@@ -1,5 +1,5 @@
 {
-	"name": "@wordpress/tools-eslint",
+	"name": "@wordpress/eslint-tools",
 	"version": "1.0.0",
 	"description": "Consolidated ESLint configuration for the repo.",
 	"private": true,

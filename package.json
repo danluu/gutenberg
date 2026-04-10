@@ -62,7 +62,7 @@
 		"@types/sprintf-js": "1.1.2",
 		"@types/uuid": "8.3.1",
 		"@wordpress/build": "file:./packages/wp-build",
-		"@wordpress/tools-eslint": "file:./tools/eslint",
+		"@wordpress/eslint-tools": "file:./tools/eslint",
 		"@wordpress/vips": "file:./packages/vips",
 		"ajv": "8.17.1",
 		"babel-jest": "29.7.0",

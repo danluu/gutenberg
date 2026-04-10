@@ -1,4 +1,4 @@
-# @wordpress/tools-eslint
+# @wordpress/eslint-tools
 
 Consolidated ESLint configuration for the Gutenberg monorepo. This is a **private** workspace package and is not published to npm.
 
