@@ -36,10 +36,14 @@ export interface PopupProps
 	children?: ReactNode;
 
 	/**
-	 * A parent element to render the portal into.
+	 * The parent element the portal is attached to.
 	 *
-	 * Useful for cross-document rendering, such as rendering a dialog
-	 * in a parent document when the trigger is inside an iframe.
+	 * Useful for cross-document rendering — for example, rendering the
+	 * dialog in a parent document when the trigger lives inside an iframe.
+	 *
+	 * Accepts an `HTMLElement`, a ref to one, or a function returning one.
+	 *
+	 * @default the current document's `<body>`
 	 */
 	container?: _Dialog.Portal.Props[ 'container' ];
 
