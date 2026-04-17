@@ -15,19 +15,12 @@ import { __ } from '@wordpress/i18n';
  * Internal dependencies
  */
 import Controls from './controls';
-import useTabMenuSync from './use-tab-menu-sync';
+import useTabMenuItemsSync from './use-tab-menu-items-sync';
 
 const EMPTY_ARRAY = [];
 
 const TABS_TEMPLATE = [
-	[
-		'core/tabs-menu',
-		{},
-		[
-			[ 'core/tabs-menu-item', {} ],
-			[ 'core/tabs-menu-item', {} ],
-		],
-	],
+	[ 'core/tabs-menu', {} ],
 	[
 		'core/tab-panel',
 		{},
@@ -63,7 +56,7 @@ function Edit( { clientId, attributes, setAttributes } ) {
 		}
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
-	const { tabs, tabPanelClientId, menuItems, tabsMenuClientId } = useSelect(
+	const { tabs, tabsMenuClientId } = useSelect(
 		( select ) => {
 			const { getBlocks } = select( blockEditorStore );
 			const innerBlocks = getBlocks( clientId );
@@ -77,15 +70,13 @@ function Edit( { clientId, attributes, setAttributes } ) {
 
 			return {
 				tabs: tabPanel?.innerBlocks ?? EMPTY_ARRAY,
-				tabPanelClientId: tabPanel?.clientId ?? null,
-				menuItems: tabsMenu?.innerBlocks ?? EMPTY_ARRAY,
 				tabsMenuClientId: tabsMenu?.clientId ?? null,
 			};
 		},
 		[ clientId ]
 	);
 
-	useTabMenuSync( { tabs, menuItems, tabPanelClientId, tabsMenuClientId } );
+	useTabMenuItemsSync( { tabs, tabsMenuClientId } );
 
 	/**
 	 * Memoize context value to prevent unnecessary re-renders.

@@ -12,21 +12,27 @@ import { useDispatch, useSelect } from '@wordpress/data';
 
 /**
  * "Add tab" button in the block toolbar for the tab block.
- * Inserts a new core/tab into the tab-panel and a new core/tabs-menu-item
- * into the tabs-menu, keeping both in sync.
+ * Inserts a new core/tab into the tab-panel. The tabs-menu items attribute
+ * is kept in sync automatically via useTabMenuItemsSync.
  *
  * @param {Object} props
  * @param {string} props.tabsClientId The client ID of the parent tabs block.
  * @return {React.JSX.Element} The toolbar control element.
  */
 export default function AddTabToolbarControl( { tabsClientId } ) {
-	const { insertBlock } = useDispatch( blockEditorStore );
+	const {
+		insertBlock,
+		updateBlockAttributes,
+		selectBlock,
+		__unstableMarkNextChangeAsNotPersistent,
+	} = useDispatch( blockEditorStore );
 
-	const { tabPanelClientId, tabsMenuClientId } = useSelect(
+	const { tabPanelClientId, tabCount, tabsMenuClientId } = useSelect(
 		( select ) => {
 			if ( ! tabsClientId ) {
 				return {
 					tabPanelClientId: null,
+					tabCount: 0,
 					tabsMenuClientId: null,
 				};
 			}
@@ -40,6 +46,7 @@ export default function AddTabToolbarControl( { tabsClientId } ) {
 			);
 			return {
 				tabPanelClientId: tabPanel?.clientId || null,
+				tabCount: tabPanel?.innerBlocks?.length || 0,
 				tabsMenuClientId: tabsMenu?.clientId || null,
 			};
 		},
@@ -54,12 +61,18 @@ export default function AddTabToolbarControl( { tabsClientId } ) {
 		const newTabBlock = createBlock( 'core/tab', {
 			label: __( 'Tab' ),
 		} );
-		insertBlock( newTabBlock, undefined, tabPanelClientId );
+		insertBlock( newTabBlock, undefined, tabPanelClientId, false );
 
-		// Insert a corresponding menu item into the tabs-menu.
+		// Switch editor active tab to the new tab.
+		const newIndex = tabCount;
+		__unstableMarkNextChangeAsNotPersistent();
+		updateBlockAttributes( tabsClientId, {
+			editorActiveTabIndex: newIndex,
+		} );
+
+		// Select the tabs-menu block so focus stays in the menu area.
 		if ( tabsMenuClientId ) {
-			const newMenuItemBlock = createBlock( 'core/tabs-menu-item', {} );
-			insertBlock( newMenuItemBlock, undefined, tabsMenuClientId );
+			selectBlock( tabsMenuClientId );
 		}
 	};
 

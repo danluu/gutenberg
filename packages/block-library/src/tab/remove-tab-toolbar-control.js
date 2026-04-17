@@ -11,8 +11,8 @@ import { useDispatch, useSelect } from '@wordpress/data';
 
 /**
  * "Remove Tab" button in the block toolbar for the tab block.
- * Removes the currently active core/tab and its corresponding
- * core/tabs-menu-item, keeping both in sync.
+ * Removes the currently active core/tab. The tabs-menu items attribute
+ * is kept in sync automatically via useTabMenuItemsSync.
  *
  * @param {Object} props
  * @param {string} props.tabsClientId The client ID of the parent tabs block.
@@ -28,17 +28,17 @@ export default function RemoveTabToolbarControl( { tabsClientId } ) {
 
 	const {
 		activeTabClientId,
-		activeMenuItemClientId,
 		tabCount,
 		editorActiveTabIndex,
+		tabsMenuClientId,
 	} = useSelect(
 		( select ) => {
 			if ( ! tabsClientId ) {
 				return {
 					activeTabClientId: null,
-					activeMenuItemClientId: null,
 					tabCount: 0,
 					editorActiveTabIndex: 0,
+					tabsMenuClientId: null,
 				};
 			}
 			const { getBlocks, getBlockAttributes } =
@@ -56,14 +56,12 @@ export default function RemoveTabToolbarControl( { tabsClientId } ) {
 				( block ) => block.name === 'core/tabs-menu'
 			);
 			const tabs = tabPanel?.innerBlocks || [];
-			const menuItems = tabsMenu?.innerBlocks || [];
 			const activeTab = tabs[ activeIndex ];
-			const activeMenuItem = menuItems[ activeIndex ];
 			return {
 				activeTabClientId: activeTab?.clientId || null,
-				activeMenuItemClientId: activeMenuItem?.clientId || null,
 				tabCount: tabs.length,
 				editorActiveTabIndex: activeIndex,
+				tabsMenuClientId: tabsMenu?.clientId || null,
 			};
 		},
 		[ tabsClientId ]
@@ -85,14 +83,12 @@ export default function RemoveTabToolbarControl( { tabsClientId } ) {
 			editorActiveTabIndex: newActiveIndex,
 		} );
 
-		// Remove the tab content block and the corresponding menu item.
+		// Remove the tab content block.
 		removeBlock( activeTabClientId, false );
-		if ( activeMenuItemClientId ) {
-			removeBlock( activeMenuItemClientId, false );
-		}
 
-		if ( tabsClientId ) {
-			selectBlock( tabsClientId );
+		// Select the tabs-menu so focus moves to the new active tab button.
+		if ( tabsMenuClientId ) {
+			selectBlock( tabsMenuClientId );
 		}
 	};
 

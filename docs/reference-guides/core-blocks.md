@@ -1048,18 +1048,8 @@ Display the tab buttons for a tabbed interface. ([Source](https://github.com/Wor
 -	**Experimental:** true
 -	**Category:** design
 -	**Parent:** core/tabs
--	**Allowed Blocks:** core/tabs-menu-item
 -	**Supports:** color (background, text), dimensions (~~aspectRatio~~, ~~height~~, ~~minHeight~~, ~~width~~), layout (allowJustification, allowOrientation, allowVerticalAlignment, default, ~~allowSwitching~~), spacing (blockGap, margin, padding), typography (fontSize), ~~html~~, ~~lock~~, ~~reusable~~, ~~visibility~~
-
-## Tab Menu Item
-
-A single tab button in the tabs menu. ([Source](https://github.com/WordPress/gutenberg/tree/trunk/packages/block-library/src/tabs-menu-item))
-
--	**Name:** core/tabs-menu-item
--	**Experimental:** true
--	**Category:** design
--	**Parent:** core/tabs-menu
--	**Supports:** color (background, text), spacing (padding), typography (fontSize, textAlign), ~~html~~, ~~lock~~, ~~reusable~~, ~~visibility~~
+-	**Attributes:** items
 
 ## Tag Cloud
 

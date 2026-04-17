@@ -8,14 +8,15 @@
 /**
  * Render callback for core/tabs-menu.
  *
- * Re-renders each tabs-menu-item inner block with per-item context (index, id,
- * label) injected from the tabs-list, so the tabs-menu-item render callback
- * can add the correct IAPI directives for each button.
+ * Injects IAPI directives into the saved button HTML. The buttons already
+ * carry color/border/padding styles from save.js; this callback adds
+ * tab-specific attributes (id, aria-controls, context) and interactivity
+ * directives using data from the tabs-list context.
  *
  * @since 7.0.0
  *
  * @param array     $attributes Block attributes.
- * @param string    $content    Block content (rendered inner blocks from save.js).
+ * @param string    $content    Block content (rendered buttons from save.js).
  * @param \WP_Block $block      WP_Block instance.
  *
  * @return string Updated HTML.
@@ -27,41 +28,59 @@ function block_core_tabs_menu_render_callback( array $attributes, string $conten
 		return $content;
 	}
 
-	// Re-render each tabs-menu-item with per-item context (index, id, label).
-	// Match by position so items align with their corresponding tabs.
-	$buttons_html       = '';
-	$menu_item_position = 0;
+	$tag_processor = new WP_HTML_Tag_Processor( $content );
+	$tab_index     = 0;
 
-	foreach ( $block->parsed_block['innerBlocks'] ?? array() as $parsed_menu_item ) {
-		if ( 'core/tabs-menu-item' !== ( $parsed_menu_item['blockName'] ?? '' ) ) {
-			continue;
-		}
+	while ( $tag_processor->next_tag( 'button' ) ) {
+		$tab = $tabs_list[ $tab_index ] ?? null;
 
-		$tab       = $tabs_list[ $menu_item_position ] ?? null;
-		$tab_index = $menu_item_position;
-		++$menu_item_position;
-
-		// Skip menu items with no matching tab.
 		if ( null === $tab ) {
-			continue;
+			break;
 		}
 
-		$item_context = array_merge(
-			$block->context,
-			array(
-				'core/tabs-menu-item-index' => $tab_index,
-				'core/tabs-menu-item-id'    => $tab['id'] ?? '',
-				'core/tabs-menu-item-label' => $tab['label'] ?? '',
-			)
+		$tab_id = $tab['id'] ?? 'tab-' . $tab_index;
+
+		$tag_processor->set_attribute( 'id', 'tab__' . $tab_id );
+		$tag_processor->set_attribute( 'aria-controls', $tab_id );
+		$tag_processor->set_attribute( 'data-wp-on--click', 'actions.handleTabClick' );
+		$tag_processor->set_attribute( 'data-wp-on--keydown', 'actions.handleTabKeyDown' );
+		$tag_processor->set_attribute( 'data-wp-bind--aria-selected', 'state.isActiveTab' );
+		$tag_processor->set_attribute( 'data-wp-bind--tabindex', 'state.tabIndexAttribute' );
+		$tag_processor->set_attribute(
+			'data-wp-context',
+			wp_json_encode( array( 'tabIndex' => $tab_index ) )
 		);
 
-		$menu_item_block = new WP_Block( $parsed_menu_item, $item_context );
-		$buttons_html   .= $menu_item_block->render();
+		// Replace button content with the tab label from context (source of truth).
+		$tag_processor->set_bookmark( 'menu_item_' . $tab_index );
+
+		++$tab_index;
+	}
+
+	$output = $tag_processor->get_updated_html();
+
+	// Replace each button's inner content with the label from tabs-list context.
+	foreach ( $tabs_list as $index => $tab ) {
+		$tab_label = $tab['label'] ?? '';
+		$output    = preg_replace(
+			'/(<button\b[^>]*id="tab__' . preg_quote( $tab['id'] ?? 'tab-' . $index, '/' ) . '"[^>]*>).*?(<\/button>)/s',
+			'$1<span>' . wp_kses_post( $tab_label ) . '</span>$2',
+			$output,
+			1
+		);
 	}
 
 	// Rebuild the wrapper using get_block_wrapper_attributes().
+	// Replace only the opening wrapper tag to preserve inner content.
 	$wrapper_attributes = get_block_wrapper_attributes( array( 'role' => 'tablist' ) );
-	return sprintf( '<div %s>%s</div>', $wrapper_attributes, $buttons_html );
+	$output             = preg_replace(
+		'/^<div\b[^>]*>/',
+		'<div ' . $wrapper_attributes . '>',
+		$output,
+		1
+	);
+
+	return $output;
 }
 
 /**
