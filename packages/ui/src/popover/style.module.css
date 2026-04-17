@@ -18,9 +18,9 @@
 	}
 
 	/*
-	 * Structural marker; no visual styles. Always applied to the popup root
-	 * wrapped by ThemeProvider `hasLayoutBox`, regardless of `variant`.
-	 * Visuals live in `.default`.
+	 * Structural marker; no visual styles. Applied to the popup root (direct
+	 * child of ThemeProvider) so the unlayered `:has(> .popup)` rule above can
+	 * match regardless of `variant`. Visuals live in `.default`.
 	 */
 	/* stylelint-disable-next-line block-no-empty -- structural marker; kept
 	 * class-based (not a data attribute) so it is defined alongside the other
