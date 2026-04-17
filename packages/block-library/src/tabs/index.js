@@ -23,7 +23,7 @@ export const settings = {
 			{
 				name: 'core/tabs-menu',
 				attributes: {
-					items: [
+					tabs: [
 						{ label: __( 'Tab 1' ) },
 						{ label: __( 'Tab 2' ) },
 					],

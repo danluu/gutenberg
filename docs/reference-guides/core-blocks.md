@@ -1049,7 +1049,7 @@ Display the tab buttons for a tabbed interface. ([Source](https://github.com/Wor
 -	**Category:** design
 -	**Parent:** core/tabs
 -	**Supports:** color (background, text), dimensions (~~aspectRatio~~, ~~height~~, ~~minHeight~~, ~~width~~), layout (allowJustification, allowOrientation, allowVerticalAlignment, default, ~~allowSwitching~~), spacing (blockGap, margin, padding), typography (fontSize), ~~html~~, ~~lock~~, ~~reusable~~, ~~visibility~~
--	**Attributes:** items
+-	**Attributes:** tabs
 
 ## Tag Cloud
 

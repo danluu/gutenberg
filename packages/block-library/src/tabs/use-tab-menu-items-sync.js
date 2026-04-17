@@ -6,10 +6,10 @@ import { useDispatch } from '@wordpress/data';
 import { useEffect, useRef } from '@wordpress/element';
 
 /**
- * Keep the tabs-menu block's `items` attribute in sync with the tab blocks.
+ * Keep the tabs-menu block's `tabs` attribute in sync with the tab blocks.
  *
  * Whenever the list of core/tab blocks changes (add, remove, reorder, or
- * label edit), this hook updates the `items` attribute on the core/tabs-menu
+ * label edit), this hook updates the `tabs` attribute on the core/tabs-menu
  * block so that save.js can render the correct buttons.
  *
  * @param {Object}      props
@@ -20,26 +20,26 @@ export default function useTabMenuItemsSync( { tabs, tabsMenuClientId } ) {
 	const { updateBlockAttributes, __unstableMarkNextChangeAsNotPersistent } =
 		useDispatch( blockEditorStore );
 
-	const prevItemsRef = useRef( null );
+	const prevTabsRef = useRef( null );
 
 	useEffect( () => {
 		if ( ! tabsMenuClientId ) {
 			return;
 		}
 
-		const newItems = tabs.map( ( tab ) => ( {
+		const newTabs = tabs.map( ( tab ) => ( {
 			label: tab.attributes.label || '',
 		} ) );
 
-		// Only update if items actually changed to avoid unnecessary re-renders.
-		const serialized = JSON.stringify( newItems );
-		if ( serialized === prevItemsRef.current ) {
+		// Only update if tabs actually changed to avoid unnecessary re-renders.
+		const serialized = JSON.stringify( newTabs );
+		if ( serialized === prevTabsRef.current ) {
 			return;
 		}
-		prevItemsRef.current = serialized;
+		prevTabsRef.current = serialized;
 
 		__unstableMarkNextChangeAsNotPersistent();
-		updateBlockAttributes( tabsMenuClientId, { items: newItems } );
+		updateBlockAttributes( tabsMenuClientId, { tabs: newTabs } );
 	}, [
 		tabs,
 		tabsMenuClientId,

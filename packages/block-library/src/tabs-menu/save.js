@@ -14,7 +14,7 @@ import {
 } from '@wordpress/block-editor';
 
 export default function save( { attributes } ) {
-	const { items } = attributes;
+	const { tabs } = attributes;
 	const blockProps = useBlockProps.save( {
 		role: 'tablist',
 	} );
@@ -33,7 +33,7 @@ export default function save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			{ items.map( ( item, index ) => (
+			{ tabs.map( ( tab, index ) => (
 				<button
 					key={ index }
 					className={ buttonClassName || undefined }
@@ -41,7 +41,7 @@ export default function save( { attributes } ) {
 					type="button"
 					role="tab"
 				>
-					{ item.label }
+					{ tab.label }
 				</button>
 			) ) }
 		</div>

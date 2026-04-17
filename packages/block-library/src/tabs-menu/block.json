@@ -10,8 +10,16 @@
 	"parent": [ "core/tabs" ],
 	"usesContext": [ "core/tabs-list" ],
 	"attributes": {
-		"items": {
+		"tabs": {
 			"type": "array",
+			"source": "query",
+			"selector": "button",
+			"query": {
+				"label": {
+					"type": "string",
+					"source": "html"
+				}
+			},
 			"default": []
 		}
 	},
