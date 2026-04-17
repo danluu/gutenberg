@@ -41,7 +41,7 @@ export default function save( { attributes } ) {
 					type="button"
 					role="tab"
 				>
-					<span>{ item.label }</span>
+					{ item.label }
 				</button>
 			) ) }
 		</div>

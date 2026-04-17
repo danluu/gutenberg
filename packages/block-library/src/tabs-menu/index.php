@@ -64,7 +64,7 @@ function block_core_tabs_menu_render_callback( array $attributes, string $conten
 		$tab_label = $tab['label'] ?? '';
 		$output    = preg_replace(
 			'/(<button\b[^>]*id="tab__' . preg_quote( $tab['id'] ?? 'tab-' . $index, '/' ) . '"[^>]*>).*?(<\/button>)/s',
-			'$1<span>' . wp_kses_post( $tab_label ) . '</span>$2',
+			'$1' . wp_kses_post( $tab_label ) . '$2',
 			$output,
 			1
 		);

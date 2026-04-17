@@ -147,8 +147,9 @@ function Edit( { attributes, clientId, context } ) {
 				{ tabsList.map( ( tab, index ) => {
 					const isActive = index === effectiveActiveIndex;
 					return (
-						<button
+						<RichText
 							key={ tab.clientId || index }
+							tagName="button"
 							type="button"
 							className={ clsx( buttonClassName, {
 								'is-active': isActive,
@@ -159,17 +160,13 @@ function Edit( { attributes, clientId, context } ) {
 								event.preventDefault();
 								handleTabClick( index );
 							} }
-						>
-							<RichText
-								tagName="span"
-								withoutInteractiveFormatting
-								placeholder={ __( 'Tab title' ) }
-								value={ tab.label }
-								onChange={ ( newLabel ) =>
-									handleLabelChange( index, newLabel )
-								}
-							/>
-						</button>
+							withoutInteractiveFormatting
+							placeholder={ __( 'Tab title' ) }
+							value={ tab.label }
+							onChange={ ( newLabel ) =>
+								handleLabelChange( index, newLabel )
+							}
+						/>
 					);
 				} ) }
 			</div>
