@@ -13,6 +13,7 @@ import {
 	RichText,
 	__experimentalUseBorderProps as useBorderProps,
 	__experimentalUseColorProps as useColorProps,
+	__experimentalGetSpacingClassesAndStyles as getSpacingClassesAndStyles,
 } from '@wordpress/block-editor';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useMemo, useCallback, useEffect, useRef } from '@wordpress/element';
@@ -30,7 +31,7 @@ function Edit( { attributes, clientId, context } ) {
 
 	const colorProps = useColorProps( attributes );
 	const borderProps = useBorderProps( attributes );
-	const paddingStyle = attributes.style?.spacing?.padding;
+	const spacingProps = getSpacingClassesAndStyles( attributes );
 
 	const { tabsClientId, editorActiveTabIndex, activeTabIndex } = useSelect(
 		( select ) => {
@@ -132,11 +133,7 @@ function Edit( { attributes, clientId, context } ) {
 	const buttonStyle = {
 		...colorProps.style,
 		...borderProps.style,
-		padding: paddingStyle
-			? `${ paddingStyle.top || '' } ${ paddingStyle.right || '' } ${
-					paddingStyle.bottom || ''
-			  } ${ paddingStyle.left || '' }`.trim() || undefined
-			: undefined,
+		...spacingProps.style,
 	};
 
 	return (
