@@ -51,36 +51,10 @@ function block_core_tabs_menu_render_callback( array $attributes, string $conten
 			wp_json_encode( array( 'tabIndex' => $tab_index ) )
 		);
 
-		// Replace button content with the tab label from context (source of truth).
-		$tag_processor->set_bookmark( 'menu_item_' . $tab_index );
-
 		++$tab_index;
 	}
 
-	$output = $tag_processor->get_updated_html();
-
-	// Replace each button's inner content with the label from tabs-list context.
-	foreach ( $tabs_list as $index => $tab ) {
-		$tab_label = $tab['label'] ?? '';
-		$output    = preg_replace(
-			'/(<button\b[^>]*id="tab__' . preg_quote( $tab['id'] ?? 'tab-' . $index, '/' ) . '"[^>]*>).*?(<\/button>)/s',
-			'$1' . wp_kses_post( $tab_label ) . '$2',
-			$output,
-			1
-		);
-	}
-
-	// Rebuild the wrapper using get_block_wrapper_attributes().
-	// Replace only the opening wrapper tag to preserve inner content.
-	$wrapper_attributes = get_block_wrapper_attributes( array( 'role' => 'tablist' ) );
-	$output             = preg_replace(
-		'/^<div\b[^>]*>/',
-		'<div ' . $wrapper_attributes . '>',
-		$output,
-		1
-	);
-
-	return $output;
+	return $tag_processor->get_updated_html();
 }
 
 /**
