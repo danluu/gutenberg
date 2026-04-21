@@ -96,6 +96,22 @@ But the write path for block content does this instead:
 So the corruption happens on the main RTC write path for formatted block
 content.
 
+This was re-checked against the real editor hook, not just helper calls:
+
+- `useEntityBlockEditor().onInput()` produces `blocks + selection` updates
+  with `RichTextData` values for paragraph content
+- those updates are serialized to HTML strings before syncing
+- once the CRDT document already has a `blocks` tree, the next formatted
+  `onInput()` change reproduces the corruption through the actual
+  `editEntityRecord()` -> `SyncManager.update()` -> `applyPostChangesToCRDTDoc()`
+  path
+
+One nuance matters here: if the CRDT document was initialized only from
+`content.raw`, the first block edit can simply seed the `blocks` field instead
+of diffing existing rich-text `Y.Text` content. The corruption appears once
+`blocks` already exist in the CRDT document, which is the normal steady-state
+after block syncing has started.
+
 ## Primary Reproduction
 
 ### Input
@@ -124,13 +140,17 @@ The closing `a` from `beta` is lost and the result ends with a stray `>`.
 
 ### Why This Proves The Root Cause
 
-The same reproduction was checked four ways:
+The same reproduction was checked six ways:
 
 1. `mergeRichTextUpdate()` with cursor `10` corrupts the string.
 2. `mergeCrdtBlocks()` with cursor `10` corrupts the block content.
 3. `applyPostChangesToCRDTDoc()` with `selection.selectionStart.offset = 10`
    corrupts the stored `Y.Text`.
-4. The exact same update succeeds when the cursor hint is removed (`null`).
+4. `SyncManager.update()` reproduces the same corruption after the next event
+   loop tick.
+5. `useEntityBlockEditor().onInput()` reproduces it end to end once `blocks`
+   have been seeded into the CRDT document.
+6. The exact same update succeeds when the cursor hint is removed (`null`).
 
 Then the offset was converted with the same helper used by the other RTC
 selection paths:
