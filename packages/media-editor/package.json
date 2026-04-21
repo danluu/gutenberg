@@ -52,7 +52,8 @@
 		"@wordpress/i18n": "file:../i18n",
 		"@wordpress/icons": "file:../icons",
 		"@wordpress/interface": "file:../interface",
-		"@wordpress/private-apis": "file:../private-apis"
+		"@wordpress/private-apis": "file:../private-apis",
+		"@wordpress/ui": "file:../ui"
 	},
 	"peerDependencies": {
 		"react": "^18.0.0"
