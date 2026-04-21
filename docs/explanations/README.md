@@ -10,3 +10,7 @@
 -   [Why is Playwright the tool of choice for end-to-end tests?](/docs/explanations/architecture/automated-testing.md)
 -   [What’s the difference between the different editor packages? What’s the purpose of each package?](/docs/explanations/architecture/modularity.md#whats-the-difference-between-the-different-editor-packages-whats-the-purpose-of-each-package)
 -   [Template and template parts flows](/docs/explanations/architecture/full-site-editing-templates.md)
+
+## [Fuzzer Bugs](/docs/explanations/fuzzer-bugs/README.md)
+
+-   [Real-Time Collaboration Rich-Text Initial False Positives](/docs/explanations/fuzzer-bugs/real-time-collaboration-rich-text-initial-false-positives.md)

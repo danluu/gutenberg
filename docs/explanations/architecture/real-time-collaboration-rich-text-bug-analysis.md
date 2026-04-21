@@ -2,6 +2,9 @@
 
 This report replaces the earlier version of this document.
 
+The three initial helper-level false positives are documented separately in
+[Real-Time Collaboration Rich-Text Initial False Positives](/docs/explanations/fuzzer-bugs/real-time-collaboration-rich-text-initial-false-positives.md).
+
 The earlier report claimed two production rich-text corruption bugs in
 `diffWithCursor()` itself. Deeper analysis showed those two cases were false
 positives: they only failed when the cursor was supplied as an HTML index,
