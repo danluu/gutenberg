@@ -40,6 +40,8 @@ interface NormalizedCollaborativeState {
 	title: string;
 }
 
+type CleanupUsersMode = 'all' | 'tracked' | 'none';
+
 export const SECOND_USER: UserCredentials = {
 	username: 'collaborator',
 	email: 'collaborator@example.com',
@@ -53,23 +55,28 @@ const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 
 export default class CollaborationUtils {
 	private admin: Admin;
+	private cleanupUsersMode: CleanupUsersMode;
 	private editor: Editor;
 	private requestUtils: RequestUtils;
 	private primaryPage: Page;
 	private sessions: UserSession[] = [];
+	private trackedUserIds: number[] = [];
 
 	constructor( {
 		admin,
+		cleanupUsersMode = 'all',
 		editor,
 		requestUtils,
 		page,
 	}: {
 		admin: Admin;
+		cleanupUsersMode?: CleanupUsersMode;
 		editor: Editor;
 		requestUtils: RequestUtils;
 		page: Page;
 	} ) {
 		this.admin = admin;
+		this.cleanupUsersMode = cleanupUsersMode;
 		this.editor = editor;
 		this.requestUtils = requestUtils;
 		this.primaryPage = page;
@@ -85,6 +92,11 @@ export default class CollaborationUtils {
 		await this.admin.visitAdminPage(
 			'post.php',
 			`post=${ postId }&action=edit`
+		);
+		await this.primaryPage.waitForFunction(
+			() => window?.wp?.data && window?.wp?.blocks,
+			undefined,
+			{ timeout: 30000 }
 		);
 		await this.editor.setPreferences( 'core/edit-post', {
 			welcomeGuide: false,
@@ -573,6 +585,12 @@ export default class CollaborationUtils {
 		return this.sessions[ 0 ].editor;
 	}
 
+	registerCleanupUser( userId: number ) {
+		if ( ! this.trackedUserIds.includes( userId ) ) {
+			this.trackedUserIds.push( userId );
+		}
+	}
+
 	/**
 	 * Clean up: close all secondary browser contexts and delete test users.
 	 */
@@ -581,7 +599,27 @@ export default class CollaborationUtils {
 			await session.context.close();
 		}
 		this.sessions = [];
-		await this.requestUtils.deleteAllUsers();
+
+		if ( this.cleanupUsersMode === 'all' ) {
+			await this.requestUtils.deleteAllUsers();
+		} else if ( this.cleanupUsersMode === 'tracked' ) {
+			for ( const userId of this.trackedUserIds ) {
+				try {
+					await this.requestUtils.rest( {
+						method: 'DELETE',
+						path: `/wp/v2/users/${ userId }`,
+						params: {
+							force: true,
+							reassign: 1,
+						},
+					} );
+				} catch {
+					// Ignore cleanup failures so one stale user does not mask test results.
+				}
+			}
+		}
+
+		this.trackedUserIds = [];
 	}
 }
 
