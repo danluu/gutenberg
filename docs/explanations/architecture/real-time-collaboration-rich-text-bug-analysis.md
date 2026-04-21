@@ -1,213 +1,269 @@
 # Real-Time Collaboration Rich-Text Bug Analysis
 
-This report documents the real bugs found while expanding the fast non-browser real-time collaboration fuzzing. It also records why the three originally reported seeds were rejected as false positives so the final bug list is limited to production-relevant failures.
+This report replaces the earlier version of this document.
 
-## Scope
+The earlier report claimed two production rich-text corruption bugs in
+`diffWithCursor()` itself. Deeper analysis showed those two cases were false
+positives: they only failed when the cursor was supplied as an HTML index,
+while the production block-editor selection API supplies a rich-text text
+offset.
 
-The original failing seeds `46016`, `46153`, and `46181` all minimized successfully, but deeper analysis showed that none of them represented a production bug:
+After re-checking the problem against the real production path, there is a
+real production bug, but it is a different one:
 
-- `46016` expected an invalid rich-text HTML string that `RichTextData` does not preserve.
-- `46153` required a non-null cursor on the plain-text update path, but production plain-text updates call `mergeRichTextUpdate(..., null)`.
-- `46181` had the same problem as `46153`: the failure depended on an impossible cursor for the plain-text path, and the update succeeds when run with the production contract.
+- the block merge path passes a rich-text text offset directly into a diff API
+  that operates on HTML string indices
 
-After filtering those out, production-shaped fuzzing found two real bugs on the block rich-text HTML path. Both bugs occur in valid, balanced HTML strings, both reproduce through `mergeRichTextUpdate()`, and both corrupt the result instead of producing the requested new value.
+That coordinate-space mismatch is enough to corrupt block rich-text content in
+production.
 
-## Bug 1: Nested `<strong>` Replacement Corrupts Closing Tags
+## Summary
 
-### Minimized Reproduction
+The confirmed bug is in the handoff between block-editor selections and
+rich-text diffing:
 
-- Seed: `8970`
-- Step: `62`
-- Old value: `"<strong><strong>😀😀</strong></strong><br> <br>"`
-- New value: `"<strong>bold</strong><br>"`
-- Cursor after change: `21`
-- Expected result: `"<strong>bold</strong><br>"`
-- Actual result: `"<strong>bold</st<br> <br>"`
+- `WPBlockSelection.offset` is a rich-text offset that counts visible text
+  positions, not HTML characters
+- `mergeRichTextUpdate()` diffs HTML strings and passes the cursor to
+  `Delta.diffWithCursor()`, which therefore interprets the cursor as an HTML
+  index
+- other RTC selection paths already know about this distinction and convert
+  between the two spaces with `richTextOffsetToHtmlIndex()` and
+  `htmlIndexToRichTextOffset()`
+- the block merge path in `applyPostChangesToCRDTDoc()` does not do that
+  conversion before calling `mergeCrdtBlocks()`
 
-Both the old and new values are valid rich-text HTML. They round-trip through `RichTextData.fromHTMLString(...).toHTMLString()` without modification, so this is not an oracle bug caused by invalid input. The corruption also reproduces through both:
+The result is that rich-text edits can be replayed with the cursor pointing at
+the wrong place inside the HTML string. When the content contains formatting
+tags, that wrong cursor can steer `diffWithCursor()` into emitting a corrupt
+delta.
 
-- `mergeRichTextUpdate()` in `packages/core-data/src/utils/crdt-blocks.ts`
-- `Delta.diffWithCursor()` in `packages/sync/src/quill-delta/Delta.ts`
+## What Was Re-Checked
 
-### What The Bug Does
+The earlier report treated these as production bugs:
 
-The user is effectively replacing a nested bold region followed by `<br> <br>` with a simpler bold region followed by a single `<br>`. Instead of producing the requested result, the diff logic splices part of the closing `</strong>` tag into the middle of the final HTML and leaves stale suffix content behind.
+- `"<strong><strong>😀😀</strong></strong><br> <br>"` ->
+  `"<strong>bold</strong><br>"` with cursor `21`
+- `"<strong>é<strong>é</strong></strong>beta<br>"` ->
+  `"<strong>bold</strong><br>"` with cursor `21`
 
-The broken diff emitted for this case is:
+Those cases do fail at the `diffWithCursor()` layer, but only with cursor `21`,
+which is an HTML index. Under the actual block-editor contract, the selection
+offset for the resulting `"<strong>bold</strong><br>"` state is a rich-text
+offset such as `4` or `5`, not `21`. Re-running those cases with the
+production-shaped cursor contract makes them pass.
 
-```json
-[
-  { "retain": 8 },
-  { "insert": "b" },
-  { "delete": 4 },
-  { "retain": 1 },
-  { "insert": "ld" },
-  { "delete": 7 },
-  { "retain": 1 },
-  { "delete": 9 },
-  { "retain": 3 },
-  { "delete": 5 }
-]
-```
+So the earlier report was materially wrong in one important way:
 
-Applying that diff to the old value produces:
+- it treated "HTML index reaches a lower-level helper" as if that were the
+  production contract
 
-```text
-<strong>bold</st<br> <br>
-```
+The real bug appears only after switching the analysis to the actual
+production cursor contract.
 
-This is HTML corruption, not a harmless formatting mismatch. The edit leaves a truncated closing tag (`</st`) and preserves stale trailing content from the old string.
+## Confirmed Production Bug
 
-### Why This Is A Real Production Bug
+### Bug
 
-This input shape matches the real block rich-text code path:
+`applyPostChangesToCRDTDoc()` passes `changes.selection.selectionStart.offset`
+straight into `mergeCrdtBlocks()`, and that value is ultimately passed to
+`mergeRichTextUpdate()` and `Delta.diffWithCursor()` without converting it from
+rich-text offset space into HTML index space.
 
-- `mergeCrdtBlocks()` passes a non-null cursor position for block edits.
-- Rich-text block attributes are merged through `mergeRichTextUpdate()`.
-- `mergeRichTextUpdate()` converts the current and new values to `Delta`s and calls `diffWithCursor()`.
+### Why This Is Reachable In Production
 
-Unlike the false-positive plain-text seeds, this failure does not rely on an impossible cursor contract or invalid HTML. It is reachable on the exact path Gutenberg uses for block rich-text synchronization.
+This is not a fuzzer-only artifact.
 
-### Root Cause
+The production code already distinguishes these two index spaces elsewhere:
 
-The bug comes from the cursor-guided post-processing in `Delta.diffWithCursor()`, not from Yjs itself.
+- `packages/core-data/src/types.ts` defines `WPBlockSelection.offset` as the
+  editor selection offset
+- `packages/core-data/src/utils/crdt-user-selections.ts` converts that offset
+  with `richTextOffsetToHtmlIndex()` before creating a `Y.RelativePosition`
+- `packages/core-data/src/utils/block-selection-history.ts` does the same when
+  saving selection history
+- `packages/core-data/src/utils/crdt-selection.ts` converts back with
+  `htmlIndexToRichTextOffset()` when restoring editor selections
 
-`diffWithCursor()` first computes a character diff, then tries to move insertions and deletions toward the cursor using:
+But the write path for block content does this instead:
 
-- `tryMoveInsertionToCursor()`
-- `tryMoveDeletionToCursor()`
+- `packages/core-data/src/utils/crdt.ts` reads
+  `changes.selection?.selectionStart?.offset ?? null`
+- it passes that raw number into `mergeCrdtBlocks()`
+- `mergeCrdtBlocks()` forwards that number to every rich-text merge
+- `mergeRichTextUpdate()` applies `diffWithCursor()` to HTML strings
 
-Those helpers only verify local substring equality around the cursor. That is enough for simple repeated text like `"aaaa"`, which is what the current unit tests focus on, but it is not enough for repeated or nested HTML markup where the same short substrings appear in multiple structurally different positions.
+So the corruption happens on the main RTC write path for formatted block
+content.
 
-In this bug, repeated `<strong>` and `</strong>` regions create ambiguous alignments. The heuristic sees a locally matching substring and decides that a diff segment can be moved closer to the cursor, but that move breaks the global structure of the HTML. Once the move is accepted, later delta conversion emits a sequence that deletes only part of the old closing-tag structure and leaves stale suffix text behind.
+## Primary Reproduction
 
-### How The Bug Was Introduced
+### Input
 
-This bug class was introduced by commit `30c040ca841` on January 14, 2026:
+- old value: `"<em>italic</em><em>italic</em>"`
+- new value: `"<em>italic</em>beta"`
+- block-editor selection offset after the edit: `10`
 
-- `packages/core-data/src/utils/crdt-blocks.ts` stopped doing full-string replacement and started applying incremental rich-text diffs.
-- `packages/sync/src/quill-delta/Delta.ts` was added with the custom `diffWithCursor()` logic and the cursor-moving heuristics.
+Both HTML strings are stable Gutenberg rich-text values:
 
-Before that change, `mergeRichTextUpdate()` deleted the whole string and inserted the new one. That was less efficient, but it did not have this corruption mode. The new diff path improved incremental behavior, but it also introduced a heuristic that assumes local substring equivalence is enough to relocate edits safely. That assumption is false for nested or repeated markup.
+- `RichTextData.fromHTMLString(old).toHTMLString()` returns the same old value
+- `RichTextData.fromHTMLString(new).toHTMLString()` returns the same new value
 
-Later fixes in `d2eb0cf1215` and `af635a669bf` addressed surrogate pairs and large-input performance. They did not address this structural ambiguity problem.
+### What Production Does
 
-### Proposed Fix Plan
+The production block merge path passes `10` directly into the rich-text merge.
 
-1. Add a direct regression test for this exact repro in `packages/sync/src/quill-delta/test/Delta.ts`.
-2. Add a higher-level regression for `mergeRichTextUpdate()` so the CRDT integration path is also covered.
-3. Add a correctness guard in `diffWithCursor()`:
-   - Compose the adjusted diff back onto the old delta.
-   - If the composed result does not equal the requested new value, discard the cursor-adjusted diff and fall back to plain `diff()` or full replacement.
-4. Replace the current move heuristics with a cursor-anchored replacement strategy that computes one contiguous replacement region around the cursor rather than relocating already-generated diff chunks through repeated markup.
-
-### Fix Rationale
-
-The immediate guard is the lowest-risk fix because it stops corruption even if the heuristic remains imperfect. The deeper heuristic rewrite is still worthwhile because the current algorithm is fundamentally underconstrained: it tries to infer editor intent from local substring equality in strings where the same markup fragments repeat. A cursor-anchored contiguous replacement is a better model for editor-style edits and avoids manufacturing partial closing tags.
-
-## Bug 2: Nested Formatting With Repeated Suffix Text Produces Split Closing Tags
-
-### Minimized Reproduction
-
-- Seed: `10276`
-- Step: `46`
-- Old value: `"<strong>é<strong>é</strong></strong>beta<br>"`
-- New value: `"<strong>bold</strong><br>"`
-- Cursor after change: `21`
-- Expected result: `"<strong>bold</strong><br>"`
-- Actual result: `"<strong>bold</strbeta<br>"`
-
-Again, both the old and new values are valid rich-text HTML, and both round-trip through `RichTextData` unchanged. The failure reproduces through both `mergeRichTextUpdate()` and `Delta.diffWithCursor()`.
-
-### What The Bug Does
-
-The edit is replacing nested bold content followed by plain text (`beta`) and a line break with a simpler bold span and the same trailing line break. Instead of fully removing the old nested content and the stale plain-text suffix, the resulting diff leaves part of the old `beta` text behind and splices an incomplete closing tag into the result:
+That reproduces all the way through `applyPostChangesToCRDTDoc()` and produces:
 
 ```text
-<strong>bold</strbeta<br>
+<em>italic</em>bet>
 ```
 
-The broken diff emitted for this case is:
+That is content corruption, not just a different but equivalent serialization.
+The closing `a` from `beta` is lost and the result ends with a stray `>`.
 
-```json
-[
-  { "retain": 8 },
-  { "insert": "b" },
-  { "delete": 6 },
-  { "retain": 1 },
-  { "insert": "ld" },
-  { "delete": 5 },
-  { "retain": 1 },
-  { "insert": "/str" },
-  { "delete": 17 }
-]
+### Why This Proves The Root Cause
+
+The same reproduction was checked four ways:
+
+1. `mergeRichTextUpdate()` with cursor `10` corrupts the string.
+2. `mergeCrdtBlocks()` with cursor `10` corrupts the block content.
+3. `applyPostChangesToCRDTDoc()` with `selection.selectionStart.offset = 10`
+   corrupts the stored `Y.Text`.
+4. The exact same update succeeds when the cursor hint is removed (`null`).
+
+Then the offset was converted with the same helper used by the other RTC
+selection paths:
+
+- `richTextOffsetToHtmlIndex("<em>italic</em><em>italic</em>", 10)` returns
+  `14`
+
+Passing `14` into `mergeRichTextUpdate()` produces the correct result:
+
+```text
+<em>italic</em>beta
 ```
 
-That is not just the wrong formatting boundary. It is a corrupted HTML result that blends a partial closing tag with stale text from the old suffix.
+That isolates the root cause to the coordinate-space mismatch. The same edit:
 
-### Why This Is A Real Production Bug
+- fails with the production rich-text offset
+- succeeds with the corresponding HTML index
+- succeeds with no cursor hint at all
 
-This case is also production-shaped:
+## Secondary Confirmation
 
-- The values are valid block rich-text HTML.
-- The cursor is a plausible local rich-text cursor.
-- The failure occurs only when the non-null cursor path is used, which is the intended path for block rich-text updates.
+The same bug class reproduces on a second corrected-model fuzz case:
 
-This means the bug can corrupt a collaborator-visible block attribute during normal incremental synchronization, rather than only failing inside a fuzzer-only input model.
+- old value:
+  `"<strong>é</strong>é<strong>é</strong><strong>é</strong>alphaalpha"`
+- new value: `"<strong>é</strong><em>italic</em>"`
+- block-editor selection offset after the edit: `8`
+- actual production-path result:
+  `"<strong>é</strong><em>italic</eha"`
 
-### Root Cause
+Again:
 
-This is the same underlying bug class as Bug 1, but with a slightly different ambiguous context.
+- both values round-trip through `RichTextData` unchanged
+- the corruption reproduces through `applyPostChangesToCRDTDoc()`
+- the failure only appears when the rich-text offset is fed into the HTML diff
 
-The combination of:
+This matters because it shows the bug is not a single brittle string pair. It
+is a bug class triggered by formatted content plus the wrong cursor space.
 
-- nested `<strong>` markup,
-- repeated short substrings around the cursor,
-- a trailing plain-text suffix (`beta`), and
-- a shared `<br>` suffix
+## What The Bug Is Not
 
-gives `diffWithCursor()` multiple locally plausible alignments. The cursor-moving heuristic chooses an alignment that looks valid near the cursor, then rewrites diff segments around that choice. Because the choice is only locally justified, the final delta no longer represents a globally correct transformation from old value to new value.
+The confirmed production bug is not:
 
-In practical terms, the heuristic "pulls" pieces of the transformation through repeated markup boundaries and reuses the wrong suffix occurrence. That is why the result contains `/str` plus stale `beta` text instead of a clean `</strong>`.
+- "any rich-text corruption in `diffWithCursor()` is production-reachable"
+- "the two original cursor-21 repros are real as written"
+- "the low-level cursor-moving heuristic is definitely wrong even when given a
+  correct HTML index"
 
-### How The Bug Was Introduced
+There may still be lower-level heuristic bugs in `diffWithCursor()` with valid
+HTML-index cursors. This analysis does not prove or disprove that. What it does
+prove is that production currently sends the helper the wrong kind of cursor,
+and that alone is enough to corrupt real block content.
 
-The introduction point is the same as Bug 1: commit `30c040ca841` on January 14, 2026.
+## How The Bug Was Introduced
 
-That change replaced the previous full-string overwrite behavior with incremental diffs produced by `diffWithCursor()`. The new code path made block rich-text syncing more incremental, but it also introduced a heuristic that assumes repeated local substrings can be disambiguated safely using only cursor position plus local substring comparison. This repro shows that the assumption breaks when repeated formatting and repeated suffixes coexist.
+The bug was introduced on January 14, 2026 by commit `30c040ca841`
+("Real-time collaboration: Use alternative diff in quill-delta, provide
+incremental text updates").
 
-### Proposed Fix Plan
+That change did two relevant things:
 
-1. Add a regression test for this exact repro in `packages/sync/src/quill-delta/test/Delta.ts`.
-2. Add a high-level regression around `mergeRichTextUpdate()` so the CRDT application path is covered.
-3. Add a verification step after cursor-guided adjustment:
-   - apply the candidate delta to the old value,
-   - compare the result to the target new value,
-   - fall back if the candidate does not exactly match.
-4. Rework the cursor-guided algorithm so it prefers one contiguous replacement around the cursor instead of relocating insertion and deletion segments independently.
+- it replaced the old full-string replacement behavior for rich-text updates
+  with incremental cursor-guided diffs
+- it added this block merge handoff in `packages/core-data/src/utils/crdt.ts`:
+  `changes.selection?.selectionStart?.offset ?? null`
 
-### Fix Rationale
+At that point, the merge path started passing a block-editor text offset into a
+lower-level diff working on HTML strings.
 
-This bug is a strong argument for separating "use the cursor as a hint" from "mutate the diff structure after the fact". The current approach tries to improve an already ambiguous diff by moving operations independently. That is precisely what creates the split closing tag and stale suffix reuse. A verified fallback prevents corruption immediately, and a cursor-anchored replacement strategy removes the specific ambiguity that allowed this bug to happen.
+Later, on March 17, 2026, commit `848188b4f12`
+("RTC: Fix cursor index sync with rich text formatting") added
+`richTextOffsetToHtmlIndex()` and `htmlIndexToRichTextOffset()` and used them
+to fix awareness, cursor drawing, and selection history paths. That commit is
+important evidence that the codebase already recognizes the two index spaces.
 
-## Relationship Between The Two Bugs
+But the block merge path introduced in `30c040ca841` was not updated to use the
+new conversion helpers, so the write path remained wrong.
 
-These are best understood as two minimized repros for the same underlying defect:
+## Proposed Fix Plan
 
-- `diffWithCursor()` can mis-handle repeated or nested HTML when its cursor-moving heuristics find a locally matching substring in more than one structurally distinct place.
-- The resulting delta can be syntactically incorrect and can preserve stale suffix content from the old value.
+1. Stop passing a bare `number | null` cursor through the block merge stack.
+2. Replace it with a scoped cursor descriptor containing:
+   - the selected `clientId`
+   - the selected `attributeKey`
+   - the editor-space rich-text offset
+3. In the specific rich-text merge for that selected block attribute:
+   - read the current HTML string from the matching `Y.Text`
+   - convert the editor-space offset with `richTextOffsetToHtmlIndex()`
+   - pass the converted HTML index to `mergeRichTextUpdate()`
+4. Pass `null` for all other rich-text attributes.
+5. Add regression coverage at three levels:
+   - direct `mergeRichTextUpdate()` reproduction with converted and
+     unconverted cursors
+   - `mergeCrdtBlocks()` reproduction
+   - `applyPostChangesToCRDTDoc()` reproduction
+6. As a defensive backstop, add a verification guard after
+   `diffWithCursor()`:
+   - apply the candidate delta to the old value
+   - if it does not exactly match the requested new value, fall back to plain
+     diff or full replacement
 
-The emoji-heavy case and the combining-mark-plus-text case are still worth keeping as separate regressions because they exercise different ambiguous contexts:
+## Fix Rationale
 
-- Bug 1 emphasizes repeated closing-tag structure and repeated `<br>` suffix context.
-- Bug 2 emphasizes nested formatting plus a repeated trailing plain-text suffix that leaks into the result.
+The important part of the fix is not just "convert one number before calling
+`mergeRichTextUpdate()`". The existing API is too weak because a single raw
+cursor number is passed through recursive block and attribute merges. That does
+not identify which block or which rich-text attribute the cursor belongs to.
 
-## Rejected False Positives
+A scoped cursor object solves both problems:
 
-For completeness, the three originally reported seeds were rejected for the following reasons:
+- it preserves the correct coordinate space until the code reaches the exact
+  `Y.Text` being edited
+- it avoids accidentally reusing one block's cursor for unrelated rich-text
+  fields encountered during the same merge
 
-- `46016`: invalid expected HTML; `RichTextData` repairs it by closing the dangling `<strong>`.
-- `46153`: plain-text case with non-null cursor; succeeds with the real plain-text contract of `cursor = null`.
-- `46181`: plain-text case with non-null cursor; succeeds with the real plain-text contract of `cursor = null`.
+The verification guard is still worth adding because it prevents content
+corruption even if another cursor-mapping edge case remains.
 
-Those seeds still exposed limitations in `diffWithCursor()`, but not bugs on a currently reachable production path. The two bugs documented above are the production-relevant failures that remained after that filtering.
+## Final Assessment
+
+The earlier report's two "real bugs" were false positives caused by analyzing
+HTML-index cursors instead of production rich-text offsets.
+
+The real production bug is different and stronger:
+
+- real block-editor selection offsets are passed unconverted into an HTML diff
+- that path reproduces through `applyPostChangesToCRDTDoc()`
+- the corruption disappears when the same offset is converted with
+  `richTextOffsetToHtmlIndex()`
+- a second corrected-model repro shows the same bug class
+
+So the correct conclusion is:
+
+- there is a real production RTC rich-text corruption bug
+- the bug is a cursor coordinate-space mismatch on the block merge write path
+- this document should be used instead of the earlier report

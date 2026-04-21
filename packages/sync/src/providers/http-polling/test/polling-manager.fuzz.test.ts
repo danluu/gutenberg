@@ -14,10 +14,67 @@ import type { SyncResponse } from '../types';
 /**
  * Internal dependencies
  */
-import {
-	createSeededRandom,
-	seededRangeFromEnv,
-} from '../../../test/seeded-rng';
+interface SeededRandom {
+	bool: ( probability?: number ) => boolean;
+}
+
+/* eslint-disable no-bitwise */
+function createSeededRandom( seed: number ): SeededRandom {
+	let state = seed >>> 0;
+
+	if ( state === 0 ) {
+		state = 0x9e3779b9;
+	}
+
+	function nextUint32(): number {
+		state += 0x6d2b79f5;
+		let value = state;
+		value = Math.imul( value ^ ( value >>> 15 ), value | 1 );
+		value ^= value + Math.imul( value ^ ( value >>> 7 ), value | 61 );
+		return ( value ^ ( value >>> 14 ) ) >>> 0;
+	}
+
+	return {
+		bool( probability = 0.5 ) {
+			return nextUint32() / 0x100000000 < probability;
+		},
+	};
+}
+/* eslint-enable no-bitwise */
+
+function readIntFromEnv( name: string ): number | undefined {
+	const value = process.env[ name ];
+
+	if ( value === undefined || value === '' ) {
+		return undefined;
+	}
+
+	const parsed = Number.parseInt( value, 10 );
+
+	if ( Number.isNaN( parsed ) ) {
+		throw new Error(
+			`Expected ${ name } to be an integer, got "${ value }".`
+		);
+	}
+
+	return parsed;
+}
+
+function seededRangeFromEnv(
+	defaultCount: number,
+	defaultStart = 1
+): number[] {
+	const count = readIntFromEnv( 'GUTENBERG_FUZZ_SEED_COUNT' ) ?? defaultCount;
+	const start = readIntFromEnv( 'GUTENBERG_FUZZ_SEED_START' ) ?? defaultStart;
+
+	if ( count < 0 ) {
+		throw new Error(
+			`Expected GUTENBERG_FUZZ_SEED_COUNT to be non-negative, got "${ count }".`
+		);
+	}
+
+	return Array.from( { length: count }, ( _value, index ) => start + index );
+}
 
 // Mock all external dependencies before imports.
 jest.mock( 'yjs', () => ( {

@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Page, BrowserContext } from '@playwright/test';
+import type { Page, BrowserContext, Route } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -26,6 +26,18 @@ interface UserSession {
 	context: BrowserContext;
 	page: Page;
 	editor: Editor;
+}
+
+interface NormalizedBlock {
+	attributes: Record< string, unknown >;
+	innerBlocks: NormalizedBlock[];
+	name: string;
+}
+
+interface NormalizedCollaborativeState {
+	blocks: NormalizedBlock[];
+	crdtDocument: string | null;
+	title: string;
 }
 
 export const SECOND_USER: UserCredentials = {
@@ -331,6 +343,164 @@ export default class CollaborationUtils {
 				{ timeout }
 			);
 		}
+	}
+
+	/**
+	 * Returns a normalized view of the current collaborative editor state for
+	 * equality checks across participants.
+	 *
+	 * @param page                          The page to inspect.
+	 * @param [options]                     Optional settings.
+	 * @param [options.includeCrdtDocument] Whether to include the persisted
+	 *                                      _crdt_document in the returned state.
+	 */
+	async getNormalizedPostState(
+		page: Page,
+		{ includeCrdtDocument = false }: { includeCrdtDocument?: boolean } = {}
+	): Promise< NormalizedCollaborativeState > {
+		return page.evaluate(
+			( { includePersistedDoc } ) => {
+				const normalizeBlocks = (
+					blockTree: Array< {
+						attributes?: Record< string, unknown >;
+						innerBlocks?: Array< unknown >;
+						name: string;
+					} >
+				): NormalizedBlock[] =>
+					blockTree.map( ( block ) => ( {
+						name: block.name,
+						attributes: JSON.parse(
+							JSON.stringify( block.attributes ?? {} )
+						),
+						innerBlocks: normalizeBlocks(
+							( block.innerBlocks ?? [] ) as Array< {
+								attributes?: Record< string, unknown >;
+								innerBlocks?: Array< unknown >;
+								name: string;
+							} >
+						),
+					} ) );
+
+				const postId = ( window as any ).wp.data
+					.select( 'core/editor' )
+					.getCurrentPostId();
+				const record = ( window as any ).wp.data
+					.select( 'core' )
+					.getEntityRecord( 'postType', 'post', postId );
+				const blocks = ( window as any ).wp.data
+					.select( 'core/block-editor' )
+					.getBlocks();
+
+				return {
+					title:
+						( window as any ).wp.data
+							.select( 'core/editor' )
+							.getEditedPostAttribute( 'title' ) ?? '',
+					blocks: normalizeBlocks( blocks ),
+					crdtDocument: includePersistedDoc
+						? record?.meta?._crdt_document ?? null
+						: null,
+				};
+			},
+			{ includePersistedDoc: includeCrdtDocument }
+		);
+	}
+
+	/**
+	 * Wait until all tracked pages converge on the same normalized editor state.
+	 *
+	 * @param [options]                     Optional settings.
+	 * @param [options.includeCrdtDocument] Whether convergence should also
+	 *                                      include the persisted CRDT document.
+	 * @param [options.pages]               Specific pages to compare.
+	 * @param [options.timeout]             Maximum wait time in ms.
+	 */
+	async waitForConvergence( {
+		includeCrdtDocument = false,
+		pages = this.allPages,
+		timeout = 15000,
+	}: {
+		includeCrdtDocument?: boolean;
+		pages?: Page[];
+		timeout?: number;
+	} = {} ): Promise< NormalizedCollaborativeState > {
+		const deadline = Date.now() + timeout;
+		let lastStates: NormalizedCollaborativeState[] = [];
+
+		while ( Date.now() < deadline ) {
+			lastStates = await Promise.all(
+				pages.map( ( page ) =>
+					this.getNormalizedPostState( page, {
+						includeCrdtDocument,
+					} )
+				)
+			);
+
+			const serializedFirstState = JSON.stringify( lastStates[ 0 ] );
+			const isSettled = lastStates.every(
+				( state ) =>
+					JSON.stringify( state ) === serializedFirstState &&
+					( ! includeCrdtDocument || !! state.crdtDocument )
+			);
+
+			if ( isSettled ) {
+				return lastStates[ 0 ];
+			}
+
+			await pages[ 0 ].waitForTimeout( 250 );
+		}
+
+		throw new Error(
+			`Collaborative state did not converge within ${ timeout }ms: ${ JSON.stringify(
+				lastStates
+			) }`
+		);
+	}
+
+	private async interceptNextSyncRequest(
+		page: Page,
+		handler: ( route: Route ) => Promise< void >
+	) {
+		const urlPattern = '**/*wp-sync*';
+		const once = async ( route: Route ) => {
+			await page.unroute( urlPattern, once );
+			await handler( route );
+		};
+
+		await page.route( urlPattern, once );
+	}
+
+	/**
+	 * Delay the next wp-sync request made by a page.
+	 *
+	 * @param page    The page whose next sync request should be delayed.
+	 * @param delayMs Delay duration in milliseconds.
+	 */
+	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		await this.interceptNextSyncRequest( page, async ( route ) => {
+			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
+			await route.continue();
+		} );
+	}
+
+	/**
+	 * Fulfill the next wp-sync request with a synthetic HTTP error.
+	 *
+	 * @param page   The page whose next sync request should fail.
+	 * @param status HTTP status to return. Defaults to 500.
+	 */
+	async failNextSyncRequest( page: Page, status = 500 ) {
+		await this.interceptNextSyncRequest( page, async ( route ) => {
+			await route.fulfill( {
+				status,
+				contentType: 'application/json',
+				body: JSON.stringify( {
+					code: 'rtc_fuzz_failure',
+					message: 'Synthetic collaboration sync failure.',
+					data: { status },
+				} ),
+			} );
+		} );
 	}
 
 	/**

@@ -7,7 +7,60 @@ import { Y } from '@wordpress/sync';
  * Internal dependencies
  */
 import { mergeRichTextUpdate } from '../crdt-blocks';
-import { createSeededRandom } from './seeded-rng';
+
+interface SeededRandom {
+	bool: ( probability?: number ) => boolean;
+	int: ( maxExclusive: number ) => number;
+	intBetween: ( minInclusive: number, maxInclusive: number ) => number;
+	pick: < T >( values: readonly T[] ) => T;
+}
+
+/* eslint-disable no-bitwise */
+function createSeededRandom( seed: number ): SeededRandom {
+	let state = seed >>> 0;
+
+	if ( state === 0 ) {
+		state = 0x9e3779b9;
+	}
+
+	function nextUint32(): number {
+		state += 0x6d2b79f5;
+		let value = state;
+		value = Math.imul( value ^ ( value >>> 15 ), value | 1 );
+		value ^= value + Math.imul( value ^ ( value >>> 7 ), value | 61 );
+		return ( value ^ ( value >>> 14 ) ) >>> 0;
+	}
+
+	function next(): number {
+		return nextUint32() / 0x100000000;
+	}
+
+	function int( maxExclusive: number ): number {
+		if ( maxExclusive <= 0 ) {
+			return 0;
+		}
+
+		return Math.floor( next() * maxExclusive );
+	}
+
+	return {
+		bool( probability = 0.5 ) {
+			return next() < probability;
+		},
+		int,
+		intBetween( minInclusive, maxInclusive ) {
+			return minInclusive + int( maxInclusive - minInclusive + 1 );
+		},
+		pick< T >( values: readonly T[] ): T {
+			if ( values.length === 0 ) {
+				throw new Error( 'Cannot pick from an empty array.' );
+			}
+
+			return values[ int( values.length ) ];
+		},
+	};
+}
+/* eslint-enable no-bitwise */
 
 export const FRAGMENTS = [
 	'alpha',
@@ -189,6 +242,8 @@ function pickCursorPosition(
 		case 'beyond-end':
 			return maxLength + rng.intBetween( 1, 4 );
 	}
+
+	return preferred;
 }
 
 export function applyReplayStepToFragments(

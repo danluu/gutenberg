@@ -1131,4 +1131,75 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		// Room 2 should have no updates.
 		$this->assertEmpty( $data['rooms'][1]['updates'] );
 	}
+
+	public function test_sync_randomized_room_batches_preserve_room_isolation() {
+		wp_set_current_user( self::$editor_id );
+
+		$seed             = 617;
+		$post_id_2        = self::factory()->post->create( array( 'post_author' => self::$editor_id ) );
+		$rooms            = array(
+			$this->get_post_room(),
+			'postType/post:' . $post_id_2,
+		);
+		$expected_updates = array_fill_keys( $rooms, array() );
+
+		mt_srand( $seed );
+
+		for ( $i = 0; $i < 8; $i++ ) {
+			$target_room = $rooms[ mt_rand( 0, count( $rooms ) - 1 ) ];
+			$client_id   = mt_rand( 1, 1000 );
+			$update_data = base64_encode( "fuzz-$seed-$i-$client_id" );
+
+			$response = $this->dispatch_sync(
+				array(
+					$this->build_room(
+						$target_room,
+						$client_id,
+						0,
+						array( 'user' => "writer-$client_id" ),
+						array(
+							array(
+								'type' => 'update',
+								'data' => $update_data,
+							),
+						)
+					),
+				)
+			);
+
+			$this->assertSame( 200, $response->get_status() );
+			$expected_updates[ $target_room ][] = $update_data;
+
+			$batch_rooms = $rooms;
+			shuffle( $batch_rooms );
+
+			$batch_response = $this->dispatch_sync(
+				array_map(
+					function ( $room_name ) use ( $i ) {
+						return $this->build_room(
+							$room_name,
+							2000 + $i,
+							0,
+							array( 'user' => "reader-$i" )
+						);
+					},
+					$batch_rooms
+				)
+			);
+
+			$this->assertSame( 200, $batch_response->get_status() );
+			$data           = $batch_response->get_data();
+			$room_responses = array_column( $data['rooms'], null, 'room' );
+
+			foreach ( $rooms as $room_name ) {
+				$this->assertArrayHasKey( $room_name, $room_responses );
+				$this->assertSame(
+					$expected_updates[ $room_name ],
+					wp_list_pluck( $room_responses[ $room_name ]['updates'], 'data' )
+				);
+			}
+		}
+
+		wp_delete_post( $post_id_2, true );
+	}
 }

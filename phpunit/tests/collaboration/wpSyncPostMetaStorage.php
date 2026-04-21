@@ -710,4 +710,62 @@ class Tests_Collaboration_WpSyncPostMetaStorage extends WP_UnitTestCase {
 			'Concurrent update should survive compaction.'
 		);
 	}
+
+	public function test_randomized_room_storage_operations_remain_isolated_and_monotonic() {
+		$seed             = 7331;
+		$storage          = new WP_Sync_Post_Meta_Storage();
+		$post_id_2        = self::factory()->post->create( array( 'post_author' => self::$editor_id ) );
+		$rooms            = array(
+			$this->get_room(),
+			'postType/post:' . $post_id_2,
+		);
+		$expected_updates = array_fill_keys( $rooms, array() );
+		$last_cursors     = array_fill_keys( $rooms, 0 );
+
+		mt_srand( $seed );
+
+		for ( $i = 0; $i < 10; $i++ ) {
+			$room       = $rooms[ mt_rand( 0, count( $rooms ) - 1 ) ];
+			$other_room = $rooms[0] === $room ? $rooms[1] : $rooms[0];
+			$update     = array(
+				'type' => 'update',
+				'data' => base64_encode( "storage-$seed-$i" ),
+			);
+			$client_id  = mt_rand( 1, 1000 );
+			$awareness  = array(
+				$client_id => array(
+					'name' => "client-$client_id",
+				),
+			);
+
+			$this->assertTrue( $storage->add_update( $room, $update ) );
+			$expected_updates[ $room ][] = $update['data'];
+			$this->assertTrue( $storage->set_awareness_state( $room, $awareness ) );
+
+			foreach ( $rooms as $room_name ) {
+				$updates = $storage->get_updates_after_cursor( $room_name, 0 );
+				$cursor  = $storage->get_cursor( $room_name );
+
+				$this->assertGreaterThanOrEqual(
+					$last_cursors[ $room_name ],
+					$cursor,
+					'Cursors must be monotonic per room.'
+				);
+				$last_cursors[ $room_name ] = $cursor;
+
+				$this->assertSame(
+					$expected_updates[ $room_name ],
+					wp_list_pluck( $updates, 'data' )
+				);
+			}
+
+			$this->assertSame( $awareness, $storage->get_awareness_state( $room ) );
+			$this->assertArrayNotHasKey(
+				$client_id,
+				$storage->get_awareness_state( $other_room )
+			);
+		}
+
+		wp_delete_post( $post_id_2, true );
+	}
 }

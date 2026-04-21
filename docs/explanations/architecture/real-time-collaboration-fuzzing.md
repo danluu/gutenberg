@@ -258,23 +258,32 @@ For Jest-based layers, shrinking should be automatic if a property-based library
 
 ## Suggested Rollout
 
+> Note: CI and nightly automation are intentionally deferred until the local
+> fuzz layers are stable, reproducible, and easy to triage.
+
 ### Phase 1: fast local fuzzing
 
 -   Add model fuzzing for `crdt.ts` and `crdt-blocks.ts`.
 -   Add sync and polling state-machine fuzzing with mocked transport.
+<!-- Deferred for later:
 -   Run these in CI with fixed seeds and a small iteration budget.
+-->
 
 ### Phase 2: seeded browser fuzzing
 
 -   Add one Playwright RTC fuzz spec in Chromium only.
--   Run a small number of seeds in CI.
 -   Store traces and action logs for failures.
+<!-- Deferred for later:
+-   Run a small number of seeds in CI.
+-->
 
-### Phase 3: broader nightly exploration
+### Phase 3: broader exploration
 
 -   Increase iteration counts for model and transport fuzzers.
--   Run longer browser fuzz jobs nightly or on demand.
 -   Expand from two to three participants once failures are reproducible and triageable.
+<!-- Deferred for later:
+-   Run longer browser fuzz jobs nightly or on demand.
+-->
 
 ### Phase 4: hardening
 
@@ -287,7 +296,7 @@ For Jest-based layers, shrinking should be automatic if a property-based library
 -   Start at the CRDT and transport layers. They will find the highest volume of real bugs for the least runtime.
 -   Keep browser fuzzing deterministic and bounded. Long random browser sessions without good logs are expensive and low-signal.
 -   Treat the current RTC E2E specs as seed generators and regression oracles.
--   Separate PR-safe fuzzing from deeper nightly fuzzing.
+-   Defer CI and nightly scheduling until the local fuzz layers are stable and failures are easy to triage.
 -   Prefer a small number of durable invariants over many brittle UI assertions.
 
 The most important design choice is to make browser fuzzing the last layer, not the first. The hard bugs in RCE are usually interleaving bugs. Those are easier to explore, reproduce, and shrink in deterministic model and transport tests than in a full browser stack.
