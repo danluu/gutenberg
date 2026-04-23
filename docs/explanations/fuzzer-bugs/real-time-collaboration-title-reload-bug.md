@@ -187,6 +187,41 @@ So `9375c0e0148` looks more like a commit that made the refresh path robust enou
 
 `8051e14451c` (`RTC: Fix stale CRDT document persisted on save`) is much weaker than either of the above because this bug appears before save, and save can repair the visible split rather than create it.
 
+## Fix Plan
+
+The fix should be structured as a reload-reconciliation fix, not as a generic sync retry or timeout increase.
+
+The expected shape is:
+
+1. Lock in the current regression with the browser repro in [collaboration-title-reload-repro.spec.ts](../../../../test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts).
+2. Add a narrower automated check around the manager/bootstrap path so the browser test is not the only guardrail.
+3. Trace the exact ordering between:
+   - persisted CRDT application in [packages/sync/src/manager.ts](../../../../packages/sync/src/manager.ts)
+   - entity reload from `core-data`
+   - title replay through [getPostChangesFromCRDTDoc()](../../../../packages/core-data/src/utils/crdt.ts:277)
+   - local edit application through [applyPostChangesToCRDTDoc()](../../../../packages/core-data/src/utils/crdt.ts:173)
+4. Prevent the stale initial entity title from overwriting an already-synced unsaved title during reload/bootstrap.
+5. Re-run the focused browser repro plus the existing collaboration refresh/title-sync tests to confirm the fix does not break normal convergence.
+
+The most likely code-level fix is one of these two shapes:
+
+- treat the CRDT title as authoritative for unsaved collaborative state during reload until local entity state has been reconciled
+- or make reload detect that the current title edit is already represented in the CRDT and avoid replaying the stale initial entity title back into local state
+
+What should not be done:
+
+- do not fix this by adding sleeps, retries, or a longer convergence timeout
+- do not special-case only the exact browser repro sequence
+- do not rely on save to repair the split, because the bug is specifically about pre-save collaborative visibility
+
+Minimum verification for a real fix:
+
+- the repro no longer splits after reload
+- the non-reloading collaborator no longer regresses
+- later block edits still sync
+- later fresh title edits still sync
+- the existing refresh and title-sync collaboration tests still pass
+
 ## Confidence
 
 This is a strongest-evidence introduction call, not a mathematically complete bisect.
