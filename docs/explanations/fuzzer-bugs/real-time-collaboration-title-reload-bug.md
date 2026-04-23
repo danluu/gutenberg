@@ -166,28 +166,59 @@ That failure shape points away from a general provider failure and toward a titl
 
 `22e067b0243` — `Real-time Collaboration: Use Y.text for title, content and excerpt (#75448)`
 
-This is the strongest candidate because it is the only title-specific change in the candidate set. It changed `title`, `content`, and `excerpt` from plain values to `Y.Text` handling in [packages/core-data/src/utils/crdt.ts](../../../../packages/core-data/src/utils/crdt.ts), including routing title writes through `mergeRichTextUpdate()`.
+This is the strongest candidate because it is the only title-specific structural change in the candidate set. It changed `title`, `content`, and `excerpt` from plain values to `Y.Text` handling in [packages/core-data/src/utils/crdt.ts](../../../../packages/core-data/src/utils/crdt.ts), including routing title writes through `mergeRichTextUpdate()`.
 
 That is a direct fit for a bug where:
 
 - blocks still work
 - generic refresh still works for content
 - persisted CRDT still matches
-- only the title is stranded as a local edit after reload
+- only the title is lost on one collaborator after reload
+
+The introduction case for `22e067b0243` is stronger after the deeper analysis:
+
+- the current bug is title-specific
+- later fresh title edits still sync, so the generic refresh transport is alive
+- the reload bug affects a pre-existing unsaved title edit, which is exactly the path newly converted to `Y.Text`
+- the title conversion reused `mergeRichTextUpdate()` from the rich-text/block path, but title reload coverage did not exist yet
+
+There is also nearby corroborating history. Just after `22e067b0243`, another title-specific follow-up landed:
+
+- `c977aee732e` — `Fix auto draft bug for Y.text titles (#75560)`
+
+That does not prove this bug, but it does show that the newly introduced `Y.Text` title path was still shaking out immediately after `22e067b0243`.
 
 ### Second candidate: `9375c0e0148`
 
 `9375c0e0148` — `[Real-time Collaboration] Fix sync issue on refresh (#76017)`
 
-This commit clearly touched the right lifecycle family. It changed reload/rejoin setup in [packages/sync/src/manager.ts](../../../../packages/sync/src/manager.ts:293) by initializing the Y.Doc before applying the persisted document.
+This commit clearly touched the right lifecycle family. It changed reload/rejoin setup in [packages/sync/src/manager.ts](../../../../packages/sync/src/manager.ts:293) by initializing the Y.Doc before applying the persisted document, and it fixed a real refresh transport problem around missing initial Yjs operations.
 
-It is a credible secondary suspect because this bug happens on reload. It is weaker than `22e067b0243`, though, because the observed failure is field-specific rather than a broad document divergence.
+It is still weaker than `22e067b0243`, for two reasons:
+
+- the root cause described in `9375c0e0148` is transport-generic, but the current bug is field-specific
+- in the deeper reproduction, later block edits and later fresh title edits still sync after the split, which is the opposite of the broken-refresh transport that `9375c0e0148` was fixing
+
+So `9375c0e0148` is more plausibly a commit that made the refresh path robust enough for this latent title bug to show up reliably, rather than the commit that created the title bug itself.
 
 ### Weakest candidate: `8051e14451c`
 
 `8051e14451c` — `RTC: Fix stale CRDT document persisted on save (#75975)`
 
 This is the weakest candidate because the bug appears before save. The deeper analysis shows that save can repair the visible split, not that save creates it.
+
+## Introduction Confidence
+
+This is not a mathematically proven bisect result. It is a strongest-evidence introduction call.
+
+I attempted a direct historical check before `9375c0e0148`, but that older revision did not bootstrap RTC cleanly in the current local environment, so it did not yield a clean yes/no result for the title regression itself. Because of that, the introduction conclusion is based on:
+
+- current behavioral evidence from isolated repros
+- the exact scope of the candidate diffs
+- the fact that the bug is title-specific while later refresh transport remains alive
+- the nearby follow-up fix for another `Y.Text` title bug
+
+With that evidence, the most likely introduction is still `22e067b0243`, with `9375c0e0148` as the strongest alternative only if later historical testing shows the bug truly was not observable before the refresh fix.
 
 ## Bottom Line
 
@@ -196,5 +227,6 @@ This is the weakest candidate because the bug appears before save. The deeper an
 - False-positive assessment: not a false positive; deeper analysis strengthens the real-bug classification
 - Stronger current description: reload loses the already-synced unsaved title on one collaborator, while the room remains live for later block and title edits
 - Most likely introduction: `22e067b0243`
+- Why: it is the title-specific `Y.Text` conversion, and the current bug is a title-specific reload/reconciliation failure rather than a generic refresh transport failure
 - Secondary introduction candidate: `9375c0e0148`
 - Current status: active on this checkout, with a stable isolated repro
