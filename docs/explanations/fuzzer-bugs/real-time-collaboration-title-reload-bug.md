@@ -2,231 +2,207 @@
 
 ## Summary
 
-This is a real production-path bug.
+This is a real production-path bug in real-time collaboration.
 
-When two collaborators are editing the same post, a title change can sync live to both users, but if one user reloads before the post is saved, the already-synced unsaved title can be lost on one collaborator. After reload, one page still shows the synced unsaved title, while the other page falls back to the initial title.
+If two collaborators are editing the same post, and an unsaved title change has already synced to both users, reloading one collaborator can cause the other collaborator to lose that synced unsaved title and fall back to the initial title. The collaboration room itself does not die: later block edits still sync, and later fresh title edits still sync. The bug is specifically that reload fails to preserve or reapply the already-synced unsaved title edit.
 
-The strongest current evidence is that this is an active regression on the non-reloading collaborator, not just a failure to restore state on the reloading page:
+The focused repro and analysis live in [test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts](../../../../test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts).
 
-- before reload, both collaborators show the synced unsaved title
-- one collaborator reloads
-- afterward, the other collaborator regresses from the synced unsaved title back to the initial title without making a local title change
+## User-visible Behavior
 
-This is not just a short timeout or a DOM-only mismatch:
+Expected behavior:
 
-- the original minimal repro still fails after 30 seconds
-- a longer 90-second convergence check still does not rejoin the two pages
-- live title sync works without reload
-- generic collaborative refresh behavior works for content
-- reloading one collaborator actively regresses the other collaborator from the synced unsaved title back to the initial title
-- later block sync still works after the split
-- later fresh title edits still sync after the split
-- saving the page that still holds the lost-title successor edit makes both pages and the persisted record converge again
+- User A changes the title.
+- User B sees the changed title.
+- User A reloads.
+- Both users should still see the changed title.
 
-The isolated minimal repro is in [test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts](../../../../test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts).
+Actual behavior:
 
-## Why This Is Thought To Be Real
+- User A changes the title.
+- User B sees the changed title.
+- User A reloads.
+- One of the users falls back to the initial title.
+- The other user still shows the unsaved edited title.
 
-- It reproduces in its own git worktree, outside the long-run fuzz harness.
-- The repro does not depend on injected faults, Antithesis, or the 12-hour runner.
-- The scenario is production-like: two editors, one synced title edit, one reload.
-- The failure is a user-visible and store-visible state split, not just a console warning or timing assertion.
-- The issue survives a deeper bounded analysis run instead of disappearing with more sync time.
+In the strongest reproduction, the non-reloading collaborator is the one that regresses. That matters because it rules out a simple explanation like “the reloaded page lost its own local UI state.”
 
-Short control runs also passed in the same isolated worktree:
+## Why This Is A Real Bug
+
+This does not look like a false positive.
+
+The evidence is:
+
+- The bug reproduces in an isolated git worktree, outside the long-running fuzz harness.
+- It does not depend on injected faults or Antithesis.
+- The failing scenario is ordinary product behavior: two collaborators, one synced title edit, one reload.
+- The regression is visible to the other collaborator, not just to the page that reloaded.
+- The issue survives a long bounded wait instead of disappearing after extra polling cycles.
+
+The focused evidence suite in [collaboration-title-reload-repro.spec.ts](../../../../test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts) establishes all of the following:
+
+- The minimal repro fails within the normal convergence window.
+- A 90-second convergence check still does not restore agreement on the pre-reload unsaved title.
+- Before reload, both collaborators show the same unsaved title.
+- After one collaborator reloads, the other collaborator can regress back to the initial title without making a local title change.
+- After the split, later block edits still sync.
+- After the split, later fresh title edits still sync.
+- Saving a page holding a later dirty title restores convergence and updates the persisted post.
+
+Control tests in the existing collaboration suite also pass:
 
 - [collaboration-sync.spec.ts](../../../../test/e2e/specs/editor/collaboration/collaboration-sync.spec.ts): `Title changes sync between users`
 - [collaboration-refresh.spec.ts](../../../../test/e2e/specs/editor/collaboration/collaboration-refresh.spec.ts): `User A edits are synced to User B after User A refreshes`
-- [collaboration-title-reload-repro.spec.ts](../../../../test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts): `reloading one collaborator regresses the other collaborator from the synced unsaved title`
 
-That narrows the bug to the reload reconciliation of an already-synced unsaved title edit, not title sync in general and not refresh in general.
+That narrows the defect to reload-time reconciliation of an already-synced unsaved title edit. It is not a general title-sync failure, and it is not a general refresh transport failure.
 
-Local isolated runs also produced matching Playwright screenshots, traces, and error snapshots in the worktree test artifact directories. Those generated artifacts are not checked in, so the stable evidence in this branch is the repro spec plus the captured state summarized below.
-
-The key observed state is:
-
-- original 30-second repro:
-  - page 1 title: `RTC reload repro synced title`
-  - page 2 title: `RTC reload repro initial title`
-  - blocks: equal
-  - persisted `_crdt_document`: equal
-- deeper 90-second analysis:
-  - one page still has `editedTitle = RTC reload repro synced title`
-  - the other page still has `editedTitle = RTC reload repro initial title`
-  - the page with the synced title keeps it as an unsaved edit via `entityEditsTitle = RTC reload repro synced title`
-  - the other page remains on `RTC reload repro initial title`
-  - both pages still share the same persisted `_crdt_document`
-- targeted regression check:
-  - before reload, both pages have `editedTitle = RTC reload repro synced title`
-  - after one collaborator reloads, the non-reloading collaborator regresses to `editedTitle = RTC reload repro initial title`
-  - the reloading collaborator still has `editedTitle = RTC reload repro synced title`
-- post-split liveness check:
-  - a new paragraph block added after the split still syncs across pages
-  - a brand-new title edit made after the split also syncs across pages
-  - both pages then converge again on the new unsaved title
-  - this shows the room is still live; the bug is the loss of the pre-reload unsaved title on one page
-
-That is the signature of a real collaboration-state bug, not a false positive.
-
-## Minimal Repro
+## Minimal Reproduction
 
 1. Create a draft post with a non-empty title and at least one paragraph.
 2. Open the post in two collaborative editor sessions.
 3. Change the title in one session.
 4. Wait until the second session shows the new title.
 5. Reload one of the sessions before saving.
-6. Wait for reconnect and convergence.
+6. Wait for reconnect.
 
 Expected result:
 
-- both sessions should still show the edited title
+- both sessions continue to show the edited title
 
 Actual result:
 
-- the two sessions stop agreeing on the already-synced unsaved title
-- in deeper inspection, that pre-reload unsaved title survives only on one page
-- more specifically, reloading one collaborator can make the other collaborator regress from the synced unsaved title back to the initial title
-- later fresh edits can still sync, so the defect is loss of the earlier synced edit, not total title-sync failure
+- one session shows the edited title
+- the other session falls back to the initial title
 
-The current repro command is:
+The basic repro command is:
 
 ```bash
 PATH="$PWD/.tooling/node-v20.19.0-darwin-arm64/bin:$PWD/node_modules/.bin:$PATH" \
 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts --project=chromium
 ```
 
-The deeper diagnostic command is:
+Additional focused checks in the same spec:
 
 ```bash
 PATH="$PWD/.tooling/node-v20.19.0-darwin-arm64/bin:$PWD/node_modules/.bin:$PATH" \
 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts --project=chromium --grep "reload divergence persists"
 ```
 
-The regression-focused command is:
-
 ```bash
 PATH="$PWD/.tooling/node-v20.19.0-darwin-arm64/bin:$PWD/node_modules/.bin:$PATH" \
 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts --project=chromium --grep "regresses the other collaborator"
 ```
 
+## Observed State
+
+When the bug reproduces:
+
+- both pages still agree on blocks
+- both pages still agree on the persisted `_crdt_document`
+- one page has `editedTitle = RTC reload repro synced title`
+- the other page has `editedTitle = RTC reload repro initial title`
+
+The more detailed state inspection shows that the page which still has the edited title keeps it as an unsaved edit:
+
+- `entityEditsTitle = RTC reload repro synced title`
+- `postEditsTitle = RTC reload repro synced title`
+
+The other page has no corresponding unsaved title edit and falls back to the initial title.
+
+One subtle point matters here: the last saved entity record staying on the initial title before save is normal editor behavior by itself. [getEditedPostAttribute()](../../../../packages/editor/src/store/selectors.js:348) prefers unsaved edits over the last known saved state, so `currentPost` or entity-record title remaining initial before save is not evidence of the bug. The real bug evidence is that one collaborator loses the already-synced unsaved title edit after reload while the other collaborator does not.
+
+## What The Bug Is Not
+
+This bug is not:
+
+- a general collaboration disconnect
+- a general refresh failure
+- a general title-sync failure
+- a stale-saved-record misunderstanding
+
+The post-reload room is still healthy enough to exchange new block updates and new title updates. What fails is preservation of the pre-existing unsaved title edit across the reload boundary.
+
 ## Lowest Reproducible Layer
 
-The lowest reproducible layer found so far is the real browser/e2e layer.
+The lowest confirmed repro layer is the real browser/e2e layer.
 
-I could not push this lower into a stable unit or mocked integration test because the failure depends on the interaction of three subsystems that are mostly tested separately today:
+I could not reduce this to a stable unit or mocked integration test because the failure depends on the interaction of multiple layers that are usually tested separately:
 
 - entity reload through the `core-data` resolver in [packages/core-data/src/resolvers.js](../../../../packages/core-data/src/resolvers.js)
 - reload/bootstrap in [packages/sync/src/manager.ts](../../../../packages/sync/src/manager.ts)
-- post title CRDT translation in [packages/core-data/src/utils/crdt.ts](../../../../packages/core-data/src/utils/crdt.ts)
+- title CRDT translation in [packages/core-data/src/utils/crdt.ts](../../../../packages/core-data/src/utils/crdt.ts)
 
-The relevant paths are:
+The most relevant code paths are:
 
 - title writes become `Y.Text` updates in [applyPostChangesToCRDTDoc()](../../../../packages/core-data/src/utils/crdt.ts:173)
 - title replay after CRDT updates happens in [getPostChangesFromCRDTDoc()](../../../../packages/core-data/src/utils/crdt.ts:277)
 - reload bootstraps the Y.Doc and applies persisted CRDT state in [loadEntity() / _applyPersistedCrdtDoc()](../../../../packages/sync/src/manager.ts:271)
 
-Local browser autosave is not currently the best explanation. The restore path in [packages/editor/src/components/local-autosave-monitor/index.js](../../../../packages/editor/src/components/local-autosave-monitor/index.js:70) requires a restore notice and an explicit click, which this repro does not perform.
+The local browser autosave restore path is not a good explanation here. [packages/editor/src/components/local-autosave-monitor/index.js](../../../../packages/editor/src/components/local-autosave-monitor/index.js:70) requires a restore notice and an explicit click, and this repro does not use that path.
 
-The deeper run makes the bug more specific than the original writeup:
+## Technical Interpretation
 
-- the already-synced unsaved title is lost on one page after reload
-- the room is still healthy enough to exchange later block updates and later title updates
-- the bug is therefore in reload-time reconciliation of the earlier unsaved title edit
+The best current explanation is:
 
-One important correction from the deeper analysis: the last saved post record staying on the initial title before save is not bug evidence by itself. That is normal editor behavior. [getEditedPostAttribute()](../../../../packages/editor/src/store/selectors.js:348) explicitly prefers unsaved edits over the last known saved state, so `currentPost` / entity-record title remaining initial before save is expected. The bug evidence is that one collaborator loses the already-synced unsaved title edit after reload while the other does not.
+1. A title edit syncs live to both collaborators.
+2. The edit is still unsaved.
+3. One collaborator reloads.
+4. During reload/bootstrap, the system fails to re-establish the already-synced unsaved title edit symmetrically across both peers.
+5. One page retains the edit as an unsaved title change.
+6. The other page loses it and falls back to the initial title.
+7. The room remains live, so later edits continue to propagate.
 
-## Technical Analysis
+That failure shape points to a title-specific reload/reconciliation bug, not to a transport-wide collaboration failure.
 
-The latest evidence suggests this failure model:
+## Most Likely Introduction
 
-1. A live collaborative title edit reaches both peers.
-2. The post is not saved, so the persisted `_crdt_document` still reflects the initial title.
-3. One peer reloads.
-4. The reloaded peer bootstraps from the persisted document and the REST-loaded entity record.
-5. The pre-reload unsaved title delta is not restored symmetrically to both peers.
-6. One page retains the edit, while the other loses it and falls back to the initial title.
-7. Live collaboration continues afterward, so later block and title edits still propagate.
+The strongest introduction candidate is:
 
-This matches the observed state:
+- `22e067b0243` — `Real-time Collaboration: Use Y.text for title, content and excerpt (#75448)`
 
-- title sync works before reload
-- generic content refresh works in a separate control test
-- the original synced unsaved title remains on only one page after reload
-- the other page loses that title and falls back to the initial title
-- the non-reloading page can be the one that regresses, which rules out a simple “the reloaded page forgot its own local state” explanation
-- later block edits still sync
-- later fresh title edits still sync
-- explicit save from a page holding the later dirty title restores convergence and updates the persisted title
+Why this is the strongest candidate:
 
-That failure shape points away from a general provider failure and toward a title-specific reload/reconciliation bug for pre-existing unsaved title edits. It also makes the false-positive explanation much weaker, because the regression is externally visible on the peer that did not reload.
+- It is the only title-specific structural change in the candidate set.
+- It changed `title` from a plain value to `Y.Text` handling in [packages/core-data/src/utils/crdt.ts](../../../../packages/core-data/src/utils/crdt.ts).
+- It routed title writes through `mergeRichTextUpdate()`, reusing machinery from the rich-text/block path.
+- The current bug is specifically about a pre-existing unsaved title edit surviving reload asymmetrically.
 
-## How The Bug Was Probably Introduced
-
-### Strongest candidate: `22e067b0243`
-
-`22e067b0243` — `Real-time Collaboration: Use Y.text for title, content and excerpt (#75448)`
-
-This is the strongest candidate because it is the only title-specific structural change in the candidate set. It changed `title`, `content`, and `excerpt` from plain values to `Y.Text` handling in [packages/core-data/src/utils/crdt.ts](../../../../packages/core-data/src/utils/crdt.ts), including routing title writes through `mergeRichTextUpdate()`.
-
-That is a direct fit for a bug where:
-
-- blocks still work
-- generic refresh still works for content
-- persisted CRDT still matches
-- only the title is lost on one collaborator after reload
-
-The introduction case for `22e067b0243` is stronger after the deeper analysis:
-
-- the current bug is title-specific
-- later fresh title edits still sync, so the generic refresh transport is alive
-- the reload bug affects a pre-existing unsaved title edit, which is exactly the path newly converted to `Y.Text`
-- the title conversion reused `mergeRichTextUpdate()` from the rich-text/block path, but title reload coverage did not exist yet
-
-There is also nearby corroborating history. Just after `22e067b0243`, another title-specific follow-up landed:
+There is nearby corroborating history:
 
 - `c977aee732e` — `Fix auto draft bug for Y.text titles (#75560)`
 
-That does not prove this bug, but it does show that the newly introduced `Y.Text` title path was still shaking out immediately after `22e067b0243`.
+That follow-up does not prove this specific bug, but it does show that the newly introduced `Y.Text` title path was still unstable right after `22e067b0243`.
 
-### Second candidate: `9375c0e0148`
+The strongest alternative candidate is:
 
-`9375c0e0148` — `[Real-time Collaboration] Fix sync issue on refresh (#76017)`
+- `9375c0e0148` — `[Real-time Collaboration] Fix sync issue on refresh (#76017)`
 
-This commit clearly touched the right lifecycle family. It changed reload/rejoin setup in [packages/sync/src/manager.ts](../../../../packages/sync/src/manager.ts:293) by initializing the Y.Doc before applying the persisted document, and it fixed a real refresh transport problem around missing initial Yjs operations.
+This is weaker because:
 
-It is still weaker than `22e067b0243`, for two reasons:
+- its stated root cause is transport-generic
+- the current bug is title-specific
+- after the split, later block edits and later fresh title edits still sync, which is the opposite of the generic broken-refresh transport fixed by `9375c0e0148`
 
-- the root cause described in `9375c0e0148` is transport-generic, but the current bug is field-specific
-- in the deeper reproduction, later block edits and later fresh title edits still sync after the split, which is the opposite of the broken-refresh transport that `9375c0e0148` was fixing
+So `9375c0e0148` looks more like a commit that made the refresh path robust enough for this latent title bug to show up reliably, rather than the commit that most likely created the bug.
 
-So `9375c0e0148` is more plausibly a commit that made the refresh path robust enough for this latent title bug to show up reliably, rather than the commit that created the title bug itself.
+`8051e14451c` (`RTC: Fix stale CRDT document persisted on save`) is much weaker than either of the above because this bug appears before save, and save can repair the visible split rather than create it.
 
-### Weakest candidate: `8051e14451c`
+## Confidence
 
-`8051e14451c` — `RTC: Fix stale CRDT document persisted on save (#75975)`
+This is a strongest-evidence introduction call, not a mathematically complete bisect.
 
-This is the weakest candidate because the bug appears before save. The deeper analysis shows that save can repair the visible split, not that save creates it.
+I attempted a direct historical check before `9375c0e0148`, but that older revision did not bootstrap RTC cleanly in the current local environment, so it did not provide a clean yes/no result for the title regression itself. Because of that, the introduction judgment is based on:
 
-## Introduction Confidence
-
-This is not a mathematically proven bisect result. It is a strongest-evidence introduction call.
-
-I attempted a direct historical check before `9375c0e0148`, but that older revision did not bootstrap RTC cleanly in the current local environment, so it did not yield a clean yes/no result for the title regression itself. Because of that, the introduction conclusion is based on:
-
-- current behavioral evidence from isolated repros
+- isolated behavioral repros
 - the exact scope of the candidate diffs
-- the fact that the bug is title-specific while later refresh transport remains alive
-- the nearby follow-up fix for another `Y.Text` title bug
-
-With that evidence, the most likely introduction is still `22e067b0243`, with `9375c0e0148` as the strongest alternative only if later historical testing shows the bug truly was not observable before the refresh fix.
+- the fact that the room remains alive after the split
+- the fact that the bug is title-specific
+- the nearby follow-up fix for another `Y.Text` title issue
 
 ## Bottom Line
 
 - Reality assessment: real bug
+- False-positive assessment: not a false positive
 - Lowest confirmed repro layer: browser/e2e
-- False-positive assessment: not a false positive; deeper analysis strengthens the real-bug classification
-- Stronger current description: reload loses the already-synced unsaved title on one collaborator, while the room remains live for later block and title edits
+- Strongest current description: reload loses an already-synced unsaved title on one collaborator, while the room remains live for later block and title edits
 - Most likely introduction: `22e067b0243`
-- Why: it is the title-specific `Y.Text` conversion, and the current bug is a title-specific reload/reconciliation failure rather than a generic refresh transport failure
-- Secondary introduction candidate: `9375c0e0148`
-- Current status: active on this checkout, with a stable isolated repro
