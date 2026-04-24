@@ -185,6 +185,9 @@ not updated to use them.
 
 ## Proposed Fix Plan
 
+The proposed implementation is in
+[PR #77658](https://github.com/WordPress/gutenberg/pull/77658).
+
 1. Stop treating the block merge cursor as a bare number in the production
    path.
 2. Carry the selected `clientId`, selected `attributeKey`, and editor-space
