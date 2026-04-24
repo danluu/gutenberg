@@ -114,11 +114,20 @@ import {
 	mergeCrdtBlocks,
 	mergeRichTextUpdate,
 	type Block,
+	type BlockMergeCursor,
 	type YBlock,
 	type YBlocks,
 	type YBlockAttributes,
 } from '../crdt-blocks';
 import { getCachedRichTextData, createRichTextDataCache } from '../crdt-text';
+
+function richTextCursor( offset: number ): BlockMergeCursor {
+	return {
+		clientId: 'block-1',
+		attributeKey: 'content',
+		offset,
+	};
+}
 
 describe( 'crdt-blocks', () => {
 	let doc: Y.Doc;
@@ -1016,10 +1025,11 @@ describe( 'crdt-blocks', () => {
 					name: 'core/paragraph',
 					attributes: { content: 'XHello World' },
 					innerBlocks: [],
+					clientId: 'block-1',
 				},
 			];
 
-			mergeCrdtBlocks( yblocks, updatedBlocks, 0 );
+			mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 0 ) );
 
 			const block = yblocks.get( 0 );
 			const content = (
@@ -1034,6 +1044,7 @@ describe( 'crdt-blocks', () => {
 					name: 'core/paragraph',
 					attributes: { content: 'Hello World' },
 					innerBlocks: [],
+					clientId: 'block-1',
 				},
 			];
 
@@ -1044,10 +1055,11 @@ describe( 'crdt-blocks', () => {
 					name: 'core/paragraph',
 					attributes: { content: 'Hello World!' },
 					innerBlocks: [],
+					clientId: 'block-1',
 				},
 			];
 
-			mergeCrdtBlocks( yblocks, updatedBlocks, 11 );
+			mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 11 ) );
 
 			const block = yblocks.get( 0 );
 			const content = (
@@ -1062,6 +1074,7 @@ describe( 'crdt-blocks', () => {
 					name: 'core/paragraph',
 					attributes: { content: 'Hello' },
 					innerBlocks: [],
+					clientId: 'block-1',
 				},
 			];
 
@@ -1072,10 +1085,11 @@ describe( 'crdt-blocks', () => {
 					name: 'core/paragraph',
 					attributes: { content: 'Hello World' },
 					innerBlocks: [],
+					clientId: 'block-1',
 				},
 			];
 
-			mergeCrdtBlocks( yblocks, updatedBlocks, 999 );
+			mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 999 ) );
 
 			const block = yblocks.get( 0 );
 			const content = (
@@ -2602,7 +2616,7 @@ describe( 'crdt-blocks', () => {
 			];
 
 			// Cursor after 'Hello 😀' = 6 + 2 = 8
-			mergeCrdtBlocks( yblocks, updatedBlocks, 8 );
+			mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 8 ) );
 
 			const block = yblocks.get( 0 );
 			const content = (
@@ -2633,7 +2647,7 @@ describe( 'crdt-blocks', () => {
 			];
 
 			// Cursor at position 6 (after 'Hello ', emoji was deleted)
-			mergeCrdtBlocks( yblocks, updatedBlocks, 6 );
+			mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 6 ) );
 
 			const block = yblocks.get( 0 );
 			const content = (
@@ -2664,7 +2678,7 @@ describe( 'crdt-blocks', () => {
 			];
 
 			// Cursor after 'a😀x' = 1 + 2 + 1 = 4
-			mergeCrdtBlocks( yblocks, updatedBlocks, 4 );
+			mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 4 ) );
 
 			const block = yblocks.get( 0 );
 			const content = (
@@ -2696,7 +2710,7 @@ describe( 'crdt-blocks', () => {
 			];
 
 			// Cursor after '😀 hello ' = 2 + 7 = 9
-			mergeCrdtBlocks( yblocks, updatedBlocks, 9 );
+			mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 9 ) );
 
 			const block = yblocks.get( 0 );
 			const content = (
@@ -2812,7 +2826,7 @@ describe( 'crdt-blocks', () => {
 				];
 
 				// Cursor after '𠮷野家は美味しい' = 2+1+1+1+1+1+1+1 = 9
-				mergeCrdtBlocks( yblocks, updatedBlocks, 9 );
+				mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 9 ) );
 
 				const block = yblocks.get( 0 );
 				const content = (
@@ -2843,7 +2857,7 @@ describe( 'crdt-blocks', () => {
 					},
 				];
 
-				mergeCrdtBlocks( yblocks, updatedBlocks, 18 );
+				mergeCrdtBlocks( yblocks, updatedBlocks, richTextCursor( 18 ) );
 
 				const block = yblocks.get( 0 );
 				const content = (

@@ -25,6 +25,7 @@ import {
 	mergeCrdtBlocks,
 	mergeRichTextUpdate,
 	type Block,
+	type BlockMergeCursor,
 	type YBlock,
 	type YBlocks,
 } from './crdt-blocks';
@@ -160,13 +161,12 @@ export function applyPostChangesToCRDTDoc(
 				}
 
 				// Block changes from typing are bundled with a 'selection' update.
-				// Pass the resulting cursor position to the mergeCrdtBlocks function.
-				const cursorPosition =
-					changes.selection?.selectionStart?.offset ?? null;
+				const cursor: BlockMergeCursor | null =
+					changes.selection?.selectionStart ?? null;
 
 				// Merge blocks does not need `setValue` because it is operating on a
 				// Yjs type that is already in the Y.Doc.
-				mergeCrdtBlocks( currentBlocks, newValue, cursorPosition );
+				mergeCrdtBlocks( currentBlocks, newValue, cursor );
 				break;
 			}
 

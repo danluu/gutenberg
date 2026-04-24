@@ -57,6 +57,12 @@ export interface YBlockRecord extends YMapRecord {
 export type YBlock = YMapWrap< YBlockRecord >;
 export type YBlocks = Y.Array< YBlock >;
 
+export interface BlockMergeCursor {
+	attributeKey?: string;
+	clientId: string;
+	offset?: number;
+}
+
 // Block attribute schema cannot be known at compile time, so we use Y.Map.
 // Attribute values will be typed as the union of `Y.Text` and `unknown`.
 export type YBlockAttributes = Y.Map< Y.Text | unknown >;
@@ -383,12 +389,12 @@ function createNewYBlock( block: Block ): YBlock {
  *
  * @param yblocks        The blocks in the local Y.Doc.
  * @param incomingBlocks Gutenberg blocks being synced.
- * @param cursorPosition The position of the cursor after the change occurs.
+ * @param cursor         The selected block attribute cursor after the change occurs.
  */
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
-	cursorPosition: number | null
+	cursor: BlockMergeCursor | null
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -500,11 +506,12 @@ export function mergeCrdtBlocks(
 
 							if ( isAttributeChanged ) {
 								updateYBlockAttribute(
+									block,
 									block.name,
 									attributeName,
 									attributeValue,
 									currentAttributes,
-									cursorPosition
+									cursor
 								);
 							}
 						}
@@ -531,11 +538,7 @@ export function mergeCrdtBlocks(
 						yblock.set( key, yInnerBlocks );
 					}
 
-					mergeCrdtBlocks(
-						yInnerBlocks,
-						value ?? [],
-						cursorPosition
-					);
+					mergeCrdtBlocks( yInnerBlocks, value ?? [], cursor );
 					break;
 				}
 
@@ -579,6 +582,23 @@ export function mergeCrdtBlocks(
 		}
 		knownClientIds.add( clientId );
 	}
+}
+
+function getCursorPositionForAttribute(
+	block: Block,
+	attributeName: string,
+	cursor: BlockMergeCursor | null
+): number | null {
+	if (
+		! cursor ||
+		cursor.clientId !== block.clientId ||
+		cursor.attributeKey !== attributeName ||
+		typeof cursor.offset !== 'number'
+	) {
+		return null;
+	}
+
+	return cursor.offset;
 }
 
 /**
@@ -795,20 +815,27 @@ function mergeYMapValues(
 /**
  * Update a single attribute on a Yjs block attributes map (currentAttributes).
  *
+ * @param block             The block that owns the attribute.
  * @param blockName         The block type name, e.g. 'core/paragraph'.
  * @param attributeName     The name of the attribute to update, e.g. 'content'.
  * @param attributeValue    The new value for the attribute.
  * @param currentAttributes The Y.Map holding the block's current attributes.
- * @param cursorPosition    The local cursor position, used when merging rich-text deltas.
+ * @param cursor            The scoped local cursor, used when merging the selected field.
  */
 function updateYBlockAttribute(
+	block: Block,
 	blockName: string,
 	attributeName: string,
 	attributeValue: unknown,
 	currentAttributes: YBlockAttributes,
-	cursorPosition: number | null
+	cursor: BlockMergeCursor | null
 ): void {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
+	const cursorPosition = getCursorPositionForAttribute(
+		block,
+		attributeName,
+		cursor
+	);
 
 	mergeYValue(
 		schema,
