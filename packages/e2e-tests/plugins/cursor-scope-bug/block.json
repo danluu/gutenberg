@@ -1,0 +1,26 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "test/cursor-scope-bug",
+	"title": "Cursor Scope Bug",
+	"category": "text",
+	"icon": "editor-code",
+	"attributes": {
+		"first": {
+			"type": "rich-text",
+			"source": "rich-text",
+			"selector": "p.first",
+			"default": ""
+		},
+		"second": {
+			"type": "rich-text",
+			"source": "rich-text",
+			"selector": "p.second",
+			"default": "<em>b</em><em>i</em>"
+		}
+	},
+	"supports": {
+		"html": false
+	},
+	"editorScript": "cursor-scope-bug-editor"
+}
