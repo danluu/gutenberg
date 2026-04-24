@@ -33,6 +33,95 @@ The main invariants are:
 -   **Idempotence**: replaying the same update does not corrupt state.
 -   **Structural validity**: block trees remain valid and local-only data stays local.
 
+## Implemented Architecture And Code Map
+
+The implemented fuzzing stack has two connected paths: fast in-process model
+fuzzers, and a slower browser campaign that drives the real editor.
+
+The browser campaign path is:
+
+-   The campaign entry point is
+    [`bin/rtc-browser-fuzz-launcher.mjs`](../../../bin/rtc-browser-fuzz-launcher.mjs),
+    which starts parallel lanes with disjoint seed ranges.
+-   Each lane runs
+    [`bin/rtc-browser-fuzz-runner.mjs`](../../../bin/rtc-browser-fuzz-runner.mjs),
+    which performs preflight checks, runs one Playwright seed at a time, reruns
+    failures, writes summaries, and maps `RTC_FUZZ_*` controls into
+    `GUTENBERG_RTC_BROWSER_*` test controls.
+-   The runner invokes
+    [`test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts`](../../../test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts),
+    which owns the seeded browser action grammar, save/reload milestones,
+    transient sync fault injection, and convergence assertions.
+-   The browser spec reuses
+    [`test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts`](../../../test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts)
+    for opening collaborative sessions, joining users, collaborator discovery,
+    CRDT-state extraction, convergence polling, and targeted `wp-sync` request
+    delay/failure helpers.
+
+The full-stack path under test is:
+
+-   Browser edits enter core-data through entity/block-editor integration,
+    including
+    [`use-entity-block-editor.js`](../../../packages/core-data/src/hooks/use-entity-block-editor.js)
+    and
+    [`sync.ts`](../../../packages/core-data/src/sync.ts).
+-   Core-data projects post fields and block trees into CRDT state through
+    [`crdt.ts`](../../../packages/core-data/src/utils/crdt.ts),
+    [`crdt-blocks.ts`](../../../packages/core-data/src/utils/crdt-blocks.ts),
+    [`crdt-text.ts`](../../../packages/core-data/src/utils/crdt-text.ts), and
+    selection helpers such as
+    [`crdt-selection.ts`](../../../packages/core-data/src/utils/crdt-selection.ts).
+-   The sync package coordinates loaded entities, persisted CRDT documents, save
+    metadata, undo metadata, and provider lifecycle in
+    [`manager.ts`](../../../packages/sync/src/manager.ts).
+-   The HTTP polling provider sends room updates through
+    [`http-polling-provider.ts`](../../../packages/sync/src/providers/http-polling/http-polling-provider.ts)
+    and schedules room queues, discovery, retries, and room isolation in
+    [`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts).
+-   The server path receives those requests in
+    [`class-wp-http-polling-sync-server.php`](../../../lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php),
+    persists room state through
+    [`class-wp-sync-post-meta-storage.php`](../../../lib/compat/wordpress-7.0/class-wp-sync-post-meta-storage.php),
+    and intersects with save/autosave behavior in
+    [`class-gutenberg-rest-autosaves-controller.php`](../../../lib/compat/wordpress-7.0/class-gutenberg-rest-autosaves-controller.php).
+
+The model and state-machine fuzzers are arranged around the same production
+boundaries:
+
+-   [`crdt.fuzz.test.ts`](../../../packages/core-data/src/utils/test/crdt.fuzz.test.ts)
+    and
+    [`crdt-blocks.fuzz.test.ts`](../../../packages/core-data/src/utils/test/crdt-blocks.fuzz.test.ts)
+    fuzz the core-data CRDT projection helpers directly.
+-   [`merge-rich-text.fuzz.test.ts`](../../../packages/core-data/src/utils/test/merge-rich-text.fuzz.test.ts)
+    uses
+    [`merge-rich-text-fuzz-utils.ts`](../../../packages/core-data/src/utils/test/merge-rich-text-fuzz-utils.ts)
+    to stress cursor-aware rich-text merging without a browser.
+-   [`manager.fuzz.test.ts`](../../../packages/sync/src/test/manager.fuzz.test.ts)
+    fuzzes the real sync manager with mocked providers and mocked record
+    handlers.
+-   [`polling-manager.fuzz.test.ts`](../../../packages/sync/src/providers/http-polling/test/polling-manager.fuzz.test.ts)
+    fuzzes HTTP polling scheduling and room-isolation behavior without
+    launching the editor.
+-   The PHP randomized tests in
+    [`wpHttpPollingSyncServer.php`](../../../phpunit/tests/collaboration/wpHttpPollingSyncServer.php)
+    and
+    [`wpSyncPostMetaStorage.php`](../../../phpunit/tests/collaboration/wpSyncPostMetaStorage.php)
+    fuzz server room batching, cursor monotonicity, awareness storage, and
+    storage isolation.
+
+The supporting triage files are:
+
+-   [`bin/rtc-browser-failure-analysis.schema.json`](../../../bin/rtc-browser-failure-analysis.schema.json),
+    the JSON schema used when the long-running runner asks Codex to classify a
+    failing browser seed.
+-   [`artifacts/rtc-browser-fuzz/tools/inspect-crdt-failure.ts`](../../../artifacts/rtc-browser-fuzz/tools/inspect-crdt-failure.ts),
+    a helper for decoding CRDT documents from convergence-failure logs.
+-   [`artifacts/rtc-browser-fuzz/no-webserver.playwright.config.ts`](../../../artifacts/rtc-browser-fuzz/no-webserver.playwright.config.ts)
+    and
+    [`artifacts/rtc-browser-fuzz/no-webserver-noreset.playwright.config.ts`](../../../artifacts/rtc-browser-fuzz/no-webserver-noreset.playwright.config.ts),
+    local configs for rerunning browser fuzz seeds against an already-running
+    environment.
+
 ## Layer 1: Pure CRDT And Rich-Text Model Fuzzers
 
 These fuzzers live in `packages/core-data/src/utils/test/`. They run entirely in-process, mostly against `Y.Doc` and helper functions. This is the fastest layer.
