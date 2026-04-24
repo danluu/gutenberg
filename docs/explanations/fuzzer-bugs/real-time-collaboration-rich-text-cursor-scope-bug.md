@@ -222,7 +222,8 @@ npm run test:e2e -- \
 
 The current top-level-field bug was introduced on January 14, 2026 by commit
 `30c040ca841` ("Real-time collaboration: Use alternative diff in quill-delta,
-provide incremental text updates").
+provide incremental text updates") from
+[PR #73699](https://github.com/WordPress/gutenberg/pull/73699).
 
 That change:
 
@@ -232,10 +233,11 @@ That change:
 -   removed the selected field scope before rich-text merging happened
 
 Later, on April 2, 2026, commit `09a21c64b5b`
-("RTC: Fix core/table cell merging") generalized the same cursor plumbing into
-schema-aware array and object merges. That did not create the top-level
-`core/file` bug shown here, but it widened the same scope-loss problem to
-nested rich-text structures.
+("RTC: Fix core/table cell merging") from
+[PR #76913](https://github.com/WordPress/gutenberg/pull/76913) generalized
+the same cursor plumbing into schema-aware array and object merges. That did
+not create the top-level `core/file` bug shown here, but it widened the same
+scope-loss problem to nested rich-text structures.
 
 ## Impact Bounds
 
@@ -256,6 +258,12 @@ That narrows severity, but it does not make the bug a false positive. The bug
 causes real in-session collaborator-visible corruption.
 
 ## Proposed Fix Plan
+
+The proposed implementation is in
+[PR #77658](https://github.com/WordPress/gutenberg/pull/77658). The separate
+cursor-scope branch adds regression coverage for this bug; no upstream
+Gutenberg PR exists for that tests-only branch at the time this note was
+written.
 
 1. Stop treating the block merge cursor as `number | null`.
 2. Thread a scoped cursor object through the write path, carrying at least:
