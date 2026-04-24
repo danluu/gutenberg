@@ -35,6 +35,14 @@ const CONVERGENCE_TIMEOUT_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_CONVERGENCE_TIMEOUT_MS',
 	15000
 );
+const DISCOVERY_TIMEOUT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_DISCOVERY_TIMEOUT_MS',
+	30000
+);
+const BOOT_TIMEOUT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_BOOT_TIMEOUT_MS',
+	30000
+);
 const RUN_TIMEOUT_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_RUN_TIMEOUT_MS',
 	8 * 60 * 1000
@@ -51,6 +59,15 @@ const FULL_PREFLIGHT_INTERVAL_SEEDS = getPositiveIntegerEnv(
 	'RTC_FUZZ_FULL_PREFLIGHT_INTERVAL_SEEDS',
 	25
 );
+const BASE_URL = process.env.RTC_FUZZ_BASE_URL ?? process.env.WP_BASE_URL ?? '';
+const DISABLE_SYNC_FAULTS =
+	process.env.RTC_FUZZ_DISABLE_SYNC_FAULTS ??
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS ??
+	'0';
+const DISABLE_RELOAD =
+	process.env.RTC_FUZZ_DISABLE_RELOAD ??
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_RELOAD ??
+	'0';
 const LANE_LABEL = process.env.RTC_FUZZ_LANE_LABEL ?? `seed-${ START_SEED }`;
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 
@@ -119,6 +136,21 @@ function getSharedEnv( overrides = {} ) {
 	return {
 		...process.env,
 		PATH: SHARED_PATH,
+		...overrides,
+	};
+}
+
+function getBrowserFuzzEnv( overrides = {} ) {
+	return {
+		...( BASE_URL ? { WP_BASE_URL: BASE_URL } : {} ),
+		GUTENBERG_RTC_BROWSER_DISCOVERY_TIMEOUT_MS:
+			process.env.GUTENBERG_RTC_BROWSER_DISCOVERY_TIMEOUT_MS ??
+			String( DISCOVERY_TIMEOUT_MS ),
+		GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS:
+			process.env.GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS ??
+			String( BOOT_TIMEOUT_MS ),
+		GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: DISABLE_SYNC_FAULTS,
+		GUTENBERG_RTC_BROWSER_DISABLE_RELOAD: DISABLE_RELOAD,
 		...overrides,
 	};
 }
@@ -323,19 +355,21 @@ async function runFullPreflight( label ) {
 			SPEC_PATH,
 			'--project=chromium',
 		],
-		env: getSharedEnv( {
-			WP_ARTIFACTS_PATH: path.join(
-				OUTPUT_DIR,
-				`${ label }-preflight-artifacts`
-			),
-			GUTENBERG_RTC_BROWSER_SEED_START: String( START_SEED ),
-			GUTENBERG_RTC_BROWSER_SEED_COUNT: '1',
-			GUTENBERG_RTC_BROWSER_STEPS: '1',
-			GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS: String(
-				CONVERGENCE_TIMEOUT_MS
-			),
-			GUTENBERG_RTC_LANE_LABEL: LANE_LABEL,
-		} ),
+		env: getSharedEnv(
+			getBrowserFuzzEnv( {
+				WP_ARTIFACTS_PATH: path.join(
+					OUTPUT_DIR,
+					`${ label }-preflight-artifacts`
+				),
+				GUTENBERG_RTC_BROWSER_SEED_START: String( START_SEED ),
+				GUTENBERG_RTC_BROWSER_SEED_COUNT: '1',
+				GUTENBERG_RTC_BROWSER_STEPS: '1',
+				GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS: String(
+					CONVERGENCE_TIMEOUT_MS
+				),
+				GUTENBERG_RTC_LANE_LABEL: LANE_LABEL,
+			} )
+		),
 		logPath: preflightLogPath,
 		timeoutMs: 2 * 60 * 1000,
 	} );
@@ -409,15 +443,17 @@ function mapAnalysisKind( analysis, localClassification ) {
 }
 
 function buildAttemptEnv( seed, convergenceTimeoutMs, artifactsDir ) {
-	return getSharedEnv( {
-		WP_ARTIFACTS_PATH: artifactsDir,
-		GUTENBERG_RTC_BROWSER_SEED_START: String( seed ),
-		GUTENBERG_RTC_BROWSER_SEED_COUNT: '1',
-		GUTENBERG_RTC_BROWSER_STEPS: String( STEP_COUNT ),
-		GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS:
-			String( convergenceTimeoutMs ),
-		GUTENBERG_RTC_LANE_LABEL: LANE_LABEL,
-	} );
+	return getSharedEnv(
+		getBrowserFuzzEnv( {
+			WP_ARTIFACTS_PATH: artifactsDir,
+			GUTENBERG_RTC_BROWSER_SEED_START: String( seed ),
+			GUTENBERG_RTC_BROWSER_SEED_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_STEPS: String( STEP_COUNT ),
+			GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS:
+				String( convergenceTimeoutMs ),
+			GUTENBERG_RTC_LANE_LABEL: LANE_LABEL,
+		} )
+	);
 }
 
 async function runSeedAttempt( seed, label, convergenceTimeoutMs ) {

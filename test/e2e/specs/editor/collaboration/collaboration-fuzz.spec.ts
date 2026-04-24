@@ -96,6 +96,13 @@ const CONVERGENCE_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS',
 	15000
 );
+const DISCOVERY_TIMEOUT_MS = getEnvInt(
+	'GUTENBERG_RTC_BROWSER_DISCOVERY_TIMEOUT_MS',
+	15000
+);
+const DISABLE_SYNC_FAULTS =
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS === '1';
+const DISABLE_RELOAD = process.env.GUTENBERG_RTC_BROWSER_DISABLE_RELOAD === '1';
 const RETRIABLE_SYNC_FAILURE_STATUSES = [ 429, 500, 503 ];
 
 function getEnvInt( name: string, fallback: number ): number {
@@ -560,7 +567,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 
 			await collaborationUtils.openPost( post.id );
 			await collaborationUtils.joinUser( post.id, collaboratorUser );
-			await collaborationUtils.waitForMutualDiscovery();
+			await collaborationUtils.waitForMutualDiscovery( {
+				timeout: DISCOVERY_TIMEOUT_MS,
+			} );
 			await collaborationUtils.waitForConvergence( {
 				timeout: CONVERGENCE_TIMEOUT_MS,
 			} );
@@ -577,22 +586,20 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				STEP_COUNT,
 				usedMilestones
 			);
-			const reloadStep = chooseMilestoneStep(
-				rng,
-				STEP_COUNT,
-				usedMilestones
-			);
+			const reloadStep = DISABLE_RELOAD
+				? -1
+				: chooseMilestoneStep( rng, STEP_COUNT, usedMilestones );
 
 			for ( let step = 0; step < STEP_COUNT; step++ ) {
 				const actor = pick( rng, pages );
 				const faultRoll = rng();
 
-				if ( faultRoll < 0.15 ) {
+				if ( ! DISABLE_SYNC_FAULTS && faultRoll < 0.15 ) {
 					await collaborationUtils.delayNextSyncRequest(
 						actor.page,
 						250 + Math.floor( rng() * 1250 )
 					);
-				} else if ( faultRoll < 0.25 ) {
+				} else if ( ! DISABLE_SYNC_FAULTS && faultRoll < 0.25 ) {
 					// 403 is a semantic permission failure, not a transient sync
 					// fault. The runtime correctly unregisters the room on 403,
 					// so injecting it here only produces harness-level false

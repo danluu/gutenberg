@@ -353,11 +353,21 @@ Layer-specific controls:
 -   `GUTENBERG_RTC_BROWSER_SEED_COUNT`
 -   `GUTENBERG_RTC_BROWSER_STEPS`
 -   `GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS`
+-   `GUTENBERG_RTC_BROWSER_DISCOVERY_TIMEOUT_MS`
+-   `GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS`
+-   `GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS`
+-   `GUTENBERG_RTC_BROWSER_DISABLE_RELOAD`
 -   `RTC_FUZZ_START_SEED`
 -   `RTC_FUZZ_SEED_STRIDE`
 -   `RTC_FUZZ_DURATION_HOURS`
 -   `RTC_FUZZ_STEP_COUNT`
 -   `RTC_FUZZ_PARALLEL_LANES`
+-   `RTC_FUZZ_CONVERGENCE_TIMEOUT_MS`
+-   `RTC_FUZZ_DISCOVERY_TIMEOUT_MS`
+-   `RTC_FUZZ_BOOT_TIMEOUT_MS`
+-   `RTC_FUZZ_DISABLE_SYNC_FAULTS`
+-   `RTC_FUZZ_DISABLE_RELOAD`
+-   `RTC_FUZZ_BASE_URL`
 
 Lower-level fuzzers usually report the failing seed and an action trace directly in the thrown test error. The long-running browser runner writes per-seed logs, Playwright artifacts, recheck logs, Codex-analysis output, and a summary record for each failure.
 

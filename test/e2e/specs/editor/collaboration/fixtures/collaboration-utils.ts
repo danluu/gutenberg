@@ -52,6 +52,10 @@ export const SECOND_USER: UserCredentials = {
 };
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
+const RTC_BOOT_TIMEOUT_MS = Number.parseInt(
+	process.env.GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS || '10000',
+	10
+);
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -136,7 +140,9 @@ export default class CollaborationUtils {
 
 		// Dismiss welcome guide.
 		await newPage.waitForFunction(
-			() => window?.wp?.data && window?.wp?.blocks
+			() => window?.wp?.data && window?.wp?.blocks,
+			undefined,
+			{ timeout: RTC_BOOT_TIMEOUT_MS }
 		);
 		await newPage.evaluate( () => {
 			window.wp.data
