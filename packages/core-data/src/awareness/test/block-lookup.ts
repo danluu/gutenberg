@@ -8,8 +8,8 @@ import { select } from '@wordpress/data';
  * Internal dependencies
  */
 import {
-	getContainingBlockYMap,
 	getBlockPathInYdoc,
+	getContainingBlockYMap,
 	resolveBlockClientIdByPath,
 } from '../block-lookup';
 
