@@ -161,12 +161,14 @@ function identifyForbiddenRoom(
  * rooms, and restores pending updates for the remaining rooms so they retry on
  * the next poll cycle.
  *
- * @param error          The forbidden error, narrowed via isForbiddenError.
- * @param requestedRooms The rooms that were in the failing request.
+ * @param error               The forbidden error, narrowed via isForbiddenError.
+ * @param requestedRooms      The rooms that were in the failing request.
+ * @param requestedRoomStates The room states that created the failing request.
  */
 function handleForbiddenError(
 	error: WPRestError,
-	requestedRooms: SyncPayload[ 'rooms' ]
+	requestedRooms: SyncPayload[ 'rooms' ],
+	requestedRoomStates: Map< string, RoomState >
 ): void {
 	const forbiddenRoom = identifyForbiddenRoom(
 		error,
@@ -175,8 +177,8 @@ function handleForbiddenError(
 
 	if ( forbiddenRoom ) {
 		// A specific room was denied — unregister only that room.
-		const state = roomStates.get( forbiddenRoom );
-		if ( state ) {
+		const state = requestedRoomStates.get( forbiddenRoom );
+		if ( state && roomStates.get( forbiddenRoom ) === state ) {
 			state.log(
 				'Permission denied, unregistering room',
 				{ error },
@@ -189,13 +191,14 @@ function handleForbiddenError(
 		// Restore updates for remaining rooms so they can be retried on
 		// the next poll cycle.
 		for ( const room of requestedRooms ) {
+			const remainingState = requestedRoomStates.get( room.room );
 			if (
 				room.room === forbiddenRoom ||
-				! roomStates.has( room.room )
+				! remainingState ||
+				roomStates.get( room.room ) !== remainingState
 			) {
 				continue;
 			}
-			const remainingState = roomStates.get( room.room )!;
 			if ( room.updates.length > 0 ) {
 				remainingState.updateQueue.restore( room.updates );
 			}
@@ -684,6 +687,9 @@ function poll(): void {
 				updates: state.updateQueue.get(),
 			} ) ),
 		};
+		const requestedRoomStates = new Map(
+			roomsInRequest.map( ( state ) => [ state.room, state ] )
+		);
 
 		// Emit 'connecting' status only for rooms in this request. Rooms
 		// rotated out of this poll keep their prior status.
@@ -712,11 +718,14 @@ function poll(): void {
 			hasCollaborators = false;
 
 			rooms.forEach( ( room ) => {
-				if ( ! roomStates.has( room.room ) ) {
+				const roomState = requestedRoomStates.get( room.room );
+				if (
+					! roomState ||
+					roomStates.get( room.room ) !== roomState
+				) {
 					return;
 				}
 
-				const roomState = roomStates.get( room.room )!;
 				roomState.endCursor = room.end_cursor;
 
 				// If a limit is exceeded, disconnect immediately without processing updates.
@@ -810,7 +819,11 @@ function poll(): void {
 			// sync a specific entity. Silently unregister the affected
 			// room(s) and let polling continue for the rest.
 			if ( isForbiddenError( error ) ) {
-				handleForbiddenError( error, payload.rooms );
+				handleForbiddenError(
+					error,
+					payload.rooms,
+					requestedRoomStates
+				);
 
 				// If every room was unregistered, stop the poll loop
 				// instead of scheduling another tick. Reset isPolling
@@ -848,11 +861,10 @@ function poll(): void {
 				// them; if it didn't, the compaction includes them. Updates not seen by
 				// this client are preserved in both cases.
 				for ( const room of payload.rooms ) {
-					if ( ! roomStates.has( room.room ) ) {
+					const state = requestedRoomStates.get( room.room );
+					if ( ! state || roomStates.get( room.room ) !== state ) {
 						continue;
 					}
-
-					const state = roomStates.get( room.room )!;
 
 					if ( room.updates.length > 0 && state.endCursor > 0 ) {
 						state.updateQueue.clear();
@@ -900,6 +912,11 @@ function poll(): void {
 					} );
 				}
 			}
+		}
+
+		if ( roomStates.size === 0 ) {
+			isPolling = false;
+			return;
 		}
 
 		pollingTimeoutId = setTimeout( poll, pollInterval );
@@ -1052,6 +1069,12 @@ function unregisterRoom(
 	}
 
 	if ( 0 === roomStates.size && areListenersRegistered ) {
+		if ( pollingTimeoutId ) {
+			clearTimeout( pollingTimeoutId );
+			pollingTimeoutId = null;
+			isPolling = false;
+		}
+
 		window.removeEventListener( 'beforeunload', handleBeforeUnload );
 		window.removeEventListener( 'pagehide', handlePageHide );
 		document.removeEventListener(
