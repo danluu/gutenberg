@@ -46,6 +46,51 @@ It fails for schema-aware nested rich text, where the top-level attribute is a
 treated the selection as invalid for relative tracking and fell back to a block
 selection.
 
+The bundled `core/table` block exposed a second half of the same problem: table
+cell `RichText` instances did not provide an `identifier`, so the block-editor
+selection carried an offset but no nested `attributeKey`. Selection history then
+had no way to know that the cursor belonged to the first body cell's
+`body.0.cells.0.content` `Y.Text`.
+
+## Introduced By
+
+This regression was introduced by
+[#74878, "Real-time collaboration: Use relative positions in undo stack"](https://github.com/WordPress/gutenberg/pull/74878),
+merged on January 23, 2026 as
+[commit `5cbdbc274fb4dc0f74b23cbc248fe8056a15f37b`](https://github.com/WordPress/gutenberg/commit/5cbdbc274fb4dc0f74b23cbc248fe8056a15f37b).
+That PR introduced
+`packages/core-data/src/utils/block-selection-history.ts` and the affected
+`BlockSelectionHistory` conversion path. The original implementation created
+relative selections only with direct top-level rich-text attributes:
+
+```ts
+const changedYText = attributeKey
+	? attributes?.get( attributeKey )
+	: undefined;
+```
+
+Before #74878, this specific selection-history failure could not occur because
+the selection-history code did not exist.
+
+[#76418](https://github.com/WordPress/gutenberg/pull/76418) later adjusted
+rich-text offset handling in this file for HTML-vs-text index conversion, but it
+kept the same top-level attribute lookup and did not address nested rich-text
+selection targets.
+
+This is independent from the other recent RTC issues:
+
+- [#77532](https://github.com/WordPress/gutenberg/issues/77532) and
+  [#77658](https://github.com/WordPress/gutenberg/pull/77658) cover rich-text
+  offset spaces in the block merge diff path.
+- [#77662](https://github.com/WordPress/gutenberg/pull/77662) covers cursor
+  scope loss across different rich-text fields.
+- [#77666](https://github.com/WordPress/gutenberg/pull/77666) covers title
+  divergence after refresh.
+- [#77669](https://github.com/WordPress/gutenberg/pull/77669) covers the large
+  update size check that caused "Connection Lost".
+
+Those PRs do not fix this nested selection-history bug.
+
 ## Why This Is Reachable
 
 The nested value shape is the same shape used by the CRDT block encoding for
@@ -81,47 +126,58 @@ selection.
 
 ## Browser Status
 
-Browser-level coverage was added as a normal-action e2e repro:
+Browser-level coverage now uses the bundled `core/table` block:
+
+```bash
+test/e2e/specs/editor/collaboration/collaboration-table-selection-history.spec.ts
+```
+
+The user-facing repro uses normal editor actions:
+
+1. User A inserts a normal Table block and clicks `Create Table`.
+2. User A types `Hello world` in the first body cell.
+3. User A moves the cursor after `Hello` with keyboard navigation.
+4. User B clicks the same table cell and types `XXX` at the beginning.
+5. User A types `!` without re-clicking the cell.
+
+Before the fix, User A's selection stayed at offset `5` after the content became
+`XXXHello world`, so the final `!` landed in the wrong location:
+
+```text
+XXXHe!llo world
+```
+
+After the fix, the table cell selection has attribute
+`body.0.cells.0.content`, the offset shifts from `5` to `8`, and the final `!`
+lands at the expected location:
+
+```text
+XXXHello! world
+```
+
+The local browser videos are:
+
+```text
+/Users/danluu/conductor/workspaces/gutenberg-v1/seattle/.context/repro-artifacts/core-table-normal-block-normal-actions-failure.webm
+/Users/danluu/conductor/workspaces/gutenberg-v1/seattle/.context/repro-artifacts/core-table-normal-block-normal-actions-fixed.webm
+```
+
+An earlier fixture-block browser repro is still present on the explanation
+branch:
 
 ```bash
 test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
 ```
 
-The repro activates an e2e fixture plugin that registers a custom block with a
-nested `RichText` identifier, `body.content`. The user-facing steps are normal
-editor actions:
+That test uses a custom block with a nested `RichText` identifier,
+`body.content`. It is useful as a narrow selection-history repro, but the
+bug is also reachable through the bundled Table block above.
 
-1. User A inserts the block through the slash inserter.
-2. User A types `Hello world`.
-3. User A moves the cursor after `Hello` with keyboard navigation.
-4. User B clicks the same field and types `XXX` at the beginning.
-5. User A's selection should move from offset `5` to offset `8`.
-
-The test failed against the pre-fix browser bundle with User A still at offset
-`5` after the content became `XXXHello world`. The failing run produced:
-
-```text
-.context/repro-artifacts/nested-selection-history-normal-actions-failure.webm
-.context/repro-artifacts/nested-selection-history-normal-actions-error-context.md
-```
-
-After rebuilding the browser bundle with this fix, the same e2e spec passed.
-The passing run produced:
-
-```text
-.context/repro-artifacts/nested-selection-history-normal-actions-fixed.webm
-```
-
-`wp-env-test` was started with automatic port selection at:
+`wp-env-test` was run with automatic port selection at:
 
 ```text
 http://localhost:8899
 ```
-
-The e2e fixture plugin is needed because the closest first-party nested
-rich-text UI, `core/table`, does not provide a stable `RichText` identifier for
-table cells. Without that identifier, the block-editor selection does not carry
-the nested `attributeKey` needed to exercise this selection-history path.
 
 ## Fix
 
@@ -136,6 +192,15 @@ Selection history now resolves rich-text targets in two ways:
 If no exact or unambiguous `Y.Text` is available, selection history keeps the
 existing block-selection fallback.
 
+The Table block also now passes a nested `RichText` identifier for each cell:
+
+```js
+identifier={ `${ name }.${ rowIndex }.cells.${ columnIndex }.content` }
+```
+
+That makes the first body cell selection visible to the block-editor and RTC
+stores as `body.0.cells.0.content`.
+
 ## Verification
 
 Commands run:
@@ -146,10 +211,12 @@ npm run test:unit packages/core-data/src/utils/test/crdt.ts -- --runInBand
 npm run test:unit packages/core-data/src/utils/test/block-selection-history.fuzz.test.ts -- --runInBand
 npm run lint:js -- packages/core-data/src/utils/block-selection-history.ts packages/core-data/src/utils/test/block-selection-history.test.ts packages/core-data/src/utils/test/crdt.ts packages/core-data/src/utils/test/block-selection-history.fuzz.test.ts
 npm run lint:js -- packages/e2e-tests/plugins/nested-rich-selection/index.js test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
+npm run lint:js -- packages/core-data/src/utils/block-selection-history.ts packages/core-data/src/utils/test/block-selection-history.test.ts packages/core-data/src/utils/test/crdt.ts packages/block-library/src/table/edit.js test/e2e/specs/editor/collaboration/collaboration-table-selection-history.spec.ts
 php -l packages/e2e-tests/plugins/nested-rich-selection.php
 npm run wp-env-test -- start --auto-port
 npm run build -- --skip-types
 WP_BASE_URL=http://localhost:8899 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
+WP_BASE_URL=http://localhost:8899 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-selection-history.spec.ts
 ```
 
 Known-fixes baseline repro command:
