@@ -98,6 +98,22 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		return 'postType/post:' . self::$post_id;
 	}
 
+	/**
+	 * Gets awareness states keyed by client ID.
+	 *
+	 * @param WP_Sync_Storage $storage Storage backend.
+	 * @param string          $room    Room identifier.
+	 * @return array<int, array<string, mixed>> Awareness states keyed by client ID.
+	 */
+	private function get_awareness_states_by_client_id( WP_Sync_Storage $storage, string $room ): array {
+		$states = array();
+		foreach ( $storage->get_awareness_state( $room ) as $entry ) {
+			$states[ $entry['client_id'] ] = $entry['state'];
+		}
+
+		return $states;
+	}
+
 	/*
 	 * Required abstract method implementations.
 	 *
@@ -1144,10 +1160,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		$response = $server->handle_request( $request );
 		$this->assertSame( 200, $response->get_status() );
 
-		$actual = array();
-		foreach ( $base_storage->get_awareness_state( $room ) as $entry ) {
-			$actual[ $entry['client_id'] ] = $entry['state'];
-		}
+		$actual = $this->get_awareness_states_by_client_id( $base_storage, $room );
 
 		$this->assertNotEmpty( $race_storage->injected_entries );
 		$this->assertSame( $request_state, $actual[1] );
@@ -1204,16 +1217,153 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 			)
 		);
 
-		$actual = array();
-		foreach ( $base_storage->get_awareness_state( $room ) as $entry ) {
-			$actual[ $entry['client_id'] ] = $entry['state'];
-		}
+		$actual = $this->get_awareness_states_by_client_id( $base_storage, $room );
 
 		$this->assertSame( $request_state, $actual[1] );
 		$this->assertSame(
 			$completed_state,
 			$actual[2],
 			'A stale awareness write must preserve client states completed after its read.'
+		);
+	}
+
+	public function test_sync_awareness_wrapper_preserves_completed_update_for_client_present_in_stale_read() {
+		if ( ! class_exists( 'Gutenberg_Sync_Awareness_Merging_Storage' ) ) {
+			$this->markTestSkipped( 'The Gutenberg awareness merge wrapper is not loaded.' );
+		}
+
+		wp_set_current_user( self::$editor_id );
+
+		$room            = $this->get_post_room() . ':awareness-wrapper-update-race';
+		$base_storage    = new WP_Sync_Post_Meta_Storage();
+		$storage         = new Gutenberg_Sync_Awareness_Merging_Storage( $base_storage );
+		$old_state       = array( 'cursor' => 'old-client' );
+		$completed_state = array( 'cursor' => 'completed-client' );
+		$request_state   = array( 'cursor' => 'stale-client' );
+		$now             = time();
+
+		$this->assertTrue(
+			$base_storage->set_awareness_state(
+				$room,
+				array(
+					array(
+						'client_id'  => 2,
+						'state'      => $old_state,
+						'updated_at' => $now,
+						'wp_user_id' => get_current_user_id(),
+					),
+				)
+			)
+		);
+
+		// Simulate an older server path reading client 2's old state before
+		// client 2 completes a newer awareness write.
+		$this->assertSame( array( 2 => $old_state ), $this->get_awareness_states_by_client_id( $storage, $room ) );
+
+		$this->assertTrue(
+			$base_storage->set_awareness_state(
+				$room,
+				array(
+					array(
+						'client_id'  => 2,
+						'state'      => $completed_state,
+						'updated_at' => $now + 1,
+						'wp_user_id' => get_current_user_id(),
+					),
+				)
+			)
+		);
+
+		$this->assertTrue(
+			$storage->set_awareness_state(
+				$room,
+				array(
+					array(
+						'client_id'  => 2,
+						'state'      => $old_state,
+						'updated_at' => $now,
+						'wp_user_id' => get_current_user_id(),
+					),
+					array(
+						'client_id'  => 1,
+						'state'      => $request_state,
+						'updated_at' => $now + 1,
+						'wp_user_id' => get_current_user_id(),
+					),
+				)
+			)
+		);
+
+		$actual = $this->get_awareness_states_by_client_id( $base_storage, $room );
+
+		$this->assertSame( $request_state, $actual[1] );
+		$this->assertSame(
+			$completed_state,
+			$actual[2],
+			'A stale awareness write must not replace a completed update with the old read state.'
+		);
+	}
+
+	public function test_sync_awareness_wrapper_preserves_completed_disconnect_for_client_present_in_stale_read() {
+		if ( ! class_exists( 'Gutenberg_Sync_Awareness_Merging_Storage' ) ) {
+			$this->markTestSkipped( 'The Gutenberg awareness merge wrapper is not loaded.' );
+		}
+
+		wp_set_current_user( self::$editor_id );
+
+		$room          = $this->get_post_room() . ':awareness-wrapper-disconnect-race';
+		$base_storage  = new WP_Sync_Post_Meta_Storage();
+		$storage       = new Gutenberg_Sync_Awareness_Merging_Storage( $base_storage );
+		$old_state     = array( 'cursor' => 'old-client' );
+		$request_state = array( 'cursor' => 'stale-client' );
+		$now           = time();
+
+		$this->assertTrue(
+			$base_storage->set_awareness_state(
+				$room,
+				array(
+					array(
+						'client_id'  => 2,
+						'state'      => $old_state,
+						'updated_at' => $now,
+						'wp_user_id' => get_current_user_id(),
+					),
+				)
+			)
+		);
+
+		// Simulate an older server path reading client 2 before client 2
+		// completes a disconnect write.
+		$this->assertSame( array( 2 => $old_state ), $this->get_awareness_states_by_client_id( $storage, $room ) );
+		$this->assertTrue( $base_storage->set_awareness_state( $room, array() ) );
+
+		$this->assertTrue(
+			$storage->set_awareness_state(
+				$room,
+				array(
+					array(
+						'client_id'  => 2,
+						'state'      => $old_state,
+						'updated_at' => $now,
+						'wp_user_id' => get_current_user_id(),
+					),
+					array(
+						'client_id'  => 1,
+						'state'      => $request_state,
+						'updated_at' => $now + 1,
+						'wp_user_id' => get_current_user_id(),
+					),
+				)
+			)
+		);
+
+		$actual = $this->get_awareness_states_by_client_id( $base_storage, $room );
+
+		$this->assertSame( $request_state, $actual[1] );
+		$this->assertArrayNotHasKey(
+			2,
+			$actual,
+			'A stale awareness write must not resurrect a client that disconnected after the stale read.'
 		);
 	}
 
