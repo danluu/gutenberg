@@ -672,55 +672,15 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 * @param array<string, mixed>|null $awareness_update Awareness state sent by the client.
 		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
 		 */
-		private function process_awareness_update( string $room, int $client_id, ?array $awareness_update ): array {
-			$existing_awareness  = $this->storage->get_awareness_state( $room );
-			$updated_awareness   = array();
-			$current_time        = time();
-			$previous_entered_at = null;
-
-			foreach ( $existing_awareness as $entry ) {
-				$entry = $this->normalize_stored_awareness_entry( $entry );
-				if ( null === $entry ) {
-					continue;
-				}
-
-				// Remove this client's entry (it will be updated below).
-				if ( $client_id === $entry['client_id'] ) {
-					$previous_entered_at = $entry['state']['collaboratorInfo']['enteredAt'];
-					continue;
-				}
-
-				// Remove entries that have expired.
-				if ( $current_time - $entry['updated_at'] >= self::AWARENESS_TIMEOUT ) {
-					continue;
-				}
-
-				$updated_awareness[] = $entry;
-			}
-
-			// Add this client's awareness state.
-			if ( null !== $awareness_update ) {
-				$state = $this->normalize_awareness_update( $awareness_update, get_current_user_id(), $previous_entered_at );
-				if ( null !== $state ) {
-					$updated_awareness[] = array(
-						'client_id'  => $client_id,
-						'state'      => $state,
-						'updated_at' => $current_time,
-						'wp_user_id' => get_current_user_id(),
-					);
-				}
-			}
-
-			// This action can fail, but it shouldn't fail the entire request.
-			$this->storage->set_awareness_state( $room, $updated_awareness );
-
-			// Convert to client_id => state map for response.
-			$response = array();
-			foreach ( $updated_awareness as $entry ) {
-				$response[ $entry['client_id'] ] = $entry['state'];
-			}
-
-			return $response;
+	private function process_awareness_update( string $room, int $client_id, ?array $awareness_update ): array {
+			return $this->storage->update_awareness_state(
+				$room,
+				$client_id,
+				$awareness_update,
+				time(),
+				get_current_user_id(),
+				self::AWARENESS_TIMEOUT
+			);
 		}
 
 		/**
