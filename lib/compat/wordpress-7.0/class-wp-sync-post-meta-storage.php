@@ -142,6 +142,142 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 		}
 
 		/**
+		 * Updates one client's awareness state for a given room.
+		 *
+		 * The server sends awareness as a read-modify-write operation: remove this
+		 * client's previous entry, drop expired entries, then optionally add this
+		 * client's latest state. Use a per-room MySQL advisory lock so concurrent
+		 * requests do not overwrite awareness entries that completed between the
+		 * read and write phases.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @global wpdb $wpdb WordPress database abstraction object.
+		 *
+		 * @param string                    $room             Room identifier.
+		 * @param int                       $client_id        Client identifier.
+		 * @param array<string, mixed>|null $awareness_update Awareness state sent by the client, or null to disconnect.
+		 * @param int                       $current_time     Current Unix timestamp.
+		 * @param int                       $wp_user_id       WordPress user ID for this client.
+		 * @param int                       $timeout          Awareness timeout in seconds.
+		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
+		 */
+		public function update_awareness_state( string $room, int $client_id, ?array $awareness_update, int $current_time, int $wp_user_id, int $timeout ): array {
+			global $wpdb;
+
+			$lock_name     = 'wp_sync_awareness_' . md5( $room );
+			$lock_acquired = '1' === (string) $wpdb->get_var(
+				$wpdb->prepare( 'SELECT GET_LOCK( %s, %d )', $lock_name, 5 )
+			);
+
+			if ( ! $lock_acquired ) {
+				$awareness = $this->merge_awareness_update(
+					$this->get_awareness_state( $room ),
+					$client_id,
+					$awareness_update,
+					$current_time,
+					$wp_user_id,
+					$timeout
+				);
+				return $this->awareness_entries_to_response( $awareness );
+			}
+
+			try {
+				$awareness = $this->merge_awareness_update(
+					$this->get_awareness_state( $room ),
+					$client_id,
+					$awareness_update,
+					$current_time,
+					$wp_user_id,
+					$timeout
+				);
+
+				// This action can fail, but it shouldn't fail the entire request.
+				$this->set_awareness_state( $room, $awareness );
+
+				return $this->awareness_entries_to_response( $awareness );
+			} finally {
+				$wpdb->get_var(
+					$wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock_name )
+				);
+			}
+		}
+
+		/**
+		 * Merges one client's awareness update into an existing awareness list.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<int, mixed>          $existing_awareness Existing awareness entries.
+		 * @param int                       $client_id          Client identifier.
+		 * @param array<string, mixed>|null $awareness_update   Awareness state sent by the client, or null to disconnect.
+		 * @param int                       $current_time       Current Unix timestamp.
+		 * @param int                       $wp_user_id         WordPress user ID for this client.
+		 * @param int                       $timeout            Awareness timeout in seconds.
+		 * @return array<int, array{client_id: int, state: array<string, mixed>, updated_at: int, wp_user_id: int}> Updated awareness entries.
+		 */
+		private function merge_awareness_update( array $existing_awareness, int $client_id, ?array $awareness_update, int $current_time, int $wp_user_id, int $timeout ): array {
+			$updated_awareness = array();
+
+			foreach ( $existing_awareness as $entry ) {
+				if (
+					! is_array( $entry ) ||
+					! isset( $entry['client_id'], $entry['state'], $entry['updated_at'], $entry['wp_user_id'] )
+				) {
+					continue;
+				}
+
+				$entry_client_id = (int) $entry['client_id'];
+
+				// Remove this client's entry. It will be updated below unless the
+				// client sent null to disconnect.
+				if ( $client_id === $entry_client_id ) {
+					continue;
+				}
+
+				// Remove entries that have expired.
+				if ( $current_time - (int) $entry['updated_at'] >= $timeout ) {
+					continue;
+				}
+
+				$updated_awareness[] = array(
+					'client_id'  => $entry_client_id,
+					'state'      => is_array( $entry['state'] ) ? $entry['state'] : array(),
+					'updated_at' => (int) $entry['updated_at'],
+					'wp_user_id' => (int) $entry['wp_user_id'],
+				);
+			}
+
+			if ( null !== $awareness_update ) {
+				$updated_awareness[] = array(
+					'client_id'  => $client_id,
+					'state'      => $awareness_update,
+					'updated_at' => $current_time,
+					'wp_user_id' => $wp_user_id,
+				);
+			}
+
+			return $updated_awareness;
+		}
+
+		/**
+		 * Converts stored awareness entries to the REST response shape.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<int, array{client_id: int, state: array<string, mixed>}> $awareness Awareness entries.
+		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
+		 */
+		private function awareness_entries_to_response( array $awareness ): array {
+			$response = array();
+			foreach ( $awareness as $entry ) {
+				$response[ $entry['client_id'] ] = $entry['state'];
+			}
+
+			return $response;
+		}
+
+		/**
 		 * Sets awareness state for a given room.
 		 *
 		 * @since 7.0.0
