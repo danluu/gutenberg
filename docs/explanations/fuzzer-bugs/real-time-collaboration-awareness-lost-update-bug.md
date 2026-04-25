@@ -6,6 +6,8 @@ Real product bug. The HTTP polling sync server updated awareness with a whole-ro
 
 An additional audit finding was discovered in the first unmerged PR fix: the Core-compat wrapper preserved newly added clients, but not later updates or disconnects for clients already present in the stale read. That second issue was not a separate `origin/trunk` product introduction; it was introduced by the first fix branch and fixed before PR submission.
 
+A final CI compatibility issue was found in the PR branch: the first fix made `update_awareness_state()` a required `WP_Sync_Storage` interface method. That broke existing implementations of the public storage interface shape in tests and extensions. The submitted fix keeps the old interface intact and treats `update_awareness_state()` as an optional capability detected with `method_exists()`.
+
 ## Source
 
 -   Handoff item: `real-time-collaboration-distinct-fuzzer-failures.md` item 9.
@@ -20,6 +22,8 @@ The vulnerable awareness read-modify-write path was introduced in Gutenberg by [
 The same behavior moved into the current `lib/compat/wordpress-7.0/` path in [WordPress/gutenberg#75366](https://github.com/WordPress/gutenberg/pull/75366), "Real-time collaboration: Move PHP code to compat / backports directory", merged on February 13, 2026. That PR was a relocation/backport step rather than the original introduction of the race; it linked the Gutenberg compat move to the WordPress Core backport proposal [WordPress/wordpress-develop#10894](https://github.com/WordPress/wordpress-develop/pull/10894).
 
 The additional wrapper issue was introduced only on the unmerged fix branch by [`0475d1e0336a9dabc81e2962a8ed54cfed2ba7ac`](https://github.com/danluu/gutenberg/commit/0475d1e0336a9dabc81e2962a8ed54cfed2ba7ac), "Fix RTC awareness concurrent merge". That commit added `Gutenberg_Sync_Awareness_Merging_Storage` for the current trunk runtime where Core's older sync server/storage classes are already loaded before Gutenberg's compat copies. The first wrapper preserved clients that appeared after the stale read, but allowed stale writes to overwrite a later update for a client already present in the read snapshot and allowed stale writes to resurrect a client that disconnected after the read. The correction is [`54ae7f662f95137a267e94e24572a906a4d6795f`](https://github.com/danluu/gutenberg/commit/54ae7f662f95137a267e94e24572a906a4d6795f), "Preserve awareness updates from stale wrapper writes".
+
+The CI compatibility issue was also introduced on the unmerged fix branch by [`0475d1e0336a9dabc81e2962a8ed54cfed2ba7ac`](https://github.com/danluu/gutenberg/commit/0475d1e0336a9dabc81e2962a8ed54cfed2ba7ac), which added `WP_Sync_Storage::update_awareness_state()` as a required method. The correction is [`ee70bf352630ed49308324752b3230f46f4d6a39`](https://github.com/danluu/gutenberg/commit/ee70bf352630ed49308324752b3230f46f4d6a39), "Keep sync storage interface compatible".
 
 ## Baseline Reproduction
 
@@ -108,7 +112,7 @@ Yes. The bug can be reproduced below Playwright, below REST, and below the brows
 
 ## Fix Plan
 
-The fix moves awareness merging into the storage layer via `WP_Sync_Storage::update_awareness_state()`. The post-meta storage implementation takes a per-room MySQL advisory lock, reads the latest awareness state, removes the requesting client's old entry and expired entries, adds the requesting client's new state when non-null, writes the merged list, and returns the `client_id => state` response map.
+The fix moves awareness merging into storage implementations that opt into `update_awareness_state()`, without changing the required `WP_Sync_Storage` interface. `WP_HTTP_Polling_Sync_Server` calls `update_awareness_state()` when the storage object provides it; otherwise it uses the original read/merge/write path for compatibility with existing storage implementations. The post-meta storage implementation takes a per-room MySQL advisory lock, reads the latest awareness state, removes the requesting client's old entry and expired entries, adds the requesting client's new state when non-null, writes the merged list, and returns the `client_id => state` response map.
 
 Current WordPress trunk already loads older Core copies of the RTC server/storage classes before the Gutenberg plugin can load its compat copies. For that runtime path, Gutenberg wraps Core's storage object in `Gutenberg_Sync_Awareness_Merging_Storage`. The wrapper remembers the awareness snapshot returned to Core's older read/write server path, takes the same per-room advisory lock during `set_awareness_state()`, and reconciles three views: the stale read snapshot, the latest stored state, and the stale write candidate.
 
@@ -119,9 +123,9 @@ That wrapper reconciliation is intentionally stricter than the first fix attempt
 -   a client present in the stale read and unchanged in the stale write is removed if another request disconnected it;
 -   a client changed by the current stale request is kept as the current request's own update.
 
-If the advisory lock cannot be acquired, the server returns a merged response without writing. That avoids overwriting completed states under lock contention; the client will retry awareness on the next poll.
+If the advisory lock cannot be acquired, the atomic storage path returns a merged response without writing. That avoids overwriting completed states under lock contention; the client will retry awareness on the next poll.
 
-The PR branch keeps the regression tests and the fix separated from the repro branch. The PR branch is `danluu/ci-ready-rtc-awareness`; the explanation/repro branch is `danluu/rtc-issue-09-awareness-lost-update-repro`.
+The PR branch keeps the regression tests and the fix separated from the repro branch. The PR branch is `danluu/fix-rtc-ci-break`; the explanation/repro branch is `danluu/rtc-issue-09-awareness-lost-update-repro`.
 
 ## Verification
 
@@ -151,6 +155,16 @@ WP_ENV_PORT=8911 WP_ENV_PHPMYADMIN_PORT=9011 npm run wp-env -- --config=.context
   /var/www/html/wp-content/plugins/hong-kong/vendor/bin/phpunit \
   --bootstrap /var/www/html/wp-content/plugins/hong-kong/.context/issue9-phpunit-bootstrap.php \
   /var/www/html/wp-content/plugins/hong-kong/phpunit/tests/collaboration/wpSyncPostMetaStorage.php
+
+WP_ENV_PORT=8912 WP_ENV_PHPMYADMIN_PORT=9012 npm run wp-env-test -- run --env-cwd='wp-content/plugins/gutenberg' cli composer run-script lint -- \
+  lib/compat/wordpress-7.0/class-gutenberg-sync-awareness-merging-storage.php \
+  lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php \
+  lib/compat/wordpress-7.0/class-wp-sync-post-meta-storage.php \
+  lib/compat/wordpress-7.0/interface-wp-sync-storage.php \
+  lib/compat/wordpress-7.0/collaboration.php \
+  phpunit/tests/collaboration/wpHttpPollingSyncServer.php
+
+WP_ENV_PORT=8912 WP_ENV_PHPMYADMIN_PORT=9012 npm run test:unit:php:base -- --filter test_sync_awareness_accepts_storage_without_atomic_awareness_method phpunit/tests/collaboration/wpHttpPollingSyncServer.php
 ```
 
 Failure check for the additional wrapper issue: I applied only the two new wrapper regression tests to the previous fix commit `0475d1e0336a9dabc81e2962a8ed54cfed2ba7ac`, without the wrapper correction, and ran the standard `wpHttpPollingSyncServer.php` PHPUnit file:
@@ -176,10 +190,23 @@ Actual cursor: old-client
 Failed asserting that an array does not have the key 2.
 ```
 
+Failure check for the CI compatibility issue: I loaded the previous PR head interface (`54ae7f662f95137a267e94e24572a906a4d6795f`) and instantiated a valid pre-existing `WP_Sync_Storage` implementation that did not provide `update_awareness_state()`.
+
+```bash
+php -d display_errors=1 -r '$code = shell_exec("git show 54ae7f662f95137a267e94e24572a906a4d6795f:lib/compat/wordpress-7.0/interface-wp-sync-storage.php"); eval("?>" . $code); new class() implements WP_Sync_Storage { public function add_update( string $room, $update ): bool { return true; } public function get_awareness_state( string $room ): array { return array(); } public function get_cursor( string $room ): int { return 0; } public function get_update_count( string $room ): int { return 0; } public function get_updates_after_cursor( string $room, int $cursor ): array { return array(); } public function remove_updates_before_cursor( string $room, int $cursor ): bool { return true; } public function set_awareness_state( string $room, array $awareness ): bool { return true; } };'
+```
+
+Result without the compatibility fix:
+
+```text
+PHP Fatal error: Class WP_Sync_Storage@anonymous must implement 1 abstract method (WP_Sync_Storage::update_awareness_state)
+```
+
 Results:
 
 -   PHP standards: passed.
 -   Playwright awareness lost-update repro: passed.
--   `wpHttpPollingSyncServer.php` on WordPress 6.8.3 plugin compat classes after the audit fix: `OK (61 tests, 160 assertions)`.
--   `wpHttpPollingSyncServer.php` on current WordPress trunk Core classes after the audit fix: `OK (61 tests, 155 assertions)`, with one expected skip for the plugin-only `update_awareness_state()` method test.
+-   `wpHttpPollingSyncServer.php` on WordPress 6.8.3 plugin compat classes after the CI compatibility fix: `OK (62 tests, 163 assertions)`.
+-   `wpHttpPollingSyncServer.php` on current WordPress trunk Core classes after the CI compatibility fix: `OK (62 tests, 158 assertions)`, with one expected skip for the plugin-only `update_awareness_state()` method test.
 -   `wpSyncPostMetaStorage.php` on both current WordPress trunk Core classes and WordPress 6.8.3 plugin compat classes: `OK (14 tests, 53 assertions)`.
+-   `test_sync_awareness_accepts_storage_without_atomic_awareness_method`: `OK (1 test, 3 assertions)`.
