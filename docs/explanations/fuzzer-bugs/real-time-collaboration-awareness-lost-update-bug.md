@@ -80,6 +80,26 @@ Earlier user-screen video without the disappearing Collaborators UI: `/Users/dan
 
 Earlier instrumentation-only video: `/Users/danluu/conductor/workspaces/gutenberg-v1/hong-kong/.context/videos/rtc-awareness-lost-update-failing-injected.webm`.
 
+## Lower-Level Reproductions
+
+Yes. The bug can be reproduced below Playwright, below REST, and below the browser UI. These repros are deterministic because they inject the storage effect of a completed concurrent request exactly between the stale request's awareness read and stale write. That injection is the same practical interleaving that can happen when two editor tabs poll `/wp-sync/v1/updates` concurrently for the same room in separate PHP requests.
+
+-   [Standalone PHP model](./repros/awareness-lost-update-model.php): no WordPress bootstrap. This models only the old awareness `get_awareness_state()` snapshot, PHP merge, and `set_awareness_state()` overwrite. Run with:
+
+    ```bash
+    php docs/explanations/fuzzer-bugs/repros/awareness-lost-update-model.php
+    ```
+
+-   [WordPress storage-level repro](./repros/awareness-lost-update-storage.php): uses real `WP_Sync_Post_Meta_Storage` and the post-meta awareness row, but bypasses Playwright, the browser, REST routing, permissions, and CRDT document updates. Run with:
+
+    ```bash
+    npm run wp-env-test -- run --env-cwd='wp-content/plugins/gutenberg' \
+      cli wp eval-file \
+      docs/explanations/fuzzer-bugs/repros/awareness-lost-update-storage.php
+    ```
+
+-   Server-level regression: `phpunit/tests/collaboration/wpHttpPollingSyncServer.php::test_sync_awareness_preserves_completed_concurrent_client_state` runs through `WP_HTTP_Polling_Sync_Server` with a storage wrapper that injects the same completed write at the vulnerable scheduling point. This is the lowest level that still exercises the production sync server request handling.
+
 ## Fix
 
 The fix moves awareness merging into the storage layer via `WP_Sync_Storage::update_awareness_state()`. The post-meta storage implementation takes a per-room MySQL advisory lock, reads the latest awareness state, removes the requesting client's old entry and expired entries, adds the requesting client's new state when non-null, writes the merged list, and returns the `client_id => state` response map.
