@@ -1614,6 +1614,177 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		$this->assertNotEmpty( $race_storage->injected_entries, 'Expected awareness race injection to run.' );
 	}
 
+	public function test_sync_awareness_preserves_completed_concurrent_client_state() {
+		if ( ! method_exists( 'WP_Sync_Post_Meta_Storage', 'update_awareness_state' ) ) {
+			$this->markTestSkipped( 'The loaded storage class does not expose atomic awareness updates.' );
+		}
+
+		wp_set_current_user( self::$editor_id );
+
+		$room         = $this->get_post_room() . ':awareness-race';
+		$base_storage = new WP_Sync_Post_Meta_Storage();
+		$race_storage = new class( $base_storage ) implements WP_Sync_Storage {
+			private WP_Sync_Storage $storage;
+			private array $queued_injections = array();
+			public array $injected_entries   = array();
+
+			public function __construct( WP_Sync_Storage $storage ) {
+				$this->storage = $storage;
+			}
+
+			public function queue_awareness_injection( string $room, array $entry ): void {
+				$this->queued_injections[ $room ][] = $entry;
+			}
+
+			public function add_update( string $room, $update ): bool {
+				return $this->storage->add_update( $room, $update );
+			}
+
+			public function get_awareness_state( string $room ): array {
+				$snapshot = $this->storage->get_awareness_state( $room );
+				$this->inject_awareness_entry( $room );
+				return $snapshot;
+			}
+
+			public function update_awareness_state( string $room, int $client_id, ?array $awareness_update, int $current_time, int $wp_user_id, int $timeout ): array {
+				$this->inject_awareness_entry( $room );
+				return $this->storage->update_awareness_state( $room, $client_id, $awareness_update, $current_time, $wp_user_id, $timeout );
+			}
+
+			public function get_cursor( string $room ): int {
+				return $this->storage->get_cursor( $room );
+			}
+
+			public function get_update_count( string $room ): int {
+				return $this->storage->get_update_count( $room );
+			}
+
+			public function get_updates_after_cursor( string $room, int $cursor ): array {
+				return $this->storage->get_updates_after_cursor( $room, $cursor );
+			}
+
+			public function remove_updates_before_cursor( string $room, int $cursor ): bool {
+				return $this->storage->remove_updates_before_cursor( $room, $cursor );
+			}
+
+			public function set_awareness_state( string $room, array $awareness ): bool {
+				return $this->storage->set_awareness_state( $room, $awareness );
+			}
+
+			private function inject_awareness_entry( string $room ): void {
+				if ( empty( $this->queued_injections[ $room ] ) ) {
+					return;
+				}
+
+				$entry                    = array_shift( $this->queued_injections[ $room ] );
+				$this->injected_entries[] = $entry;
+				$by_client_id             = array();
+				foreach ( array_merge( $this->storage->get_awareness_state( $room ), array( $entry ) ) as $awareness_entry ) {
+					$by_client_id[ $awareness_entry['client_id'] ] = $awareness_entry;
+				}
+
+				$this->storage->set_awareness_state( $room, array_values( $by_client_id ) );
+			}
+		};
+		$server       = new WP_HTTP_Polling_Sync_Server( $race_storage );
+
+		$completed_state = array( 'cursor' => 'completed-client' );
+		$race_storage->queue_awareness_injection(
+			$room,
+			array(
+				'client_id'  => 2,
+				'state'      => $completed_state,
+				'updated_at' => time(),
+				'wp_user_id' => get_current_user_id(),
+			)
+		);
+
+		$request_state = array( 'cursor' => 'stale-client' );
+		$request       = new WP_REST_Request( 'POST', '/wp-sync/v1/updates' );
+		$request->set_body_params(
+			array(
+				'rooms' => array(
+					$this->build_room( $room, 1, 0, $request_state ),
+				),
+			)
+		);
+
+		$response = $server->handle_request( $request );
+		$this->assertSame( 200, $response->get_status() );
+
+		$actual = array();
+		foreach ( $base_storage->get_awareness_state( $room ) as $entry ) {
+			$actual[ $entry['client_id'] ] = $entry['state'];
+		}
+
+		$this->assertNotEmpty( $race_storage->injected_entries );
+		$this->assertSame( $request_state, $actual[1] );
+		$this->assertArrayHasKey( 2, $actual, 'Completed client state was not stored. Actual awareness: ' . wp_json_encode( $actual ) );
+		$this->assertSame(
+			$completed_state,
+			$actual[2],
+			'A stale awareness request must not overwrite another client state that was already stored.'
+		);
+	}
+
+	public function test_sync_awareness_wrapper_preserves_completed_concurrent_client_state() {
+		if ( ! class_exists( 'Gutenberg_Sync_Awareness_Merging_Storage' ) ) {
+			$this->markTestSkipped( 'The Gutenberg awareness merge wrapper is not loaded.' );
+		}
+
+		wp_set_current_user( self::$editor_id );
+
+		$room         = $this->get_post_room() . ':awareness-wrapper-race';
+		$base_storage = new WP_Sync_Post_Meta_Storage();
+		$storage      = new Gutenberg_Sync_Awareness_Merging_Storage( $base_storage );
+
+		// Simulate an older server path reading awareness before another
+		// request completes its write.
+		$this->assertSame( array(), $storage->get_awareness_state( $room ) );
+
+		$completed_state = array( 'cursor' => 'completed-client' );
+		$this->assertTrue(
+			$base_storage->set_awareness_state(
+				$room,
+				array(
+					array(
+						'client_id'  => 2,
+						'state'      => $completed_state,
+						'updated_at' => time(),
+						'wp_user_id' => get_current_user_id(),
+					),
+				)
+			)
+		);
+
+		$request_state = array( 'cursor' => 'stale-client' );
+		$this->assertTrue(
+			$storage->set_awareness_state(
+				$room,
+				array(
+					array(
+						'client_id'  => 1,
+						'state'      => $request_state,
+						'updated_at' => time(),
+						'wp_user_id' => get_current_user_id(),
+					),
+				)
+			)
+		);
+
+		$actual = array();
+		foreach ( $base_storage->get_awareness_state( $room ) as $entry ) {
+			$actual[ $entry['client_id'] ] = $entry['state'];
+		}
+
+		$this->assertSame( $request_state, $actual[1] );
+		$this->assertSame(
+			$completed_state,
+			$actual[2],
+			'A stale awareness write must preserve client states completed after its read.'
+		);
+	}
+
 	public function test_sync_awareness_client_id_cannot_be_used_by_another_user() {
 		wp_set_current_user( self::$editor_id );
 
