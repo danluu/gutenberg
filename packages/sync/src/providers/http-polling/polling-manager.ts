@@ -726,8 +726,6 @@ function poll(): void {
 					return;
 				}
 
-				roomState.endCursor = room.end_cursor;
-
 				// If a limit is exceeded, disconnect immediately without processing updates.
 				if ( checkConnectionLimit( room.awareness, roomState ) ) {
 					roomState.onStatusChange( {
@@ -762,6 +760,7 @@ function poll(): void {
 
 				// Process each incoming update and collect any responses.
 				const responseUpdates: SyncUpdate[] = [];
+				let hasFailedUpdate = false;
 				for ( const update of room.updates ) {
 					try {
 						const response = roomState.processDocUpdate( update );
@@ -775,10 +774,14 @@ function poll(): void {
 							'error',
 							true // force
 						);
+						hasFailedUpdate = true;
 					}
 				}
 
 				roomState.updateQueue.addBulk( responseUpdates );
+				if ( ! hasFailedUpdate ) {
+					roomState.endCursor = room.end_cursor;
+				}
 
 				// Respond to compaction requests from server. The server asks only one
 				// client at a time to compact (lowest active client ID). We encode our
