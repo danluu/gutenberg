@@ -54,6 +54,34 @@ function createTestDoc() {
 	return ydoc;
 }
 
+function createDocWithNestedRichText() {
+	const ydoc = new Y.Doc();
+	const documentMap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+	const blocks = new Y.Array();
+	documentMap.set( 'blocks', blocks );
+
+	const block = new Y.Map();
+	block.set( 'clientId', 'block-1' );
+	block.set( 'innerBlocks', new Y.Array() );
+
+	const attributes = new Y.Map();
+	const body = new Y.Array();
+	const row = new Y.Map();
+	const cells = new Y.Array();
+	const cell = new Y.Map();
+	const nestedText = new Y.Text( 'Nested cell text' );
+
+	cell.set( 'content', nestedText );
+	cells.push( [ cell ] );
+	row.set( 'cells', cells );
+	body.push( [ row ] );
+	attributes.set( 'body', body );
+	block.set( 'attributes', attributes );
+	blocks.push( [ block ] );
+
+	return { nestedText, ydoc };
+}
+
 function createSelection(
 	start: { clientId: string; attributeKey?: string; offset?: number },
 	end?: { clientId: string; attributeKey?: string; offset?: number }
@@ -441,6 +469,72 @@ describe( 'BlockSelectionHistory', () => {
 	} );
 
 	describe( 'relative position accuracy', () => {
+		test( 'should track nested rich-text attributes as relative positions', () => {
+			const { nestedText, ydoc: nestedYdoc } =
+				createDocWithNestedRichText();
+			const nestedHistory = createBlockSelectionHistory( nestedYdoc, 5 );
+			const selection = createSelection( {
+				clientId: 'block-1',
+				attributeKey: 'body',
+				offset: 7,
+			} );
+
+			nestedHistory.updateSelection( selection );
+
+			const selectionHistory = nestedHistory.getSelectionHistory();
+			const fullSelection = selectionHistory[ 0 ];
+			expect( fullSelection.start.type ).toBe(
+				YSelectionType.RelativeSelection
+			);
+			expect( fullSelection.end.type ).toBe(
+				YSelectionType.RelativeSelection
+			);
+
+			const startPosition = fullSelection.start as YRelativeSelection;
+			nestedText.insert( 0, 'Prefix ' );
+
+			const absolutePosition =
+				Y.createAbsolutePositionFromRelativePosition(
+					startPosition.relativePosition,
+					nestedYdoc
+				);
+
+			expect( absolutePosition?.type ).toBe( nestedText );
+			expect( absolutePosition?.index ).toBe( 14 );
+			nestedYdoc.destroy();
+		} );
+
+		test( 'should track nested rich-text attribute paths as relative positions', () => {
+			const { nestedText, ydoc: nestedYdoc } =
+				createDocWithNestedRichText();
+			const nestedHistory = createBlockSelectionHistory( nestedYdoc, 5 );
+			const selection = createSelection( {
+				clientId: 'block-1',
+				attributeKey: 'body.0.cells.0.content',
+				offset: 7,
+			} );
+
+			nestedHistory.updateSelection( selection );
+
+			const [ fullSelection ] = nestedHistory.getSelectionHistory();
+			expect( fullSelection.start.type ).toBe(
+				YSelectionType.RelativeSelection
+			);
+			const startPosition = fullSelection.start as YRelativeSelection;
+
+			nestedText.insert( 0, 'Prefix ' );
+
+			const absolutePosition =
+				Y.createAbsolutePositionFromRelativePosition(
+					startPosition.relativePosition,
+					nestedYdoc
+				);
+
+			expect( absolutePosition?.type ).toBe( nestedText );
+			expect( absolutePosition?.index ).toBe( 14 );
+			nestedYdoc.destroy();
+		} );
+
 		test( 'should create relative position that survives text insertion before it', () => {
 			const selection = createSelection( {
 				clientId: 'block-1',

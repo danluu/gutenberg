@@ -904,6 +904,51 @@ describe( 'crdt', () => {
 				expect( changes.selection?.selectionEnd.offset ).toBe( 8 );
 			} );
 
+			it( 'includes recalculated selection for nested rich text when text is inserted before cursor', () => {
+				const ytext = addNestedRichTextBlockToDoc(
+					map,
+					'block-1',
+					'Hello world'
+				);
+
+				updateSelectionHistory( doc, {
+					selectionStart: {
+						clientId: 'block-1',
+						attributeKey: 'body.0.cells.0.content',
+						offset: 5,
+					},
+					selectionEnd: {
+						clientId: 'block-1',
+						attributeKey: 'body.0.cells.0.content',
+						offset: 5,
+					},
+				} );
+
+				ytext.insert( 0, 'XXX' );
+
+				const editedRecord = {
+					title: 'CRDT Title',
+					status: 'draft',
+					blocks: [],
+				} as unknown as Post;
+
+				const changes = getPostChangesFromCRDTDoc(
+					doc,
+					editedRecord,
+					defaultSyncedProperties
+				);
+
+				expect( changes.selection ).toBeDefined();
+				expect( changes.selection?.selectionStart.offset ).toBe( 8 );
+				expect( changes.selection?.selectionStart.clientId ).toBe(
+					'block-1'
+				);
+				expect( changes.selection?.selectionStart.attributeKey ).toBe(
+					'body.0.cells.0.content'
+				);
+				expect( changes.selection?.selectionEnd.offset ).toBe( 8 );
+			} );
+
 			it( 'includes recalculated selection when text is deleted before cursor', () => {
 				const ytext = addBlockToDoc( map, 'block-1', 'Hello world' );
 
@@ -988,6 +1033,40 @@ function addBlockToDoc(
 	const attrs = new Y.Map();
 	const ytext = new Y.Text( content );
 	attrs.set( 'content', ytext );
+	block.set( 'attributes', attrs );
+	block.set( 'innerBlocks', new Y.Array() );
+	( blocks as YBlocks ).push( [ block ] );
+
+	return ytext;
+}
+
+function addNestedRichTextBlockToDoc(
+	map: YMapWrap< YPostRecord >,
+	clientId: string,
+	content: string
+): Y.Text {
+	let blocks = map.get( 'blocks' );
+	if ( ! ( blocks instanceof Y.Array ) ) {
+		blocks = new Y.Array< YBlock >();
+		map.set( 'blocks', blocks );
+	}
+
+	const block = createYMap< YBlockRecord >();
+	block.set( 'name', 'core/table' );
+	block.set( 'clientId', clientId );
+	const attrs = new Y.Map();
+	const body = new Y.Array();
+	const row = new Y.Map();
+	const cells = new Y.Array();
+	const cell = new Y.Map();
+	const ytext = new Y.Text( content );
+
+	cell.set( 'content', ytext );
+	cell.set( 'tag', 'td' );
+	cells.push( [ cell ] );
+	row.set( 'cells', cells );
+	body.push( [ row ] );
+	attrs.set( 'body', body );
 	block.set( 'attributes', attrs );
 	block.set( 'innerBlocks', new Y.Array() );
 	( blocks as YBlocks ).push( [ block ] );
