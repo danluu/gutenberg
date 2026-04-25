@@ -8,8 +8,8 @@ If two collaborators are editing the same post, an unsaved title edit can sync t
 
 The PR branch for review is [`try/rtc-title-reload-pr`](https://github.com/danluu/gutenberg/tree/try/rtc-title-reload-pr). It has the requested commit shape:
 
-- Tests: [`c7b996a1fa40d3bb76839b1f9c167c792b0940d7`](https://github.com/danluu/gutenberg/commit/c7b996a1fa40d3bb76839b1f9c167c792b0940d7)
-- Fix: [`c973f94d4ef356ebe50a942c16647cc02bc28138`](https://github.com/danluu/gutenberg/commit/c973f94d4ef356ebe50a942c16647cc02bc28138)
+- Tests: [`dcb258e2f7f01dc64c39820782c5b743a8127d66`](https://github.com/danluu/gutenberg/commit/dcb258e2f7f01dc64c39820782c5b743a8127d66)
+- Fix: [`0ff6ab371a02bacfaa57b83e0e19da9e834f3930`](https://github.com/danluu/gutenberg/commit/0ff6ab371a02bacfaa57b83e0e19da9e834f3930)
 - PR creation URL: <https://github.com/danluu/gutenberg/pull/new/try/rtc-title-reload-pr>
 
 ## User-visible Behavior
@@ -55,7 +55,13 @@ This matches the deeper instrumentation:
 
 ## Repros And Checks
 
-The committed product-level repro is the browser test [`test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts). This is the top-level repro because I could not reduce the behavior to a lower-level product repro; it requires a real reload, two editor sessions, core-data entity resolution, the sync manager, REST save response handling, and the collaboration provider.
+There are three committed repro levels on the PR branch.
+
+The lowest-level repro is in [`packages/core-data/src/test/actions.js`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/packages/core-data/src/test/actions.js). The test named `preserves the live sync title when a CRDT persistence save returns stale post fields` models the sync document as already holding the unsaved title, then runs `saveEntityRecord` with a stale REST save response. On the buggy path, the stale title is replayed into the sync document.
+
+The middle-level repro is in [`packages/core-data/src/test/resolvers.js`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/packages/core-data/src/test/resolvers.js). The test named `persistCRDTDoc does not replay a stale save response into the sync document` wires the real `persistCRDTDoc` resolver callback into the real `saveEntityRecord` action. This reproduces the exact internal path used during reload/bootstrap, without needing a browser.
+
+The top-level product repro is the browser test [`test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts). It uses two real editor pages, a real title edit, a real reload, core-data entity resolution, the sync manager, REST save response handling, and the collaboration provider.
 
 To rerun the browser repro on the PR branch:
 
@@ -68,20 +74,16 @@ npm run build -- --skip-types
 WP_BASE_URL=http://localhost:8889 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts --project=chromium
 ```
 
-To see the repro fail before the fix, check out the tests commit and run the same browser test:
+To see the repros fail before the fix, check out the tests commit and run either the unit repros or the browser repro:
 
 ```bash
-git checkout c7b996a1fa40d3bb76839b1f9c167c792b0940d7
+git checkout dcb258e2f7f01dc64c39820782c5b743a8127d66
+npm run test:unit packages/core-data/src/test/actions.js packages/core-data/src/test/resolvers.js -- --runInBand
 npm run build -- --skip-types
 WP_BASE_URL=http://localhost:8889 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts --project=chromium
 ```
 
-The fix also includes narrower unit-level guardrails:
-
-- [`packages/core-data/src/test/resolvers.js`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/packages/core-data/src/test/resolvers.js) verifies that CRDT persistence saves use the internal skip option.
-- [`packages/core-data/src/test/actions.js`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/packages/core-data/src/test/actions.js) verifies that skipped sync updates still mark the sync document as saved without applying the REST response fields.
-
-To rerun those unit checks:
+To rerun just the lower-level repros on the PR branch:
 
 ```bash
 npm run test:unit packages/core-data/src/test/actions.js packages/core-data/src/test/resolvers.js -- --runInBand
@@ -144,7 +146,7 @@ The rationale is that the sync manager still needs to mark the document as saved
 
 Minimum verification for the fix:
 
-- The browser repro fails at the tests commit and passes at the fix commit.
+- The unit repros and browser repro fail at the tests commit and pass at the fix commit.
 - The focused browser test passes after a fresh build.
 - The core-data unit tests pass.
 - Targeted JS lint passes for the touched source and test files.
@@ -162,6 +164,7 @@ WP_BASE_URL=http://localhost:8889 npm run test:e2e -- test/e2e/specs/editor/coll
 
 - Reality assessment: real production bug
 - False-positive assessment: not a false positive
-- Lowest confirmed behavior-level repro: browser/e2e
+- Lowest automated repro: core-data action/sync unit test
+- Lowest product behavior repro: browser/e2e
 - Root cause: automatic CRDT persistence save replays a stale full REST save response into the live sync document
 - Strongest direct introduction candidate: [PR #75841](https://github.com/WordPress/gutenberg/pull/75841)
