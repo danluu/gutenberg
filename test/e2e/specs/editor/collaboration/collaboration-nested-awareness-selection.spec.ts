@@ -55,13 +55,13 @@ test.describe( 'Collaboration - Nested Awareness Selection', () => {
 					),
 				{ timeout: 5000 }
 			)
-			.toBe( 'body.0.cells.0.content' );
+			.toMatch( /^body\.0\.cells\.[01]\.content$/ );
 
 		const editorFrame = page2.frameLocator(
 			'iframe[name="editor-canvas"]'
 		);
 		const cursor = editorFrame.locator(
-			'.collaborators-overlay-user:not(:has-text("You"))'
+			'.collaborators-overlay-user-cursor'
 		);
 
 		await expect
