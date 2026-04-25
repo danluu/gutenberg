@@ -55,28 +55,36 @@ This matches the deeper instrumentation:
 
 ## Repros And Checks
 
+There are two relevant remote branches:
+
+- The PR branch is [`try/rtc-title-reload-pr`](https://github.com/danluu/gutenberg/tree/try/rtc-title-reload-pr). It contains the minimal tests intended for review plus the proposed fix.
+- The explanation/diagnostic branch is [`try/rtc-title-reload`](https://github.com/danluu/gutenberg/tree/try/rtc-title-reload). It contains this writeup and broader investigation artifacts. It is not the PR branch.
+
+If you are reading this file from the explanation/diagnostic branch, do not expect every PR test path below to exist in that checkout. Fetch and switch to the PR branch before running the PR repro commands.
+
 There are three committed repro levels on the PR branch.
 
 The lowest-level repro is in [`packages/core-data/src/test/actions.js`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/packages/core-data/src/test/actions.js). The test named `preserves the live sync title when a CRDT persistence save returns stale post fields` models the sync document as already holding the unsaved title, then runs `saveEntityRecord` with a stale REST save response. On the buggy path, the stale title is replayed into the sync document.
 
 The middle-level repro is in [`packages/core-data/src/test/resolvers.js`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/packages/core-data/src/test/resolvers.js). The test named `persistCRDTDoc does not replay a stale save response into the sync document` wires the real `persistCRDTDoc` resolver callback into the real `saveEntityRecord` action. This reproduces the exact internal path used during reload/bootstrap, without needing a browser.
 
-The top-level product repro is the browser test [`test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts). It uses two real editor pages, a real title edit, a real reload, core-data entity resolution, the sync manager, REST save response handling, and the collaboration provider.
+The top-level product repro is the browser test [`test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload-pr/test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts). It is committed to the PR branch. It uses two real editor pages, a real title edit, a real reload, core-data entity resolution, the sync manager, REST save response handling, and the collaboration provider.
 
-To rerun the browser repro on the PR branch:
+To rerun the browser repro on the PR branch, start from a normal Gutenberg checkout and switch to the PR branch first:
 
 ```bash
 git fetch danluu try/rtc-title-reload-pr
-git switch try/rtc-title-reload-pr
+git switch --detach FETCH_HEAD
 npm install
 npx wp-env --config .wp-env.test.json start
 npm run build -- --skip-types
 WP_BASE_URL=http://localhost:8889 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload.spec.ts --project=chromium
 ```
 
-To see the repros fail before the fix, check out the tests commit and run either the unit repros or the browser repro:
+To see the PR repros fail before the fix, check out the tests-only commit from the PR branch and run either the unit repros or the browser repro:
 
 ```bash
+git fetch danluu try/rtc-title-reload-pr
 git checkout dcb258e2f7f01dc64c39820782c5b743a8127d66
 npm run test:unit packages/core-data/src/test/actions.js packages/core-data/src/test/resolvers.js -- --runInBand
 npm run build -- --skip-types
@@ -89,7 +97,18 @@ To rerun just the lower-level repros on the PR branch:
 npm run test:unit packages/core-data/src/test/actions.js packages/core-data/src/test/resolvers.js -- --runInBand
 ```
 
-The audit branch also contains a broader diagnostic repro suite in [`collaboration-title-reload-repro.spec.ts`](../../../../test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts). That file is intentionally not part of the PR branch; it contains exploratory checks that are useful for investigation but too broad for the small PR.
+The explanation/diagnostic branch also contains a broader diagnostic browser suite in [`test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts`](https://github.com/danluu/gutenberg/blob/try/rtc-title-reload/test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts). That file is intentionally not part of the PR branch; it contains exploratory checks that are useful for investigation but too broad for the small PR.
+
+To run the diagnostic browser suite that is not in the PR, switch to the explanation/diagnostic branch first:
+
+```bash
+git fetch danluu try/rtc-title-reload
+git switch --detach FETCH_HEAD
+npm install
+npx wp-env --config .wp-env.test.json start
+npm run build -- --skip-types
+WP_BASE_URL=http://localhost:8889 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts --project=chromium
+```
 
 ## Environment Used
 
