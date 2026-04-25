@@ -10,6 +10,12 @@ Real product bug. The HTTP polling sync server updated awareness with a whole-ro
 -   Fuzzer evidence: `phpunit/tests/collaboration/wpHttpPollingSyncServer.php`.
 -   Failure signature: "Awareness read-modify-write can lose completed client states."
 
+## Introduced
+
+The vulnerable awareness read-modify-write path was introduced in Gutenberg by [WordPress/gutenberg#74564](https://github.com/WordPress/gutenberg/pull/74564), "Real-time collaboration: Add default HTTP polling sync provider", merged on January 28, 2026. The relevant commit is [`48ce44dac7981eb730079563a3a2975b89840fac`](https://github.com/WordPress/gutenberg/commit/48ce44dac7981eb730079563a3a2975b89840fac), which added `Gutenberg_HTTP_Polling_Sync_Server::process_awareness_update()` with the non-atomic `get_awareness_state()` → PHP merge → `set_awareness_state()` sequence.
+
+The same behavior moved into the current `lib/compat/wordpress-7.0/` path in [WordPress/gutenberg#75366](https://github.com/WordPress/gutenberg/pull/75366), "Real-time collaboration: Move PHP code to compat / backports directory", merged on February 13, 2026. That PR was a relocation/backport step rather than the original introduction of the race; it linked the Gutenberg compat move to the WordPress Core backport proposal [WordPress/wordpress-develop#10894](https://github.com/WordPress/wordpress-develop/pull/10894).
+
 ## Baseline Reproduction
 
 I reproduced the failure against the known-fixes validation worktree, not raw `try/fuzz`, to avoid masking from older RTC bugs:
