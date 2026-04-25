@@ -672,14 +672,151 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 * @param array<string, mixed>|null $awareness_update Awareness state sent by the client.
 		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
 		 */
-	private function process_awareness_update( string $room, int $client_id, ?array $awareness_update ): array {
-			return $this->storage->update_awareness_state(
-				$room,
+		private function process_awareness_update( string $room, int $client_id, ?array $awareness_update ): array {
+			$current_time = time();
+			$wp_user_id   = get_current_user_id();
+
+			if ( method_exists( $this->storage, 'update_awareness_state' ) ) {
+				$method = new ReflectionMethod( $this->storage, 'update_awareness_state' );
+				if ( 7 <= $method->getNumberOfParameters() ) {
+					return $this->storage->update_awareness_state(
+						$room,
+						$client_id,
+						$awareness_update,
+						$current_time,
+						$wp_user_id,
+						self::AWARENESS_TIMEOUT,
+						function ( array $existing_awareness, int $merge_client_id, ?array $merge_awareness_update, int $merge_current_time, int $merge_wp_user_id, int $merge_timeout ): array {
+							return $this->merge_awareness_update(
+								$existing_awareness,
+								$merge_client_id,
+								$merge_awareness_update,
+								$merge_current_time,
+								$merge_wp_user_id,
+								$merge_timeout
+							);
+						}
+					);
+				}
+			}
+
+			$updated_awareness = $this->merge_awareness_update(
+				$this->storage->get_awareness_state( $room ),
 				$client_id,
 				$awareness_update,
-				time(),
-				get_current_user_id(),
+				$current_time,
+				$wp_user_id,
 				self::AWARENESS_TIMEOUT
+			);
+
+			// This action can fail, but it shouldn't fail the entire request.
+			$this->storage->set_awareness_state( $room, $updated_awareness );
+
+			return $this->awareness_entries_to_response( $updated_awareness );
+		}
+
+		/**
+		 * Merges one client's awareness update into an existing awareness list.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<int, mixed>          $existing_awareness Existing awareness entries.
+		 * @param int                       $client_id          Client identifier.
+		 * @param array<string, mixed>|null $awareness_update   Awareness state sent by the client, or null to disconnect.
+		 * @param int                       $current_time       Current Unix timestamp.
+		 * @param int                       $wp_user_id         WordPress user ID for this client.
+		 * @param int                       $timeout            Awareness timeout in seconds.
+		 * @return array<int, array{client_id: int, state: array<string, mixed>, updated_at: int, wp_user_id: int}> Updated awareness entries.
+		 */
+		private function merge_awareness_update( array $existing_awareness, int $client_id, ?array $awareness_update, int $current_time, int $wp_user_id, int $timeout ): array {
+			$updated_awareness   = array();
+			$previous_entered_at = null;
+
+			foreach ( $existing_awareness as $entry ) {
+				if ( ! $this->is_awareness_entry( $entry ) ) {
+					continue;
+				}
+
+				$entry = $this->normalize_stored_awareness_entry( $entry );
+				if ( null === $entry ) {
+					continue;
+				}
+
+				$entry_client_id = (int) $entry['client_id'];
+				if ( $client_id === $entry_client_id ) {
+					$previous_entered_at = $entry['state']['collaboratorInfo']['enteredAt'];
+					continue;
+				}
+				if ( $current_time - (int) $entry['updated_at'] >= $timeout ) {
+					continue;
+				}
+
+				$updated_awareness[] = $entry;
+			}
+
+			if ( null !== $awareness_update ) {
+				$state = $this->normalize_awareness_update(
+					$awareness_update,
+					$wp_user_id,
+					$previous_entered_at
+				);
+
+				if ( null !== $state ) {
+					$updated_awareness[] = array(
+						'client_id'  => $client_id,
+						'state'      => $state,
+						'updated_at' => $current_time,
+						'wp_user_id' => $wp_user_id,
+					);
+				}
+			}
+
+			return $updated_awareness;
+		}
+
+		/**
+		 * Converts stored awareness entries to the REST response shape.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<int, array{client_id: int, state: array<string, mixed>}> $awareness Awareness entries.
+		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
+		 */
+		private function awareness_entries_to_response( array $awareness ): array {
+			$response = array();
+			foreach ( $awareness as $entry ) {
+				$response[ $entry['client_id'] ] = $entry['state'];
+			}
+
+			return $response;
+		}
+
+		/**
+		 * Checks whether a value is an awareness entry.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param mixed $entry Potential awareness entry.
+		 * @return bool Whether the value is an awareness entry.
+		 */
+		private function is_awareness_entry( $entry ): bool {
+			return is_array( $entry ) && isset( $entry['client_id'], $entry['state'], $entry['updated_at'], $entry['wp_user_id'] );
+		}
+
+		/**
+		 * Normalizes an awareness entry's scalar fields.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<string, mixed> $entry Awareness entry.
+		 * @return array{client_id: int, state: array<string, mixed>, updated_at: int, wp_user_id: int} Normalized entry.
+		 */
+		private function normalize_awareness_entry( array $entry ): array {
+			return array(
+				'client_id'  => (int) $entry['client_id'],
+				'state'      => is_array( $entry['state'] ) ? $entry['state'] : array(),
+				'updated_at' => (int) $entry['updated_at'],
+				'wp_user_id' => (int) $entry['wp_user_id'],
 			);
 		}
 

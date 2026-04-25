@@ -167,9 +167,10 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 		 * @param int                       $current_time     Current Unix timestamp.
 		 * @param int                       $wp_user_id       WordPress user ID for this client.
 		 * @param int                       $timeout          Awareness timeout in seconds.
+		 * @param callable|null             $merge_callback   Optional room-specific merge callback.
 		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
 		 */
-		public function update_awareness_state( string $room, int $client_id, ?array $awareness_update, int $current_time, int $wp_user_id, int $timeout ): array {
+		public function update_awareness_state( string $room, int $client_id, ?array $awareness_update, int $current_time, int $wp_user_id, int $timeout, ?callable $merge_callback = null ): array {
 			global $wpdb;
 
 			$lock_name     = 'wp_sync_awareness_' . md5( $room );
@@ -178,7 +179,14 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 			);
 
 			if ( ! $lock_acquired ) {
-				$awareness = $this->merge_awareness_update(
+				$awareness = null === $merge_callback ? $this->merge_awareness_update(
+					$this->get_awareness_state( $room ),
+					$client_id,
+					$awareness_update,
+					$current_time,
+					$wp_user_id,
+					$timeout
+				) : $merge_callback(
 					$this->get_awareness_state( $room ),
 					$client_id,
 					$awareness_update,
@@ -190,7 +198,14 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 			}
 
 			try {
-				$awareness = $this->merge_awareness_update(
+				$awareness = null === $merge_callback ? $this->merge_awareness_update(
+					$this->get_awareness_state( $room ),
+					$client_id,
+					$awareness_update,
+					$current_time,
+					$wp_user_id,
+					$timeout
+				) : $merge_callback(
 					$this->get_awareness_state( $room ),
 					$client_id,
 					$awareness_update,
