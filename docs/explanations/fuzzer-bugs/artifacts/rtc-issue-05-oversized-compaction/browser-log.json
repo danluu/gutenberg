@@ -1,0 +1,374 @@
+{
+	"modalPage": "A",
+	"maxCompactionUpdateDataLength": 1669920,
+	"statuses": [
+		200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200,
+		400, 200, 400, 200, 200, 400, 200, 200, 200, 400, 200, 200, 200, 200,
+		200, 200, 200, 200, 400
+	],
+	"syncTraffic": [
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 1220,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 26876,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 26768,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 889432,
+			"compactionUpdateDataLengths": [ 889432 ]
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 26768,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 1643004,
+			"compactionUpdateDataLengths": [ 1643004 ]
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 400
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 1669920,
+			"compactionUpdateDataLengths": [ 1669920 ]
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 400
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 1669920,
+			"compactionUpdateDataLengths": [ 1669920 ]
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 400
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 1669920,
+			"compactionUpdateDataLengths": [ 1669920 ]
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 400
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": []
+		},
+		{
+			"label": "B",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 200
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 1669920,
+			"compactionUpdateDataLengths": [ 1669920 ]
+		},
+		{
+			"label": "A",
+			"maxUpdateDataLength": 0,
+			"compactionUpdateDataLengths": [],
+			"status": 400
+		}
+	]
+}
