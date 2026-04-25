@@ -206,24 +206,41 @@ if ( ! class_exists( 'Gutenberg_Sync_Awareness_Merging_Storage' ) ) {
 		 * @return array<int, mixed> Awareness entries with later completed states preserved.
 		 */
 		private function preserve_entries_completed_after_read( array $latest_awareness, array $read_awareness, array $next_awareness ): array {
-			$read_client_ids   = $this->awareness_client_ids( $read_awareness );
-			$next_by_client_id = $this->awareness_entries_by_client_id( $next_awareness );
-			$current_timestamp = time();
+			$read_by_client_id   = $this->awareness_entries_by_client_id( $read_awareness );
+			$latest_by_client_id = $this->awareness_entries_by_client_id( $latest_awareness );
+			$next_by_client_id   = $this->awareness_entries_by_client_id( $next_awareness );
+			$current_timestamp   = time();
 
-			foreach ( $latest_awareness as $entry ) {
-				if ( ! $this->is_awareness_entry( $entry ) ) {
+			foreach ( $next_by_client_id as $client_id => $entry ) {
+				if (
+					! isset( $read_by_client_id[ $client_id ] ) ||
+					! $this->awareness_entries_match( $read_by_client_id[ $client_id ], $entry )
+				) {
 					continue;
 				}
 
-				$client_id = (int) $entry['client_id'];
-				if ( isset( $read_client_ids[ $client_id ] ) || isset( $next_by_client_id[ $client_id ] ) ) {
-					continue;
-				}
-				if ( $current_timestamp - (int) $entry['updated_at'] >= WP_HTTP_Polling_Sync_Server::AWARENESS_TIMEOUT ) {
+				if ( ! isset( $latest_by_client_id[ $client_id ] ) ) {
+					unset( $next_by_client_id[ $client_id ] );
 					continue;
 				}
 
-				$next_by_client_id[ $client_id ] = $this->normalize_awareness_entry( $entry );
+				if ( $this->is_awareness_entry_expired( $latest_by_client_id[ $client_id ], $current_timestamp, WP_HTTP_Polling_Sync_Server::AWARENESS_TIMEOUT ) ) {
+					unset( $next_by_client_id[ $client_id ] );
+					continue;
+				}
+
+				$next_by_client_id[ $client_id ] = $latest_by_client_id[ $client_id ];
+			}
+
+			foreach ( $latest_by_client_id as $client_id => $entry ) {
+				if ( isset( $read_by_client_id[ $client_id ] ) || isset( $next_by_client_id[ $client_id ] ) ) {
+					continue;
+				}
+				if ( $this->is_awareness_entry_expired( $entry, $current_timestamp, WP_HTTP_Polling_Sync_Server::AWARENESS_TIMEOUT ) ) {
+					continue;
+				}
+
+				$next_by_client_id[ $client_id ] = $entry;
 			}
 
 			return array_values( $next_by_client_id );
@@ -272,22 +289,6 @@ if ( ! class_exists( 'Gutenberg_Sync_Awareness_Merging_Storage' ) ) {
 		}
 
 		/**
-		 * Converts awareness entries to an ID lookup.
-		 *
-		 * @param array<int, mixed> $awareness Awareness entries.
-		 * @return array<int, true> Map of client IDs to true.
-		 */
-		private function awareness_client_ids( array $awareness ): array {
-			$client_ids = array();
-			foreach ( $awareness as $entry ) {
-				if ( $this->is_awareness_entry( $entry ) ) {
-					$client_ids[ (int) $entry['client_id'] ] = true;
-				}
-			}
-			return $client_ids;
-		}
-
-		/**
 		 * Converts awareness entries to a client-ID keyed map.
 		 *
 		 * @param array<int, mixed> $awareness Awareness entries.
@@ -301,6 +302,29 @@ if ( ! class_exists( 'Gutenberg_Sync_Awareness_Merging_Storage' ) ) {
 				}
 			}
 			return $by_client_id;
+		}
+
+		/**
+		 * Checks whether two awareness entries describe the same stored state.
+		 *
+		 * @param array<string, mixed> $left  First awareness entry.
+		 * @param array<string, mixed> $right Second awareness entry.
+		 * @return bool Whether the entries match.
+		 */
+		private function awareness_entries_match( array $left, array $right ): bool {
+			return $this->normalize_awareness_entry( $left ) === $this->normalize_awareness_entry( $right );
+		}
+
+		/**
+		 * Checks whether an awareness entry is expired.
+		 *
+		 * @param array<string, mixed> $entry             Awareness entry.
+		 * @param int                  $current_timestamp Current Unix timestamp.
+		 * @param int                  $timeout           Awareness timeout in seconds.
+		 * @return bool Whether the entry has expired.
+		 */
+		private function is_awareness_entry_expired( array $entry, int $current_timestamp, int $timeout ): bool {
+			return $current_timestamp - (int) $entry['updated_at'] >= $timeout;
 		}
 
 		/**
