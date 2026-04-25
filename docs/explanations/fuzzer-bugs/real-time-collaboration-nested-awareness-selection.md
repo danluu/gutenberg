@@ -10,7 +10,7 @@ The fuzzer selection state is valid for the CRDT representation: Gutenberg store
 
 Source fuzzer: `/Users/danluu/dev/fuzz/gutenberg-try-fuzz/packages/core-data/src/awareness/test/post-editor-awareness.ts`
 
-Repro branch: `danluu/rtc-issue-06-nested-awareness-repro`
+Repro branch: `danluu/realistic-browser-repro`
 
 Command:
 
@@ -53,17 +53,37 @@ Helper misuse: ruled out. The reproducer uses `Y.createRelativePositionFromTypeI
 
 Environment contamination and race injection: ruled out. The failure is deterministic in a single `Y.Doc` with no async sync provider and no injected races.
 
-Known-fixed bug masking: ruled out. This reproduces against trunk plus the known awareness/path fixes already present in this workspace. The older rich-text offset fix is not involved because the offset is correct.
+Known-fixed bug masking: ruled out. This reproduces against trunk plus the table-cell selection-path support in this workspace, but without the awareness conversion fix. The older rich-text offset fix is not involved because the offset is correct.
 
-## Browser Reachability
+## Browser Repro
 
-A pure realistic-user Playwright repro for this exact failure was not produced.
+Test: `test/e2e/specs/editor/collaboration/collaboration-nested-awareness-selection.spec.ts`
 
-The blocker is product reachability, not test harness instability: current `getSelectionState()` only creates awareness cursor positions when `selection.attributeKey` points to a top-level block attribute whose CRDT value is a `Y.Text`. Core nested-rich-text controls, such as table cells, do not expose a nested attribute path through block-editor selection state. In `core/table`, cell `RichText` controls do not pass an `identifier`, so the selection uses the RichText instance symbol instead of a serializable `attributeKey`. `getCursorPosition()` then returns `null` before any nested `Y.Text` relative position is created.
+This is a browser-level reproduction with user actions:
 
-Highest realistic layer reached: deterministic unit/fuzzer reproducer at the production awareness conversion method, with real Yjs relative positions and the production block path resolver. A separate user-facing issue likely exists for awareness not being generated for table-cell selections, but that is a broader selection-path feature gap and not this conversion failure.
+- Create a draft post containing a `core/table` block.
+- Open a collaborative editing session for that post.
+- In user 1's editor, click a real contenteditable table cell and press `ArrowRight`.
+- Assert that block-editor selection state exposes a nested rich-text attribute key such as `body.0.cells.0.content`.
+- In user 2's editor, wait for the remote collaborator cursor line.
 
-Video: not produced, because there is no isolated top-level user-action path to this specific nested-`Y.Text` conversion failure in the current editor.
+On the repro branch, the test reaches the nested attribute path and then fails because no `.collaborators-overlay-user-cursor` appears for user 2. That isolates the original conversion bug: the sender now produces a nested `Y.Text` relative position from a realistic table-cell selection, while the receiver still cannot walk from that nested `Y.Text` back to the containing block.
+
+The browser reachability prerequisite is commit `3e7ae5a6997` (`Emit nested table cell awareness selections`). It gives table-cell `RichText` controls a stable nested `identifier` and teaches `getCursorPosition()` to resolve dot-path attribute keys into nested CRDT `Y.Text` instances. The conversion fix is intentionally absent from the repro branch.
+
+Command used locally from `test/e2e`:
+
+```bash
+WP_BASE_URL=http://localhost:8902 npm exec --workspace @wordpress/e2e-tests-playwright -- playwright test --config ../../.context/playwright-8902.config.ts editor/collaboration/collaboration-nested-awareness-selection.spec.ts --project=chromium
+```
+
+The alternate `wp-env` config in `.context/wp-env.e2e-8902.json` uses port `8902` only because the default local `8888`/`8889` ports were already occupied by other workspaces.
+
+Failing browser artifact:
+
+```text
+/Users/danluu/conductor/workspaces/gutenberg-v1/louisville/.context/artifacts/rtc-issue-06/nested-awareness-browser-repro-failing.webm
+```
 
 ## Fix Plan
 
@@ -74,4 +94,7 @@ PR branch: `danluu/rtc-issue-06-nested-awareness-pr`
 Commits:
 
 - `5f337883a9b` Add nested awareness selection tests
+- `35c58f9ee75` Add browser repro for nested awareness selection
+- `4f12e11bcb9` Emit nested table cell awareness selections
+- `379be64280b` Stabilize nested awareness browser repro
 - `e334674e9c8` Resolve nested awareness selection blocks
