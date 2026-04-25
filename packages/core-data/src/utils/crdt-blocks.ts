@@ -61,6 +61,14 @@ export type YBlocks = Y.Array< YBlock >;
 // Attribute values will be typed as the union of `Y.Text` and `unknown`.
 export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 
+export interface RichTextCursorSelection {
+	attributeKey: string;
+	clientId: string;
+	offset: number;
+}
+
+export type MergeCursorPosition = number | RichTextCursorSelection | null;
+
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
 
 /**
@@ -388,7 +396,7 @@ function createNewYBlock( block: Block ): YBlock {
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
-	cursorPosition: number | null
+	cursorPosition: MergeCursorPosition
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -501,6 +509,7 @@ export function mergeCrdtBlocks(
 							if ( isAttributeChanged ) {
 								updateYBlockAttribute(
 									block.name,
+									block.clientId,
 									attributeName,
 									attributeValue,
 									currentAttributes,
@@ -613,12 +622,14 @@ function areArrayElementsEqual(
  * @param newValue       The new plain array to merge into the Y.Array.
  * @param schema         The attribute schema (must have `query`).
  * @param cursorPosition The local cursor position for rich-text delta merges.
+ * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
  */
 function mergeYArray(
 	yArray: Y.Array< unknown >,
 	newValue: unknown[],
 	schema: BlockAttributeSchema,
-	cursorPosition: number | null
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope
 ): void {
 	if ( ! schema.query ) {
 		return;
@@ -665,7 +676,8 @@ function mergeYArray(
 				currentElement,
 				newElement,
 				query,
-				cursorPosition
+				cursorPosition,
+				cursorScope
 			);
 		} else {
 			// Element is the wrong type (e.g. partial migration) or the
@@ -722,13 +734,15 @@ function mergeYArray(
  * @param yMap           The Y.Map that owns this entry.
  * @param key            The key of this entry in the Y.Map.
  * @param cursorPosition The local cursor position for rich-text delta merges.
+ * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
  */
 function mergeYValue(
 	schema: BlockAttributeSchema | undefined,
 	newVal: unknown,
 	yMap: Y.Map< unknown >,
 	key: string,
-	cursorPosition: number | null
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope
 ): void {
 	const currentVal = yMap.get( key );
 	if (
@@ -736,21 +750,31 @@ function mergeYValue(
 		typeof newVal === 'string' &&
 		currentVal instanceof Y.Text
 	) {
-		mergeRichTextUpdate( currentVal, newVal, cursorPosition );
+		mergeRichTextUpdate(
+			currentVal,
+			newVal,
+			resolveRichTextCursorPosition( cursorPosition, cursorScope )
+		);
 	} else if (
 		schema?.type === 'array' &&
 		schema.query &&
 		Array.isArray( newVal ) &&
 		currentVal instanceof Y.Array
 	) {
-		mergeYArray( currentVal, newVal, schema, cursorPosition );
+		mergeYArray( currentVal, newVal, schema, cursorPosition, cursorScope );
 	} else if (
 		schema?.type === 'object' &&
 		schema.query &&
 		isRecord( newVal ) &&
 		currentVal instanceof Y.Map
 	) {
-		mergeYMapValues( currentVal, newVal, schema.query, cursorPosition );
+		mergeYMapValues(
+			currentVal,
+			newVal,
+			schema.query,
+			cursorPosition,
+			cursorScope
+		);
 	} else {
 		const newYValue = createYValueFromSchema( schema, newVal );
 
@@ -773,15 +797,24 @@ function mergeYValue(
  * @param newObj         The new plain object to merge into the Y.Map.
  * @param query          The query schema defining property types.
  * @param cursorPosition The local cursor position for rich-text delta merges.
+ * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
  */
 function mergeYMapValues(
 	yMap: Y.Map< unknown >,
 	newObj: Record< string, unknown >,
 	query: Record< string, BlockAttributeSchema >,
-	cursorPosition: number | null
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope
 ): void {
 	for ( const [ key, newVal ] of Object.entries( newObj ) ) {
-		mergeYValue( query[ key ], newVal, yMap, key, cursorPosition );
+		mergeYValue(
+			query[ key ],
+			newVal,
+			yMap,
+			key,
+			cursorPosition,
+			cursorScope
+		);
 	}
 
 	// Delete properties absent from the incoming object.
@@ -796,6 +829,7 @@ function mergeYMapValues(
  * Update a single attribute on a Yjs block attributes map (currentAttributes).
  *
  * @param blockName         The block type name, e.g. 'core/paragraph'.
+ * @param blockClientId     The local clientId for the block being merged.
  * @param attributeName     The name of the attribute to update, e.g. 'content'.
  * @param attributeValue    The new value for the attribute.
  * @param currentAttributes The Y.Map holding the block's current attributes.
@@ -803,10 +837,11 @@ function mergeYMapValues(
  */
 function updateYBlockAttribute(
 	blockName: string,
+	blockClientId: string | undefined,
 	attributeName: string,
 	attributeValue: unknown,
 	currentAttributes: YBlockAttributes,
-	cursorPosition: number | null
+	cursorPosition: MergeCursorPosition
 ): void {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
 
@@ -815,8 +850,35 @@ function updateYBlockAttribute(
 		attributeValue,
 		currentAttributes,
 		attributeName,
-		cursorPosition
+		cursorPosition,
+		{
+			attributeName,
+			blockClientId,
+		}
 	);
+}
+
+interface RichTextCursorScope {
+	attributeName: string;
+	blockClientId: string | undefined;
+}
+
+function resolveRichTextCursorPosition(
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope
+): number | null {
+	if ( cursorPosition === null || typeof cursorPosition === 'number' ) {
+		return cursorPosition;
+	}
+
+	if (
+		cursorPosition.clientId !== cursorScope.blockClientId ||
+		cursorPosition.attributeKey !== cursorScope.attributeName
+	) {
+		return null;
+	}
+
+	return cursorPosition.offset;
 }
 
 // Cached block attribute types, populated once from getBlockTypes().
