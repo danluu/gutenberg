@@ -60,6 +60,10 @@ interface EntityState {
 	ydoc: CRDTDoc;
 }
 
+interface PersistedCrdtDocHydrationResult {
+	invalidatedChanges: Partial< ObjectData > | null;
+}
+
 /**
  * Get the entity ID for the given object type and object ID.
  *
@@ -139,6 +143,92 @@ export function createSyncManager( debug = false ): SyncManager {
 			...context,
 			entityId,
 		} );
+	}
+
+	function applyCRDTDocChangesAndPersist(
+		entityState: EntityState,
+		entityId: EntityID,
+		changes: Partial< ObjectData >
+	): void {
+		const { handlers, syncConfig, ydoc } = entityState;
+
+		ydoc.transact( () => {
+			log( 'applyPersistedCrdtDoc', 'applying changes', entityId, {
+				changedKeys: Object.keys( changes ),
+			} );
+			syncConfig.applyChangesToCRDTDoc( ydoc, changes );
+			handlers.persistCRDTDoc();
+		}, LOCAL_SYNC_MANAGER_ORIGIN );
+	}
+
+	function hydratePersistedCrdtDoc(
+		entityState: EntityState,
+		entityId: EntityID,
+		record: ObjectData,
+		serialized?: string | null
+	): PersistedCrdtDocHydrationResult | null {
+		const {
+			syncConfig: { getChangesFromCRDTDoc, getPersistedCRDTDoc },
+			ydoc: targetDoc,
+		} = entityState;
+
+		// Get the persisted CRDT document, if it exists.
+		const persisted = serialized ?? getPersistedCRDTDoc?.( record );
+		const tempDoc = persisted ? deserializeCrdtDoc( persisted ) : null;
+
+		if ( ! tempDoc ) {
+			log( 'applyPersistedCrdtDoc', 'no persisted doc', entityId );
+			return null;
+		}
+
+		// Apply the persisted document to the current document as a single update.
+		// This is done even if the persisted document has been invalidated. This
+		// prevents a newly joining peer (or refreshing user) from re-initializing
+		// the CRDT document (the "initialization problem").
+		//
+		// IMPORTANT: Do not wrap this in a transaction with the local origin. It
+		// effectively advances the state vector for the current client, which causes
+		// Yjs to think that another client is using this client ID.
+		const update = Y.encodeStateAsUpdateV2( tempDoc );
+		Y.applyUpdateV2( targetDoc, update );
+
+		// Compute the differences between the persisted doc and the current
+		// record. This can happen when:
+		//
+		// 1. The server makes updates on save that mutate the entity. Example: On
+		//    initial save, the server adds the "Uncategorized" category to the
+		//    post.
+		// 2. An "out-of-band" update occurs. Example: a WP-CLI command or direct
+		//    database update mutates the entity.
+		// 3. Unsaved changes are synced from a peer _before_ this code runs. We
+		//    can't control when (or if) remote changes are synced, so this is a
+		//    race condition.
+		const invalidations = getChangesFromCRDTDoc( tempDoc, record );
+		const invalidatedKeys = Object.keys( invalidations );
+
+		// Destroy the temporary document to prevent leaks.
+		tempDoc.destroy();
+
+		if ( 0 === invalidatedKeys.length ) {
+			log( 'applyPersistedCrdtDoc', 'valid persisted doc', entityId );
+			// The persisted CRDT document is valid. There are no updates to apply.
+			return { invalidatedChanges: null };
+		}
+
+		log( 'applyPersistedCrdtDoc', 'invalidated keys', entityId, {
+			invalidatedKeys,
+		} );
+
+		// Use the invalidated keys to get the updated values from the entity.
+		return {
+			invalidatedChanges: invalidatedKeys.reduce(
+				( acc, key ) =>
+					Object.assign( acc, {
+						[ key ]: record[ key ],
+					} ),
+				{}
+			),
+		};
 	}
 
 	/**
@@ -268,6 +358,17 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		entityStates.set( entityId, entityState );
 
+		const serializedPersistedDoc =
+			syncConfig.getPersistedCRDTDoc?.( record );
+		const persistedHydrationResult = serializedPersistedDoc
+			? hydratePersistedCrdtDoc(
+					entityState,
+					entityId,
+					record,
+					serializedPersistedDoc
+			  )
+			: null;
+
 		// Create providers for the given entity and its Yjs document.
 		log( 'loadEntity', 'connecting', entityId );
 		const providerResults = await Promise.all(
@@ -294,7 +395,17 @@ export function createSyncManager( debug = false ): SyncManager {
 		initializeYjsDoc( ydoc );
 
 		// Get and apply the persisted CRDT document, if it exists.
-		internal.applyPersistedCrdtDoc( objectType, objectId, record );
+		if ( persistedHydrationResult ) {
+			if ( persistedHydrationResult.invalidatedChanges ) {
+				applyCRDTDocChangesAndPersist(
+					entityState,
+					entityId,
+					persistedHydrationResult.invalidatedChanges
+				);
+			}
+		} else {
+			internal.applyPersistedCrdtDoc( objectType, objectId, record );
+		}
 	}
 
 	/**
@@ -414,7 +525,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		const entityId = getEntityId( objectType, objectId );
 		log( 'unloadEntity', 'unloading', entityId );
 		entityStates.get( entityId )?.unload();
-		updateCRDTDoc( objectType, null, {}, origin, { isSave: true } );
+		updateCRDTDoc( objectType, null, {}, LOCAL_SYNC_MANAGER_ORIGIN, {
+			isSave: true,
+		} );
 	}
 
 	/**
@@ -463,20 +576,17 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		const {
 			handlers,
-			syncConfig: {
-				applyChangesToCRDTDoc,
-				getChangesFromCRDTDoc,
-				getPersistedCRDTDoc,
-			},
+			syncConfig: { applyChangesToCRDTDoc },
 			ydoc: targetDoc,
 		} = entityState;
 
-		// Get the persisted CRDT document, if it exists.
-		const serialized = getPersistedCRDTDoc?.( record );
-		const tempDoc = serialized ? deserializeCrdtDoc( serialized ) : null;
+		const persistedHydrationResult = hydratePersistedCrdtDoc(
+			entityState,
+			entityId,
+			record
+		);
 
-		if ( ! tempDoc ) {
-			log( 'applyPersistedCrdtDoc', 'no persisted doc', entityId );
+		if ( ! persistedHydrationResult ) {
 			// Apply the current record as changes and request that the CRDT doc be
 			// persisted with the entity. The persisted CRDT doc can be created by
 			// calling `syncManager.createPersistedCRDTDoc`.
@@ -487,60 +597,13 @@ export function createSyncManager( debug = false ): SyncManager {
 			return;
 		}
 
-		// Apply the persisted document to the current document as a single update.
-		// This is done even if the persisted document has been invalidated. This
-		// prevents a newly joining peer (or refreshing user) from re-initializing
-		// the CRDT document (the "initialization problem").
-		//
-		// IMPORTANT: Do not wrap this in a transaction with the local origin. It
-		// effectively advances the state vector for the current client, which causes
-		// Yjs to think that another client is using this client ID.
-		const update = Y.encodeStateAsUpdateV2( tempDoc );
-		Y.applyUpdateV2( targetDoc, update );
-
-		// Compute the differences between the persisted doc and the current
-		// record. This can happen when:
-		//
-		// 1. The server makes updates on save that mutate the entity. Example: On
-		//    initial save, the server adds the "Uncategorized" category to the
-		//    post.
-		// 2. An "out-of-band" update occurs. Example: a WP-CLI command or direct
-		//    database update mutates the entity.
-		// 3. Unsaved changes are synced from a peer _before_ this code runs. We
-		//    can't control when (or if) remote changes are synced, so this is a
-		//    race condition.
-		const invalidations = getChangesFromCRDTDoc( tempDoc, record );
-		const invalidatedKeys = Object.keys( invalidations );
-
-		// Destroy the temporary document to prevent leaks.
-		tempDoc.destroy();
-
-		if ( 0 === invalidatedKeys.length ) {
-			log( 'applyPersistedCrdtDoc', 'valid persisted doc', entityId );
-			// The persisted CRDT document is valid. There are no updates to apply.
-			return;
+		if ( persistedHydrationResult.invalidatedChanges ) {
+			applyCRDTDocChangesAndPersist(
+				entityState,
+				entityId,
+				persistedHydrationResult.invalidatedChanges
+			);
 		}
-
-		log( 'applyPersistedCrdtDoc', 'invalidated keys', entityId, {
-			invalidatedKeys,
-		} );
-
-		// Use the invalidated keys to get the updated values from the entity.
-		const changes = invalidatedKeys.reduce(
-			( acc, key ) =>
-				Object.assign( acc, {
-					[ key ]: record[ key ],
-				} ),
-			{}
-		);
-
-		// Apply the changes and request that the updated CRDT doc be persisted with
-		// the entity. The persisted CRDT doc can be created by calling
-		// `syncManager.createPersistedCRDTDoc`.
-		targetDoc.transact( () => {
-			applyChangesToCRDTDoc( targetDoc, changes );
-			handlers.persistCRDTDoc();
-		}, LOCAL_SYNC_MANAGER_ORIGIN );
 	}
 
 	/**
