@@ -181,7 +181,7 @@ http://localhost:8899
 
 ## Fix
 
-Selection history now resolves rich-text targets in two ways:
+RTC code now resolves rich-text targets in two ways:
 
 - an explicit dot path such as `body.0.cells.0.content` must resolve directly
   to a nested `Y.Text`;
@@ -191,6 +191,15 @@ Selection history now resolves rich-text targets in two ways:
 
 If no exact or unambiguous `Y.Text` is available, selection history keeps the
 existing block-selection fallback.
+
+The resolver is shared by selection history and remote-user selection state, so
+table-cell selections are also available to collaborator cursor rendering.
+
+When a stored relative position is converted back to a WordPress selection, the
+current nested attribute path is recomputed from the resolved `Y.Text`. This
+matters for structural edits: if another row is inserted before the selected
+row, a cursor that was recorded at `body.0.cells.0.content` is restored as
+`body.1.cells.0.content` instead of pointing at the wrong cell.
 
 The Table block also now passes a nested `RichText` identifier for each cell:
 
@@ -208,15 +217,18 @@ Commands run:
 ```bash
 npm run test:unit packages/core-data/src/utils/test/block-selection-history.test.ts -- --runInBand
 npm run test:unit packages/core-data/src/utils/test/crdt.ts -- --runInBand
+npm run test:unit packages/core-data/src/utils/test/crdt-user-selections.ts -- --runInBand
 npm run test:unit packages/core-data/src/utils/test/block-selection-history.fuzz.test.ts -- --runInBand
 npm run lint:js -- packages/core-data/src/utils/block-selection-history.ts packages/core-data/src/utils/test/block-selection-history.test.ts packages/core-data/src/utils/test/crdt.ts packages/core-data/src/utils/test/block-selection-history.fuzz.test.ts
 npm run lint:js -- packages/e2e-tests/plugins/nested-rich-selection/index.js test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
 npm run lint:js -- packages/core-data/src/utils/block-selection-history.ts packages/core-data/src/utils/test/block-selection-history.test.ts packages/core-data/src/utils/test/crdt.ts packages/block-library/src/table/edit.js test/e2e/specs/editor/collaboration/collaboration-table-selection-history.spec.ts
+npm run lint:js -- packages/core-data/src/utils/block-selection-history.ts packages/core-data/src/utils/crdt-selection.ts packages/core-data/src/utils/crdt-utils.ts packages/core-data/src/utils/crdt-user-selections.ts packages/core-data/src/utils/test/block-selection-history.test.ts packages/core-data/src/utils/test/crdt-user-selections.ts packages/core-data/src/utils/test/crdt.ts packages/block-library/src/table/edit.js test/e2e/specs/editor/collaboration/collaboration-table-selection-history.spec.ts
 php -l packages/e2e-tests/plugins/nested-rich-selection.php
 npm run wp-env-test -- start --auto-port
 npm run build -- --skip-types
 WP_BASE_URL=http://localhost:8899 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
 WP_BASE_URL=http://localhost:8899 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-selection-history.spec.ts
+WP_BASE_URL=http://localhost:8899 npm run test:e2e -- test/e2e/specs/editor/blocks/table.spec.js
 ```
 
 Known-fixes baseline repro command:
