@@ -115,10 +115,44 @@ That test exercises the post-fix user behavior: an oversized document disables
 real-time collaboration, and another editor sees the standard post-lock modal.
 
 A separate exploratory top-level Playwright repro for an oversized aggregate
-sync request body exists outside this PR work. That path is related to the same
-generic `Connection lost` symptom, but it is a different limit: the full request
-body can exceed `16 MiB` even when individual updates are under the per-update
-limit. This PR targets the per-update base64 accounting mismatch.
+sync request body is pushed only to the `danluu` remote, outside this PR branch:
+<https://github.com/danluu/gutenberg/blob/try/connection-error-large-update-explanation/test/e2e/specs/editor/collaboration/collaboration-sync-body-size-connection-lost.spec.ts>.
+That path is related to the same generic `Connection lost` symptom, but it is a
+different limit: the full request body can exceed `16 MiB` even when individual
+updates are under the per-update limit. This PR targets the per-update base64
+accounting mismatch.
+
+PR-description-ready note:
+
+````md
+Additional browser-level repro, kept outside this PR:
+https://github.com/danluu/gutenberg/blob/try/connection-error-large-update-explanation/test/e2e/specs/editor/collaboration/collaboration-sync-body-size-connection-lost.spec.ts
+
+It lives only on the `danluu` remote, on branch
+`try/connection-error-large-update-explanation`. It is intentionally not part
+of this PR because the PR uses lower-level unit coverage for the per-update
+base64 limit. The browser repro demonstrates the related `Connection lost`
+symptom when one aggregate sync poll exceeds the server's `16 MiB` request-body
+limit.
+
+To run it from a clean checkout:
+
+```bash
+git fetch danluu try/connection-error-large-update-explanation
+git worktree add ../gutenberg-large-update-repro FETCH_HEAD
+cd ../gutenberg-large-update-repro
+source ~/.nvm/nvm.sh && nvm use
+npm install
+WP_ENV_PORT=8893 npm run wp-env-test start
+WP_ENV_PORT=8893 WP_BASE_URL=http://localhost:8893 npm exec \
+	--workspace @wordpress/e2e-tests-playwright -- wp-scripts test-playwright \
+	test/e2e/specs/editor/collaboration/collaboration-sync-body-size-connection-lost.spec.ts \
+	--project=chromium
+WP_ENV_PORT=8893 npm run wp-env-test stop
+```
+
+Use a different `WP_ENV_PORT` if `8893` is already occupied.
+````
 
 ## PR Contents
 
