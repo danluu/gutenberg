@@ -255,6 +255,10 @@ Branch:
 
 `danluu/audit-rtc-size-limit`
 
+PR:
+
+https://github.com/WordPress/gutenberg/pull/77674
+
 Commits:
 
 - `1b42ab1e87f` Add RTC oversized compaction regression tests
