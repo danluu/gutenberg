@@ -14,7 +14,12 @@ import { Y } from '@wordpress/sync';
 /**
  * Internal dependencies
  */
-import { createYMap, type YMapRecord, type YMapWrap } from './crdt-utils';
+import {
+	createYMap,
+	richTextOffsetToHtmlIndex,
+	type YMapRecord,
+	type YMapWrap,
+} from './crdt-utils';
 import { getCachedRichTextData } from './crdt-text';
 import { Delta } from '../sync';
 
@@ -622,7 +627,7 @@ function areArrayElementsEqual(
  * @param newValue       The new plain array to merge into the Y.Array.
  * @param schema         The attribute schema (must have `query`).
  * @param cursorPosition The local cursor position for rich-text delta merges.
- * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
+ * @param cursorScope    The block and attribute path scope for cursor hints.
  */
 function mergeYArray(
 	yArray: Y.Array< unknown >,
@@ -677,7 +682,13 @@ function mergeYArray(
 				newElement,
 				query,
 				cursorPosition,
-				cursorScope
+				{
+					...cursorScope,
+					attributePath: [
+						...cursorScope.attributePath,
+						String( left + i ),
+					],
+				}
 			);
 		} else {
 			// Element is the wrong type (e.g. partial migration) or the
@@ -734,7 +745,7 @@ function mergeYArray(
  * @param yMap           The Y.Map that owns this entry.
  * @param key            The key of this entry in the Y.Map.
  * @param cursorPosition The local cursor position for rich-text delta merges.
- * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
+ * @param cursorScope    The block and attribute path scope for cursor hints.
  */
 function mergeYValue(
 	schema: BlockAttributeSchema | undefined,
@@ -753,7 +764,7 @@ function mergeYValue(
 		mergeRichTextUpdate(
 			currentVal,
 			newVal,
-			resolveRichTextCursorPosition( cursorPosition, cursorScope )
+			resolveRichTextCursorPosition( cursorPosition, cursorScope, newVal )
 		);
 	} else if (
 		schema?.type === 'array' &&
@@ -797,7 +808,7 @@ function mergeYValue(
  * @param newObj         The new plain object to merge into the Y.Map.
  * @param query          The query schema defining property types.
  * @param cursorPosition The local cursor position for rich-text delta merges.
- * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
+ * @param cursorScope    The block and attribute path scope for cursor hints.
  */
 function mergeYMapValues(
 	yMap: Y.Map< unknown >,
@@ -807,14 +818,10 @@ function mergeYMapValues(
 	cursorScope: RichTextCursorScope
 ): void {
 	for ( const [ key, newVal ] of Object.entries( newObj ) ) {
-		mergeYValue(
-			query[ key ],
-			newVal,
-			yMap,
-			key,
-			cursorPosition,
-			cursorScope
-		);
+		mergeYValue( query[ key ], newVal, yMap, key, cursorPosition, {
+			...cursorScope,
+			attributePath: [ ...cursorScope.attributePath, key ],
+		} );
 	}
 
 	// Delete properties absent from the incoming object.
@@ -852,33 +859,45 @@ function updateYBlockAttribute(
 		attributeName,
 		cursorPosition,
 		{
-			attributeName,
+			attributePath: [ attributeName ],
 			blockClientId,
 		}
 	);
 }
 
 interface RichTextCursorScope {
-	attributeName: string;
+	attributePath: string[];
 	blockClientId: string | undefined;
+}
+
+interface DeltaWithOps {
+	ops: Parameters< Y.Text[ 'applyDelta' ] >[ 0 ];
 }
 
 function resolveRichTextCursorPosition(
 	cursorPosition: MergeCursorPosition,
-	cursorScope: RichTextCursorScope
+	cursorScope: RichTextCursorScope,
+	updatedValue: string
 ): number | null {
-	if ( cursorPosition === null || typeof cursorPosition === 'number' ) {
-		return cursorPosition;
+	if ( cursorPosition === null ) {
+		return null;
+	}
+
+	if ( typeof cursorPosition === 'number' ) {
+		return richTextOffsetToHtmlIndex( updatedValue, cursorPosition );
+	}
+
+	if ( cursorPosition.clientId !== cursorScope.blockClientId ) {
+		return null;
 	}
 
 	if (
-		cursorPosition.clientId !== cursorScope.blockClientId ||
-		cursorPosition.attributeKey !== cursorScope.attributeName
+		cursorPosition.attributeKey !== cursorScope.attributePath.join( '.' )
 	) {
 		return null;
 	}
 
-	return cursorPosition.offset;
+	return richTextOffsetToHtmlIndex( updatedValue, cursorPosition.offset );
 }
 
 // Cached block attribute types, populated once from getBlockTypes().
@@ -1008,6 +1027,39 @@ export function mergeRichTextUpdate(
 		updatedValueAsDelta,
 		cursorPosition
 	);
+	const safeDiff =
+		cursorPosition !== null &&
+		! isDeltaVerificationMatch( blockYText, deltaDiff, updatedValue )
+			? currentValueAsDelta.diff( updatedValueAsDelta )
+			: deltaDiff;
 
-	blockYText.applyDelta( deltaDiff.ops );
+	blockYText.applyDelta( safeDiff.ops );
+}
+
+/**
+ * Verify that a cursor-guided diff is safe before applying it to shared text.
+ *
+ * `diffWithCursor()` uses a cursor hint to adjust the ordinary string diff. A
+ * stale, mis-scoped, or wrong-coordinate cursor can produce a valid Delta that
+ * mutates to the wrong HTML string. Apply the candidate delta to a temporary
+ * Y.Text first so the caller can fall back to a regular diff instead of
+ * corrupting the shared rich-text value.
+ *
+ * @param blockYText    The current Y.Text before applying the candidate delta.
+ * @param delta         The candidate cursor-guided delta.
+ * @param expectedValue The exact HTML string expected after applying the delta.
+ * @return Whether the candidate delta produces the expected value.
+ */
+function isDeltaVerificationMatch(
+	blockYText: Y.Text,
+	delta: DeltaWithOps,
+	expectedValue: string
+): boolean {
+	const verificationYText = localDoc.getText( 'verification-text' );
+
+	verificationYText.delete( 0, verificationYText.length );
+	verificationYText.insert( 0, blockYText.toString() );
+	verificationYText.applyDelta( delta.ops );
+
+	return verificationYText.toString() === expectedValue;
 }
