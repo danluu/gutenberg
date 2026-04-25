@@ -30,6 +30,24 @@ if ( ! interface_exists( 'WP_Sync_Storage' ) ) {
 		public function get_awareness_state( string $room ): array;
 
 		/**
+		 * Updates one client's awareness state for a given room.
+		 *
+		 * Implementations should merge with the latest stored awareness state
+		 * atomically when concurrent requests can update the same room.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param string                    $room             Room identifier.
+		 * @param int                       $client_id        Client identifier.
+		 * @param array<string, mixed>|null $awareness_update Awareness state sent by the client, or null to disconnect.
+		 * @param int                       $current_time     Current Unix timestamp.
+		 * @param int                       $wp_user_id       WordPress user ID for this client.
+		 * @param int                       $timeout          Awareness timeout in seconds.
+		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
+		 */
+		public function update_awareness_state( string $room, int $client_id, ?array $awareness_update, int $current_time, int $wp_user_id, int $timeout ): array;
+
+		/**
 		 * Gets the current cursor for a given room. This should return a monotonically
 		 * increasing integer that represents the last update that was returned for the
 		 * room during the current request. This allows clients to retrieve updates
