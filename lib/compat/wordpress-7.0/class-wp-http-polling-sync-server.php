@@ -784,6 +784,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 */
 		private function awareness_entries_to_response( array $awareness ): array {
 			$response = array();
+
 			foreach ( $awareness as $entry ) {
 				$response[ $entry['client_id'] ] = $entry['state'];
 			}
