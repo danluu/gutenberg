@@ -210,7 +210,34 @@ lands at the expected location:
 XXXHello! world
 ```
 
-The local browser videos are:
+Normal-user-action videos for each distinct bug are:
+
+```text
+/Users/danluu/conductor/workspaces/gutenberg-v1/seattle/.context/repro-artifacts/bug1-selection-history-top-level-lookup-normal-actions.webm
+/Users/danluu/conductor/workspaces/gutenberg-v1/seattle/.context/repro-artifacts/bug2-table-cell-missing-identifier-normal-actions.webm
+/Users/danluu/conductor/workspaces/gutenberg-v1/seattle/.context/repro-artifacts/bug3-remote-cursor-nested-table-cell-normal-actions.webm
+/Users/danluu/conductor/workspaces/gutenberg-v1/seattle/.context/repro-artifacts/bug4-stale-table-cell-path-after-row-insert-normal-actions.webm
+```
+
+Bug 1 disables only the nested resolver in selection history. The Table cell
+has `body.0.cells.0.content`, but User A's cursor stays at offset `5` after
+User B types before it, and `!` lands at `XXXHe!llo world`.
+
+Bug 2 disables only the Table cell `RichText` identifier. User A's selection
+has offset `5` but no `attributeKey`, so the final `!` again lands at
+`XXXHe!llo world`.
+
+Bug 3 disables only the nested resolver in collaborator awareness. User B has a
+real table-cell selection at `body.0.cells.0.content` offset `5`, but User A
+sees no remote collaborator cursor in that table cell.
+
+Bug 4 disables only current-path recomputation and path-only shifted-selection
+emission. User B inserts a row before User A's selected row and types `XXX`
+before User A's cursor in the moved row. User A's selection is restored to stale
+`body.0.cells.0.content` instead of `body.1.cells.0.content`, and User A's
+subsequent `!` lands in the newly inserted blank row.
+
+The earlier before/after browser videos are:
 
 ```text
 /Users/danluu/conductor/workspaces/gutenberg-v1/seattle/.context/repro-artifacts/core-table-normal-block-normal-actions-failure.webm
@@ -232,6 +259,12 @@ bug is also reachable through the bundled Table block above.
 
 ```text
 http://localhost:8899
+```
+
+The four per-bug videos above were recorded against the local `wp-env` site at:
+
+```text
+http://localhost:8897
 ```
 
 ## Fix
