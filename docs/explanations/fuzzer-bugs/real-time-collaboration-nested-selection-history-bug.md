@@ -81,25 +81,47 @@ selection.
 
 ## Browser Status
 
-A pure first-party, user-only Playwright repro was not produced.
+Browser-level coverage was added as a normal-action e2e repro:
 
-The closest first-party nested rich-text UI is `core/table`, but its cell
-`RichText` instances do not provide a stable `identifier`, so the block-editor
-selection does not include an `attributeKey` or nested path for selection
-history to resolve. A path-aware nested RichText is realistic for a custom
-block, but that requires registering a test block as harness setup; I did not
-promote that to the required top-level repro because the user-action sequence
-would depend on artificial setup not present in first-party editor UI.
-
-`wp-env` was started with automatic port selection at:
-
-```text
-http://localhost:8897
+```bash
+test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
 ```
 
-The initial `wp-env start` failed because port `8888` was already allocated.
-No browser video was recorded because the top-level user-only repro was blocked
-by the first-party UI/harness gap above.
+The repro activates an e2e fixture plugin that registers a custom block with a
+nested `RichText` identifier, `body.content`. The user-facing steps are normal
+editor actions:
+
+1. User A inserts the block through the slash inserter.
+2. User A types `Hello world`.
+3. User A moves the cursor after `Hello` with keyboard navigation.
+4. User B clicks the same field and types `XXX` at the beginning.
+5. User A's selection should move from offset `5` to offset `8`.
+
+The test failed against the pre-fix browser bundle with User A still at offset
+`5` after the content became `XXXHello world`. The failing run produced:
+
+```text
+.context/repro-artifacts/nested-selection-history-normal-actions-failure.webm
+.context/repro-artifacts/nested-selection-history-normal-actions-error-context.md
+```
+
+After rebuilding the browser bundle with this fix, the same e2e spec passed.
+The passing run produced:
+
+```text
+.context/repro-artifacts/nested-selection-history-normal-actions-fixed.webm
+```
+
+`wp-env-test` was started with automatic port selection at:
+
+```text
+http://localhost:8899
+```
+
+The e2e fixture plugin is needed because the closest first-party nested
+rich-text UI, `core/table`, does not provide a stable `RichText` identifier for
+table cells. Without that identifier, the block-editor selection does not carry
+the nested `attributeKey` needed to exercise this selection-history path.
 
 ## Fix
 
@@ -123,6 +145,11 @@ npm run test:unit packages/core-data/src/utils/test/block-selection-history.test
 npm run test:unit packages/core-data/src/utils/test/crdt.ts -- --runInBand
 npm run test:unit packages/core-data/src/utils/test/block-selection-history.fuzz.test.ts -- --runInBand
 npm run lint:js -- packages/core-data/src/utils/block-selection-history.ts packages/core-data/src/utils/test/block-selection-history.test.ts packages/core-data/src/utils/test/crdt.ts packages/core-data/src/utils/test/block-selection-history.fuzz.test.ts
+npm run lint:js -- packages/e2e-tests/plugins/nested-rich-selection/index.js test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
+php -l packages/e2e-tests/plugins/nested-rich-selection.php
+npm run wp-env-test -- start --auto-port
+npm run build -- --skip-types
+WP_BASE_URL=http://localhost:8899 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-nested-selection-history-repro.spec.ts
 ```
 
 Known-fixes baseline repro command:
