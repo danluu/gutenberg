@@ -70,6 +70,38 @@ Environment contamination and race injection: ruled out. The failure is determin
 
 Known-fixed bug masking: ruled out. This reproduces against trunk plus the table-cell selection-path support in this workspace, but without the awareness conversion fix. The older rich-text offset fix is not involved because the offset is correct.
 
+## Lower-Level Repros
+
+Standalone Yjs shape repro: [repros/nested-awareness-parent-walk-repro.cjs](./repros/nested-awareness-parent-walk-repro.cjs)
+
+Command:
+
+```bash
+node docs/explanations/fuzzer-bugs/repros/nested-awareness-parent-walk-repro.cjs
+```
+
+This script does not import Gutenberg. It builds both relevant Yjs parent chains and shows that `parent.parent` finds the block for a top-level rich-text attribute but returns `null` for nested table-cell rich text. The same script also verifies that an ancestor walk reaches the containing block. It exits successfully only when that mismatch is reproduced.
+
+Production conversion unit/fuzzer repro: [packages/core-data/src/awareness/test/post-editor-awareness.ts](../../../packages/core-data/src/awareness/test/post-editor-awareness.ts)
+
+Command:
+
+```bash
+npm run test:unit packages/core-data/src/awareness/test/post-editor-awareness.ts -- --runInBand --testNamePattern="nested rich-text"
+```
+
+On the repro branch, the seeded nested-rich-text cases fail at `convertSelectionStateToAbsolute()` with `localClientId: null`. On the fix branch, the same cases pass.
+
+Selection-state nested path unit repro: [packages/core-data/src/utils/test/crdt-user-selections.ts](../../../packages/core-data/src/utils/test/crdt-user-selections.ts)
+
+Command:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-user-selections.ts -- --runInBand --testNamePattern="nested rich-text attribute path"
+```
+
+This verifies the sender-side lower layer: a block-editor selection with `attributeKey: "body.0.cells.0.content"` resolves to a `Y.RelativePosition` in the nested table-cell `Y.Text`. That proves the receiver-side conversion bug can be reached without synthetic awareness writes once table cells expose a stable nested `RichText` identifier.
+
 ## Browser Repro
 
 Test: `test/e2e/specs/editor/collaboration/collaboration-nested-awareness-selection.spec.ts`
