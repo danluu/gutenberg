@@ -8,6 +8,10 @@ The PR branch is `fix-connection-error-large-update-pr`. It contains only the
 regression test commit and the fix commit. This explanatory history lives on the
 separate branch `try/connection-error-large-update-explanation`.
 
+This explanation exists only on the `danluu` remote, not on the PR branch or
+the upstream `WordPress/gutenberg` remote. Remote copy:
+<https://github.com/danluu/gutenberg/blob/try/connection-error-large-update-explanation/docs/explanations/fuzzer-bugs/real-time-collaboration-large-update-connection-lost-bug.md>.
+
 ## Bug Summary
 
 An edit that produced a sync update near the client's old `1 MiB` size limit
