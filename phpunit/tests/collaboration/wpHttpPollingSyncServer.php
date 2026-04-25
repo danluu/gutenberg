@@ -1062,6 +1062,63 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		$this->assertSame( array( 'cursor' => 'updated' ), $awareness[1] );
 	}
 
+	public function test_sync_awareness_accepts_storage_without_atomic_awareness_method() {
+		wp_set_current_user( self::$editor_id );
+
+		$storage = new class() implements WP_Sync_Storage {
+			private array $awareness = array();
+			private array $updates   = array();
+
+			public function add_update( string $room, $update ): bool {
+				$this->updates[ $room ][] = $update;
+				return true;
+			}
+
+			public function get_awareness_state( string $room ): array {
+				return $this->awareness[ $room ] ?? array();
+			}
+
+			public function get_cursor( string $room ): int {
+				return count( $this->updates[ $room ] ?? array() );
+			}
+
+			public function get_update_count( string $room ): int {
+				return count( $this->updates[ $room ] ?? array() );
+			}
+
+			public function get_updates_after_cursor( string $room, int $cursor ): array {
+				return array_slice( $this->updates[ $room ] ?? array(), $cursor );
+			}
+
+			public function remove_updates_before_cursor( string $room, int $cursor ): bool {
+				$this->updates[ $room ] = array_slice( $this->updates[ $room ] ?? array(), $cursor );
+				return true;
+			}
+
+			public function set_awareness_state( string $room, array $awareness ): bool {
+				$this->awareness[ $room ] = $awareness;
+				return true;
+			}
+		};
+		$server  = new WP_HTTP_Polling_Sync_Server( $storage );
+		$room    = $this->get_post_room() . ':legacy-awareness-storage';
+		$request = new WP_REST_Request( 'POST', '/wp-sync/v1/updates' );
+		$request->set_body_params(
+			array(
+				'rooms' => array(
+					$this->build_room( $room, 7, 0, array( 'cursor' => 'legacy-storage' ) ),
+				),
+			)
+		);
+
+		$response = $server->handle_request( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( array( 'cursor' => 'legacy-storage' ), $data['rooms'][0]['awareness'][7] );
+		$this->assertSame( 7, $storage->get_awareness_state( $room )[0]['client_id'] );
+	}
+
 	public function test_sync_awareness_preserves_completed_concurrent_client_state() {
 		if ( ! method_exists( 'WP_Sync_Post_Meta_Storage', 'update_awareness_state' ) ) {
 			$this->markTestSkipped( 'The loaded storage class does not expose atomic awareness updates.' );
