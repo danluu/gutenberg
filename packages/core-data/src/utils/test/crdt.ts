@@ -1096,7 +1096,6 @@ describe( 'crdt', () => {
 					'body.1.cells.0.content'
 				);
 			} );
-
 			it( 'includes recalculated selection when text is deleted before cursor', () => {
 				const ytext = addBlockToDoc( map, 'block-1', 'Hello world' );
 
