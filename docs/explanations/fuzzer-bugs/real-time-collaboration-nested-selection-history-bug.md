@@ -2,13 +2,31 @@
 
 ## Status
 
-This is a real product bug in the RTC selection-history path.
+This is a family of real product bugs in RTC nested rich-text selection
+handling. The original fuzzer found the selection-history part of the problem;
+browser and review passes found three related product bugs in the same nested
+rich-text path family.
 
 The focused fuzzer failure is valid: when a block selection points at nested
 rich text, `createBlockSelectionHistory()` records a `BlockSelection` instead
 of a `RelativeSelection`. That loses the `Y.RelativePosition` needed to keep
 the cursor attached to the intended `Y.Text` when remote edits happen before
 the cursor.
+
+The distinct bugs fixed here are:
+
+1. Selection history only resolved top-level rich-text attributes, so nested
+   rich-text selections downgraded to block selections.
+2. The bundled Table block did not publish a stable `RichText` identifier for
+   table cells, so ordinary table-cell typing had offsets but no nested
+   `attributeKey`.
+3. Remote collaborator selection state also resolved only top-level
+   rich-text attributes, so nested table-cell selections could not become
+   remote cursor positions.
+4. Recalculated selections reused the originally recorded nested attribute path.
+   If a structural edit moved the same `Y.Text` to a different index path, the
+   cursor could be restored into the wrong table cell or not emitted at all
+   when only the path changed.
 
 ## Failure
 
@@ -52,9 +70,19 @@ selection carried an offset but no nested `attributeKey`. Selection history then
 had no way to know that the cursor belonged to the first body cell's
 `body.0.cells.0.content` `Y.Text`.
 
-## Introduced By
+The same top-level-only resolver existed in
+`packages/core-data/src/utils/crdt-user-selections.ts`, which powers remote
+collaborator cursor state.
 
-This regression was introduced by
+`packages/core-data/src/utils/crdt-selection.ts` stored relative positions but
+converted them back to WordPress selections using the originally recorded
+`attributeKey`. That is not stable for index-based nested paths. A relative
+position can still point to the same `Y.Text` after a row is inserted before it,
+but the old `body.0.cells.0.content` string is then stale.
+
+## Sources
+
+Bug 1, the selection-history downgrade, was introduced by
 [#74878, "Real-time collaboration: Use relative positions in undo stack"](https://github.com/WordPress/gutenberg/pull/74878),
 merged on January 23, 2026 as
 [commit `5cbdbc274fb4dc0f74b23cbc248fe8056a15f37b`](https://github.com/WordPress/gutenberg/commit/5cbdbc274fb4dc0f74b23cbc248fe8056a15f37b).
@@ -76,6 +104,33 @@ the selection-history code did not exist.
 rich-text offset handling in this file for HTML-vs-text index conversion, but it
 kept the same top-level attribute lookup and did not address nested rich-text
 selection targets.
+
+Bug 2, the missing Table cell identifier, is in the bundled `core/table` edit
+component. The current memoized cell implementation was introduced by
+[#74029](https://github.com/WordPress/gutenberg/pull/74029), merged as
+[commit `8a6a34aff3639b0240e1730dcb689639fb28e438`](https://github.com/WordPress/gutenberg/commit/8a6a34aff3639b0240e1730dcb689639fb28e438).
+That code rendered each cell `RichText` without an `identifier`. The omission
+was not RTC-visible until RTC selection history and awareness started depending
+on `attributeKey`.
+
+Bug 3, remote collaborator cursor state resolving only top-level Y.Text
+attributes, traces to
+[#74728, "Real-time Collaboration: Add user and selection information to awareness"](https://github.com/WordPress/gutenberg/pull/74728),
+merged as
+[commit `8f4810c21b352568c95baf04c8e34f4218ec32ad`](https://github.com/WordPress/gutenberg/commit/8f4810c21b352568c95baf04c8e34f4218ec32ad).
+Later awareness fixes such as
+[#75075](https://github.com/WordPress/gutenberg/pull/75075) and
+[#75590](https://github.com/WordPress/gutenberg/pull/75590) changed surrounding
+selection lookup behavior, but preserved the same direct
+`attributes.get( attributeKey )` rich-text assumption.
+
+Bug 4, stale nested `attributeKey` paths after structural edits, was introduced
+by [#75703, "Real-time collaboration: Improve collaboration within the same rich text"](https://github.com/WordPress/gutenberg/pull/75703),
+merged as
+[commit `0180c417fc4d2e704f3f8738ed09703ebeeda189`](https://github.com/WordPress/gutenberg/commit/0180c417fc4d2e704f3f8738ed09703ebeeda189).
+That PR added shifted-selection emission through `getPostChangesFromCRDTDoc()`
+but converted a relative position back using the stored `attributeKey`, not the
+current path of the resolved `Y.Text`.
 
 This is independent from the other recent RTC issues:
 
@@ -209,6 +264,43 @@ identifier={ `${ name }.${ rowIndex }.cells.${ columnIndex }.content` }
 
 That makes the first body cell selection visible to the block-editor and RTC
 stores as `body.0.cells.0.content`.
+
+## Added Tests
+
+PR branch tests added for the original and review-found bugs:
+
+- `packages/core-data/src/utils/test/block-selection-history.test.ts`
+  verifies nested `Y.Text` selections become relative selections, rejects
+  malformed dotted array indexes, and refuses to guess among multiple nested
+  rich-text leaves.
+- `packages/core-data/src/utils/test/crdt.ts` verifies nested table-cell
+  selections are recalculated after text edits, verifies current nested
+  attribute paths are recomputed after structural row insertion, and verifies a
+  path-only structural change is emitted even when the offset does not move.
+- `packages/core-data/src/utils/test/crdt-user-selections.ts` verifies remote
+  collaborator selection state can create cursor positions for nested rich-text
+  attribute paths.
+- `test/e2e/specs/editor/collaboration/collaboration-table-selection-history.spec.ts`
+  is a browser-level normal-action repro with the bundled Table block. It
+  verifies the table cell has `body.0.cells.0.content`, the cursor shifts from
+  offset `5` to `8`, and User A's subsequent `!` lands at `XXXHello! world`.
+
+Negative checks run while keeping the new tests:
+
+- Removing the remote cursor nested resolver made
+  `packages/core-data/src/utils/test/crdt-user-selections.ts` fail:
+  `returns Cursor for nested rich-text attribute paths` received `none` instead
+  of `cursor`.
+- Removing current-path recomputation in `crdt-selection.ts` made
+  `packages/core-data/src/utils/test/crdt.ts` fail:
+  `recalculates nested selection attribute paths after structural changes`
+  returned `body.0.cells.0.content` instead of `body.1.cells.0.content`, and
+  `includes selection when only a nested attribute path changes` emitted no
+  selection.
+- Removing the Table cell `RichText` identifier and rebuilding made the browser
+  e2e fail before the concurrent edit: User A's selection had offset `5`, but
+  `startAttributeKey` and `endAttributeKey` were `undefined` instead of
+  `body.0.cells.0.content`.
 
 ## Verification
 
