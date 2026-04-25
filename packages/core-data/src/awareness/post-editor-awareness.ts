@@ -10,7 +10,11 @@ import { store as blockEditorStore } from '@wordpress/block-editor';
  * Internal dependencies
  */
 import { BaseAwarenessState, baseEqualityFieldChecks } from './base-awareness';
-import { getBlockPathInYdoc, resolveBlockClientIdByPath } from './block-lookup';
+import {
+	getBlockPathInYdoc,
+	getContainingBlockYMap,
+	resolveBlockClientIdByPath,
+} from './block-lookup';
 import { isObjectRecord } from './utils';
 import {
 	AWARENESS_CURSOR_UPDATE_THROTTLE_IN_MS,
@@ -305,10 +309,8 @@ export class PostEditorAwareness extends BaseAwarenessState< PostEditorState > {
 			return { richTextOffset: null, localClientId: null };
 		}
 
-		// Navigate up: Y.Text -> attributes Y.Map -> block Y.Map
-		const yType = absolutePosition.type.parent?.parent;
-		const path =
-			yType instanceof Y.Map ? getBlockPathInYdoc( yType ) : null;
+		const yType = getContainingBlockYMap( absolutePosition.type );
+		const path = yType ? getBlockPathInYdoc( yType ) : null;
 		const localClientId = path ? resolveBlockClientIdByPath( path ) : null;
 
 		return {
