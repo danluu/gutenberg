@@ -1,18 +1,31 @@
 # Real-Time Collaboration Oversized Compaction Update Bug
 
-Status: real product bug.
+Status: real product bugs.
 
 ## Summary
 
-The HTTP polling client has a size guard for ordinary local `updateV2`
-events, but server-requested compaction and retry-generated compaction bypass
-that guard. Once a collaborative room has more than
+The original fuzzer failure is real, and it covers multiple client-side bugs in
+the HTTP polling provider's size and room-lifecycle handling.
+
+First, the client and server did not measure update size in the same units: the
+server validates the base64-encoded update `data` string, while the client
+guard used raw Yjs byte length with a 1 MiB cap. Second, the ordinary local
+`updateV2` overflow path disconnected the room but then continued and queued
+the oversized update. Third, server-requested compaction and retry-generated
+compaction bypassed the local size guard entirely. Once a collaborative room has
+more than
 `WP_HTTP_Polling_Sync_Server::COMPACTION_THRESHOLD` stored updates, the server
 sets `should_compact: true`; the nominated client responds with a full Yjs
 state update from `Y.encodeStateAsUpdateV2( doc )`. For large but otherwise
 ordinary documents, that full-state `compaction` update can exceed the server's
 1 MiB per-update `data` limit and produce repeated `400` responses until the
 editor shows the generic `Connection lost` modal.
+
+The audit of the PR also found a second, independent state-machine bug: async
+poll success/error handling keyed only by room name, so a stale in-flight
+response could mutate a newly registered room with the same name. The same area
+also left `isPolling` true after a terminal size-limit unregister, delaying
+sync for the next registered room until a stale scheduled tick ran.
 
 This is distinct from the request-body limit bug. The failing request contains
 a single oversized update; it does not need to exceed the server's 16 MiB
@@ -39,11 +52,14 @@ checked with narrower repros instead of relying on the mixed fuzzer alone.
 
 ### Unit Repro
 
-PR branch `danluu/rtc-issue-05-oversized-update-pr` adds focused tests for both
-compaction enqueue paths:
+PR branch `danluu/audit-rtc-size-limit` adds focused tests for the local update
+and compaction enqueue paths:
 
+- raw-vs-encoded update size limit
+- local oversized update disconnect with no queued doomed update
 - server `should_compact: true` response
 - ambiguous failed poll retry that replaces outgoing updates with compaction
+- deprecated server `compaction_request` response
 
 Verification command:
 
@@ -51,7 +67,18 @@ Verification command:
 npm run test:unit packages/sync/src/providers/http-polling/test/polling-manager.test.ts -- --runInBand
 ```
 
-Result: passed, `30` tests.
+Result on the fixed branch: passed, `34` tests.
+
+Fail-before-fix check: with the audit code fix removed but the new tests kept,
+the same command failed with `4` failures:
+
+- `polls immediately for a new room after a local size-limit disconnect clears the last room`
+- `does not send an oversized deprecated server-requested compaction update`
+- `ignores a success response for a re-registered room with the same name`
+- `ignores an error response for a re-registered room with the same name`
+
+Those failures prove the added tests exercise real pre-fix behavior rather than
+only asserting the implementation shape.
 
 ### PHP Server Controls
 
@@ -93,6 +120,7 @@ Observed browser artifacts:
 - sync statuses included: `200`, `400`
 - compaction requests observed: `6`
 - video: `/Users/danluu/conductor/workspaces/gutenberg-v1/cayenne/.context/rtc-issue-05-oversized-compaction-repro.webm`
+- raw Playwright source video: `/Users/danluu/conductor/workspaces/gutenberg-v1/cayenne/.context/rtc-issue-05-source-repro.webm`
 - traffic log: `/Users/danluu/conductor/workspaces/gutenberg-v1/cayenne/.context/rtc-issue-05-oversized-compaction-browser-log.json`
 - committed video copy:
   `docs/explanations/fuzzer-bugs/artifacts/rtc-issue-05-oversized-compaction/repro.webm`
@@ -127,11 +155,35 @@ base64 size-accounting fix, and the focused compaction repro still fails there.
 The final fix also preserves encoded-size accounting so the branch is safe when
 applied directly to `origin/trunk`.
 
-## Root Cause
+## Root Causes
+
+### Bug 1: Encoded vs Raw Size Accounting
+
+The server accepts updates through a schema whose `data` field is a string with
+`maxLength` equal to `MAX_UPDATE_DATA_SIZE`:
+[`class-wp-http-polling-sync-server.php`](../../../lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php#L64)
+and
+[`class-wp-http-polling-sync-server.php`](../../../lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php#L122-L128).
+
+The client cap was a raw byte count set to 1 MiB:
+[`config.ts`](../../../packages/sync/src/providers/http-polling/config.ts#L27).
+Because base64 expands three raw bytes to four string characters, a raw update
+below the old client cap could still encode to more than the server's 1 MiB
+string cap.
+
+### Bug 2: Local Oversized Updates Continued After Disconnect
 
 The client only checked `update.byteLength > MAX_UPDATE_SIZE_IN_BYTES` inside
-the document `updateV2` observer for ordinary local edits. Compaction updates
-are created outside that observer:
+the document `updateV2` observer for ordinary local edits. On overflow it
+disconnected and unregistered the room, but it did not return before the normal
+enqueue path:
+[`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L862-L886).
+That means a single oversized local update could still be appended to the
+queue object captured by the observer closure.
+
+### Bug 3: Compaction Updates Bypassed The Size Guard
+
+Compaction updates are created outside the local `updateV2` observer:
 
 - `room.should_compact` clears the queue and enqueues
   `Y.encodeStateAsUpdateV2( doc )` as `compaction`
@@ -143,25 +195,69 @@ are created outside that observer:
 Those paths did not use the size guard before placing updates in the queue, so
 the next poll could send a payload the server must reject.
 
+Sources:
+
+- server-requested compaction:
+  [`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L683-L688)
+- deprecated `compaction_request`:
+  [`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L689-L696)
+- retry-generated compaction:
+  [`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L757-L759)
+
+### Bug 4: Stale Poll Responses Could Mutate New Room State
+
+The poll loop built a request from concrete `RoomState` objects but processed
+responses by checking only whether a room name still existed:
+[`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L620-L626).
+The error recovery path made the same room-name lookup:
+[`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L750-L755).
+
+If a request was in flight while a room was unregistered and then registered
+again with the same room string, the old response could apply updates, restore
+old outgoing updates, or log retry state into the new room's Y.Doc/queue. That
+is a real provider lifecycle bug: `registerRoom` and `unregisterRoom` are the
+public manager operations used as editor entities mount and unmount.
+
+The same lifecycle area caused a liveness bug after terminal size-limit
+disconnects. `registerRoom` only starts polling when `isPolling` is false:
+[`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L927-L929).
+But `unregisterRoom` removed listeners and room state without clearing an
+already scheduled polling timeout or resetting `isPolling`:
+[`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts#L958-L969).
+After the last room disconnected for document size, a newly registered room
+could fail to poll immediately.
+
 ## Fix Plan
 
-Use one size-limit disconnect path for both ordinary updates and compaction.
+Use one size-limit disconnect path for ordinary local updates and all
+compaction producers. Return immediately after terminal local-update overflow.
 Create compaction updates through a guarded helper, and do not enqueue them if
-they exceed the client-side cap. Keep the cap aligned with the server by
-accounting for base64 expansion: the server validates the encoded string, so
-the raw Yjs limit must be `floor( 1 MiB / 4 ) * 3`.
+they exceed the client-side cap.
+
+Keep the cap aligned with the server by accounting for base64 expansion: the
+server validates the encoded string, so the raw Yjs limit must be
+`floor( 1 MiB / 4 ) * 3`.
 
 When an oversized compaction is detected, unregister the room with the existing
 `document-size-limit-exceeded` error instead of sending a doomed request and
 entering generic retry/backoff.
 
+For poll lifecycle correctness, snapshot the exact `RoomState` objects used to
+build each request. On success, forbidden-error handling, and generic retry
+recovery, mutate a room only if the current map still contains that same object
+for the room name. When unregistering the last room, clear any pending poll
+timeout and reset `isPolling` so future `registerRoom()` calls can start a new
+poll immediately.
+
 ## Fix Branch
 
 Branch:
 
-`danluu/rtc-issue-05-oversized-update-pr`
+`danluu/audit-rtc-size-limit`
 
 Commits:
 
 - `1b42ab1e87f` Add RTC oversized compaction regression tests
 - `188976ac441` Guard RTC compaction update size
+- `fe65e827450` Harden polling manager against stale room states
+- `984b51ea2d0` Cover RTC oversized update edge cases
