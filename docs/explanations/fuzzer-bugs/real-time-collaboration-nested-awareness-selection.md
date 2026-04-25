@@ -43,6 +43,21 @@ Y.Text -> cell Y.Map -> cells Y.Array -> row Y.Map -> body Y.Array -> attributes
 
 The old code uses `absolutePosition.type.parent?.parent`, so nested targets resolve the text offset but never find the containing block. Without a local client ID, the collaborator cursor/selection cannot be anchored to a block element.
 
+## Introduction
+
+The fixed-depth parent lookup was introduced on February 23, 2026 by [PR #75590](https://github.com/WordPress/gutenberg/pull/75590), commit `d5add1a75a1` (`Real-time collaboration: Remove block client IDs from Awareness, fix "Show Template" view`). That PR intentionally stopped carrying block client IDs in awareness state and instead resolved the local block by walking from the resolved Yjs relative position back to a block map. The text-selection path added this assumption:
+
+```text
+Y.Text -> attributes Y.Map -> block Y.Map
+```
+
+So the regression point for this lookup bug is PR #75590, not the original awareness-selection work.
+
+Relevant related PRs:
+
+- [PR #74728](https://github.com/WordPress/gutenberg/pull/74728) introduced user and selection information in awareness on January 23, 2026. Before PR #75590, text selection states still carried the block client ID (`blockId`, `blockStartId`, `blockEndId`) alongside the Yjs relative text position, so this specific parent-walk failure did not exist yet.
+- [PR #76913](https://github.com/WordPress/gutenberg/pull/76913) made `core/table` cell merging schema-aware on April 2, 2026 and created nested Yjs structures such as `body[].cells[].content` as nested `Y.Text` values. That did not introduce the incorrect lookup, but it made the `core/table` nested-rich-text CRDT shape that exposes the latent PR #75590 assumption.
+
 ## Real-vs-False-Positive Checks
 
 Invalid oracle: ruled out. The expected local ID is resolved through the same block index path used by existing root and inner-block awareness tests. The mocked editor store contains the corresponding local block at that path.
