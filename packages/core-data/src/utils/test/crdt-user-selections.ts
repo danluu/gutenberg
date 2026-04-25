@@ -420,6 +420,23 @@ function createTestDocWithBlocks() {
 	block3.set( 'innerBlocks', innerBlocks );
 	blocks.push( [ block3 ] );
 
+	// Create block 4 with nested table-cell content.
+	const block4 = new Y.Map();
+	block4.set( 'clientId', 'block-4' );
+	const block4Attrs = new Y.Map();
+	const body = new Y.Array();
+	const row = new Y.Map();
+	const cells = new Y.Array();
+	const cell = new Y.Map();
+	cell.set( 'content', new Y.Text( 'Nested cell text' ) );
+	cells.push( [ cell ] );
+	row.set( 'cells', cells );
+	body.push( [ row ] );
+	block4Attrs.set( 'body', body );
+	block4.set( 'attributes', block4Attrs );
+	block4.set( 'innerBlocks', new Y.Array() );
+	blocks.push( [ block4 ] );
+
 	return testDoc;
 }
 
@@ -430,6 +447,7 @@ describe( 'getSelectionState', () => {
 		'block-1': 0,
 		'block-2': 1,
 		'block-3': 2,
+		'block-4': 3,
 		'inner-block-1': 0,
 	};
 
@@ -437,6 +455,7 @@ describe( 'getSelectionState', () => {
 		'block-1': '',
 		'block-2': '',
 		'block-3': '',
+		'block-4': '',
 		'inner-block-1': 'block-3',
 	};
 
@@ -529,6 +548,52 @@ describe( 'getSelectionState', () => {
 			expect(
 				( result as SelectionCursor ).cursorPosition.absoluteOffset
 			).toBe( 5 );
+		} );
+
+		test( 'returns Cursor for nested rich-text attribute paths', () => {
+			const selectionStart: WPBlockSelection = {
+				clientId: 'block-4',
+				attributeKey: 'body.0.cells.0.content',
+				offset: 6,
+			};
+			const selectionEnd: WPBlockSelection = {
+				clientId: 'block-4',
+				attributeKey: 'body.0.cells.0.content',
+				offset: 6,
+			};
+
+			const result = getSelectionState(
+				selectionStart,
+				selectionEnd,
+				testDoc
+			);
+
+			expect( result.type ).toBe( SelectionType.Cursor );
+			const cursorResult = result as SelectionCursor;
+			expect( cursorResult.cursorPosition.absoluteOffset ).toBe( 6 );
+
+			const documentMap = testDoc.getMap( CRDT_RECORD_MAP_KEY );
+			const blocks = documentMap.get( 'blocks' ) as Y.Array<
+				Y.Map< unknown >
+			>;
+			const block = blocks.get( 3 );
+			const attrs = block.get( 'attributes' ) as Y.Map< unknown >;
+			const body = attrs.get( 'body' ) as Y.Array< Y.Map< unknown > >;
+			const row = body.get( 0 );
+			const cells = row.get( 'cells' ) as Y.Array< Y.Map< unknown > >;
+			const cell = cells.get( 0 );
+			const ytext = cell.get( 'content' ) as Y.Text;
+
+			ytext.insert( 0, 'XXX' );
+
+			const absolutePosition =
+				Y.createAbsolutePositionFromRelativePosition(
+					cursorResult.cursorPosition.relativePosition,
+					testDoc
+				);
+
+			expect( absolutePosition?.type ).toBe( ytext );
+			expect( absolutePosition?.index ).toBe( 9 );
 		} );
 
 		test( 'returns Cursor at start of block (offset 0)', () => {

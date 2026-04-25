@@ -949,6 +949,101 @@ describe( 'crdt', () => {
 				expect( changes.selection?.selectionEnd.offset ).toBe( 8 );
 			} );
 
+			it( 'recalculates nested selection attribute paths after structural changes', () => {
+				const ytext = addNestedRichTextBlockToDoc(
+					map,
+					'block-1',
+					'Hello world'
+				);
+
+				updateSelectionHistory( doc, {
+					selectionStart: {
+						clientId: 'block-1',
+						attributeKey: 'body.0.cells.0.content',
+						offset: 5,
+					},
+					selectionEnd: {
+						clientId: 'block-1',
+						attributeKey: 'body.0.cells.0.content',
+						offset: 5,
+					},
+				} );
+
+				const blocks = map.get( 'blocks' ) as YBlocks;
+				const block = blocks.get( 0 );
+				const attrs = block.get( 'attributes' ) as Y.Map< unknown >;
+				const body = attrs.get( 'body' ) as Y.Array< Y.Map< unknown > >;
+				body.insert( 0, [ createTableRow( 'Inserted row' ).row ] );
+				ytext.insert( 0, 'XXX' );
+
+				const editedRecord = {
+					title: 'CRDT Title',
+					status: 'draft',
+					blocks: [],
+				} as unknown as Post;
+
+				const changes = getPostChangesFromCRDTDoc(
+					doc,
+					editedRecord,
+					defaultSyncedProperties
+				);
+
+				expect( changes.selection ).toBeDefined();
+				expect( changes.selection?.selectionStart.offset ).toBe( 8 );
+				expect( changes.selection?.selectionStart.attributeKey ).toBe(
+					'body.1.cells.0.content'
+				);
+				expect( changes.selection?.selectionEnd.offset ).toBe( 8 );
+				expect( changes.selection?.selectionEnd.attributeKey ).toBe(
+					'body.1.cells.0.content'
+				);
+			} );
+
+			it( 'includes selection when only a nested attribute path changes', () => {
+				addNestedRichTextBlockToDoc( map, 'block-1', 'Hello world' );
+
+				updateSelectionHistory( doc, {
+					selectionStart: {
+						clientId: 'block-1',
+						attributeKey: 'body.0.cells.0.content',
+						offset: 5,
+					},
+					selectionEnd: {
+						clientId: 'block-1',
+						attributeKey: 'body.0.cells.0.content',
+						offset: 5,
+					},
+				} );
+
+				const blocks = map.get( 'blocks' ) as YBlocks;
+				const block = blocks.get( 0 );
+				const attrs = block.get( 'attributes' ) as Y.Map< unknown >;
+				const body = attrs.get( 'body' ) as Y.Array< Y.Map< unknown > >;
+				body.insert( 0, [ createTableRow( 'Inserted row' ).row ] );
+
+				const editedRecord = {
+					title: 'CRDT Title',
+					status: 'draft',
+					blocks: [],
+				} as unknown as Post;
+
+				const changes = getPostChangesFromCRDTDoc(
+					doc,
+					editedRecord,
+					defaultSyncedProperties
+				);
+
+				expect( changes.selection ).toBeDefined();
+				expect( changes.selection?.selectionStart.offset ).toBe( 5 );
+				expect( changes.selection?.selectionStart.attributeKey ).toBe(
+					'body.1.cells.0.content'
+				);
+				expect( changes.selection?.selectionEnd.offset ).toBe( 5 );
+				expect( changes.selection?.selectionEnd.attributeKey ).toBe(
+					'body.1.cells.0.content'
+				);
+			} );
+
 			it( 'includes recalculated selection when text is deleted before cursor', () => {
 				const ytext = addBlockToDoc( map, 'block-1', 'Hello world' );
 
@@ -1040,6 +1135,23 @@ function addBlockToDoc(
 	return ytext;
 }
 
+function createTableRow( content: string ): {
+	row: Y.Map< unknown >;
+	ytext: Y.Text;
+} {
+	const row = new Y.Map();
+	const cells = new Y.Array();
+	const cell = new Y.Map();
+	const ytext = new Y.Text( content );
+
+	cell.set( 'content', ytext );
+	cell.set( 'tag', 'td' );
+	cells.push( [ cell ] );
+	row.set( 'cells', cells );
+
+	return { row, ytext };
+}
+
 function addNestedRichTextBlockToDoc(
 	map: YMapWrap< YPostRecord >,
 	clientId: string,
@@ -1056,15 +1168,8 @@ function addNestedRichTextBlockToDoc(
 	block.set( 'clientId', clientId );
 	const attrs = new Y.Map();
 	const body = new Y.Array();
-	const row = new Y.Map();
-	const cells = new Y.Array();
-	const cell = new Y.Map();
-	const ytext = new Y.Text( content );
+	const { row, ytext } = createTableRow( content );
 
-	cell.set( 'content', ytext );
-	cell.set( 'tag', 'td' );
-	cells.push( [ cell ] );
-	row.set( 'cells', cells );
 	body.push( [ row ] );
 	attrs.set( 'body', body );
 	block.set( 'attributes', attrs );

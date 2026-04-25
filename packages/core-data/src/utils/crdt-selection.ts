@@ -18,6 +18,7 @@ import {
 	type YSelection,
 } from './block-selection-history';
 import {
+	findRichTextAttributeKeyForYText,
 	findBlockByClientIdInDoc,
 	htmlIndexToRichTextOffset,
 } from './crdt-utils';
@@ -58,11 +59,13 @@ export function updateSelectionHistory(
  * Convert a YSelection to a WPBlockSelection.
  * @param ySelection The YSelection (relative) to convert
  * @param ydoc       The Y.Doc to convert the selection to a block selection for
+ * @param block      The Yjs block containing the selection
  * @return The converted WPBlockSelection, or null if the conversion fails
  */
 function convertYSelectionToBlockSelection(
 	ySelection: YSelection,
-	ydoc: Y.Doc
+	ydoc: Y.Doc,
+	block?: ReturnType< typeof findBlockByClientIdInDoc >
 ): WPBlockSelection | null {
 	if ( ySelection.type === YSelectionType.RelativeSelection ) {
 		const { relativePosition, attributeKey, clientId } = ySelection;
@@ -73,9 +76,17 @@ function convertYSelectionToBlockSelection(
 		);
 
 		if ( absolutePosition ) {
+			const currentAttributeKey =
+				absolutePosition.type instanceof Y.Text
+					? findRichTextAttributeKeyForYText(
+							block?.get( 'attributes' ),
+							absolutePosition.type
+					  ) ?? attributeKey
+					: attributeKey;
+
 			return {
 				clientId,
-				attributeKey,
+				attributeKey: currentAttributeKey,
 				offset: htmlIndexToRichTextOffset(
 					absolutePosition.type.toString(),
 					absolutePosition.index
@@ -114,9 +125,14 @@ function convertYFullSelectionToWPSelection(
 
 	const startBlockSelection = convertYSelectionToBlockSelection(
 		start,
-		ydoc
+		ydoc,
+		startBlock
 	);
-	const endBlockSelection = convertYSelectionToBlockSelection( end, ydoc );
+	const endBlockSelection = convertYSelectionToBlockSelection(
+		end,
+		ydoc,
+		endBlock
+	);
 
 	if ( startBlockSelection === null || endBlockSelection === null ) {
 		return null;
@@ -253,18 +269,43 @@ export function getShiftedSelection(
 		return null;
 	}
 
-	const selectionStart = convertYSelectionToBlockSelection( start, ydoc );
-	const selectionEnd = convertYSelectionToBlockSelection( end, ydoc );
+	const startBlock = findBlockByClientIdInDoc( start.clientId, ydoc );
+	const endBlock = findBlockByClientIdInDoc( end.clientId, ydoc );
+
+	if ( ! startBlock || ! endBlock ) {
+		return null;
+	}
+
+	const selectionStart = convertYSelectionToBlockSelection(
+		start,
+		ydoc,
+		startBlock
+	);
+	const selectionEnd = convertYSelectionToBlockSelection(
+		end,
+		ydoc,
+		endBlock
+	);
 
 	if ( ! selectionStart || ! selectionEnd ) {
 		return null;
 	}
 
-	// Only dispatch if at least one endpoint actually moved.
+	// Only dispatch if at least one endpoint actually moved or its nested
+	// attribute path changed after a structural edit.
 	const startShifted = selectionStart.offset !== start.offset;
 	const endShifted = selectionEnd.offset !== end.offset;
+	const startAttributePathChanged =
+		selectionStart.attributeKey !== start.attributeKey;
+	const endAttributePathChanged =
+		selectionEnd.attributeKey !== end.attributeKey;
 
-	if ( ! startShifted && ! endShifted ) {
+	if (
+		! startShifted &&
+		! endShifted &&
+		! startAttributePathChanged &&
+		! endAttributePathChanged
+	) {
 		return null;
 	}
 

@@ -54,7 +54,7 @@ function createTestDoc() {
 	return ydoc;
 }
 
-function createDocWithNestedRichText() {
+function createDocWithNestedRichText( cellCount = 1 ) {
 	const ydoc = new Y.Doc();
 	const documentMap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
 	const blocks = new Y.Array();
@@ -68,11 +68,17 @@ function createDocWithNestedRichText() {
 	const body = new Y.Array();
 	const row = new Y.Map();
 	const cells = new Y.Array();
-	const cell = new Y.Map();
 	const nestedText = new Y.Text( 'Nested cell text' );
 
-	cell.set( 'content', nestedText );
-	cells.push( [ cell ] );
+	for ( let index = 0; index < cellCount; index++ ) {
+		const cell = new Y.Map();
+		cell.set(
+			'content',
+			index === 0 ? nestedText : new Y.Text( `Nested cell ${ index }` )
+		);
+		cells.push( [ cell ] );
+	}
+
 	row.set( 'cells', cells );
 	body.push( [ row ] );
 	attributes.set( 'body', body );
@@ -532,6 +538,48 @@ describe( 'BlockSelectionHistory', () => {
 
 			expect( absolutePosition?.type ).toBe( nestedText );
 			expect( absolutePosition?.index ).toBe( 14 );
+			nestedYdoc.destroy();
+		} );
+
+		test( 'should not partially parse nested array path indexes', () => {
+			const { ydoc: nestedYdoc } = createDocWithNestedRichText();
+			const nestedHistory = createBlockSelectionHistory( nestedYdoc, 5 );
+			const selection = createSelection( {
+				clientId: 'block-1',
+				attributeKey: 'body.0foo.cells.0.content',
+				offset: 7,
+			} );
+
+			nestedHistory.updateSelection( selection );
+
+			const [ fullSelection ] = nestedHistory.getSelectionHistory();
+			expect( fullSelection.start.type ).toBe(
+				YSelectionType.BlockSelection
+			);
+			expect( fullSelection.end.type ).toBe(
+				YSelectionType.BlockSelection
+			);
+			nestedYdoc.destroy();
+		} );
+
+		test( 'should not guess top-level nested attributes with multiple rich-text leaves', () => {
+			const { ydoc: nestedYdoc } = createDocWithNestedRichText( 2 );
+			const nestedHistory = createBlockSelectionHistory( nestedYdoc, 5 );
+			const selection = createSelection( {
+				clientId: 'block-1',
+				attributeKey: 'body',
+				offset: 7,
+			} );
+
+			nestedHistory.updateSelection( selection );
+
+			const [ fullSelection ] = nestedHistory.getSelectionHistory();
+			expect( fullSelection.start.type ).toBe(
+				YSelectionType.BlockSelection
+			);
+			expect( fullSelection.end.type ).toBe(
+				YSelectionType.BlockSelection
+			);
 			nestedYdoc.destroy();
 		} );
 

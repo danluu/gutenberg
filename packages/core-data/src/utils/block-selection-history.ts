@@ -11,6 +11,7 @@ import { Y } from '@wordpress/sync';
  */
 import {
 	findBlockByClientIdInDoc,
+	getRichTextYTextFromAttributeKey,
 	richTextOffsetToHtmlIndex,
 } from './crdt-utils';
 import type { WPBlockSelection, WPSelection } from '../types';
@@ -51,88 +52,6 @@ export interface YSelectionHistory {
 export interface BlockSelectionHistory {
 	getSelectionHistory: () => YFullSelection[];
 	updateSelection: ( newSelection: WPSelection ) => void;
-}
-
-function getNestedValueByPath(
-	value: unknown,
-	path: string[]
-): unknown | undefined {
-	let currentValue = value;
-
-	for ( const segment of path ) {
-		if ( currentValue instanceof Y.Map ) {
-			currentValue = currentValue.get( segment );
-		} else if ( currentValue instanceof Y.Array ) {
-			const index = Number.parseInt( segment, 10 );
-
-			if ( Number.isNaN( index ) ) {
-				return undefined;
-			}
-
-			currentValue = currentValue.get( index );
-		} else {
-			return undefined;
-		}
-	}
-
-	return currentValue;
-}
-
-function findYTexts( value: unknown ): Y.Text[] {
-	if ( value instanceof Y.Text ) {
-		return [ value ];
-	}
-
-	if ( value instanceof Y.Map ) {
-		const yTexts: Y.Text[] = [];
-
-		for ( const nestedValue of value.values() ) {
-			yTexts.push( ...findYTexts( nestedValue ) );
-		}
-
-		return yTexts;
-	}
-
-	if ( value instanceof Y.Array ) {
-		const yTexts: Y.Text[] = [];
-
-		for ( const nestedValue of value ) {
-			yTexts.push( ...findYTexts( nestedValue ) );
-		}
-
-		return yTexts;
-	}
-
-	return [];
-}
-
-function findUniqueYText( value: unknown ): Y.Text | undefined {
-	const yTexts = findYTexts( value );
-
-	return yTexts.length === 1 ? yTexts[ 0 ] : undefined;
-}
-
-function getRichTextAttribute(
-	attributes: Y.Map< unknown > | undefined,
-	attributeKey: string | undefined
-): Y.Text | undefined {
-	if ( ! attributes || ! attributeKey ) {
-		return undefined;
-	}
-
-	const path = attributeKey.split( '.' );
-	const pathRoot = attributes.get( path[ 0 ] );
-
-	if ( path.length > 1 ) {
-		const pathValue = getNestedValueByPath( pathRoot, path.slice( 1 ) );
-		return pathValue instanceof Y.Text ? pathValue : undefined;
-	}
-
-	if ( pathRoot instanceof Y.Text ) {
-		return pathRoot;
-	}
-
-	return findUniqueYText( pathRoot );
 }
 
 /**
@@ -228,7 +147,10 @@ function convertWPBlockSelectionToSelection(
 	const attributes = block?.get( 'attributes' );
 	const attributeKey = selection.attributeKey;
 
-	const changedYText = getRichTextAttribute( attributes, attributeKey );
+	const changedYText = getRichTextYTextFromAttributeKey(
+		attributes,
+		attributeKey
+	);
 
 	const isFullyDefinedSelection = attributeKey && clientId;
 

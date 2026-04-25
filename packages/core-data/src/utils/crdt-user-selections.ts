@@ -12,7 +12,11 @@ import { store as blockEditorStore } from '@wordpress/block-editor';
 import { CRDT_RECORD_MAP_KEY } from '../sync';
 import type { YPostRecord } from './crdt';
 import type { YBlock, YBlocks } from './crdt-blocks';
-import { getRootMap, richTextOffsetToHtmlIndex } from './crdt-utils';
+import {
+	getRichTextYTextFromAttributeKey,
+	getRootMap,
+	richTextOffsetToHtmlIndex,
+} from './crdt-utils';
 import type {
 	AbsoluteBlockIndexPath,
 	WPBlockSelection,
@@ -169,10 +173,13 @@ function getCursorPosition(
 	}
 
 	const attributes = block.get( 'attributes' );
-	const currentYText = attributes?.get( selection.attributeKey );
+	const currentYText = getRichTextYTextFromAttributeKey(
+		attributes,
+		selection.attributeKey
+	);
 
 	// If the attribute is not a Y.Text, return null.
-	if ( ! ( currentYText instanceof Y.Text ) ) {
+	if ( ! currentYText ) {
 		return null;
 	}
 

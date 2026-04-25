@@ -84,6 +84,151 @@ export function isYMap< T extends YMapRecord >(
 	return value instanceof Y.Map;
 }
 
+function getNestedValueByPath(
+	value: unknown,
+	path: string[]
+): unknown | undefined {
+	let currentValue = value;
+
+	for ( const segment of path ) {
+		if ( currentValue instanceof Y.Map ) {
+			currentValue = currentValue.get( segment );
+		} else if ( currentValue instanceof Y.Array ) {
+			if ( ! /^(0|[1-9]\d*)$/.test( segment ) ) {
+				return undefined;
+			}
+
+			currentValue = currentValue.get( Number( segment ) );
+		} else {
+			return undefined;
+		}
+	}
+
+	return currentValue;
+}
+
+function findYTexts( value: unknown ): Y.Text[] {
+	if ( value instanceof Y.Text ) {
+		return [ value ];
+	}
+
+	if ( value instanceof Y.Map ) {
+		const yTexts: Y.Text[] = [];
+
+		for ( const nestedValue of value.values() ) {
+			yTexts.push( ...findYTexts( nestedValue ) );
+		}
+
+		return yTexts;
+	}
+
+	if ( value instanceof Y.Array ) {
+		const yTexts: Y.Text[] = [];
+
+		for ( const nestedValue of value ) {
+			yTexts.push( ...findYTexts( nestedValue ) );
+		}
+
+		return yTexts;
+	}
+
+	return [];
+}
+
+function findUniqueYText( value: unknown ): Y.Text | undefined {
+	const yTexts = findYTexts( value );
+
+	return yTexts.length === 1 ? yTexts[ 0 ] : undefined;
+}
+
+function findYTextPath(
+	value: unknown,
+	target: Y.Text,
+	path: string[] = []
+): string[] | undefined {
+	if ( value === target ) {
+		return path;
+	}
+
+	if ( value instanceof Y.Map ) {
+		let foundPath: string[] | undefined;
+		value.forEach( ( nestedValue, key ) => {
+			if ( foundPath ) {
+				return;
+			}
+			foundPath = findYTextPath( nestedValue, target, [
+				...path,
+				String( key ),
+			] );
+		} );
+		return foundPath;
+	}
+
+	if ( value instanceof Y.Array ) {
+		for ( let index = 0; index < value.length; index++ ) {
+			const foundPath = findYTextPath( value.get( index ), target, [
+				...path,
+				String( index ),
+			] );
+			if ( foundPath ) {
+				return foundPath;
+			}
+		}
+	}
+
+	return undefined;
+}
+
+/**
+ * Resolve a rich-text attribute key to its Y.Text. Supports direct top-level
+ * attributes and explicit dotted paths into nested Y.Map/Y.Array attributes.
+ * For a top-level nested attribute, return a Y.Text only if it is unambiguous.
+ *
+ * @param attributes   Block attributes from the Yjs block.
+ * @param attributeKey RichText identifier / block-editor attribute key.
+ */
+export function getRichTextYTextFromAttributeKey(
+	attributes: Y.Map< unknown > | undefined,
+	attributeKey: string | undefined
+): Y.Text | undefined {
+	if ( ! attributes || ! attributeKey ) {
+		return undefined;
+	}
+
+	const path = attributeKey.split( '.' );
+	const pathRoot = attributes.get( path[ 0 ] );
+
+	if ( path.length > 1 ) {
+		const pathValue = getNestedValueByPath( pathRoot, path.slice( 1 ) );
+		return pathValue instanceof Y.Text ? pathValue : undefined;
+	}
+
+	if ( pathRoot instanceof Y.Text ) {
+		return pathRoot;
+	}
+
+	return findUniqueYText( pathRoot );
+}
+
+/**
+ * Find the current rich-text attribute path for a Y.Text under block
+ * attributes. This recomputes index-based nested paths after structural edits.
+ *
+ * @param attributes Block attributes from the Yjs block.
+ * @param yText      Rich-text Y.Text to locate.
+ */
+export function findRichTextAttributeKeyForYText(
+	attributes: Y.Map< unknown > | undefined,
+	yText: Y.Text
+): string | undefined {
+	if ( ! attributes ) {
+		return undefined;
+	}
+
+	const path = findYTextPath( attributes, yText );
+	return path?.join( '.' );
+}
+
 /**
  * Given a block ID and a Y.Doc, find the block in the document.
  *
