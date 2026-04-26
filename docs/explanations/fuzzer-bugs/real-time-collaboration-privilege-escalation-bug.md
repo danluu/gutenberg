@@ -308,6 +308,149 @@ Add negative controls:
 4. Unauthorized remote edits are not persisted by autosave, manual save,
    publish, reload reconciliation, or CRDT persistence replay.
 
+## Fix Plan Audit Perspectives
+
+These are reviews of the proposed fix plan, not reviews of a landed production
+fix. They are written as engineering lenses associated with each reviewer,
+rather than direct quotes or impersonations.
+
+### Linus Torvalds-Style Systems Review
+
+Findings:
+
+1. The plan has the right first instinct: reduce the sync surface before
+   designing a richer authorization system. A small hard allow list is easier
+   to reason about than provenance threaded through a large generic CRDT path.
+2. The structural fix is still too abstract. A vague `syncConfig`
+   authorization layer could become another stringly typed policy table that
+   looks good in review but is bypassed by the next field added to
+   `syncedProperties`.
+3. Provenance must not become hidden mutable state that is separate from the
+   data being saved. If the save path can lose or ignore provenance, the bug
+   will come back under a different field name.
+4. The current plan should be explicit that default behavior must fail closed.
+   New post properties, taxonomy REST bases, and meta keys should not
+   automatically become collaboratively writable.
+
+Suggested changes:
+
+1. Make the containment patch brutally simple: remove every capability-sensitive
+   property from default sync until each one has a field-specific permission
+   proof.
+2. Put the allow list and its authorization predicate in one obvious code path.
+   Avoid scattered checks where sync setup, CRDT merge, and save preparation
+   each know only part of the rule.
+3. Add tests directly next to the code that constructs `syncedProperties` and
+   directly next to the code that prepares save payloads. Do not rely only on
+   end-to-end tests.
+4. Require any future synced field to include a test proving that a lower-role
+   origin user cannot persist it through a higher-role saver.
+
+### Kyle Kingsbury / Jepsen-Style Distributed Systems Review
+
+Findings:
+
+1. The bug is a distributed authorization failure, not just a bad field list.
+   The important property is: if the origin user is not authorized for a value,
+   no later merge, replay, save, publish, autosave, or reconnect by another
+   participant should persist that value.
+2. Single-session happy-path repros are necessary but not sufficient. The fix
+   must survive concurrent edits, delayed sync updates, persisted CRDT replay,
+   users joining late, users leaving, and capability changes while updates are
+   in flight.
+3. Provenance needs causal durability. If provenance exists only in ephemeral
+   client memory, then reload, compaction, CRDT persistence, or room replay can
+   detach the privileged value from its lower-privilege origin.
+4. The system needs an explicit invariant that can be tested across histories,
+   not just examples for `meta` and Custom HTML.
+
+Suggested changes:
+
+1. Define the safety property in tests: for every remote-origin field or content
+   update, persistence must be authorized against the origin user, not the
+   eventual saver.
+2. Add replay tests where an unauthorized CRDT update is persisted in the room,
+   an admin joins later, and the admin saves or publishes.
+3. Add revocation tests where a user originates or receives an update, then the
+   user's role or capabilities change before save.
+4. Add concurrent tests where an authorized admin and unauthorized contributor
+   edit the same field or block content, and verify the merge cannot launder
+   the unauthorized value.
+5. Track provenance through any CRDT snapshot, merge, persistence, compaction,
+   and reload path, or else keep privileged data out of opaque CRDT updates.
+
+### tptacek-Style Security Review
+
+Findings:
+
+1. The core security boundary is simple: attacker-controlled data must not be
+   blessed by a more privileged principal merely because it arrived through
+   collaboration.
+2. Client-side provenance is not a strong security primitive by itself. If a
+   malicious client can forge, omit, or reshape provenance, the server cannot
+   trust it as authorization evidence.
+3. The plan should avoid saying "sanitize before save" without specifying whose
+   authority is used. Sanitizing at the final admin save is exactly the broken
+   behavior for `unfiltered_html`.
+4. The Yjs update should be treated as untrusted transport bytes. Room access
+   proves only that a user may participate in a collaboration session; it does
+   not prove authority over every operation encoded in the update.
+
+Suggested changes:
+
+1. For privileged fields and privileged content, prefer structured operations
+   that the server validates as the origin user, or require the origin user to
+   perform the real REST write and use collaboration only to notify peers.
+2. If content sync remains client mediated, filter remote-origin content using
+   the origin user's content rules before it can enter another user's save
+   payload.
+3. Add direct REST negative controls for every repro: prove the lower-privilege
+   user cannot directly persist the value, then prove collaboration no longer
+   changes that result.
+4. Extend the Custom HTML test beyond `<script>` to include representative KSES
+   cases such as event-handler attributes, dangerous URLs, and embeds if those
+   are accepted or rejected differently by role.
+5. Do not rely on UI hiding as a security boundary. The fix must hold for a
+   malicious collaborator that can send arbitrary sync updates after joining a
+   room.
+
+### Dan Luu-Style Debugging And Regression Review
+
+Findings:
+
+1. The plan is directionally right, but it needs an inventory. Without a table
+   of every synced property, its UI exposure, direct REST behavior, relevant
+   capabilities, and collaboration behavior, the fix risks solving only the two
+   repros.
+2. The Custom HTML repro changes the priority. This is not just about obscure
+   plugin meta. A standard block and a standard WordPress capability are enough
+   to demonstrate the issue.
+3. The immediate containment plan should state the product tradeoff. Removing
+   fields from RTC can break some collaborative niceties, but silent privilege
+   escalation is worse than temporarily not syncing a field.
+4. The test plan needs a crisp definition of "fixed" that includes every
+   persistence path users naturally trigger, not just the manual save path in
+   the first repro.
+
+Suggested changes:
+
+1. Build and keep a synced-property matrix covering `blocks`, `content`,
+   `title`, `excerpt`, `author`, `status`, `meta`, taxonomy REST bases, `date`,
+   `featured_media`, `sticky`, `template`, `comment_status`, `ping_status`, and
+   `format`.
+2. For each property, record the minimum capability for direct REST persistence,
+   whether the standard UI exposes it to lower roles, and whether RTC can import
+   it into a higher-role user's payload.
+3. Treat the two videos as complementary regression artifacts: the fixture meta
+   video explains field-level authorization, and the Custom HTML video explains
+   why standard content sync is also in scope.
+4. Make the acceptance criterion explicit: unauthorized remote-origin data must
+   not persist through save, autosave, publish, reload reconciliation, late
+   join, CRDT persistence replay, or role changes.
+5. Prefer a conservative shipped fix with documented temporarily disabled sync
+   behavior over a broad provenance redesign that leaves the known exploit
+   reachable while the full design is debated.
+
 ## Non-Fix
 
 Only tightening `WP_HTTP_Polling_Sync_Server::can_user_sync_entity_type()` is
