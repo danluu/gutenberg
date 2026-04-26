@@ -32,7 +32,10 @@ not include the previously known transport limit bug.
 ### 2. Failed provider creation leaves an entity permanently loaded
 
 -   Commit: `3e76fdf6e8f Add five RTC sync lifecycle bug repros`
--   Repro: `packages/sync/src/test/manager.ts`
+-   Repros:
+    -   `packages/sync/src/test/manager.ts`
+    -   `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`
+    -   `packages/e2e-tests/plugins/sync-provider-lifecycle.php`
 -   Failure: `SyncManager.load()` stores the entity state before provider creation
     finishes. If the provider creator rejects, a later retry for the same entity
     is skipped because the stale entity state remains registered.
@@ -40,20 +43,30 @@ not include the previously known transport limit bug.
     connecting for that entity until the manager is recreated.
 -   Repro status:
     -   SyncManager public API: created in `packages/sync/src/test/manager.ts`.
-    -   Core-data/editor integration: not created. `core-data` starts sync by
-        calling `SyncManager.load()` and intentionally does not await the result,
-        so a higher-level repro needs a provider fault injected before the entity
-        resolver starts.
-    -   Playwright normal-user browser repro: not created for the stock editor.
-        The default HTTP polling provider does not reject during construction;
-        reproducing this in the browser requires an injected or third-party
-        provider that fails during creation, then a same-page retry of the same
-        entity.
+    -   Core-data/editor integration: created in
+        `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
+        The browser test activates an editor plugin that uses the public
+        `sync.providers` filter to behave like a third-party RTC provider that is
+        temporarily unavailable.
+    -   Playwright plugin-user browser repro: created in
+        `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
+        A user opens a post while the provider is unavailable, then clicks the
+        plugin's visible `Reconnect RTC provider` button after the provider is
+        available. The button invalidates and re-resolves the normal
+        `core-data` post entity. With the bug, the post provider creator is not
+        called a second time because the stale entity state from the failed first
+        load is still registered.
+    -   Playwright stock-editor repro: still not created. The default HTTP polling
+        provider does not reject during construction, so stock editor actions
+        alone do not naturally create this provider-startup failure.
 
 ### 3. Partial provider creation failure leaks already-created providers
 
 -   Commit: `3e76fdf6e8f Add five RTC sync lifecycle bug repros`
--   Repro: `packages/sync/src/test/manager.ts`
+-   Repros:
+    -   `packages/sync/src/test/manager.ts`
+    -   `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`
+    -   `packages/e2e-tests/plugins/sync-provider-lifecycle.php`
 -   Failure: when one provider creator resolves and a later provider creator
     rejects, `SyncManager.load()` rejects without destroying the provider that was
     already created.
@@ -61,13 +74,18 @@ not include the previously known transport limit bug.
     can remain active after a failed load.
 -   Repro status:
     -   SyncManager public API: created in `packages/sync/src/test/manager.ts`.
-    -   Core-data/editor integration: not created. A higher-level repro needs
-        multiple provider creators registered through the `sync.providers` hook,
-        where one creator succeeds and a later creator rejects.
-    -   Playwright normal-user browser repro: not created for the stock editor.
-        The browser-level trigger requires a plugin or injected provider list;
-        ordinary editor actions with the default provider do not create the
-        partial-provider-failure state.
+    -   Core-data/editor integration: created in
+        `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
+        The test exercises the real `core-data` entity resolver and
+        `SyncManager.load()` path from the editor.
+    -   Playwright plugin-user browser repro: created in
+        `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
+        An activated plugin registers two providers through `sync.providers`: the
+        first provider starts and the second provider rejects. With the bug, the
+        first provider's `destroy()` method is never called.
+    -   Playwright stock-editor repro: still not created. Stock Gutenberg only
+        registers the default HTTP polling provider, so ordinary stock editor
+        actions do not create a partial provider failure.
 
 ### 4. Undo metadata is written to the wrong synced entity
 
@@ -132,7 +150,10 @@ not include the previously known transport limit bug.
 ### 6. Remaining rooms never resume queued updates after the primary room is unregistered
 
 -   Commit: `3e76fdf6e8f Add five RTC sync lifecycle bug repros`
--   Repro: `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`
+-   Repros:
+    -   `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`
+    -   `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`
+    -   `packages/e2e-tests/plugins/sync-room-lifecycle.php`
 -   Failure: the polling provider marks the first registered room as primary and
     only uses the primary room for collaborator detection and queue resumption. If
     that primary room is unregistered, no remaining room is promoted, so later
@@ -143,19 +164,27 @@ not include the previously known transport limit bug.
 -   Repro status:
     -   HTTP polling manager unit/integration: created in
         `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`.
-    -   Core-data/editor integration: not created. The next level needs a page with
-        a primary post room and a secondary synced room, then a primary-room
-        unregister while the secondary room remains loaded.
-    -   Playwright normal-user browser repro: investigated, not created for the
-        stock editor. The plausible oversized-document workflow unregisters the
-        post room, but it also sets `collaborationSupported` to false and the
-        editor falls back to normal post locking. The existing stock browser path
-        therefore does not leave a collaborative secondary room that a user can
-        continue editing without injected timing or transport state. A remote
-        post-deletion workflow is also blocked by the browser-level 403 behavior
-        reproduced in bug 5: the failing room is not unregistered, so the page
-        never reaches the "primary removed, secondary survives" state needed to
-        isolate this bug.
+    -   Core-data/editor integration: created in
+        `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`.
+        The repro uses public `core-data` actions from an activated editor plugin
+        so the page stays open after deleting the current post entity and can
+        continue editing a loaded category entity.
+    -   Playwright plugin-user browser repro: created in
+        `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`.
+        User A opens a post, loads the default category room through the normal
+        pre-publish panel, then clicks a visible plugin button that deletes the
+        current post entity in place. User B opens a different post and loads the
+        same category room through the normal pre-publish panel. User A then
+        clicks a visible plugin button that edits the loaded category entity.
+        The next sync payload from User A contains the category room but zero
+        updates, showing that collaborator awareness in the surviving category
+        room did not resume its queued local update after the original post room
+        was unregistered.
+    -   Playwright stock-editor repro: still not created. The stock "Move to
+        trash" action redirects away after deleting the post, the oversized
+        document path disables collaboration and falls back to post locking, and
+        the remote post-deletion path is blocked by the browser-level 403 handling
+        behavior reproduced in bug 5.
 
 ## Verification
 
@@ -174,3 +203,11 @@ The repros are intentionally failing on the current implementation:
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts --grep "retries a queued post compaction"`
     fails after a normal admin UI category deletion because the next retry payload
     still contains the deleted `taxonomy/category` room.
+-   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`
+    fails the provider retry repro with one post-room provider creation attempt
+    instead of two, and fails the partial-provider repro with zero destroys for
+    the provider that was created before the later provider rejected.
+-   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`
+    fails after User A deletes the original post room in place and User B joins
+    the surviving category room; the next User A payload has no post room and has
+    the category room with zero queued updates.
