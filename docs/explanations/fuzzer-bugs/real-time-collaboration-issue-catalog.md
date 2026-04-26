@@ -41,6 +41,12 @@ For current grouping and counts, see
     `rest_cookie_invalid_nonce` `403`s that are surfaced as the generic
     disconnect modal. Evidence:
     [auth-loss-connection-lost-20260423/summary.md](../../../artifacts/rtc-browser-fuzz/auth-loss-connection-lost-20260423/summary.md).
+-   `Privilege escalation` via room-level sync authorization. Status:
+    confirmed product bug with CRDT, save-payload, and browser reproductions.
+    A lower-privilege collaborator can sync a protected field into a
+    higher-privilege user's editor, and the higher-privilege user's normal save
+    persists the lower-privilege value. Evidence:
+    [real-time-collaboration-privilege-escalation-bug.md](real-time-collaboration-privilege-escalation-bug.md).
 
 ## Confirmed External-Condition Issue Classes
 
