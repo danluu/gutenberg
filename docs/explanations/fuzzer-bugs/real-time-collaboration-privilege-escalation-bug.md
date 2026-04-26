@@ -9,21 +9,37 @@ The sync server authorizes access to a post room with post-level permissions,
 for example `edit_post` on `postType/post:123`. Once a user is in that room,
 their Yjs update can change any post property that the client-side post sync
 configuration accepts. That set currently includes fields whose save
-permissions can be stricter than ordinary post editing, including `author`,
-`status`, `meta`, taxonomy terms, `date`, `featured_media`, `sticky`,
-`template`, `comment_status`, `ping_status`, and `format`.
+permissions can be stricter than ordinary post editing, including `blocks`,
+`content`, `author`, `status`, `meta`, taxonomy terms, `date`,
+`featured_media`, `sticky`, `template`, `comment_status`, `ping_status`, and
+`format`.
 
-The remote change is then applied to the higher-privilege user's local
-`core-data` edits. When that higher-privilege user saves the post through the
-normal editor UI, `saveEditedEntityRecord()` sends the merged edits with the
-higher-privilege user's REST nonce and capabilities.
+`content` is not automatically safe just because it is the primary editor
+field. WordPress filters post content differently depending on the saving
+user's capabilities. For example, a contributor without `unfiltered_html` can
+type a `<script>` tag into a Custom HTML block, but a direct contributor save
+is sanitized by KSES. If the same block content is synced into an admin editor
+and then published by the admin, the final save runs with the admin's
+`unfiltered_html` capability.
+
+The remote change is then applied to the higher-privilege user's local editor
+state and eventual `core-data` save payload. When that higher-privilege user
+saves the post through the normal editor UI, `saveEditedEntityRecord()` sends
+the merged edits with the higher-privilege user's REST nonce and capabilities.
 
 That makes the higher-privilege user the deputy that persists the
 lower-privilege user's unauthorized field change.
 
-## Concrete Reproduction
+## Concrete Reproductions
 
-The current repro uses an ordinary two-user editor session:
+There are two concrete repros. They demonstrate the same confused-deputy bug
+through two different authorization boundaries.
+
+### Repro 1: Fixture Plugin Admin-Only Meta
+
+The first repro uses an ordinary two-user editor session with a small test
+plugin. The plugin is only there to make the field-level authorization boundary
+obvious and deterministic:
 
 1. A test plugin registers `rtc_privileged_meta` as post meta with
    `show_in_rest: true` and an `auth_callback` requiring `manage_options`.
@@ -43,12 +59,55 @@ No direct REST write, console mutation, synthetic Playwright action, or
 out-of-band state injection is needed. The contributor only types into a
 visible editor control, and the admin only saves through the editor.
 
+This repro isolates the generic entity-field problem. The contributor can
+enter the post room because they can edit the post, but they cannot directly
+write this meta key. RTC nevertheless transfers the contributor's meta edit
+into the admin's local save payload, and the final save is authorized as the
+admin.
+
+### Repro 2: Standard Custom HTML Block
+
+The second repro uses only standard Gutenberg and WordPress components. No
+custom bug plugin is active:
+
+1. A contributor owns a draft post and an admin opens the same post in the
+   collaborative editor.
+2. As a negative control, the same contributor directly saves post content
+   containing a Custom HTML block with `<script>`. The REST save returns
+   success, but KSES strips the script tag because the contributor does not
+   have `unfiltered_html`.
+3. The contributor opens the same collaborative editor session.
+4. The contributor uses the normal block inserter to add the built-in Custom
+   HTML block.
+5. The contributor uses the block's normal `Edit HTML` dialog and types a
+   `<script>` tag.
+6. RTC sync copies that block content into the admin's editor state before any
+   server-side KSES filtering.
+7. The admin uses the normal `Publish` flow.
+8. The published `post_content` still contains the contributor-controlled
+   `<script>` tag.
+
+This repro is more realistic because the UI and field are both built in. The
+authorization boundary is WordPress' existing `unfiltered_html` capability:
+the contributor may edit the post, but their direct save must not persist
+unfiltered script content. RTC changes who performs the final save, so the
+contributor's content is judged under the admin's capability set instead.
+
+### Why Both Repros Matter
+
+The fixture-plugin meta repro proves that arbitrary synced entity fields can
+cross per-field REST authorization boundaries such as meta `auth_callback`s.
+The standard Custom HTML repro proves that even primary block content can be
+capability-sensitive. A fix that only removes `meta` from sync would miss the
+`unfiltered_html` path. A fix that only sanitizes block content would miss
+other fields such as `author`, `status`, taxonomy terms, and privileged meta.
+
 ## Production Path
 
 The vulnerable path is:
 
-1. The lower-privilege user's editor calls `editEntityRecord()` with a synced
-   post field.
+1. The lower-privilege user's editor changes a synced post field or synced
+   block content.
 2. `SyncManager.update()` applies the edit to the local CRDT document.
 3. The HTTP polling provider sends an opaque Yjs update to the sync room.
 4. `WP_HTTP_Polling_Sync_Server::check_permissions()` verifies room access,
@@ -61,6 +120,11 @@ The vulnerable path is:
 8. `saveEditedEntityRecord()` saves all non-transient edits with the current
    user's credentials.
 
+For the Custom HTML repro, the privileged value is in the synced
+`blocks`/`content` surface instead of in `meta`. The final REST request is
+still made by the admin, so KSES applies the admin's `unfiltered_html`
+capability rather than the contributor's missing capability.
+
 The critical trust-boundary error is between steps 4 and 7: after a user has
 room-level access, the system does not preserve or re-check the origin user's
 authority for each changed field.
@@ -72,6 +136,9 @@ mean that the user may perform every REST write associated with that post.
 
 Examples of fields that can require stronger or different capabilities:
 
+-   `content`/`blocks`: unfiltered HTML is controlled by `unfiltered_html`, so
+    a contributor's direct save can be sanitized while an admin save preserves
+    the same HTML.
 -   `status`: publishing can require `publish_posts`.
 -   `author`: reassignment can require permission to edit the target author or
     otherwise manage the post.
@@ -88,7 +155,7 @@ admin sends the save request.
 ## How The Bug Was Introduced
 
 This is a composition bug, not a single intentionally unsafe line. The relevant
-PRs created three assumptions that are individually reasonable but unsafe
+PRs created several assumptions that are individually reasonable but unsafe
 together.
 
 1. [#72114: Collaborative editing: Make syncing a side-concern instead of a replacement for local state](https://github.com/WordPress/gutenberg/pull/72114)
@@ -100,10 +167,10 @@ together.
 2. [#72262: Improve CRDT "merge logic" for post entities](https://github.com/WordPress/gutenberg/pull/72262)
 
     This added post-specific CRDT merge logic and expanded the synced post
-    surface beyond block content. The resulting allow list included fields such
-    as `author`, `status`, `sticky`, `template`, taxonomy fields, and other
-    properties with capability requirements that are not equivalent to
-    `edit_post`.
+    surface beyond the smallest possible set of editor content. The resulting
+    allow list included `blocks`/`content` as well as fields such as `author`,
+    `status`, `sticky`, `template`, taxonomy fields, and other properties with
+    capability requirements that are not equivalent to `edit_post`.
 
 3. [#72332: Real-time collaboration: Add support for syncing post meta](https://github.com/WordPress/gutenberg/pull/72332)
 
@@ -148,6 +215,11 @@ together.
     field-level authorization for CRDT update contents, so the confused-deputy
     path remains.
 
+The meta repro depends on the later addition of post meta sync. The Custom HTML
+repro does not. It follows from the more fundamental decision to sync editor
+content through a room transport whose server permission check is coarser than
+WordPress' per-user content filtering rules.
+
 ## Why This Was Easy To Miss
 
 The design relies on the REST API as the final authority for saves. That works
@@ -167,26 +239,34 @@ distinguish "admin typed this" from "admin received this from a contributor".
 
 1. Narrow the default post CRDT sync surface to fields that are safe for every
    participant who can enter the post room.
-2. Remove privileged or capability-sensitive fields from default post sync:
+2. Do not treat `blocks` or `content` as automatically safe. Remote-origin
+   block content must either be filtered as the origin user before it can be
+   saved by another user, or cross-user content sync must be disabled when the
+   participants do not share the same relevant content capabilities, especially
+   `unfiltered_html`.
+3. Remove privileged or capability-sensitive fields from default post sync:
    `author`, `status`, `meta`, taxonomy REST bases, `date`, `featured_media`,
    `sticky`, `template`, `comment_status`, `ping_status`, and `format`.
-3. Do not sync arbitrary post meta by default. Only sync explicitly declared
+4. Do not sync arbitrary post meta by default. Only sync explicitly declared
    collaborative meta keys, and require that those keys are safe for all room
    participants or have a field-level authorization strategy.
-4. Keep block content/title/excerpt syncing only after confirming that the same
-   post-level permission is sufficient for all participating roles in the
-   target editor workflow.
+5. Keep title, excerpt, and other text-like fields only after confirming
+   whether they have the same KSES or capability-sensitive behavior as content
+   in the target editor workflow.
 
 This containment is intentionally conservative. It prevents known privilege
 crossing while a more complete authorization model is designed.
 
 ### Structural Fix
 
-1. Add provenance to remote changes before they enter `core-data` edits.
-   `SyncManager` should know whether each dirty field came from local input or
-   from a remote user, and which WordPress user/client originated it.
+1. Add provenance to remote changes before they enter `core-data` edits or
+   block editor content. `SyncManager` should know whether each dirty field or
+   block/content delta came from local input or from a remote user, and which
+   WordPress user/client originated it.
 2. Add a `syncConfig` authorization layer for remote fields. For post entities,
-   this layer must be per property and, for `meta`, per meta key.
+   this layer must be per property and, for `meta`, per meta key. For
+   `blocks`/`content`, it must account for origin-user content filtering such
+   as `unfiltered_html`.
 3. Filter remote CRDT changes before calling `handlers.editRecord( changes )`.
    Unauthorized remote fields should be ignored or left as remote-only CRDT
    state, not placed into the local save payload.
@@ -194,10 +274,10 @@ crossing while a more complete authorization model is designed.
    `saveEditedEntityRecord()` or the post entity pre-persist path should avoid
    saving remote-origin fields unless the origin user was authorized for that
    exact field.
-5. For fields where PHP must be authoritative and Yjs updates are opaque, stop
-   using generic CRDT room updates. Use structured operations that the server
-   can validate, or require the originating user to perform a real REST write
-   and use collaboration only to notify/refetch peers.
+5. For content where PHP/KSES must be authoritative and Yjs updates are opaque,
+   either use structured operations that the server can validate and sanitize
+   as the origin user, or require the originating user to perform a real REST
+   write and use collaboration only to notify/refetch peers.
 6. Treat server room permission as a transport permission only. Do not use it as
    authorization for every field inside the room.
 
@@ -206,19 +286,26 @@ crossing while a more complete authorization model is designed.
 Keep repro coverage at three levels:
 
 1. CRDT utility test: a lower-privilege remote update to `author`, taxonomy
-   fields, `meta`, and `status` must not surface as local save edits.
+   fields, `meta`, `status`, and unfiltered block content must not surface as
+   local save edits for a higher-privilege user.
 2. Save-payload test: remote-only privileged edits must not be included in
    `saveEditedEntityRecord()` payloads.
 3. Playwright test: a contributor using normal editor UI must not be able to
    change an admin-only meta key by syncing it into an admin editor and waiting
    for the admin to save.
+4. Playwright test: a contributor using the built-in Custom HTML block must not
+   be able to persist `<script>` by syncing it into an admin editor and waiting
+   for the admin to publish.
 
 Add negative controls:
 
 1. Ordinary collaborative block/content edits still sync and save.
 2. A user who is actually authorized for a protected field can still edit and
    save that field.
-3. Unauthorized remote edits are not persisted by autosave, manual save,
+3. A contributor's direct save of the Custom HTML `<script>` test content is
+   sanitized, proving the script only persists through the collaboration
+   confused-deputy path.
+4. Unauthorized remote edits are not persisted by autosave, manual save,
    publish, reload reconciliation, or CRDT persistence replay.
 
 ## Non-Fix
