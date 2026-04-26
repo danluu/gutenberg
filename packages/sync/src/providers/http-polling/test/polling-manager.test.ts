@@ -1682,6 +1682,99 @@ describe( 'polling-manager', () => {
 			await jest.advanceTimersByTimeAsync( 0 );
 			expect( mockPostSyncUpdate ).toHaveBeenCalledTimes( 3 );
 		} );
+
+		it( 'retries a surviving room compaction update after another room gets a 403', async () => {
+			mockEncodeStateAsUpdateV2.mockReturnValueOnce(
+				new Uint8Array( [ 7 ] )
+			);
+			mockPostSyncUpdate
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'primary-room',
+							end_cursor: 1,
+							awareness: { 1: {}, 2: {} },
+							updates: [],
+						},
+					],
+				} )
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'primary-room',
+							end_cursor: 2,
+							awareness: { 1: {}, 2: {} },
+							updates: [],
+						},
+						{
+							room: 'secondary-room',
+							end_cursor: 1,
+							awareness: {},
+							updates: [],
+							should_compact: true,
+						},
+					],
+				} )
+				.mockRejectedValueOnce( {
+					code: 'rest_cannot_edit',
+					message:
+						'You do not have permission to sync this entity: primary-room.',
+					data: { status: 403 },
+				} )
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'secondary-room',
+							end_cursor: 2,
+							awareness: {},
+							updates: [],
+						},
+					],
+				} );
+
+			pollingManager.registerRoom( {
+				room: 'primary-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+			pollingManager.registerRoom( {
+				room: 'secondary-room',
+				doc: createMockDoc( 2 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+			await jest.advanceTimersByTimeAsync( 1000 );
+			await jest.advanceTimersByTimeAsync( 1000 );
+
+			const forbiddenPayload = mockPostSyncUpdate.mock.calls[ 2 ][ 0 ];
+			const forbiddenSecondaryRoom = forbiddenPayload.rooms.find(
+				( room ) => room.room === 'secondary-room'
+			);
+			expect( forbiddenSecondaryRoom?.updates ).toEqual( [
+				expect.objectContaining( {
+					type: SyncUpdateType.COMPACTION,
+				} ),
+			] );
+
+			await jest.advanceTimersByTimeAsync( 1000 );
+
+			const retryPayload = mockPostSyncUpdate.mock.calls[ 3 ][ 0 ];
+			const retrySecondaryRoom = retryPayload.rooms.find(
+				( room ) => room.room === 'secondary-room'
+			);
+			expect( retrySecondaryRoom?.updates ).toEqual( [
+				expect.objectContaining( {
+					type: SyncUpdateType.COMPACTION,
+				} ),
+			] );
+		} );
 	} );
 
 	describe( 'room overflow rotation', () => {
