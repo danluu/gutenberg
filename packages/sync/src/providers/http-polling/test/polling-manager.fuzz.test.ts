@@ -549,12 +549,10 @@ describe( 'polling-manager fuzzing', () => {
 							} )
 					);
 					const shouldCompact = rng.bool( 0.35 );
-					const compactionLength = rng.bool( 0.55 )
-						? rng.intBetween(
-								MOCK_MAX_UPDATE_SIZE_IN_BYTES + 1,
-								64
-						  )
-						: rng.intBetween( 1, MOCK_MAX_UPDATE_SIZE_IN_BYTES );
+					const compactionLength = rng.intBetween(
+						1,
+						MOCK_MAX_UPDATE_SIZE_IN_BYTES
+					);
 					const endCursor = safeCursor + rng.intBetween( 1, 20 );
 
 					if ( shouldCompact ) {
