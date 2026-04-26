@@ -734,6 +734,40 @@ describe( 'saveEditedEntityRecord', () => {
 			undefined
 		);
 	} );
+	it( 'saves non-transient edits after RTC authorization has accepted them', async () => {
+		const configs = [
+			{
+				kind: 'postType',
+				name: 'post',
+				baseURL: '/wp/v2/posts',
+			},
+		];
+		const acceptedEdits = {
+			title: 'Safe collaborative title',
+		};
+		const select = {
+			getEntityRecordNonTransientEdits: () => acceptedEdits,
+			hasEditsForEntityRecord: () => true,
+		};
+
+		const dispatch = Object.assign( jest.fn(), {
+			saveEntityRecord: jest.fn(),
+		} );
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		await saveEditedEntityRecord(
+			'postType',
+			'post',
+			10
+		)( { dispatch, select, resolveSelect } );
+
+		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			{ id: 10, title: 'Safe collaborative title' },
+			undefined
+		);
+	} );
 } );
 
 describe( 'saveEntityRecord', () => {

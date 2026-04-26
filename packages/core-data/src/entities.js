@@ -21,6 +21,7 @@ import {
 	defaultSyncConfig,
 	getPostChangesFromCRDTDoc,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
+	SAFE_POST_SYNC_PROPERTIES,
 } from './utils/crdt';
 
 export const DEFAULT_ENTITY_KEY = 'id';
@@ -333,13 +334,7 @@ export const prePersistPostType = async (
  */
 async function loadPostTypeEntities() {
 	const postTypesPromise = apiFetch( { path: '/wp/v2/types?context=view' } );
-	const taxonomiesPromise = window._wpCollaborationEnabled
-		? apiFetch( { path: '/wp/v2/taxonomies?context=view' } )
-		: Promise.resolve( {} );
-	const [ postTypes, taxonomies ] = await Promise.all( [
-		postTypesPromise,
-		taxonomiesPromise,
-	] );
+	const postTypes = await postTypesPromise;
 
 	return Object.entries( postTypes ?? {} ).map( ( [ name, postType ] ) => {
 		const isTemplate = [ 'wp_template', 'wp_template_part' ].includes(
@@ -347,26 +342,7 @@ async function loadPostTypeEntities() {
 		);
 		const namespace = postType?.rest_namespace ?? 'wp/v2';
 
-		const syncedProperties = new Set( [
-			'author',
-			'blocks',
-			'content',
-			'comment_status',
-			'date',
-			'excerpt',
-			'featured_media',
-			'format',
-			'meta',
-			'ping_status',
-			'slug',
-			'status',
-			'sticky',
-			'template',
-			'title',
-			...( postType.taxonomies
-				?.map( ( taxonomy ) => taxonomies?.[ taxonomy ]?.rest_base )
-				?.filter( Boolean ) ?? [] ),
-		] );
+		const syncedProperties = new Set( SAFE_POST_SYNC_PROPERTIES );
 
 		const entity = {
 			kind: 'postType',
