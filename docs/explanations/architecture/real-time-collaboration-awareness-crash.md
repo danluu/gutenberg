@@ -104,16 +104,18 @@ The current repros are committed as failing tests on
 They assert the desired safe behavior and fail against the current vulnerable
 implementation. They cover these boundaries:
 
--   Server replay:
-    [`wpHttpPollingSyncServer.php`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/phpunit/tests/collaboration/wpHttpPollingSyncServer.php)
--   Polling ingestion:
-    [`polling-manager.test.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/test/polling-manager.test.ts)
--   Awareness publication and equality exception:
-    [`awareness-state.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/test/awareness-state.ts)
--   Presence UI crash:
-    [`collaborators-presence/test/index.tsx`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/test/index.tsx)
--   Browser-level crash:
-    [`collaboration-awareness-exception.spec.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/test/e2e/specs/editor/collaboration/collaboration-awareness-exception.spec.ts)
+-   Server rejection:
+    [`test_sync_rejects_malformed_awareness_without_collaborator_info()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/phpunit/tests/collaboration/wpHttpPollingSyncServer.php#L1000)
+-   Polling ingestion drop:
+    [`regression: drops malformed remote awareness from the server`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/test/polling-manager.test.ts#L559)
+-   Awareness publication guard:
+    [`regression: should not publish non-empty malformed remote state to subscribers`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/test/awareness-state.ts#L159)
+-   Awareness equality guard:
+    [`regression: should not throw when a remote state update has an unknown top-level field`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/test/awareness-state.ts#L188)
+-   Presence UI crash guard:
+    [`regression: malformed remote awareness does not trip the editor error boundary`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/test/index.tsx#L82)
+-   Browser-level crash guard:
+    [`malformed awareness from one collaborator does not crash another editor`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/test/e2e/specs/editor/collaboration/collaboration-awareness-exception.spec.ts#L7)
 
 ## Root Cause
 
