@@ -12,7 +12,8 @@
 		destroyed: 0,
 		failures: 0,
 		mode,
-		providerAvailable: false,
+		providerAvailable: mode === 'ready-default',
+		recoveryScheduled: false,
 		retryFinished: false,
 		retryStarted: false,
 		rooms: {},
@@ -83,6 +84,64 @@
 		throw new Error( 'A later RTC provider failed to start.' );
 	}
 
+	function scheduleAutoRecovery() {
+		if ( state.recoveryScheduled ) {
+			return;
+		}
+
+		state.recoveryScheduled = true;
+
+		window.setTimeout( async function () {
+			const postId = wp.data.select( 'core/editor' ).getCurrentPostId();
+
+			state.providerAvailable = true;
+			state.retryStarted = true;
+			state.retryFinished = false;
+
+			wp.data
+				.dispatch( 'core' )
+				.invalidateResolution( 'getEntityRecord', [
+					'postType',
+					'post',
+					postId,
+				] );
+
+			await wp.data
+				.resolveSelect( 'core' )
+				.getEntityRecord( 'postType', 'post', postId );
+
+			state.retryFinished = true;
+		}, 500 );
+	}
+
+	function createDefaultWhenAvailableProvider( defaultProvider ) {
+		return async function defaultWhenAvailableProvider( options ) {
+			const roomState = getRoomState( options );
+			state.attempts++;
+			roomState.attempts++;
+
+			if ( ! state.providerAvailable ) {
+				state.failures++;
+				roomState.failures++;
+				scheduleAutoRecovery();
+				throw new Error( 'RTC provider is temporarily unavailable.' );
+			}
+
+			const provider = await defaultProvider( options );
+			state.created++;
+			roomState.created++;
+
+			return {
+				...provider,
+				destroy() {
+					state.destroyed++;
+					roomState.destroyed++;
+					provider.destroy();
+				},
+			};
+		};
+	}
+
 	wp.hooks.addFilter(
 		'sync.providers',
 		'gutenberg-test/sync-provider-lifecycle',
@@ -97,6 +156,10 @@
 
 			if ( mode === 'partial-default' ) {
 				return [ ...providers, failingProvider ];
+			}
+
+			if ( mode === 'auto-default' || mode === 'ready-default' ) {
+				return [ createDefaultWhenAvailableProvider( providers[ 0 ] ) ];
 			}
 
 			return providers;

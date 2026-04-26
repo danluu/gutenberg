@@ -56,6 +56,16 @@ not include the previously known transport limit bug.
         `core-data` post entity. With the bug, the post provider creator is not
         called a second time because the stale entity state from the failed first
         load is still registered.
+    -   Playwright extension-user browser repro with automatic recovery and the
+        real default provider: created in
+        `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
+        An activated provider extension wraps Gutenberg's default HTTP provider.
+        User A opens a post while the provider is temporarily unavailable. The
+        extension then automatically recovers and re-resolves the current post,
+        delegating to the real HTTP provider after recovery. User B opens the
+        same post with the provider already available. With the bug, User A never
+        reconnects to normal collaboration and never sees User B in the
+        Collaborators list.
     -   Playwright stock-editor repro: still not created. The default HTTP polling
         provider does not reject during construction: it constructs the
         `HttpPollingProvider`, registers the room, and returns before any network
@@ -235,6 +245,10 @@ The repros are intentionally failing on the current implementation:
     fails the provider retry repro with one post-room provider creation attempt
     instead of two, and fails the partial-provider repro with zero destroys for
     the provider that was created before the later provider rejected.
+-   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts --grep "transient default-provider startup outage"`
+    uses a provider extension that automatically recovers and then delegates to
+    Gutenberg's real default HTTP provider. It fails because User A never
+    reconnects and never sees User B in the normal Collaborators list.
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts --grep "cleans up the default HTTP provider"`
     uses the real default HTTP provider plus a failing extension provider. It
     fails because a later post-room sync request is still sent after the

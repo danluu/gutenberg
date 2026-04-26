@@ -2,12 +2,18 @@
  * External dependencies
  */
 import type { Page, Request } from '@playwright/test';
-import type { Admin, Editor } from '@wordpress/e2e-test-utils-playwright';
+import { Editor, type Admin } from '@wordpress/e2e-test-utils-playwright';
 
 /**
  * Internal dependencies
  */
 import { test, expect } from './fixtures';
+import {
+	SECOND_USER,
+	type UserCredentials,
+} from './fixtures/collaboration-utils';
+
+const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 
 type ProviderLifecycleState = {
 	attempts: number;
@@ -15,6 +21,7 @@ type ProviderLifecycleState = {
 	destroyed: number;
 	failures: number;
 	providerAvailable: boolean;
+	recoveryScheduled: boolean;
 	retryFinished: boolean;
 	retryStarted: boolean;
 	rooms: Record< string, ProviderLifecycleRoomState >;
@@ -39,7 +46,12 @@ async function openPostWithProviderLifecycleMode(
 	editor: Editor,
 	page: Page,
 	postId: number,
-	mode: 'partial' | 'partial-default' | 'retry'
+	mode:
+		| 'auto-default'
+		| 'partial'
+		| 'partial-default'
+		| 'ready-default'
+		| 'retry'
 ) {
 	await admin.visitAdminPage(
 		'post.php',
@@ -57,6 +69,49 @@ async function openPostWithProviderLifecycleMode(
 		undefined,
 		{ timeout: 15000 }
 	);
+}
+
+async function openUserPostWithProviderLifecycleMode(
+	admin: Admin,
+	user: UserCredentials,
+	postId: number,
+	mode: 'ready-default'
+): Promise< { editor: Editor; page: Page } > {
+	const context = await admin.browser.newContext( {
+		baseURL: BASE_URL,
+	} );
+	const page = await context.newPage();
+
+	await page.goto( '/wp-login.php' );
+	await page.locator( '#user_login' ).fill( user.username );
+	await page.locator( '#user_pass' ).fill( user.password );
+	await page.getByRole( 'button', { name: 'Log In' } ).click();
+	await page.waitForURL( '**/wp-admin/**' );
+
+	await page.goto(
+		`/wp-admin/post.php?post=${ postId }&action=edit&rtc_provider_lifecycle=${ mode }`
+	);
+	await page.waitForFunction(
+		() =>
+			window._wpCollaborationEnabled === true &&
+			window.wp?.data &&
+			window.__rtcProviderLifecycle,
+		undefined,
+		{ timeout: 15000 }
+	);
+	await page.evaluate( () => {
+		window.wp.data
+			.dispatch( 'core/preferences' )
+			.set( 'core/edit-post', 'welcomeGuide', false );
+		window.wp.data
+			.dispatch( 'core/preferences' )
+			.set( 'core/edit-post', 'fullscreenMode', false );
+	} );
+
+	return {
+		editor: new Editor( { page } ),
+		page,
+	};
 }
 
 type SyncPayload = {
@@ -182,6 +237,73 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 		const postState = await getProviderLifecycleRoomState( page, postRoom );
 		expect( postState?.attempts ).toBe( 2 );
 		expect( postState?.created ).toBe( 1 );
+	} );
+
+	test( 'connects after a transient default-provider startup outage recovers automatically', async ( {
+		admin,
+		collaborationUtils,
+		editor,
+		page,
+		requestUtils,
+	} ) => {
+		const post = await requestUtils.createPost( {
+			title: 'RTC automatic provider recovery repro',
+			status: 'draft',
+			date_gmt: new Date().toISOString(),
+		} );
+		const postRoom = `postType/post:${ post.id }`;
+		const syncedTitle = `Synced after provider recovery ${ Date.now() }`;
+
+		await openPostWithProviderLifecycleMode(
+			admin,
+			editor,
+			page,
+			post.id,
+			'auto-default'
+		);
+		await collaborationUtils.waitForEntityReady( page );
+
+		await expect
+			.poll(
+				async () => {
+					const state = await getProviderLifecycleState( page );
+					return {
+						failures: state.rooms[ postRoom ]?.failures ?? 0,
+						retryFinished: state.retryFinished,
+					};
+				},
+				{ timeout: 10000 }
+			)
+			.toEqual( {
+				failures: 1,
+				retryFinished: true,
+			} );
+
+		const { editor: editor2, page: page2 } =
+			await openUserPostWithProviderLifecycleMode(
+				admin,
+				SECOND_USER,
+				post.id,
+				'ready-default'
+			);
+
+		try {
+			await collaborationUtils.waitForEntityReady( page2 );
+
+			await expect(
+				page.getByRole( 'button', { name: /Collaborators list/ } )
+			).toBeVisible( { timeout: 15000 } );
+
+			await editor2.canvas
+				.getByRole( 'textbox', { name: 'Add title' } )
+				.fill( syncedTitle );
+
+			await expect(
+				editor.canvas.getByRole( 'textbox', { name: 'Add title' } )
+			).toHaveText( syncedTitle, { timeout: 15000 } );
+		} finally {
+			await page2.context().close();
+		}
 	} );
 
 	test( 'destroys providers that were created before a later provider fails', async ( {
