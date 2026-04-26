@@ -2,16 +2,18 @@
 
 ## Summary
 
-The real-time collaboration awareness path trusts remote awareness state as if it
-were a typed `PostEditorAwarenessState`. In practice, awareness is client
-provided JSON. The server accepts any non-null object, stores it, and returns it
-to other clients in the same room. The HTTP polling provider then writes that
-state directly into the local Yjs awareness map. Core-data publishes it to
-subscribers, and the editor presence UI dereferences `collaboratorInfo` as a
-required field.
+Real-time collaboration is still an unreleased feature, so this bug should be
+treated as a pre-release protocol-design bug rather than a compatibility problem
+with deployed RTC implementations.
 
-A collaborator with edit access to the same room can therefore send malformed
-awareness such as:
+The current awareness protocol lets an authenticated collaborator send arbitrary
+JSON as their awareness state. The PHP sync endpoint stores that object and
+returns it to other clients in the room. The HTTP polling provider writes the
+returned object directly into the local Yjs awareness map. Core-data then treats
+the entry as a typed `PostEditorAwarenessState`, and the editor presence UI
+dereferences required fields such as `collaboratorInfo.avatar_urls`.
+
+That means one collaborator with edit access to the same room can submit:
 
 ```json
 {
@@ -19,253 +21,318 @@ awareness such as:
 }
 ```
 
-When another editor receives that state, the presence UI can throw:
+When a peer receives that state, the peer can hit:
 
 ```text
 Cannot read properties of undefined (reading 'avatar_urls')
 ```
 
-This is a collaborator-to-collaborator UI denial of service. It also overlaps
-with the existing awareness spoofing issue because the same trust boundary lets a
-client provide arbitrary `collaboratorInfo` values. This path does not currently
-look like script execution by itself: the known sinks pass names through React
-text rendering and avatar URLs through normal attributes. The severe behavior
-here is that one authorized collaborator can crash another collaborator's editor
-surface.
+This is a collaborator-to-collaborator editor UI denial of service. It is the
+same trust-boundary failure as the awareness spoofing issue: the server treats
+client-supplied presence and identity data as authoritative and fans it out to
+other clients.
 
-## Data Flow
+This path does not currently look like script execution by itself. The known
+presence sinks render names through React text rendering and avatar URLs through
+normal element attributes. The issue is still security-relevant because an
+authorized collaborator can crash another collaborator's editor surface, and
+because the same design allows identity spoofing in collaborator UI.
 
-The vulnerable path is:
+## Scope And Assumptions
 
-1. A client posts a sync payload to `/wp-sync/v1/updates`.
-2. The PHP sync endpoint accepts `awareness` when it is any object or `null`.
-3. `WP_HTTP_Polling_Sync_Server::process_awareness_update()` stores the submitted
-   object under the sender's client ID and returns the stored `client_id => state`
-   map to other room clients.
-4. `processAwarenessUpdate()` in the HTTP polling manager writes each returned
-   state into `awareness.getStates()` without validating the state shape.
-5. `AwarenessState.updateSubscribers()` treats the raw Yjs awareness entry as the
-   generic `State`, adds `clientId`, `isConnected`, and `isMe`, and publishes it
-   to core-data subscribers.
-6. `CollaboratorsPresence` and `CollaboratorsList` render
-   `collaboratorState.collaboratorInfo.avatar_urls`,
-   `collaboratorState.collaboratorInfo.name`, and
-   `collaboratorState.collaboratorInfo.id` without checking that
-   `collaboratorInfo` exists.
+This analysis assumes the RTC sync endpoint and awareness protocol have not been
+released to a broad population. That matters for the fix:
 
-The current repro stack covers each boundary:
+-   We do not need to preserve the current weak awareness wire format for
+    compatibility.
+-   We can make breaking protocol changes before release.
+-   We should prefer a narrow server-enforced schema over permissive parsing.
+-   We do not need a migration for arbitrary existing production awareness
+    state. At most, development or test environments may contain stale malformed
+    entries, and those can be skipped and cleaned up opportunistically.
 
--   PHP endpoint replay:
+Client-side hardening is still required, but as defense-in-depth. Clients should
+not crash on corrupted storage, plugin interference, direct REST calls, future
+server bugs, or a partially rolled-out development build.
+
+## Impact
+
+An attacker needs permission to sync the same room as the victim. In the normal
+post editor case, that means the attacker must be an authenticated user who can
+edit the same post.
+
+Current client-ID ownership checks prevent a user from taking over a client ID
+that is already associated with another WordPress user. They do not make the
+awareness state safe. A user can still publish malformed state under their own
+client ID, and the endpoint also accepts a fresh client ID for that user. Peers
+then receive and render that state.
+
+The user-visible impact is:
+
+-   Missing required fields can crash presence UI and trip the editor error
+    boundary.
+-   Unknown top-level fields can trigger the awareness equality checker to throw
+    when state changes are compared.
+-   Arbitrary `collaboratorInfo` values can spoof the name/avatar shown in
+    collaborator UI.
+
+## Vulnerable Data Flow
+
+The vulnerable path crosses four layers:
+
+1. **REST input.** A client posts `rooms[].awareness` to
+   `/wp-sync/v1/updates`. The route schema currently accepts any object or
+   `null`.
+2. **Server fan-out.**
+   `WP_HTTP_Polling_Sync_Server::process_awareness_update()` stores the object
+   under the submitted client ID and returns the stored `client_id => state` map
+   to room peers.
+3. **Polling client ingestion.** `processAwarenessUpdate()` in
+   [`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts)
+   writes each returned value into `awareness.getStates()` without runtime
+   validation.
+4. **Typed publication and rendering.**
+   [`AwarenessState.updateSubscribers()`](../../../packages/core-data/src/awareness/awareness-state.ts)
+   publishes the raw entry as typed state, and
+   [`CollaboratorsPresence`](../../../packages/editor/src/components/collaborators-presence/index.tsx)
+   plus
+   [`CollaboratorsList`](../../../packages/editor/src/components/collaborators-presence/list.tsx)
+   dereference `collaboratorInfo` fields.
+
+The repro stack on this branch covers those boundaries:
+
+-   Server replay:
     [`wpHttpPollingSyncServer.php`](../../../phpunit/tests/collaboration/wpHttpPollingSyncServer.php)
--   HTTP polling ingestion:
+-   Polling ingestion:
     [`polling-manager.test.ts`](../../../packages/sync/src/providers/http-polling/test/polling-manager.test.ts)
--   Core-data awareness publication and equality crash:
+-   Awareness publication and equality exception:
     [`awareness-state.ts`](../../../packages/core-data/src/awareness/test/awareness-state.ts)
--   Presence UI error-boundary crash:
+-   Presence UI crash:
     [`collaborators-presence/test/index.tsx`](../../../packages/editor/src/components/collaborators-presence/test/index.tsx)
--   Browser-level repro:
+-   Browser-level crash:
     [`collaboration-awareness-exception.spec.ts`](../../../test/e2e/specs/editor/collaboration/collaboration-awareness-exception.spec.ts)
 
 ## Root Cause
 
-The root cause is a trust-boundary mismatch:
+The root cause is that awareness crosses a trust boundary without a parser.
 
--   The transport layer models remote awareness as
-    `Record< string, object | null >`, which is effectively untrusted JSON.
--   Core-data models post-editor awareness as `PostEditorAwarenessState`, where
-    `collaboratorInfo` is required.
--   The HTTP polling provider converts the transport shape into the Yjs awareness
-    map without parsing, validating, or normalizing it.
--   `AwarenessState` assumes every entry in `getStates()` has the subclass's
-    expected fields, even though Yjs awareness maps can contain arbitrary remote
-    values.
--   The editor UI trusts the TypeScript type and dereferences required fields at
-    runtime.
+The transport type is effectively untrusted JSON:
 
-There is a second crash mode in the same area. `AwarenessState.isFieldEqual()`
-throws when it sees a top-level field without an equality checker. That is useful
-for catching local implementation mistakes, but remote awareness can introduce
-unknown fields. Once malformed remote state is in `previousSnapshot`, a later
-update can trigger:
+```ts
+Record< string, object | null >;
+```
+
+The consumer type is much stronger:
+
+```ts
+PostEditorAwarenessState;
+```
+
+`PostEditorAwarenessState` requires `collaboratorInfo`, and the UI is written as
+if that requirement were enforced at runtime. It is not. TypeScript only proves
+what the local code claims after the remote object has already been trusted.
+
+There is also a second crash mechanism in the same trust boundary. The awareness
+base class has field-specific equality checks and throws on unknown fields:
 
 ```text
 No equality check implemented for awareness state field "unexpected".
 ```
 
-So malformed awareness can break consumers either by missing required fields or
-by adding unexpected fields.
+That throw is reasonable for local developer mistakes, but remote clients can
+currently introduce unknown fields. Remote input should be rejected or normalized
+before it reaches equality comparison.
 
 ## How The Bug Was Introduced
 
-This was introduced by composing several changes that each made a reasonable
-local assumption, but together crossed a trust boundary unsafely.
+No single commit introduced the full bug by itself. The bug came from connecting
+several locally reasonable pieces without defining the awareness wire contract.
 
-The awareness foundation, added by `fcbeef1c21a` (`Real-time Collaboration: Add
-Yjs awareness foundation (#74565)`), created a typed awareness abstraction with
-field-specific equality checks. That abstraction assumes awareness fields are
-controlled by the subclass and throws when an unknown field appears.
+`fcbeef1c21a` (`Real-time Collaboration: Add Yjs awareness foundation (#74565)`)
+introduced the typed awareness abstraction and equality checks. That code assumes
+subclasses own the state shape.
 
-The default HTTP polling provider, added by `48ce44dac79` (`Real-time
-collaboration: Add default HTTP polling sync provider (#74564)`), made the
-server-returned awareness map authoritative for remote clients. Its
-`processAwarenessUpdate()` implementation writes remote awareness values directly
-into `awareness.getStates()` and emits a Yjs awareness change event.
+`48ce44dac79` (`Real-time collaboration: Add default HTTP polling sync provider
+(#74564)`) made server-returned awareness authoritative for remote clients. Its
+polling code writes returned awareness directly into the Yjs awareness map.
 
-The PHP sync server path, later moved into the WordPress 7.0 compat location by
 `69699955ed0` (`Real-time collaboration: Move PHP code to compat / backports
-directory (#75366)`), accepts `awareness` as an object or `null`, stores the
-object under the client ID, and returns the same object to peers. Later
-permission and client-ID hardening, including `7f8ada36a3e` (`RTC: Verify client
-ID to avoid awareness mutation (#76056)`) and `1be2ef27e68` (`Backport: Improve
-validation and permission checks for WP_HTTP_Polling_Sync_Server (#76987)`),
-improved who may use the endpoint and which client ID they may update, but did
-not make the awareness state itself schema-safe.
+directory (#75366)`) moved the PHP sync server into the WordPress 7.0 compat
+path. The server stores `awareness` as client-provided room state and returns it
+to peers. Later permission and client-ID ownership hardening, including
+`7f8ada36a3e` (`RTC: Verify client ID to avoid awareness mutation (#76056)`) and
+`1be2ef27e68` (`Backport: Improve validation and permission checks for
+WP_HTTP_Polling_Sync_Server (#76987)`), improved who may use the endpoint and
+which client IDs they may update. They did not validate or canonicalize the
+awareness state itself.
 
-The collaborators presence UI, introduced by `8e5a0039ff6` (`Real-time
-Collaboration: Add collaborators presence UI (#75065)`) and later expanded by
-presence polish changes such as `cbda05fa088` and `903cef79660`, renders
-collaborator avatar and name fields as required data. That is correct if the
-state is a validated `PostEditorAwarenessState`, but not if it is raw remote
-JSON.
+`8e5a0039ff6` (`Real-time Collaboration: Add collaborators presence UI
+(#75065)`) and later presence UI changes render `collaboratorInfo` as required
+data. That is correct only if the server or client has already converted remote
+JSON into a valid `PostEditorAwarenessState`.
 
-The bug therefore appears to have existed since the HTTP polling, awareness, and
-presence UI paths were connected. It became reachable because the system never
-added a runtime conversion point from "untrusted awareness JSON" to "valid
-post-editor awareness state".
+The missing design step was a runtime boundary between "untrusted awareness
+payload" and "typed collaborator state".
+
+## Fix Strategy
+
+Because the feature is unreleased, fix the protocol rather than preserving the
+current permissive behavior.
+
+The target design should be:
+
+-   Client requests contain only the awareness fields the client is allowed to
+    control.
+-   Server responses contain canonical collaborator identity fields derived from
+    WordPress authentication, not from client-provided identity JSON.
+-   Both server and client reject malformed awareness before it reaches
+    rendering or equality checks.
 
 ## Fix Plan
 
-Fix this in layers. The client guard should land even if server validation also
-lands, because existing bad state, old servers, plugins, or future transport bugs
-must not be able to crash the editor.
+### 1. Define a strict wire schema before release
 
-### 1. Define the runtime awareness contract
+Split the request and response contracts.
 
-Create one runtime validator/normalizer for post-editor awareness state. The
-minimum valid non-empty state should be:
+Client-to-server awareness should be `null` for disconnect or a narrow activity
+object. The client should not be trusted to provide collaborator identity.
 
--   `collaboratorInfo` is present.
--   `collaboratorInfo.id` is a finite number.
--   `collaboratorInfo.name` and `collaboratorInfo.slug` are strings.
--   `collaboratorInfo.avatar_urls` is an object containing only string URL values
-    for known sizes, or an empty object.
--   `collaboratorInfo.browserType` is a string.
--   `collaboratorInfo.enteredAt` is a finite number.
--   `editorState`, when present, matches the existing selection-state runtime
-    expectations.
--   Unknown top-level fields are rejected or stripped before state reaches
-    `AwarenessState.updateSubscribers()`.
+For the post editor, a good pre-release request contract is:
 
-Keep `null` as the disconnect signal. Decide explicitly whether `{}` remains an
-allowed transient local state while collaborator info is loading. If `{}` remains
-allowed, it must be treated as empty presence and must not be rendered or counted
-as a collaborator.
+```ts
+type ClientPostEditorAwareness = null | {
+	editorState?: EditorState;
+};
+```
 
-### 2. Validate at the client trust boundary
+The server-to-client response contract can include identity, but identity should
+be canonical:
 
-Change the HTTP polling awareness types from "object" to "unknown until parsed".
-Then validate each remote state before writing it into the Yjs awareness map.
+```ts
+type ServerPostEditorAwareness = {
+	collaboratorInfo: {
+		id: number;
+		name: string;
+		slug: string;
+		avatar_urls: Record< string, string >;
+		browserType?: string;
+		enteredAt: number;
+	};
+	editorState?: EditorState;
+};
+```
 
-Recommended behavior:
+If `browserType` is kept, decide whether it is display-only client-provided
+metadata or remove it from collaborator identity. Do not treat it as
+authoritative.
 
--   Drop invalid remote awareness entries.
--   If an invalid entry was already present locally, delete it and emit a removal
-    change.
--   Do not emit an update for invalid state.
--   Optionally log a development-only warning with the room and client ID, but do
-    not include attacker-controlled values in user-visible UI.
+Reject unknown top-level fields. Reject arrays and non-plain objects. Bound the
+serialized size of awareness state independently of the overall request body
+limit.
 
-The sync package should not depend directly on editor/core-data state types. Use
-one of these approaches:
+### 2. Make the PHP endpoint authoritative
 
--   Add an optional `validateAwarenessState` or `normalizeAwarenessState`
-    callback to the room/provider registration path, supplied by core-data for
-    post-editor rooms.
--   Or make the sync package perform only generic hardening (`plain object`,
-    no arrays, bounded size), then have core-data validate before publishing
-    `PostEditorAwarenessState` to hooks.
+The server is the fan-out point, so it should enforce the contract first.
 
-The stronger option is to validate before writing to Yjs and again before
-publishing typed state.
+Recommended server behavior:
 
-### 3. Make `AwarenessState` robust against remote data
+-   Accept `awareness: null` as a disconnect signal.
+-   Accept only the narrow client-controlled activity fields for non-null
+    awareness.
+-   Derive `collaboratorInfo.id`, `name`, `slug`, and `avatar_urls` from the
+    authenticated `wp_user_id` before returning awareness to other clients.
+-   Reject malformed non-null awareness with a `400 rest_invalid_param` style
+    response.
+-   When rewriting room awareness, drop any malformed stored entries instead of
+    returning them.
+-   Keep the existing room permission and client-ID ownership checks.
 
-`AwarenessState.updateSubscribers()` should not assume that every entry returned
-by `getStates()` is a valid `State`. Add a protected parser hook, for example:
+Because this is unreleased, rejecting bad requests is preferable to accepting and
+silently stripping arbitrary fields. Silent stripping makes protocol mistakes
+harder to detect before release.
+
+### 3. Change sync types from trusted object to unknown-at-boundary
+
+The sync package should not type remote awareness as a safe `object`. Use
+`unknown` at the transport boundary and parse it before writing to Yjs.
+
+The sync package is intentionally generic, so avoid importing post-editor types
+directly into it. Either:
+
+-   pass a room-specific `normalizeAwarenessState` callback when registering the
+    room, or
+-   perform only generic validation in sync and require core-data to normalize
+    before publishing typed awareness.
+
+The stronger pre-release design is to do both:
+
+-   sync rejects impossible JSON shapes (`null`, plain object, size bounds);
+-   core-data validates the post-editor-specific shape.
+
+### 4. Harden `AwarenessState`
+
+`AwarenessState` should not publish every value from `getStates()` as `State`.
+Add a protected normalization hook:
 
 ```ts
 protected normalizeRemoteState( rawState: unknown ): State | null;
 ```
 
-Subclasses can implement schema-specific validation. The base implementation can
-accept plain objects for generic awareness, but post-editor awareness should
-return `null` for malformed values. `updateSubscribers()` should skip `null`
-states before updating `seenStates`, `previousSnapshot`, or subscribers.
+Use it before updating `seenStates`, `previousSnapshot`, or subscribers. Invalid
+remote state should be skipped and, where possible, removed from the local
+awareness map.
 
-After this change, `isFieldEqual()` should only see fields from normalized
-states. It can keep throwing for local developer mistakes, but malformed remote
-state should never reach that comparison path.
+After this change:
 
-### 4. Harden the PHP endpoint
-
-Server validation is still needed because the server is the fan-out point.
-
-Implement a REST schema or explicit validator for awareness state:
-
--   `null` is allowed for disconnect.
--   Empty state is allowed only if clients still need it during startup, and it
-    should not be treated as renderable collaborator presence.
--   Non-empty state must match the post-editor awareness schema.
--   Unknown top-level fields should be rejected.
--   Invalid stored awareness entries should be skipped and removed when the room
-    state is rewritten.
-
-For the spoofing side of the same trust issue, prefer making identity fields
-server-authoritative. The server already records `wp_user_id` for an awareness
-entry. It can derive or verify `collaboratorInfo.id`, `name`, `slug`, and avatar
-URLs from the authenticated WordPress user instead of trusting the client. The
-client may still provide non-security-sensitive activity state such as selection.
+-   unknown remote fields never reach `isFieldEqual()`;
+-   missing required fields never reach presence UI;
+-   local code can still throw on unknown fields when setting managed local
+    state, preserving the developer-signal value of the equality checker.
 
 ### 5. Keep UI defensive
 
-The UI should not be the primary validator, but it should remain resilient:
+The UI should not be the main security boundary, but it should still avoid
+turning malformed state into a full editor crash.
 
--   Filter collaborators without valid `collaboratorInfo` before rendering
-    avatars, names, notifications, or scroll targets.
--   Avoid optional chaining that silently renders misleading partial identities;
-    invalid collaborators should be absent from the presence UI.
--   Keep error boundaries as last-resort containment, not normal control flow.
+Presence consumers should filter out collaborators without valid
+`collaboratorInfo` before rendering avatars, names, notifications, or scroll
+targets. Do not use optional chaining to render partial or misleading
+collaborator identities. Invalid collaborators should be absent from the UI.
+
+The error boundary should remain last-resort containment, not the expected
+handling path.
 
 ### 6. Convert repros into regression tests
 
-The repro tests on this branch should become passing regression tests for the
-fixed behavior:
+The existing repro tests should be converted from "proves crash" to "proves
+rejection or safe ignore":
 
--   PHP: malformed awareness is rejected or omitted from the returned awareness
-    map.
--   HTTP polling manager: malformed remote awareness is not stored in
-    `awareness.getStates()` and does not emit an added/updated collaborator.
--   Core-data awareness: unknown remote fields do not throw and do not publish a
-    malformed collaborator.
+-   PHP: malformed awareness is rejected with a 400, or existing malformed
+    stored entries are omitted during cleanup.
+-   Polling manager: malformed remote awareness is not stored in
+    `awareness.getStates()` and does not emit an added collaborator.
+-   Core-data awareness: unknown remote fields do not throw and are not
+    published to subscribers.
 -   Presence UI: malformed awareness does not trip an error boundary.
--   Browser: one collaborator can post malformed awareness, but the other editor
-    remains usable and the malformed collaborator is not shown.
+-   Browser: the attacker can attempt the malformed update, but the victim editor
+    remains usable and no fake/malformed collaborator appears.
 
-Keep a separate positive-path test proving that valid collaborators still appear
-and update normally.
+Keep positive-path tests proving valid collaborator presence still appears,
+updates, disconnects, and reconnects normally.
 
-## Fix Ordering
+## Recommended Landing Order
 
-The safest landing order is:
+Since this can be fixed before release, land the protocol fix before exposing the
+feature broadly:
 
-1. Client-side validation and UI resilience, to stop the crash even with old or
-   corrupted server state.
-2. PHP validation and cleanup, to stop propagating bad awareness to other
-   clients.
-3. Server-authoritative collaborator identity, to address spoofing from the same
-   trust boundary.
-4. Test conversion from "repro demonstrates crash" to "malformed awareness is
-   ignored or rejected".
+1. Define the strict request/response awareness schemas.
+2. Make the PHP endpoint reject malformed awareness and return server-derived
+   collaborator identity.
+3. Update the client to send only allowed activity fields and to parse response
+   awareness at the boundary.
+4. Harden `AwarenessState` and the presence UI as defense-in-depth.
+5. Convert the repro tests into regression tests and keep one browser-level
+   regression.
 
-This order reduces user-visible risk first without depending on every deployment
-having the server fix immediately.
+The key release criterion is that arbitrary client-provided awareness JSON never
+crosses into typed collaborator state.
