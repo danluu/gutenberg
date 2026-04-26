@@ -101,7 +101,9 @@ not include the previously known transport limit bug.
 ### 5. A surviving room's compaction update is dropped after a 403 in another room
 
 -   Commit: `3e76fdf6e8f Add five RTC sync lifecycle bug repros`
--   Repro: `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`
+-   Repros:
+    -   `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`
+    -   `test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts`
 -   Failure: after a server-requested compaction update is sent for a room, a 403
     for another room unregisters the forbidden room and restores updates for
     surviving rooms. The restore path filters out compaction updates, so the
@@ -111,13 +113,21 @@ not include the previously known transport limit bug.
 -   Repro status:
     -   HTTP polling manager unit/integration: created in
         `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`.
-    -   REST server integration: not created. The next level needs an actual sync
-        server state with at least two rooms in one poll, a compaction nomination
-        for the surviving room, and a simultaneous 403 for another room.
-    -   Playwright normal-user browser repro: not created for the stock editor.
-        The required timing combines server compaction nomination with a
-        concurrent permission loss; ordinary editor actions do not deterministically
-        create that race without server-side test setup.
+    -   REST server integration: created in
+        `test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts`.
+        The test seeds valid Yjs updates through the public `/wp-sync/v1/updates`
+        endpoint so the real sync server nominates the post room for compaction.
+    -   Playwright browser repro: created in
+        `test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts`.
+        Two administrator browser sessions open the same post and load the default
+        category room through the normal pre-publish panel. A third admin page uses
+        the normal Writing settings and Categories screens to move the default
+        category back to `Uncategorized` and delete the loaded category. The
+        current browser repro fails before the narrow unit-test assertion: the
+        403 is surfaced to the polling manager as a generic `Response`, so the
+        deleted category room remains in later retry payloads and all rooms back
+        off. The test's next assertion checks that, once that 403 handling layer is
+        fixed, the queued post compaction update is retried instead of dropped.
 
 ### 6. Remaining rooms never resume queued updates after the primary room is unregistered
 
@@ -141,7 +151,11 @@ not include the previously known transport limit bug.
         post room, but it also sets `collaborationSupported` to false and the
         editor falls back to normal post locking. The existing stock browser path
         therefore does not leave a collaborative secondary room that a user can
-        continue editing without injected timing or transport state.
+        continue editing without injected timing or transport state. A remote
+        post-deletion workflow is also blocked by the browser-level 403 behavior
+        reproduced in bug 5: the failing room is not unregistered, so the page
+        never reaches the "primary removed, secondary survives" state needed to
+        isolate this bug.
 
 ## Verification
 
@@ -157,3 +171,6 @@ The repros are intentionally failing on the current implementation:
     fails the new undo selection browser repro with the selection unset after
     undo. Temporarily removing the normal pre-publish category load makes the
     same test pass.
+-   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts --grep "retries a queued post compaction"`
+    fails after a normal admin UI category deletion because the next retry payload
+    still contains the deleted `taxonomy/category` room.
