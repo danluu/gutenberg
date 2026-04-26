@@ -24,6 +24,7 @@ const SECOND_ADMIN: UserCredentials = {
 
 const COMMENT_COLLECTION_ROOM = 'root/comment';
 const NOTE_TARGET_TEXT = 'Primary unregister note target';
+const NOTE_TARGET_TEXT_PREFIX = NOTE_TARGET_TEXT;
 
 type SyncRoomPayload = {
 	room: string;
@@ -165,11 +166,12 @@ async function pasteOversizedTitle( page: Page, editor: Editor ) {
 async function addNoteToParagraph(
 	page: Page,
 	editor: Editor,
+	targetText: string,
 	noteText: string
 ) {
 	await editor.canvas
 		.getByRole( 'document', { name: 'Block: Paragraph' } )
-		.filter( { hasText: NOTE_TARGET_TEXT } )
+		.filter( { hasText: targetText } )
 		.click();
 	await editor.clickBlockOptionsMenuItem( 'Add note' );
 	await page
@@ -213,10 +215,13 @@ test.describe( 'Collaboration - primary room unregister without plugins', () => 
 	} ) => {
 		test.setTimeout( 120000 );
 
+		await requestUtils.deleteAllComments( 'note' );
+
+		const noteTargetText = `${ NOTE_TARGET_TEXT_PREFIX } ${ Date.now() }`;
 		const post = await requestUtils.createPost( {
 			title: 'RTC stock primary unregister repro',
 			status: 'draft',
-			content: `<!-- wp:paragraph --><p>${ NOTE_TARGET_TEXT }</p><!-- /wp:paragraph -->`,
+			content: `<!-- wp:paragraph --><p>${ noteTargetText }</p><!-- /wp:paragraph -->`,
 			date_gmt: new Date().toISOString(),
 		} );
 		const postRoom = `postType/post:${ post.id }`;
@@ -268,14 +273,16 @@ test.describe( 'Collaboration - primary room unregister without plugins', () => 
 		const { page2 } = collaborationUtils;
 		await waitForRoomCollaborator( page, COMMENT_COLLECTION_ROOM );
 
-		await addNoteToParagraph( page, editor, noteText );
+		await addNoteToParagraph( page, editor, noteTargetText, noteText );
 
 		const commentPayload = await waitForSyncPayload(
 			page,
-			( payload ) =>
-				payload.rooms.some(
+			( payload ) => {
+				const commentRoom = payload.rooms.find(
 					( room ) => room.room === COMMENT_COLLECTION_ROOM
-				),
+				);
+				return ( commentRoom?.updates.length ?? 0 ) > 0;
+			},
 			10000
 		);
 		const commentRoom = commentPayload.rooms.find(
