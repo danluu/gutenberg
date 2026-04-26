@@ -8,6 +8,7 @@ import { Y } from '@wordpress/sync';
  * Internal dependencies
  */
 import {
+	findRichTextAttributeKeyForYText,
 	getYTextByAttributeKey,
 	htmlIndexToRichTextOffset,
 	richTextOffsetToHtmlIndex,
@@ -19,6 +20,30 @@ function createAttachedAttributes(): Y.Map< unknown > {
 	const attributes = new Y.Map< unknown >();
 	root.set( 'attributes', attributes );
 	return attributes;
+}
+
+function addTableCellText(
+	attributes: Y.Map< unknown >,
+	content: string
+): Y.Text {
+	const body =
+		( attributes.get( 'body' ) as Y.Array< Y.Map< unknown > > ) ??
+		new Y.Array< Y.Map< unknown > >();
+	if ( ! attributes.has( 'body' ) ) {
+		attributes.set( 'body', body );
+	}
+
+	const row = new Y.Map< unknown >();
+	const cells = new Y.Array< Y.Map< unknown > >();
+	const cell = new Y.Map< unknown >();
+	const text = new Y.Text( content );
+
+	cell.set( 'content', text );
+	cells.push( [ cell ] );
+	row.set( 'cells', cells );
+	body.push( [ row ] );
+
+	return text;
 }
 
 describe( 'getYTextByAttributeKey', () => {
@@ -60,6 +85,31 @@ describe( 'getYTextByAttributeKey', () => {
 		expect(
 			getYTextByAttributeKey( attributes, 'body.-1.cells.0.content' )
 		).toBeNull();
+	} );
+} );
+
+describe( 'findRichTextAttributeKeyForYText', () => {
+	it( 'returns the current nested attribute path for a Y.Text', () => {
+		const attributes = createAttachedAttributes();
+		const text = addTableCellText( attributes, 'Cell text' );
+
+		expect( findRichTextAttributeKeyForYText( attributes, text ) ).toBe(
+			'body.0.cells.0.content'
+		);
+	} );
+
+	it( 'updates array indexes after structural edits', () => {
+		const attributes = createAttachedAttributes();
+		const text = addTableCellText( attributes, 'Cell text' );
+		const body = attributes.get( 'body' ) as Y.Array< Y.Map< unknown > >;
+		const insertedRow = new Y.Map< unknown >();
+		insertedRow.set( 'cells', new Y.Array< Y.Map< unknown > >() );
+
+		body.insert( 0, [ insertedRow ] );
+
+		expect( findRichTextAttributeKeyForYText( attributes, text ) ).toBe(
+			'body.1.cells.0.content'
+		);
 	} );
 } );
 
