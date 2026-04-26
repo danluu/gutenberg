@@ -735,7 +735,7 @@ describe( 'saveEditedEntityRecord', () => {
 		);
 	} );
 
-	it( 'does not include privileged collaboration-only edits in the save payload', async () => {
+	it( 'saves non-transient edits after RTC authorization has accepted them', async () => {
 		const configs = [
 			{
 				kind: 'postType',
@@ -743,14 +743,11 @@ describe( 'saveEditedEntityRecord', () => {
 				baseURL: '/wp/v2/posts',
 			},
 		];
-		const remoteCollaborationEdits = {
-			meta: {
-				rtc_privileged_meta: 'changed by limited peer',
-			},
-			status: 'publish',
+		const acceptedEdits = {
+			title: 'Safe collaborative title',
 		};
 		const select = {
-			getEntityRecordNonTransientEdits: () => remoteCollaborationEdits,
+			getEntityRecordNonTransientEdits: () => acceptedEdits,
 			hasEditsForEntityRecord: () => true,
 		};
 
@@ -768,7 +765,7 @@ describe( 'saveEditedEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			{ id: 10 },
+			{ id: 10, title: 'Safe collaborative title' },
 			undefined
 		);
 	} );

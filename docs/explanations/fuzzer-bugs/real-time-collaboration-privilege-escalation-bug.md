@@ -30,6 +30,24 @@ the merged edits with the higher-privilege user's REST nonce and capabilities.
 That makes the higher-privilege user the deputy that persists the
 lower-privilege user's unauthorized field change.
 
+## Branch Links For Issue Reports
+
+Use these absolute links when pasting this writeup into an issue in the main
+Gutenberg repository:
+
+-   Proposed fix branch:
+    <https://github.com/danluu/gutenberg/tree/try/privilege-escalation>
+-   This explanation:
+    <https://github.com/danluu/gutenberg/blob/try/privilege-escalation/docs/explanations/fuzzer-bugs/real-time-collaboration-privilege-escalation-bug.md>
+-   CRDT containment:
+    <https://github.com/danluu/gutenberg/blob/try/privilege-escalation/packages/core-data/src/utils/crdt.ts>
+-   Post entity sync configuration:
+    <https://github.com/danluu/gutenberg/blob/try/privilege-escalation/packages/core-data/src/entities.js>
+-   CRDT regression test:
+    <https://github.com/danluu/gutenberg/blob/try/privilege-escalation/packages/core-data/src/utils/test/crdt-authorization.test.ts>
+-   Playwright repros:
+    <https://github.com/danluu/gutenberg/blob/try/privilege-escalation/test/e2e/specs/editor/collaboration/collaboration-privilege-escalation.spec.ts>
+
 ## Concrete Reproductions
 
 There are two concrete repros. They demonstrate the same confused-deputy bug
@@ -235,7 +253,29 @@ distinguish "admin typed this" from "admin received this from a contributor".
 
 ## Fix Plan
 
-### Immediate Containment
+### Proposed Immediate Containment On This Branch
+
+The proposed fix on `danluu/try/privilege-escalation` implements the
+conservative review feedback first:
+
+1. Define a single fail-closed post sync allow list,
+   `SAFE_POST_SYNC_PROPERTIES`, currently containing only `title`.
+2. Use that allow list when constructing post entity `syncedProperties`.
+3. Re-check the same allow list inside both
+   `applyPostChangesToCRDTDoc()` and `getPostChangesFromCRDTDoc()`, so a
+   future broad `syncedProperties` caller cannot accidentally reopen the
+   unsafe fields.
+4. Stop auto-registering taxonomy REST bases for post CRDT sync.
+5. Leave `blocks`, `content`, `excerpt`, `author`, `status`, `meta`, taxonomy
+   REST bases, `date`, `featured_media`, `sticky`, `template`,
+   `comment_status`, `ping_status`, and `format` out of cross-user post sync
+   until there is provenance and field-level authorization.
+
+This intentionally trades collaboration coverage for a simple security
+property: data that can require stronger authority than `edit_post` does not
+enter another user's local save payload through RTC.
+
+### Immediate Containment Requirements
 
 1. Narrow the default post CRDT sync surface to fields that are safe for every
    participant who can enter the post room.
@@ -250,7 +290,7 @@ distinguish "admin typed this" from "admin received this from a contributor".
 4. Do not sync arbitrary post meta by default. Only sync explicitly declared
    collaborative meta keys, and require that those keys are safe for all room
    participants or have a field-level authorization strategy.
-5. Keep title, excerpt, and other text-like fields only after confirming
+5. Keep additional text-like fields such as excerpt only after confirming
    whether they have the same KSES or capability-sensitive behavior as content
    in the target editor workflow.
 
@@ -283,23 +323,25 @@ crossing while a more complete authorization model is designed.
 
 ### Test Plan
 
-Keep repro coverage at three levels:
+Keep repro coverage at four checks:
 
 1. CRDT utility test: a lower-privilege remote update to `author`, taxonomy
    fields, `meta`, `status`, and unfiltered block content must not surface as
    local save edits for a higher-privilege user.
-2. Save-payload test: remote-only privileged edits must not be included in
-   `saveEditedEntityRecord()` payloads.
+2. Save-payload test: `saveEditedEntityRecord()` remains an ordinary sink for
+   non-transient edits; RTC authorization must happen before remote CRDT data
+   reaches this path.
 3. Playwright test: a contributor using normal editor UI must not be able to
    change an admin-only meta key by syncing it into an admin editor and waiting
-   for the admin to save.
+   for the admin to publish.
 4. Playwright test: a contributor using the built-in Custom HTML block must not
    be able to persist `<script>` by syncing it into an admin editor and waiting
    for the admin to publish.
 
 Add negative controls:
 
-1. Ordinary collaborative block/content edits still sync and save.
+1. Ordinary collaborative edits for fields that remain in the fail-closed allow
+   list, currently `title`, still sync and save.
 2. A user who is actually authorized for a protected field can still edit and
    save that field.
 3. A contributor's direct save of the Custom HTML `<script>` test content is

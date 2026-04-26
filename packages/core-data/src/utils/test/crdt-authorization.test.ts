@@ -20,10 +20,20 @@ import type { Post } from '../../entity-types';
 
 const syncedProperties = new Set< string >( [
 	'author',
+	'blocks',
 	'categories',
+	'comment_status',
 	'content',
+	'date',
+	'excerpt',
+	'featured_media',
+	'format',
 	'meta',
+	'ping_status',
+	'slug',
 	'status',
+	'sticky',
+	'template',
 	'title',
 ] );
 
@@ -67,10 +77,13 @@ describe( 'CRDT authorization', () => {
 				{
 					author: 2,
 					categories: [ 12 ],
+					content:
+						'<!-- wp:html -->\n<script>alert( "pwned" );</script>\n<!-- /wp:html -->',
 					meta: {
 						rtc_privileged_meta: 'changed by limited peer',
 					},
 					status: 'publish',
+					title: 'Collaborative title',
 				} as PostChanges,
 				syncedProperties
 			);
@@ -90,8 +103,10 @@ describe( 'CRDT authorization', () => {
 
 			expect( changes ).not.toHaveProperty( 'author' );
 			expect( changes ).not.toHaveProperty( 'categories' );
+			expect( changes ).not.toHaveProperty( 'content' );
 			expect( changes ).not.toHaveProperty( 'meta' );
 			expect( changes ).not.toHaveProperty( 'status' );
+			expect( changes ).toHaveProperty( 'title', 'Collaborative title' );
 		} finally {
 			privilegedDoc.destroy();
 			limitedDoc.destroy();
