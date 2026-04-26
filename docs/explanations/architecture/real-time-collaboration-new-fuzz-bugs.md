@@ -133,15 +133,17 @@ not include the previously known transport limit bug.
         `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`.
     -   REST server integration: created in
         `test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts`.
-        The test seeds valid Yjs updates through the public `/wp-sync/v1/updates`
-        endpoint so the real sync server nominates the post room for compaction.
-    -   Playwright browser repro: created in
+        The test drives the real editor and sync server until the server nominates
+        the post room for compaction.
+    -   Playwright normal-user browser repro: created in
         `test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts`.
         Two administrator browser sessions open the same post and load the default
-        category room through the normal pre-publish panel. A third admin page uses
-        the normal Writing settings and Categories screens to move the default
-        category back to `Uncategorized` and delete the loaded category. The
-        current browser repro fails before the narrow unit-test assertion: the
+        category room through the normal pre-publish panel. One user then types
+        80 characters into the normal title field, which produces enough post-room
+        sync updates for the real server to request compaction. A third admin page
+        uses the normal Writing settings and Categories screens to move the
+        default category back to `Uncategorized` and delete the loaded category.
+        The current browser repro fails before the narrow unit-test assertion: the
         403 is surfaced to the polling manager as a generic `Response`, so the
         deleted category room remains in later retry payloads and all rooms back
         off. The test's next assertion checks that, once that 403 handling layer is
@@ -201,8 +203,9 @@ The repros are intentionally failing on the current implementation:
     undo. Temporarily removing the normal pre-publish category load makes the
     same test pass.
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts --grep "retries a queued post compaction"`
-    fails after a normal admin UI category deletion because the next retry payload
-    still contains the deleted `taxonomy/category` room.
+    uses normal title typing to trigger server-requested compaction, then fails
+    after a normal admin UI category deletion because the next retry payload still
+    contains the deleted `taxonomy/category` room.
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`
     fails the provider retry repro with one post-room provider creation attempt
     instead of two, and fails the partial-provider repro with zero destroys for

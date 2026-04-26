@@ -3,7 +3,6 @@
  */
 import type { Page, Request, Response } from '@playwright/test';
 import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
-import * as Y from 'yjs';
 
 /**
  * Internal dependencies
@@ -69,42 +68,6 @@ function payloadHasRoom( payload: SyncPayload | null, room: string ) {
 
 function roomHasCompactionUpdate( room: SyncRoomPayload | undefined ) {
 	return room?.updates.some( ( update ) => update.type === 'compaction' );
-}
-
-async function seedPostRoomUpdates(
-	requestUtils: RequestUtils,
-	room: string,
-	count: number
-) {
-	const ydoc = new Y.Doc();
-	const updates: Uint8Array[] = [];
-	ydoc.on( 'updateV2', ( update: Uint8Array ) => {
-		updates.push( update );
-	} );
-
-	const map = ydoc.getMap( 'seed' );
-	for ( let i = 0; i < count; i++ ) {
-		map.set( `update-${ i }`, i );
-	}
-
-	await requestUtils.rest( {
-		method: 'POST',
-		path: '/wp-sync/v1/updates',
-		data: {
-			rooms: [
-				{
-					after: 0,
-					awareness: null,
-					client_id: 987654321,
-					room,
-					updates: updates.map( ( update ) => ( {
-						data: Buffer.from( update ).toString( 'base64' ),
-						type: 'update',
-					} ) ),
-				},
-			],
-		},
-	} );
 }
 
 async function setDefaultCategory(
@@ -217,6 +180,21 @@ async function deleteCategoryThroughAdminUi(
 	await expect( row ).toHaveCount( 0 );
 }
 
+async function typeTitleUpdates( page: Page, count: number ) {
+	const title = page
+		.frameLocator( 'iframe[name="editor-canvas"]' )
+		.getByRole( 'textbox', { name: 'Add title' } );
+
+	await title.click();
+	await page.keyboard.press( 'End' );
+
+	for ( let i = 0; i < count; i++ ) {
+		await page.keyboard.type( String.fromCharCode( 97 + ( i % 26 ) ), {
+			delay: 5,
+		} );
+	}
+}
+
 test.describe( 'Collaboration - compaction and permission loss', () => {
 	test( 'retries a queued post compaction after a loaded category room is deleted', async ( {
 		collaborationUtils,
@@ -257,7 +235,7 @@ test.describe( 'Collaboration - compaction and permission loss', () => {
 			[ page, page2 ],
 			postRoom
 		);
-		await seedPostRoomUpdates( requestUtils, postRoom, 60 );
+		await typeTitleUpdates( page, 80 );
 		const { page: compactorPage } = await compactionNominationPromise;
 
 		const forbiddenRequestPromise = compactorPage.waitForRequest(
