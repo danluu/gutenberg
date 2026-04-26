@@ -9,7 +9,7 @@ import {
 	it,
 	jest,
 } from '@jest/globals';
-import { type SyncResponse } from '../types';
+import { SyncUpdateType, type SyncResponse } from '../types';
 
 // Mock all external dependencies before imports.
 jest.mock( 'yjs', () => ( {
@@ -1282,6 +1282,75 @@ describe( 'polling-manager', () => {
 
 			await jest.advanceTimersByTimeAsync( 0 );
 			expect( mockPostSyncUpdate ).toHaveBeenCalledTimes( 3 );
+		} );
+
+		it( 'resumes queued updates after the original primary room is unregistered', async () => {
+			mockPostSyncUpdate
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'primary-room',
+							end_cursor: 1,
+							awareness: { 1: {} },
+							updates: [],
+						},
+					],
+				} )
+				.mockResolvedValue( {
+					rooms: [
+						{
+							room: 'secondary-room',
+							end_cursor: 2,
+							awareness: { 2: {}, 3: {} },
+							updates: [],
+						},
+					],
+				} );
+
+			const secondaryDoc = createMockDoc( 2 );
+
+			pollingManager.registerRoom( {
+				room: 'primary-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+			pollingManager.registerRoom( {
+				room: 'secondary-room',
+				doc: secondaryDoc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+			expect( mockPostSyncUpdate ).toHaveBeenCalledTimes( 1 );
+
+			pollingManager.unregisterRoom( 'primary-room', {
+				sendDisconnectSignal: false,
+			} );
+
+			const onDocUpdate = getOnDocUpdate( secondaryDoc );
+			onDocUpdate( new Uint8Array( [ 9 ] ), 'local-editor' );
+
+			await jest.advanceTimersByTimeAsync( 4000 );
+			await jest.advanceTimersByTimeAsync( 4000 );
+
+			const payloadAfterCollaboratorDiscovery =
+				mockPostSyncUpdate.mock.calls[ 2 ][ 0 ];
+			const secondaryRoom = payloadAfterCollaboratorDiscovery.rooms.find(
+				( room ) => room.room === 'secondary-room'
+			);
+			expect( secondaryRoom?.updates ).toEqual(
+				expect.arrayContaining( [
+					expect.objectContaining( {
+						type: SyncUpdateType.UPDATE,
+					} ),
+				] )
+			);
 		} );
 	} );
 
