@@ -88,29 +88,31 @@ The vulnerable path crosses four layers:
    under the submitted client ID and returns the stored `client_id => state` map
    to room peers.
 3. **Polling client ingestion.** `processAwarenessUpdate()` in
-   [`polling-manager.ts`](../../../packages/sync/src/providers/http-polling/polling-manager.ts)
+   [`polling-manager.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/polling-manager.ts)
    writes each returned value into `awareness.getStates()` without runtime
    validation.
 4. **Typed publication and rendering.**
-   [`AwarenessState.updateSubscribers()`](../../../packages/core-data/src/awareness/awareness-state.ts)
+   [`AwarenessState.updateSubscribers()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/awareness-state.ts)
    publishes the raw entry as typed state, and
-   [`CollaboratorsPresence`](../../../packages/editor/src/components/collaborators-presence/index.tsx)
+   [`CollaboratorsPresence`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/index.tsx)
    plus
-   [`CollaboratorsList`](../../../packages/editor/src/components/collaborators-presence/list.tsx)
+   [`CollaboratorsList`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/list.tsx)
    dereference `collaboratorInfo` fields.
 
-The repro stack on this branch covers those boundaries:
+The current repros are committed as tests on
+[`danluu/try/awareness-exception`](https://github.com/danluu/gutenberg/tree/try/awareness-exception).
+They cover these boundaries:
 
 -   Server replay:
-    [`wpHttpPollingSyncServer.php`](../../../phpunit/tests/collaboration/wpHttpPollingSyncServer.php)
+    [`wpHttpPollingSyncServer.php`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/phpunit/tests/collaboration/wpHttpPollingSyncServer.php)
 -   Polling ingestion:
-    [`polling-manager.test.ts`](../../../packages/sync/src/providers/http-polling/test/polling-manager.test.ts)
+    [`polling-manager.test.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/test/polling-manager.test.ts)
 -   Awareness publication and equality exception:
-    [`awareness-state.ts`](../../../packages/core-data/src/awareness/test/awareness-state.ts)
+    [`awareness-state.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/test/awareness-state.ts)
 -   Presence UI crash:
-    [`collaborators-presence/test/index.tsx`](../../../packages/editor/src/components/collaborators-presence/test/index.tsx)
+    [`collaborators-presence/test/index.tsx`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/test/index.tsx)
 -   Browser-level crash:
-    [`collaboration-awareness-exception.spec.ts`](../../../test/e2e/specs/editor/collaboration/collaboration-awareness-exception.spec.ts)
+    [`collaboration-awareness-exception.spec.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/test/e2e/specs/editor/collaboration/collaboration-awareness-exception.spec.ts)
 
 ## Root Cause
 
@@ -302,10 +304,11 @@ collaborator identities. Invalid collaborators should be absent from the UI.
 The error boundary should remain last-resort containment, not the expected
 handling path.
 
-### 6. Convert repros into regression tests
+### 6. Turn repro tests into fix regressions
 
-The existing repro tests should be converted from "proves crash" to "proves
-rejection or safe ignore":
+The repros are already committed as executable tests on the danluu branch. Once
+the fix lands, their expectations should be flipped from "proves crash" to
+"proves rejection or safe ignore":
 
 -   PHP: malformed awareness is rejected with a 400, or existing malformed
     stored entries are omitted during cleanup.
