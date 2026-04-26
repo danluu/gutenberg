@@ -93,6 +93,22 @@ The failing stock repro is:
 WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts
 ```
 
+Known-fixes-base status, checked on `try/fuzz-known-issues-fixed-campaign`
+after the previously found RTC fixes were applied:
+
+-   **Fails:** browser stock repro
+    `test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts`
+    still receives `["anchor", "same", undefined]` instead of
+    `["anchor", "same", "same"]`.
+-   **Fails:** lower-level CRDT duplicate-row repro
+    `packages/core-data/src/utils/test/crdt-table-duplicates.fuzz.test.ts`
+    still loses the edit to the later duplicate row when the earlier duplicate
+    row is deleted.
+-   **Passes:** the lower-level control cases for distinct row contents and for
+    editing the earlier duplicate while deleting the later duplicate. Those
+    controls show the remaining failure is specific to ambiguous duplicate row
+    identity, not to all table-array merges.
+
 The lower-level fuzz/unit coverage should live near the CRDT block merge tests
 and cover duplicate query-array elements directly, without depending on browser
 timing.
