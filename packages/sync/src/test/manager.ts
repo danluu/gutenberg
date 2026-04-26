@@ -199,6 +199,67 @@ describe( 'SyncManager', () => {
 			expect( mockProviderCreator ).toHaveBeenCalledTimes( 1 );
 		} );
 
+		it( 'allows an entity to be retried after provider creation fails', async () => {
+			mockProviderCreator.mockRejectedValueOnce(
+				new Error( 'connect failed' )
+			);
+
+			const manager = createSyncManager();
+
+			await expect(
+				manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				)
+			).rejects.toThrow( 'connect failed' );
+
+			mockProviderCreator.mockResolvedValueOnce( mockProviderResult );
+
+			await manager.load(
+				mockSyncConfig,
+				'post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+
+			expect( mockProviderCreator ).toHaveBeenCalledTimes( 2 );
+		} );
+
+		it( 'destroys already-created providers when a later provider fails', async () => {
+			const providerResultA = {
+				destroy: jest.fn(),
+				on: jest.fn(),
+			};
+			const providerCreatorA = jest.fn( () =>
+				Promise.resolve( providerResultA )
+			);
+			const providerCreatorB = jest.fn( () =>
+				Promise.reject( new Error( 'second provider failed' ) )
+			);
+			mockGetProviderCreators.mockReturnValue( [
+				providerCreatorA,
+				providerCreatorB,
+			] );
+
+			const manager = createSyncManager();
+
+			await expect(
+				manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				)
+			).rejects.toThrow( 'second provider failed' );
+
+			expect( providerResultA.destroy ).toHaveBeenCalledTimes( 1 );
+		} );
+
 		it( 'loads multiple entities independently', async () => {
 			const manager = createSyncManager();
 
@@ -231,6 +292,7 @@ describe( 'SyncManager', () => {
 			mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
 				( ydoc: CRDTDoc, changes: Partial< ObjectData > ) => {
 					const recordMap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+
 					Object.entries( changes ).forEach( ( [ key, value ] ) => {
 						recordMap.set( key, value );
 					} );
@@ -284,6 +346,7 @@ describe( 'SyncManager', () => {
 				{ isNewUndoLevel: true }
 			);
 
+			// Wait a tick for yieldToEventLoop.
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			expect( handlersA.addUndoMeta ).toHaveBeenCalledTimes( 1 );
