@@ -200,7 +200,9 @@ function handleForbiddenError(
 				continue;
 			}
 			if ( room.updates.length > 0 ) {
-				remainingState.updateQueue.restore( room.updates );
+				remainingState.updateQueue.restore( room.updates, {
+					preserveCompaction: true,
+				} );
 			}
 		}
 	} else {
@@ -742,20 +744,19 @@ function poll(): void {
 				// Process awareness update.
 				roomState.processAwarenessUpdate( room.awareness );
 
-				// If there is another collaborator on the primary entity,
-				// resume all room queues for the next poll and increase
-				// polling frequency. We only check the primary room to
-				// avoid false positives from shared collection rooms
-				// (e.g. taxonomy/category), but resume all queues so
-				// collection rooms (e.g. root/comment) can also sync.
-				if (
-					roomState.isPrimaryRoom &&
-					Object.keys( room.awareness ).length > 1
-				) {
+				// The primary room represents the user's main editing context, so a
+				// collaborator there still resumes all room queues for secondary
+				// data such as notes. If the primary room has been unregistered,
+				// surviving rooms resume only their own queue when they see peers.
+				if ( Object.keys( room.awareness ).length > 1 ) {
 					hasCollaborators = true;
-					roomStates.forEach( ( state ) => {
-						state.updateQueue.resume();
-					} );
+					if ( roomState.isPrimaryRoom ) {
+						roomStates.forEach( ( state ) => {
+							state.updateQueue.resume();
+						} );
+					} else {
+						roomState.updateQueue.resume();
+					}
 				}
 
 				// Process each incoming update and collect any responses.
