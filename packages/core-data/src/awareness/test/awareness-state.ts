@@ -156,6 +156,87 @@ describe( 'AwarenessState', () => {
 			expect( callback ).toHaveBeenCalled();
 		} );
 
+		test( 'repro: should publish non-empty malformed remote state to subscribers', () => {
+			const localDoc = new Y.Doc();
+			const localAwareness = new TestAwarenessState( localDoc );
+			const callback = jest.fn();
+			const remoteClientId = 123;
+
+			try {
+				localAwareness.setUp();
+				localAwareness.onStateChange( callback );
+				localAwareness.getStates().set( remoteClientId, {
+					unexpected: 'missing expected state fields',
+				} as any );
+
+				localAwareness.emit( 'change', [
+					{
+						added: [ remoteClientId ],
+						updated: [],
+						removed: [],
+					},
+				] );
+
+				expect( callback ).toHaveBeenCalledWith( [
+					expect.objectContaining( {
+						clientId: remoteClientId,
+						isConnected: true,
+						isMe: false,
+						unexpected: 'missing expected state fields',
+					} ),
+				] );
+			} finally {
+				try {
+					localDoc.destroy();
+				} catch {}
+			}
+		} );
+
+		test( 'repro: should throw when a remote state update has an unknown top-level field', () => {
+			const localDoc = new Y.Doc();
+			const localAwareness = new TestAwarenessState( localDoc );
+			const remoteClientId = 123;
+
+			try {
+				localAwareness.setUp();
+				localAwareness.onStateChange( jest.fn() );
+				localAwareness.getStates().set( remoteClientId, {
+					name: 'Remote',
+					count: 1,
+					unexpected: 'first',
+				} as any );
+				localAwareness.emit( 'change', [
+					{
+						added: [ remoteClientId ],
+						updated: [],
+						removed: [],
+					},
+				] );
+
+				localAwareness.getStates().set( remoteClientId, {
+					name: 'Remote',
+					count: 1,
+					unexpected: 'second',
+				} as any );
+
+				expect( () => {
+					localAwareness.emit( 'change', [
+						{
+							added: [],
+							updated: [ remoteClientId ],
+							removed: [],
+						},
+					] );
+				} ).toThrow(
+					'No equality check implemented for awareness state field "unexpected".'
+				);
+			} finally {
+				try {
+					localDoc.destroy();
+				} catch {}
+			}
+		} );
+
 		test( 'should return unsubscribe function', () => {
 			awareness.setUp();
 			const callback = jest.fn();
@@ -343,8 +424,10 @@ describe( 'AwarenessState', () => {
 	describe( 'updateSubscribers', () => {
 		test( 'should not call subscribers when no subscriptions exist', () => {
 			awareness.setUp();
-			// This should not throw
-			awareness.testUpdateSubscribers();
+
+			expect( () => {
+				awareness.testUpdateSubscribers();
+			} ).not.toThrow();
 		} );
 
 		test( 'should include enhanced state properties', () => {

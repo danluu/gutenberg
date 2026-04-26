@@ -91,11 +91,11 @@ function getOnDocUpdate( doc: ReturnType< typeof createMockDoc > ) {
 	return call[ 1 ] as ( update: Uint8Array, origin: unknown ) => void;
 }
 
-function createMockAwareness() {
+function createMockAwareness( states = new Map< number, object >() ) {
 	return {
 		clientID: 1,
 		getLocalState: jest.fn( () => ( {} ) ),
-		getStates: jest.fn( () => new Map() ),
+		getStates: jest.fn( () => states ),
 		on: jest.fn(),
 		off: jest.fn(),
 		emit: jest.fn(),
@@ -552,6 +552,49 @@ describe( 'polling-manager', () => {
 					} ),
 				} )
 			);
+		} );
+	} );
+
+	describe( 'awareness update processing', () => {
+		it( 'repro: stores and emits malformed remote awareness from the server', async () => {
+			const currentStates = new Map< number, object >();
+			const awareness = createMockAwareness( currentStates );
+
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness: {
+							1: { collaboratorInfo: { id: 100 } },
+							2: { unexpected: 'missing collaboratorInfo' },
+						},
+						updates: [],
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 1 ),
+				awareness,
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( currentStates.get( 2 ) ).toEqual( {
+				unexpected: 'missing collaboratorInfo',
+			} );
+			expect( awareness.emit ).toHaveBeenCalledWith( 'change', [
+				{
+					added: [ 2 ],
+					updated: [],
+					removed: [],
+				},
+			] );
 		} );
 	} );
 
