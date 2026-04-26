@@ -14,6 +14,12 @@ import {
 } from './fixtures/collaboration-utils';
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
+const PROVIDER_LIFECYCLE_PLUGIN =
+	'gutenberg-test-plugin-sync-provider-lifecycle';
+const PROVIDER_AUTO_RECOVERY_PLUGIN =
+	'gutenberg-test-plugin-sync-provider-auto-recovery';
+const PROVIDER_PARTIAL_DEFAULT_PLUGIN =
+	'gutenberg-test-plugin-sync-provider-partial-default';
 
 type ProviderLifecycleState = {
 	attempts: number;
@@ -180,16 +186,12 @@ async function getProviderLifecycleRoomState(
 }
 
 test.describe( 'Collaboration provider lifecycle repros', () => {
-	test.beforeAll( async ( { requestUtils } ) => {
-		await requestUtils.activatePlugin(
-			'gutenberg-test-plugin-sync-provider-lifecycle'
-		);
-	} );
-
-	test.afterAll( async ( { requestUtils } ) => {
-		await requestUtils.deactivatePlugin(
-			'gutenberg-test-plugin-sync-provider-lifecycle'
-		);
+	test.afterEach( async ( { requestUtils } ) => {
+		await Promise.allSettled( [
+			requestUtils.deactivatePlugin( PROVIDER_LIFECYCLE_PLUGIN ),
+			requestUtils.deactivatePlugin( PROVIDER_AUTO_RECOVERY_PLUGIN ),
+			requestUtils.deactivatePlugin( PROVIDER_PARTIAL_DEFAULT_PLUGIN ),
+		] );
 	} );
 
 	test( 'retries provider creation for the same post after a provider becomes available', async ( {
@@ -205,6 +207,7 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 			date_gmt: new Date().toISOString(),
 		} );
 		const postRoom = `postType/post:${ post.id }`;
+		await requestUtils.activatePlugin( PROVIDER_LIFECYCLE_PLUGIN );
 
 		await openPostWithProviderLifecycleMode(
 			admin,
@@ -252,12 +255,13 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 		requestUtils,
 	} ) => {
 		const post = await requestUtils.createPost( {
-			title: 'RTC automatic provider recovery no-query',
+			title: 'RTC automatic provider recovery repro',
 			status: 'draft',
 			date_gmt: new Date().toISOString(),
 		} );
 		const postRoom = `postType/post:${ post.id }`;
 		const syncedTitle = `Synced after provider recovery ${ Date.now() }`;
+		await requestUtils.activatePlugin( PROVIDER_AUTO_RECOVERY_PLUGIN );
 
 		await openPostWithProviderLifecycleMode(
 			admin,
@@ -294,6 +298,22 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 
 		try {
 			await collaborationUtils.waitForEntityReady( page2 );
+			await expect
+				.poll(
+					async () => {
+						const state = await getProviderLifecycleState( page2 );
+						const postState = state.rooms[ postRoom ];
+						return {
+							created: postState?.created ?? 0,
+							failures: postState?.failures ?? 0,
+						};
+					},
+					{ timeout: 10000 }
+				)
+				.toEqual( {
+					created: 1,
+					failures: 0,
+				} );
 
 			await expect(
 				page.getByRole( 'button', { name: /Collaborators list/ } )
@@ -324,6 +344,7 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 			date_gmt: new Date().toISOString(),
 		} );
 		const postRoom = `postType/post:${ post.id }`;
+		await requestUtils.activatePlugin( PROVIDER_LIFECYCLE_PLUGIN );
 
 		await openPostWithProviderLifecycleMode(
 			admin,
@@ -363,12 +384,13 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 		requestUtils,
 	} ) => {
 		const post = await requestUtils.createPost( {
-			title: 'RTC partial default provider no-query',
+			title: 'RTC partial default provider failure repro',
 			status: 'draft',
 			date_gmt: new Date().toISOString(),
 		} );
 		const postRoom = `postType/post:${ post.id }`;
 		const firstPostRoomRequest = waitForRoomRequest( page, postRoom );
+		await requestUtils.activatePlugin( PROVIDER_PARTIAL_DEFAULT_PLUGIN );
 
 		await openPostWithProviderLifecycleMode(
 			admin,

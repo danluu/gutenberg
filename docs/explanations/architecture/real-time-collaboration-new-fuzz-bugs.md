@@ -36,6 +36,7 @@ not include the previously known transport limit bug.
     -   `packages/sync/src/test/manager.ts`
     -   `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`
     -   `packages/e2e-tests/plugins/sync-provider-lifecycle.php`
+    -   `packages/e2e-tests/plugins/sync-provider-auto-recovery.php`
 -   Failure: `SyncManager.load()` stores the entity state before provider creation
     finishes. If the provider creator rejects, a later retry for the same entity
     is skipped because the stale entity state remains registered.
@@ -61,13 +62,14 @@ not include the previously known transport limit bug.
         `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
         An activated provider extension wraps Gutenberg's default HTTP provider.
         The repro uses the normal post editor URL, with no
-        `rtc_provider_lifecycle` query flag; the activated extension infers the
-        test mode from the current post and user. User A opens a post while the
-        provider is temporarily unavailable. The extension then automatically
-        recovers and re-resolves the current post, delegating to the real HTTP
-        provider after recovery. User B opens the same post with the provider
-        already available. With the bug, User A never reconnects to normal
-        collaboration and never sees User B in the Collaborators list.
+        `rtc_provider_lifecycle` query flag and no title-based trigger. The
+        dedicated activated extension behaves site-wide: User A opens a post
+        while the provider is temporarily unavailable, then the extension
+        automatically marks itself recovered, re-resolves the current post, and
+        delegates to the real HTTP provider after recovery. User B opens the
+        same post with the provider already available. With the bug, User A
+        never reconnects to normal collaboration and never sees User B in the
+        Collaborators list.
     -   Playwright stock-editor repro: still not created. The default HTTP polling
         provider does not reject during construction: it constructs the
         `HttpPollingProvider`, registers the room, and returns before any network
@@ -85,6 +87,7 @@ not include the previously known transport limit bug.
     -   `packages/sync/src/test/manager.ts`
     -   `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`
     -   `packages/e2e-tests/plugins/sync-provider-lifecycle.php`
+    -   `packages/e2e-tests/plugins/sync-provider-partial-default.php`
 -   Failure: when one provider creator resolves and a later provider creator
     rejects, `SyncManager.load()` rejects without destroying the provider that was
     already created.
@@ -106,12 +109,13 @@ not include the previously known transport limit bug.
         `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
         An activated provider extension appends a failing provider after
         Gutenberg's default HTTP provider. The user simply opens a post with the
-        normal post editor URL and no `rtc_provider_lifecycle` query flag; the
-        activated extension infers the test mode from the current post. With the
-        bug, the real HTTP provider keeps polling the post room after the later
-        extension provider rejects. The test first allows for the initial
-        in-flight sync request, then fails when a later post-room sync request is
-        still sent instead of the default provider being destroyed.
+        normal post editor URL, no `rtc_provider_lifecycle` query flag, and no
+        title-based trigger. The dedicated activated extension behaves
+        site-wide. With the bug, the real HTTP provider keeps polling the post
+        room after the later extension provider rejects. The test first allows
+        for the initial in-flight sync request, then fails when a later post-room
+        sync request is still sent instead of the default provider being
+        destroyed.
     -   Playwright stock-editor repro: still not created. Stock Gutenberg only
         registers the default HTTP polling provider, so ordinary stock editor
         actions do not create a partial provider failure.
@@ -250,15 +254,15 @@ The repros are intentionally failing on the current implementation:
     instead of two, and fails the partial-provider repro with zero destroys for
     the provider that was created before the later provider rejected.
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts --grep "transient default-provider startup outage"`
-    uses a normal post editor URL, no repro query flag, and a provider extension
-    that automatically recovers and then delegates to Gutenberg's real default
-    HTTP provider. It fails because User A never reconnects and never sees User
-    B in the normal Collaborators list.
+    uses a normal post editor URL, no repro query flag, no title-based trigger,
+    and a dedicated provider extension that automatically recovers and then
+    delegates to Gutenberg's real default HTTP provider. It fails because User A
+    never reconnects and never sees User B in the normal Collaborators list.
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts --grep "cleans up the default HTTP provider"`
-    uses a normal post editor URL, no repro query flag, the real default HTTP
-    provider, and a failing extension provider. It fails because a later
-    post-room sync request is still sent after the extension provider rejects,
-    showing that the default provider was leaked.
+    uses a normal post editor URL, no repro query flag, no title-based trigger,
+    the real default HTTP provider, and a dedicated failing extension provider.
+    It fails because a later post-room sync request is still sent after the
+    extension provider rejects, showing that the default provider was leaked.
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`
     fails after User A deletes the original post room in place and User B joins
     the surviving category room; the next User A payload has no post room and has
