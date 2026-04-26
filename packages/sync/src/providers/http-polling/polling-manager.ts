@@ -744,10 +744,11 @@ function poll(): void {
 				// Process awareness update.
 				roomState.processAwarenessUpdate( room.awareness );
 
-				// The primary room represents the user's main editing context, so a
-				// collaborator there still resumes all room queues for secondary
-				// data such as notes. If the primary room has been unregistered,
-				// surviving rooms resume only their own queue when they see peers.
+				// If there is another collaborator on the primary entity,
+				// resume all room queues for the next poll because related
+				// collection rooms (e.g. root/comment) can also sync. If
+				// the primary room was removed, a surviving non-primary room
+				// with collaborators should still resume its own queue.
 				if ( Object.keys( room.awareness ).length > 1 ) {
 					hasCollaborators = true;
 					if ( roomState.isPrimaryRoom ) {
