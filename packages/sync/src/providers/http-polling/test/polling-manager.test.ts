@@ -556,7 +556,7 @@ describe( 'polling-manager', () => {
 	} );
 
 	describe( 'awareness update processing', () => {
-		it( 'repro: stores and emits malformed remote awareness from the server', async () => {
+		it( 'regression: drops malformed remote awareness from the server', async () => {
 			const currentStates = new Map< number, object >();
 			const awareness = createMockAwareness( currentStates );
 
@@ -585,15 +585,11 @@ describe( 'polling-manager', () => {
 
 			await jest.advanceTimersByTimeAsync( 0 );
 
-			expect( currentStates.get( 2 ) ).toEqual( {
-				unexpected: 'missing collaboratorInfo',
-			} );
-			expect( awareness.emit ).toHaveBeenCalledWith( 'change', [
-				{
+			expect( currentStates.has( 2 ) ).toBe( false );
+			expect( awareness.emit ).not.toHaveBeenCalledWith( 'change', [
+				expect.objectContaining( {
 					added: [ 2 ],
-					updated: [],
-					removed: [],
-				},
+				} ),
 			] );
 		} );
 	} );

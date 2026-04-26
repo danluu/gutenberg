@@ -992,32 +992,24 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	}
 
 	/**
-	 * Reproduces the server side of the awareness crash: malformed awareness is
-	 * accepted, persisted, and returned to other clients in the same room.
+	 * Regression test for the server side of the awareness crash: malformed
+	 * awareness should not be accepted and returned to other clients in the same room.
 	 *
 	 * @ticket 64890
 	 */
-	public function test_sync_awareness_accepts_malformed_state_without_collaborator_info(): void {
+	public function test_sync_rejects_malformed_awareness_without_collaborator_info(): void {
 		wp_set_current_user( self::$editor_id );
 
 		$room                = $this->get_post_room();
 		$malformed_awareness = array( 'unexpected' => 'missing collaboratorInfo' );
 
-		$this->dispatch_sync(
+		$response = $this->dispatch_sync(
 			array(
 				$this->build_room( $room, 1, 0, $malformed_awareness ),
 			)
 		);
 
-		$response = $this->dispatch_sync(
-			array(
-				$this->build_room( $room, 2, 0, array( 'name' => 'Victim' ) ),
-			)
-		);
-
-		$data = $response->get_data();
-		$this->assertArrayHasKey( 1, $data['rooms'][0]['awareness'] );
-		$this->assertSame( $malformed_awareness, $data['rooms'][0]['awareness'][1] );
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
 	}
 
 	public function test_sync_awareness_shows_multiple_clients() {

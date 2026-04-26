@@ -99,9 +99,10 @@ The vulnerable path crosses four layers:
    [`CollaboratorsList`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/list.tsx)
    dereference `collaboratorInfo` fields.
 
-The current repros are committed as tests on
+The current repros are committed as failing tests on
 [`danluu/try/awareness-exception`](https://github.com/danluu/gutenberg/tree/try/awareness-exception).
-They cover these boundaries:
+They assert the desired safe behavior and fail against the current vulnerable
+implementation. They cover these boundaries:
 
 -   Server replay:
     [`wpHttpPollingSyncServer.php`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/phpunit/tests/collaboration/wpHttpPollingSyncServer.php)
@@ -304,11 +305,10 @@ collaborator identities. Invalid collaborators should be absent from the UI.
 The error boundary should remain last-resort containment, not the expected
 handling path.
 
-### 6. Update the existing repro tests after the fix
+### 6. Make the existing failing repro tests pass
 
-The repros are already committed as executable tests on the danluu branch. This
-part is done. Once the fix lands, update those existing tests so their
-expectations flip from "proves crash" to "proves rejection or safe ignore":
+The repros are already committed as executable failing tests on the danluu
+branch. Their expectations already assert "rejection or safe ignore":
 
 -   PHP: malformed awareness is rejected with a 400, or existing malformed
     stored entries are omitted during cleanup.
@@ -334,8 +334,8 @@ feature broadly:
 3. Update the client to send only allowed activity fields and to parse response
    awareness at the boundary.
 4. Harden `AwarenessState` and the presence UI as defense-in-depth.
-5. Update the existing repro tests to assert the fixed behavior, keeping one
-   browser-level regression.
+5. Make the existing failing repro tests pass without weakening their fixed
+   behavior expectations.
 
 The key release criterion is that arbitrary client-provided awareness JSON never
 crosses into typed collaborator state.

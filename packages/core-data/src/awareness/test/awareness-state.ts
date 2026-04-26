@@ -156,7 +156,7 @@ describe( 'AwarenessState', () => {
 			expect( callback ).toHaveBeenCalled();
 		} );
 
-		test( 'repro: should publish non-empty malformed remote state to subscribers', () => {
+		test( 'regression: should not publish non-empty malformed remote state to subscribers', () => {
 			const localDoc = new Y.Doc();
 			const localAwareness = new TestAwarenessState( localDoc );
 			const callback = jest.fn();
@@ -177,14 +177,7 @@ describe( 'AwarenessState', () => {
 					},
 				] );
 
-				expect( callback ).toHaveBeenCalledWith( [
-					expect.objectContaining( {
-						clientId: remoteClientId,
-						isConnected: true,
-						isMe: false,
-						unexpected: 'missing expected state fields',
-					} ),
-				] );
+				expect( callback ).not.toHaveBeenCalled();
 			} finally {
 				try {
 					localDoc.destroy();
@@ -192,7 +185,7 @@ describe( 'AwarenessState', () => {
 			}
 		} );
 
-		test( 'repro: should throw when a remote state update has an unknown top-level field', () => {
+		test( 'regression: should not throw when a remote state update has an unknown top-level field', () => {
 			const localDoc = new Y.Doc();
 			const localAwareness = new TestAwarenessState( localDoc );
 			const remoteClientId = 123;
@@ -227,9 +220,7 @@ describe( 'AwarenessState', () => {
 							removed: [],
 						},
 					] );
-				} ).toThrow(
-					'No equality check implemented for awareness state field "unexpected".'
-				);
+				} ).not.toThrow();
 			} finally {
 				try {
 					localDoc.destroy();

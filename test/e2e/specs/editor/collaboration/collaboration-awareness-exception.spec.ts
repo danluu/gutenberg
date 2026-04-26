@@ -4,11 +4,16 @@
 import { test, expect } from './fixtures';
 
 test.describe( 'Collaboration - Awareness exception repro', () => {
-	test( 'one collaborator can crash another editor with malformed awareness', async ( {
+	test( 'malformed awareness from one collaborator does not crash another editor', async ( {
 		collaborationUtils,
 		requestUtils,
 		page,
 	} ) => {
+		const pageErrors: string[] = [];
+		page.on( 'pageerror', ( error ) => {
+			pageErrors.push( error.message );
+		} );
+
 		const post = await requestUtils.createPost( {
 			title: 'Awareness Exception Repro',
 			status: 'draft',
@@ -36,8 +41,20 @@ test.describe( 'Collaboration - Awareness exception repro', () => {
 			} );
 		}, post.id );
 
+		// Give the victim editor enough time to receive the next awareness poll.
+		await collaborationUtils.waitForSyncCycle( page, 2, {
+			timeout: 15000,
+		} );
+
+		expect(
+			pageErrors.some( ( message ) =>
+				message.includes(
+					"Cannot read properties of undefined (reading 'avatar_urls')"
+				)
+			)
+		).toBe( false );
 		await expect(
 			page.getByText( 'The editor has encountered an unexpected error.' )
-		).toBeVisible( { timeout: 15000 } );
+		).toBeHidden();
 	} );
 } );

@@ -79,7 +79,7 @@ describe( 'CollaboratorsPresence awareness crash repro', () => {
 		consoleError.mockRestore();
 	} );
 
-	it( 'repro: malformed remote awareness trips the editor error boundary', () => {
+	it( 'regression: malformed remote awareness does not trip the editor error boundary', () => {
 		mockActiveCollaborators = [
 			makeCollaborator( {
 				clientId: 1,
@@ -108,7 +108,7 @@ describe( 'CollaboratorsPresence awareness crash repro', () => {
 		);
 
 		expect(
-			screen.getByText( 'Test error boundary fallback' )
-		).toBeInTheDocument();
+			screen.queryByText( 'Test error boundary fallback' )
+		).not.toBeInTheDocument();
 	} );
 } );
