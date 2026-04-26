@@ -1478,6 +1478,142 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		);
 	}
 
+	public function test_randomized_awareness_race_windows_preserve_completed_client_states() {
+		wp_set_current_user( self::$editor_id );
+
+		$seed         = 9473;
+		$room         = $this->get_post_room() . ':awareness-race-' . $seed;
+		$base_storage = new WP_Sync_Post_Meta_Storage();
+		$race_storage = new class( $base_storage ) implements WP_Sync_Storage {
+			private WP_Sync_Storage $storage;
+			private array $queued_injections = array();
+			public array $injected_entries   = array();
+
+			public function __construct( WP_Sync_Storage $storage ) {
+				$this->storage = $storage;
+			}
+
+			public function queue_awareness_injection( string $room, array $entry ): void {
+				$this->queued_injections[ $room ][] = $entry;
+			}
+
+			public function add_update( string $room, $update ): bool {
+				return $this->storage->add_update( $room, $update );
+			}
+
+			public function get_awareness_state( string $room ): array {
+				$snapshot = $this->storage->get_awareness_state( $room );
+
+				if ( ! empty( $this->queued_injections[ $room ] ) ) {
+					$entry = array_shift( $this->queued_injections[ $room ] );
+					$state = $this->merge_awareness_entries(
+						$this->storage->get_awareness_state( $room ),
+						array( $entry )
+					);
+
+					$this->storage->set_awareness_state( $room, $state );
+					$this->injected_entries[] = $entry;
+				}
+
+				return $snapshot;
+			}
+
+			public function get_cursor( string $room ): int {
+				return $this->storage->get_cursor( $room );
+			}
+
+			public function get_update_count( string $room ): int {
+				return $this->storage->get_update_count( $room );
+			}
+
+			public function get_updates_after_cursor( string $room, int $cursor ): array {
+				return $this->storage->get_updates_after_cursor( $room, $cursor );
+			}
+
+			public function remove_updates_before_cursor( string $room, int $cursor ): bool {
+				return $this->storage->remove_updates_before_cursor( $room, $cursor );
+			}
+
+			public function set_awareness_state( string $room, array $awareness ): bool {
+				return $this->storage->set_awareness_state( $room, $awareness );
+			}
+
+			private function merge_awareness_entries( array $current, array $entries ): array {
+				$by_client_id = array();
+
+				foreach ( array_merge( $current, $entries ) as $entry ) {
+					$by_client_id[ $entry['client_id'] ] = $entry;
+				}
+
+				return array_values( $by_client_id );
+			}
+		};
+		$server       = new WP_HTTP_Polling_Sync_Server( $race_storage );
+		$expected     = array();
+
+		mt_srand( $seed );
+
+		for ( $i = 0; $i < 8; $i++ ) {
+			$client_id = 10 + $i;
+			$state     = array(
+				'cursor' => "client-$client_id-step-$i",
+				'focus'  => mt_rand( 1, 1000 ),
+			);
+
+			if ( 0 === $i || mt_rand( 0, 1 ) ) {
+				$injected_client_id              = 1000 + $i;
+				$injected_state                  = array(
+					'cursor' => "injected-$injected_client_id-step-$i",
+					'focus'  => mt_rand( 1, 1000 ),
+				);
+				$expected[ $injected_client_id ] = $injected_state;
+
+				$race_storage->queue_awareness_injection(
+					$room,
+					array(
+						'client_id'  => $injected_client_id,
+						'state'      => $injected_state,
+						'updated_at' => time(),
+						'wp_user_id' => get_current_user_id(),
+					)
+				);
+			}
+
+			$request = new WP_REST_Request( 'POST', '/wp-sync/v1/updates' );
+			$request->set_body_params(
+				array(
+					'rooms' => array(
+						$this->build_room( $room, $client_id, 0, $state ),
+					),
+				)
+			);
+
+			$response = $server->handle_request( $request );
+			$this->assertSame( 200, $response->get_status(), "Awareness race fuzz failed for seed $seed step $i." );
+
+			$expected[ $client_id ] = $state;
+			$actual                 = array();
+			foreach ( $base_storage->get_awareness_state( $room ) as $entry ) {
+				$actual[ $entry['client_id'] ] = $entry['state'];
+			}
+
+			foreach ( $expected as $expected_client_id => $expected_state ) {
+				$this->assertArrayHasKey(
+					$expected_client_id,
+					$actual,
+					"Completed awareness state was lost for seed $seed step $i client $expected_client_id."
+				);
+				$this->assertSame(
+					$expected_state,
+					$actual[ $expected_client_id ],
+					"Completed awareness state changed for seed $seed step $i client $expected_client_id."
+				);
+			}
+		}
+
+		$this->assertNotEmpty( $race_storage->injected_entries, 'Expected awareness race injection to run.' );
+	}
+
 	public function test_sync_awareness_client_id_cannot_be_used_by_another_user() {
 		wp_set_current_user( self::$editor_id );
 

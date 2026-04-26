@@ -9,15 +9,86 @@ import {
 	it,
 	jest,
 } from '@jest/globals';
-import type { SyncResponse } from '../types';
+import { SyncUpdateType, type SyncResponse } from '../types';
 
 /**
  * Internal dependencies
  */
-import {
-	createSeededRandom,
-	seededRangeFromEnv,
-} from '../../../test/seeded-rng';
+interface SeededRandom {
+	bool: ( probability?: number ) => boolean;
+	int: ( maxExclusive: number ) => number;
+	intBetween: ( minInclusive: number, maxInclusive: number ) => number;
+}
+
+/* eslint-disable no-bitwise */
+function createSeededRandom( seed: number ): SeededRandom {
+	let state = seed >>> 0;
+
+	if ( state === 0 ) {
+		state = 0x9e3779b9;
+	}
+
+	function nextUint32(): number {
+		state += 0x6d2b79f5;
+		let value = state;
+		value = Math.imul( value ^ ( value >>> 15 ), value | 1 );
+		value ^= value + Math.imul( value ^ ( value >>> 7 ), value | 61 );
+		return ( value ^ ( value >>> 14 ) ) >>> 0;
+	}
+
+	function int( maxExclusive: number ): number {
+		if ( maxExclusive <= 0 ) {
+			return 0;
+		}
+
+		return Math.floor( ( nextUint32() / 0x100000000 ) * maxExclusive );
+	}
+
+	return {
+		bool( probability = 0.5 ) {
+			return nextUint32() / 0x100000000 < probability;
+		},
+		int,
+		intBetween( minInclusive, maxInclusive ) {
+			return minInclusive + int( maxInclusive - minInclusive + 1 );
+		},
+	};
+}
+/* eslint-enable no-bitwise */
+
+function readIntFromEnv( name: string ): number | undefined {
+	const value = process.env[ name ];
+
+	if ( value === undefined || value === '' ) {
+		return undefined;
+	}
+
+	const parsed = Number.parseInt( value, 10 );
+
+	if ( Number.isNaN( parsed ) ) {
+		throw new Error(
+			`Expected ${ name } to be an integer, got "${ value }".`
+		);
+	}
+
+	return parsed;
+}
+
+function seededRangeFromEnv(
+	defaultCount: number,
+	defaultStart = 1
+): number[] {
+	const count = readIntFromEnv( 'GUTENBERG_FUZZ_SEED_COUNT' ) ?? defaultCount;
+	const start = readIntFromEnv( 'GUTENBERG_FUZZ_SEED_START' ) ?? defaultStart;
+
+	if ( count < 0 ) {
+		throw new Error(
+			`Expected GUTENBERG_FUZZ_SEED_COUNT to be non-negative, got "${ count }".`
+		);
+	}
+
+	return Array.from( { length: count }, ( _value, index ) => start + index );
+}
 
 // Mock all external dependencies before imports.
 jest.mock( 'yjs', () => ( {
@@ -50,6 +121,8 @@ jest.mock( '@wordpress/hooks', () => ( {
 	),
 } ) );
 
+const MOCK_MAX_UPDATE_SIZE_IN_BYTES = 10;
+
 jest.mock( '../config', () => ( {
 	...( jest.requireActual( '../config' ) as object ),
 	MAX_UPDATE_SIZE_IN_BYTES: 10,
@@ -81,6 +154,7 @@ const SEEDS = seededRangeFromEnv( 8, 501 );
 const PRIMARY_ROOM = 'postType/post:1';
 const CONFLICTING_ROOM = 'postType/post:10';
 const COLLECTION_ROOM = 'collection-room';
+const FAILING_REMOTE_UPDATE_BYTE = 13;
 
 function createMockDoc( clientID = 1 ) {
 	return { clientID, on: jest.fn(), off: jest.fn() };
@@ -125,9 +199,13 @@ function createResponse(
 	{
 		hasCollaborators,
 		endCursor = 1,
+		shouldCompact = false,
+		updates = [],
 	}: {
 		hasCollaborators: boolean;
 		endCursor?: number;
+		shouldCompact?: boolean;
+		updates?: SyncResponse[ 'rooms' ][ number ][ 'updates' ];
 	}
 ): SyncResponse {
 	return {
@@ -138,8 +216,28 @@ function createResponse(
 				room === PRIMARY_ROOM
 					? createAwarenessState( hasCollaborators )
 					: {},
-			updates: [],
+			updates,
+			...( shouldCompact ? { should_compact: true } : {} ),
 		} ) ),
+	};
+}
+
+function createRemoteUpdate(
+	seed: number,
+	step = 0,
+	{ shouldFail = false }: { shouldFail?: boolean } = {}
+) {
+	return {
+		data: globalThis.btoa(
+			String.fromCharCode(
+				shouldFail
+					? FAILING_REMOTE_UPDATE_BYTE
+					: 32 + ( ( seed + step ) % 64 ),
+				( seed + step + 1 ) % 255,
+				13
+			)
+		),
+		type: SyncUpdateType.UPDATE,
 	};
 }
 
@@ -149,11 +247,16 @@ function getLastPayload(
 	return mockPostSyncUpdate.mock.calls.at( -1 )?.[ 0 ] as
 		| {
 				rooms: {
+					after: number;
 					room: string;
-					updates: { type: string }[];
+					updates: { data: string; type: string }[];
 				}[];
 		  }
 		| undefined;
+}
+
+function getBase64ByteLength( data: string ) {
+	return globalThis.atob( data ).length;
 }
 
 describe( 'polling-manager fuzzing', () => {
@@ -164,6 +267,8 @@ describe( 'polling-manager fuzzing', () => {
 	let mockPostSyncUpdateNonBlocking: jest.Mock<
 		typeof import('../utils').postSyncUpdateNonBlocking
 	>;
+	let mockApplyUpdateV2: jest.Mock;
+	let mockEncodeStateAsUpdateV2: jest.Mock;
 
 	beforeEach( () => {
 		jest.useFakeTimers();
@@ -173,7 +278,20 @@ describe( 'polling-manager fuzzing', () => {
 			mockPostSyncUpdate = require( '../utils' ).postSyncUpdate;
 			mockPostSyncUpdateNonBlocking =
 				require( '../utils' ).postSyncUpdateNonBlocking;
+			mockApplyUpdateV2 = require( 'yjs' ).applyUpdateV2;
+			mockEncodeStateAsUpdateV2 = require( 'yjs' ).encodeStateAsUpdateV2;
 		} );
+
+		mockApplyUpdateV2.mockImplementation(
+			( _doc: unknown, update: Uint8Array ) => {
+				if ( update[ 0 ] === FAILING_REMOTE_UPDATE_BYTE ) {
+					throw new Error( 'fuzzed remote update apply failure' );
+				}
+			}
+		);
+		mockEncodeStateAsUpdateV2.mockImplementation(
+			() => new Uint8Array( [ 1, 2, 3 ] )
+		);
 	} );
 
 	afterEach( () => {
@@ -352,6 +470,160 @@ describe( 'polling-manager fuzzing', () => {
 					sendDisconnectSignal: false,
 				} );
 				pollingManager.unregisterRoom( COLLECTION_ROOM, {
+					sendDisconnectSignal: false,
+				} );
+			}
+		}
+	);
+
+	it.each( SEEDS )(
+		'protocol-state-machine-preserves-cursors-and-update-size-guards (seed %i)',
+		async ( seed ) => {
+			const rng = createSeededRandom( seed );
+			const trace: string[] = [];
+			const doc = createMockDoc( seed );
+			const onStatusChange = jest.fn();
+			const onSync = jest.fn();
+			let safeCursor = 0;
+
+			function assertPayloadInvariants(
+				payload: NonNullable< ReturnType< typeof getLastPayload > >,
+				expectedAfter: number
+			) {
+				const room = payload.rooms.find(
+					( candidate ) => candidate.room === PRIMARY_ROOM
+				);
+
+				expect( room?.after ).toBe( expectedAfter );
+
+				const oversizedUpdates = payload.rooms.flatMap(
+					( payloadRoom ) =>
+						payloadRoom.updates.filter(
+							( update ) =>
+								getBase64ByteLength( update.data ) >
+								MOCK_MAX_UPDATE_SIZE_IN_BYTES
+						)
+				);
+
+				expect( oversizedUpdates ).toEqual( [] );
+			}
+
+			try {
+				mockPostSyncUpdate.mockResolvedValueOnce(
+					createResponse( [ PRIMARY_ROOM ], {
+						endCursor: 1,
+						hasCollaborators: true,
+					} )
+				);
+
+				pollingManager.registerRoom( {
+					room: PRIMARY_ROOM,
+					doc,
+					awareness: createMockAwareness(),
+					log: jest.fn(),
+					onStatusChange,
+					onSync,
+				} );
+
+				trace.push( 'initial poll discovers collaborators' );
+				await jest.advanceTimersByTimeAsync( 0 );
+				assertPayloadInvariants(
+					getLastPayload( mockPostSyncUpdate )!,
+					0
+				);
+				safeCursor = 1;
+
+				for ( let step = 0; step < 12; step++ ) {
+					const expectedAfter = safeCursor;
+					const responseHasFailedUpdate = rng.bool( 0.35 );
+					const remoteUpdateCount = responseHasFailedUpdate
+						? rng.intBetween( 1, 2 )
+						: rng.intBetween( 0, 2 );
+					const remoteUpdates = Array.from(
+						{ length: remoteUpdateCount },
+						( _value, updateIndex ) =>
+							createRemoteUpdate( seed, step * 10 + updateIndex, {
+								shouldFail:
+									responseHasFailedUpdate &&
+									updateIndex === 0,
+							} )
+					);
+					const shouldCompact = rng.bool( 0.35 );
+					const compactionLength = rng.bool( 0.55 )
+						? rng.intBetween(
+								MOCK_MAX_UPDATE_SIZE_IN_BYTES + 1,
+								64
+						  )
+						: rng.intBetween( 1, MOCK_MAX_UPDATE_SIZE_IN_BYTES );
+					const endCursor = safeCursor + rng.intBetween( 1, 20 );
+
+					if ( shouldCompact ) {
+						mockEncodeStateAsUpdateV2.mockReturnValueOnce(
+							new Uint8Array( compactionLength )
+						);
+					}
+
+					if ( rng.bool( 0.35 ) ) {
+						getOnDocUpdate( doc )(
+							new Uint8Array( rng.intBetween( 1, 9 ) ),
+							`local-fuzz-${ step }`
+						);
+						trace.push( `${ step }: queued local update` );
+					}
+
+					mockPostSyncUpdate.mockResolvedValueOnce(
+						createResponse( [ PRIMARY_ROOM ], {
+							endCursor,
+							hasCollaborators: true,
+							shouldCompact,
+							updates: remoteUpdates,
+						} )
+					);
+
+					trace.push(
+						`${ step }: poll after=${ expectedAfter } remoteUpdates=${ remoteUpdateCount } failedRemote=${ responseHasFailedUpdate } shouldCompact=${ shouldCompact } compactionLength=${ compactionLength } endCursor=${ endCursor }`
+					);
+					await jest.advanceTimersByTimeAsync( 1000 );
+
+					assertPayloadInvariants(
+						getLastPayload( mockPostSyncUpdate )!,
+						expectedAfter
+					);
+
+					if ( ! responseHasFailedUpdate ) {
+						safeCursor = endCursor;
+					}
+				}
+
+				mockPostSyncUpdate.mockResolvedValueOnce(
+					createResponse( [ PRIMARY_ROOM ], {
+						endCursor: safeCursor + 1,
+						hasCollaborators: true,
+					} )
+				);
+				trace.push( `final poll after=${ safeCursor }` );
+				await jest.advanceTimersByTimeAsync( 1000 );
+				assertPayloadInvariants(
+					getLastPayload( mockPostSyncUpdate )!,
+					safeCursor
+				);
+
+				expect( onStatusChange ).not.toHaveBeenCalledWith(
+					expect.objectContaining( {
+						error: expect.anything(),
+					} )
+				);
+				expect( onSync ).not.toHaveBeenCalled();
+			} catch ( error ) {
+				throw new Error(
+					`Polling protocol fuzz failed for seed ${ seed }\n${ trace.join(
+						'\n'
+					) }\n${
+						error instanceof Error ? error.message : String( error )
+					}`
+				);
+			} finally {
+				pollingManager.unregisterRoom( PRIMARY_ROOM, {
 					sendDisconnectSignal: false,
 				} );
 			}

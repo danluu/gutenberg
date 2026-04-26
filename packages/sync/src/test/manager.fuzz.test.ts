@@ -30,11 +30,114 @@ import type {
 	SyncConfig,
 } from '../types';
 import { deserializeCrdtDoc } from '../utils';
-import {
-	createSeededRandom,
-	intFromEnv,
-	seededRangeFromEnv,
-} from './seeded-rng';
+
+interface SeededRandom {
+	bool: ( probability?: number ) => boolean;
+	intBetween: ( minInclusive: number, maxInclusive: number ) => number;
+	pick: < T >( values: readonly T[] ) => T;
+	string: ( prefix?: string ) => string;
+}
+
+/* eslint-disable no-bitwise */
+function createSeededRandom( seed: number ): SeededRandom {
+	let state = seed >>> 0;
+
+	if ( state === 0 ) {
+		state = 0x9e3779b9;
+	}
+
+	function nextUint32(): number {
+		state += 0x6d2b79f5;
+		let value = state;
+		value = Math.imul( value ^ ( value >>> 15 ), value | 1 );
+		value ^= value + Math.imul( value ^ ( value >>> 7 ), value | 61 );
+		return ( value ^ ( value >>> 14 ) ) >>> 0;
+	}
+
+	function next(): number {
+		return nextUint32() / 0x100000000;
+	}
+
+	function int( maxExclusive: number ): number {
+		if ( maxExclusive <= 0 ) {
+			return 0;
+		}
+
+		return Math.floor( next() * maxExclusive );
+	}
+
+	return {
+		bool( probability = 0.5 ) {
+			return next() < probability;
+		},
+		intBetween( minInclusive, maxInclusive ) {
+			return minInclusive + int( maxInclusive - minInclusive + 1 );
+		},
+		pick< T >( values: readonly T[] ): T {
+			if ( values.length === 0 ) {
+				throw new Error( 'Cannot pick from an empty array.' );
+			}
+
+			return values[ int( values.length ) ];
+		},
+		string( prefix = 'seed' ) {
+			return `${ prefix }-${ nextUint32().toString( 36 ) }`;
+		},
+	};
+}
+/* eslint-enable no-bitwise */
+
+function readIntFromEnv( name: string ): number | undefined {
+	const value = process.env[ name ];
+
+	if ( value === undefined || value === '' ) {
+		return undefined;
+	}
+
+	const parsed = Number.parseInt( value, 10 );
+
+	if ( Number.isNaN( parsed ) ) {
+		throw new Error(
+			`Expected ${ name } to be an integer, got "${ value }".`
+		);
+	}
+
+	return parsed;
+}
+
+function seededRangeFromEnv(
+	defaultCount: number,
+	defaultStart = 1
+): number[] {
+	const count = readIntFromEnv( 'GUTENBERG_FUZZ_SEED_COUNT' ) ?? defaultCount;
+	const start = readIntFromEnv( 'GUTENBERG_FUZZ_SEED_START' ) ?? defaultStart;
+
+	if ( count < 0 ) {
+		throw new Error(
+			`Expected GUTENBERG_FUZZ_SEED_COUNT to be non-negative, got "${ count }".`
+		);
+	}
+
+	return Array.from( { length: count }, ( _value, index ) => start + index );
+}
+
+function intFromEnv(
+	name: string,
+	defaultValue: number,
+	options: {
+		min?: number;
+	} = {}
+): number {
+	const value = readIntFromEnv( name ) ?? defaultValue;
+
+	if ( options.min !== undefined && value < options.min ) {
+		throw new Error(
+			`Expected ${ name } to be >= ${ options.min }, got "${ value }".`
+		);
+	}
+
+	return value;
+}
 
 jest.mock( '../providers', () => ( {
 	getProviderCreators: jest.fn(),
@@ -199,6 +302,11 @@ describe( 'SyncManager fuzzing', () => {
 			};
 			const entityDocs = new Map< EntityKey, Y.Doc >();
 			const loaded = new Set< EntityKey >();
+			const observedProviderUpdates: Array< {
+				byteLength: number;
+				objectId: string | null;
+				origin: unknown;
+			} > = [];
 			let collectionDoc: Y.Doc | null = null;
 			let collectionTransactSpy: YDocTransactSpy | undefined;
 
@@ -269,6 +377,19 @@ describe( 'SyncManager fuzzing', () => {
 					objectId: string | null;
 					ydoc: Y.Doc;
 				} ): Promise< ProviderCreatorResult > => {
+					const onUpdate = (
+						update: Uint8Array,
+						origin: unknown
+					) => {
+						observedProviderUpdates.push( {
+							byteLength: update.byteLength,
+							objectId,
+							origin,
+						} );
+					};
+
+					ydoc.on( 'updateV2', onUpdate );
+
 					if ( objectId === null ) {
 						collectionDoc = ydoc;
 						collectionTransactSpy = jest.spyOn(
@@ -292,6 +413,8 @@ describe( 'SyncManager fuzzing', () => {
 
 					return {
 						destroy: jest.fn( () => {
+							ydoc.off( 'updateV2', onUpdate );
+
 							if ( objectId === null ) {
 								collectionDoc = null;
 								collectionTransactSpy?.mockRestore();
@@ -402,6 +525,17 @@ describe( 'SyncManager fuzzing', () => {
 				).toEqual( {} );
 			}
 
+			function assertNoLargeOutboundLikeProviderUpdates() {
+				const largeOutboundLikeUpdates = observedProviderUpdates.filter(
+					( update ) =>
+						update.objectId !== null &&
+						update.byteLength > 64 &&
+						update.origin == null
+				);
+
+				expect( largeOutboundLikeUpdates ).toEqual( [] );
+			}
+
 			async function waitForSettledState() {
 				for ( let attempt = 0; attempt < 8; attempt++ ) {
 					if ( isStateSettled() ) {
@@ -437,9 +571,16 @@ describe( 'SyncManager fuzzing', () => {
 						case 'local-update': {
 							const key = rng.pick( ENTITY_KEYS );
 							const field = rng.pick( FIELDS );
+							const isLargeValue = rng.bool( 0.35 );
 							const value = `${ field }-${ seed }-${ step }-${ rng.string(
 								key
-							) }`;
+							) }${
+								isLargeValue
+									? `-${ 'x'.repeat(
+											rng.intBetween( 128, 512 )
+									  ) }`
+									: ''
+							}`;
 							const isSave = rng.bool( 0.4 );
 
 							await loadEntity( key );
@@ -448,7 +589,9 @@ describe( 'SyncManager fuzzing', () => {
 							trace.push(
 								`${ step }: local ${ key }.${ field } -> ${ JSON.stringify(
 									value
-								) }${ isSave ? ' [save]' : '' }`
+								) }${ isLargeValue ? ' [large]' : '' }${
+									isSave ? ' [save]' : ''
+								}`
 							);
 
 							manager.update(
@@ -524,7 +667,7 @@ describe( 'SyncManager fuzzing', () => {
 							const before = (
 								collectionHandlers.refetchRecords as jest.Mock
 							 ).mock.calls.length;
-							const activeCollectionDoc = assertDefined(
+							const activeCollectionDoc: Y.Doc = assertDefined(
 								collectionDoc,
 								'Expected collection Y.Doc to be loaded.'
 							);
@@ -559,14 +702,15 @@ describe( 'SyncManager fuzzing', () => {
 									OBJECT_TYPE,
 									ENTITY_IDS[ key ]
 								);
-							const activeCollectionDoc = assertDefined(
+							const activeCollectionDoc: Y.Doc = assertDefined(
 								collectionDoc,
 								'Expected collection Y.Doc during unload.'
 							);
-							const activeCollectionTransactSpy = assertDefined(
-								collectionTransactSpy,
-								'Expected collection transact spy during unload.'
-							);
+							const activeCollectionTransactSpy: YDocTransactSpy =
+								assertDefined(
+									collectionTransactSpy,
+									'Expected collection transact spy during unload.'
+								);
 
 							const nextSavedAt = activeCollectionDoc
 								.getMap( CRDT_STATE_MAP_KEY )
@@ -582,6 +726,7 @@ describe( 'SyncManager fuzzing', () => {
 					}
 
 					await waitForSettledState();
+					assertNoLargeOutboundLikeProviderUpdates();
 				}
 
 				for ( const key of ENTITY_KEYS ) {
@@ -595,10 +740,13 @@ describe( 'SyncManager fuzzing', () => {
 						expected[ key ]
 					);
 				}
+				assertNoLargeOutboundLikeProviderUpdates();
 			} catch ( error ) {
 				throw new Error(
 					`SyncManager fuzz failed for seed ${ seed }\n${ trace.join(
 						'\n'
+					) }\nObserved provider updates: ${ JSON.stringify(
+						observedProviderUpdates
 					) }\n${
 						error instanceof Error ? error.message : String( error )
 					}`
