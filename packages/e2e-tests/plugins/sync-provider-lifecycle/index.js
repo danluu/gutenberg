@@ -95,6 +95,10 @@
 				return [ successfulProvider, failingProvider ];
 			}
 
+			if ( mode === 'partial-default' ) {
+				return [ ...providers, failingProvider ];
+			}
+
 			return providers;
 		}
 	);

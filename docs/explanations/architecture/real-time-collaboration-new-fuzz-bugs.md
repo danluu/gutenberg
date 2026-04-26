@@ -57,8 +57,14 @@ not include the previously known transport limit bug.
         called a second time because the stale entity state from the failed first
         load is still registered.
     -   Playwright stock-editor repro: still not created. The default HTTP polling
-        provider does not reject during construction, so stock editor actions
-        alone do not naturally create this provider-startup failure.
+        provider does not reject during construction: it constructs the
+        `HttpPollingProvider`, registers the room, and returns before any network
+        request is awaited. The stock Retry modal only retries an already-created
+        polling provider, so it is not shown for provider-creator rejection. I
+        also did not find a stock post-editor action that invalidates and
+        re-resolves the current post entity in the same page; a full page reload
+        recreates the sync manager and therefore does not exercise this stale
+        in-memory state.
 
 ### 3. Partial provider creation failure leaks already-created providers
 
@@ -83,6 +89,15 @@ not include the previously known transport limit bug.
         An activated plugin registers two providers through `sync.providers`: the
         first provider starts and the second provider rejects. With the bug, the
         first provider's `destroy()` method is never called.
+    -   Playwright extension-user browser repro with the real default provider:
+        created in
+        `test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts`.
+        An activated provider extension appends a failing provider after
+        Gutenberg's default HTTP provider. The user simply opens a post. With the
+        bug, the real HTTP provider keeps polling the post room after the later
+        extension provider rejects. The test first allows for the initial
+        in-flight sync request, then fails when a later post-room sync request is
+        still sent instead of the default provider being destroyed.
     -   Playwright stock-editor repro: still not created. Stock Gutenberg only
         registers the default HTTP polling provider, so ordinary stock editor
         actions do not create a partial provider failure.
@@ -220,6 +235,10 @@ The repros are intentionally failing on the current implementation:
     fails the provider retry repro with one post-room provider creation attempt
     instead of two, and fails the partial-provider repro with zero destroys for
     the provider that was created before the later provider rejected.
+-   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-provider-lifecycle.spec.ts --grep "cleans up the default HTTP provider"`
+    uses the real default HTTP provider plus a failing extension provider. It
+    fails because a later post-room sync request is still sent after the
+    extension provider rejects, showing that the default provider was leaked.
 -   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`
     fails after User A deletes the original post room in place and User B joins
     the surviving category room; the next User A payload has no post room and has
