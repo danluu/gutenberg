@@ -52,7 +52,10 @@ export interface UpdateQueue {
 	clear: () => void;
 	get: () => SyncUpdate[];
 	pause: () => void;
-	restore: ( updates: SyncUpdate[] ) => void;
+	restore: (
+		updates: SyncUpdate[],
+		options?: { preserveCompaction?: boolean }
+	) => void;
 	resume: () => void;
 	size: () => number;
 }
