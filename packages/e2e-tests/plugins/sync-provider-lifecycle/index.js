@@ -1,6 +1,8 @@
 ( function () {
 	const params = new URLSearchParams( window.location.search );
-	const mode = params.get( 'rtc_provider_lifecycle' );
+	const mode =
+		params.get( 'rtc_provider_lifecycle' ) ||
+		window.__rtcProviderLifecycleConfig?.mode;
 
 	if ( ! mode ) {
 		return;
