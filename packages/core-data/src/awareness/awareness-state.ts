@@ -4,7 +4,7 @@
 import { REMOVAL_DELAY_IN_MS } from './config';
 import { TypedAwareness } from './typed-awareness';
 import type { EnhancedState, EqualityFieldCheck } from './types';
-import { getTypedKeys, areMapsEqual } from './utils';
+import { getTypedKeys, areMapsEqual, isObjectRecord } from './utils';
 
 type AwarenessClientID = number;
 
@@ -199,6 +199,39 @@ export abstract class AwarenessState<
 	protected abstract onSetUp(): void;
 
 	/**
+	 * Validate and normalize a remote awareness state before it reaches
+	 * subscribers. This public wrapper lets transport providers ask an
+	 * awareness implementation to validate remote state without knowing its
+	 * room-specific schema.
+	 *
+	 * @param rawState - The raw remote state from the sync provider.
+	 * @return A safe state, or null when the state should be ignored.
+	 */
+	public getValidatedRemoteState( rawState: unknown ): State | null {
+		return this.normalizeRemoteState( rawState );
+	}
+
+	/**
+	 * Hook for subclasses to enforce a room-specific awareness schema.
+	 *
+	 * @param rawState - The raw remote state from the sync provider.
+	 * @return A safe state, or null when the state should be ignored.
+	 */
+	protected normalizeRemoteState( rawState: unknown ): State | null {
+		if ( ! isObjectRecord( rawState ) ) {
+			return null;
+		}
+
+		for ( const field of Object.keys( rawState ) ) {
+			if ( ! ( field in this.equalityFieldChecks ) ) {
+				return null;
+			}
+		}
+
+		return rawState as State;
+	}
+
+	/**
 	 * Get the most recent state from the last processed change event.
 	 *
 	 * @return An array of EnhancedState< State >.
@@ -281,15 +314,33 @@ export abstract class AwarenessState<
 			return;
 		}
 
-		const states = this.getStates();
+		const states = this.getStates() as Map< number, unknown >;
+		const normalizedStates = new Map< number, State >();
+
+		states.forEach( ( rawState, clientId ) => {
+			const normalizedState = this.getValidatedRemoteState( rawState );
+
+			if ( normalizedState ) {
+				normalizedStates.set( clientId, normalizedState );
+				return;
+			}
+
+			if (
+				isObjectRecord( rawState ) &&
+				Object.keys( rawState ).length > 0
+			) {
+				states.delete( clientId );
+				this.seenStates.delete( clientId );
+			}
+		} );
 
 		this.seenStates = new Map< number, State >( [
 			...this.seenStates.entries(),
-			...states.entries(),
+			...normalizedStates.entries(),
 		] );
 
 		const updatedStates = new Map< number, EnhancedState< State > >(
-			[ ...this.disconnectedCollaborators, ...states.keys() ]
+			[ ...this.disconnectedCollaborators, ...normalizedStates.keys() ]
 				.filter( ( clientId ) => {
 					// Exclude any collaborators with empty awareness state. This can happen from
 					// the Yjs inspector.

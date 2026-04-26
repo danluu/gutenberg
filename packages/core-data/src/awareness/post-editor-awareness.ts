@@ -11,6 +11,7 @@ import { store as blockEditorStore } from '@wordpress/block-editor';
  */
 import { BaseAwarenessState, baseEqualityFieldChecks } from './base-awareness';
 import { getBlockPathInYdoc, resolveBlockClientIdByPath } from './block-lookup';
+import { isObjectRecord } from './utils';
 import {
 	AWARENESS_CURSOR_UPDATE_THROTTLE_IN_MS,
 	LOCAL_CURSOR_UPDATE_DEBOUNCE_IN_MS,
@@ -56,6 +57,25 @@ export class PostEditorAwareness extends BaseAwarenessState< PostEditorState > {
 		super.onSetUp();
 
 		this.subscribeToCollaboratorSelectionChanges();
+	}
+
+	protected normalizeRemoteState(
+		rawState: unknown
+	): PostEditorState | null {
+		const state = super.normalizeRemoteState( rawState );
+
+		if ( ! state ) {
+			return null;
+		}
+
+		if (
+			undefined !== state.editorState &&
+			! isObjectRecord( state.editorState )
+		) {
+			return null;
+		}
+
+		return state;
 	}
 
 	/**

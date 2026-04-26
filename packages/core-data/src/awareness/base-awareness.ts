@@ -8,7 +8,11 @@ import { resolveSelect } from '@wordpress/data';
  */
 import { AwarenessState } from './awareness-state';
 import { STORE_NAME as coreStore } from '../name';
-import { generateCollaboratorInfo, areCollaboratorInfosEqual } from './utils';
+import {
+	generateCollaboratorInfo,
+	areCollaboratorInfosEqual,
+	isCollaboratorInfo,
+} from './utils';
 
 import type { BaseState } from './types';
 
@@ -26,6 +30,28 @@ export abstract class BaseAwarenessState<
 		const currentUser = await resolveSelect( coreStore ).getCurrentUser();
 		const collaboratorInfo = generateCollaboratorInfo( currentUser );
 		this.setLocalStateField( 'collaboratorInfo', collaboratorInfo );
+	}
+
+	public getLocalStateForSync(): object | null {
+		const localState = this.getLocalState();
+
+		if ( ! localState ) {
+			return null;
+		}
+
+		const clientControlledState = { ...localState };
+		delete clientControlledState.collaboratorInfo;
+		return clientControlledState;
+	}
+
+	protected normalizeRemoteState( rawState: unknown ): State | null {
+		const state = super.normalizeRemoteState( rawState );
+
+		if ( ! state || ! isCollaboratorInfo( state.collaboratorInfo ) ) {
+			return null;
+		}
+
+		return state;
 	}
 }
 

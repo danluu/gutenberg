@@ -96,6 +96,17 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		const UPDATE_TYPE_UPDATE = 'update';
 
 		/**
+		 * Client-provided awareness fields accepted by the server.
+		 *
+		 * @since 7.0.0
+		 * @var string[]
+		 */
+		const ALLOWED_AWARENESS_FIELDS = array(
+			'collaboratorInfo',
+			'editorState',
+		);
+
+		/**
 		 * Storage backend for sync updates.
 		 *
 		 * @since 7.0.0
@@ -273,6 +284,13 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				);
 			}
 
+			foreach ( $request['rooms'] as $room ) {
+				$result = $this->validate_awareness_update( $room['awareness'] );
+				if ( is_wp_error( $result ) ) {
+					return $result;
+				}
+			}
+
 			return true;
 		}
 
@@ -296,6 +314,11 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				$client_id = $room_request['client_id'];
 				$cursor    = $room_request['after'];
 				$room      = $room_request['room'];
+
+				$validation_result = $this->validate_awareness_update( $awareness );
+				if ( is_wp_error( $validation_result ) ) {
+					return $validation_result;
+				}
 
 				// Merge awareness state.
 				$merged_awareness = $this->process_awareness_update( $room, $client_id, $awareness );
@@ -403,6 +426,243 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		}
 
 		/**
+		 * Checks whether an array came from a JSON object rather than a JSON list.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<mixed> $value The value to check.
+		 * @return bool True for object-like arrays, false for list-like arrays.
+		 */
+		private function is_object_like_array( array $value ): bool {
+			if ( array() === $value ) {
+				return true;
+			}
+
+			foreach ( array_keys( $value ) as $key ) {
+				if ( is_int( $key ) ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validates client-provided awareness before it is stored or fanned out.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param mixed $awareness_update Awareness state sent by the client.
+		 * @return true|WP_Error True when valid, otherwise an error.
+		 */
+		private function validate_awareness_update( $awareness_update ) {
+			if ( null === $awareness_update ) {
+				return true;
+			}
+
+			if ( ! is_array( $awareness_update ) || ! $this->is_object_like_array( $awareness_update ) ) {
+				return new WP_Error(
+					'rest_invalid_param',
+					__( 'Invalid awareness state.', 'gutenberg' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			foreach ( array_keys( $awareness_update ) as $field ) {
+				if ( ! in_array( $field, self::ALLOWED_AWARENESS_FIELDS, true ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						__( 'Invalid awareness state.', 'gutenberg' ),
+						array( 'status' => 400 )
+					);
+				}
+			}
+
+			if (
+				isset( $awareness_update['collaboratorInfo'] ) &&
+				( ! is_array( $awareness_update['collaboratorInfo'] ) || ! $this->is_object_like_array( $awareness_update['collaboratorInfo'] ) )
+			) {
+				return new WP_Error(
+					'rest_invalid_param',
+					__( 'Invalid awareness state.', 'gutenberg' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if (
+				isset( $awareness_update['editorState'] ) &&
+				( ! is_array( $awareness_update['editorState'] ) || ! $this->is_object_like_array( $awareness_update['editorState'] ) )
+			) {
+				return new WP_Error(
+					'rest_invalid_param',
+					__( 'Invalid awareness state.', 'gutenberg' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Gets the display name to use for collaborator presence.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param WP_User $user User object.
+		 * @return string Display name.
+		 */
+		private function get_collaborator_display_name( WP_User $user ): string {
+			if ( '' !== $user->display_name ) {
+				return $user->display_name;
+			}
+
+			if ( '' !== $user->user_login ) {
+				return $user->user_login;
+			}
+
+			return (string) $user->ID;
+		}
+
+		/**
+		 * Gets the browser name from a user-agent string.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param string $user_agent The user-agent string.
+		 * @return string Browser name.
+		 */
+		private function get_browser_name( string $user_agent ): string {
+			if ( false !== strpos( $user_agent, 'Firefox' ) ) {
+				return 'Firefox';
+			}
+			if ( false !== strpos( $user_agent, 'Edg' ) ) {
+				return 'Microsoft Edge';
+			}
+			if ( false !== strpos( $user_agent, 'Chrome' ) && false === strpos( $user_agent, 'Edg' ) ) {
+				return 'Chrome';
+			}
+			if ( false !== strpos( $user_agent, 'Safari' ) && false === strpos( $user_agent, 'Chrome' ) ) {
+				return 'Safari';
+			}
+			if ( false !== strpos( $user_agent, 'MSIE' ) || false !== strpos( $user_agent, 'Trident' ) ) {
+				return 'Internet Explorer';
+			}
+			if ( false !== strpos( $user_agent, 'Opera' ) || false !== strpos( $user_agent, 'OPR' ) ) {
+				return 'Opera';
+			}
+
+			return 'Unknown';
+		}
+
+		/**
+		 * Builds canonical collaborator identity from WordPress user data.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param int         $wp_user_id   User ID.
+		 * @param int|null    $entered_at   Existing enteredAt timestamp in milliseconds.
+		 * @param string|null $browser_type Existing browser type, or null for the current request.
+		 * @return array{id: int, name: string, slug: string, avatar_urls: array<string, string>, browserType: string, enteredAt: int}|null Collaborator info or null when the user is missing.
+		 */
+		private function get_canonical_collaborator_info( int $wp_user_id, ?int $entered_at = null, ?string $browser_type = null ): ?array {
+			$user = get_userdata( $wp_user_id );
+			if ( ! $user instanceof WP_User ) {
+				return null;
+			}
+
+			if ( null === $browser_type ) {
+				$browser_type = $this->get_browser_name( $_SERVER['HTTP_USER_AGENT'] ?? '' );
+			}
+
+			$avatar_urls = rest_get_avatar_urls( $user );
+			if ( ! is_array( $avatar_urls ) ) {
+				$avatar_urls = array();
+			}
+
+			return array(
+				'avatar_urls' => $avatar_urls,
+				'browserType' => $browser_type,
+				'enteredAt'   => $entered_at ?? time() * 1000,
+				'id'          => $user->ID,
+				'name'        => $this->get_collaborator_display_name( $user ),
+				'slug'        => $user->user_nicename,
+			);
+		}
+
+		/**
+		 * Normalizes a valid client awareness update into the server-to-client shape.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<string, mixed> $awareness_update Client awareness state.
+		 * @param int                  $wp_user_id        User ID.
+		 * @param int|null             $entered_at        Existing enteredAt timestamp in milliseconds.
+		 * @return array<string, mixed>|null Server awareness state, or null when the user is missing.
+		 */
+		private function normalize_awareness_update( array $awareness_update, int $wp_user_id, ?int $entered_at = null ): ?array {
+			$collaborator_info = $this->get_canonical_collaborator_info( $wp_user_id, $entered_at );
+			if ( null === $collaborator_info ) {
+				return null;
+			}
+
+			$normalized = array(
+				'collaboratorInfo' => $collaborator_info,
+			);
+
+			if ( isset( $awareness_update['editorState'] ) ) {
+				$normalized['editorState'] = $awareness_update['editorState'];
+			}
+
+			return $normalized;
+		}
+
+		/**
+		 * Normalizes a stored awareness entry and drops stale malformed state.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<string, mixed> $entry Stored awareness entry.
+		 * @return array<string, mixed>|null Normalized storage entry or null when invalid.
+		 */
+		private function normalize_stored_awareness_entry( array $entry ): ?array {
+			if (
+				! isset( $entry['state'], $entry['wp_user_id'], $entry['updated_at'] ) ||
+				! is_array( $entry['state'] ) ||
+				true !== $this->validate_awareness_update( $entry['state'] )
+			) {
+				return null;
+			}
+
+			$entered_at = null;
+			if ( isset( $entry['state']['collaboratorInfo']['enteredAt'] ) && is_numeric( $entry['state']['collaboratorInfo']['enteredAt'] ) ) {
+				$entered_at = (int) $entry['state']['collaboratorInfo']['enteredAt'];
+			} elseif ( is_numeric( $entry['updated_at'] ) ) {
+				$entered_at = (int) $entry['updated_at'] * 1000;
+			}
+
+			$browser_type = null;
+			if ( isset( $entry['state']['collaboratorInfo']['browserType'] ) && is_string( $entry['state']['collaboratorInfo']['browserType'] ) ) {
+				$browser_type = $entry['state']['collaboratorInfo']['browserType'];
+			}
+
+			$collaborator_info = $this->get_canonical_collaborator_info( (int) $entry['wp_user_id'], $entered_at, $browser_type );
+			if ( null === $collaborator_info ) {
+				return null;
+			}
+
+			$state = array(
+				'collaboratorInfo' => $collaborator_info,
+			);
+
+			if ( isset( $entry['state']['editorState'] ) ) {
+				$state['editorState'] = $entry['state']['editorState'];
+			}
+
+			$entry['state'] = $state;
+			return $entry;
+		}
+
+		/**
 		 * Processes and stores an awareness update from a client.
 		 *
 		 * @since 7.0.0
@@ -413,13 +673,20 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 * @return array<int, array<string, mixed>> Map of client ID to awareness state.
 		 */
 		private function process_awareness_update( string $room, int $client_id, ?array $awareness_update ): array {
-			$existing_awareness = $this->storage->get_awareness_state( $room );
-			$updated_awareness  = array();
-			$current_time       = time();
+			$existing_awareness  = $this->storage->get_awareness_state( $room );
+			$updated_awareness   = array();
+			$current_time        = time();
+			$previous_entered_at = null;
 
 			foreach ( $existing_awareness as $entry ) {
+				$entry = $this->normalize_stored_awareness_entry( $entry );
+				if ( null === $entry ) {
+					continue;
+				}
+
 				// Remove this client's entry (it will be updated below).
 				if ( $client_id === $entry['client_id'] ) {
+					$previous_entered_at = $entry['state']['collaboratorInfo']['enteredAt'];
 					continue;
 				}
 
@@ -433,12 +700,15 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 
 			// Add this client's awareness state.
 			if ( null !== $awareness_update ) {
-				$updated_awareness[] = array(
-					'client_id'  => $client_id,
-					'state'      => $awareness_update,
-					'updated_at' => $current_time,
-					'wp_user_id' => get_current_user_id(),
-				);
+				$state = $this->normalize_awareness_update( $awareness_update, get_current_user_id(), $previous_entered_at );
+				if ( null !== $state ) {
+					$updated_awareness[] = array(
+						'client_id'  => $client_id,
+						'state'      => $state,
+						'updated_at' => $current_time,
+						'wp_user_id' => get_current_user_id(),
+					);
+				}
 			}
 
 			// This action can fail, but it shouldn't fail the entire request.
