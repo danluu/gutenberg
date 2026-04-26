@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Page } from '@playwright/test';
+import type { Page, Request } from '@playwright/test';
 import type { Admin, Editor } from '@wordpress/e2e-test-utils-playwright';
 
 /**
@@ -39,7 +39,7 @@ async function openPostWithProviderLifecycleMode(
 	editor: Editor,
 	page: Page,
 	postId: number,
-	mode: 'partial' | 'retry'
+	mode: 'partial' | 'partial-default' | 'retry'
 ) {
 	await admin.visitAdminPage(
 		'post.php',
@@ -56,6 +56,48 @@ async function openPostWithProviderLifecycleMode(
 			window.__rtcProviderLifecycle,
 		undefined,
 		{ timeout: 15000 }
+	);
+}
+
+type SyncPayload = {
+	rooms: { room: string }[];
+};
+
+function isSyncRequest( request: Request ) {
+	return request.method() === 'POST' && request.url().includes( 'wp-sync' );
+}
+
+function getSyncPayload( request: Request ): SyncPayload | null {
+	const data = request.postData();
+	if ( ! data ) {
+		return null;
+	}
+
+	try {
+		return JSON.parse( data ) as SyncPayload;
+	} catch {
+		return null;
+	}
+}
+
+async function waitForRoomRequest(
+	page: Page,
+	roomName: string,
+	timeout = 15000
+) {
+	await page.waitForRequest(
+		( request ) => {
+			if ( ! isSyncRequest( request ) ) {
+				return false;
+			}
+
+			const payload = getSyncPayload( request );
+			return (
+				payload?.rooms.some( ( room ) => room.room === roomName ) ??
+				false
+			);
+		},
+		{ timeout }
 	);
 }
 
@@ -184,5 +226,55 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 
 		const postState = await getProviderLifecycleRoomState( page, postRoom );
 		expect( postState?.destroyed ).toBe( 1 );
+	} );
+
+	test( 'cleans up the default HTTP provider when an extension provider fails', async ( {
+		admin,
+		collaborationUtils,
+		editor,
+		page,
+		requestUtils,
+	} ) => {
+		const post = await requestUtils.createPost( {
+			title: 'RTC partial default provider failure repro',
+			status: 'draft',
+			date_gmt: new Date().toISOString(),
+		} );
+		const postRoom = `postType/post:${ post.id }`;
+		const firstPostRoomRequest = waitForRoomRequest( page, postRoom );
+
+		await openPostWithProviderLifecycleMode(
+			admin,
+			editor,
+			page,
+			post.id,
+			'partial-default'
+		);
+		await collaborationUtils.waitForEntityReady( page );
+
+		await expect
+			.poll(
+				async () => {
+					const state = await getProviderLifecycleState( page );
+					return state.rooms[ postRoom ]?.failures ?? 0;
+				},
+				{ timeout: 10000 }
+			)
+			.toBe( 1 );
+
+		// The real HTTP provider may have already sent its initial sync request
+		// before the later extension provider rejected. The leak is that it keeps
+		// polling after the failed load should have cleaned it up.
+		await firstPostRoomRequest;
+
+		const leakedPostRoomRequest = await waitForRoomRequest(
+			page,
+			postRoom,
+			7000
+		)
+			.then( () => true )
+			.catch( () => false );
+
+		expect( leakedPostRoomRequest ).toBe( false );
 	} );
 } );
