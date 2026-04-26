@@ -536,6 +536,27 @@ describe( 'http-polling utils', () => {
 				// Only the existing update should remain
 				expect( queue.size() ).toBe( 1 );
 			} );
+
+			it( 'can preserve compaction updates when restoring a definitive rejection', () => {
+				const compactionUpdate = {
+					type: SyncUpdateType.COMPACTION,
+					data: 'AA==',
+				};
+				const regularUpdate = {
+					type: SyncUpdateType.UPDATE,
+					data: 'AQ==',
+				};
+				const queue = createUpdateQueue( [], false );
+
+				queue.restore( [ compactionUpdate, regularUpdate ], {
+					preserveCompaction: true,
+				} );
+
+				expect( queue.get() ).toEqual( [
+					compactionUpdate,
+					regularUpdate,
+				] );
+			} );
 		} );
 
 		describe( 'size', () => {
@@ -623,6 +644,24 @@ describe( 'http-polling utils', () => {
 				code: 'internal_server_error',
 				message: 'Internal Server Error',
 			} );
+		} );
+
+		it( 'throws parsed REST errors from failed Response objects', async () => {
+			const restError = {
+				code: 'rest_cannot_edit',
+				message:
+					'You do not have permission to sync this entity: primary-room.',
+				data: { status: 403 },
+			};
+
+			mockApiFetch.mockRejectedValue( {
+				json: jest.fn( async () => restError ),
+				status: 403,
+			} );
+
+			await expect( postSyncUpdate( { rooms: [] } ) ).rejects.toEqual(
+				restError
+			);
 		} );
 
 		it( 'propagates network errors', async () => {
