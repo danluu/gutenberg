@@ -100,6 +100,15 @@
 			state.retryStarted = true;
 			state.retryFinished = false;
 
+			const recoveryPath =
+				window.__rtcProviderLifecycleConfig?.recoveryPath;
+			if ( recoveryPath && window.wp?.apiFetch ) {
+				await window.wp.apiFetch( {
+					method: 'POST',
+					path: recoveryPath,
+				} );
+			}
+
 			wp.data
 				.dispatch( 'core' )
 				.invalidateResolution( 'getEntityRecord', [
