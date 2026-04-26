@@ -52,10 +52,13 @@ async function openPostWithProviderLifecycleMode(
 		| 'partial-default'
 		| 'ready-default'
 		| 'retry'
+		| undefined
 ) {
 	await admin.visitAdminPage(
 		'post.php',
-		`post=${ postId }&action=edit&rtc_provider_lifecycle=${ mode }`
+		`post=${ postId }&action=edit${
+			mode ? `&rtc_provider_lifecycle=${ mode }` : ''
+		}`
 	);
 	await editor.setPreferences( 'core/edit-post', {
 		welcomeGuide: false,
@@ -75,7 +78,7 @@ async function openUserPostWithProviderLifecycleMode(
 	admin: Admin,
 	user: UserCredentials,
 	postId: number,
-	mode: 'ready-default'
+	mode: 'ready-default' | undefined
 ): Promise< { editor: Editor; page: Page } > {
 	const context = await admin.browser.newContext( {
 		baseURL: BASE_URL,
@@ -89,7 +92,9 @@ async function openUserPostWithProviderLifecycleMode(
 	await page.waitForURL( '**/wp-admin/**' );
 
 	await page.goto(
-		`/wp-admin/post.php?post=${ postId }&action=edit&rtc_provider_lifecycle=${ mode }`
+		`/wp-admin/post.php?post=${ postId }&action=edit${
+			mode ? `&rtc_provider_lifecycle=${ mode }` : ''
+		}`
 	);
 	await page.waitForFunction(
 		() =>
@@ -247,7 +252,7 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 		requestUtils,
 	} ) => {
 		const post = await requestUtils.createPost( {
-			title: 'RTC automatic provider recovery repro',
+			title: 'RTC automatic provider recovery no-query',
 			status: 'draft',
 			date_gmt: new Date().toISOString(),
 		} );
@@ -259,7 +264,7 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 			editor,
 			page,
 			post.id,
-			'auto-default'
+			undefined
 		);
 		await collaborationUtils.waitForEntityReady( page );
 
@@ -284,7 +289,7 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 				admin,
 				SECOND_USER,
 				post.id,
-				'ready-default'
+				undefined
 			);
 
 		try {
@@ -358,7 +363,7 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 		requestUtils,
 	} ) => {
 		const post = await requestUtils.createPost( {
-			title: 'RTC partial default provider failure repro',
+			title: 'RTC partial default provider no-query',
 			status: 'draft',
 			date_gmt: new Date().toISOString(),
 		} );
@@ -370,7 +375,7 @@ test.describe( 'Collaboration provider lifecycle repros', () => {
 			editor,
 			page,
 			post.id,
-			'partial-default'
+			undefined
 		);
 		await collaborationUtils.waitForEntityReady( page );
 
