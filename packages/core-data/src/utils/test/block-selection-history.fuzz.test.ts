@@ -16,6 +16,7 @@ import {
 	YSelectionType,
 	type YRelativeSelection,
 } from '../block-selection-history';
+import { findRichTextAttributeKeyForYText } from '../crdt-utils';
 import { CRDT_RECORD_MAP_KEY } from '../../sync';
 import type { WPSelection } from '../../types';
 
@@ -227,6 +228,12 @@ function createDocWithFuzzedRichTextTargets(
 
 	block.set( 'attributes', attributes );
 	blocks.push( [ block ] );
+
+	for ( const target of targets ) {
+		target.attributeKey =
+			findRichTextAttributeKeyForYText( attributes, target.text ) ??
+			target.attributeKey;
+	}
 
 	return { targets, ydoc };
 }
