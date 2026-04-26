@@ -75,6 +75,16 @@ interface RegisterRoomOptions {
 	onSync: () => void;
 }
 
+type RemoteAwarenessStateNormalizer = ( state: unknown ) => object | null;
+
+interface AwarenessWithRemoteStateValidation extends Awareness {
+	getValidatedRemoteState: RemoteAwarenessStateNormalizer;
+}
+
+interface AwarenessWithLocalStateSerialization extends Awareness {
+	getLocalStateForSync: () => LocalAwarenessState;
+}
+
 interface RoomState {
 	clientId: number;
 	createCompactionUpdate: () => SyncUpdate;
@@ -210,6 +220,50 @@ function handleForbiddenError(
 
 const roomStates: Map< string, RoomState > = new Map();
 
+function isObjectRecord( value: unknown ): value is object {
+	return (
+		'object' === typeof value && null !== value && ! Array.isArray( value )
+	);
+}
+
+function normalizeGenericRemoteAwarenessState( state: unknown ): object | null {
+	return isObjectRecord( state ) ? state : null;
+}
+
+function hasRemoteStateValidation(
+	awareness: Awareness
+): awareness is AwarenessWithRemoteStateValidation {
+	return (
+		'function' ===
+		typeof ( awareness as Partial< AwarenessWithRemoteStateValidation > )
+			.getValidatedRemoteState
+	);
+}
+
+function getRemoteAwarenessStateNormalizer(
+	awareness: Awareness
+): RemoteAwarenessStateNormalizer {
+	if ( hasRemoteStateValidation( awareness ) ) {
+		return awareness.getValidatedRemoteState.bind( awareness );
+	}
+
+	return normalizeGenericRemoteAwarenessState;
+}
+
+function getLocalAwarenessStateForSync(
+	awareness: Awareness
+): LocalAwarenessState {
+	const awarenessWithSerializer =
+		awareness as Partial< AwarenessWithLocalStateSerialization >;
+	const serializer = awarenessWithSerializer.getLocalStateForSync;
+
+	if ( 'function' === typeof serializer ) {
+		return serializer.call( awareness );
+	}
+
+	return awareness.getLocalState() ?? {};
+}
+
 /**
  * Create a compaction update by merging existing updates. This preserves
  * the original operation metadata (client IDs, logical clocks) so that
@@ -275,12 +329,14 @@ function createSyncStep2Update( doc: Y.Doc, step1: Uint8Array ): SyncUpdate {
 /**
  * Process an incoming awareness update from the server.
  *
- * @param state     The awareness state received
- * @param awareness The local Awareness instance
+ * @param state                The awareness state received.
+ * @param awareness            The local Awareness instance.
+ * @param normalizeRemoteState Normalizes room-specific remote awareness state.
  */
 function processAwarenessUpdate(
 	state: AwarenessState,
-	awareness: Awareness
+	awareness: Awareness,
+	normalizeRemoteState: RemoteAwarenessStateNormalizer
 ): void {
 	const currentStates = awareness.getStates();
 	const added = new Set< number >();
@@ -308,8 +364,16 @@ function processAwarenessUpdate(
 			return;
 		}
 
+		const normalizedState = normalizeRemoteState( awarenessState );
+
+		if ( null === normalizedState ) {
+			currentStates.delete( clientId );
+			removed.add( clientId );
+			return;
+		}
+
 		if ( ! currentStates.has( clientId ) ) {
-			currentStates.set( clientId, awarenessState );
+			currentStates.set( clientId, normalizedState );
 			added.add( clientId );
 			return;
 		}
@@ -317,9 +381,9 @@ function processAwarenessUpdate(
 		const currentState = currentStates.get( clientId );
 
 		if (
-			JSON.stringify( currentState ) !== JSON.stringify( awarenessState )
+			JSON.stringify( currentState ) !== JSON.stringify( normalizedState )
 		) {
-			currentStates.set( clientId, awarenessState );
+			currentStates.set( clientId, normalizedState );
 			updated.add( clientId );
 		}
 	} );
@@ -849,9 +913,11 @@ function registerRoom( {
 	 * entity loading so that the consumer can indicate which entity is primary.
 	 */
 	const isPrimaryRoom = 0 === roomStates.size;
+	const normalizeRemoteState = getRemoteAwarenessStateNormalizer( awareness );
 
 	function onAwarenessUpdate(): void {
-		roomState.localAwarenessState = awareness.getLocalState() ?? {};
+		roomState.localAwarenessState =
+			getLocalAwarenessStateForSync( awareness );
 	}
 
 	function onDocUpdate( update: Uint8Array, origin: unknown ): void {
@@ -902,11 +968,11 @@ function registerRoom( {
 			),
 		endCursor: 0,
 		isPrimaryRoom,
-		localAwarenessState: awareness.getLocalState() ?? {},
+		localAwarenessState: getLocalAwarenessStateForSync( awareness ),
 		log,
 		onStatusChange,
 		processAwarenessUpdate: ( state: AwarenessState ) =>
-			processAwarenessUpdate( state, awareness ),
+			processAwarenessUpdate( state, awareness, normalizeRemoteState ),
 		processDocUpdate: ( update: SyncUpdate ) =>
 			processDocUpdate( update, doc, onSync ),
 		room,
