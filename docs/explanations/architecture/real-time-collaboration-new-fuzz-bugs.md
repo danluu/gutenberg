@@ -72,7 +72,9 @@ not include the previously known transport limit bug.
 ### 4. Undo metadata is written to the wrong synced entity
 
 -   Commit: `3e76fdf6e8f Add five RTC sync lifecycle bug repros`
--   Repro: `packages/sync/src/test/manager.ts`
+-   Repros:
+    -   `packages/sync/src/test/manager.ts`
+    -   `test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts`
 -   Failure: each `SyncUndoManager.addToScope()` call registers global
     `stack-item-added` and `stack-item-popped` listeners that close over that
     entity's handlers but do not check which Yjs document emitted the undo event.
@@ -82,12 +84,19 @@ not include the previously known transport limit bug.
 -   Repro status:
     -   SyncManager and Yjs undo integration: created in
         `packages/sync/src/test/manager.ts`.
-    -   Core-data/editor integration: not created. The next useful level is an
-        editor test with two concurrently loaded synced entities and observable
-        selection metadata on both entities.
-    -   Playwright normal-user browser repro: not created yet. A stock normal-user
-        repro needs a UI workflow that loads and edits two synced entities in the
-        same page and makes the wrong-entity selection restore visible.
+    -   Core-data/editor integration: covered by the browser repro because it
+        exercises the real `core-data` resolver handlers, post sync config,
+        default taxonomy sync config, and editor selection store.
+    -   Playwright normal-user browser repro: created in
+        `test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts`.
+        The test opens the normal pre-publish panel, which loads the default
+        category entity as a second synced Yjs document. It then types
+        `abcdef`, places the caret after `abc`, splits the paragraph with
+        Enter, and undoes with the normal keyboard shortcut. With the bug, the
+        content is restored to `abcdef` but the editor selection is unset
+        instead of restored to offset 3. A control run with the category load
+        removed passes, confirming the failure is caused by the second synced
+        entity.
 
 ### 5. A surviving room's compaction update is dropped after a 403 in another room
 
@@ -127,11 +136,12 @@ not include the previously known transport limit bug.
     -   Core-data/editor integration: not created. The next level needs a page with
         a primary post room and a secondary synced room, then a primary-room
         unregister while the secondary room remains loaded.
-    -   Playwright normal-user browser repro: not created yet. The most plausible
-        stock workflow is to unregister the post room through a normal
-        unrecoverable event such as an oversized paste, then edit a remaining
-        synced secondary entity with another collaborator present and assert that
-        the secondary edit never syncs.
+    -   Playwright normal-user browser repro: investigated, not created for the
+        stock editor. The plausible oversized-document workflow unregisters the
+        post room, but it also sets `collaborationSupported` to false and the
+        editor falls back to normal post locking. The existing stock browser path
+        therefore does not leave a collaborative secondary room that a user can
+        continue editing without injected timing or transport state.
 
 ## Verification
 
@@ -143,3 +153,7 @@ The repros are intentionally failing on the current implementation:
     passes the existing tests and fails the two new polling-manager repros.
 -   The duplicate table bug has both a deterministic unit/fuzz repro and a
     Playwright browser repro using normal table UI actions.
+-   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts --grep "Undo restores the post selection"`
+    fails the new undo selection browser repro with the selection unset after
+    undo. Temporarily removing the normal pre-publish category load makes the
+    same test pass.
