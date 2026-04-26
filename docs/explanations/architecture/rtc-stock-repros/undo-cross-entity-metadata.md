@@ -97,6 +97,22 @@ The failing stock repro is:
 WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts --grep "Undo restores the post selection"
 ```
 
+Known-fixes-base status, checked on `try/fuzz-known-issues-fixed-campaign`
+after the previously found RTC fixes were applied:
+
+-   **Fails:** browser stock repro
+    `Undo restores the post selection when another synced entity is loaded`.
+    Content undo still happens, but the selection snapshot has
+    `attributeKey: undefined`, `blockIndex: -1`, and no offsets/content instead
+    of the expected post paragraph selection.
+-   **Passes:** baseline undo/redo collaboration tests in the same spec:
+    `User A undo only affects their own changes, not User B changes` and
+    `Redo restores the undone change`.
+
+The pass/fail split matters: the previously fixed RTC write-path and ordinary
+undo behavior remain functional, but the multi-entity undo metadata scoping bug
+is still present.
+
 Lower-level coverage should assert that a stack item created from one Yjs
 document never invokes metadata handlers registered for a different synced
 entity.
