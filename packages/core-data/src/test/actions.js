@@ -734,6 +734,44 @@ describe( 'saveEditedEntityRecord', () => {
 			undefined
 		);
 	} );
+
+	it( 'does not include privileged collaboration-only edits in the save payload', async () => {
+		const configs = [
+			{
+				kind: 'postType',
+				name: 'post',
+				baseURL: '/wp/v2/posts',
+			},
+		];
+		const remoteCollaborationEdits = {
+			meta: {
+				rtc_privileged_meta: 'changed by limited peer',
+			},
+			status: 'publish',
+		};
+		const select = {
+			getEntityRecordNonTransientEdits: () => remoteCollaborationEdits,
+			hasEditsForEntityRecord: () => true,
+		};
+
+		const dispatch = Object.assign( jest.fn(), {
+			saveEntityRecord: jest.fn(),
+		} );
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		await saveEditedEntityRecord(
+			'postType',
+			'post',
+			10
+		)( { dispatch, select, resolveSelect } );
+
+		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			{ id: 10 },
+			undefined
+		);
+	} );
 } );
 
 describe( 'saveEntityRecord', () => {
