@@ -112,6 +112,22 @@ The failing stock repro is:
 WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts --grep "syncs notes after an oversized title"
 ```
 
+Known-fixes-base status, checked on `try/fuzz-known-issues-fixed-campaign`
+after the previously found RTC fixes were applied:
+
+-   **Fails:** normal stock browser repro
+    `syncs notes after an oversized title removes the original post room`.
+    After another user joins the surviving `root/comment` room, normal note
+    creation still sends a `root/comment` payload with `0` updates.
+-   **Fails:** lower-level/browser lifecycle repro in the same spec,
+    `resumes category updates after the original post room is deleted in place`.
+    The post room is gone as expected, but the surviving category room also
+    sends `0` updates.
+-   **Passes:** the previously fixed large-update transport behavior on this
+    base. The oversized title disables collaboration for the post room instead
+    of repeatedly surfacing the generic transport-limit failure, but the
+    remaining room-local queue-resume bug is still present.
+
 The lower-level polling manager regression should assert that a non-primary
 surviving room resumes its own queue when it sees a collaborator, while a shared
 collection room does not resume unrelated post room queues.
