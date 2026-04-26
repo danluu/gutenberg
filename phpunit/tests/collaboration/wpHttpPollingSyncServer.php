@@ -64,10 +64,36 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	 * @return array Room request data.
 	 */
 	private function build_room( $room, $client_id = 1, $cursor = 0, $awareness = array(), $updates = array() ) {
-		if ( empty( $awareness ) ) {
-			$awareness = array( 'user' => 'test' );
+		if (
+			null !== $awareness &&
+			! empty( $awareness ) &&
+			! array_key_exists( 'collaboratorInfo', $awareness ) &&
+			! array_key_exists( 'editorState', $awareness )
+		) {
+			$awareness = array( 'editorState' => $awareness );
 		}
 
+		return array(
+			'after'     => $cursor,
+			'awareness' => $awareness,
+			'client_id' => $client_id,
+			'room'      => $room,
+			'updates'   => $updates,
+		);
+	}
+
+	/**
+	 * Builds a room request without adapting legacy test awareness into the
+	 * current awareness protocol shape.
+	 *
+	 * @param string $room      Room identifier.
+	 * @param int    $client_id Client ID.
+	 * @param int    $cursor    Cursor value for the 'after' parameter.
+	 * @param mixed  $awareness Awareness state.
+	 * @param array  $updates   Array of updates.
+	 * @return array Room request data.
+	 */
+	private function build_raw_room( $room, $client_id = 1, $cursor = 0, $awareness = array(), $updates = array() ) {
 		return array(
 			'after'     => $cursor,
 			'awareness' => $awareness,
@@ -979,7 +1005,12 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	public function test_sync_awareness_returned() {
 		wp_set_current_user( self::$editor_id );
 
-		$awareness = array( 'name' => 'Editor' );
+		$awareness = array(
+			'collaboratorInfo' => array(
+				'id'   => 999999,
+				'name' => 'Spoofed User',
+			),
+		);
 		$response  = $this->dispatch_sync(
 			array(
 				$this->build_room( $this->get_post_room(), 1, 0, $awareness ),
@@ -988,7 +1019,8 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 1, $data['rooms'][0]['awareness'] );
-		$this->assertSame( $awareness, $data['rooms'][0]['awareness'][1] );
+		$this->assertSame( self::$editor_id, $data['rooms'][0]['awareness'][1]['collaboratorInfo']['id'] );
+		$this->assertNotSame( 'Spoofed User', $data['rooms'][0]['awareness'][1]['collaboratorInfo']['name'] );
 	}
 
 	/**
@@ -1005,7 +1037,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		$response = $this->dispatch_sync(
 			array(
-				$this->build_room( $room, 1, 0, $malformed_awareness ),
+				$this->build_raw_room( $room, 1, 0, $malformed_awareness ),
 			)
 		);
 
@@ -1036,8 +1068,8 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		$this->assertArrayHasKey( 1, $awareness );
 		$this->assertArrayHasKey( 2, $awareness );
-		$this->assertSame( array( 'name' => 'Client 1' ), $awareness[1] );
-		$this->assertSame( array( 'name' => 'Client 2' ), $awareness[2] );
+		$this->assertSame( self::$editor_id, $awareness[1]['collaboratorInfo']['id'] );
+		$this->assertSame( self::$editor_id, $awareness[2]['collaboratorInfo']['id'] );
 	}
 
 	public function test_sync_awareness_updates_existing_client() {
@@ -1064,7 +1096,8 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		// Should have exactly one entry for client 1 with updated state.
 		$this->assertCount( 1, $awareness );
-		$this->assertSame( array( 'cursor' => 'updated' ), $awareness[1] );
+		$this->assertSame( array( 'cursor' => 'updated' ), $awareness[1]['editorState'] );
+		$this->assertSame( self::$editor_id, $awareness[1]['collaboratorInfo']['id'] );
 	}
 
 	public function test_sync_awareness_client_id_cannot_be_used_by_another_user() {

@@ -13,6 +13,7 @@ import { unlock } from '../../lock-unlock';
 import { getAvatarUrl } from '../collaborators-overlay/get-avatar-url';
 import { getAvatarBorderColor } from '../collab-sidebar/utils';
 import { createCursorRegistry } from '../collaborators-overlay/cursor-registry';
+import { hasRenderableCollaboratorInfo } from './utils';
 
 import './styles/collaborators-presence.scss';
 import { CollaboratorsOverlay } from '../collaborators-overlay';
@@ -41,13 +42,17 @@ export function CollaboratorsPresence( {
 		postType
 	) as PostEditorAwarenessState[];
 
-	const otherActiveCollaborators = activeCollaborators.filter(
+	const renderableCollaborators = activeCollaborators.filter(
+		hasRenderableCollaboratorInfo
+	);
+
+	const otherActiveCollaborators = renderableCollaborators.filter(
 		( c ) => ! c.isMe
 	);
 
 	// Always include self in the list sorted first.
 	const collaboratorsForList = useMemo( () => {
-		return [ ...activeCollaborators ].sort( ( a, b ) => {
+		return [ ...renderableCollaborators ].sort( ( a, b ) => {
 			if ( a.isMe && ! b.isMe ) {
 				return -1;
 			}
@@ -56,7 +61,7 @@ export function CollaboratorsPresence( {
 			}
 			return 0;
 		} );
-	}, [ activeCollaborators ] );
+	}, [ renderableCollaborators ] );
 
 	const [ cursorRegistry ] = useState( createCursorRegistry );
 
@@ -72,7 +77,7 @@ export function CollaboratorsPresence( {
 		return null;
 	}
 
-	const me = activeCollaborators.find( ( c ) => c.isMe );
+	const me = renderableCollaborators.find( ( c ) => c.isMe );
 
 	return (
 		<>

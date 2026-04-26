@@ -99,15 +99,18 @@ The vulnerable path crosses four layers:
    [`CollaboratorsList`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/list.tsx)
    dereference `collaboratorInfo` fields.
 
-The current repros are committed as failing tests on
+The repros are committed as regression tests on
 [`danluu/try/awareness-exception`](https://github.com/danluu/gutenberg/tree/try/awareness-exception).
-They assert the desired safe behavior and fail against the current vulnerable
-implementation. They cover these boundaries:
+They were introduced as failing tests against the vulnerable implementation and
+now describe the behavior the proposed fix preserves. They cover these
+boundaries:
 
 -   Server rejection:
-    [`test_sync_rejects_malformed_awareness_without_collaborator_info()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/phpunit/tests/collaboration/wpHttpPollingSyncServer.php#L1000)
+    [`test_sync_rejects_malformed_awareness_without_collaborator_info()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/phpunit/tests/collaboration/wpHttpPollingSyncServer.php#L1032)
+-   Sync-safe local payload:
+    [`uses sync-safe local awareness when the awareness implementation provides it`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/test/polling-manager.test.ts#L565)
 -   Polling ingestion drop:
-    [`regression: drops malformed remote awareness from the server`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/test/polling-manager.test.ts#L559)
+    [`regression: drops malformed remote awareness from the server`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/test/polling-manager.test.ts#L607)
 -   Awareness publication guard:
     [`regression: should not publish non-empty malformed remote state to subscribers`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/test/awareness-state.ts#L159)
 -   Awareness equality guard:
@@ -181,10 +184,9 @@ payload" and "typed collaborator state".
 
 ## Fix Strategy
 
-Because the feature is unreleased, fix the protocol rather than preserving the
-current permissive behavior.
-
-The target design should be:
+Because the feature is unreleased, the branch fixes the protocol rather than
+preserving the current permissive behavior. The proposed fix in this branch does
+three things:
 
 -   Client requests contain only the awareness fields the client is allowed to
     control.
@@ -193,16 +195,17 @@ The target design should be:
 -   Both server and client reject malformed awareness before it reaches
     rendering or equality checks.
 
-## Fix Plan
+## Proposed Fix
 
-### 1. Define a strict wire schema before release
+### 1. Split the wire schema
 
-Split the request and response contracts.
+Client-to-server awareness is now treated as `null` for disconnect or a narrow
+activity object. The post editor awareness implementation keeps
+`collaboratorInfo` locally for the current user's UI, but
+[`BaseAwarenessState.getLocalStateForSync()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/base-awareness.ts#L35)
+removes it before the polling provider builds the sync request.
 
-Client-to-server awareness should be `null` for disconnect or a narrow activity
-object. The client should not be trusted to provide collaborator identity.
-
-For the post editor, a good pre-release request contract is:
+The proposed request contract is:
 
 ```ts
 type ClientPostEditorAwareness = null | {
@@ -210,8 +213,7 @@ type ClientPostEditorAwareness = null | {
 };
 ```
 
-The server-to-client response contract can include identity, but identity should
-be canonical:
+The server-to-client response contract includes canonical identity:
 
 ```ts
 type ServerPostEditorAwareness = {
@@ -227,90 +229,95 @@ type ServerPostEditorAwareness = {
 };
 ```
 
-If `browserType` is kept, decide whether it is display-only client-provided
-metadata or remove it from collaborator identity. Do not treat it as
-authoritative.
-
-Reject unknown top-level fields. Reject arrays and non-plain objects. Bound the
-serialized size of awareness state independently of the overall request body
-limit.
+The server currently derives `browserType` from the request user agent and
+preserves `enteredAt` for an existing client ID. Neither field is treated as
+user identity.
 
 ### 2. Make the PHP endpoint authoritative
 
-The server is the fan-out point, so it should enforce the contract first.
+The PHP endpoint is the fan-out point, so the branch makes it enforce the
+contract first:
 
-Recommended server behavior:
-
--   Accept `awareness: null` as a disconnect signal.
--   Accept only the narrow client-controlled activity fields for non-null
-    awareness.
--   Derive `collaboratorInfo.id`, `name`, `slug`, and `avatar_urls` from the
-    authenticated `wp_user_id` before returning awareness to other clients.
--   Reject malformed non-null awareness with a `400 rest_invalid_param` style
-    response.
--   When rewriting room awareness, drop any malformed stored entries instead of
-    returning them.
+-   [`ALLOWED_AWARENESS_FIELDS`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php#L104)
+    limits client-controlled awareness to `collaboratorInfo` and `editorState`
+    during the transition. `collaboratorInfo` may still be submitted directly to
+    the REST endpoint, but the server ignores its identity fields.
+-   [`validate_awareness_update()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php#L458)
+    rejects unknown top-level fields, lists, and malformed non-null awareness
+    with `rest_invalid_param`.
+-   [`normalize_awareness_update()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php#L602)
+    returns `collaboratorInfo.id`, `name`, `slug`, and `avatar_urls` from the
+    authenticated WordPress user.
+-   [`normalize_stored_awareness_entry()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php#L627)
+    drops malformed stored entries during room awareness cleanup.
 -   Keep the existing room permission and client-ID ownership checks.
 
-Because this is unreleased, rejecting bad requests is preferable to accepting and
-silently stripping arbitrary fields. Silent stripping makes protocol mistakes
-harder to detect before release.
+Because this is unreleased, rejecting bad requests is preferable to accepting
+and silently stripping arbitrary fields. Silent stripping makes protocol
+mistakes harder to detect before release.
 
-### 3. Change sync types from trusted object to unknown-at-boundary
+One test-environment caveat: current `wp-env` may load the already-copied
+WordPress core class at
+`wp-includes/collaboration/class-wp-http-polling-sync-server.php` before the
+Gutenberg compat class. That core copy needs the same server patch. This is a
+source synchronization issue for the unreleased feature, not a compatibility
+requirement for deployed RTC servers.
 
-The sync package should not type remote awareness as a safe `object`. Use
-`unknown` at the transport boundary and parse it before writing to Yjs.
+### 3. Parse awareness at sync and core-data boundaries
 
-The sync package is intentionally generic, so avoid importing post-editor types
-directly into it. Either:
+The sync package stays generic. It does not import post-editor types. Instead,
+[`polling-manager.ts`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/sync/src/providers/http-polling/polling-manager.ts#L241)
+detects awareness implementations that provide runtime parsing hooks:
 
--   pass a room-specific `normalizeAwarenessState` callback when registering the
-    room, or
--   perform only generic validation in sync and require core-data to normalize
-    before publishing typed awareness.
+-   `getLocalStateForSync()` for outbound state, so clients do not send trusted
+    identity data when an awareness implementation can serialize a safer
+    payload.
+-   `getValidatedRemoteState()` for inbound state, so malformed room-specific
+    awareness is not written into `awareness.getStates()`.
 
-The stronger pre-release design is to do both:
-
--   sync rejects impossible JSON shapes (`null`, plain object, size bounds);
--   core-data validates the post-editor-specific shape.
-
-### 4. Harden `AwarenessState`
-
-`AwarenessState` should not publish every value from `getStates()` as `State`.
-Add a protected normalization hook:
+Core-data now owns the typed parser. The base class exposes a public transport
+wrapper and a protected subclass hook:
 
 ```ts
+public getValidatedRemoteState( rawState: unknown ): State | null;
 protected normalizeRemoteState( rawState: unknown ): State | null;
 ```
 
-Use it before updating `seenStates`, `previousSnapshot`, or subscribers. Invalid
-remote state should be skipped and, where possible, removed from the local
-awareness map.
+The implementation is in
+[`AwarenessState`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/awareness-state.ts#L210).
+It rejects unknown top-level fields before equality comparison and removes
+non-empty malformed entries before updating `seenStates`, `previousSnapshot`, or
+subscribers.
 
-After this change:
+Post-editor awareness then adds the room-specific checks:
 
--   unknown remote fields never reach `isFieldEqual()`;
--   missing required fields never reach presence UI;
--   local code can still throw on unknown fields when setting managed local
-    state, preserving the developer-signal value of the equality checker.
+-   [`BaseAwarenessState`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/base-awareness.ts#L35)
+    requires a valid `collaboratorInfo`.
+-   [`PostEditorAwareness`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/post-editor-awareness.ts#L59)
+    requires `editorState`, when present, to be object-shaped.
+-   [`isCollaboratorInfo()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/core-data/src/awareness/utils.ts#L81)
+    checks the runtime shape used by editor presence consumers.
 
-### 5. Keep UI defensive
+### 4. Keep UI defensive
 
 The UI should not be the main security boundary, but it should still avoid
 turning malformed state into a full editor crash.
 
-Presence consumers should filter out collaborators without valid
-`collaboratorInfo` before rendering avatars, names, notifications, or scroll
-targets. Do not use optional chaining to render partial or misleading
-collaborator identities. Invalid collaborators should be absent from the UI.
+Presence UI now filters out collaborators without renderable collaborator info
+through
+[`hasRenderableCollaboratorInfo()`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/utils.ts#L22).
+[`CollaboratorsPresence`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/index.tsx#L46)
+and
+[`CollaboratorsList`](https://github.com/danluu/gutenberg/blob/try/awareness-exception/packages/editor/src/components/collaborators-presence/list.tsx#L39)
+use that guard before rendering avatars, names, and scroll targets. Invalid
+collaborators are absent from the UI rather than partially rendered.
 
 The error boundary should remain last-resort containment, not the expected
 handling path.
 
-### 6. Make the existing failing repro tests pass
+## Verification
 
-The repros are already committed as executable failing tests on the danluu
-branch. Their expectations already assert "rejection or safe ignore":
+The branch contains executable regression tests for the fixed behavior:
 
 -   PHP: malformed awareness is rejected with a 400, or existing malformed
     stored entries are omitted during cleanup.
@@ -322,22 +329,19 @@ branch. Their expectations already assert "rejection or safe ignore":
 -   Browser: the attacker can attempt the malformed update, but the victim editor
     remains usable and no fake/malformed collaborator appears.
 
-Keep positive-path tests proving valid collaborator presence still appears,
-updates, disconnects, and reconnects normally.
+Focused JS repro tests pass with this implementation:
 
-## Recommended Landing Order
+```bash
+npm run test:unit packages/core-data/src/awareness/test/awareness-state.ts -- --runInBand
+npm run test:unit packages/sync/src/providers/http-polling/test/polling-manager.test.ts -- --runInBand
+npm run test:unit packages/editor/src/components/collaborators-presence/test/index.tsx -- --runInBand
+```
 
-Since this can be fixed before release, land the protocol fix before exposing the
-feature broadly:
-
-1. Define the strict request/response awareness schemas.
-2. Make the PHP endpoint reject malformed awareness and return server-derived
-   collaborator identity.
-3. Update the client to send only allowed activity fields and to parse response
-   awareness at the boundary.
-4. Harden `AwarenessState` and the presence UI as defense-in-depth.
-5. Make the existing failing repro tests pass without weakening their fixed
-   behavior expectations.
+The PHP repro is the right server-side assertion, but in a `wp-env` checkout that
+already contains the core RTC server class, the test exercises the core copy
+instead of the Gutenberg compat class. Apply the same server patch to that core
+copy, or run against a core checkout that has received it, before using the PHP
+test as end-to-end server verification.
 
 The key release criterion is that arbitrary client-provided awareness JSON never
 crosses into typed collaborator state.

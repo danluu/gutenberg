@@ -91,7 +91,11 @@ function getOnDocUpdate( doc: ReturnType< typeof createMockDoc > ) {
 	return call[ 1 ] as ( update: Uint8Array, origin: unknown ) => void;
 }
 
-function createMockAwareness( states = new Map< number, object >() ) {
+function createMockAwareness(
+	states = new Map< number, object >(),
+	getValidatedRemoteState?: ( state: unknown ) => object | null,
+	getLocalStateForSync?: () => object | null
+) {
 	return {
 		clientID: 1,
 		getLocalState: jest.fn( () => ( {} ) ),
@@ -99,6 +103,8 @@ function createMockAwareness( states = new Map< number, object >() ) {
 		on: jest.fn(),
 		off: jest.fn(),
 		emit: jest.fn(),
+		...( getValidatedRemoteState ? { getValidatedRemoteState } : {} ),
+		...( getLocalStateForSync ? { getLocalStateForSync } : {} ),
 	};
 }
 
@@ -556,9 +562,58 @@ describe( 'polling-manager', () => {
 	} );
 
 	describe( 'awareness update processing', () => {
+		it( 'uses sync-safe local awareness when the awareness implementation provides it', async () => {
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness: {},
+						updates: [],
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(
+					new Map< number, object >(),
+					undefined,
+					() => ( {
+						editorState: { cursor: 'safe' },
+					} )
+				),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( mockPostSyncUpdate ).toHaveBeenCalledWith(
+				expect.objectContaining( {
+					rooms: [
+						expect.objectContaining( {
+							awareness: {
+								editorState: { cursor: 'safe' },
+							},
+						} ),
+					],
+				} )
+			);
+		} );
+
 		it( 'regression: drops malformed remote awareness from the server', async () => {
 			const currentStates = new Map< number, object >();
-			const awareness = createMockAwareness( currentStates );
+			const awareness = createMockAwareness( currentStates, ( state ) => {
+				return 'object' === typeof state &&
+					null !== state &&
+					! Array.isArray( state ) &&
+					'collaboratorInfo' in state
+					? state
+					: null;
+			} );
 
 			mockPostSyncUpdate.mockResolvedValue( {
 				rooms: [
