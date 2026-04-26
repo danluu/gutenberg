@@ -117,6 +117,21 @@ The failing stock repro is:
 WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts --grep "retries a queued post compaction"
 ```
 
+Known-fixes-base status, checked on `try/fuzz-known-issues-fixed-campaign`
+after the previously found RTC fixes were applied:
+
+-   **Fails:** browser stock repro
+    `retries a queued post compaction after a loaded category room is deleted`.
+    The retry payload still contains the deleted category room, so the current
+    failure is at the 403 normalization/selective-unregister layer.
+-   **Not yet reached in the browser repro:** the narrower assertion that the
+    surviving post room retries its queued compaction update. That assertion is
+    still part of the required fix, but the stock browser path currently fails
+    first because the forbidden category room is not removed.
+-   **Passes:** previously fixed size-limit and compaction-size behavior on this
+    base. Those fixes prevent oversized local/compaction updates from taking
+    down the transport, but they do not handle this per-room 403 recovery case.
+
 The lower-level regression should live in the HTTP polling manager tests and
 assert that a 403 for one room retries a surviving room's queued compaction,
 while generic failures still use the safer compaction-filtering restore path.
