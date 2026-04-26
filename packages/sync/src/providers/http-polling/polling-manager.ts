@@ -200,7 +200,9 @@ function handleForbiddenError(
 				continue;
 			}
 			if ( room.updates.length > 0 ) {
-				remainingState.updateQueue.restore( room.updates );
+				remainingState.updateQueue.restore( room.updates, {
+					preserveCompaction: true,
+				} );
 			}
 		}
 	} else {

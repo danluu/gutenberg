@@ -16,6 +16,20 @@ import {
 
 const SYNC_API_PATH = '/wp-sync/v1/updates';
 
+interface JsonResponseLike {
+	clone?: () => JsonResponseLike;
+	json: () => Promise< unknown >;
+}
+
+function isJsonResponseLike( value: unknown ): value is JsonResponseLike {
+	return (
+		!! value &&
+		'object' === typeof value &&
+		'function' ===
+			typeof ( value as Partial< JsonResponseLike > ).json
+	);
+}
+
 export function uint8ArrayToBase64( data: Uint8Array ): string {
 	let binary = '';
 	const len = data.byteLength;
@@ -78,11 +92,19 @@ export function createUpdateQueue(
 		pause(): void {
 			isPaused = true;
 		},
-		restore( restoredUpdates: SyncUpdate[] ): void {
-			// Restore to front of the queue on failure. Remove compaction updates.
-			const filtered = restoredUpdates.filter(
-				( u ) => u.type !== SyncUpdateType.COMPACTION
-			);
+		restore(
+			restoredUpdates: SyncUpdate[],
+			{ preserveCompaction = false } = {}
+		): void {
+			// Restore to front of the queue on failure. Remove compaction updates
+			// unless the caller knows the server rejected the request before storing
+			// the surviving room's updates.
+			let filtered = restoredUpdates;
+			if ( ! preserveCompaction ) {
+				filtered = restoredUpdates.filter(
+					( u ) => u.type !== SyncUpdateType.COMPACTION
+				);
+			}
 
 			if ( 0 === filtered.length ) {
 				return;
@@ -112,6 +134,18 @@ export function postSyncUpdate(
 		method: 'POST',
 		path: SYNC_API_PATH,
 		data: payload,
+	} ).catch( async ( error ) => {
+		if ( isJsonResponseLike( error ) ) {
+			const response =
+				'function' === typeof error.clone ? error.clone() : error;
+			const parsedError = await response.json().catch( () => null );
+
+			if ( parsedError ) {
+				throw parsedError;
+			}
+		}
+
+		throw error;
 	} );
 }
 
