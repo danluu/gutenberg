@@ -109,6 +109,23 @@ promoted to the confirmed bug list with product-level repro notes.
     direct and nested object/array rich-text attributes, records ordinary
     block-selection snapshots, and verifies that relative positions stay tied to
     the selected `Y.Text` after edits before the cursor.
+-   `Room-level sync auth can become a confused-deputy privilege escalation`.
+    Status: covered by the CRDT authorization fuzzer. The sync endpoint checks
+    only room-level access, while the post CRDT sync config includes fields with
+    different direct-save capability requirements. The fuzzer randomizes peer
+    capability profiles and synced post field classes, then verifies that a
+    lower-privilege peer's remote CRDT update cannot enter a higher-privilege
+    peer's save payload. Current failing seeds `1901`-`1908` surface
+    `author`, `status`, `meta`, taxonomy, media/date/sticky, and
+    policy-dependent field classes. Audit evidence:
+    `lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php` authorizes
+    `postType/*:id` rooms with `edit_post`;
+    `packages/core-data/src/entities.js` syncs broad post properties including
+    `author`, `status`, `meta`, and taxonomy rest bases;
+    `packages/sync/src/manager.ts` applies remote CRDT changes through
+    `handlers.editRecord()`; and
+    `packages/core-data/src/actions.js` later saves the edited record with the
+    local user's REST nonce and capabilities.
 
 ## Known Existing / Excluded Bug
 
