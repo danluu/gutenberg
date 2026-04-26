@@ -166,6 +166,62 @@ export function getYTextByAttributeKey(
 	return value instanceof Y.Text ? value : null;
 }
 
+function findYTextPath(
+	value: unknown,
+	target: Y.Text,
+	path: string[] = []
+): string[] | undefined {
+	if ( value === target ) {
+		return path;
+	}
+
+	if ( value instanceof Y.Map ) {
+		let foundPath: string[] | undefined;
+		value.forEach( ( nestedValue, key ) => {
+			if ( foundPath ) {
+				return;
+			}
+			foundPath = findYTextPath( nestedValue, target, [
+				...path,
+				String( key ),
+			] );
+		} );
+		return foundPath;
+	}
+
+	if ( value instanceof Y.Array ) {
+		for ( let index = 0; index < value.length; index++ ) {
+			const foundPath = findYTextPath( value.get( index ), target, [
+				...path,
+				String( index ),
+			] );
+			if ( foundPath ) {
+				return foundPath;
+			}
+		}
+	}
+
+	return undefined;
+}
+
+/**
+ * Find the current rich-text attribute path for a Y.Text under block
+ * attributes. This recomputes index-based nested paths after structural edits.
+ *
+ * @param attributes Block attributes from the Yjs block.
+ * @param yText      Rich-text Y.Text to locate.
+ */
+export function findRichTextAttributeKeyForYText(
+	attributes: Y.Map< unknown > | undefined,
+	yText: Y.Text
+): string | undefined {
+	if ( ! attributes ) {
+		return undefined;
+	}
+
+	return findYTextPath( attributes, yText )?.join( '.' );
+}
+
 /**
  * Given a block ID and a Y.Doc, find the block in the document.
  *
