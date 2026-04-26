@@ -80,10 +80,16 @@ export function createUndoManager(): SyncUndoManager {
 			const { addUndoMeta, restoreUndoMeta } = handlers;
 
 			yUndoManager.on( 'stack-item-added', ( event: StackItemEvent ) => {
+				if ( event.ydoc !== ydoc ) {
+					return;
+				}
 				addUndoMeta( ydoc, event.stackItem.meta );
 			} );
 
 			yUndoManager.on( 'stack-item-popped', ( event: StackItemEvent ) => {
+				if ( event.ydoc !== ydoc ) {
+					return;
+				}
 				restoreUndoMeta( ydoc, event.stackItem.meta );
 			} );
 		},

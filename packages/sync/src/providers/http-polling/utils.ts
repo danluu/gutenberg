@@ -78,11 +78,17 @@ export function createUpdateQueue(
 		pause(): void {
 			isPaused = true;
 		},
-		restore( restoredUpdates: SyncUpdate[] ): void {
-			// Restore to front of the queue on failure. Remove compaction updates.
-			const filtered = restoredUpdates.filter(
-				( u ) => u.type !== SyncUpdateType.COMPACTION
-			);
+		restore(
+			restoredUpdates: SyncUpdate[],
+			{ preserveCompaction = false } = {}
+		): void {
+			// Restore to front of the queue on failure. Remove compaction updates
+			// unless the caller knows the failed request was definitively rejected.
+			const filtered = preserveCompaction
+				? restoredUpdates
+				: restoredUpdates.filter(
+						( u ) => u.type !== SyncUpdateType.COMPACTION
+				  );
 
 			if ( 0 === filtered.length ) {
 				return;
@@ -112,6 +118,27 @@ export function postSyncUpdate(
 		method: 'POST',
 		path: SYNC_API_PATH,
 		data: payload,
+	} ).catch( async ( error ) => {
+		if (
+			error &&
+			typeof error === 'object' &&
+			typeof ( error as Response ).json === 'function'
+		) {
+			const response = error as Response;
+			const parsedError = await (
+				typeof response.clone === 'function'
+					? response.clone()
+					: response
+			)
+				.json()
+				.catch( () => null );
+
+			if ( parsedError ) {
+				throw parsedError;
+			}
+		}
+
+		throw error;
 	} );
 }
 
