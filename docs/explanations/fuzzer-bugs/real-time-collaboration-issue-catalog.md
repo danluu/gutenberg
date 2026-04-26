@@ -56,6 +56,60 @@ For current grouping and counts, see
     Evidence:
     [browser-abort-connection-lost-20260423/summary.md](../../../artifacts/rtc-browser-fuzz/browser-abort-connection-lost-20260423/summary.md).
 
+## Follow-Up Code Audit Items Needing Triage / Repro
+
+These came from follow-up code audit after the offset-space fix work. Items
+with focused fuzz repros are still listed here until they are either fixed or
+promoted to the confirmed bug list with product-level repro notes.
+
+-   `Cursor offset is still globally scoped across rich-text fields`. Status:
+    already tracked as the cursor-scope corruption write-path bug above. The
+    `crdt-blocks` fuzz target now includes multi-field rich-text mutations and
+    a general local-merge invariant, so it can catch this class without a
+    dedicated single-path repro. A natural browser repro is still pending.
+    Audit evidence:
+    `packages/core-data/src/utils/crdt.ts` passes only `selectionStart.offset`
+    into block merging; `crdt-blocks.ts` reuses that bare offset for every
+    changed attribute and nested rich-text field before calling
+    `diffWithCursor`.
+-   `Persisted CRDT hydration can be treated as an outgoing local update`.
+    Status: covered by the sync-manager entity lifecycle fuzzer. Providers are
+    created and attach `doc.on( 'updateV2' )` before persisted CRDT state is
+    applied, while the polling manager treats any non-polling-manager-origin
+    update as local. The fuzzer now watches ordinary unload/persist/reload
+    action sequences for large untagged provider-visible updates.
+-   `Remote update apply failure can permanently skip an update`. Status:
+    covered by the polling-manager protocol state-machine fuzzer. The polling
+    manager advances `endCursor` before applying room updates, then logs
+    per-update apply failures without rolling the cursor back. The fuzzer now
+    mixes remote updates, local queued updates, compaction requests, and cursor
+    assertions across repeated polls.
+-   `Concurrent first access to a new sync room can split storage`. Status:
+    covered by the post-meta storage race fuzzer. The sync post-meta storage
+    path performs a get-or-insert by room hash without a lock or unique
+    constraint. The fuzzer injects a competing first writer through the ordinary
+    `wp_insert_post()` path and checks that the room has one reachable storage
+    lineage and that acknowledged updates remain visible to a fresh storage
+    reader.
+-   `Awareness state has a lost-update race`. Status: covered by the
+    HTTP-polling server race fuzzer. Awareness is stored with whole-state
+    read-modify-write semantics. The fuzzer injects completed awareness writes
+    between a poll's awareness read and write, then checks that all completed
+    client states survive subsequent ordinary polling operations.
+-   `Compaction update size guard gap`. Status: same family as the confirmed
+    oversized-compaction bug above; covered by the polling-manager protocol
+    state-machine fuzzer. Compaction enqueues `Y.encodeStateAsUpdateV2( doc )`
+    directly. The fuzzer now treats oversized queued updates as a general
+    invariant violation, regardless of whether they came from local edits or a
+    server-requested compaction.
+-   `Selection history does not track nested rich-text positions`. Status:
+    covered by the block-selection-history fuzzer and the nested awareness
+    selection fuzzer. Selection conversion only handles top-level block
+    attributes that are direct `Y.Text` values. The history fuzzer now generates
+    direct and nested object/array rich-text attributes, records ordinary
+    block-selection snapshots, and verifies that relative positions stay tied to
+    the selected `Y.Text` after edits before the cursor.
+
 ## Known Existing / Excluded Bug
 
 -   `Reload-title collaboration bug`. Status: real existing bug, but excluded
@@ -68,7 +122,7 @@ For current grouping and counts, see
     not a collaboration product bug. This breaks `activateTheme()` in global
     setup.
 -   `Missing gutenberg-test-plugin-disables-the-css-animations plugin in a
-    non-target env`. Status: environment failure, not a collaboration product
+non-target env`. Status: environment failure, not a collaboration product
     bug. This showed up during isolated reruns against the wrong local
     WordPress instance.
 -   `rest_post_invalid_id` during setup or editor open. Status: dirty or

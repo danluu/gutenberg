@@ -166,10 +166,31 @@ function escapeHtml( value: string ): string {
 		.replaceAll( '"', '&quot;' );
 }
 
+function blockDelimiter(
+	name: string,
+	attributes: Record< string, unknown > = {}
+): string {
+	const serializedAttributes = Object.keys( attributes ).length
+		? ` ${ JSON.stringify( attributes ) }`
+		: '';
+
+	return `<!-- wp:${ name }${ serializedAttributes } -->`;
+}
+
 function paragraph( content: string ): string {
 	return `<!-- wp:paragraph -->\n<p>${ escapeHtml(
 		content
 	) }</p>\n<!-- /wp:paragraph -->`;
+}
+
+function rawParagraph(
+	innerHTML: string,
+	attributes: Record< string, unknown > = {}
+): string {
+	return `${ blockDelimiter(
+		'paragraph',
+		attributes
+	) }\n<p>${ innerHTML }</p>\n<!-- /wp:paragraph -->`;
 }
 
 function heading( content: string, level = 2 ): string {
@@ -177,6 +198,20 @@ function heading( content: string, level = 2 ): string {
 	return `<!-- wp:heading${ attributes } -->\n<h${ level } class="wp-block-heading">${ escapeHtml(
 		content
 	) }</h${ level }>\n<!-- /wp:heading -->`;
+}
+
+function rawHeading(
+	innerHTML: string,
+	level = 2,
+	attributes: Record< string, unknown > = {}
+): string {
+	const headingAttributes =
+		level === 2 ? attributes : { ...attributes, level };
+
+	return `${ blockDelimiter(
+		'heading',
+		headingAttributes
+	) }\n<h${ level } class="wp-block-heading">${ innerHTML }</h${ level }>\n<!-- /wp:heading -->`;
 }
 
 function list( items: string[] ): string {
@@ -206,7 +241,107 @@ function group( blocks: string[] ): string {
 	) }</div>\n<!-- /wp:group -->`;
 }
 
-function getInitialContent( seed: number ): string {
+function htmlEntityReferenceContent( seed: number ): string {
+	const textVariants = [
+		`Seed ${ seed } refs: AT&amp T, AT&amp;T, copy &copy 2026, reg &reg , decimal &#38 , hex &#x26 and escaped tags &lt;em&gt;text&lt;/em&gt;.`,
+		`Seed ${ seed } ambiguous refs: &notin; / &notin text, nbsp &nbsp gap, quote &quot;value&quot;, apos &apos;value&apos;, lt &lt and gt &gt.`,
+	];
+	const linkVariants = [
+		`<a href="https://example.test/search?q=alpha&amp;beta=2&amp-gamma=3&#38-delta=4&#x26-epsilon=5" title="A&amp B &copy 2026 &#34 quoted&#34;">attribute refs</a>`,
+		`<a href="https://example.test/path?name=Tom&amp;mode=rich&#x26-debug=1" aria-label="Tom &amp Jerry &copy 2026">aria refs</a>`,
+	];
+
+	return [
+		rawParagraph(
+			`${ pick( createRng( seed + 11 ), textVariants ) } ${ pick(
+				createRng( seed + 17 ),
+				linkVariants
+			) }`
+		),
+		rawHeading(
+			`Heading refs &amp optional &copy ${ seed } with &#x26; hex`,
+			3
+		),
+	].join( '\n' );
+}
+
+function deprecatedBlockContent( seed: number ): string {
+	return [
+		`${ blockDelimiter( 'paragraph', {
+			align: 'center',
+		} ) }\n<p class="has-text-align-center">Deprecated centered paragraph ${ seed } with &amp; entity.</p>\n<!-- /wp:paragraph -->`,
+		`${ blockDelimiter( 'heading', {
+			align: 'right',
+			level: 3,
+		} ) }\n<h3 class="has-text-align-right">Deprecated heading ${ seed }</h3>\n<!-- /wp:heading -->`,
+		`${ blockDelimiter(
+			'list'
+		) }\n<ul class="wp-block-list"><li>Deprecated list ${ seed } alpha</li><li>Deprecated list beta &amp; item</li></ul>\n<!-- /wp:list -->`,
+		`${ blockDelimiter( 'quote', {
+			align: 'center',
+		} ) }\n<blockquote class="wp-block-quote has-text-align-center"><p>Deprecated quote ${ seed }</p><cite>Older save</cite></blockquote>\n<!-- /wp:quote -->`,
+		`${ blockDelimiter( 'separator', {
+			customColor: '#335577',
+		} ) }\n<hr class="wp-block-separator has-text-color has-background" style="background-color:#335577;color:#335577" />\n<!-- /wp:separator -->`,
+	].join( '\n' );
+}
+
+function validationFixContent( seed: number ): string {
+	return [
+		'<!-- wp:heading -->',
+		`<h2 id="fuzz-heading-anchor-${ seed }" class="wp-block-heading fuzz-heading-class-${ seed }">Heading needing root fixes ${ seed }</h2>`,
+		'<!-- /wp:heading -->',
+		'<!-- wp:paragraph -->',
+		`<p id="fuzz-paragraph-anchor-${ seed }">Paragraph needing anchor fix ${ seed } &amp; refs.</p>`,
+		'<!-- /wp:paragraph -->',
+		'<!-- wp:group {"layout":{"type":"constrained"}} -->',
+		`<div id="fuzz-group-anchor-${ seed }" aria-label="Group &amp; label ${ seed }" class="wp-block-group fuzz-group-class-${ seed }">`,
+		paragraph( `Nested paragraph in fixable group ${ seed }.` ),
+		'</div>',
+		'<!-- /wp:group -->',
+	].join( '\n' );
+}
+
+function equivalentHtmlContent( seed: number ): string {
+	return [
+		'<!-- wp:separator {"opacity":"css"} -->',
+		'<hr class="wp-block-separator has-css-opacity"></hr>',
+		'<!-- /wp:separator -->',
+		'<!-- wp:separator -->',
+		'<hr class="wp-block-separator has-alpha-channel-opacity"></hr>',
+		'<!-- /wp:separator -->',
+		rawParagraph(
+			`Equivalent entity paragraph ${ seed }: &copy and &copy; plus decimal &#169 and hex &#xA9;.`
+		),
+	].join( '\n' );
+}
+
+function freeformParserContent( seed: number ): string {
+	return [
+		`<p>Freeform load paragraph ${ seed } with &amp optional refs and <strong>inline formatting</strong>.</p>`,
+		`<h3>Freeform heading ${ seed } after code editor style parse</h3>`,
+	].join( '\n' );
+}
+
+function getParserStressContent(
+	seed: number,
+	step = 0,
+	userIndex = 0
+): string {
+	const variantSeed = seed * 101 + step * 17 + userIndex;
+	const rng = createRng( variantSeed );
+	const variants = [
+		htmlEntityReferenceContent,
+		deprecatedBlockContent,
+		validationFixContent,
+		equivalentHtmlContent,
+		freeformParserContent,
+	];
+
+	return pick( rng, variants )( variantSeed );
+}
+
+function getBaseInitialContent( seed: number ): string {
 	switch ( seed % 4 ) {
 		case 0:
 			return [
@@ -253,6 +388,27 @@ function getInitialContent( seed: number ): string {
 					'Tail paragraph kept for save and reload stability checks.'
 				),
 			].join( '\n' );
+	}
+}
+
+function getInitialContent( seed: number ): string {
+	const baseContent = getBaseInitialContent( seed );
+
+	switch ( seed % 6 ) {
+		case 1:
+			return [ baseContent, htmlEntityReferenceContent( seed ) ].join(
+				'\n'
+			);
+		case 2:
+			return [ baseContent, deprecatedBlockContent( seed ) ].join( '\n' );
+		case 3:
+			return [ baseContent, validationFixContent( seed ) ].join( '\n' );
+		case 4:
+			return [ baseContent, equivalentHtmlContent( seed ) ].join( '\n' );
+		case 5:
+			return [ baseContent, freeformParserContent( seed ) ].join( '\n' );
+		default:
+			return baseContent;
 	}
 }
 
@@ -475,6 +631,189 @@ async function insertConcurrentParagraphs(
 	);
 }
 
+async function editRichTextPairBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number
+) {
+	await page.evaluate(
+		( { fuzzSeed, fuzzStep, fuzzUserIndex } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			let block = blocks.find(
+				( candidate: { name: string } ) =>
+					candidate.name === 'core/pullquote'
+			);
+
+			const valueVariants = [
+				'',
+				'x',
+				'xy',
+				'<em>alpha</em><strong>beta</strong>',
+				'plain <em>changed</em>',
+			];
+			const citationVariants = [
+				'<em>b</em><em>i</em>',
+				'ab<em>b</em><strong>it</strong>',
+				'a<strong>it</strong>',
+				'ab<em>b</em><strong>i</strong>t',
+				'<em>alpha</em><strong>beta</strong>',
+				'plain <strong>text</strong>',
+			];
+			const textLength = ( html: string ) => {
+				const template = document.createElement( 'template' );
+				template.innerHTML = html;
+				return template.content.textContent?.length ?? html.length;
+			};
+
+			if ( ! block ) {
+				block = ( window as any ).wp.blocks.createBlock(
+					'core/pullquote',
+					{
+						value: valueVariants[
+							( fuzzSeed + fuzzUserIndex ) % valueVariants.length
+						],
+						citation:
+							citationVariants[
+								( fuzzSeed + fuzzStep ) %
+									citationVariants.length
+							],
+					}
+				);
+				blockEditor.insertBlock( block );
+			}
+
+			const variantOffset =
+				fuzzSeed +
+				fuzzStep * 3 +
+				fuzzUserIndex +
+				String( block.attributes.citation ?? '' ).length;
+			const selectedAttribute =
+				variantOffset % 2 === 0 ? 'value' : 'citation';
+			const nextValue =
+				valueVariants[ variantOffset % valueVariants.length ];
+			const nextCitation =
+				citationVariants[
+					( variantOffset + fuzzStep + 1 ) % citationVariants.length
+				];
+			const selectedHtml =
+				selectedAttribute === 'value' ? nextValue : nextCitation;
+			const cursorOffset = Math.min(
+				textLength( selectedHtml ),
+				1 + ( variantOffset % 6 )
+			);
+
+			blockEditor.selectionChange(
+				block.clientId,
+				selectedAttribute,
+				cursorOffset,
+				cursorOffset
+			);
+			blockEditor.updateBlockAttributes( block.clientId, {
+				value: nextValue,
+				citation: nextCitation,
+			} );
+		},
+		{ fuzzSeed: seed, fuzzStep: step, fuzzUserIndex: userIndex }
+	);
+}
+
+async function editFormattedParagraphAtCursor(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number
+) {
+	const variants = [
+		'<em>italic</em><em>italic</em>',
+		'<em>italic</em>beta',
+		'<em>italic</em><strong>beta</strong>',
+		'plain <em>changed</em>',
+		'<strong>alpha</strong> beta',
+	];
+	const selectedVariant =
+		variants[ ( seed + step * 3 + userIndex ) % variants.length ];
+
+	await page.evaluate(
+		( { content, cursorOffset } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			let block = blocks.find(
+				( candidate: {
+					name: string;
+					attributes: { content?: string };
+				} ) =>
+					candidate.name === 'core/paragraph' &&
+					typeof candidate.attributes.content === 'string' &&
+					candidate.attributes.content.includes( '<em>italic</em>' )
+			);
+
+			if ( ! block ) {
+				block = ( window as any ).wp.blocks.createBlock(
+					'core/paragraph',
+					{
+						content: '<em>italic</em><em>italic</em>',
+					}
+				);
+				blockEditor.insertBlock( block );
+			}
+
+			blockEditor.selectionChange(
+				block.clientId,
+				'content',
+				cursorOffset,
+				cursorOffset
+			);
+			blockEditor.updateBlockAttributes( block.clientId, {
+				content,
+			} );
+		},
+		{
+			content:
+				step % 4 === 0
+					? `<em>italic</em>${ escapeHtml(
+							`beta ${ seed } ${ userIndex }`
+					  ) }`
+					: selectedVariant,
+			cursorOffset: Math.min( 10, selectedVariant.length ),
+		}
+	);
+}
+
+async function reparseEditedContent(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	{ appendStressBlock = false }: { appendStressBlock?: boolean } = {}
+) {
+	const currentContent = await page.evaluate( () =>
+		( window as any ).wp.data.select( 'core/editor' ).getEditedPostContent()
+	);
+	const nextContent = appendStressBlock
+		? [
+				currentContent,
+				getParserStressContent( seed, step, userIndex ),
+		  ].join( '\n' )
+		: currentContent;
+
+	await page.evaluate( ( content ) => {
+		const blocks = ( window as any ).wp.blocks.parse( content );
+		( window as any ).wp.data
+			.dispatch( 'core/block-editor' )
+			.resetBlocks( blocks );
+	}, nextContent );
+}
+
 async function saveDraft( page: Page ) {
 	await page.evaluate( () => {
 		( window as any ).wp.data.dispatch( 'core/editor' ).savePost();
@@ -543,6 +882,28 @@ const ACTIONS: PageAction[] = [
 		label: 'concurrent-paragraphs',
 		run: async ( _page, seed, step, _userIndex, rng, pages ) =>
 			insertConcurrentParagraphs( pages, seed, step, rng ),
+	},
+	{
+		label: 'edit-formatted-paragraph-at-cursor',
+		run: async ( page, seed, step, userIndex ) =>
+			editFormattedParagraphAtCursor( page, seed, step, userIndex ),
+	},
+	{
+		label: 'edit-rich-text-pair-block',
+		run: async ( page, seed, step, userIndex ) =>
+			editRichTextPairBlock( page, seed, step, userIndex ),
+	},
+	{
+		label: 'reparse-edited-content',
+		run: async ( page, seed, step, userIndex ) =>
+			reparseEditedContent( page, seed, step, userIndex ),
+	},
+	{
+		label: 'append-parser-stress-content',
+		run: async ( page, seed, step, userIndex ) =>
+			reparseEditedContent( page, seed, step, userIndex, {
+				appendStressBlock: true,
+			} ),
 	},
 ];
 

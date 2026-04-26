@@ -33,6 +33,7 @@ import { deserializeCrdtDoc } from '../utils';
 
 interface SeededRandom {
 	bool: ( probability?: number ) => boolean;
+	intBetween: ( minInclusive: number, maxInclusive: number ) => number;
 	pick: < T >( values: readonly T[] ) => T;
 	string: ( prefix?: string ) => string;
 }
@@ -68,6 +69,9 @@ function createSeededRandom( seed: number ): SeededRandom {
 	return {
 		bool( probability = 0.5 ) {
 			return next() < probability;
+		},
+		intBetween( minInclusive, maxInclusive ) {
+			return minInclusive + int( maxInclusive - minInclusive + 1 );
 		},
 		pick< T >( values: readonly T[] ): T {
 			if ( values.length === 0 ) {
@@ -298,6 +302,11 @@ describe( 'SyncManager fuzzing', () => {
 			};
 			const entityDocs = new Map< EntityKey, Y.Doc >();
 			const loaded = new Set< EntityKey >();
+			const observedProviderUpdates: Array< {
+				byteLength: number;
+				objectId: string | null;
+				origin: unknown;
+			} > = [];
 			let collectionDoc: Y.Doc | null = null;
 			let collectionTransactSpy: YDocTransactSpy | undefined;
 
@@ -368,6 +377,19 @@ describe( 'SyncManager fuzzing', () => {
 					objectId: string | null;
 					ydoc: Y.Doc;
 				} ): Promise< ProviderCreatorResult > => {
+					const onUpdate = (
+						update: Uint8Array,
+						origin: unknown
+					) => {
+						observedProviderUpdates.push( {
+							byteLength: update.byteLength,
+							objectId,
+							origin,
+						} );
+					};
+
+					ydoc.on( 'updateV2', onUpdate );
+
 					if ( objectId === null ) {
 						collectionDoc = ydoc;
 						collectionTransactSpy = jest.spyOn(
@@ -391,6 +413,8 @@ describe( 'SyncManager fuzzing', () => {
 
 					return {
 						destroy: jest.fn( () => {
+							ydoc.off( 'updateV2', onUpdate );
+
 							if ( objectId === null ) {
 								collectionDoc = null;
 								collectionTransactSpy?.mockRestore();
@@ -501,6 +525,17 @@ describe( 'SyncManager fuzzing', () => {
 				).toEqual( {} );
 			}
 
+			function assertNoLargeOutboundLikeProviderUpdates() {
+				const largeOutboundLikeUpdates = observedProviderUpdates.filter(
+					( update ) =>
+						update.objectId !== null &&
+						update.byteLength > 64 &&
+						update.origin == null
+				);
+
+				expect( largeOutboundLikeUpdates ).toEqual( [] );
+			}
+
 			async function waitForSettledState() {
 				for ( let attempt = 0; attempt < 8; attempt++ ) {
 					if ( isStateSettled() ) {
@@ -536,9 +571,16 @@ describe( 'SyncManager fuzzing', () => {
 						case 'local-update': {
 							const key = rng.pick( ENTITY_KEYS );
 							const field = rng.pick( FIELDS );
+							const isLargeValue = rng.bool( 0.35 );
 							const value = `${ field }-${ seed }-${ step }-${ rng.string(
 								key
-							) }`;
+							) }${
+								isLargeValue
+									? `-${ 'x'.repeat(
+											rng.intBetween( 128, 512 )
+									  ) }`
+									: ''
+							}`;
 							const isSave = rng.bool( 0.4 );
 
 							await loadEntity( key );
@@ -547,7 +589,9 @@ describe( 'SyncManager fuzzing', () => {
 							trace.push(
 								`${ step }: local ${ key }.${ field } -> ${ JSON.stringify(
 									value
-								) }${ isSave ? ' [save]' : '' }`
+								) }${ isLargeValue ? ' [large]' : '' }${
+									isSave ? ' [save]' : ''
+								}`
 							);
 
 							manager.update(
@@ -682,6 +726,7 @@ describe( 'SyncManager fuzzing', () => {
 					}
 
 					await waitForSettledState();
+					assertNoLargeOutboundLikeProviderUpdates();
 				}
 
 				for ( const key of ENTITY_KEYS ) {
@@ -695,10 +740,13 @@ describe( 'SyncManager fuzzing', () => {
 						expected[ key ]
 					);
 				}
+				assertNoLargeOutboundLikeProviderUpdates();
 			} catch ( error ) {
 				throw new Error(
 					`SyncManager fuzz failed for seed ${ seed }\n${ trace.join(
 						'\n'
+					) }\nObserved provider updates: ${ JSON.stringify(
+						observedProviderUpdates
 					) }\n${
 						error instanceof Error ? error.message : String( error )
 					}`

@@ -378,6 +378,68 @@ export default class CollaborationUtils {
 	): Promise< NormalizedCollaborativeState > {
 		return page.evaluate(
 			( { includePersistedDoc } ) => {
+				const normalizeHtmlString = ( value: string ) => {
+					const template = document.createElement( 'template' );
+					template.innerHTML = value;
+
+					for ( const element of Array.from(
+						template.content.querySelectorAll( '*' )
+					) ) {
+						const attributes = Array.from( element.attributes )
+							.map( ( attribute ) => ( {
+								name: attribute.name,
+								value: attribute.value,
+							} ) )
+							.sort( ( a, b ) => a.name.localeCompare( b.name ) );
+
+						for ( const attribute of attributes ) {
+							element.removeAttribute( attribute.name );
+						}
+
+						for ( const attribute of attributes ) {
+							element.setAttribute(
+								attribute.name,
+								attribute.value
+							);
+						}
+					}
+
+					return template.innerHTML;
+				};
+				const normalizeAttributeValue = ( value: unknown ): unknown => {
+					if ( Array.isArray( value ) ) {
+						return value.map( normalizeAttributeValue );
+					}
+
+					if ( value && typeof value === 'object' ) {
+						return Object.keys( value as Record< string, unknown > )
+							.sort()
+							.reduce< Record< string, unknown > >(
+								( normalizedValue, key ) => ( {
+									...normalizedValue,
+									[ key ]: normalizeAttributeValue(
+										( value as Record< string, unknown > )[
+											key
+										]
+									),
+								} ),
+								{}
+							);
+					}
+
+					if ( typeof value === 'string' ) {
+						return normalizeHtmlString( value );
+					}
+
+					return value;
+				};
+				const normalizeAttributes = (
+					attributes: Record< string, unknown >
+				) =>
+					normalizeAttributeValue( attributes ) as Record<
+						string,
+						unknown
+					>;
 				const normalizeBlocks = (
 					blockTree: Array< {
 						attributes?: Record< string, unknown >;
@@ -387,8 +449,10 @@ export default class CollaborationUtils {
 				): NormalizedBlock[] =>
 					blockTree.map( ( block ) => ( {
 						name: block.name,
-						attributes: JSON.parse(
-							JSON.stringify( block.attributes ?? {} )
+						attributes: normalizeAttributes(
+							JSON.parse(
+								JSON.stringify( block.attributes ?? {} )
+							)
 						),
 						innerBlocks: normalizeBlocks(
 							( block.innerBlocks ?? [] ) as Array< {
@@ -643,11 +707,32 @@ export async function setCollaboration(
 	requestUtils: RequestUtils,
 	enabled: boolean
 ): Promise< void > {
-	const response = await requestUtils.request.get(
-		'/wp-admin/options-writing.php'
-	);
-	const html = await response.text();
-	const nonce = html.match( /name="_wpnonce" value="([^"]+)"/ )![ 1 ];
+	let nonce: string | null = null;
+	let lastHtml = '';
+	let lastStatus = 0;
+
+	for ( let attempt = 0; attempt < 3 && ! nonce; attempt++ ) {
+		const response = await requestUtils.request.get(
+			'/wp-admin/options-writing.php'
+		);
+		lastStatus = response.status();
+		lastHtml = await response.text();
+		nonce =
+			lastHtml.match( /name="_wpnonce" value="([^"]+)"/ )?.[ 1 ] ?? null;
+
+		if ( ! nonce ) {
+			await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+		}
+	}
+
+	if ( ! nonce ) {
+		throw new Error(
+			`Unable to read writing settings nonce while setting collaboration. Last status: ${ lastStatus }. Body starts: ${ lastHtml.slice(
+				0,
+				300
+			) }`
+		);
+	}
 
 	const optionName = 'wp_collaboration_enabled';
 	const optionValue = enabled ? 1 : 0;

@@ -32,12 +32,37 @@ class Tests_Collaboration_WpSyncPostMetaStorage extends WP_UnitTestCase {
 		parent::set_up();
 		update_option( 'wp_collaboration_enabled', 1 );
 
-		// Reset storage post ID cache to ensure clean state after transaction rollback.
+		$this->reset_storage_post_id_cache();
+	}
+
+	/**
+	 * Resets the static room-to-storage-post cache.
+	 */
+	private function reset_storage_post_id_cache(): void {
 		$reflection = new ReflectionProperty( 'WP_Sync_Post_Meta_Storage', 'storage_post_ids' );
 		if ( PHP_VERSION_ID < 80100 ) {
 			$reflection->setAccessible( true );
 		}
 		$reflection->setValue( null, array() );
+	}
+
+	/**
+	 * Counts active storage posts that could be used as room storage lineages.
+	 *
+	 * @param string $room Room identifier.
+	 * @return int Number of matching storage posts.
+	 */
+	private function count_storage_post_lineages( string $room ): int {
+		global $wpdb;
+
+		$room_hash = md5( $room );
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish' AND post_name LIKE %s",
+				WP_Sync_Post_Meta_Storage::POST_TYPE,
+				$wpdb->esc_like( $room_hash ) . '%'
+			)
+		);
 	}
 
 	/**
@@ -709,6 +734,74 @@ class Tests_Collaboration_WpSyncPostMetaStorage extends WP_UnitTestCase {
 			$update_data,
 			'Concurrent update should survive compaction.'
 		);
+	}
+
+	public function test_randomized_first_access_races_do_not_split_room_storage() {
+		$seed = 9109;
+
+		mt_srand( $seed );
+
+		for ( $i = 0; $i < 6; $i++ ) {
+			$this->reset_storage_post_id_cache();
+
+			$storage   = new WP_Sync_Post_Meta_Storage();
+			$room      = 'postType/post:' . self::$post_id . ':first-access-race-' . $seed . '-' . $i . '-' . mt_rand();
+			$room_hash = md5( $room );
+			$update    = array(
+				'type' => 'update',
+				'data' => base64_encode( "first-access-race-$seed-$i" ),
+			);
+
+			$did_inject       = false;
+			$injected_post_id = 0;
+			$injector         = static function ( $data ) use ( &$did_inject, &$injected_post_id, $room_hash ) {
+				if (
+					$did_inject ||
+					! is_array( $data ) ||
+					( $data['post_type'] ?? null ) !== WP_Sync_Post_Meta_Storage::POST_TYPE ||
+					( $data['post_name'] ?? null ) !== $room_hash
+				) {
+					return $data;
+				}
+
+				$did_inject       = true;
+				$injected_post_id = wp_insert_post(
+					array(
+						'post_type'   => WP_Sync_Post_Meta_Storage::POST_TYPE,
+						'post_status' => 'publish',
+						'post_title'  => 'Sync Storage',
+						'post_name'   => $room_hash,
+					)
+				);
+
+				return $data;
+			};
+
+			add_filter( 'wp_insert_post_data', $injector, 10, 1 );
+			try {
+				$this->assertTrue( $storage->add_update( $room, $update ) );
+			} finally {
+				remove_filter( 'wp_insert_post_data', $injector, 10 );
+			}
+
+			$this->assertTrue( $did_inject, "Expected first-access race injection for seed $seed step $i." );
+			$this->assertIsInt( $injected_post_id, "Expected injected storage post for seed $seed step $i." );
+			$this->assertSame(
+				1,
+				$this->count_storage_post_lineages( $room ),
+				"First-access race split room storage for seed $seed step $i."
+			);
+
+			$this->reset_storage_post_id_cache();
+			$fresh_storage = new WP_Sync_Post_Meta_Storage();
+			$updates       = $fresh_storage->get_updates_after_cursor( $room, 0 );
+
+			$this->assertContains(
+				$update['data'],
+				wp_list_pluck( $updates, 'data' ),
+				"An acknowledged first-access update must be visible to a fresh storage instance for seed $seed step $i."
+			);
+		}
 	}
 
 	public function test_randomized_room_storage_operations_remain_isolated_and_monotonic() {

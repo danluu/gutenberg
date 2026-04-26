@@ -8,6 +8,8 @@ fuzzing campaigns and the focused follow-up repro work on 2026-04-23.
 The current split is:
 
 -   confirmed product bugs
+-   follow-up code audit candidates, including several now covered by focused
+    fuzz repros
 -   known excluded bug family
 -   test environment or harness failures
 -   still-open startup signatures that have not earned promotion to real bugs
@@ -50,6 +52,12 @@ The raw bucket counts are tracked in
     sync bugs above. The captured HAR shows browser or OS offline state being
     surfaced as the same generic modal.
 
+## Follow-Up Audit Candidates
+
+The durable list of code-audit findings and their current fuzz/repro status is
+tracked in
+[Real-Time Collaboration Issue Catalog](real-time-collaboration-issue-catalog.md#follow-up-code-audit-items-needing-triage--repro).
+
 ## Known Excluded
 
 -   `Known existing bug`: [collaboration-title-reload-repro.spec.ts](../../../test/e2e/specs/editor/collaboration/collaboration-title-reload-repro.spec.ts)
@@ -68,7 +76,7 @@ product bugs:
 -   `Dirty shared content state`: `4` hits. Global setup `deleteAllPosts()`
     fails with `rest_cannot_delete`.
 -   `Login / navigation startup failure`: `1` hit. `page.waitForURL(
-    '**/wp-admin/**' )` never resolves before the overall test timeout.
+'**/wp-admin/**' )` never resolves before the overall test timeout.
 
 These buckets are now reflected directly in
 [distinct-failure-tracker.mjs](../../../artifacts/rtc-browser-fuzz/tools/distinct-failure-tracker.mjs)
