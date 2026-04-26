@@ -168,9 +168,20 @@ not include the previously known transport limit bug.
         `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`.
     -   Core-data/editor integration: created in
         `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`.
-        The repro uses public `core-data` actions from an activated editor plugin
-        so the page stays open after deleting the current post entity and can
+        The stock repro uses the normal editor title and Notes UI; the plugin
+        repro uses public `core-data` actions from an activated editor plugin so
+        the page stays open after deleting the current post entity and can
         continue editing a loaded category entity.
+    -   Playwright normal-user stock browser repro: created in
+        `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`.
+        User A opens a post alone, so the post room is primary and the notes
+        collection room's update queue is still paused. User A then replaces the
+        normal title field with an oversized pasted title, which triggers the
+        document-size limit and unregisters only the primary post room. User B
+        opens the same post and joins the surviving `root/comment` room. User A
+        then adds a note through the normal Notes UI. With the bug, User A's
+        next `root/comment` sync payload has zero updates, and User B never gets
+        the `All notes` button for that note.
     -   Playwright plugin-user browser repro: created in
         `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`.
         User A opens a post, loads the default category room through the normal
@@ -182,11 +193,10 @@ not include the previously known transport limit bug.
         updates, showing that collaborator awareness in the surviving category
         room did not resume its queued local update after the original post room
         was unregistered.
-    -   Playwright stock-editor repro: still not created. The stock "Move to
-        trash" action redirects away after deleting the post, the oversized
-        document path disables collaboration and falls back to post locking, and
-        the remote post-deletion path is blocked by the browser-level 403 handling
-        behavior reproduced in bug 5.
+    -   Stock paths that were ruled out: the stock "Move to trash" action
+        redirects away after deleting the post, and the remote post-deletion path
+        is blocked by the browser-level 403 handling behavior reproduced in bug 5. The working stock path is the oversized-title route above, combined
+        with the normal Notes UI as the surviving synced room.
 
 ## Verification
 
@@ -214,3 +224,8 @@ The repros are intentionally failing on the current implementation:
     fails after User A deletes the original post room in place and User B joins
     the surviving category room; the next User A payload has no post room and has
     the category room with zero queued updates.
+-   `WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts --grep "syncs notes after an oversized title"`
+    uses no repro plugin. It fails after normal editor actions: User A pastes an
+    oversized title, User B opens the same post, and User A adds a note. The next
+    User A `root/comment` payload has zero updates, and User B never sees the
+    `All notes` button for the note.
