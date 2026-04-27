@@ -29,6 +29,43 @@
 This appears to be a composition bug in the original HTTP polling sync design,
 not a bug introduced by the later `1 MiB` single-update accounting fix.
 
+Relevant history:
+
+- [#72114](https://github.com/WordPress/gutenberg/pull/72114),
+  `c214929139f50337250efe2bb24ff82c3ff2b6aa`, made syncing a
+  side-concern in the core-data resolver. This is part of the path where
+  resolved entity records can be loaded into the sync manager.
+- [#74564](https://github.com/WordPress/gutenberg/pull/74564),
+  `48ce44dac7981eb730079563a3a2975b89840fac`, added the default HTTP
+  polling sync provider. Its polling manager built one payload from all
+  registered `roomStates` and drained each room's queued updates with
+  `state.updateQueue.get()`, without an aggregate request-byte budget.
+- [#75699](https://github.com/WordPress/gutenberg/pull/75699),
+  `c4e4fac0a26bfb2dc38f17c765f2e84266b68b99`, removed the
+  `IS_GUTENBERG_PLUGIN` guards around collaborative editing. In the current
+  path, any resolved numeric entity record with `entityConfig.syncConfig` and
+  no query is loaded into sync.
+- [#76987](https://github.com/WordPress/gutenberg/pull/76987),
+  `1be2ef27e6819597dacc3b395caa05670d494194`, backported the server
+  validation hardening from `WordPress/wordpress-develop#11296`. It added
+  `MAX_BODY_SIZE = 16 * MB_IN_BYTES`, `MAX_ROOMS_PER_REQUEST = 50`,
+  `MAX_UPDATE_DATA_SIZE = MB_IN_BYTES`, and the route-level
+  `validate_request()` path that returns `rest_sync_body_too_large` with
+  status `413`.
+
+Two later nearby fixes are related but do not fix this aggregate-body bug:
+
+- [#77631](https://github.com/WordPress/gutenberg/pull/77631),
+  `1642980d599be51c7cce7b2dc3a0c052b69ad367`, rotates rooms when the
+  registered room count exceeds `MAX_ROOMS_PER_REQUEST`. It addresses the
+  `>50` rooms failure, but a request with `50` or fewer rooms can still exceed
+  the `16 MiB` body cap.
+- [#77669](https://github.com/WordPress/gutenberg/pull/77669),
+  `a54911b0c49e3b4abea4d6d7ce85c0e2c2bad11e`, fixes the separate
+  per-update base64 accounting mismatch. That prevents a single encoded update
+  from exceeding the `1 MiB` update limit, but does not limit the total body
+  size of a multi-room poll.
+
 The sync endpoint has three independent caps:
 
 - at most `50` rooms per request
