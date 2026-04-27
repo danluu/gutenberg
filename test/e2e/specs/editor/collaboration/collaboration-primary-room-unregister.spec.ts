@@ -281,12 +281,10 @@ test.describe( 'Collaboration - primary room unregister without plugins', () => 
 		const commentRoom = commentPayload.rooms.find(
 			( room ) => room.room === COMMENT_COLLECTION_ROOM
 		);
-		expect
-			.soft(
-				commentRoom?.updates.length,
-				'normal note creation should send a root/comment update after another user joins that surviving room'
-			)
-			.toBeGreaterThan( 0 );
+		expect(
+			commentRoom?.updates.length,
+			'normal note creation should send a root/comment update after another user joins that surviving room'
+		).toBeGreaterThan( 0 );
 
 		await openAllNotesSidebar( page2 );
 		await expect(
