@@ -24,6 +24,101 @@
 - WordPress responds with repeated `413 Request Entity Too Large`.
 - After retries are exhausted, the editor shows the `Connection lost` modal.
 
+## Reproduction levels
+
+The full `Connection lost` modal is only visible at the browser/editor layer,
+but the bug can be reproduced at lower levels by separating the failure into
+the client payload shape and the server validator.
+
+### Payload-shape repro
+
+This is the lowest-level client-side repro. It constructs the same `SyncPayload`
+shape that the polling manager sends, while staying under the `50` room cap and
+under the `1 MiB` per-update cap. The resulting JSON body still exceeds the
+server's `16 MiB` body cap.
+
+Run from any checkout:
+
+```bash
+node <<'NODE'
+const MAX_BODY_SIZE = 16 * 1024 * 1024;
+const ROOM_COUNT = 44;
+const BASELINE_ROOMS = [
+	'postType/post:1',
+	'root/comment',
+	'taxonomy/category',
+	'root/site',
+];
+const ENCODED_UPDATE_SIZE = 600 * 1024;
+const rooms = Array.from( { length: ROOM_COUNT }, ( _, index ) => ( {
+	after: 0,
+	awareness: { user: `client-${ index + 1 }` },
+	client_id: index + 1,
+	room: BASELINE_ROOMS[ index ] || `postType/post:${ index + 1 }`,
+	updates:
+		index < BASELINE_ROOMS.length
+			? []
+			: [ { type: 'update', data: 'x'.repeat( ENCODED_UPDATE_SIZE ) } ],
+} ) );
+const body = JSON.stringify( { rooms } );
+console.log(
+	JSON.stringify(
+		{
+			rooms: rooms.length,
+			updates: rooms.reduce(
+				( total, room ) => total + room.updates.length,
+				0
+			),
+			encodedUpdateBytes: ENCODED_UPDATE_SIZE,
+			bodyBytes: Buffer.byteLength( body, 'utf8' ),
+			maxBodyBytes: MAX_BODY_SIZE,
+			exceedsLimit:
+				Buffer.byteLength( body, 'utf8' ) > MAX_BODY_SIZE,
+		},
+		null,
+		2
+	)
+);
+NODE
+```
+
+Expected result: `rooms` is `44`, each encoded update is `614400` bytes, and
+`bodyBytes` is about `24581413`, which is greater than `16777216`.
+
+### Server-validator repro
+
+This isolates the server behavior: the route-level validator rejects an
+oversized raw request body with `rest_sync_body_too_large` and status `413`.
+This does not exercise the editor modal, but it proves that the server rejects
+the aggregate request before the sync handler stores updates.
+
+```bash
+vendor/bin/phpunit \
+	--filter test_sync_rejects_oversized_request_body \
+	phpunit/tests/collaboration/wpHttpPollingSyncServer.php
+```
+
+This test is in
+`phpunit/tests/collaboration/wpHttpPollingSyncServer.php`.
+
+### Browser HTTP repro
+
+This is the focused browser repro without relying on a fuzzer campaign. It
+loads the extra synced entity rooms, edits them, observes a `POST
+/wp-json/wp-sync/v1/updates` request above `16 MiB`, observes repeated `413`
+responses, and then asserts that the `Connection lost` modal appears.
+
+```bash
+WP_ENV_PORT=8893 npm run wp-env-test start
+WP_ENV_PORT=8893 WP_BASE_URL=http://localhost:8893 npm exec \
+	--workspace @wordpress/e2e-tests-playwright -- wp-scripts test-playwright \
+	test/e2e/specs/editor/collaboration/collaboration-sync-body-size-connection-lost.spec.ts \
+	--project=chromium
+WP_ENV_PORT=8893 npm run wp-env-test stop
+```
+
+Use a different `WP_ENV_PORT` if `8893` is already occupied.
+
 ## How this was introduced
 
 This appears to be a composition bug in the original HTTP polling sync design,
