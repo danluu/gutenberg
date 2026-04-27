@@ -127,32 +127,32 @@ look identical before one of them is edited.
 
 ## How It Was Introduced
 
-The duplicate-row failure is rooted in `#77164`, with several earlier PRs making
+The duplicate-row failure is rooted in #77164, with several earlier PRs making
 the table path visible:
 
--   `#72262` (`84019935998c`, "Improve CRDT merge logic for post entities")
+-   #72262 (`84019935998c`, "Improve CRDT merge logic for post entities")
     created the post/block CRDT merge infrastructure in `core-data`. It is the
     base layer, not the table-specific regression.
--   `#76597` (`80605517663` / `ac9073b15d3`, "RTC: Fix CRDT serialization of
+-   #76597 (`80605517663` / `ac9073b15d3`, "RTC: Fix CRDT serialization of
     nested RichText attributes") made nested `RichTextData` serialize
     recursively, including rich text inside table cells.
--   `#76607` (`85695dcffdc`, "RTC: Fix RichTextData deserialization") added the
+-   #76607 (`85695dcffdc`, "RTC: Fix RichTextData deserialization") added the
     matching recursive deserialization through schema query nodes, so table cell
     content could round-trip back into runtime `RichTextData`.
--   `#76913` (`09a21c64b5b`, "RTC: Fix core/table cell merging") made
+-   #76913 (`09a21c64b5b`, "RTC: Fix core/table cell merging") made
     `core/table` rows and cells schema-aware nested Yjs structures:
     array/query attributes became `Y.Array<Y.Map>`, object/query attributes
     became `Y.Map`, and nested cell content became `Y.Text`. This enabled
     in-place table cell merging. At this point, structural length changes still
     rebuilt the affected array, which was less stable but did not infer row
     identity from duplicate row values.
--   `#77164` (`a6bfd3e5543`, "RTC: Improve array attribute stability when
+-   #77164 (`a6bfd3e5543`, "RTC: Improve array attribute stability when
     structural changes occur") changed `mergeYArray()` to preserve nested Yjs
     children during inserts/deletes by using a left/right sweep and
     `areArrayElementsEqual()`. That was intended to keep existing row/cell
     objects stable across structural edits, but it matched query-array elements
     by serialized value. For duplicate table rows, two different logical rows
-    can serialize to the same value (`same`), so `#77164` made those rows
+    can serialize to the same value (`same`), so #77164 made those rows
     interchangeable to the diff algorithm. A concurrent delete of one duplicate
     and edit of the other can therefore attach the edit/delete to different
     logical rows and leave collaborators with divergent visible tables.
