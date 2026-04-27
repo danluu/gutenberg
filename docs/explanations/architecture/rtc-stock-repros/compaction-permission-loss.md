@@ -21,6 +21,12 @@ rejected the request before accepting the surviving room's compaction.
 
 - Browser repro: `test/e2e/specs/editor/collaboration/collaboration-compaction-permission.spec.ts`
 - Video: `videos/compaction-permission-loss.mp4`
+- Video provenance: regenerated on April 26, 2026 from the Playwright trace
+  emitted by the checked-in browser repro. In this current worktree run, the
+  real fixture fails earlier at `waitForMutualDiscovery()` because the
+  `Collaborators list` button never appears, so the compaction and category
+  deletion steps are not reached. The MP4 intentionally shows that actual e2e
+  run rather than a hand-written compaction flow.
 - Normal user actions:
   1. Create a category and make it the default category.
   2. Editor A and Editor B open the same collaborative post.
