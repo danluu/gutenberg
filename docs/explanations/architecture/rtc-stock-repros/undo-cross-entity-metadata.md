@@ -17,6 +17,13 @@ rather than scoped to the document/entity that produced the undo event.
 
 - Browser repro: `test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts`
 - Video: `videos/undo-metadata-cross-entity.mp4`
+- Video provenance: regenerated on April 26, 2026 from the Playwright trace
+  emitted by the checked-in browser repro. In this current worktree run, after
+  moving the undo environment from Playground to Docker, the real fixture fails
+  earlier than the historical selection assertion: the normal undo shortcut
+  leaves the split `abc` / `def` paragraphs in place, so the selection snapshot
+  assertion is not reached. The MP4 intentionally shows that actual e2e run
+  rather than a hand-written undo flow.
 - Normal user actions:
   1. Editor A opens a collaborative post.
   2. Editor A opens the pre-publish panel, which loads and syncs the default
