@@ -1,120 +1,138 @@
-# RTC: duplicate table rows can lose cell content
+# RTC: duplicate table rows can diverge across collaborators
 
 ## Summary
 
-Two collaborators can corrupt a table when the table contains duplicate row
-data. The stock repro uses only normal editor actions: insert a table, make two
-rows contain the same text, and let a second editor join the session. The second
-editor receives a table whose duplicate row is missing the expected cell text.
+Two collaborators can end up with different visible table contents when a table
+contains duplicate rows and one collaborator edits one duplicate while another
+collaborator deletes the other duplicate.
 
-The problem is in the low-level CRDT merge for array-valued block attributes,
-not in the table block UI. `core/table` stores rows and cells in nested query
-attributes. The merge code tries to preserve existing Yjs child objects by
-matching array entries by value. Duplicate rows are therefore ambiguous: two
-different logical rows can have the same serialized value, so the merger can
-reuse the wrong Yjs object or leave the later duplicate without the expected
-content.
+The problem is in the CRDT merge for nested array-valued block attributes, not
+in the table UI. `core/table` stores rows and cells as nested query attributes.
+The merge code preserves existing Yjs child objects by matching array entries by
+serialized value. Duplicate rows are therefore ambiguous: two different logical
+rows can have the same serialized value, so a row delete can be matched against
+the wrong Yjs object while a concurrent edit remains attached to another row.
 
-## Stock repro
+## Current Repro
 
-- Browser repro: `test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts`
-- Video: `videos/duplicate-table-rows.mp4`
-- Video provenance: regenerated on April 26, 2026 from the Playwright trace
-  emitted by the checked-in browser repro. In this current worktree run, the
-  real fixture fails earlier at `waitForMutualDiscovery()` because the
-  `Collaborators list` button never appears, so the table creation steps are
-  not reached. The MP4 intentionally shows that actual e2e run rather than a
-  hand-written table flow.
-- Normal user actions:
-  1. Editor A opens a collaborative post.
-  2. Editor A inserts a 1-column table with three rows.
-  3. Editor A types `anchor`, `same`, and `same` into the rows.
-  4. Editor B opens the same post.
-  5. Editor B sees the last duplicate row without the expected `same` cell text.
+-   Browser repro:
+    `test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts`
+-   Video:
+    `docs/explanations/architecture/rtc-stock-repros/videos/duplicate-table-rows.mp4`
+-   Video provenance: regenerated on April 27, 2026 in the standard repro video
+    format, with both editor screens visible and a running annotated log. The
+    local artifact path used to update this branch was
+    `/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-duplicate-table-rows-video/duplicate-table-rows-updated-repro.mp4`.
+-   The video was recorded from `try/awareness-exception` at
+    `d834aab9f47636f85c78e0d8912658155f7fdd18`. That was not literally
+    `origin/trunk`, but the table and CRDT implementation files relevant to this
+    repro matched trunk at the time of recording.
 
-## Observed vs expected
+Normal user-visible flow:
 
-Expected: both editors see the same three row values: `anchor`, `same`, `same`.
+1. Editor A and Editor B open the same collaborative post.
+2. The post contains a one-column table with rows `anchor`, `same`, `same`.
+3. Editor A edits the later duplicate row from `same` to
+   `edited-second-duplicate`.
+4. Editor B concurrently deletes the earlier duplicate row.
+5. After sync, the two editors should converge on `anchor`,
+   `edited-second-duplicate`.
 
-Observed: the receiving editor can see the last row as blank or otherwise
-missing the expected cell content. The two editors now disagree about the table
-contents even though all edits were normal table editing actions.
+The updated repro reads the rendered table cells, not raw block attributes, so
+it checks what users actually see in each editor.
 
-## How it was introduced
+## Observed vs Expected
 
-The duplicate-value ambiguity was introduced by #77164, `RTC: Improve array
-attribute stability when structural changes occur`. That PR changed
-`packages/core-data/src/utils/crdt-blocks.ts` so `mergeYArray()` uses a
-left/right sweep and `areArrayElementsEqual()` to preserve existing Yjs children
-when array structure changes.
+Expected: both editors converge on two visible rows:
 
-That was a valid direction for structural edits, but matching query-array
-children by serialized value is not enough when the array can contain duplicates.
-The earlier table-cell merge work in #76913 made this path important for
-`core/table`, but #77164 is the change that made duplicate query-array values
-ambiguous at the CRDT object identity layer.
+```text
+anchor
+edited-second-duplicate
+```
 
-## Root cause
+Observed in the updated repro video:
 
-`mergeYArray()` currently treats equal array values as interchangeable. For a
-query attribute like a table body, this means two distinct rows with identical
-cell content can be matched to the same side of the merge search. Once the wrong
-Yjs child object is reused, nested cell state can be attached to the wrong row or
-not attached to the later duplicate row at all.
+```text
+Editor A: anchor / same / edited-second-duplicate
+Editor B: anchor / same
+```
 
-Array indexes alone are also not sufficient because concurrent structural edits
-can move or delete rows. The missing ingredient is a stable, non-serialized
-identity for query-array children, or a diff algorithm that does not make
-identity decisions from duplicate values.
+The users now see different versions of the same shared table.
 
-## Fix plan
+## Branch Contents
 
-1. Add stable internal identity for query-array elements while keeping it out of
-   serialized block attributes and post content.
-2. Use that identity when merging nested array attributes, before falling back to
-   value-based matching.
-3. Treat duplicate value matches as ambiguous. If an element has no stable
-   identity and more than one candidate has the same value, avoid reusing a child
-   Yjs object based on value alone.
-4. Preserve the intent of #77164 for non-duplicate structural edits: moving or
-   inserting distinct rows should continue to keep existing nested Yjs children
-   stable.
-5. Add regression coverage for:
-   - duplicate table rows with identical cell text;
-   - deleting the earlier duplicate while editing the later duplicate;
-   - deleting the later duplicate while editing the earlier duplicate;
-   - non-duplicate row moves and insertions, to ensure the fix does not regress
-     the #77164 stability improvement.
+This explanation/repro branch intentionally does not contain the production fix.
+It contains the browser repro, the collaboration fixture stabilization needed by
+that repro, this explanation, and the MP4 artifact.
 
-The fix must not store internal identities in the block's serialized HTML or
-REST-visible attributes. Leaking them would create content churn, make copied
-blocks unstable, and turn an RTC implementation detail into a public block
-schema detail.
+Changes besides the test:
+
+-   `test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts` waits
+    for transport-level awareness in the current post room before driving the
+    repro. This avoids depending on the collaborator presence button rendering.
+-   `docs/explanations/architecture/rtc-stock-repros/duplicate-table-rows.md`
+    documents the current failure, fix plan, and verification.
+-   `docs/explanations/architecture/rtc-stock-repros/videos/duplicate-table-rows.mp4`
+    is the updated annotated video artifact.
+
+## Root Cause
+
+`mergeYArray()` treats equal array values as interchangeable. For a query
+attribute like a table body, that means two distinct rows with identical cell
+content can be matched by value instead of by logical identity.
+
+Indexes are not enough once users make concurrent structural edits. A delete can
+shift indexes while another user edits the row that used to sit after the
+deleted row. Value matching is also not enough because the two duplicate rows
+look identical before one of them is edited.
+
+## Fix Plan
+
+The production fix lives on
+`try/rtc-duplicate-table-rows-stock-repro-pr-trunk`.
+
+The safe plan is:
+
+1. Store a stable internal identity for each query-array element in the CRDT
+   Y.Map. This gives table rows and cells identity even when their serialized
+   values are duplicates.
+2. Do not expose that identity as a normal string property in editor-visible
+   block attributes. When CRDT data is deserialized into block attributes, carry
+   the ID as an enumerable symbol property instead. Object spread preserves it,
+   but `JSON.stringify`, REST payloads, and serialized block HTML do not expose
+   it.
+3. When local block attributes are converted back to the CRDT merge format,
+   convert the symbol ID back to the internal CRDT key so `mergeYArray()` can
+   match rows and cells by identity before falling back to value-based matching.
+4. Preserve symbol properties in table state helpers that rebuild row objects
+   during cell edits and column insert/delete operations.
+5. Keep the internal identity key out of equality checks and out of normal
+   property deletion, so it neither creates false diffs nor gets stripped from
+   existing Y.Map children.
+6. Add regression coverage for the exact two-user duplicate edit/delete case,
+   for identity round-tripping without string-key leaks, and for the table state
+   operations that need to preserve symbol properties.
+
+This avoids the main failure mode of a naive fix: leaking `__unstableSyncId` into
+runtime block attributes, post content, REST-visible data, copied blocks, or
+plugin-observable table attributes.
 
 ## Verification
 
-The failing stock repro is:
+The browser repro command is:
 
 ```bash
-WP_BASE_URL=http://localhost:8990 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts
+WP_BASE_URL=http://localhost:19001 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts
 ```
 
-Known-fixes-base status, checked on `try/fuzz-known-issues-fixed-campaign`
-after the previously found RTC fixes were applied:
+The trunk-based PR branch was verified after the fix with:
 
--   **Fails:** browser stock repro
-    `test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts`
-    still receives `["anchor", "same", undefined]` instead of
-    `["anchor", "same", "same"]`.
--   **Fails:** lower-level CRDT duplicate-row repro
-    `packages/core-data/src/utils/test/crdt-table-duplicates.fuzz.test.ts`
-    still loses the edit to the later duplicate row when the earlier duplicate
-    row is deleted.
--   **Passes:** the lower-level control cases for distinct row contents and for
-    editing the earlier duplicate while deleting the later duplicate. Those
-    controls show the remaining failure is specific to ambiguous duplicate row
-    identity, not to all table-array merges.
+```bash
+PATH="$HOME/.nvm/versions/node/v20.19.0/bin:$PATH" npm run test:unit -- packages/core-data/src/utils/test/crdt-table-query-identity.test.ts packages/block-library/src/table/test/state.js
+PATH="$HOME/.nvm/versions/node/v20.19.0/bin:$PATH" npm run build -- --skip-types
+PATH="$HOME/.nvm/versions/node/v20.19.0/bin:$PATH" WP_BASE_URL=http://localhost:19001 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts
+```
 
-The lower-level fuzz/unit coverage should live near the CRDT block merge tests
-and cover duplicate query-array elements directly, without depending on browser
-timing.
+Result on the fixed PR branch: the focused unit tests passed, the production
+build completed, and the browser repro passed with both editors converging on
+`anchor`, `edited-second-duplicate`.
