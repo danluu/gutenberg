@@ -1,0 +1,99 @@
+Outstanding fuzzer bugs without matching WordPress/gutenberg PRs or issues
+Date: 2026-04-27
+
+This list records locally found RTC/fuzzer issues that I did not find reported
+as matching WordPress/gutenberg PRs or GitHub issues. "Unreported" here means I
+could not find a matching upstream PR or issue by branch name, commit subject,
+or the bug's distinctive failure wording.
+
+Excluded as already reported: #77681, #77675, #77673, #77669, #77666, #77662,
+#77658, #77631, #77678, and #77676.
+
+1. RTC duplicate table rows lose cell content
+   Branch: try/rtc-duplicate-table-rows-stock-repro-pr-trunk
+   Symptom: a table with row contents "anchor", "same", "same" can arrive at a
+   collaborator as "anchor", "same", undefined. The likely root is value-based
+   identity matching for duplicate query-array rows in the CRDT block merge path.
+
+2. RTC 403 in one room can drop another room's queued compaction
+   Branch: try/rtc-compaction-403-stock-repro-pr
+   Symptom: deleting a loaded category room can make a request fail with 403
+   while a surviving post room has a queued server-requested compaction. Recovery
+   can unregister the forbidden room but restore the surviving queue in a mode
+   that filters out the queued compaction.
+
+3. RTC surviving rooms stop syncing after the primary room unregisters
+   Branch: try/rtc-primary-unregister-stock-repro-pr-trunk
+   Symptom: after an oversized title unregisters the primary post room, a
+   surviving room such as root/comment can see a collaborator but keep sending
+   empty update payloads, so a note remains local and does not reach another
+   editor.
+   Caveat: this may not be a product bug. The primary-room behavior may be by
+   design to avoid shared collection rooms causing unrelated post rooms to flush
+   queued updates. The proposed fix would need product confirmation that a
+   surviving room should resume only its own queue when it has collaborators.
+
+4. Failed provider creation leaves an entity permanently loaded
+   Branch/catalog: try/fuzz-known-issues-fixed-campaign
+   Symptom: SyncManager.load() records entity state before provider creation
+   finishes. If provider creation rejects, a later retry for the same entity can
+   be skipped because the stale entity state remains registered.
+
+5. Partial provider creation failure leaks already-created providers
+   Branch/catalog: try/fuzz-known-issues-fixed-campaign
+   Symptom: when one provider creator resolves and a later provider creator
+   rejects, SyncManager.load() rejects without destroying the provider that was
+   already created. Listeners, polling rooms, awareness state, or other provider
+   resources can remain active after the failed load.
+
+6. Persisted CRDT hydration is resent as a local update after reload
+   Branch: danluu/rtc-stale-visual-probe
+   Symptom: reloading a post with _crdt_document meta can cause the HTTP polling
+   provider to observe persisted Yjs hydration as a local post-room update and
+   send that already-persisted state back to /wp-sync/v1/updates.
+   Caveat: I was not able to actually observe user-visible corruption from this.
+   The observed failure is at the sync/protocol level: a large local-looking
+   update is sent after reload when no local user edit occurred.
+
+7. Awareness read/modify/write can lose concurrent client state
+   Branches: danluu/rtc-issue-09-awareness-lost-update-repro,
+   danluu/danluu/rtc-issue-09-awareness-lost-update-pr
+   Symptom: concurrent awareness writes can interleave so a stale request reads
+   the room, another request completes a client awareness write, and the stale
+   request writes back an older whole-room awareness map that loses the completed
+   client state.
+
+8. Polling cursor can advance past a remote update that failed to apply
+   Branch: danluu/rtc-issue-04-remote-apply-cursor-pr
+   Symptom: if applying a remote Yjs update throws, the polling manager can still
+   advance the room cursor. A later poll starts after the failed update, so that
+   remote update is skipped instead of retried.
+
+9. root/comment sync storage OOM causes generic Connection Lost
+   Branch: try/connection-error-large-update-explanation
+   Symptom: a large root/comment room can make POST /wp-json/wp-sync/v1/updates
+   return repeated 500s from PHP memory exhaustion in WP_Sync_Post_Meta_Storage,
+   eventually surfacing as the generic real-time collaboration Connection Lost
+   modal.
+
+10. Oversized compaction snapshot causes generic Connection Lost
+    Branches: try/rtc-compaction-snapshot,
+    try/connection-error-large-update-explanation
+    Symptom: once a room crosses the compaction threshold, the client can send a
+    full-state compaction update larger than the server's 1 MiB per-update data
+    limit. The server returns repeated 400 rest_invalid_param responses and the
+    client eventually shows the generic Connection Lost modal.
+
+11. Aggregate sync request body can exceed 16 MiB
+    Branch: try/connection-error-large-update-explanation
+    Symptom: many individually valid queued updates across many rooms can produce
+    a single wp-sync request body over the server's 16 MiB body limit. The server
+    returns repeated 413 responses and the editor surfaces the generic Connection
+    Lost modal.
+
+12. Auth/nonce loss mid-session surfaces as generic Connection Lost
+    Branch: try/connection-error-large-update-explanation
+    Symptom: after a successful collaborative session starts, losing browser auth
+    state causes repeated rest_cookie_invalid_nonce 403s. The polling path treats
+    these as an unknown sync disconnect instead of surfacing an auth-specific
+    failure.

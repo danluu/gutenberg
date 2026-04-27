@@ -182,6 +182,35 @@ describe( 'polling-manager', () => {
 			} );
 		} );
 
+		it( 'emits document-size-limit-exceeded error when base64 data exceeds the server size limit', async () => {
+			mockPostSyncUpdate.mockResolvedValue( syncResponse );
+
+			const onStatusChange = jest.fn();
+			const doc = createMockDoc( 1 );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			// Raw 8 bytes is below the mocked client limit (10), but base64
+			// encoding expands it to 12 chars, which exceeds the server schema
+			// limit when both limits are configured to the same numeric value.
+			const onDocUpdate = getOnDocUpdate( doc );
+			onDocUpdate( new Uint8Array( 8 ), 'some-origin' );
+
+			expect( onStatusChange ).toHaveBeenCalledWith( {
+				status: 'disconnected',
+				error: expect.objectContaining( {
+					code: 'document-size-limit-exceeded',
+				} ),
+			} );
+		} );
+
 		it( 'unregisters the room when the limit is exceeded', async () => {
 			mockPostSyncUpdate.mockResolvedValue( syncResponse );
 
