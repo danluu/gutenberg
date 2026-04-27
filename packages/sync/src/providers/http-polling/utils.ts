@@ -92,6 +92,13 @@ export function createUpdateQueue(
 		pause(): void {
 			isPaused = true;
 		},
+		peek(): SyncUpdate[] {
+			if ( isPaused ) {
+				return [];
+			}
+
+			return [ ...updates ];
+		},
 		restore(
 			restoredUpdates: SyncUpdate[],
 			{ preserveCompaction = false } = {}
@@ -103,8 +110,8 @@ export function createUpdateQueue(
 			if ( ! preserveCompaction ) {
 				filtered = restoredUpdates.filter(
 					( u ) => u.type !== SyncUpdateType.COMPACTION
-				);
-			}
+					);
+				}
 
 			if ( 0 === filtered.length ) {
 				return;
@@ -112,11 +119,25 @@ export function createUpdateQueue(
 
 			updates.unshift( ...filtered );
 		},
+		restoreExact( restoredUpdates: SyncUpdate[] ): void {
+			if ( 0 === restoredUpdates.length ) {
+				return;
+			}
+
+			updates.unshift( ...restoredUpdates );
+		},
 		resume(): void {
 			isPaused = false;
 		},
 		size(): number {
 			return updates.length;
+		},
+		take( count: number ): SyncUpdate[] {
+			if ( isPaused || count <= 0 ) {
+				return [];
+			}
+
+			return updates.splice( 0, count );
 		},
 	};
 }
