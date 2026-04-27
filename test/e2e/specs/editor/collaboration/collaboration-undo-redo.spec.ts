@@ -243,7 +243,10 @@ test.describe( 'Collaboration - Undo/Redo', () => {
 				},
 			] );
 
-		await page.keyboard.press( 'ControlOrMeta+z' );
+		await editor.canvas
+			.locator( '[contenteditable="true"]' )
+			.filter( { hasText: 'def' } )
+			.press( process.platform === 'darwin' ? 'Meta+z' : 'Control+z' );
 		await expect
 			.poll( () => editor.getBlocks(), { timeout: 5000 } )
 			.toMatchObject( [
