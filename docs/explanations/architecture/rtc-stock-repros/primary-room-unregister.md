@@ -17,8 +17,10 @@ rooms themselves have another collaborator.
 
 ## Stock repro
 
-- Browser repro: `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`
-- Video: `videos/primary-room-unregister.mp4`
+- Browser repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-primary-unregister-stock-repro-pr-trunk/test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts
+- Video:
+  https://github.com/danluu/gutenberg/blob/try/rtc-primary-unregister-stock-repro/docs/explanations/architecture/rtc-stock-repros/videos/primary-room-unregister.mp4
 - Video provenance: regenerated on April 26, 2026 from the Playwright trace
   emitted by the checked-in browser repro. This current worktree run reaches
   the intended failure: after another user joins the surviving `root/comment`
@@ -82,31 +84,54 @@ resume tied to primary-room existence.
 
 ## Fix plan
 
-1. Make queue resume room-local: when a room sees more than one awareness client,
-   resume that room's own update queue.
-2. Keep a separate global "has collaborators" signal only for polling cadence
-   and connection status. Any active room with more than one awareness client can
-   justify faster polling, but it must not automatically flush unrelated room
-   queues.
-3. Remove the dependency on a surviving primary room for room-local queue
+1. Preserve the existing primary-room behavior: when the primary room sees more
+   than one awareness client, resume all queues so related rooms such as
+   `root/comment` can send updates.
+2. Add a non-primary fallback: when a non-primary room sees more than one
+   awareness client, resume only that room's own queue.
+3. Keep a separate global "has collaborators" signal for polling cadence. Any
+   active room with more than one awareness client can justify faster polling,
+   but non-primary awareness must not flush unrelated room queues.
+4. Do not promote a replacement primary room just to recover from unregistering
+   the first room. Promotion risks changing request-selection semantics; the
+   smaller fix is to let surviving rooms resume themselves.
+5. Remove the dependency on a surviving primary room for room-local queue
    resume. If the primary room is unregistered, remaining rooms should still
    process awareness and resume themselves when they have peers.
-4. If a primary room is still useful for request selection, promote a remaining
-   active room only for request scheduling/status purposes. Do not use promotion
-   to resume unrelated queues.
-5. Add regression coverage for:
+6. Add regression coverage for:
    - oversized-title unregister of the post room followed by normal note
      creation in `root/comment`;
+   - provider-level room registration and provider disconnect, so the repro
+     exercises the public HTTP polling provider interface and not only the
+     polling manager singleton;
    - normal post plus notes collaboration when the primary room remains active;
    - two unrelated posts that share a collection room, ensuring collection
      awareness does not flush unrelated post room updates;
    - unregistering and later registering rooms so queue resume state does not
      leak across stale room objects.
 
-This plan preserves the false-positive protection from #76704 by narrowing
-queue resume to the room where collaborator awareness was observed. It fixes the
-surviving-room case without going back to a global "any shared collection means
-all rooms can send" rule.
+This plan preserves the false-positive protection from #76704 by allowing
+non-primary rooms to resume only themselves. It fixes the surviving-room case
+without going back to a global "any shared collection means all rooms can send"
+rule.
+
+## Repro coverage in the PR branch
+
+PR branch:
+https://github.com/danluu/gutenberg/tree/try/rtc-primary-unregister-stock-repro-pr-trunk
+
+- Browser-level normal-user repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-primary-unregister-stock-repro-pr-trunk/test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts
+- HTTP polling provider-level repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-primary-unregister-stock-repro-pr-trunk/packages/sync/src/providers/http-polling/test/http-polling-provider.test.ts
+- Polling manager-level repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-primary-unregister-stock-repro-pr-trunk/packages/sync/src/providers/http-polling/test/polling-manager.test.ts
+
+There is no meaningful lower standalone Yjs or `UpdateQueue` repro for this
+specific bug. The failure requires room lifecycle, primary-room classification,
+collaborator awareness, and queue-resume policy; those are introduced in the
+HTTP polling provider/polling manager layer. Below that layer, the queue only
+stores and returns updates, and Yjs only emits document updates.
 
 ## Verification
 
@@ -135,3 +160,15 @@ after the previously found RTC fixes were applied:
 The lower-level polling manager regression should assert that a non-primary
 surviving room resumes its own queue when it sees a collaborator, while a shared
 collection room does not resume unrelated post room queues.
+
+Current PR-branch verification:
+
+- Tests-only commit fails against trunk:
+  `packages/sync/src/providers/http-polling/test/http-polling-provider.test.ts`
+  fails because the surviving `root/comment` room still sends an empty update
+  list after collaborator discovery.
+- Tests-only commit fails against trunk:
+  `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`
+  fails for the same empty surviving-room update list.
+- Branch head passes:
+  `npm run test:unit -- packages/sync/src/providers/http-polling/test/http-polling-provider.test.ts packages/sync/src/providers/http-polling/test/polling-manager.test.ts`
