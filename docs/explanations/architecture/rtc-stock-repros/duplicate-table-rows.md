@@ -19,6 +19,12 @@ content.
 
 - Browser repro: `test/e2e/specs/editor/collaboration/collaboration-table-duplicates.spec.ts`
 - Video: `videos/duplicate-table-rows.mp4`
+- Video provenance: regenerated on April 26, 2026 from the Playwright trace
+  emitted by the checked-in browser repro. In this current worktree run, the
+  real fixture fails earlier at `waitForMutualDiscovery()` because the
+  `Collaborators list` button never appears, so the table creation steps are
+  not reached. The MP4 intentionally shows that actual e2e run rather than a
+  hand-written table flow.
 - Normal user actions:
   1. Editor A opens a collaborative post.
   2. Editor A inserts a 1-column table with three rows.
