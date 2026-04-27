@@ -15,8 +15,10 @@ rather than scoped to the document/entity that produced the undo event.
 
 ## Stock repro
 
-- Browser repro: `test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts`
-- Video: `videos/undo-metadata-cross-entity.mp4`
+- Browser repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-undo-cross-entity-stock-repro-pr-trunk/test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts
+- Video:
+  https://github.com/danluu/gutenberg/blob/try/rtc-undo-cross-entity-stock-repro/docs/explanations/architecture/rtc-stock-repros/videos/undo-metadata-cross-entity.mp4
 - Video provenance: regenerated on April 26, 2026 from the Playwright trace
   emitted by the checked-in browser repro. In this current worktree run, after
   moving the undo environment from Playground to Docker, the real fixture fails
@@ -77,24 +79,40 @@ that makes the editor sync a second entity without custom setup.
 
 ## Fix plan
 
-1. Keep one `stack-item-added` listener and one `stack-item-popped` listener per
-   shared undo manager.
-2. Maintain an explicit map from synced document/tracked type to that entity's
-   metadata handlers.
-3. On stack item events, determine the owning document or tracked type from the
-   event before invoking metadata handlers.
-4. Invoke only the handlers for the owning entity. If ownership cannot be
-   determined, do not run unrelated entity handlers as a fallback.
-5. Remove handlers from the map when an entity is unloaded or removed from undo
-   scope, and remove the shared listeners when the undo manager is destroyed.
-6. Add regression coverage for post plus category, post plus notes, and entity
-   unload/reload so the fix does not introduce stale listener leaks.
+1. Keep the shared undo stack so user-facing undo ordering across synced
+   entities does not change.
+2. Use the `ydoc` already emitted by `YMultiDocUndoManager` stack-item events to
+   identify the document that produced the stack item.
+3. In each metadata listener installed by `addToScope()`, return early unless
+   `event.ydoc` is the Yjs document for that scope.
+4. Invoke only the metadata handlers for the owning entity. If ownership cannot
+   be determined, do not run unrelated entity handlers as a fallback.
+5. Add regression coverage at the direct undo-wrapper level and the
+   `SyncManager` integration level so the fix cannot regress back to global
+   metadata dispatch.
 
 The fix should not split the editor into independent undo managers per entity
 unless product behavior explicitly wants separate undo stacks. Splitting stacks
 would avoid this bug but would also change user-facing undo ordering across
 entities. The safer fix is to keep the shared stack and scope only the metadata
 dispatch.
+
+## Repro coverage in the PR branch
+
+PR branch:
+https://github.com/danluu/gutenberg/tree/try/rtc-undo-cross-entity-stock-repro-pr-trunk
+
+- Browser-level normal-user repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-undo-cross-entity-stock-repro-pr-trunk/test/e2e/specs/editor/collaboration/collaboration-undo-redo.spec.ts
+- `SyncManager` integration repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-undo-cross-entity-stock-repro-pr-trunk/packages/sync/src/test/manager.ts
+- Direct `SyncUndoManager` wrapper repro:
+  https://github.com/danluu/gutenberg/blob/try/rtc-undo-cross-entity-stock-repro-pr-trunk/packages/sync/src/test/undo-manager.test.ts
+
+There is no lower Gutenberg repro below `SyncUndoManager` for this bug. The
+underlying `YMultiDocUndoManager` already emits the owning `ydoc`; the bug is in
+Gutenberg's wrapper ignoring that ownership information when dispatching
+metadata handlers.
 
 ## Verification
 
@@ -123,3 +141,14 @@ is still present.
 Lower-level coverage should assert that a stack item created from one Yjs
 document never invokes metadata handlers registered for a different synced
 entity.
+
+Current PR-branch verification:
+
+- Tests-only commit fails against trunk:
+  `packages/sync/src/test/undo-manager.test.ts` fails because a stack item from
+  one Yjs document invokes `addUndoMeta` for a different document.
+- Tests-only commit fails against trunk:
+  `packages/sync/src/test/manager.ts` fails because an update to one synced
+  entity invokes undo metadata handlers for another synced entity.
+- Branch head passes:
+  `npm run test:unit -- packages/sync/src/test/undo-manager.test.ts packages/sync/src/test/manager.ts`
