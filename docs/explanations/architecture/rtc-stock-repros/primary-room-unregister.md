@@ -19,6 +19,10 @@ rooms themselves have another collaborator.
 
 - Browser repro: `test/e2e/specs/editor/collaboration/collaboration-primary-room-unregister.spec.ts`
 - Video: `videos/primary-room-unregister.mp4`
+- Video provenance: regenerated on April 26, 2026 from the Playwright trace
+  emitted by the checked-in browser repro. This current worktree run reaches
+  the intended failure: after another user joins the surviving `root/comment`
+  room, normal note creation sends a `root/comment` payload with `0` updates.
 - Normal user actions:
   1. Editor A opens a collaborative post that contains a paragraph.
   2. Editor A pastes an oversized title. The post room exceeds the sync size
