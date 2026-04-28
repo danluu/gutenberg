@@ -273,3 +273,155 @@ The fix should be evaluated by blast radius and debuggability:
 
 Do not ship a fix that only handles the seed that failed. The important question
 is whether the system has stopped treating stale full snapshots as truth.
+
+## Audit-informed narrow fix plan
+
+The first fix plan points in the right direction, but it is still broad enough
+that an implementation could accidentally turn into another heuristic-heavy
+merge algorithm. This second plan incorporates the audit comments as explicit
+constraints.
+
+### Constraints
+
+-   Do not replace the block merge system.
+-   Do not add more "guess the right row" special cases to `mergeYArray()`.
+-   Do not make full block snapshots globally behave like operations without a
+    caller-provided base snapshot.
+-   Do not use convergence as the success condition. The success condition is
+    preserving acknowledged remote operations unless a real later local operation
+    targets the same logical value.
+-   When a structural table edit is ambiguous, preserve remote data and resync the
+    editor instead of inventing a delete or move.
+
+### Phase 1: add small failing tests
+
+Before changing production code, add deterministic tests for the failures the
+fuzzer found:
+
+-   remote B1 edit, stale local A1 edit;
+-   remote append row, stale local cell edit;
+-   remote prepend row, stale local cell edit;
+-   remote delete row, stale local cell edit in another row.
+
+Keep the randomized test, but make the deterministic tests the primary review
+surface. They explain the invariant better and reduce the chance of fixing only
+one seed.
+
+### Phase 2: add opt-in local merge context
+
+Add a small merge context owned by the caller that merges editor state into a
+Y.Doc. The context stores the previous serialized local block snapshot for that
+specific stream:
+
+```ts
+interface LocalBlockMergeContext {
+	previousLocalBlocks?: Block[];
+}
+```
+
+Thread this context through the RTC editor-to-Y.Doc path. Do not make it a hidden
+global keyed only by `Y.Array`, because that would make tests pass while leaving
+call order and ownership unclear.
+
+When no context is provided, keep the current behavior. That keeps the change
+narrow and avoids breaking unrelated callers that use `mergeCrdtBlocks()` as a
+simple state-replacement helper.
+
+### Phase 3: derive local changes before touching Yjs
+
+For context-backed merges, compare:
+
+```text
+previousLocalBlocks -> nextLocalBlocks
+```
+
+Then apply only paths that changed locally. For table `body`, `head`, and `foot`
+query attributes:
+
+-   if a rich-text cell is unchanged between previous and next local snapshots,
+    do not call `mergeRichTextUpdate()` for that cell;
+-   if a plain property is unchanged locally, do not set it on the `Y.Map`;
+-   if a property is absent in both previous and next local snapshots, do not
+    delete a remote property from the `Y.Map`;
+-   if a row or cell array is unchanged locally, do not merge through it just
+    because the current Y.Doc differs.
+
+This directly implements the Linus-style rule from the audit: if it did not
+change locally, do not write it.
+
+### Phase 4: handle only unambiguous structural edits
+
+For query-backed arrays, derive structural operations from the local base and the
+next local snapshot. In the first production fix, support only unambiguous cases:
+
+-   append rows/cells where the base is an exact prefix of the next local array;
+-   prepend rows/cells where the base is an exact suffix of the next local array;
+-   one middle insertion where the unchanged prefix and suffix identify a single
+    insertion range;
+-   one deletion where the unchanged prefix and suffix identify a single deletion
+    range.
+
+Apply those operations to the current Y.Array. For ambiguous cases such as
+duplicate rows, moves, overlapping structural edits, or multiple independent
+splices, do not delete or rewrite the current Y.Array. Mark the merge as needing
+an editor resync from the current Y.Doc and leave remote data intact.
+
+This keeps the first fix small. It also avoids pretending that index-based rows
+have stable identity when they do not.
+
+### Phase 5: make lossy fallbacks observable
+
+The existing wrong-type migration path that rebuilds an entire Y.Array should
+remain available for old data, but it should not silently run during ordinary
+collaboration. Add a debug-only or test-visible signal for destructive fallback
+paths so tests can assert that the stale-snapshot fix is not passing by
+rebuilding more data.
+
+The fix should prefer "skip and resync" over "rebuild and hope" whenever the
+input is a stale editor snapshot rather than an explicit migration.
+
+### Phase 6: validate with operation-preservation checks
+
+The tests should check operation preservation, not only final equality:
+
+-   after a remote edit has been applied locally, a stale local snapshot must not
+    remove that edit;
+-   after a remote insert has been applied locally, a stale local snapshot must
+    not remove that inserted row;
+-   after a remote delete has been applied locally, a stale local snapshot must
+    not resurrect the deleted row;
+-   after an ambiguous local structural edit, the current Y.Doc should remain
+    unchanged except for clearly local leaf edits.
+
+Run the deterministic tests, the table fuzzer, and the existing block-tree fuzzer.
+Then run a larger seed range locally before opening the PR.
+
+### Phase 7: rollout discipline
+
+Keep the code change behind the local merge context path at first. Do not
+retarget every CRDT merge caller in the same patch. The first PR should only wire
+the context into the RTC editor-to-Y.Doc path that can produce stale local
+snapshots.
+
+After that lands, separately consider whether other callers need the same
+context. Each additional caller should come with a test that demonstrates why it
+can receive stale full snapshots.
+
+### Why this should not introduce more issues
+
+The plan reduces writes rather than adding broader writes. Unchanged local data
+stops being written to the Y.Doc, which is exactly the class of write that causes
+the bug.
+
+The risky part is structural editing. The plan deliberately supports only
+structural edits whose local base uniquely identifies the operation. Everything
+else is a no-op plus resync, not a best-effort rewrite. That may temporarily
+prefer preserving remote data over applying an ambiguous local structural edit,
+but it avoids silent data loss and gives the editor a chance to present the
+current document state.
+
+The change is also reviewable: a small context object, local-delta derivation,
+table-query-specific tests, and conservative handling for ambiguous arrays. If an
+implementation needs more machinery than that, it should be split into a later
+design change with stable row/cell identity rather than hidden inside this bug
+fix.
