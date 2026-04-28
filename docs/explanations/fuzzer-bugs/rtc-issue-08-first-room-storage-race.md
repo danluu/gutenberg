@@ -36,6 +36,8 @@ On the vulnerable implementation, the test fails because WordPress creates both 
 
 This is still probabilistic. It does not install a `wp_insert_post_data` filter, diagnostic mu-plugin, server-side delay, database lock, or scheduler hook. On a vulnerable checkout it can reproduce the split by normal HTTP concurrency alone; on a fixed checkout it should usually exhaust its attempts without finding duplicate storage rows.
 
+The script defaults to three concurrent first polls so the request shape stays close to ordinary simultaneous editors or tabs. Raising `--concurrency` can make the timing window easier to hit on slower or more serialized local environments, but it is not required for the underlying race.
+
 ### Browser/video repro
 
 The local browser/video harness uses editor-visible presence to expose the split. It creates a draft post, enables a test-only race injector for the post's sync room, opens the post as admin, and delays the initial empty sync polls until the admin's presence payload contains visible collaborator metadata. The first meaningful admin presence poll then travels through the production `/wp-sync/v1/updates` endpoint and triggers the storage race.

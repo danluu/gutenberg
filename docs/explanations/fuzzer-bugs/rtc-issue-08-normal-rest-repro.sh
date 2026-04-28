@@ -3,7 +3,7 @@
 set -u
 
 ATTEMPTS="${ATTEMPTS:-60}"
-CONCURRENCY="${CONCURRENCY:-30}"
+CONCURRENCY="${CONCURRENCY:-3}"
 CURL_MAX_TIME="${CURL_MAX_TIME:-30}"
 WP_USER="${WP_USER:-admin}"
 WP_PASSWORD="${WP_PASSWORD:-}"
@@ -38,7 +38,7 @@ Run from a Gutenberg checkout with wp-env available:
 Environment/options:
 
   ATTEMPTS=N or --attempts N          Fresh rooms to try. Default: 60
-  CONCURRENCY=N or --concurrency N    Concurrent first polls per room. Default: 30
+  CONCURRENCY=N or --concurrency N    Concurrent first polls per room. Default: 3
   BASE_URL=URL or --url URL           WordPress URL. Default: wp option siteurl
   WP_USER=USER or --user USER         User for REST Basic Auth. Default: admin
   WP_PASSWORD=PASS or --password PASS Application password. Default: create temp
