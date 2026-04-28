@@ -114,6 +114,41 @@ Nested Yjs types reduce the blast radius from "whole table body" to
 cell value is still a write to a `Y.Text`; a stale missing row is still a delete
 from a `Y.Array`.
 
+## Relationship to the duplicate-row fix
+
+[WordPress/gutenberg#77723](https://github.com/WordPress/gutenberg/pull/77723)
+fixes a related but different table merge bug: duplicate-looking rows are
+ambiguous when `mergeYArray()` matches query-array elements by serialized value.
+That PR adds stable internal identities for query-array elements so two rows with
+the same visible contents are no longer treated as interchangeable.
+
+This stale-snapshot bug is not fixed by stable row identity alone. The stale
+snapshot can already refer to the right logical row or cell and still carry an
+old value. It can also omit a remotely inserted row because the local editor
+snapshot was created before that row existed. With the #77723 ID-based merge, an
+incoming stale snapshot can still:
+
+-   delete a remote row whose ID exists in the current Y.Doc but not in the stale
+    incoming snapshot;
+-   resurrect a remote-deleted row whose ID still exists in the stale incoming
+    snapshot;
+-   overwrite a remote cell edit on the same cell ID because the incoming cell
+    string is old.
+
+The fixes are therefore complementary, not independent. The preferred landing
+order is:
+
+1.  Land [#77723](https://github.com/WordPress/gutenberg/pull/77723) first, so
+    query-array rows and cells have stable internal identities.
+2.  Implement this stale-snapshot fix on top of that identity layer.
+
+If this stale-snapshot fix has to land before #77723, it should not invent a
+parallel row-identity system. It should keep structural changes conservative and
+expect a follow-up rebase onto the #77723 identity mechanism. A textual clean
+merge is not enough; the combined behavior must be tested because both fixes
+touch `packages/core-data/src/utils/crdt-blocks.ts` and the same table/query
+merge path.
+
 ## Fix plan
 
 ### 1. Make the invariant explicit
@@ -127,7 +162,19 @@ The invariant should be:
 Convergence alone is not enough. The tests must assert preservation of known
 remote operations.
 
-### 2. Add deterministic regressions before changing code
+### 2. Use #77723 identity as the array basis
+
+Do not solve row identity twice. Once
+[#77723](https://github.com/WordPress/gutenberg/pull/77723) lands, use its
+internal query-array IDs to identify rows and cells when deriving and applying
+local structural operations.
+
+The stale-snapshot fix should change the authority model, not the identity
+model. Stable IDs answer "which row is this?" They do not answer "is this stale
+snapshot allowed to delete or overwrite this row?" The second question is the
+bug being fixed here.
+
+### 3. Add deterministic regressions before changing code
 
 Keep the randomized test, but add small deterministic tests for the specific
 failure modes:
@@ -137,9 +184,11 @@ failure modes:
 -   remote prepend row, stale local edit to an existing cell;
 -   remote delete row, stale local edit to a different row.
 
-These should fail before the fix and pass after the fix.
+Add at least one test that runs against the #77723-style identity path and shows
+that stable IDs alone do not preserve the remote operation. These should fail
+before the stale-snapshot fix and pass after it.
 
-### 3. Stop treating local block snapshots as authoritative state
+### 4. Stop treating local block snapshots as authoritative state
 
 Introduce local-base tracking for the block merge path.
 
@@ -164,7 +213,7 @@ For table query attributes, this means:
 -   if an array length differs only because the current Y.Doc has remote
     insertions or deletions, do not try to force it back to the stale local length.
 
-### 4. Handle structural table edits as operations
+### 5. Handle structural table edits as local operations
 
 For query-backed arrays, derive structural operations from the local base:
 
@@ -172,23 +221,27 @@ For query-backed arrays, derive structural operations from the local base:
 base rows -> next local rows
 ```
 
-Then apply those operations to the current Y.Array.
+Then apply those operations to the current Y.Array using the stable row/cell IDs
+from #77723 when available.
 
-The first safe implementation can support the common cases already covered by
-the current left/right sweep:
+Deletion must require positive evidence of a local delete from the local base. A
+row being absent from a stale incoming snapshot is not enough, because that same
+absence is exactly how a remote insert gets lost. Similarly, insertion must not
+resurrect a row that was remotely deleted unless the local delta actually added
+that logical row after the local base.
+
+The first safe implementation should support the common unambiguous cases:
 
 -   append;
 -   prepend;
 -   middle insert with unchanged surrounding rows;
 -   delete with unchanged surrounding rows.
 
-If the local base and next local snapshot are ambiguous, for example duplicate
-rows with identical content or concurrent moves, prefer a conservative fallback
-that preserves remote data over a clever best guess. For example, skip an
-ambiguous structural write and force the editor to resync from the Y.Doc rather
-than deleting remote rows.
+If the local base and next local snapshot are ambiguous, preserve remote data and
+force the editor to resync from the Y.Doc rather than deleting or moving rows by
+heuristic.
 
-### 5. Reconcile editor state after remote updates
+### 6. Reconcile editor state after remote updates
 
 The merge layer should make stale snapshots less likely by ensuring that remote
 Y.Doc updates are reflected into the editor state before later local snapshots
@@ -198,7 +251,7 @@ This does not replace local-base delta tracking. It is a second defense. In a
 browser/editor pipeline, asynchronous updates can still be reordered or batched
 in surprising ways.
 
-### 6. Keep the randomized test as a bug finder
+### 7. Keep the randomized test as a bug finder
 
 The new fuzz test should remain after the deterministic regressions pass. It
 should grow to cover:
@@ -207,7 +260,8 @@ should grow to cover:
 -   repeated remote edits before a stale local merge;
 -   duplicate row contents;
 -   nested head/body/foot attributes;
--   row and cell structural edits in the same run.
+-   row and cell structural edits in the same run;
+-   the combined #77723 identity path plus stale local snapshots.
 
 The test should report the seed and operation trace, and the default seed range
 should be small enough for normal unit-test runs while allowing larger runs via
@@ -220,69 +274,75 @@ and Dan Luu. It is not speaking for them.
 
 ### Linus Torvalds lens
 
-The core smell is pretending that a full stale state object is an operation.
-Fix that directly. Do not add more special cases to `mergeYArray()` that try to
-guess when stale values are safe. That will become unreviewable.
+The core smell is still pretending that a full stale state object is an
+operation. Stable row IDs do not change that. They make the object easier to
+match, but they do not make stale values safe to write.
 
-The simplest defensible rule is:
+The plan should not grow a second identity scheme or a pile of special cases in
+`mergeYArray()`. Land or rebase on #77723, then make one narrow semantic change:
 
 ```text
 If it did not change locally, do not write it.
 ```
 
-The plan should avoid broad rewrites and hidden magic. Start with a tiny set of
-failing tests and a small local-base delta mechanism. If the fix needs elaborate
-heuristics for arrays, the data model is missing identity and the code should say
-so instead of pretending the heuristic is correct.
+The implementation should make ownership explicit. A caller-owned local merge
+context is reviewable. A hidden global cache of previous snapshots is not. If a
+structural edit is ambiguous, do not be clever; skip the destructive operation
+and resync.
 
 ### Kyle Kingsbury / Jepsen lens
 
-The existing tests mostly check convergence and shape. That is insufficient for
-collaboration systems. Two replicas can converge after losing an operation.
+The model must distinguish identity from causality. #77723 gives rows and cells
+identity, but the stale-snapshot bug is about whether an operation is causally
+allowed to overwrite another operation.
 
-The fix needs a model of operations and invariants:
+The tests need operation-preservation invariants:
 
 -   remote edit acknowledged before stale local merge must remain visible unless a
     causally later local operation overwrites the same logical field;
 -   remote insert acknowledged before stale local merge must remain present unless
-    a causally later local delete targets that same logical row;
+    a causally later local delete targets that same logical row ID;
 -   remote delete acknowledged before stale local merge must not be resurrected by
-    an old snapshot.
+    an old snapshot containing that same logical row ID.
 
-Array identity is the hard part. Index-based operations are not stable under
-concurrency. The tests should include duplicate rows and concurrent structural
-changes because those are where index-based algorithms quietly invent the wrong
-history.
+The dangerous case after #77723 is that the code will look more correct because
+it has identities, while still applying stale snapshots as full desired states.
+The tests should explicitly run the stale-snapshot cases through the ID-aware
+path and show that operation preservation, not just convergence, is the success
+criterion.
 
 ### Dan Luu lens
 
-This is exactly the kind of bug that a plausible happy-path test misses: the
-feature demo works, the data structure looks more granular, and convergence
-tests pass. The missing test is the mundane production interleaving: remote
-update arrives, local UI emits an older full snapshot, and a user loses work.
+This is exactly the kind of bug where "the fixes merge cleanly" can be a false
+signal. #77723 and this fix can both be reasonable in isolation while combining
+into a system that still deletes remote rows absent from a stale incoming
+snapshot.
 
-The fix should be evaluated by blast radius and debuggability:
+The plan should optimize for reviewability and future debugging:
 
--   add small deterministic regressions that future maintainers can understand in
-    one screen;
--   keep the fuzz test because it exercises schedules humans will not enumerate;
--   add comments that state the stale-snapshot invariant, not just the mechanics of
-    Y.Array and Y.Map;
--   consider instrumentation or logging around destructive fallback paths so that
-    remaining lossy merges are observable during RTC rollout.
+-   document the distinction between identity and freshness in the code comment
+    next to the merge logic;
+-   keep deterministic tests small enough that a reviewer can see the lost
+    operation without replaying the fuzzer;
+-   keep the fuzz test because it explores schedules humans will not enumerate;
+-   make destructive fallback paths observable in tests;
+-   avoid a broad "fix all CRDT merges" patch when the current repro is the RTC
+    editor-to-Y.Doc path for table query attributes.
 
-Do not ship a fix that only handles the seed that failed. The important question
-is whether the system has stopped treating stale full snapshots as truth.
+The revised plan should explicitly say that #77723 is the preferred base. If it
+cannot be the base, the stale-snapshot patch must stay conservative enough that
+rebasing onto #77723 does not require redesigning the fix.
 
-## Audit-informed narrow fix plan
+## Updated post-audit fix plan
 
-The first fix plan points in the right direction, but it is still broad enough
-that an implementation could accidentally turn into another heuristic-heavy
-merge algorithm. This second plan incorporates the audit comments as explicit
-constraints.
+The first fix plan did not fully account for the interaction with #77723. This
+plan incorporates the audit comments and treats #77723's stable query-array
+identity as the preferred foundation.
 
 ### Constraints
 
+-   Prefer landing after [#77723](https://github.com/WordPress/gutenberg/pull/77723).
+-   Do not add a second row/cell identity mechanism.
 -   Do not replace the block merge system.
 -   Do not add more "guess the right row" special cases to `mergeYArray()`.
 -   Do not make full block snapshots globally behave like operations without a
@@ -293,7 +353,20 @@ constraints.
 -   When a structural table edit is ambiguous, preserve remote data and resync the
     editor instead of inventing a delete or move.
 
-### Phase 1: add small failing tests
+### Phase 0: establish the base
+
+Rebase the stale-snapshot fix on top of #77723 if it has landed. If it has not
+landed, either base the work on that branch intentionally or keep the production
+change limited to local-delta plumbing and non-structural stale writes. Do not
+ship a competing table row identity design.
+
+The PR should say which base it used:
+
+-   "built on #77723 identity path"; or
+-   "pre-#77723, intentionally avoids structural identity changes and expects a
+    rebase."
+
+### Phase 1: add focused failing tests
 
 Before changing production code, add deterministic tests for the failures the
 fuzzer found:
@@ -303,9 +376,17 @@ fuzzer found:
 -   remote prepend row, stale local cell edit;
 -   remote delete row, stale local cell edit in another row.
 
+Add combined-branch tests that prove #77723 alone is insufficient:
+
+-   current Y.Doc has a remote inserted row ID absent from the stale incoming
+    snapshot, and the stale merge must not delete it;
+-   stale incoming snapshot contains a row ID that was remotely deleted, and the
+    stale merge must not resurrect it;
+-   same cell ID has newer remote text in the Y.Doc and stale old text in the
+    incoming snapshot, and the stale merge must not revert it.
+
 Keep the randomized test, but make the deterministic tests the primary review
-surface. They explain the invariant better and reduce the chance of fixing only
-one seed.
+surface.
 
 ### Phase 2: add opt-in local merge context
 
@@ -349,25 +430,34 @@ query attributes:
 This directly implements the Linus-style rule from the audit: if it did not
 change locally, do not write it.
 
-### Phase 4: handle only unambiguous structural edits
+### Phase 4: apply structural operations by identity when available
 
 For query-backed arrays, derive structural operations from the local base and the
-next local snapshot. In the first production fix, support only unambiguous cases:
+next local snapshot. When #77723 IDs are present, use those IDs to apply
+unambiguous local inserts and deletes to the current Y.Array.
 
--   append rows/cells where the base is an exact prefix of the next local array;
--   prepend rows/cells where the base is an exact suffix of the next local array;
--   one middle insertion where the unchanged prefix and suffix identify a single
-    insertion range;
--   one deletion where the unchanged prefix and suffix identify a single deletion
-    range.
+Deletion rule:
 
-Apply those operations to the current Y.Array. For ambiguous cases such as
-duplicate rows, moves, overlapping structural edits, or multiple independent
-splices, do not delete or rewrite the current Y.Array. Mark the merge as needing
-an editor resync from the current Y.Doc and leave remote data intact.
+```text
+delete row ID X only if X existed in previousLocalBlocks and is absent from
+nextLocalBlocks because of the local delta
+```
 
-This keeps the first fix small. It also avoids pretending that index-based rows
-have stable identity when they do not.
+Insertion rule:
+
+```text
+insert row ID X only if X is absent from previousLocalBlocks and present in
+nextLocalBlocks because of the local delta
+```
+
+Never delete a current Y.Array element merely because it is absent from the
+incoming snapshot. Never insert an old incoming element merely because the
+current Y.Array no longer has it.
+
+For pre-#77723 code, support only unambiguous prefix/suffix structural edits and
+prefer skip-and-resync for duplicates or overlapping changes. After #77723, keep
+the same conservative behavior for operations whose IDs or local base evidence
+are missing.
 
 ### Phase 5: make lossy fallbacks observable
 
@@ -391,10 +481,13 @@ The tests should check operation preservation, not only final equality:
 -   after a remote delete has been applied locally, a stale local snapshot must
     not resurrect the deleted row;
 -   after an ambiguous local structural edit, the current Y.Doc should remain
-    unchanged except for clearly local leaf edits.
+    unchanged except for clearly local leaf edits;
+-   the #77723 duplicate-row edit/delete regression must still pass after this
+    fix is applied.
 
-Run the deterministic tests, the table fuzzer, and the existing block-tree fuzzer.
-Then run a larger seed range locally before opening the PR.
+Run the deterministic tests, the table fuzzer, the existing block-tree fuzzer,
+and the #77723 duplicate-row regression. Then run a larger seed range locally
+before opening the PR.
 
 ### Phase 7: rollout discipline
 
@@ -413,15 +506,19 @@ The plan reduces writes rather than adding broader writes. Unchanged local data
 stops being written to the Y.Doc, which is exactly the class of write that causes
 the bug.
 
-The risky part is structural editing. The plan deliberately supports only
-structural edits whose local base uniquely identifies the operation. Everything
+Using #77723 as the identity layer reduces the chance of a second,
+incompatible table identity scheme. The stale-snapshot fix then has one job:
+decide whether the local snapshot has authority to write a path or perform a
+structural operation.
+
+The risky part is structural editing. The plan deliberately requires both
+identity and local-base evidence before applying deletes or inserts. Everything
 else is a no-op plus resync, not a best-effort rewrite. That may temporarily
 prefer preserving remote data over applying an ambiguous local structural edit,
 but it avoids silent data loss and gives the editor a chance to present the
 current document state.
 
-The change is also reviewable: a small context object, local-delta derivation,
-table-query-specific tests, and conservative handling for ambiguous arrays. If an
-implementation needs more machinery than that, it should be split into a later
-design change with stable row/cell identity rather than hidden inside this bug
-fix.
+The change is reviewable: a small context object, local-delta derivation,
+table-query-specific tests, reuse of #77723 IDs, and conservative handling for
+ambiguous arrays. If an implementation needs more machinery than that, it should
+be split into a later design change rather than hidden inside this bug fix.
