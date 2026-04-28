@@ -1,0 +1,277 @@
+# Stale local snapshots overwrite object+query map operations
+
+## Summary
+
+Object-backed `query` attributes are stored as nested `Y.Map` values, but the
+current local merge path treats every incoming plain object snapshot as the full
+desired value. If user A has a stale local editor snapshot of
+`attributes.hero`, receives user B's remote update to `hero.caption`, and then
+changes only `hero.headline`, the stale local snapshot writes the old
+`hero.caption` back into the CRDT document. The same path resurrects a remote
+delete when the stale object still contains the deleted key.
+
+The focused example uses a custom block with this attribute schema:
+
+```js
+hero: {
+	type: 'object',
+	query: {
+		headline: { type: 'string' },
+		caption: { type: 'string' },
+	},
+}
+```
+
+## Status against known fixes
+
+Base tested for the issue branch:
+`5ddf4ad1b34bb0798185a663437955e7f10da01b` (`origin/trunk`), which already
+contains the merged large-update fix from
+[#77669](https://github.com/WordPress/gutenberg/pull/77669) and the merged
+follow-up listed in the fuzz tracking issue,
+[#77681](https://github.com/WordPress/gutenberg/pull/77681).
+
+I reviewed the tracking issue
+[#77716](https://github.com/WordPress/gutenberg/issues/77716), its listed PRs,
+comments, and related open RTC fixes. Most listed fixes are not on the
+object+query map merge path: the title reload fix
+[#77666](https://github.com/WordPress/gutenberg/pull/77666), awareness fixes
+[#77673](https://github.com/WordPress/gutenberg/pull/77673) and
+[#77678](https://github.com/WordPress/gutenberg/issues/77678), room storage work
+[#77675](https://github.com/WordPress/gutenberg/pull/77675), and the test-only
+cursor scope PR [#77662](https://github.com/WordPress/gutenberg/pull/77662).
+
+I applied the focused repros to the relevant branches that do touch nearby RTC
+merge code:
+
+| Ref tested | Result |
+| --- | --- |
+| `origin/trunk` at `5ddf4ad1b34` | Fails the unit/model, post-adapter, and Playwright repros. |
+| `danluu/try/offset-space-bug-pr` at `cfcfe75228f` ([#77658](https://github.com/WordPress/gutenberg/pull/77658)) | Fails all three focused unit tests. |
+| `danluu/try/rtc-duplicate-table-rows-stock-repro-pr-trunk` at `2e153b32280` ([#77723](https://github.com/WordPress/gutenberg/pull/77723)) | Fails the focused object+query map tests. That branch adds stable IDs for query-array elements, but the object map stale-snapshot overwrite remains. |
+| `danluu/try/fuzz-known-issues-fixed-campaign` at `220392e83e9` | The direct `mergeCrdtBlocks()` update and delete repros still fail with the stale caption restored. The post-adapter helper diverges on that campaign branch, so the merge-level result is the useful signal there. |
+
+Conclusion: this issue is still active after the relevant known fixes I could
+identify from #77716 and related open branches.
+
+## Reproductions
+
+New focused repro file:
+`packages/core-data/src/utils/test/crdt-object-query-stale-snapshot-repro.test.ts`.
+
+Focused merge-level repro:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-object-query-stale-snapshot-repro.test.ts --runInBand --testNamePattern="mergeCrdtBlocks preserves a remote sibling object property update"
+```
+
+Expected: after user B changes `hero.caption` and user A later changes only
+`hero.headline` from a stale local snapshot, the final object is:
+
+```js
+{ headline: 'headline from user A', caption: 'caption from user B' }
+```
+
+Actual on `5ddf4ad1b34`: `caption` is restored to `caption before`.
+
+Focused delete repro:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-object-query-stale-snapshot-repro.test.ts --runInBand --testNamePattern="mergeCrdtBlocks preserves a remote sibling object property delete"
+```
+
+Expected: after user B deletes `hero.caption`, user A's later stale headline
+edit must not bring it back.
+
+Actual on `5ddf4ad1b34`: `caption before` is resurrected.
+
+Post CRDT adapter repro:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-object-query-stale-snapshot-repro.test.ts --runInBand --testNamePattern="post CRDT adapter preserves remote object\\+query sibling changes"
+```
+
+Expected: `applyPostChangesToCRDTDoc()` and `getPostChangesFromCRDTDoc()`
+preserve B's caption update after A's stale headline snapshot is applied.
+
+Actual on `5ddf4ad1b34`: the adapter returns `caption before`.
+
+Run all lower-level repros:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-object-query-stale-snapshot-repro.test.ts --runInBand
+```
+
+Actual on `5ddf4ad1b34`: all 3 tests fail.
+
+Playwright repro:
+`test/e2e/specs/editor/collaboration/collaboration-object-query-stale-snapshot.spec.ts`.
+
+```bash
+WP_ENV_PORT=8894 WP_BASE_URL=http://localhost:8894 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-object-query-stale-snapshot.spec.ts --project=chromium
+```
+
+The test creates a draft post, opens it in two collaborative editor sessions,
+registers a custom block with the object+query schema, inserts the block through
+the block inserter, and edits visible textboxes with normal keyboard actions.
+The custom block keeps a local draft after the user has edited the form, which
+is a realistic block UI pattern and creates the stale local object snapshot
+without direct Y.Doc mutation, fault injection, clock changes, or network hacks.
+
+Expected: after B edits the caption and A edits the headline, both editors show:
+
+```js
+{ headline: 'headline from user A', caption: 'caption from user B' }
+```
+
+Actual on `5ddf4ad1b34`: A's final attributes are:
+
+```js
+{ headline: 'headline from user A', caption: 'caption before' }
+```
+
+I first tried a simpler Playwright flow where both editors edited the shared
+fields directly without a local draft held by the block. That passed because the
+block UI immediately consumed the remote prop update and did not retain a stale
+object snapshot. The retained local draft variant is still natural for a block
+form and exercises the real editor data path.
+
+Verification commands that passed before writing this handoff:
+
+```bash
+npm run lint:js -- packages/core-data/src/utils/test/crdt-object-query-stale-snapshot-repro.test.ts test/e2e/specs/editor/collaboration/collaboration-object-query-stale-snapshot.spec.ts
+npm run build -- --skip-types
+```
+
+## Failure mechanism
+
+`mergeCrdtBlocks()` iterates the incoming block snapshot and compares each
+incoming attribute against the current value in the local Y.Doc. For nested Yjs
+values, including object+query attributes stored as `Y.Map`, it always delegates
+to `mergeYValue()` because `fastDeepEqual()` cannot compare a Y type with a plain
+object.
+
+For `schema.type === 'object' && schema.query`, `mergeYValue()` calls
+`mergeYMapValues()`. `mergeYMapValues()` then:
+
+1. iterates every key in the incoming plain object and calls `mergeYValue()` for
+   that key;
+2. deletes every key currently in the `Y.Map` that is absent from the incoming
+   object.
+
+That is correct only if the incoming object is causally the latest intended
+state of the whole object. In the stale-snapshot history, it is not. The
+incoming object is a local UI snapshot that only proves user A changed
+`hero.headline`; it says nothing reliable about `hero.caption`. Because the
+merge diffs against the current Y.Doc instead of against user A's previous local
+snapshot, the old caption is misclassified as a local write, and missing keys
+are misclassified as local deletes.
+
+## How this was introduced
+
+The exact introducing PR is uncertain because this is a semantic bug in the
+snapshot merge model, not a crash introduced by one isolated line.
+
+Evidence from `packages/core-data/src/utils/crdt-blocks.ts` history:
+
+- [#72262](https://github.com/WordPress/gutenberg/pull/72262) introduced the
+  post/block CRDT merge infrastructure (`84019935998`). That established the
+  broad pattern of merging incoming editor snapshots into the CRDT document.
+- [#76913](https://github.com/WordPress/gutenberg/pull/76913) added the
+  schema-aware nested Yjs representation for table/query attributes
+  (`09a21c64b5b`). That commit added the relevant `object` with `query` handling
+  through `Y.Map` and `mergeYMapValues()`, which is the active failure path for
+  this issue.
+- [#77164](https://github.com/WordPress/gutenberg/pull/77164) changed query
+  array stability (`a6bfd3e5543`). It is related to stale snapshots for nested
+  arrays, but this object+query map repro fails without needing array structural
+  matching.
+
+My best supported attribution is that the stale full-snapshot model originates
+with the initial block CRDT merge design, while the object+query map-specific
+failure became observable through the nested Y.Map handling added in #76913.
+
+## Initial fix plan
+
+Track the previous local editor snapshot for each local merge stream and derive
+local operations by diffing:
+
+```text
+previous local snapshot -> next local snapshot
+```
+
+Then apply only those local operations to the current Y.Doc. For object+query
+maps:
+
+- update a key only if that key changed locally between the previous and next
+  local snapshots;
+- delete a key only if it existed in the previous local snapshot and is absent
+  from the next local snapshot;
+- preserve remote sibling keys already present in the Y.Doc when the local diff
+  has no operation for that key.
+
+The implementation should be schema-driven and not special-case
+`test/object-query-card` or `hero`.
+
+## Fix plan audit
+
+### Linus Torvalds lens
+
+The bug is an invariant failure: a stale snapshot is being treated as a set of
+operations. Patching `mergeYMapValues()` with heuristics such as "do not replace
+if the Y.Doc value differs" would hide one symptom while breaking legitimate
+local overwrites. The fix needs an explicit local-base invariant: writes must be
+derived from a known prior local state, and the merge code must be small enough
+that updates and deletes follow the same rule.
+
+### Kyle Kingsbury / Jepsen lens
+
+The property to preserve is operation causality and convergence, not just final
+deep equality for a happy path. The stale local snapshot has not observed B's
+caption operation, so it cannot safely overwrite or delete that field. Tests
+must include histories for remote update, remote add, remote delete, replayed
+updates, late join, and both application orders. Deletes need special attention:
+a missing field is only a delete if there is local-base evidence that the field
+was removed locally.
+
+### Dan Luu lens
+
+The Playwright repro matters because this is not just an artificial model test.
+Stateful block UIs commonly keep draft form objects, debounce updates, or stage
+multi-field edits before committing them. A fix that only handles the exact unit
+shape may still fail under real editor interleavings. The tests should leave a
+debuggable trail with ordinary block attributes and should avoid hidden metadata
+that leaks into serialized content or plugin-visible block data.
+
+## Revised fix plan
+
+1. Add local-base snapshot plumbing at the RTC adapter boundary, likely around
+   `applyPostChangesToCRDTDoc()` or its caller, so `mergeCrdtBlocks()` can
+   receive both the previous local blocks and the next local blocks for local
+   writes.
+2. Keep the existing full merge path only for initialization, loading a fresh
+   CRDT document, or explicitly trusted full-state replacement.
+3. Add recursive schema-aware diff application for object+query maps. The diff
+   should emit key update/delete operations from previous-local to next-local
+   and apply those operations to the current Y.Map. For nested Y.Text and
+   Y.Array values, delegate to the corresponding operation-aware merge path.
+4. When there is no previous local snapshot for an already-synced record, prefer
+   preserving remote data and forcing an editor resync over applying a
+   destructive full-object overwrite.
+5. Extend tests:
+   - keep the focused update/delete tests in
+     `crdt-object-query-stale-snapshot-repro.test.ts`;
+   - add remote add and replay-order cases;
+   - add a late-join or reload assertion once the local-base plumbing exists;
+   - keep the Playwright repro as the browser-level guard for realistic
+     stateful block UI behavior.
+
+## Open questions
+
+- Where should the previous local snapshot live so it is per entity, per local
+  editor stream, and not confused with remote state received from Yjs?
+- How should full-state replacement be represented explicitly so initialization
+  and migrations do not accidentally use the delta-only path?
+- Should local-base diffing also become the shared fix for rich-text siblings,
+  query arrays, and top-level block arrays, or should object maps land as the
+  first narrow slice behind a common operation interface?
