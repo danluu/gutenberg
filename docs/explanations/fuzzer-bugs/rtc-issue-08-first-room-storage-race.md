@@ -30,6 +30,12 @@ This test installs a `wp_insert_post_data` filter that injects a competing `wp_i
 
 On the vulnerable implementation, the test fails because WordPress creates both `<hash>` and `<hash>-2`, and the update can be written to the suffixed post.
 
+### Normal REST concurrency repro
+
+[`rtc-issue-08-normal-rest-repro.sh`](./rtc-issue-08-normal-rest-repro.sh) is a standalone script that tries to hit the same race without a forced interleaving. It creates fresh draft posts in local `wp-env`, sends concurrent normal first polls to `/wp-sync/v1/updates`, and checks whether the room has more than one `md5( room )` storage lineage. Depending on timing, the duplicate can use the exact same `post_name` or a suffixed `post_name` such as `<hash>-2`.
+
+This is still probabilistic. It does not install a `wp_insert_post_data` filter, diagnostic mu-plugin, server-side delay, database lock, or scheduler hook. On a vulnerable checkout it can reproduce the split by normal HTTP concurrency alone; on a fixed checkout it should usually exhaust its attempts without finding duplicate storage rows.
+
 ### Browser/video repro
 
 The local browser/video harness uses editor-visible presence to expose the split. It creates a draft post, enables a test-only race injector for the post's sync room, opens the post as admin, and delays the initial empty sync polls until the admin's presence payload contains visible collaborator metadata. The first meaningful admin presence poll then travels through the production `/wp-sync/v1/updates` endpoint and triggers the storage race.
