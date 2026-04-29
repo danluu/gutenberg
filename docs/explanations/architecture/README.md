@@ -10,10 +10,10 @@ Let’s look at the big picture and the architectural and UX principles of the b
 -   [Site editing templates](/docs/explanations/architecture/full-site-editing-templates.md).
 -   [Styles in the editor](/docs/explanations/architecture/styles.md).
 -   [Performance](/docs/explanations/architecture/performance.md).
+-   [Performance CI speedup plan](/docs/explanations/architecture/performance-ci-speedup-plan.md).
 
 ## Gutenberg repository
 
 -   [Modularity and WordPress Packages](/docs/explanations/architecture/modularity.md).
 -   [Understand the repository folder structure](/docs/contributors/folder-structure.md).
 -   [Why is Playwright the tool of choice for end-to-end tests?](/docs/explanations/architecture/automated-testing.md).
-
