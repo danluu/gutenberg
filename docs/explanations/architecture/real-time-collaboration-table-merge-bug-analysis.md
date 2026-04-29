@@ -81,14 +81,14 @@ It shows two real editor sessions side by side:
 -   User A inserts a normal table, then types into cell A1.
 -   User B uses the table toolbar to insert a row after B1 and types
     `remote inserted row`.
--   The final annotation shows the bug: User A has only two rows and no remote
-    inserted row, while User B still has the inserted row.
+-   The bottom annotation band shows the bug: User A has only two rows and no
+    remote inserted row, while User B still has the inserted row.
 
 The video was recorded from `try/fuzz` at
 `4c5412d836192fa02523199395334d6245abfc64` with wp-env at
-`http://localhost:8888`. The recording adds only a visual annotation overlay;
-the reproduced editor actions are normal clicks, toolbar menu selections, and
-keyboard typing.
+`http://localhost:8888`. The recording adds a bottom annotation band outside the
+two editor views; the reproduced editor actions are normal clicks, toolbar menu
+selections, and keyboard typing.
 
 ## Why this happens
 
