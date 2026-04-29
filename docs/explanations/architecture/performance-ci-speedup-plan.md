@@ -286,14 +286,206 @@ timeout risk for much higher total CI cost. Only consider suite sharding after
 there is a shared build artifact plan that preserves per-suite branch
 comparison isolation.
 
-## Recommended order
+## Audit of the plan
 
-1. Land #77726.
-2. Change performance builds to `npm run build -- --skip-types`.
-3. Reuse the test-runner build for the matching measured branch.
-4. Add Playwright browser caching.
-5. Add docs-only PR path filtering.
-6. Add phase timing telemetry before larger runner changes.
+These are perspective-style audits, not quotes from the named people.
 
-This order removes duplicated CI work first and leaves the benchmark's
-coverage, samples, branch isolation, and measured user flows intact.
+### Linus Torvalds-style maintainer audit
+
+The plan has the right instinct: remove duplicated work before touching test
+coverage. But it still mixes small, obvious changes with changes that need more
+proof.
+
+`--skip-types` is the cleanest first patch. The performance workflow is not the
+type-checking workflow, and other CI jobs already own that. It is a boring
+change with a clear boundary.
+
+Reusing the test-runner checkout as the plugin checkout is plausible, but it
+needs a tighter invariant than "the ref is the same." The invariant should be:
+the reused checkout must be treated as read-only by WordPress, Playwright, and
+the performance tests. If that invariant is not proven, the change can become a
+state leak between the runner and the measured environment. Add a check that
+the reused checkout is clean before and after the matching branch's suites.
+
+The Playwright browser cache should not be high in the list. It is safe, but it
+is probably a small win. Putting small wins ahead of the build duplication
+fixes makes the plan look unfocused.
+
+Path filtering is a policy change, not a runner optimization. It can be good,
+but do it only if maintainers agree docs-only PRs should not exercise the
+performance workflow.
+
+### Kyle Kingsbury / Jepsen-style audit
+
+The plan needs clearer isolation guarantees. The performance workflow is an
+experiment comparing branches. Every optimization should preserve the
+experiment:
+
+- Same tests for each branch.
+- Same WordPress version.
+- Same runner class.
+- Separate WordPress data state per branch.
+- No cross-branch mutation through shared directories.
+- Branch comparisons close enough in time that runner drift is not the main
+  signal.
+
+`--skip-types` is safe because it removes a setup check that is outside the
+runtime experiment. It should not affect the generated runtime artifacts used
+by WordPress.
+
+Reusing the test-runner checkout is the riskiest useful optimization. It
+changes topology: the test process and the plugin under test would share a
+filesystem tree. If any code path writes into the plugin checkout, it can
+change later observations. The safer version is not to reuse the live
+test-runner directory directly at first. Instead, create one built current-ref
+copy and use it for both roles, or harden the direct reuse with explicit
+read-only checks.
+
+Caching Playwright browsers is observationally safe as long as the browser
+revision remains pinned by Playwright. The install command should still run as
+a verifier.
+
+Path filtering preserves experimental validity for runs that happen, but it
+changes which PRs run the experiment. Keep it narrow enough that a mixed PR
+cannot skip performance CI.
+
+### Dan Luu-style measurement audit
+
+The plan should avoid pretending all speedups are equal. A useful plan should
+separate expected impact from certainty.
+
+Likely impact:
+
+- `--skip-types`: probably minutes, because full type generation runs once for
+  the test runner and once per measured branch.
+- Reusing the matching current-ref build: probably several minutes, because it
+  removes one copy, one install, and one build in normal PR and trunk runs.
+- Playwright browser cache: probably 30 to 90 seconds, possibly less, because
+  it only avoids browser download and extraction. It does not affect builds,
+  `wp-env`, or test runtime.
+- Docs-only path filtering: large when it applies, zero otherwise.
+- Telemetry: no direct speedup, but it is what prevents the next plan from
+  relying on guesses.
+
+The plan also needs an implementation order that lets us learn. If we combine
+`--skip-types`, build reuse, Playwright caching, and path filtering into one PR,
+we will not know which change helped or broke something. The first follow-up
+should add timing telemetry or make exactly one low-risk build change.
+
+Do not oversell Playwright caching. It is worth doing if cheap, but it is not a
+major answer to a 40 to 60 minute job.
+
+## Revised plan after audit
+
+### Phase 0: keep #77726 as the correctness baseline
+
+The Site Editor helper must not wait on a transient loader edge. Keep #77726 as
+the first change because it fixes a real readiness race and removes artificial
+test time without weakening coverage.
+
+### Phase 1: add minimal timing telemetry
+
+Add phase timings before or alongside the first runner optimization. At minimum
+record:
+
+- test-runner install,
+- test-runner build,
+- Playwright install,
+- per-branch install,
+- per-branch build,
+- `wp-env start`,
+- suite runtime,
+- `wp-env stop`.
+
+Emit the timings to the workflow summary and archive JSON. Keep this out of
+CodeVitals. This does not speed up CI, but it makes every later speedup
+auditable.
+
+### Phase 2: use `--skip-types` for performance builds
+
+Change the performance command so the test-runner checkout and every plugin
+checkout run:
+
+```sh
+npm run build -- --skip-types
+```
+
+instead of:
+
+```sh
+npm run build
+```
+
+This is the safest high-impact speedup. It removes type declaration work from a
+runtime benchmark while preserving type coverage in static checks.
+
+Validation:
+
+- Run the performance workflow and confirm every suite still emits raw and
+  curated result files.
+- Confirm the built plugin loads under `wp-env`.
+- Confirm static checks remain required for type coverage.
+
+### Phase 3: remove the duplicate current-ref build
+
+For PR and trunk push runs, `testRunnerBranch` is also a measured branch. Avoid
+installing and building that ref twice.
+
+Start with the safer implementation:
+
+1. Build the test-runner checkout.
+2. For the measured branch that equals `testRunnerBranch`, create a lightweight
+   built-copy directory from the test-runner checkout instead of performing a
+   fresh `npm ci` and build.
+3. Point that branch's `.wp-env.json` plugin path at the built copy.
+4. Check `git status --short` on the built copy before and after the branch's
+   suites during validation.
+
+If validation proves the plugin checkout is not mutated, a later patch can
+consider direct reuse of `testRunnerDir`. The built-copy version captures most
+of the win while keeping the test runner and plugin-under-test paths separate.
+
+Validation:
+
+- Compare result files against a control run.
+- Confirm the current-ref branch and base branch still use separate `envDir`
+  directories.
+- Confirm no branch writes into another branch's plugin path.
+
+### Phase 4: add Playwright browser caching as a modest setup win
+
+Cache `~/.cache/ms-playwright` using a key that includes OS and the Playwright
+version from `package-lock.json`. Keep:
+
+```sh
+npx playwright install chromium --with-deps
+```
+
+as a verifier after cache restore.
+
+Expected speedup is modest, roughly 30 to 90 seconds on cache hits and possibly
+less. This is worth doing only because it is low risk and independent of the
+benchmark.
+
+### Phase 5: add narrow docs-only path filtering if maintainers agree
+
+Use a conservative `paths-ignore` rule only for files that cannot affect
+runtime performance, such as docs-only markdown changes. Do not ignore
+workflow, package, lockfile, source, schema, test, PHP, or route paths.
+
+This saves large amounts of CI time when it applies, but it is a policy choice.
+It should not be bundled with runner correctness changes.
+
+### Phase 6: defer larger runner topology changes
+
+Do not change suite ordering, branch parallelism, or suite sharding until the
+timing telemetry shows where time is going after phases 2 through 4.
+
+If a later change tries to reduce `wp-env` start/stop time, it must preserve:
+
+- same test code across branches,
+- separate WordPress data state per branch,
+- close-in-time branch comparison per suite,
+- no shared mutable plugin directory across branches,
+- no lower sample counts,
+- no retries as a substitute for readiness correctness.
