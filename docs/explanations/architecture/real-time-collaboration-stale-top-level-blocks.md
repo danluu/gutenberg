@@ -21,7 +21,7 @@ base64 update size (#77669)`). This base includes the merged known fixes
 [#77669](https://github.com/WordPress/gutenberg/pull/77669) and
 [#77681](https://github.com/WordPress/gutenberg/pull/77681).
 
-I checked the tracking issue
+I rechecked the tracking issue on 2026-04-29:
 [#77716](https://github.com/WordPress/gutenberg/issues/77716) and the linked
 items. The open or issue-only items there focus on rich-text offset/cursor
 handling ([#77532](https://github.com/WordPress/gutenberg/issues/77532),
@@ -35,12 +35,13 @@ storage/presence problems ([#77666](https://github.com/WordPress/gutenberg/pull/
 changes the top-level `mergeCrdtBlocks()` full-array delete/insert decision that
 causes this issue.
 
-The deterministic repros below fail on `origin/trunk`. I also inspected the
-local known-fixes worktree `try/fuzz-known-fixes-runtime`; its stack does not add
-a local-base top-level block-array merge. The original handoff fuzz commands
-depend on a modified fuzz harness that is not on clean `origin/trunk`, so I used
-focused repros for this issue instead of claiming the handoff seed commands run
-cleanly on trunk.
+The deterministic repros below fail on `origin/trunk`, and a natural browser
+save race now reproduces a verified collaborator append being lost. I also
+inspected the local known-fixes worktree `try/fuzz-known-fixes-runtime`; its
+stack does not add a local-base top-level block-array merge. The original
+handoff fuzz commands depend on a modified fuzz harness that is not on clean
+`origin/trunk`, so I used focused repros for this issue instead of claiming the
+handoff seed commands run cleanly on trunk.
 
 ## Reproductions
 
@@ -87,6 +88,42 @@ variant; after fixing a focus ambiguity in the test helper, that variant also
 preserved the remote append/delete. These attempts exercise realistic browser
 flows but did not create the stale full-snapshot ordering deterministically.
 
+Natural Playwright video repro:
+
+```bash
+WP_BASE_URL=http://localhost:8890 npm run test:e2e -- \
+	test/e2e/specs/editor/collaboration/collaboration-stale-top-level-blocks-stale-save-loop.spec.ts \
+	--project=chromium
+```
+
+Actual result on the tested base: the latest post-format rerun preserved the
+append on repeat 0 and failed on repeat 1 with the intended bug signal:
+
+```text
+stale-save-loop-1 { primary: [ 'Alpha local stale save loop 1', 'Beta' ] }
+Error: Found verified stale save repro 1: {"primary":["Alpha local stale save loop 1","Beta"]}
+```
+
+The test first verifies that the collaborator's editor contains the appended
+paragraph, then uses normal UI actions only: both users type in the editor and
+click the `Save draft` button. After the primary editor reloads, the local edit
+is persisted but the verified collaborator append is missing. Some runs emit
+normal sync-update retry logs during the overlap, and the same target state has
+also reproduced in a run without visible sync-error logs. The latest video
+artifact from this run is:
+
+```text
+test/e2e/artifacts/test-results/editor-collaboration-colla-ae96a-plus-overlapping-stale-save-chromium/video.webm
+```
+
+Additional natural attempts that did not hit the bug were kept out of the branch
+after recording the results: polling races while typing/replacing text, clean
+and overlapping save races without the verified append guard, drop-cap toggles,
+undo, toolbar move, drag/drop, large-post typing, per-block HTML mode, large
+paste, middle insertions, and grouping selected blocks. Those flows either
+preserved the collaborator append/delete or exposed unrelated focus/save
+ordering behavior.
+
 Build/environment checks:
 
 ```bash
@@ -125,6 +162,15 @@ For a remote delete:
 The local user's only real operation was an attribute edit on `Alpha`. The merge
 code inferred unrelated top-level structural operations from the absence or
 presence of blocks in an older snapshot.
+
+The natural browser repro reaches the same user-visible class through normal
+saves. In the observed run, user B appends `Gamma` and starts a draft save after
+the append is visible in B's editor. User A then edits `Alpha` from an older
+view and saves. After reload, A's `Alpha` edit is present and B's verified
+append is absent. The deterministic adapter tests prove that the current
+write-path can turn an older full block array into a delete of a remote top-level
+append; the Playwright repro demonstrates that a realistic editor/save history
+can surface the data loss without fault injection.
 
 ## How this was introduced
 
@@ -219,8 +265,8 @@ teaching `mergeCrdtBlocks()` to guess whether differences are local or remote.
     block semantics are known?
 -   How should local-base diffing handle duplicated or regenerated `clientId`
     values after copy/paste, pattern insertion, and controlled inner-block remaps?
--   The committed Playwright attempts did not reproduce the stale ordering
-    deterministically. A fix should not be declared complete until a realistic
-    browser history can be made to fail on the broken base and pass on the fix, or
-    until the analysis explains why this low-level stale history is not reachable
-    from the current editor data flow.
+-   The natural stale-save repro should be narrowed after the fix lands: the
+    failing browser history is realistic, but the exact handoff between save
+    persistence and CRDT local-base state still needs instrumentation if we want
+    line-level proof that the Playwright failure takes the same internal branch
+    as the deterministic adapter repro.
