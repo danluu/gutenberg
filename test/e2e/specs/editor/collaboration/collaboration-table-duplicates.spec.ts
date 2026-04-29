@@ -2,61 +2,60 @@
  * Internal dependencies
  */
 import { test, expect } from './fixtures';
-import { SECOND_USER } from './fixtures/collaboration-utils';
 
-async function getTableBodyCellContents(
-	editor: import('@wordpress/e2e-test-utils-playwright').Editor
-) {
-	const [ table ] = await editor.getBlocks();
-	return table.attributes.body.map(
-		( row: { cells: { content: string }[] } ) => row.cells[ 0 ].content
-	);
+type Editor = import('@wordpress/e2e-test-utils-playwright').Editor;
+type Page = import('@playwright/test').Page;
+
+const TABLE_POST_CONTENT = `<!-- wp:table -->
+<figure class="wp-block-table"><table><tbody><tr><td>anchor</td></tr><tr><td>same</td></tr><tr><td>same</td></tr></tbody></table></figure>
+<!-- /wp:table -->`;
+
+async function getTableBodyCellContents( editor: Editor ) {
+	return editor.canvas
+		.getByRole( 'textbox', { name: 'Body cell text' } )
+		.evaluateAll( ( cells ) =>
+			cells.map( ( cell ) => cell.textContent?.trim() )
+		);
 }
 
-async function createThreeByOneTableWithDuplicateRows( {
+async function editTableCell( {
 	editor,
 	page,
+	index,
+	content,
 }: {
-	editor: import('@wordpress/e2e-test-utils-playwright').Editor;
-	page: import('@playwright/test').Page;
+	editor: Editor;
+	page: Page;
+	index: number;
+	content: string;
 } ) {
 	await editor.canvas
-		.getByRole( 'button', { name: 'Add default block' } )
+		.getByRole( 'textbox', { name: 'Body cell text' } )
+		.nth( index )
 		.click();
-	await page.keyboard.type( '/table' );
-	await page.keyboard.press( 'Enter' );
-
-	const columnCountInput = editor.canvas.getByRole( 'spinbutton', {
-		name: 'Column count',
-	} );
-	await columnCountInput.click();
 	await page.keyboard.press( 'ControlOrMeta+a' );
-	await page.keyboard.type( '1' );
+	await page.keyboard.type( content );
+}
 
-	const rowCountInput = editor.canvas.getByRole( 'spinbutton', {
-		name: 'Row count',
-	} );
-	await rowCountInput.click();
-	await page.keyboard.press( 'ControlOrMeta+a' );
-	await page.keyboard.type( '3' );
-
-	await editor.canvas.getByRole( 'button', { name: 'Create Table' } ).click();
-
-	const cells = editor.canvas.getByRole( 'textbox', {
-		name: 'Body cell text',
-	} );
-
-	await cells.nth( 0 ).click();
-	await page.keyboard.type( 'anchor' );
-	await cells.nth( 1 ).click();
-	await page.keyboard.type( 'same' );
-	await cells.nth( 2 ).click();
-	await page.keyboard.type( 'same' );
-	await page.keyboard.press( 'Escape' );
+async function deleteTableRow( {
+	editor,
+	page,
+	index,
+}: {
+	editor: Editor;
+	page: Page;
+	index: number;
+} ) {
+	await editor.canvas
+		.getByRole( 'textbox', { name: 'Body cell text' } )
+		.nth( index )
+		.click();
+	await editor.clickBlockToolbarButton( 'Edit table' );
+	await page.getByRole( 'menuitem', { name: 'Delete row' } ).click();
 }
 
 test.describe( 'Collaboration - duplicate table rows', () => {
-	test( 'syncs duplicate table row contents created through the table UI', async ( {
+	test( 'preserves a later duplicate row edit when the earlier duplicate row is deleted', async ( {
 		collaborationUtils,
 		requestUtils,
 		editor,
@@ -67,28 +66,12 @@ test.describe( 'Collaboration - duplicate table rows', () => {
 		const post = await requestUtils.createPost( {
 			title: 'Duplicate table row collaboration repro',
 			status: 'draft',
+			content: TABLE_POST_CONTENT,
 			date_gmt: new Date().toISOString(),
 		} );
 
-		await collaborationUtils.openPost( post.id );
-		await collaborationUtils.joinUser( post.id, SECOND_USER );
+		await collaborationUtils.openCollaborativeSession( post.id );
 		const { editor2, page2 } = collaborationUtils;
-		await collaborationUtils.waitForMutualDiscovery();
-		await createThreeByOneTableWithDuplicateRows( { editor, page } );
-		await expect
-			.poll( () => getTableBodyCellContents( editor ), {
-				timeout: 10_000,
-			} )
-			.toEqual( [ 'anchor', 'same', 'same' ] );
-		await collaborationUtils.waitForSyncCycle( page );
-		await collaborationUtils.waitForSyncCycle( page2 );
-		await expect
-			.poll( () => getTableBodyCellContents( editor2 ), {
-				timeout: 15_000,
-			} )
-			.toEqual( [ 'anchor', 'same', 'same' ] );
-		await collaborationUtils.waitForSyncCycle( page );
-		await collaborationUtils.waitForSyncCycle( page2 );
 
 		await expect
 			.poll( () => getTableBodyCellContents( editor ), {
@@ -100,5 +83,35 @@ test.describe( 'Collaboration - duplicate table rows', () => {
 				timeout: 10_000,
 			} )
 			.toEqual( [ 'anchor', 'same', 'same' ] );
+
+		await Promise.all( [
+			editTableCell( {
+				content: 'edited-second-duplicate',
+				editor,
+				index: 2,
+				page,
+			} ),
+			deleteTableRow( {
+				editor: editor2,
+				index: 1,
+				page: page2,
+			} ),
+		] );
+
+		await Promise.all( [
+			collaborationUtils.waitForSyncCycle( page, 5 ),
+			collaborationUtils.waitForSyncCycle( page2, 5 ),
+		] );
+
+		await expect
+			.poll( () => getTableBodyCellContents( editor ), {
+				timeout: 10_000,
+			} )
+			.toEqual( [ 'anchor', 'edited-second-duplicate' ] );
+		await expect
+			.poll( () => getTableBodyCellContents( editor2 ), {
+				timeout: 10_000,
+			} )
+			.toEqual( [ 'anchor', 'edited-second-duplicate' ] );
 	} );
 } );

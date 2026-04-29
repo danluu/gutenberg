@@ -78,6 +78,7 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 export type MergeCursorPosition = WPBlockSelection | null;
 
 const ARRAY_ELEMENT_ID_KEY = '__unstableSyncId';
+const ARRAY_ELEMENT_ID_SYMBOL = Symbol( 'wpSyncArrayElementId' );
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
 
 /**
@@ -101,10 +102,20 @@ function serializeAttributeValue( value: unknown ): unknown {
 	// e.g. a single row inside core/table `body`: { cells: [ ... ] }
 	if ( value && typeof value === 'object' ) {
 		const result: Record< string, unknown > = {};
+		const arrayElementId = getArrayElementId( value );
 
 		for ( const [ k, v ] of Object.entries( value ) ) {
+			if ( k === ARRAY_ELEMENT_ID_KEY ) {
+				continue;
+			}
+
 			result[ k ] = serializeAttributeValue( v );
 		}
+
+		if ( arrayElementId ) {
+			result[ ARRAY_ELEMENT_ID_KEY ] = arrayElementId;
+		}
+
 		return result;
 	}
 
@@ -185,14 +196,23 @@ function deserializeAttributeValue(
 	// e.g. a single row inside core/table `body`: { cells: [ ... ] }
 	if ( value && typeof value === 'object' ) {
 		const result: Record< string, unknown > = {};
+		const arrayElementId = getArrayElementId( value );
 
 		for ( const [ key, innerValue ] of Object.entries(
 			value as Record< string, unknown >
 		) ) {
+			if ( key === ARRAY_ELEMENT_ID_KEY ) {
+				continue;
+			}
+
 			result[ key ] = deserializeAttributeValue(
 				schema?.query?.[ key ],
 				innerValue
 			);
+		}
+
+		if ( arrayElementId ) {
+			defineArrayElementId( result, arrayElementId );
 		}
 
 		return result;
@@ -364,16 +384,15 @@ function createYMapFromQuery(
 		return new Y.Map();
 	}
 
-	const entries: [ string, unknown ][] = Object.entries( obj ).map(
-		( [ key, val ] ): [ string, unknown ] => {
+	const arrayElementId = getArrayElementId( obj ) ?? uuidv4();
+	const entries: [ string, unknown ][] = Object.entries( obj )
+		.filter( ( [ key ] ) => key !== ARRAY_ELEMENT_ID_KEY )
+		.map( ( [ key, val ] ): [ string, unknown ] => {
 			const subSchema = query[ key ];
 			return [ key, createYValueFromSchema( subSchema, val ) ];
-		}
-	);
+		} );
 
-	if ( ! getArrayElementId( obj ) ) {
-		entries.push( [ ARRAY_ELEMENT_ID_KEY, uuidv4() ] );
-	}
+	entries.push( [ ARRAY_ELEMENT_ID_KEY, arrayElementId ] );
 
 	return new Y.Map( entries );
 }
@@ -688,10 +707,28 @@ function getArrayElementId( value: unknown ): string | undefined {
 
 	if ( isRecord( value ) ) {
 		const id = value[ ARRAY_ELEMENT_ID_KEY ];
-		return typeof id === 'string' ? id : undefined;
+		if ( typeof id === 'string' ) {
+			return id;
+		}
+
+		const symbolId = ( value as Record< symbol, unknown > )[
+			ARRAY_ELEMENT_ID_SYMBOL
+		];
+		return typeof symbolId === 'string' ? symbolId : undefined;
 	}
 
 	return undefined;
+}
+
+function defineArrayElementId(
+	value: Record< string, unknown >,
+	id: string
+): void {
+	Object.defineProperty( value, ARRAY_ELEMENT_ID_SYMBOL, {
+		configurable: true,
+		enumerable: true,
+		value: id,
+	} );
 }
 
 function stripArrayElementIds( value: unknown ): unknown {
