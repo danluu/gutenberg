@@ -23,7 +23,8 @@ The relevant known fixes are:
   only for the matching rich-text field, and verifies cursor-guided deltas before
   applying them.
 - [#77662](https://github.com/WordPress/gutenberg/pull/77662), open, not merged:
-  adds tests for a related cursor-scope corruption case that #77658 also fixes.
+  adds tests for a related cursor-scope corruption case. It changes only test
+  coverage and does not fix this offset-space Playwright repro.
 - [#77669](https://github.com/WordPress/gutenberg/pull/77669), merged into
   `origin/trunk` at `5ddf4ad1b34`, fixes update-size accounting and is not a
   rich-text corruption fix.
@@ -33,6 +34,10 @@ The relevant known fixes are:
   [#77678](https://github.com/WordPress/gutenberg/issues/77678), and
   [#77681](https://github.com/WordPress/gutenberg/pull/77681) cover other RTC
   failure modes and do not directly target this closing-tag corruption.
+
+As of April 29, 2026, I do not know of an open or merged upstream PR that fixes
+the normal-user Playwright repro. #77658 is the closest candidate, but it still
+fails the natural repro locally at PR head `610e02e28b6`.
 
 Local checks:
 
@@ -218,6 +223,19 @@ PR-head local video:
 ```text
 /tmp/rtc-rich-text-playwright-artifacts-fix/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/video.webm
 ```
+
+Annotated side-by-side video with a running log:
+
+```text
+/tmp/rtc-rich-text-annotated-video/rtc-rich-text-annotated-repro.mp4
+```
+
+The annotated video was generated from a fresh natural Playwright run in
+`/tmp/gutenberg-rich-text-annotated-video` at `f7b9f40c72f`. It shows the author
+editor and collaborator editor at the same time, with cumulative log entries and
+the block HTML read by Playwright. The final frame shows the author at
+`italic<em>beta</em>beta` and the collaborator at
+`italic<em>beta</em>/em>`.
 
 Both local builds reported a primitive color token generation failure after
 `build:js` and `build:php` completed. The Playwright tests still ran against the
