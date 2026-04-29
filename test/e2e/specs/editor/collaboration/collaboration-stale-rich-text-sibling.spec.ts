@@ -25,6 +25,16 @@ async function replaceText(
 	await page.keyboard.type( text, options );
 }
 
+async function typeChunks(
+	page: Page,
+	chunks: string[],
+	options: Parameters< Page[ 'keyboard' ][ 'type' ] >[ 1 ] = {}
+) {
+	for ( const chunk of chunks ) {
+		await page.keyboard.type( chunk, options );
+	}
+}
+
 function getFileBlock(
 	blocks: Awaited< ReturnType< Editor[ 'getBlocks' ] > >
 ) {
@@ -38,13 +48,13 @@ function getFileBlock(
 }
 
 test.describe( 'Collaboration - Stale rich-text sibling snapshots', () => {
-	test( 'keeps a remote file name edit while another user edits the download button text', async ( {
+	test( 'keeps a remote file name edit while another user continuously edits the download button text', async ( {
 		collaborationUtils,
 		requestUtils,
 		editor,
 		page,
 	} ) => {
-		test.setTimeout( 45_000 );
+		test.setTimeout( 90_000 );
 
 		const post = await requestUtils.createPost( {
 			title: 'RTC stale rich text sibling repro',
@@ -54,6 +64,13 @@ test.describe( 'Collaboration - Stale rich-text sibling snapshots', () => {
 				'<!-- wp:file {"href":"https://example.com/initial.pdf","textLinkHref":"https://example.com/initial.pdf"} -->',
 				'<div class="wp-block-file"><a href="https://example.com/initial.pdf">Initial file</a><a href="https://example.com/initial.pdf" class="wp-block-file__button wp-element-button" download>Download</a></div>',
 				'<!-- /wp:file -->',
+				// A large but ordinary post makes remote block-tree reconciliation
+				// overlap with user A's continued typing.
+				...Array.from(
+					{ length: 2000 },
+					( _, i ) =>
+						`<!-- wp:paragraph --><p>Filler paragraph ${ i }</p><!-- /wp:paragraph -->`
+				),
 			].join( '\n' ),
 		} );
 
@@ -62,27 +79,37 @@ test.describe( 'Collaboration - Stale rich-text sibling snapshots', () => {
 		const { editor2, page2 } = collaborationUtils;
 
 		await expect
-			.poll( () => editor.getBlocks(), { timeout: 10_000 } )
-			.toMatchObject( [
-				{
-					name: 'core/file',
-					attributes: {
-						fileName: 'Initial file',
-						downloadButtonText: 'Download',
-					},
+			.poll(
+				async () => {
+					const fileBlock = getFileBlock( await editor.getBlocks() );
+					return {
+						fileName: fileBlock.attributes.fileName,
+						downloadButtonText:
+							fileBlock.attributes.downloadButtonText,
+					};
 				},
-			] );
+				{ timeout: 20_000 }
+			)
+			.toEqual( {
+				fileName: 'Initial file',
+				downloadButtonText: 'Download',
+			} );
 		await expect
-			.poll( () => editor2.getBlocks(), { timeout: 10_000 } )
-			.toMatchObject( [
-				{
-					name: 'core/file',
-					attributes: {
-						fileName: 'Initial file',
-						downloadButtonText: 'Download',
-					},
+			.poll(
+				async () => {
+					const fileBlock = getFileBlock( await editor2.getBlocks() );
+					return {
+						fileName: fileBlock.attributes.fileName,
+						downloadButtonText:
+							fileBlock.attributes.downloadButtonText,
+					};
 				},
-			] );
+				{ timeout: 20_000 }
+			)
+			.toEqual( {
+				fileName: 'Initial file',
+				downloadButtonText: 'Download',
+			} );
 
 		const fileNameB = editor2.canvas
 			.locator( '[data-type="core/file"] a[contenteditable="true"]' )
@@ -93,25 +120,24 @@ test.describe( 'Collaboration - Stale rich-text sibling snapshots', () => {
 			)
 			.first();
 
-		const remoteSyncSeenByA = page.waitForResponse(
-			( response ) =>
-				response.url().includes( 'wp-sync' ) &&
-				response.status() === 200
-		);
-		await replaceText( page2, fileNameB, 'Remote file', {
-			delay: 10,
-		} );
-		await remoteSyncSeenByA;
-
 		await replaceText( page, downloadButtonA, 'Local button ', {
 			delay: 10,
 		} );
 
-		for ( let i = 0; i < 12; i++ ) {
-			await page.keyboard.type( `chunk${ i } `, {
-				delay: 15,
-			} );
-		}
+		const typingA = typeChunks(
+			page,
+			Array.from( { length: 100 }, ( _, i ) => `chunk${ i } ` ),
+			{ delay: 25 }
+		);
+
+		await collaborationUtils.waitForSyncCycle( page, 1 );
+		await replaceText( page2, fileNameB, 'Remote file', {
+			delay: 20,
+		} );
+
+		await typingA;
+		await collaborationUtils.waitForSyncCycle( page );
+		await collaborationUtils.waitForSyncCycle( page2 );
 
 		await expect( async () => {
 			const fileA = getFileBlock( await editor.getBlocks() );

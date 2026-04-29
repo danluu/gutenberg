@@ -6,7 +6,7 @@ Issue 1 from the RTC fuzz handoff is still reproducible in the CRDT merge layer 
 
 When one client receives a remote rich-text attribute change and then emits an older local full-block snapshot that only intended to change a sibling rich-text attribute, `mergeCrdtBlocks` treats the stale sibling value as the desired current state. The result is a lost remote update or a resurrected remote delete.
 
-The focused reproductions use a synthetic two-rich-text-attribute block and a real `core/file` shape because `core/file` has sibling rich-text attributes: `fileName` and `downloadButtonText`.
+The focused reproductions use a synthetic two-rich-text-attribute block and a real `core/file` shape because `core/file` has sibling rich-text attributes: `fileName` and `downloadButtonText`. A browser-level reproduction is now available with normal user actions in a large post.
 
 ## Status against known fixes
 
@@ -57,7 +57,7 @@ Result: fails. Expected `remote second`, received `initial second`.
 
 The temporary file was removed from that worktree afterward.
 
-### Playwright natural repro attempt
+### Playwright natural repro
 
 Setup:
 
@@ -72,16 +72,26 @@ Command:
 WP_BASE_URL=http://localhost:8896 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-rich-text-sibling.spec.ts --project=chromium
 ```
 
-Result: passes.
+Result: fails reliably on this worktree with normal user actions.
 
-The Playwright test uses normal editor actions only. It creates a draft post with a `core/file` block, opens two collaborative editor sessions, edits the file name as user B, waits only for a normal `wp-sync` response to be observed by user A, then edits the download button text as user A. It does not mutate a `Y.Doc`, inject faults, alter the network, alter clocks, or use test-only CRDT behavior.
+The Playwright test uses normal editor actions only. It creates a large draft post with one `core/file` block followed by 2,000 normal paragraph blocks, opens two collaborative editor sessions, keeps user A typing in the file block's download button text, and has user B replace the file name with `Remote file` during that continuous typing. It does not mutate a `Y.Doc`, inject faults, alter the network, alter clocks, patch providers, or use test-only CRDT behavior.
 
-Earlier natural attempts also passed:
+Observed result from repeated runs:
 
+-   expected both users to converge on `fileName: "Remote file"`;
+-   received a truncated remote sibling value such as `fileName: "Remo"`, `fileName: "Remote"`, or `fileName: "Remote "`;
+-   user A's `downloadButtonText` edit is preserved.
+
+This is a browser-level variant of the same stale sibling class: user B's rich-text sibling edit is partially overwritten while user A continues editing the other rich-text sibling in the same block.
+
+Earlier natural attempts with smaller documents passed:
+
+-   1,700 trailing paragraphs with the same continuous-typing workflow;
+-   1,500 trailing paragraphs with the same continuous-typing workflow;
+-   500 trailing paragraphs with the same continuous-typing workflow;
+-   a `core/pullquote` block with user A continuously editing the citation while user B edited the quote text;
 -   user A typed a long download-button edit while user B edited the file name after a short normal delay;
 -   user A waited one normal collaboration sync cycle after user B's edit before changing the download button text.
-
-This indicates the merge-layer bug is real, but a reliable browser-level stale local snapshot interleaving has not yet been captured with only normal user actions.
 
 ## Failure mechanism
 
@@ -98,7 +108,7 @@ const isAttributeChanged =
 	JSON.stringify( currentAttribute ) !== JSON.stringify( newAttribute );
 ```
 
-Rich-text attributes are stored as `Y.Text`, so every rich-text sibling in an incoming block snapshot is considered changed. If the incoming snapshot is older than a remote update already applied to the local `Y.Doc`, `mergeRichTextUpdate` diffs the stale value against the current remote value and applies the stale value. That loses the remote update.
+Rich-text attributes are stored as `Y.Text`, so every rich-text sibling in an incoming block snapshot is considered changed. If the incoming snapshot is older than a remote update already applied to the local `Y.Doc`, `mergeRichTextUpdate` diffs the stale value against the current remote value and applies the stale value. That loses the remote update. In the Playwright repro, this appears as a truncated `fileName` prefix because user B's typing and user A's sibling snapshots interleave while the large block tree is being synced.
 
 For remote deletes, the stale full snapshot still contains the deleted attribute, so the merge path recreates it.
 
@@ -128,7 +138,7 @@ Add tests before the fix:
 
 -   focused `mergeCrdtBlocks` update and delete cases;
 -   `applyPostChangesToCRDTDoc` using a real `core/file` block shape;
--   a Playwright regression if a reliable normal-action stale snapshot interleaving can be found.
+-   the large-document `core/file` Playwright repro with normal typing in both editor sessions.
 
 ## Fix plan audit
 
@@ -160,11 +170,11 @@ Implement a base-aware block merge path rather than patching rich-text diffing i
 4. Treat attribute deletion as local only when the attribute was present in the previous local snapshot and absent in the new local snapshot.
 5. Keep the existing full-snapshot merge path for initial hydration and explicit resync cases where there is no local base.
 6. For ambiguous structural edits where identity cannot be established safely, prefer preserving remote data and forcing a resync over deleting remote fields from a stale snapshot.
-7. Land the focused unit and adapter tests first, then add a browser regression if a reliable natural Playwright interleaving is found.
+7. Land the focused unit, adapter, and large-document Playwright regression before changing merge behavior.
 
 ## Open questions
 
 -   Where should the previous local block snapshot live: the SyncManager entity state, the core-data entity sync layer, or the block-editor bridge that emits post changes?
 -   After remote CRDT updates reconcile into the editor store, when should the local base advance without making older queued local snapshots look current?
--   Can the current browser collaboration stack be made to produce the stale local snapshot interleaving reliably through only normal user actions?
+-   Is the 2,000-paragraph Playwright repro acceptable as a regression test despite its runtime, or should it be kept as an issue-specific reproducer while unit/adapter coverage guards the fix in CI?
 -   How should the same local-base contract be extended to nested blocks and array/object attributes without duplicating diff logic in multiple merge helpers?
