@@ -49,8 +49,12 @@ Local checks:
   that as blocked for the exact fuzzer oracle, not as evidence that Issue 5 still
   reproduces.
 
-Current conclusion: Issue 5 appears fixed by #77658's rich-text offset/scoped
-cursor fix. That fix is still not merged into `origin/trunk` as of this analysis.
+Updated conclusion after the local Playwright run: Issue 5 is not proven fixed
+by #77658. The fuzzer seed passes on an earlier rich-text offset fix branch, but
+the normal-user Playwright repro still fails on the current #77658 PR head when
+the repro spec is copied into that worktree. The fix is still not merged into
+`origin/trunk`, and the natural browser repro needs more investigation before
+this issue should be marked fixed.
 
 ## Reproductions
 
@@ -161,13 +165,63 @@ Expected on the broken implementation: author reaches
 `italic<em>beta</em>beta`; collaborator receives corrupted
 `italic<em>beta</em>/em>`.
 
-Expected after #77658: both editors show `italic<em>beta</em>beta`.
+Expected after a complete fix: both editors show
+`italic<em>beta</em>beta`.
 
-Local status: not rerun in this turn. `npm run wp-env status` in the local
-test-only worktree reported `status: uninitialized`, and the disposable
-tests-only worktree lacked generated package artifacts. The existing branch and
-issue report provide the natural Playwright repro; the direct local verification
-I completed was at the fuzzer, unit/model, and integration levels.
+Local status update on April 29, 2026:
+
+Broken/repro branch command, run from
+`/tmp/gutenberg-rich-text-playwright-repro` at `f7b9f40c72f` with
+`WP_ENV_PORT=8897`, `WP_BASE_URL=http://localhost:8897`, and forced video
+recording:
+
+```bash
+WP_ENV_PORT=8897 \
+WP_ARTIFACTS_PATH=/tmp/rtc-rich-text-playwright-artifacts-isolated \
+WP_BASE_URL=http://localhost:8897 \
+  npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+  --project=chromium \
+  --grep="user unitalicizes"
+```
+
+Result: failed at the intended assertion. The author reached
+`italic<em>beta</em>beta`, but the collaborator received
+`italic<em>beta</em>/em>`.
+
+Local video:
+
+```text
+/tmp/rtc-rich-text-playwright-artifacts-isolated/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/video.webm
+```
+
+Current #77658 PR-head command, run from
+`/tmp/gutenberg-rich-text-playwright-fix` at `610e02e28b6` with the same
+normal-user repro spec copied in, `WP_ENV_PORT=8898`,
+`WP_BASE_URL=http://localhost:8898`, and forced video recording:
+
+```bash
+WP_ENV_PORT=8898 \
+WP_ARTIFACTS_PATH=/tmp/rtc-rich-text-playwright-artifacts-fix \
+WP_BASE_URL=http://localhost:8898 \
+  npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+  --project=chromium \
+  --grep="user unitalicizes"
+```
+
+Result: failed the same way. The collaborator received
+`italic<em>beta</em>/em>` instead of `italic<em>beta</em>beta`.
+
+PR-head local video:
+
+```text
+/tmp/rtc-rich-text-playwright-artifacts-fix/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/video.webm
+```
+
+Both local builds reported a primitive color token generation failure after
+`build:js` and `build:php` completed. The Playwright tests still ran against the
+isolated wp-env instances and reached the rich-text corruption assertion.
 
 The first Playwright test in that file uses `editEntityRecord()` from
 `page.evaluate()`. I do not count that as a valid handoff-level Playwright repro
@@ -219,7 +273,8 @@ nested rich-text fields, but the top-level corruption bug already existed after
 
 ## Initial fix plan
 
-1. Adopt #77658 rather than inventing a separate fix.
+1. Treat #77658 as an incomplete candidate until the normal-user Playwright repro
+   passes on the PR branch.
 2. Keep cursor information as a scoped descriptor:
    `clientId`, `attributeKey`, and editor-space rich-text offset.
 3. Convert with `richTextOffsetToHtmlIndex()` only when the merge reaches the
@@ -269,7 +324,8 @@ handoff proof.
 
 ## Revised fix plan
 
-1. Land or rebase #77658 on current `origin/trunk`.
+1. Do not land #77658 as the full Issue 5 fix until the normal-user Playwright
+   repro passes on the PR branch.
 2. Keep the merge API typed so call sites cannot pass an unscoped cursor number
    except through a clearly legacy/internal compatibility path.
 3. Preserve the exact-result delta verification guard, but treat guard fallback
