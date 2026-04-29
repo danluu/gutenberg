@@ -35,6 +35,22 @@ const TIMINGS_FILE = 'performance-timings.json';
  */
 
 /**
+ * @typedef {Object} WPPerformanceTimingEntry
+ *
+ * @property {string} phase      Phase name.
+ * @property {string} startedAt  ISO start time.
+ * @property {number} durationMs Duration in milliseconds.
+ */
+
+/**
+ * @typedef {Object} WPPerformanceTimingRecorder
+ *
+ * @property {Record<string, any>}                 metadata  Timing run metadata.
+ * @property {Record<string, Record<string, any>>} checkouts Checkout metadata.
+ * @property {WPPerformanceTimingEntry[]}          entries   Timing entries.
+ */
+
+/**
  * A logging helper for printing steps and their substeps.
  *
  * @param {number} indent Value to indent the log.
@@ -86,9 +102,9 @@ function formatDuration( durationMs ) {
 }
 
 /**
- * @param {Object} metadata Metadata for the timing run.
+ * @param {Record<string, any>} metadata Metadata for the timing run.
  *
- * @return {Object} Timing recorder.
+ * @return {WPPerformanceTimingRecorder} Timing recorder.
  */
 function createTimingRecorder( metadata ) {
 	return {
@@ -105,7 +121,7 @@ function createTimingRecorder( metadata ) {
  * Writes timing data to the artifacts directory. This is called after each timed
  * phase so partial timing data is available if a later phase fails.
  *
- * @param {Object} timings Timing recorder.
+ * @param {WPPerformanceTimingRecorder} timings Timing recorder.
  */
 function writeTimingArtifact( timings ) {
 	fs.mkdirSync( ARTIFACTS_PATH, { recursive: true } );
@@ -116,11 +132,11 @@ function writeTimingArtifact( timings ) {
 }
 
 /**
- * @param {Object} timings   Timing recorder.
- * @param {string} phase     Phase name.
- * @param {Object} metadata  Phase metadata.
- * @param {Date}   startedAt Started-at time.
- * @param {bigint} start     High-resolution start time.
+ * @param {WPPerformanceTimingRecorder} timings   Timing recorder.
+ * @param {string}                      phase     Phase name.
+ * @param {Record<string, any>}         metadata  Phase metadata.
+ * @param {Date}                        startedAt Started-at time.
+ * @param {bigint}                      start     High-resolution start time.
  */
 function addTimingEntry( timings, phase, metadata, startedAt, start ) {
 	const durationMs = Number( process.hrtime.bigint() - start ) / 1e6;
@@ -134,10 +150,10 @@ function addTimingEntry( timings, phase, metadata, startedAt, start ) {
 }
 
 /**
- * @param {Object}   timings  Timing recorder.
- * @param {string}   phase    Phase name.
- * @param {Object}   metadata Phase metadata.
- * @param {Function} callback Timed callback.
+ * @param {WPPerformanceTimingRecorder} timings  Timing recorder.
+ * @param {string}                      phase    Phase name.
+ * @param {Record<string, any>}         metadata Phase metadata.
+ * @param {Function}                    callback Timed callback.
  *
  * @return {Promise<*>} Callback return value.
  */
@@ -231,17 +247,18 @@ function getDependencyKey( checkoutDir ) {
 }
 
 /**
- * @param {Object} timings     Timing recorder.
- * @param {string} checkoutId  Checkout identifier.
- * @param {string} checkoutDir Checkout directory.
- * @param {string} ref         Git ref.
+ * @param {WPPerformanceTimingRecorder} timings     Timing recorder.
+ * @param {string}                      checkoutId  Checkout identifier.
+ * @param {string}                      checkoutDir Checkout directory.
+ * @param {string}                      ref         Git ref.
  */
 async function recordCheckoutMetadata( timings, checkoutId, checkoutDir, ref ) {
+	// @ts-ignore
+	const git = SimpleGit( checkoutDir );
+	const sha = ( await git.raw( 'rev-parse', 'HEAD' ) ).trim();
 	timings.checkouts[ checkoutId ] = {
 		ref,
-		sha: (
-			await SimpleGit( checkoutDir ).raw( 'rev-parse', 'HEAD' )
-		).trim(),
+		sha,
 		nvmrc: readOptionalTrimmedFile( path.join( checkoutDir, '.nvmrc' ) ),
 		dependencyKey: getDependencyKey( checkoutDir ),
 	};
@@ -249,11 +266,12 @@ async function recordCheckoutMetadata( timings, checkoutId, checkoutDir, ref ) {
 }
 
 /**
- * @param {Object} timings Timing recorder.
+ * @param {WPPerformanceTimingRecorder} timings Timing recorder.
  *
  * @return {Array<Object>} Timing summary rows.
  */
 function getTimingSummaryRows( timings ) {
+	/** @type {Record<string, { Phase: string, Count: number, Total: number }>} */
 	const phaseTotals = {};
 	for ( const entry of timings.entries ) {
 		phaseTotals[ entry.phase ] = phaseTotals[ entry.phase ] || {
@@ -550,27 +568,28 @@ async function runPerformanceTests( branches, options ) {
 		);
 	}
 
-	if ( options.testsBranch && ! branches.includes( options.testsBranch ) ) {
+	const testsBranch = options.testsBranch;
+	if ( testsBranch && ! branches.includes( testsBranch ) ) {
 		logAtIndent(
 			2,
 			'Fetching test runner branch:',
-			formats.success( options.testsBranch )
+			formats.success( testsBranch )
 		);
 		// @ts-ignore
 		await measureTiming(
 			timings,
 			'git_fetch',
-			{ ref: options.testsBranch, refType: 'test-runner' },
+			{ ref: testsBranch, refType: 'test-runner' },
 			async () => {
 				await sourceGit.raw(
 					'fetch',
 					'--depth=1',
 					'origin',
-					options.testsBranch
+					testsBranch
 				);
 				timings.metadata.resolvedRefs =
 					timings.metadata.resolvedRefs || {};
-				timings.metadata.resolvedRefs[ options.testsBranch ] = (
+				timings.metadata.resolvedRefs[ testsBranch ] = (
 					await sourceGit.raw( 'rev-parse', 'FETCH_HEAD' )
 				).trim();
 			}
@@ -605,8 +624,13 @@ async function runPerformanceTests( branches, options ) {
 		timings,
 		'git_checkout',
 		{ checkout: 'test-runner', ref: testRunnerBranch },
-		async () =>
-			SimpleGit( testRunnerDir ).raw( 'checkout', testRunnerBranch )
+		async () => {
+			// @ts-ignore
+			return SimpleGit( testRunnerDir ).raw(
+				'checkout',
+				testRunnerBranch
+			);
+		}
 	);
 	await recordCheckoutMetadata(
 		timings,
@@ -695,7 +719,10 @@ async function runPerformanceTests( branches, options ) {
 			timings,
 			'git_checkout',
 			{ checkout: 'plugin', ref: branch },
-			async () => SimpleGit( buildDir ).raw( 'checkout', branch )
+			async () => {
+				// @ts-ignore
+				return SimpleGit( buildDir ).raw( 'checkout', branch );
+			}
 		);
 		await recordCheckoutMetadata( timings, branch, buildDir, branch );
 
