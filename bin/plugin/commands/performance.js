@@ -4,6 +4,7 @@
 const os = require( 'os' );
 const fs = require( 'fs' );
 const path = require( 'path' );
+const crypto = require( 'crypto' );
 const SimpleGit = require( 'simple-git' );
 
 /**
@@ -22,6 +23,7 @@ const ARTIFACTS_PATH =
 	process.env.WP_ARTIFACTS_PATH || path.join( process.cwd(), 'artifacts' );
 const RAW_RESULTS_FILE_SUFFIX = '.performance-results.raw.json';
 const RESULTS_FILE_SUFFIX = '.performance-results.json';
+const TIMINGS_FILE = 'performance-timings.json';
 
 /**
  * @typedef WPPerformanceCommandOptions
@@ -61,6 +63,214 @@ function sanitizeBranchName( branch ) {
  */
 function fixed( number ) {
 	return Math.round( number * 100 ) / 100;
+}
+
+/**
+ * @param {number} durationMs Duration in milliseconds.
+ *
+ * @return {string} Formatted duration.
+ */
+function formatDuration( durationMs ) {
+	if ( durationMs < 1000 ) {
+		return `${ fixed( durationMs ) }ms`;
+	}
+
+	const totalSeconds = durationMs / 1000;
+	if ( totalSeconds < 60 ) {
+		return `${ fixed( totalSeconds ) }s`;
+	}
+
+	const minutes = Math.floor( totalSeconds / 60 );
+	const seconds = fixed( totalSeconds % 60 );
+	return `${ minutes }m ${ seconds }s`;
+}
+
+/**
+ * @param {Object} metadata Metadata for the timing run.
+ *
+ * @return {Object} Timing recorder.
+ */
+function createTimingRecorder( metadata ) {
+	return {
+		metadata: {
+			...metadata,
+			startedAt: new Date().toISOString(),
+		},
+		checkouts: {},
+		entries: [],
+	};
+}
+
+/**
+ * Writes timing data to the artifacts directory. This is called after each timed
+ * phase so partial timing data is available if a later phase fails.
+ *
+ * @param {Object} timings Timing recorder.
+ */
+function writeTimingArtifact( timings ) {
+	fs.mkdirSync( ARTIFACTS_PATH, { recursive: true } );
+	fs.writeFileSync(
+		path.join( ARTIFACTS_PATH, TIMINGS_FILE ),
+		JSON.stringify( timings, null, 2 )
+	);
+}
+
+/**
+ * @param {Object} timings   Timing recorder.
+ * @param {string} phase     Phase name.
+ * @param {Object} metadata  Phase metadata.
+ * @param {Date}   startedAt Started-at time.
+ * @param {bigint} start     High-resolution start time.
+ */
+function addTimingEntry( timings, phase, metadata, startedAt, start ) {
+	const durationMs = Number( process.hrtime.bigint() - start ) / 1e6;
+	timings.entries.push( {
+		phase,
+		...metadata,
+		startedAt: startedAt.toISOString(),
+		durationMs: fixed( durationMs ),
+	} );
+	writeTimingArtifact( timings );
+}
+
+/**
+ * @param {Object}   timings  Timing recorder.
+ * @param {string}   phase    Phase name.
+ * @param {Object}   metadata Phase metadata.
+ * @param {Function} callback Timed callback.
+ *
+ * @return {Promise<*>} Callback return value.
+ */
+async function measureTiming( timings, phase, metadata, callback ) {
+	const startedAt = new Date();
+	const start = process.hrtime.bigint();
+	let result;
+
+	try {
+		result = await callback();
+	} finally {
+		addTimingEntry( timings, phase, metadata, startedAt, start );
+	}
+
+	return result;
+}
+
+/**
+ * @param {string} command Shell command to run after NVM has been loaded.
+ * @param {string} cwd     Working directory.
+ */
+function runNvmShellScript( command, cwd ) {
+	return runShellScript(
+		`bash -c "source $HOME/.nvm/nvm.sh && ${ command }"`,
+		cwd
+	);
+}
+
+/**
+ * @param {string} filePath File path.
+ *
+ * @return {string|undefined} File contents, trimmed.
+ */
+function readOptionalTrimmedFile( filePath ) {
+	if ( ! fs.existsSync( filePath ) ) {
+		return undefined;
+	}
+	return fs.readFileSync( filePath, 'utf8' ).trim();
+}
+
+/**
+ * @param {crypto.Hash} hash         Hash object.
+ * @param {string}      targetPath   File or directory path.
+ * @param {string}      relativePath Relative path for stable hashing.
+ */
+function updateHashFromPath( hash, targetPath, relativePath ) {
+	if ( ! fs.existsSync( targetPath ) ) {
+		hash.update( `${ relativePath }\0missing\0` );
+		return;
+	}
+
+	const stat = fs.statSync( targetPath );
+	if ( stat.isDirectory() ) {
+		hash.update( `${ relativePath }\0directory\0` );
+		for ( const entry of fs.readdirSync( targetPath ).sort() ) {
+			updateHashFromPath(
+				hash,
+				path.join( targetPath, entry ),
+				path.join( relativePath, entry )
+			);
+		}
+		return;
+	}
+
+	if ( stat.isFile() ) {
+		hash.update( `${ relativePath }\0file\0` );
+		hash.update( fs.readFileSync( targetPath ) );
+	}
+}
+
+/**
+ * @param {string} checkoutDir Checkout directory.
+ *
+ * @return {string} Dependency key.
+ */
+function getDependencyKey( checkoutDir ) {
+	const hash = crypto.createHash( 'sha256' );
+	for ( const relativePath of [
+		'.nvmrc',
+		'package.json',
+		'package-lock.json',
+		'patches',
+	] ) {
+		updateHashFromPath(
+			hash,
+			path.join( checkoutDir, relativePath ),
+			relativePath
+		);
+	}
+	return hash.digest( 'hex' );
+}
+
+/**
+ * @param {Object} timings     Timing recorder.
+ * @param {string} checkoutId  Checkout identifier.
+ * @param {string} checkoutDir Checkout directory.
+ * @param {string} ref         Git ref.
+ */
+async function recordCheckoutMetadata( timings, checkoutId, checkoutDir, ref ) {
+	timings.checkouts[ checkoutId ] = {
+		ref,
+		sha: (
+			await SimpleGit( checkoutDir ).raw( 'rev-parse', 'HEAD' )
+		).trim(),
+		nvmrc: readOptionalTrimmedFile( path.join( checkoutDir, '.nvmrc' ) ),
+		dependencyKey: getDependencyKey( checkoutDir ),
+	};
+	writeTimingArtifact( timings );
+}
+
+/**
+ * @param {Object} timings Timing recorder.
+ *
+ * @return {Array<Object>} Timing summary rows.
+ */
+function getTimingSummaryRows( timings ) {
+	const phaseTotals = {};
+	for ( const entry of timings.entries ) {
+		phaseTotals[ entry.phase ] = phaseTotals[ entry.phase ] || {
+			Phase: entry.phase,
+			Count: 0,
+			Total: 0,
+		};
+		phaseTotals[ entry.phase ].Count++;
+		phaseTotals[ entry.phase ].Total += entry.durationMs;
+	}
+
+	return Object.values( phaseTotals ).map( ( row ) => ( {
+		Phase: row.Phase,
+		Count: row.Count,
+		Total: formatDuration( row.Total ),
+		Average: formatDuration( row.Total / row.Count ),
+	} ) );
 }
 
 /**
@@ -266,15 +476,39 @@ async function runPerformanceTests( branches, options ) {
 		throw new Error( `Need at least two git refs to run` );
 	}
 
+	const testRunnerBranch = options.testsBranch || branches[ 0 ];
 	const baseDir = path.join( os.tmpdir(), 'wp-performance-tests' );
+	const gitRepositoryURL =
+		process.env.WP_PERFORMANCE_TESTS_REPOSITORY_URL ||
+		config.gitRepositoryURL;
+	const timings = createTimingRecorder( {
+		branches,
+		testRunnerBranch,
+		wpVersion: options.wpVersion || 'latest',
+		rounds: TEST_ROUNDS,
+		baseDir,
+		artifactsPath: ARTIFACTS_PATH,
+		gitRepositoryURL,
+	} );
+	writeTimingArtifact( timings );
 
 	if ( fs.existsSync( baseDir ) ) {
 		logAtIndent( 1, 'Removing existing files' );
-		fs.rmSync( baseDir, { recursive: true } );
+		await measureTiming(
+			timings,
+			'base_directory_cleanup',
+			{ path: baseDir },
+			async () => fs.rmSync( baseDir, { recursive: true } )
+		);
 	}
 
 	logAtIndent( 1, 'Creating base directory:', formats.success( baseDir ) );
-	fs.mkdirSync( baseDir );
+	await measureTiming(
+		timings,
+		'base_directory_create',
+		{ path: baseDir },
+		async () => fs.mkdirSync( baseDir )
+	);
 
 	logAtIndent( 1, 'Setting up repository' );
 	const sourceDir = path.join( baseDir, 'source' );
@@ -284,14 +518,16 @@ async function runPerformanceTests( branches, options ) {
 
 	// @ts-ignore
 	const sourceGit = SimpleGit( sourceDir );
-	logAtIndent(
-		2,
-		'Initializing:',
-		formats.success( config.gitRepositoryURL )
+	logAtIndent( 2, 'Initializing:', formats.success( gitRepositoryURL ) );
+	await measureTiming(
+		timings,
+		'source_repository_setup',
+		{ repository: gitRepositoryURL },
+		async () => {
+			await sourceGit.raw( 'init' );
+			await sourceGit.raw( 'remote', 'add', 'origin', gitRepositoryURL );
+		}
 	);
-	await sourceGit
-		.raw( 'init' )
-		.raw( 'remote', 'add', 'origin', config.gitRepositoryURL );
 
 	for ( const [ i, branch ] of branches.entries() ) {
 		logAtIndent(
@@ -299,10 +535,21 @@ async function runPerformanceTests( branches, options ) {
 			`Fetching environment branch (${ i + 1 } of ${ branches.length }):`,
 			formats.success( branch )
 		);
-		await sourceGit.raw( 'fetch', '--depth=1', 'origin', branch );
+		await measureTiming(
+			timings,
+			'git_fetch',
+			{ ref: branch, refType: 'environment', index: i + 1 },
+			async () => {
+				await sourceGit.raw( 'fetch', '--depth=1', 'origin', branch );
+				timings.metadata.resolvedRefs =
+					timings.metadata.resolvedRefs || {};
+				timings.metadata.resolvedRefs[ branch ] = (
+					await sourceGit.raw( 'rev-parse', 'FETCH_HEAD' )
+				).trim();
+			}
+		);
 	}
 
-	const testRunnerBranch = options.testsBranch || branches[ 0 ];
 	if ( options.testsBranch && ! branches.includes( options.testsBranch ) ) {
 		logAtIndent(
 			2,
@@ -310,11 +557,23 @@ async function runPerformanceTests( branches, options ) {
 			formats.success( options.testsBranch )
 		);
 		// @ts-ignore
-		await sourceGit.raw(
-			'fetch',
-			'--depth=1',
-			'origin',
-			options.testsBranch
+		await measureTiming(
+			timings,
+			'git_fetch',
+			{ ref: options.testsBranch, refType: 'test-runner' },
+			async () => {
+				await sourceGit.raw(
+					'fetch',
+					'--depth=1',
+					'origin',
+					options.testsBranch
+				);
+				timings.metadata.resolvedRefs =
+					timings.metadata.resolvedRefs || {};
+				timings.metadata.resolvedRefs[ options.testsBranch ] = (
+					await sourceGit.raw( 'rev-parse', 'FETCH_HEAD' )
+				).trim();
+			}
 		);
 	} else {
 		logAtIndent(
@@ -329,7 +588,12 @@ async function runPerformanceTests( branches, options ) {
 	const testRunnerDir = path.join( baseDir + '/tests' );
 
 	logAtIndent( 2, 'Copying source to:', formats.success( testRunnerDir ) );
-	await runShellScript( `cp -R  ${ sourceDir } ${ testRunnerDir }` );
+	await measureTiming(
+		timings,
+		'source_copy',
+		{ checkout: 'test-runner', ref: testRunnerBranch },
+		async () => runShellScript( `cp -R  ${ sourceDir } ${ testRunnerDir }` )
+	);
 
 	logAtIndent(
 		2,
@@ -337,12 +601,49 @@ async function runPerformanceTests( branches, options ) {
 		formats.success( testRunnerBranch )
 	);
 	// @ts-ignore
-	await SimpleGit( testRunnerDir ).raw( 'checkout', testRunnerBranch );
+	await measureTiming(
+		timings,
+		'git_checkout',
+		{ checkout: 'test-runner', ref: testRunnerBranch },
+		async () =>
+			SimpleGit( testRunnerDir ).raw( 'checkout', testRunnerBranch )
+	);
+	await recordCheckoutMetadata(
+		timings,
+		'test-runner',
+		testRunnerDir,
+		testRunnerBranch
+	);
 
 	logAtIndent( 2, 'Installing dependencies and building' );
-	await runShellScript(
-		`bash -c "source $HOME/.nvm/nvm.sh && nvm install && npm ci && npx playwright install chromium --with-deps && npm run build"`,
-		testRunnerDir
+	await measureTiming(
+		timings,
+		'nvm_install',
+		{ checkout: 'test-runner' },
+		async () => runNvmShellScript( 'nvm install', testRunnerDir )
+	);
+	await measureTiming(
+		timings,
+		'npm_ci',
+		{ checkout: 'test-runner' },
+		async () => runNvmShellScript( 'nvm use && npm ci', testRunnerDir )
+	);
+	await measureTiming(
+		timings,
+		'playwright_install',
+		{ checkout: 'test-runner' },
+		async () =>
+			runNvmShellScript(
+				'nvm use && npx playwright install chromium --with-deps',
+				testRunnerDir
+			)
+	);
+	await measureTiming(
+		timings,
+		'build',
+		{ checkout: 'test-runner' },
+		async () =>
+			runNvmShellScript( 'nvm use && npm run build', testRunnerDir )
 	);
 
 	logAtIndent( 1, 'Setting up test environments' );
@@ -370,22 +671,49 @@ async function runPerformanceTests( branches, options ) {
 		const envDir = path.join( envsDir, sanitizedBranchName );
 
 		logAtIndent( 3, 'Creating directory:', formats.success( envDir ) );
-		fs.mkdirSync( envDir );
+		await measureTiming(
+			timings,
+			'branch_directory_create',
+			{ branch },
+			async () => fs.mkdirSync( envDir )
+		);
 		// @ts-ignore
 		branchDirs[ branch ] = envDir;
 		const buildDir = path.join( envDir, 'plugin' );
 
 		logAtIndent( 3, 'Copying source to:', formats.success( buildDir ) );
-		await runShellScript( `cp -R ${ sourceDir } ${ buildDir }` );
+		await measureTiming(
+			timings,
+			'source_copy',
+			{ checkout: 'plugin', ref: branch },
+			async () => runShellScript( `cp -R ${ sourceDir } ${ buildDir }` )
+		);
 
 		logAtIndent( 3, 'Checking out:', formats.success( branch ) );
 		// @ts-ignore
-		await SimpleGit( buildDir ).raw( 'checkout', branch );
+		await measureTiming(
+			timings,
+			'git_checkout',
+			{ checkout: 'plugin', ref: branch },
+			async () => SimpleGit( buildDir ).raw( 'checkout', branch )
+		);
+		await recordCheckoutMetadata( timings, branch, buildDir, branch );
 
 		logAtIndent( 3, 'Installing dependencies and building' );
-		await runShellScript(
-			`bash -c "source $HOME/.nvm/nvm.sh && nvm install && npm ci && npm run build"`,
-			buildDir
+		await measureTiming(
+			timings,
+			'nvm_install',
+			{ checkout: branch },
+			async () => runNvmShellScript( 'nvm install', buildDir )
+		);
+		await measureTiming(
+			timings,
+			'npm_ci',
+			{ checkout: branch },
+			async () => runNvmShellScript( 'nvm use && npm ci', buildDir )
+		);
+		await measureTiming( timings, 'build', { checkout: branch }, async () =>
+			runNvmShellScript( 'nvm use && npm run build', buildDir )
 		);
 
 		const wpEnvConfigPath = path.join( envDir, '.wp-env.json' );
@@ -396,46 +724,54 @@ async function runPerformanceTests( branches, options ) {
 			formats.success( wpEnvConfigPath )
 		);
 
-		fs.writeFileSync(
-			wpEnvConfigPath,
-			JSON.stringify(
-				{
-					config: {
-						WP_DEBUG: false,
-						SCRIPT_DEBUG: false,
-					},
-					core: wpZipUrl || 'WordPress/WordPress',
-					plugins: [ buildDir ],
-					themes: [ path.join( testRunnerDir, 'test/emptytheme' ) ],
-					env: {
-						tests: {
-							mappings: {
-								'wp-content/mu-plugins': path.join(
-									testRunnerDir,
-									'packages/e2e-tests/mu-plugins'
-								),
-								'wp-content/plugins/gutenberg-test-plugins':
-									path.join(
-										testRunnerDir,
-										'packages/e2e-tests/plugins'
-									),
-								'wp-content/themes/gutenberg-test-themes':
-									path.join(
-										testRunnerDir,
-										'test/gutenberg-test-themes'
-									),
-								'wp-content/themes/gutenberg-test-themes/twentytwentyone':
-									'https://downloads.wordpress.org/theme/twentytwentyone.1.7.zip',
-								'wp-content/themes/gutenberg-test-themes/twentytwentythree':
-									'https://downloads.wordpress.org/theme/twentytwentythree.1.0.zip',
+		await measureTiming(
+			timings,
+			'wp_env_config_write',
+			{ branch, core: wpZipUrl || 'WordPress/WordPress' },
+			async () =>
+				fs.writeFileSync(
+					wpEnvConfigPath,
+					JSON.stringify(
+						{
+							config: {
+								WP_DEBUG: false,
+								SCRIPT_DEBUG: false,
+							},
+							core: wpZipUrl || 'WordPress/WordPress',
+							plugins: [ buildDir ],
+							themes: [
+								path.join( testRunnerDir, 'test/emptytheme' ),
+							],
+							env: {
+								tests: {
+									mappings: {
+										'wp-content/mu-plugins': path.join(
+											testRunnerDir,
+											'packages/e2e-tests/mu-plugins'
+										),
+										'wp-content/plugins/gutenberg-test-plugins':
+											path.join(
+												testRunnerDir,
+												'packages/e2e-tests/plugins'
+											),
+										'wp-content/themes/gutenberg-test-themes':
+											path.join(
+												testRunnerDir,
+												'test/gutenberg-test-themes'
+											),
+										'wp-content/themes/gutenberg-test-themes/twentytwentyone':
+											'https://downloads.wordpress.org/theme/twentytwentyone.1.7.zip',
+										'wp-content/themes/gutenberg-test-themes/twentytwentythree':
+											'https://downloads.wordpress.org/theme/twentytwentythree.1.0.zip',
+									},
+								},
 							},
 						},
-					},
-				},
-				null,
-				2
-			),
-			'utf8'
+						null,
+						2
+					),
+					'utf8'
+				)
 		);
 	}
 
@@ -479,18 +815,35 @@ async function runPerformanceTests( branches, options ) {
 				const envDir = branchDirs[ branch ];
 
 				logAtIndent( 3, 'Starting environment' );
-				await runShellScript( `${ wpEnvPath } start`, envDir );
+				await measureTiming(
+					timings,
+					'wp_env_start',
+					{ branch, testSuite, round: i },
+					async () => runShellScript( `${ wpEnvPath } start`, envDir )
+				);
 
 				logAtIndent( 3, 'Running tests' );
-				await runTestSuite( testSuite, testRunnerDir, runKey );
+				await measureTiming(
+					timings,
+					'test_suite',
+					{ branch, testSuite, round: i },
+					async () => runTestSuite( testSuite, testRunnerDir, runKey )
+				);
 
 				logAtIndent( 3, 'Stopping environment' );
-				await runShellScript( `${ wpEnvPath } stop`, envDir );
+				await measureTiming(
+					timings,
+					'wp_env_stop',
+					{ branch, testSuite, round: i },
+					async () => runShellScript( `${ wpEnvPath } stop`, envDir )
+				);
 			}
 		}
 	}
 
 	logAtIndent( 0, 'Calculating results' );
+	const resultCalculationStartedAt = new Date();
+	const resultCalculationStart = process.hrtime.bigint();
 
 	const resultFiles = getFilesFromDir( ARTIFACTS_PATH ).filter( ( file ) =>
 		file.endsWith( RAW_RESULTS_FILE_SUFFIX )
@@ -546,6 +899,13 @@ async function runPerformanceTests( branches, options ) {
 			JSON.stringify( results[ testSuite ], null, 2 )
 		);
 	}
+	addTimingEntry(
+		timings,
+		'result_calculation',
+		{},
+		resultCalculationStartedAt,
+		resultCalculationStart
+	);
 
 	logAtIndent( 0, 'Printing results' );
 	log(
@@ -625,6 +985,16 @@ async function runPerformanceTests( branches, options ) {
 		summaryMarkdown += `**${ testSuite }**\n\n`;
 		summaryMarkdown += `${ formatAsMarkdownTable( rows ) }\n`;
 	}
+
+	timings.metadata.completedAt = new Date().toISOString();
+	timings.metadata.durationMs =
+		Date.parse( timings.metadata.completedAt ) -
+		Date.parse( timings.metadata.startedAt );
+	writeTimingArtifact( timings );
+
+	summaryMarkdown += `## Performance Job Timings\n\n`;
+	summaryMarkdown += `Detailed timings are archived in \`${ TIMINGS_FILE }\`.\n\n`;
+	summaryMarkdown += formatAsMarkdownTable( getTimingSummaryRows( timings ) );
 
 	fs.writeFileSync(
 		path.join( ARTIFACTS_PATH, 'summary.md' ),
