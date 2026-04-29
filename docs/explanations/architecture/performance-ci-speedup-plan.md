@@ -489,3 +489,324 @@ If a later change tries to reduce `wp-env` start/stop time, it must preserve:
 - no shared mutable plugin directory across branches,
 - no lower sample counts,
 - no retries as a substitute for readiness correctness.
+
+## Further opportunities from deeper analysis
+
+These are additional opportunities found by reading the workflow, the
+performance runner, the `wp-env` cache code, and the performance specs. They
+are not all equal-priority recommendations. Each one needs timing data before
+implementation, and none should change benchmark samples, browser actions, or
+coverage.
+
+### 6. Deduplicate dependency installs when lockfiles match
+
+Current shape:
+
+- The workflow first runs `.github/setup-node`, which can restore root
+  `node_modules`.
+- The performance runner then creates `/tmp/wp-performance-tests`.
+- Inside that temporary tree, it runs `npm ci` for the test-runner checkout.
+- It then runs another `npm ci` for every branch checkout.
+
+For normal PRs, the current commit and base branch usually have identical
+dependency inputs: `.nvmrc`, `package.json`, `package-lock.json`, and
+`patches/**`. In those cases, running a full clean install for each checkout is
+probably duplicate work.
+
+Potential fix:
+
+1. Compute a dependency key for each checkout from Node version, `package.json`,
+   `package-lock.json`, and `patches/**`.
+2. Run `npm ci` once per unique key in the temporary performance workspace.
+3. For another checkout with the same key, copy the installed `node_modules`
+   tree into place before running that checkout's build.
+4. Fall back to a fresh `npm ci` whenever the key differs.
+
+Expected impact:
+
+- Potentially minutes on typical PR runs, because this removes one or more full
+  `npm ci` executions after the first matching checkout.
+- Bigger impact on cache misses or slower runners.
+- Low impact for PRs that intentionally change dependencies, because those
+  must fall back to independent installs.
+
+Correctness risks:
+
+- npm workspace symlinks must remain valid after the copy.
+- `postinstall` output and `patch-package` changes must be identical in the
+  copied checkout.
+- Native or generated artifacts must not embed the original checkout path in a
+  way that affects the build.
+
+Validation:
+
+- Only reuse installs when the full dependency key matches.
+- Preserve symlinks when copying.
+- Run `npm ls --workspaces=false` or an equivalent cheap integrity check after
+  reuse.
+- Compare `git status --short` before and after build in reused checkouts.
+- Roll out behind timing telemetry so failed assumptions are visible.
+
+This is a better target than caching the whole temporary workspace. It has a
+clear invalidation rule and does not share WordPress state or benchmark output.
+
+### 7. Avoid repeated `nvm install` calls when `.nvmrc` matches
+
+The workflow already runs `actions/setup-node` for the repository checkout and
+then installs NVM. The performance runner still shells into every temporary
+checkout with:
+
+```sh
+source $HOME/.nvm/nvm.sh && nvm install && npm ci && ...
+```
+
+That happens once for the test runner and once for every branch environment.
+For most PRs, all compared refs use the same `.nvmrc`.
+
+Potential fix:
+
+- Read `.nvmrc` in each checkout.
+- If it matches the already configured Node version, run the install/build
+  command directly without `nvm install`.
+- If it differs, keep the existing NVM path for that checkout.
+
+Expected impact:
+
+- Small to modest. This is probably seconds per checkout when the Node version
+  is already present, but it is pure setup overhead.
+- More useful when combined with dependency install reuse, because both changes
+  make checkout setup less repetitive.
+
+Correctness risks:
+
+- Older release branches or reference commits may require a different Node
+  version.
+- The fallback must remain intact for release comparisons and
+  `workflow_dispatch`.
+
+Validation:
+
+- Log the Node version selected for each checkout.
+- Exercise a PR comparison where both refs match.
+- Exercise a synthetic comparison where one checked-out ref has a different
+  `.nvmrc`.
+
+### 8. Use Git worktrees instead of copying the source repository
+
+The runner initializes one shallow source repository, fetches the refs, then
+uses `cp -R` to make the test-runner checkout and every branch plugin checkout.
+That copies the repository metadata and working tree multiple times before any
+dependency installation or build starts.
+
+Potential fix:
+
+1. Fetch every requested ref and record the resolved commit SHA.
+2. Create the test-runner checkout with `git worktree add --detach`.
+3. Create each branch plugin checkout with another detached worktree.
+4. Remove worktrees during cleanup.
+
+Expected impact:
+
+- Probably modest: seconds to low minutes, depending on filesystem speed and
+  the number of compared refs.
+- It also reduces disk use, which helps when later changes copy built artifacts
+  or `node_modules`.
+
+Correctness risks:
+
+- Ref names, SHAs, release branches, and `workflow_dispatch` inputs all need to
+  resolve cleanly before worktree creation.
+- Cleanup must not leave locked worktrees that break later local runs.
+
+Validation:
+
+- Store resolved SHAs in the timing artifact.
+- Compare the checked-out SHA in each worktree with the current `cp -R` path.
+- Run at least PR, push, and workflow-dispatch shaped inputs before replacing
+  the copy path.
+
+This does not change test coverage or benchmark semantics. It is mainly a
+setup hygiene improvement.
+
+### 9. Deduplicate and cache immutable `wp-env` downloads, not environments
+
+`wp-env` uses `~/.wp-env` by default, but the actual work directory is keyed by
+an md5 of the `.wp-env.json` path. The performance runner generates a separate
+`.wp-env.json` under each branch environment, so identical external sources can
+land under separate cache directories.
+
+The runner also writes identical theme mappings for every branch:
+
+- `twentytwentyone.1.7.zip`
+- `twentytwentythree.1.0.zip`
+
+Depending on `--wp-version`, it may also use the same WordPress zip URL for
+every branch. Without `--wp-version`, each branch environment can clone
+`WordPress/WordPress` under its own env-specific cache directory.
+
+Potential fix:
+
+- Add a run-level immutable source cache keyed by source URL/ref.
+- Pre-resolve shared zip and git sources once.
+- Write local paths into each branch `.wp-env.json`, or improve `wp-env` so
+  downloads are globally cached by URL/ref while mutable environment state
+  remains keyed by config path.
+- Add GitHub Actions caching only for immutable downloaded sources, not for
+  databases, containers, generated `docker-compose.yml`, or per-branch work
+  directories.
+
+Expected impact:
+
+- Potentially meaningful on cold runs because WordPress and theme downloads are
+  performed before measured suites can run.
+- Smaller on warm local runs and on repeated starts of the same branch, because
+  `wp-env` already reuses files within a single env-specific work directory.
+- This needs telemetry around the first `wp-env start` for each branch before
+  ranking it against build/install work.
+
+Correctness risks:
+
+- Caching all of `~/.wp-env` is unsafe because it can preserve mutable
+  environment state.
+- Sharing a prepared WordPress database or container state across branches would
+  bias measurements and create isolation bugs.
+- WordPress trunk refs and theme zip URLs need exact cache keys.
+
+Validation:
+
+- Time download/extract separately from container start and WordPress install.
+- Assert that only immutable source directories are reused.
+- Keep branch work directories and databases separate.
+- Add a diagnostic listing of reused source cache keys to the workflow summary.
+
+This is worth investigating because it targets repeated setup work while
+preserving the key isolation property: each branch still gets its own WordPress
+environment.
+
+### 10. Split setup/build artifacts from suite execution
+
+The current runner executes every suite serially in one job. A tempting fix is
+to shard suites immediately, but naive sharding repeats all installs and builds
+in every shard and makes the workflow more expensive without necessarily
+reducing wall-clock time enough.
+
+A safer topology change would be:
+
+1. Run one setup job that fetches refs, installs dependencies, builds the
+   test-runner checkout, and builds every branch plugin checkout.
+2. Upload the built test-runner and plugin checkouts as artifacts.
+3. Run a matrix where each job owns one performance suite.
+4. Inside each suite job, compare all branches for that suite on the same
+   runner, preserving close-in-time branch comparison.
+5. Aggregate raw and curated result files in a final job.
+
+Expected impact:
+
+- Potentially large wall-clock reduction if suite runtime and repeated
+  `wp-env` start/stop dominate after build improvements.
+- Total runner minutes may increase because multiple Ubuntu runners are active
+  at once.
+- Artifact upload/download time can erase the win if built checkouts are too
+  large.
+
+Correctness risks:
+
+- Artifacted builds must be byte-for-byte equivalent to local built checkouts.
+- Each matrix job must still compare branches for the same suite under the same
+  test code.
+- Result aggregation must preserve existing raw and curated result file names
+  and CodeVitals publishing behavior.
+- The matrix must not reduce sample counts or skip suites.
+
+Validation:
+
+- Implement only after phase timing shows suite runtime dominates setup time.
+- Start with one opt-in workflow-dispatch path.
+- Compare artifacts and result files against the serial runner.
+- Keep branch comparison inside each suite job; do not run current and base on
+  separate runners for the same suite.
+
+This is the highest-upside structural change, but it should come after the
+single-run cleanup patches because it is harder to review and easier to get
+wrong.
+
+### 11. Use a thinner performance launcher
+
+The workflow runs `.github/setup-node` before invoking `./bin/plugin/cli.js
+perf`. That composite action can restore or install root dependencies, and on a
+cache hit it still runs root and workspace postinstall scripts. The plugin CLI
+also eagerly imports release package and changelog commands before it registers
+the `perf` subcommand.
+
+Potential fix:
+
+- Lazy-load plugin CLI command modules so `perf` does not import release tooling.
+- Consider a dedicated performance launcher with only the dependencies needed
+  to fetch refs and start the temporary performance runner.
+- If the launcher becomes dependency-light enough, replace the outer
+  `.github/setup-node` step in this workflow with a narrower setup path.
+
+Expected impact:
+
+- Small on warm runs. In one sampled run, the outer setup step was tens of
+  seconds while the compare step was tens of minutes.
+- Larger on root `node_modules` cache misses.
+- Mostly valuable because it removes duplicated setup before the runner creates
+  and installs its own temporary checkouts.
+
+Correctness risks:
+
+- This must not break existing plugin CLI commands or aliases.
+- The performance launcher still needs stable logging, artifact paths, and
+  error handling.
+- A custom launcher must not silently diverge from the current `perf` command.
+
+Validation:
+
+- Keep `./bin/plugin/cli.js perf` working.
+- Add a focused test or smoke command for lazy command registration.
+- Compare workflow environment variables and artifact paths before and after.
+
+This is a cleanup and setup-speed patch, not a benchmark-speed patch. It should
+not be prioritized ahead of build and install deduplication.
+
+### 12. Be careful with spec-level shortcuts
+
+The specs contain obvious-looking waits and sample counts:
+
+- editor and site-editor specs use `BROWSER_IDLE_WAIT = 1000`,
+- editor and site-editor loops collect ten samples plus throwaway iterations,
+- front-end theme specs collect sixteen samples plus a throwaway iteration,
+- media processing collects seven samples plus a throwaway iteration.
+
+Reducing these would speed up CI, but it would also change the statistical
+shape of the benchmark. The fixed waits are part of the measured interaction
+model, and the sample counts are part of how noisy browser and WordPress
+measurements are made interpretable.
+
+Recommendation:
+
+- Do not reduce sample counts or fixed waits as a CI speedup.
+- Only revisit them with a separate benchmark-methodology change backed by
+  variance data, false-positive/false-negative analysis, and CodeVitals impact.
+- Prefer setup/build/download improvements first because they do not change the
+  thing being measured.
+
+### Updated priority after deeper analysis
+
+After this pass, the best order is:
+
+1. Add phase timing telemetry.
+2. Use `npm run build -- --skip-types`.
+3. Remove the duplicate current-ref build.
+4. Deduplicate `npm ci` work when dependency keys match.
+5. Skip repeated `nvm install` when `.nvmrc` matches.
+6. Add Playwright browser caching.
+7. Deduplicate immutable `wp-env` downloads.
+8. Switch source copies to Git worktrees if setup timing justifies it.
+9. Consider setup/build artifact fan-out only after serial runner timing shows
+   suite runtime dominates.
+10. Keep docs-only filtering as a separate policy change.
+
+The main principle is unchanged: remove duplicated CI setup work first, and do
+not make the benchmark cheaper by measuring less.
