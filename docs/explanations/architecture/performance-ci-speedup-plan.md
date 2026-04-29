@@ -2,210 +2,298 @@
 
 ## Summary
 
-The current branch carries the CI fix from
-[WordPress/gutenberg#77726](https://github.com/WordPress/gutenberg/pull/77726).
-It replaces the Site Editor helper's "wait for the loader to become visible"
-sequence with a readiness predicate that accepts either a visible loader or an
-already-ready canvas, then waits until the loader is gone and the canvas is
-ready.
+This branch carries the Site Editor helper fix from
+[WordPress/gutenberg#77726](https://github.com/WordPress/gutenberg/pull/77726),
+but #77726 only removes one artificial wait from the benchmark path. The
+performance workflow has additional CI-only costs that can be reduced without
+changing the benchmarked product behavior, reducing sample counts, or hiding
+flaky tests.
 
-The performance job was not slow because the Site Editor suddenly became tens
-of minutes slower. It was slow because the test helper could miss a short-lived
-loader and then spend the full timeout waiting for that loader to become
-visible. The Site Editor performance tests call that helper repeatedly, so a
-single missed loader can turn into many minutes of artificial CI time.
+The best follow-up speedups are:
 
-## What is going on
+1. Build performance-test plugin copies with `npm run build -- --skip-types`.
+2. Reuse the already-built test-runner checkout as the plugin checkout when it
+   is the same ref as a measured branch.
+3. Cache Playwright browser downloads.
+4. Skip the performance workflow for PRs that only change documentation or other
+   files that cannot affect runtime performance.
+5. Add runner timing telemetry so future timeouts identify setup, build,
+   browser install, environment start, and test runtime separately.
 
-The performance workflow in `.github/workflows/performance.yml` has a 60 minute
-job timeout. The runner delegates to `./bin/plugin/cli.js perf`, implemented in
-`bin/plugin/commands/performance.js`. That command does expensive work by
-design:
+These are separate from #77726. #77726 fixes a correctness bug in the Site
+Editor readiness helper. The items below target duplicated CI setup work around
+the benchmark.
 
-- It fetches each compared branch.
-- It creates one test-runner checkout and a built plugin checkout for each
-  compared branch.
-- It runs `npm ci` and `npm run build` for the test runner and for every branch
-  environment.
-- It discovers every file under `test/performance/specs`.
-- For each suite, round, and branch, it starts `wp-env`, runs the suite, and
-  stops `wp-env`.
+## Current workflow shape
 
-That structure gives stable comparisons because the same test code drives each
-branch, and each branch gets its own WordPress environment. It also means fixed
-per-navigation delays are multiplied by the number of samples and by the number
-of compared branches.
+The performance workflow in `.github/workflows/performance.yml` checks out the
+repository, runs `.github/setup-node`, installs NVM, and then calls
+`./bin/plugin/cli.js perf`.
 
-The sharp regression was in `visitSiteEditor()` in
-`packages/e2e-test-utils-playwright/src/admin/visit-site-editor.ts`. The older
-helper did this for routes expected to load the Site Editor canvas:
+The `perf` command in `bin/plugin/commands/performance.js` then builds its own
+world under `/tmp/wp-performance-tests`:
 
-1. Visit `site-editor.php`.
-2. Set Site Editor preferences.
-3. Wait for `.edit-site-canvas-loader, .edit-site-canvas-spinner` to become
-   visible, with a long timeout.
-4. Wait for the loader to become hidden.
-5. If that failed, fall back to waiting for the editor content region.
+1. Create a shallow Git repository in `/tmp/wp-performance-tests/source`.
+2. Fetch every branch or commit being compared.
+3. Copy `source` to `/tmp/wp-performance-tests/tests`.
+4. Check out `--tests-branch` in the test-runner copy.
+5. Run `nvm install`, `npm ci`, `npx playwright install chromium --with-deps`,
+   and `npm run build` in the test-runner copy.
+6. For every measured branch, copy `source` to an environment plugin checkout,
+   check out that branch, and run `nvm install`, `npm ci`, and `npm run build`.
+7. For every performance suite, start the branch environment, run the suite,
+   stop the environment, and repeat for the next branch.
 
-The fallback comment said that, if the canvas loader had already disappeared,
-the helper should skip the wait. In practice the helper could not know that
-until after the "visible" wait had already consumed the timeout.
+For normal PR runs, the workflow invokes:
 
-That is especially expensive in `test/performance/specs/site-editor.spec.js`.
-The loading case uses a large 371 KB fixture and repeats the load 11 times per
-branch: 10 samples plus one throwaway. The same file also uses
-`visitSiteEditor()` for typing, pattern-loading, and page-loading cases. The
-loading metric maps `metrics.getLoadingDurations().timeSinceResponseEnd` to
-`firstBlock`; `timeSinceResponseEnd` is `performance.now() - responseEnd`, so
-an artificial helper delay is counted as a large `firstBlock` result even when
-the first block was already rendered.
+```sh
+./bin/plugin/cli.js perf "$GITHUB_SHA" "$GITHUB_BASE_REF" \
+	--tests-branch "$GITHUB_SHA"
+```
 
-The history explains why this was latent:
+That means the current PR commit is built twice: once as the test runner and
+once as a measured plugin branch.
 
-- `d301cf7d5152` / #61629 added a loader wait to avoid resolving the helper
-  before large canvas content finished loading.
-- `7e24ae4f91ee` / #61816 limited that wait to Site Editor routes that should
-  load the canvas.
-- `ad4da873ce4` / #68534 moved preference writes before the loader wait, which
-  made the helper start observing later in the page lifecycle.
-- `4085555f8ac` / #68667 made a missed loader a fallback path, but only after
-  waiting up to 60 seconds for the loader to become visible.
-- `1ba1a21c3cc` / #77725 mitigated the current CI pain by lowering the visible
-  wait from 60 seconds to 3 seconds.
-- #77726 removes the successful-case 3 second penalty by waiting on a combined
-  canvas state instead of requiring the loader to appear.
+For trunk push runs, the workflow invokes:
 
-The important distinction is that the loader is an observation mechanism, not
-the thing the tests are trying to cover. The coverage target is that
-`visitSiteEditor()` returns only after the editor canvas is usable and the
-loading overlay is gone.
+```sh
+./bin/plugin/cli.js perf "$GITHUB_SHA" dae102af1458310b05de3c1281b1654951a729ab \
+	--tests-branch "$GITHUB_SHA" \
+	--wp-version "$WP_MAJOR"
+```
 
-## Initial fix plan
+That has the same duplicate current-commit build.
 
-1. Keep the #77726 helper change as the immediate CI fix.
-2. Keep the 60 second "loaded" timeout for legitimately slow large entities.
-3. Do not reduce Site Editor performance sample counts.
-4. Do not skip performance suites, increase retries, or mark tests flaky.
-5. Do not parallelize performance suites just to save wall clock, because that
-   would add CPU and database contention to the metrics.
-6. Consider a later harness optimization that reduces repeated environment
-   start/stop cost, but only after measuring setup time separately from test
-   time.
+## #77726 baseline
 
-## Audit
+PR #77726 changes `visitSiteEditor()` so it no longer requires observing a
+transient loader. The previous helper could miss a short-lived loader and then
+spend the visible-state timeout waiting for an event edge that had already
+happened.
 
-### Linus Torvalds-style maintainer audit
+The fix is correct because the helper's contract is not "observe the loader";
+the contract is "return after the Site Editor canvas is usable and the loading
+overlay is gone." The new predicate checks page state directly:
 
-The initial plan fixes the bad helper behavior, but it is too comfortable with
-"consider a later optimization." If the helper is a state machine, say what the
-states are and make the failure mode explicit. The old code was wrong because
-it encoded a race in control flow and hid it under `catch`. The new code is
-better because it tests the page state directly, but the plan should call out
-the invariant: the helper must not require seeing a transient loader edge.
+- `loading-or-ready`: the loader is visible, or the canvas is already ready.
+- `loaded`: no visible loader and a ready canvas.
 
-The plan also needs to reject clever broad changes. Do not rewrite the
-performance runner, build system, and test helper in one patch. A small,
-obviously correct helper fix is easier to review and easier to revert than a
-large CI refactor.
+That preserves the large-entity timeout and the Site Editor coverage while
+removing the artificial wait.
 
-### Kyle Kingsbury / Jepsen-style audit
+## Additional speedups
 
-This is an observation race. The helper was waiting for an event edge that had
-already happened. In distributed-systems terms, it was treating a missed
-message as proof that the system was still not ready, then timing out and
-declaring success through a fallback. That is not a reliable readiness protocol.
+### 1. Use `--skip-types` for performance builds
 
-The plan should prefer monotonic state over transient events. "A visible loader
-exists" is useful only while it is true. "A ready canvas exists and no visible
-loader is present" is closer to the desired stable state. The plan should also
-account for old and new Site Editor UIs, iframe and non-iframe canvases, and the
-case where the iframe exists but is not fully loaded.
+`npm run build` currently runs `bin/build.mjs`, including:
 
-Do not treat shorter sleeps as correctness. #77725 is a practical mitigation,
-but a 3 second visible wait still encodes timing. It reduces blast radius, but
-it does not remove the race.
+- workspace builds,
+- worker placeholder generation,
+- TypeScript version validation,
+- `tsc --build`,
+- declaration file checks,
+- vendor builds,
+- production package builds,
+- block manifest generation,
+- workspace `build:wp` targets.
 
-### Dan Luu-style systems and measurement audit
+The performance benchmark needs runtime assets for WordPress: JS, CSS, PHP, and
+block manifests. It does not need freshly generated package declaration files.
+The repository already has dedicated type coverage in
+`.github/workflows/static-checks.yml`, where "Type checking" runs
+`npm run build`.
 
-The initial plan needs more measurement discipline. A CI job timeout is not the
-same as a product performance regression. The evidence should separate:
+Change the performance command's build steps from:
 
-- server time from browser/client time,
-- test helper wall time from measured editor work,
-- fixed setup/build cost from per-suite execution time,
-- one-off runner noise from repeated-sample behavior.
+```sh
+npm run build
+```
 
-The plan must avoid "speedups" that improve CI wall clock by damaging the
-experiment. Reducing samples, dropping suites, running branches under different
-resource contention, or adding retries would make the job look better while
-making the data worse. The right speedup removes known artificial waiting and
-then measures any runner-level changes separately.
+to:
 
-## Revised fix plan
+```sh
+npm run build -- --skip-types
+```
 
-### Phase 1: land the narrow correctness fix
+for the test-runner checkout and every measured plugin checkout.
 
-Use the #77726 helper semantics:
+Why this is safe:
 
-- Wait for `loading-or-ready`: either the loader is visibly active, or the
-  ready canvas state is already present.
-- Then wait for `loaded`: no visible loader and a ready canvas.
-- Treat iframe readiness as part of canvas readiness by requiring iframe
-  `contentDocument.readyState === 'complete'`.
-- Preserve support for the historical spinner selector and the current canvas
-  loader selector.
-- Preserve the large-entity timeout for the final loaded state.
+- It does not change any performance test, benchmark sample, browser action, or
+  WordPress runtime path.
+- It matches the precedent in the e2e and PHP-unit build workflows, which
+  already use `npm run build -- --skip-types` for runtime assets.
+- Type regressions remain covered by the static checks workflow.
 
-This removes the missed-loader race without reducing coverage, reducing sample
-counts, adding retries, or asserting that the editor is ready before the canvas
-can actually be used.
+What to validate:
 
-### Phase 2: validate without weakening the tests
+- Run a performance PR with `--skip-types` and confirm the built plugin loads
+  and all performance suites still produce the same result files.
+- Keep the static checks workflow required, because it owns type coverage after
+  this change.
 
-Before merging a follow-up that changes the performance harness itself, collect
-separate timings for:
+### 2. Reuse the test-runner build for the current branch
 
-- performance-command setup,
-- dependency installation,
-- build time per branch,
-- `wp-env start` and `wp-env stop`,
-- each test suite's Playwright runtime,
-- each `visitSiteEditor()` wait branch: saw loader, skipped to ready canvas, or
-  timed out.
+On PR and trunk push runs, `--tests-branch` is the same ref as the first
+measured branch. The command currently performs two full installs and two full
+builds for that same ref.
 
-Those timings should be attached as CI artifacts or emitted in the workflow
-summary. They should not feed into the performance metrics reported to
-CodeVitals.
+When a measured branch equals `testRunnerBranch`, the runner can reuse the
+test-runner checkout as the plugin path for that branch's `.wp-env.json`:
 
-### Phase 3: only optimize the runner where isolation is preserved
+```js
+const buildDir =
+	branch === testRunnerBranch ? testRunnerDir : path.join( envDir, 'plugin' );
+```
 
-Potential safe follow-ups:
+Then skip the copy, checkout, `npm ci`, and build for that branch only.
 
-- Keep all suites and samples, but report setup/build/runtime components so
-  future timeouts are diagnosable.
-- If `wp-env` start/stop dominates, prototype running multiple suites per
-  branch start only if the prototype can reset WordPress state between suites
-  as strongly as the current model.
-- If dependency installation dominates, investigate cache improvements that do
-  not share `node_modules` across branches with different lockfiles.
-- Keep branch comparisons serial unless there is a dedicated, isolated runner
-  per branch; parallelizing compared branches on the same machine would distort
-  the metrics.
+Why this is safe:
 
-Rejected shortcuts:
+- The ref, source tree, dependencies, and built assets are identical.
+- Each branch still gets a separate `envDir`, so WordPress database and
+  container state remain separate.
+- The performance test code is already run from the test-runner checkout; using
+  that checkout as the plugin path does not make the benchmark use different
+  code.
 
-- Do not lower `samples` or remove the throwaway iteration.
-- Do not skip Site Editor loading, typing, pattern, or pages cases.
-- Do not add Playwright retries to hide timing bugs.
-- Do not replace readiness checks with fixed sleeps.
-- Do not remove the large-post fixture, since it is the path that exposed the
-  regression and is the kind of workload the benchmark is supposed to protect.
+Risk and mitigation:
 
-### Phase 4: make the readiness contract explicit
+- If a test or `wp-env` unexpectedly writes into the plugin checkout, it could
+  dirty the test-runner tree. Add a post-suite `git status --short` assertion
+  during the first validation run. If that ever shows real writes, use a
+  lightweight copy of the built tree for the matching branch instead of a second
+  install and build.
 
-The durable product-side fix is to expose a stable Site Editor readiness signal
-instead of making tests infer readiness from implementation details like loader
-classes. A future UI change should be able to replace the visual loader without
-breaking test readiness. Until that exists, `visitSiteEditor()` should keep the
-readiness predicate small, explicit, and tied to user-observable usability:
-canvas present, iframe loaded when iframed, and overlay absent.
+Expected impact:
+
+- Normal PR and trunk push runs save one source copy, one `nvm install`, one
+  `npm ci`, and one build.
+- Release runs only benefit when `--tests-branch` is also one of the compared
+  branches.
+
+### 3. Cache Playwright browser downloads
+
+The test-runner setup runs:
+
+```sh
+npx playwright install chromium --with-deps
+```
+
+The Node dependency cache does not necessarily cache
+`~/.cache/ms-playwright`. Add an Actions cache keyed by OS and the Playwright
+version in `package-lock.json`, then keep the install command as the verifier
+that the expected Chromium revision is present.
+
+Why this is safe:
+
+- The browser version remains pinned by the installed Playwright package.
+- The install command still runs and can repair a missing cache.
+- The benchmarked product code and test coverage do not change.
+
+This is a setup-time speedup only; it should not affect measured performance
+numbers.
+
+### 4. Skip performance CI for docs-only PRs
+
+Performance tests are useful for code that can affect runtime behavior. They do
+not add signal for PRs that only change markdown documentation.
+
+Add a conservative PR path filter to the workflow, for example:
+
+```yaml
+on:
+    pull_request:
+        paths-ignore:
+            - 'docs/**'
+            - '**/*.md'
+```
+
+Why this is safe:
+
+- Runtime performance coverage is unchanged for code changes.
+- Docs-only PRs stop consuming a long-running benchmark job.
+
+Risk and mitigation:
+
+- Do not ignore broad metadata paths such as `package.json`, `package-lock.json`,
+  `.github/**`, `bin/**`, `packages/**`, `lib/**`, `routes/**`, `test/**`, or
+  `schemas/**`.
+- Keep the filter narrow. A mixed PR with any code file still runs the
+  performance workflow.
+
+### 5. Add phase timing telemetry
+
+This is not itself a speedup, but it makes future speedups much less speculative
+and makes CI timeouts actionable.
+
+Record timings for:
+
+- Git fetch and checkout setup,
+- test-runner install,
+- test-runner build,
+- Playwright browser install,
+- per-branch install,
+- per-branch build,
+- each `wp-env start`,
+- each suite runtime,
+- each `wp-env stop`.
+
+Emit these timings to the workflow summary and archive a JSON artifact. Keep
+them separate from CodeVitals benchmark metrics.
+
+Why this is safe:
+
+- It observes the runner; it does not change test behavior.
+- It prevents future regressions from being misdiagnosed as product
+  performance changes.
+
+## Risky ideas to avoid
+
+### Do not reduce sample counts
+
+Reducing the Site Editor loading samples or removing the throwaway iteration
+would improve wall clock by weakening the benchmark. That is not a CI speedup;
+it is less data.
+
+### Do not add retries
+
+Retries make flaky tests less visible and can increase wall clock in failure
+cases. The performance workflow should fail loudly when the benchmark path is
+not reliable.
+
+### Do not parallelize compared branches on the same runner
+
+Running both compared branches at the same time on one runner would introduce
+CPU, memory, disk, database, and browser contention. The benchmark compares
+branches; it should not make the branches interfere with each other.
+
+### Do not switch to branch-major suite ordering only to reduce starts
+
+The current loop compares branches suite by suite. That keeps each suite's
+branch comparison close in time on the same runner. Running all suites for one
+branch and then all suites for the next branch might reduce environment starts,
+but it increases temporal noise between paired measurements.
+
+If environment startup is proven to dominate after telemetry is added, optimize
+startup without sacrificing close-in-time branch comparisons.
+
+### Do not shard suites without shared build artifacts
+
+Suite-level matrix jobs can reduce wall clock, but a naive matrix would repeat
+the expensive branch installs and builds in every suite job. That trades one
+timeout risk for much higher total CI cost. Only consider suite sharding after
+there is a shared build artifact plan that preserves per-suite branch
+comparison isolation.
+
+## Recommended order
+
+1. Land #77726.
+2. Change performance builds to `npm run build -- --skip-types`.
+3. Reuse the test-runner build for the matching measured branch.
+4. Add Playwright browser caching.
+5. Add docs-only PR path filtering.
+6. Add phase timing telemetry before larger runner changes.
+
+This order removes duplicated CI work first and leaves the benchmark's
+coverage, samples, branch isolation, and measured user flows intact.
