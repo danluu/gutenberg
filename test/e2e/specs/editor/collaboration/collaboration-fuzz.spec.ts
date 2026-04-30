@@ -6,7 +6,11 @@ import type { Page } from '@playwright/test';
 /**
  * WordPress dependencies
  */
-import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
+import {
+	test as base,
+	expect,
+	type Editor,
+} from '@wordpress/e2e-test-utils-playwright';
 
 /**
  * Internal dependencies
@@ -96,6 +100,7 @@ const test = base.extend< Fixtures >( {
 type Random = () => number;
 
 type PageRef = {
+	editor: Editor;
 	page: Page;
 	userIndex: number;
 };
@@ -166,12 +171,13 @@ const DISCOVERY_TIMEOUT_MS = getEnvInt(
 const DISABLE_SYNC_FAULTS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS === '1';
 const DISABLE_RELOAD = process.env.GUTENBERG_RTC_BROWSER_DISABLE_RELOAD === '1';
-const ENABLE_REST_REVISION_RESTORE_PROBE =
-	process.env.GUTENBERG_RTC_BROWSER_ENABLE_REST_REVISION_RESTORE_PROBE ===
-	'1';
 const DISABLE_REVISION_RESTORE =
-	process.env.GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE === '1' ||
-	! ENABLE_REST_REVISION_RESTORE_PROBE;
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE === '1';
+const ENABLE_REVISION_RESTORE_PROBE =
+	! DISABLE_REVISION_RESTORE &&
+	( process.env.GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE ??
+		process.env.GUTENBERG_RTC_BROWSER_ENABLE_REST_REVISION_RESTORE_PROBE ??
+		'1' ) === '1';
 const ACTION_PROFILE =
 	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
 const RETRIABLE_SYNC_FAILURE_STATUSES = [ 429, 500, 503 ];
@@ -1385,7 +1391,67 @@ async function saveCheckpointAndVerify( {
 	};
 }
 
-async function restoreRevisionPayloadAndVerify( {
+async function chooseOldRevisionInBrowser( {
+	editor,
+	newerCheckpoint,
+	oldCheckpoint,
+	page,
+}: {
+	editor: Editor;
+	newerCheckpoint: SaveCheckpoint;
+	oldCheckpoint: SaveCheckpoint;
+	page: Page;
+} ) {
+	const slider = page.getByRole( 'slider', { name: 'Revision' } );
+	await slider.focus();
+
+	for ( let attempt = 0; attempt < 50; attempt++ ) {
+		const oldContentVisible = await editor.canvas
+			.getByText( oldCheckpoint.marker )
+			.first()
+			.isVisible()
+			.catch( () => false );
+		const oldOptionVisible = await editor.canvas
+			.getByText( oldCheckpoint.optionMarker )
+			.first()
+			.isVisible()
+			.catch( () => false );
+		const newerContentVisible = await editor.canvas
+			.getByText( newerCheckpoint.marker )
+			.first()
+			.isVisible()
+			.catch( () => false );
+		const newerOptionVisible = await editor.canvas
+			.getByText( newerCheckpoint.optionMarker )
+			.first()
+			.isVisible()
+			.catch( () => false );
+
+		if (
+			oldContentVisible &&
+			oldOptionVisible &&
+			! newerContentVisible &&
+			! newerOptionVisible
+		) {
+			return;
+		}
+
+		const previousSliderValue =
+			await slider.getAttribute( 'aria-valuenow' );
+		await slider.press( 'ArrowLeft' );
+		await expect
+			.poll( () => slider.getAttribute( 'aria-valuenow' ), {
+				timeout: 1000,
+			} )
+			.not.toBe( previousSliderValue );
+	}
+
+	throw new Error(
+		`Could not select old revision containing ${ oldCheckpoint.marker } without ${ newerCheckpoint.marker } through the revision UI.`
+	);
+}
+
+async function restoreRevisionViaBrowserAndVerify( {
 	checkpoints,
 	collaborationUtils,
 	postId,
@@ -1398,7 +1464,7 @@ async function restoreRevisionPayloadAndVerify( {
 	requestUtils: RestRequestUtils;
 	restorer: PageRef;
 } ) {
-	if ( DISABLE_REVISION_RESTORE || checkpoints.length < 2 ) {
+	if ( ! ENABLE_REVISION_RESTORE_PROBE || checkpoints.length < 2 ) {
 		return;
 	}
 
@@ -1419,14 +1485,31 @@ async function restoreRevisionPayloadAndVerify( {
 	expect( restoredContent ).not.toContain( newerCheckpoint.optionMarker );
 	expect( restoredTitle ).not.toContain( newerCheckpoint.titleMarker );
 
-	await requestUtils.rest< RestPost >( {
-		method: 'PUT',
-		path: `/wp/v2/posts/${ postId }`,
-		data: {
-			content: restoredContent,
-			...( restoredTitle ? { title: restoredTitle } : {} ),
-		},
+	await restorer.page.bringToFront();
+	await restorer.editor.openDocumentSettingsSidebar();
+	const settingsSidebar = restorer.page.getByRole( 'region', {
+		name: 'Editor settings',
 	} );
+	await settingsSidebar.getByRole( 'tab', { name: 'Post' } ).click();
+	await settingsSidebar
+		.locator( '.editor-private-post-last-revision__button' )
+		.click();
+
+	const restoreButton = restorer.page.getByRole( 'button', {
+		name: 'Restore',
+	} );
+	await expect( restoreButton ).toBeVisible();
+	await chooseOldRevisionInBrowser( {
+		editor: restorer.editor,
+		newerCheckpoint,
+		oldCheckpoint,
+		page: restorer.page,
+	} );
+	await restoreButton.click();
+
+	await expect(
+		restorer.page.getByText( 'Restored to revision' )
+	).toBeVisible();
 
 	await reloadAndWait( restorer.page, collaborationUtils );
 
@@ -1606,6 +1689,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 
 			const pages = collaborationUtils.allPages.map(
 				( page, userIndex ) => ( {
+					editor: collaborationUtils.allEditors[ userIndex ],
 					page,
 					userIndex,
 				} )
@@ -1713,7 +1797,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			expect( finalState.blocks.length ).toBeGreaterThan( 0 );
 			expect( finalState.crdtDocument ).not.toBeNull();
 
-			await restoreRevisionPayloadAndVerify( {
+			await restoreRevisionViaBrowserAndVerify( {
 				checkpoints: saveCheckpoints,
 				collaborationUtils,
 				postId: post.id,
