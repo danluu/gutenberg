@@ -1,0 +1,54 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"classification",
+		"confidence",
+		"summary",
+		"evidence",
+		"recommendedRunnerAction",
+		"harnessChangesApplied",
+		"changedFiles",
+		"validationSummary"
+	],
+	"properties": {
+		"classification": {
+			"type": "string",
+			"enum": [ "real", "not_real", "uncertain" ]
+		},
+		"confidence": {
+			"type": "string",
+			"enum": [ "low", "medium", "high" ]
+		},
+		"summary": {
+			"type": "string"
+		},
+		"evidence": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"recommendedRunnerAction": {
+			"type": "string",
+			"enum": [
+				"keep-running",
+				"continue-after-harness-change",
+				"stop-for-manual-triage"
+			]
+		},
+		"harnessChangesApplied": {
+			"type": "boolean"
+		},
+		"changedFiles": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"validationSummary": {
+			"type": "string"
+		}
+	}
+}
