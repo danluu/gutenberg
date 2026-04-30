@@ -1,4 +1,9 @@
 /**
+ * External dependencies
+ */
+import type { FrameLocator, Page } from '@playwright/test';
+
+/**
  * Internal dependencies
  */
 import { test, expect } from './fixtures';
@@ -48,6 +53,23 @@ async function getPersistedTitle(
 		: post.title.raw ?? post.title.rendered ?? '';
 }
 
+async function getPersistedContent(
+	requestUtils: {
+		rest: < T >( options: { path: string } ) => Promise< T >;
+	},
+	postId: number
+): Promise< string > {
+	const post = await requestUtils.rest< {
+		content: string | { raw?: string; rendered?: string };
+	} >( {
+		path: `/wp/v2/posts/${ postId }?context=edit`,
+	} );
+
+	return typeof post.content === 'string'
+		? post.content
+		: post.content.raw ?? post.content.rendered ?? '';
+}
+
 async function getRevisionTitles(
 	requestUtils: {
 		rest: < T >( options: { path: string } ) => Promise< T >;
@@ -69,6 +91,27 @@ async function getRevisionTitles(
 	} );
 }
 
+async function getRevisionContents(
+	requestUtils: {
+		rest: < T >( options: { path: string } ) => Promise< T >;
+	},
+	postId: number
+): Promise< string[] > {
+	const revisions = await requestUtils.rest<
+		Array< { content?: string | { raw?: string; rendered?: string } } >
+	>( {
+		path: `/wp/v2/posts/${ postId }/revisions?context=edit`,
+	} );
+
+	return revisions.map( ( revision ) => {
+		if ( typeof revision.content === 'string' ) {
+			return revision.content;
+		}
+
+		return revision.content?.raw ?? revision.content?.rendered ?? '';
+	} );
+}
+
 async function getEditedTitle( page: {
 	evaluate: < T >( callback: () => T ) => Promise< T >;
 } ): Promise< string > {
@@ -77,6 +120,103 @@ async function getEditedTitle( page: {
 			.select( 'core/editor' )
 			.getEditedPostAttribute( 'title' )
 	);
+}
+
+async function expectPersistedContentAndRevisionContain(
+	requestUtils: {
+		rest: < T >( options: { path: string } ) => Promise< T >;
+	},
+	postId: number,
+	markers: string[]
+) {
+	await expect
+		.poll( () => getPersistedContent( requestUtils, postId ), {
+			timeout: 20_000,
+		} )
+		.toEqual( expect.stringContaining( markers[ 0 ] ) );
+
+	const persistedContent = await getPersistedContent( requestUtils, postId );
+	for ( const marker of markers ) {
+		expect( persistedContent ).toContain( marker );
+	}
+
+	const revisions = await getRevisionContents( requestUtils, postId );
+	for ( const marker of markers ) {
+		expect(
+			revisions.some( ( revisionContent ) =>
+				revisionContent.includes( marker )
+			)
+		).toBe( true );
+	}
+}
+
+async function expectCurrentContentAndRevisionsContain(
+	requestUtils: {
+		rest: < T >( options: { path: string } ) => Promise< T >;
+	},
+	postId: number,
+	markers: string[]
+) {
+	const persistedContent = await getPersistedContent( requestUtils, postId );
+	const revisionContents = await getRevisionContents( requestUtils, postId );
+	const missingFromPersisted = markers.filter(
+		( marker ) => ! persistedContent.includes( marker )
+	);
+	const missingFromRevisions = markers.filter(
+		( marker ) =>
+			! revisionContents.some( ( revisionContent ) =>
+				revisionContent.includes( marker )
+			)
+	);
+
+	expect( {
+		missingFromPersisted,
+		missingFromRevisions,
+		persistedContent,
+		revisionContents,
+	} ).toEqual(
+		expect.objectContaining( {
+			missingFromPersisted: [],
+			missingFromRevisions: [],
+		} )
+	);
+}
+
+async function waitForEditorRuntime( page: Page ) {
+	await page.waitForFunction(
+		() =>
+			( window as any )._wpCollaborationEnabled === true &&
+			window?.wp?.data &&
+			window?.wp?.blocks,
+		undefined,
+		{ timeout: 30_000 }
+	);
+}
+
+async function expectVisibleMarker(
+	editorCanvas: FrameLocator,
+	marker: string
+) {
+	await expect(
+		editorCanvas.getByText( marker, { exact: true } ).first()
+	).toBeVisible( { timeout: 20_000 } );
+}
+
+async function typeOptionParagraphs(
+	page: Page,
+	editorCanvas: FrameLocator,
+	markers: string[]
+) {
+	await editorCanvas
+		.getByRole( 'document', { name: 'Block: Paragraph' } )
+		.last()
+		.click();
+	await page.keyboard.press( 'End' );
+
+	for ( const marker of markers ) {
+		await page.keyboard.press( 'Enter' );
+		await page.keyboard.type( marker );
+	}
 }
 
 test.describe( 'Collaboration - same user title loss', () => {
@@ -327,5 +467,68 @@ test.describe( 'Collaboration - same user title loss', () => {
 			customerTitle
 		);
 		expect( await getEditedTitle( page ) ).toBe( customerTitle );
+	} );
+
+	test( 'keeps saved typed form options when a same-user support session reloads and saves', async ( {
+		collaborationUtils,
+		editor,
+		page,
+		requestUtils,
+	} ) => {
+		test.setTimeout( 90_000 );
+
+		const customerMarkers = [
+			'Customer checkbox option breakfast',
+			'Customer checkbox option lunch',
+			'Customer meal reservation option',
+		];
+		const supportMarker = 'Support session normal follow-up edit';
+
+		const post = await requestUtils.createPost( {
+			title: 'RTC same-user support form option loss',
+			status: 'draft',
+			date_gmt: new Date().toISOString(),
+			content:
+				'<!-- wp:paragraph --><p>Initial support form body.</p><!-- /wp:paragraph -->',
+		} );
+
+		await collaborationUtils.openPost( post.id );
+		await collaborationUtils.joinUser( post.id, ADMIN_USER );
+		await waitForSameUserSession( collaborationUtils );
+		const { editor2, page2 } = collaborationUtils;
+
+		await typeOptionParagraphs( page, editor.canvas, customerMarkers );
+		await expectVisibleMarker( editor2.canvas, customerMarkers[ 0 ] );
+		await editor.saveDraft();
+		await expectPersistedContentAndRevisionContain(
+			requestUtils,
+			post.id,
+			customerMarkers
+		);
+
+		await page2.reload( { waitUntil: 'domcontentloaded' } );
+		await waitForEditorRuntime( page2 );
+
+		await editor2.canvas
+			.getByRole( 'document', { name: 'Block: Paragraph' } )
+			.first()
+			.click();
+		await page2.keyboard.press( 'End' );
+		await page2.keyboard.press( 'Enter' );
+		await page2.keyboard.type( supportMarker );
+		await editor2.saveDraft();
+
+		await expect
+			.poll( () => getPersistedContent( requestUtils, post.id ), {
+				timeout: 20_000,
+			} )
+			.toEqual( expect.stringContaining( supportMarker ) );
+		await expectCurrentContentAndRevisionsContain( requestUtils, post.id, [
+			...customerMarkers,
+			supportMarker,
+		] );
+		for ( const marker of customerMarkers ) {
+			await expectVisibleMarker( editor.canvas, marker );
+		}
 	} );
 } );

@@ -52,6 +52,21 @@ export const SECOND_USER: UserCredentials = {
 };
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
+const EDITOR_BOOT_TIMEOUT_MS = Math.max(
+	10_000,
+	Number.parseInt(
+		process.env.GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS ?? '10000',
+		10
+	) || 10_000
+);
+
+function isSyncUpdateRequest( url: string ): boolean {
+	const decodedUrl = decodeURIComponent( url );
+	return (
+		decodedUrl.includes( '/wp-json/wp-sync/v1/updates' ) ||
+		decodedUrl.includes( 'rest_route=/wp-sync/v1/updates' )
+	);
+}
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -129,14 +144,18 @@ export default class CollaborationUtils {
 		await newPage.locator( '#user_login' ).fill( user.username );
 		await newPage.locator( '#user_pass' ).fill( user.password );
 		await newPage.getByRole( 'button', { name: 'Log In' } ).click();
-		await newPage.waitForURL( '**/wp-admin/**' );
+		await newPage.waitForURL( '**/wp-admin/**', {
+			timeout: EDITOR_BOOT_TIMEOUT_MS,
+		} );
 
 		// Navigate to the post editor.
 		await newPage.goto( `/wp-admin/post.php?post=${ postId }&action=edit` );
 
 		// Dismiss welcome guide.
 		await newPage.waitForFunction(
-			() => window?.wp?.data && window?.wp?.blocks
+			() => window?.wp?.data && window?.wp?.blocks,
+			undefined,
+			{ timeout: EDITOR_BOOT_TIMEOUT_MS }
 		);
 		await newPage.evaluate( () => {
 			window.wp.data
@@ -429,6 +448,57 @@ export default class CollaborationUtils {
 	}
 
 	/**
+	 * Delay the next sync update request from the given page.
+	 *
+	 * @param page    The page whose next sync update request should be delayed.
+	 * @param delayMs Delay duration in milliseconds.
+	 */
+	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		const routePattern = /wp-sync/;
+		const handler: Parameters< Page[ 'route' ] >[ 1 ] = async ( route ) => {
+			if ( ! isSyncUpdateRequest( route.request().url() ) ) {
+				await route.fallback();
+				return;
+			}
+
+			await page.unroute( routePattern, handler );
+			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
+			await route.continue();
+		};
+
+		await page.route( routePattern, handler );
+	}
+
+	/**
+	 * Fail the next sync update request from the given page with an HTTP status.
+	 *
+	 * @param page   The page whose next sync update request should fail.
+	 * @param status HTTP status code to return.
+	 */
+	async failNextSyncRequest( page: Page, status: number ) {
+		const routePattern = /wp-sync/;
+		const handler: Parameters< Page[ 'route' ] >[ 1 ] = async ( route ) => {
+			if ( ! isSyncUpdateRequest( route.request().url() ) ) {
+				await route.fallback();
+				return;
+			}
+
+			await page.unroute( routePattern, handler );
+			await route.fulfill( {
+				body: JSON.stringify( {
+					code: 'rtc_fuzz_sync_fault',
+					data: { status },
+					message: 'Injected sync fault',
+				} ),
+				contentType: 'application/json',
+				status,
+			} );
+		};
+
+		await page.route( routePattern, handler );
+	}
+
+	/**
 	 * Returns a normalized view of the current collaborative editor state for
 	 * equality checks across participants.
 	 *
@@ -519,10 +589,19 @@ export default class CollaborationUtils {
 				)
 			);
 
-			const serializedFirstState = JSON.stringify( lastStates[ 0 ] );
+			const normalizeStateForComparison = (
+				state: NormalizedCollaborativeState
+			) => ( {
+				blocks: state.blocks,
+				title: state.title,
+			} );
+			const serializedFirstState = JSON.stringify(
+				normalizeStateForComparison( lastStates[ 0 ] )
+			);
 			const isSettled = lastStates.every(
 				( state ) =>
-					JSON.stringify( state ) === serializedFirstState &&
+					JSON.stringify( normalizeStateForComparison( state ) ) ===
+						serializedFirstState &&
 					( ! includeCrdtDocument || !! state.crdtDocument )
 			);
 

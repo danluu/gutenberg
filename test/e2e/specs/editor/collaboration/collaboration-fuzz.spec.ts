@@ -137,6 +137,7 @@ type RestRevision = {
 
 type SaveCheckpoint = {
 	content: string;
+	formOptionMarkers: string[];
 	marker: string;
 	optionMarker: string;
 	revisionId: number;
@@ -166,6 +167,10 @@ const CONVERGENCE_TIMEOUT_MS = getEnvInt(
 );
 const DISCOVERY_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_DISCOVERY_TIMEOUT_MS',
+	15000
+);
+const BOOT_TIMEOUT_MS = getEnvInt(
+	'GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS',
 	15000
 );
 const DISABLE_SYNC_FAULTS =
@@ -549,6 +554,16 @@ function getCheckpointMarker( seed: number, step: number, userIndex: number ) {
 	return `rtc-save-marker-${ seed }-${ step }-${ userIndex }`;
 }
 
+function getCheckpointFormOptionMarkers( marker: string ): string[] {
+	const suffix = marker.replace( /^rtc-save-marker-/, '' );
+
+	return [
+		`rtc-form-checkbox-option-a-${ suffix }`,
+		`rtc-form-checkbox-option-b-${ suffix }`,
+		`rtc-form-meal-reservation-option-${ suffix }`,
+	];
+}
+
 async function getEditedPostContent( page: Page ): Promise< string > {
 	return page.evaluate( () =>
 		( window as any ).wp.data.select( 'core/editor' ).getEditedPostContent()
@@ -620,6 +635,14 @@ async function getPostRevision(
 	} );
 }
 
+function formatRestError( error: unknown ): string {
+	if ( error instanceof Error ) {
+		return error.message;
+	}
+
+	return JSON.stringify( error );
+}
+
 async function waitForPersistedPostContentMarker(
 	requestUtils: RestRequestUtils,
 	postId: number,
@@ -627,9 +650,17 @@ async function waitForPersistedPostContentMarker(
 ): Promise< string > {
 	const deadline = Date.now() + CONVERGENCE_TIMEOUT_MS;
 	let lastContent = '';
+	let lastError = '';
 
 	while ( Date.now() < deadline ) {
-		lastContent = await getPersistedPostContent( requestUtils, postId );
+		try {
+			lastContent = await getPersistedPostContent( requestUtils, postId );
+			lastError = '';
+		} catch ( error ) {
+			lastError = formatRestError( error );
+			await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+			continue;
+		}
 
 		if ( lastContent.includes( marker ) ) {
 			return lastContent;
@@ -639,7 +670,7 @@ async function waitForPersistedPostContentMarker(
 	}
 
 	throw new Error(
-		`Persisted post content did not include marker "${ marker }". Last content: ${ lastContent }`
+		`Persisted post content did not include marker "${ marker }". Last content: ${ lastContent }. Last error: ${ lastError }`
 	);
 }
 
@@ -650,9 +681,17 @@ async function waitForPersistedPostTitleMarker(
 ): Promise< string > {
 	const deadline = Date.now() + CONVERGENCE_TIMEOUT_MS;
 	let lastTitle = '';
+	let lastError = '';
 
 	while ( Date.now() < deadline ) {
-		lastTitle = await getPersistedPostTitle( requestUtils, postId );
+		try {
+			lastTitle = await getPersistedPostTitle( requestUtils, postId );
+			lastError = '';
+		} catch ( error ) {
+			lastError = formatRestError( error );
+			await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+			continue;
+		}
 
 		if ( lastTitle.includes( marker ) ) {
 			return lastTitle;
@@ -662,7 +701,7 @@ async function waitForPersistedPostTitleMarker(
 	}
 
 	throw new Error(
-		`Persisted post title did not include marker "${ marker }". Last title: ${ lastTitle }`
+		`Persisted post title did not include marker "${ marker }". Last title: ${ lastTitle }. Last error: ${ lastError }`
 	);
 }
 
@@ -673,9 +712,17 @@ async function waitForRevisionContainingMarkers(
 ): Promise< RestRevision > {
 	const deadline = Date.now() + CONVERGENCE_TIMEOUT_MS;
 	let lastRevisions: RestRevision[] = [];
+	let lastError = '';
 
 	while ( Date.now() < deadline ) {
-		lastRevisions = await getPostRevisions( requestUtils, postId );
+		try {
+			lastRevisions = await getPostRevisions( requestUtils, postId );
+			lastError = '';
+		} catch ( error ) {
+			lastError = formatRestError( error );
+			await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+			continue;
+		}
 
 		const revision = lastRevisions.find( ( candidate ) => {
 			const revisionContent = getRawFieldValue( candidate.content );
@@ -699,7 +746,7 @@ async function waitForRevisionContainingMarkers(
 				id: revision.id,
 				content: getRawFieldValue( revision.content ),
 			} ) )
-		) }`
+		) }. Last error: ${ lastError }`
 	);
 }
 
@@ -763,18 +810,53 @@ async function insertCheckpointMarker( page: Page, marker: string ) {
 	}, marker );
 }
 
-async function insertCheckpointOptionBlock( page: Page, marker: string ) {
-	await page.evaluate( ( optionMarker ) => {
-		const block = ( window as any ).wp.blocks.createBlock( 'core/search', {
-			buttonPosition: 'button-inside',
-			buttonText: `Find ${ optionMarker }`,
-			label: `Search label ${ optionMarker }`,
-			placeholder: `Search placeholder ${ optionMarker }`,
-		} );
-		( window as any ).wp.data
-			.dispatch( 'core/block-editor' )
-			.insertBlock( block );
-	}, marker );
+async function insertCheckpointOptionBlock(
+	page: Page,
+	optionMarker: string,
+	formOptionMarkers: string[]
+) {
+	await page.evaluate(
+		( payload ) => {
+			const blocks = ( window as any ).wp.blocks;
+			const formRows = payload.formOptionMarkers.map(
+				( formOptionMarker ) => ( {
+					cells: [
+						{
+							content: formOptionMarker,
+							tag: 'td',
+						},
+						{
+							content: `choice ${ formOptionMarker }`,
+							tag: 'td',
+						},
+					],
+				} )
+			);
+			const searchBlock = blocks.createBlock( 'core/search', {
+				buttonPosition: 'button-inside',
+				buttonText: `Find ${ payload.optionMarker }`,
+				label: `Search label ${ payload.optionMarker }`,
+				placeholder: `Search placeholder ${ payload.optionMarker }`,
+			} );
+			const tableBlock = blocks.createBlock( 'core/table', {
+				caption: `Form options ${ payload.optionMarker }`,
+				body: formRows,
+			} );
+			const groupBlock = blocks.createBlock(
+				'core/group',
+				{ layout: { type: 'constrained' } },
+				[ searchBlock, tableBlock ]
+			);
+
+			( window as any ).wp.data
+				.dispatch( 'core/block-editor' )
+				.insertBlock( groupBlock );
+		},
+		{
+			optionMarker,
+			formOptionMarkers,
+		}
+	);
 }
 
 async function setCheckpointTitle( page: Page, marker: string ) {
@@ -1216,6 +1298,70 @@ async function editTableArrayAttributes(
 	);
 }
 
+async function editFormOptionsBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const marker = `form-option-${ seed }-${ step }-${ userIndex }-${ Math.floor(
+		rng() * 1000000
+	) }`;
+
+	await page.evaluate( ( optionMarker ) => {
+		const blockEditor = ( window as any ).wp.data.dispatch(
+			'core/block-editor'
+		);
+		const blocks = ( window as any ).wp.data
+			.select( 'core/block-editor' )
+			.getBlocks();
+		let table = blocks.find(
+			( candidate: {
+				attributes?: { caption?: string };
+				name: string;
+			} ) =>
+				candidate.name === 'core/table' &&
+				String( candidate.attributes?.caption ?? '' ).includes(
+					'RTC form options'
+				)
+		);
+		const createCell = ( content: string ) => ( {
+			content,
+			tag: 'td',
+		} );
+
+		if ( ! table ) {
+			table = ( window as any ).wp.blocks.createBlock( 'core/table', {
+				caption: 'RTC form options',
+				body: [
+					{
+						cells: [
+							createCell( `${ optionMarker }-checkbox-a` ),
+							createCell( `${ optionMarker }-checkbox-b` ),
+						],
+					},
+				],
+			} );
+			blockEditor.insertBlock( table );
+			return;
+		}
+
+		const body = JSON.parse(
+			JSON.stringify( table.attributes.body ?? [] )
+		);
+
+		body.push( {
+			cells: [
+				createCell( `${ optionMarker }-meal` ),
+				createCell( `${ optionMarker }-reservation` ),
+			],
+		} );
+
+		blockEditor.updateBlockAttributes( table.clientId, { body } );
+	}, marker );
+}
+
 async function reparseEditedContent(
 	page: Page,
 	seed: number,
@@ -1308,10 +1454,15 @@ async function saveCheckpointAndVerify( {
 	viewer: PageRef;
 } ): Promise< SaveCheckpoint > {
 	const optionMarker = `${ marker }-search-option`;
+	const formOptionMarkers = getCheckpointFormOptionMarkers( marker );
 	const titleMarker = `${ marker }-title`;
 
 	await insertCheckpointMarker( saver.page, marker );
-	await insertCheckpointOptionBlock( saver.page, optionMarker );
+	await insertCheckpointOptionBlock(
+		saver.page,
+		optionMarker,
+		formOptionMarkers
+	);
 	await setCheckpointTitle( saver.page, titleMarker );
 	const convergedWithMarker = await collaborationUtils.waitForConvergence( {
 		timeout: CONVERGENCE_TIMEOUT_MS,
@@ -1320,12 +1471,20 @@ async function saveCheckpointAndVerify( {
 	expect( hasMarker( convergedWithMarker.blocks, optionMarker ) ).toBe(
 		true
 	);
+	for ( const formOptionMarker of formOptionMarkers ) {
+		expect(
+			hasMarker( convergedWithMarker.blocks, formOptionMarker )
+		).toBe( true );
+	}
 	expect( convergedWithMarker.title ).toContain( titleMarker );
 
 	const contentBeforeSave = await getEditedPostContent( saver.page );
 	const titleBeforeSave = await getEditedPostTitle( saver.page );
 	expect( contentBeforeSave ).toContain( marker );
 	expect( contentBeforeSave ).toContain( optionMarker );
+	for ( const formOptionMarker of formOptionMarkers ) {
+		expect( contentBeforeSave ).toContain( formOptionMarker );
+	}
 	expect( titleBeforeSave ).toContain( titleMarker );
 
 	await saveDraft( saver.page );
@@ -1337,6 +1496,11 @@ async function saveCheckpointAndVerify( {
 	expect( stateAfterSave.crdtDocument ).not.toBeNull();
 	expect( hasMarker( stateAfterSave.blocks, marker ) ).toBe( true );
 	expect( hasMarker( stateAfterSave.blocks, optionMarker ) ).toBe( true );
+	for ( const formOptionMarker of formOptionMarkers ) {
+		expect( hasMarker( stateAfterSave.blocks, formOptionMarker ) ).toBe(
+			true
+		);
+	}
 	expect( stateAfterSave.title ).toContain( titleMarker );
 
 	await waitForPersistedPostContentMarker( requestUtils, postId, marker );
@@ -1345,11 +1509,18 @@ async function saveCheckpointAndVerify( {
 		postId,
 		optionMarker
 	);
+	for ( const formOptionMarker of formOptionMarkers ) {
+		await waitForPersistedPostContentMarker(
+			requestUtils,
+			postId,
+			formOptionMarker
+		);
+	}
 	await waitForPersistedPostTitleMarker( requestUtils, postId, titleMarker );
 	const revision = await waitForRevisionContainingMarkers(
 		requestUtils,
 		postId,
-		[ marker, optionMarker ]
+		[ marker, optionMarker, ...formOptionMarkers ]
 	);
 	expect( getRawFieldValue( revision.title ) ).toContain( titleMarker );
 
@@ -1367,6 +1538,11 @@ async function saveCheckpointAndVerify( {
 		expect( hasMarker( stateAfterViewerReload.blocks, optionMarker ) ).toBe(
 			true
 		);
+		for ( const formOptionMarker of formOptionMarkers ) {
+			expect(
+				hasMarker( stateAfterViewerReload.blocks, formOptionMarker )
+			).toBe( true );
+		}
 		expect( stateAfterViewerReload.title ).toContain( titleMarker );
 		await waitForPersistedPostContentMarker( requestUtils, postId, marker );
 		await waitForPersistedPostContentMarker(
@@ -1374,21 +1550,69 @@ async function saveCheckpointAndVerify( {
 			postId,
 			optionMarker
 		);
+		for ( const formOptionMarker of formOptionMarkers ) {
+			await waitForPersistedPostContentMarker(
+				requestUtils,
+				postId,
+				formOptionMarker
+			);
+		}
 		await waitForPersistedPostTitleMarker(
 			requestUtils,
 			postId,
 			titleMarker
 		);
+
+		const viewerSaveMarker = `${ marker }-viewer-post-reload-save`;
+		await insertCheckpointMarker( viewer.page, viewerSaveMarker );
+		await saveDraft( viewer.page );
+		await waitForPersistedPostContentMarker(
+			requestUtils,
+			postId,
+			viewerSaveMarker
+		);
+		await waitForRevisionContainingMarkers( requestUtils, postId, [
+			marker,
+			optionMarker,
+			...formOptionMarkers,
+		] );
+		for ( const formOptionMarker of formOptionMarkers ) {
+			await waitForPersistedPostContentMarker(
+				requestUtils,
+				postId,
+				formOptionMarker
+			);
+		}
 	}
 
 	return {
 		content: contentBeforeSave,
+		formOptionMarkers,
 		marker,
 		optionMarker,
 		revisionId: revision.id,
 		step,
 		titleMarker,
 	};
+}
+
+async function expectSelectedRevisionInBrowser( {
+	editor,
+	newerCheckpoint,
+	oldCheckpoint,
+}: {
+	editor: Editor;
+	newerCheckpoint: SaveCheckpoint;
+	oldCheckpoint: SaveCheckpoint;
+} ) {
+	await expect(
+		editor.canvas.getByText( oldCheckpoint.marker, { exact: true } ).first()
+	).toBeVisible( { timeout: 20000 } );
+	await expect(
+		editor.canvas
+			.getByText( newerCheckpoint.marker, { exact: true } )
+			.first()
+	).toBeHidden( { timeout: 20000 } );
 }
 
 async function chooseOldRevisionInBrowser( {
@@ -1403,46 +1627,33 @@ async function chooseOldRevisionInBrowser( {
 	page: Page;
 } ) {
 	const slider = page.getByRole( 'slider', { name: 'Revision' } );
+	await expect( slider ).toBeVisible( { timeout: 20000 } );
 	await slider.focus();
 
 	for ( let attempt = 0; attempt < 50; attempt++ ) {
 		const oldContentVisible = await editor.canvas
-			.getByText( oldCheckpoint.marker )
-			.first()
-			.isVisible()
-			.catch( () => false );
-		const oldOptionVisible = await editor.canvas
-			.getByText( oldCheckpoint.optionMarker )
+			.getByText( oldCheckpoint.marker, { exact: true } )
 			.first()
 			.isVisible()
 			.catch( () => false );
 		const newerContentVisible = await editor.canvas
-			.getByText( newerCheckpoint.marker )
-			.first()
-			.isVisible()
-			.catch( () => false );
-		const newerOptionVisible = await editor.canvas
-			.getByText( newerCheckpoint.optionMarker )
+			.getByText( newerCheckpoint.marker, { exact: true } )
 			.first()
 			.isVisible()
 			.catch( () => false );
 
-		if (
-			oldContentVisible &&
-			oldOptionVisible &&
-			! newerContentVisible &&
-			! newerOptionVisible
-		) {
+		if ( oldContentVisible && ! newerContentVisible ) {
 			return;
 		}
 
-		const previousSliderValue =
-			await slider.getAttribute( 'aria-valuenow' );
+		const previousSliderValue = await slider.inputValue();
+		if ( previousSliderValue === '0' ) {
+			break;
+		}
+
 		await slider.press( 'ArrowLeft' );
 		await expect
-			.poll( () => slider.getAttribute( 'aria-valuenow' ), {
-				timeout: 1000,
-			} )
+			.poll( () => slider.inputValue(), { timeout: 3000 } )
 			.not.toBe( previousSliderValue );
 	}
 
@@ -1480,9 +1691,15 @@ async function restoreRevisionViaBrowserAndVerify( {
 
 	expect( restoredContent ).toContain( oldCheckpoint.marker );
 	expect( restoredContent ).toContain( oldCheckpoint.optionMarker );
+	for ( const formOptionMarker of oldCheckpoint.formOptionMarkers ) {
+		expect( restoredContent ).toContain( formOptionMarker );
+	}
 	expect( restoredTitle ).toContain( oldCheckpoint.titleMarker );
 	expect( restoredContent ).not.toContain( newerCheckpoint.marker );
 	expect( restoredContent ).not.toContain( newerCheckpoint.optionMarker );
+	for ( const formOptionMarker of newerCheckpoint.formOptionMarkers ) {
+		expect( restoredContent ).not.toContain( formOptionMarker );
+	}
 	expect( restoredTitle ).not.toContain( newerCheckpoint.titleMarker );
 
 	await restorer.page.bringToFront();
@@ -1505,10 +1722,17 @@ async function restoreRevisionViaBrowserAndVerify( {
 		oldCheckpoint,
 		page: restorer.page,
 	} );
+	await expectSelectedRevisionInBrowser( {
+		editor: restorer.editor,
+		newerCheckpoint,
+		oldCheckpoint,
+	} );
 	await restoreButton.click();
 
 	await expect(
-		restorer.page.getByText( 'Restored to revision' )
+		restorer.page
+			.getByTestId( 'snackbar' )
+			.filter( { hasText: 'Restored to revision' } )
 	).toBeVisible();
 
 	await reloadAndWait( restorer.page, collaborationUtils );
@@ -1524,6 +1748,11 @@ async function restoreRevisionViaBrowserAndVerify( {
 	expect(
 		hasMarker( stateAfterRestore.blocks, oldCheckpoint.optionMarker )
 	).toBe( true );
+	for ( const formOptionMarker of oldCheckpoint.formOptionMarkers ) {
+		expect( hasMarker( stateAfterRestore.blocks, formOptionMarker ) ).toBe(
+			true
+		);
+	}
 	expect( stateAfterRestore.title ).toContain( oldCheckpoint.titleMarker );
 	expect(
 		hasMarker( stateAfterRestore.blocks, newerCheckpoint.marker )
@@ -1531,6 +1760,11 @@ async function restoreRevisionViaBrowserAndVerify( {
 	expect(
 		hasMarker( stateAfterRestore.blocks, newerCheckpoint.optionMarker )
 	).toBe( false );
+	for ( const formOptionMarker of newerCheckpoint.formOptionMarkers ) {
+		expect( hasMarker( stateAfterRestore.blocks, formOptionMarker ) ).toBe(
+			false
+		);
+	}
 	expect( stateAfterRestore.title ).not.toContain(
 		newerCheckpoint.titleMarker
 	);
@@ -1546,8 +1780,14 @@ async function restoreRevisionViaBrowserAndVerify( {
 		oldCheckpoint.titleMarker
 	);
 	expect( persistedContent ).toContain( oldCheckpoint.optionMarker );
+	for ( const formOptionMarker of oldCheckpoint.formOptionMarkers ) {
+		expect( persistedContent ).toContain( formOptionMarker );
+	}
 	expect( persistedContent ).not.toContain( newerCheckpoint.marker );
 	expect( persistedContent ).not.toContain( newerCheckpoint.optionMarker );
+	for ( const formOptionMarker of newerCheckpoint.formOptionMarkers ) {
+		expect( persistedContent ).not.toContain( formOptionMarker );
+	}
 	expect( persistedTitle ).not.toContain( newerCheckpoint.titleMarker );
 }
 
@@ -1610,6 +1850,11 @@ const ACTIONS: PageAction[] = [
 			editTableArrayAttributes( page, seed, step, userIndex, rng ),
 	},
 	{
+		label: 'edit-form-options-block',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			editFormOptionsBlock( page, seed, step, userIndex, rng ),
+	},
+	{
 		label: 'reparse-edited-content',
 		run: async ( page, seed, step, userIndex ) =>
 			reparseEditedContent( page, seed, step, userIndex ),
@@ -1639,6 +1884,7 @@ function getActiveActions(): PageAction[] {
 			'concurrent-paragraphs',
 			'insert-heading',
 			'edit-table-array-attributes',
+			'edit-form-options-block',
 		] );
 
 		return ACTIONS.filter( ( action ) =>
@@ -1668,7 +1914,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			collaborationUtils,
 			requestUtils,
 		} ) => {
-			test.setTimeout( Math.max( 90000, STEP_COUNT * 15000 ) );
+			test.setTimeout(
+				Math.max( 90000, BOOT_TIMEOUT_MS * 3 + STEP_COUNT * 15000 )
+			);
 
 			const rng = createRng( seed );
 			const post = await requestUtils.createPost( {
