@@ -85,6 +85,7 @@ type PendingUpdate = {
 const INITIAL_SYNC_ORIGIN = 'initial-sync';
 const REMOTE_SYNC_ORIGIN = 'remote-sync';
 const SEEDS = seededRangeFromEnv( 10, 301 );
+const STALE_SNAPSHOT_SEEDS = seededRangeFromEnv( 10, 901 );
 const STEP_COUNT = intFromEnv( 'GUTENBERG_RTC_CRDT_BLOCK_STEPS', 14, {
 	min: 1,
 } );
@@ -133,6 +134,31 @@ const RICH_TEXT_SAMPLES = [
 type MutationResult = {
 	action: string;
 	cursorPosition: number | null;
+};
+
+type StaleSnapshotScenario = {
+	applyLocal: ( blocks: Block[] ) => void;
+	applyRemote: ( blocks: Block[] ) => void;
+	initialBlocks: Block[];
+	label: string;
+	localMarker: string;
+	remoteMarker: string;
+	remoteShouldExist: boolean;
+};
+
+type NestedRichTextAttributes = {
+	cards: Array< {
+		body: string;
+		meta: {
+			caption?: string;
+			tone?: string;
+		};
+		title: string;
+	} >;
+	hero: {
+		caption?: string;
+		headline?: string;
+	};
 };
 
 function cloneBlocks( blocks: Block[] ): Block[] {
@@ -258,6 +284,94 @@ function createNestedRichTextBlock(
 	};
 }
 
+function createBaselineRichTextPairBlock( seed: number ): Block {
+	return {
+		name: 'test/rich-text-pair',
+		clientId: `pair-${ seed }`,
+		attributes: {
+			first: `pair-${ seed }-first`,
+			second: `pair-${ seed }-second`,
+		},
+		innerBlocks: [],
+	};
+}
+
+function createBaselineNestedRichTextBlock(
+	seed: number,
+	options: { heroCaption?: string } = {}
+): Block {
+	const hero: NestedRichTextAttributes[ 'hero' ] = {
+		headline: `hero-${ seed }-headline`,
+	};
+
+	if ( options.heroCaption !== undefined ) {
+		hero.caption = options.heroCaption;
+	}
+
+	return {
+		name: 'test/nested-rich-text',
+		clientId: `nested-${ seed }`,
+		attributes: {
+			hero,
+			cards: [
+				{
+					title: `card-${ seed }-0-title`,
+					body: `card-${ seed }-0-body`,
+					meta: {
+						caption: `card-${ seed }-0-caption`,
+						tone: 'tone-0',
+					},
+				},
+				{
+					title: `card-${ seed }-1-title`,
+					body: `card-${ seed }-1-body`,
+					meta: {
+						caption: `card-${ seed }-1-caption`,
+						tone: 'tone-1',
+					},
+				},
+				{
+					title: `card-${ seed }-2-title`,
+					body: `card-${ seed }-2-body`,
+					meta: {
+						caption: `card-${ seed }-2-caption`,
+						tone: 'tone-2',
+					},
+				},
+			],
+		},
+		innerBlocks: [],
+	};
+}
+
+function createMarkedParagraphBlock( seed: number, marker: string ): Block {
+	return {
+		name: 'core/paragraph',
+		clientId: `paragraph-${ seed }-${ marker }`,
+		attributes: {
+			content: marker,
+		},
+		innerBlocks: [],
+	};
+}
+
+function getNestedRichTextAttributes(
+	blocks: Block[]
+): NestedRichTextAttributes {
+	return blocks[ 0 ].attributes as NestedRichTextAttributes;
+}
+
+function createRemoteCard( seed: number, marker: string ) {
+	return {
+		title: marker,
+		body: `remote-card-${ seed }-body`,
+		meta: {
+			caption: `remote-card-${ seed }-caption`,
+			tone: 'remote',
+		},
+	};
+}
+
 function walkBlocks( blocks: Block[], callback: ( block: Block ) => void ) {
 	for ( const block of blocks ) {
 		callback( block );
@@ -359,6 +473,30 @@ function assertLocalMergeMatches( actual: Block[], expected: Block[] ) {
 	expect( normalizeBlocksForComparison( actual ) ).toEqual(
 		normalizeBlocksForComparison( expected )
 	);
+}
+
+function assertMarkerState(
+	blocks: Block[],
+	marker: string,
+	shouldExist: boolean,
+	trace: string[]
+) {
+	const serializedBlocks = JSON.stringify(
+		normalizeBlocksForComparison( blocks )
+	);
+	const hasMarker = serializedBlocks.includes( marker );
+
+	if ( hasMarker !== shouldExist ) {
+		throw new Error(
+			`Expected marker "${ marker }" to ${
+				shouldExist ? 'exist' : 'be absent'
+			}\nTrace:\n${ trace.join( '\n' ) }\nBlocks:\n${ JSON.stringify(
+				normalizeBlocksForComparison( blocks ),
+				null,
+				2
+			) }`
+		);
+	}
 }
 
 function mutateRichTextValue(
@@ -636,6 +774,348 @@ function mutateBlocks(
 	return { action, cursorPosition: null };
 }
 
+function createStaleSnapshotScenario(
+	seed: number,
+	rng: ReturnType< typeof createSeededRandom >
+): StaleSnapshotScenario {
+	const scenario = rng.pick( [
+		'rich-text-sibling-update',
+		'rich-text-sibling-delete',
+		'object-query-add',
+		'object-query-update',
+		'object-query-delete',
+		'array-query-cell-update',
+		'array-query-nested-object-update',
+		'array-query-append',
+		'array-query-prepend',
+		'array-query-delete',
+		'top-level-append',
+		'top-level-delete',
+	] as const );
+	const remoteMarker = `remote-${ seed }-${ scenario }-${ rng.string(
+		'value'
+	) }`;
+	const localMarker = `local-${ seed }-${ scenario }-${ rng.string(
+		'value'
+	) }`;
+
+	switch ( scenario ) {
+		case 'rich-text-sibling-update':
+			return {
+				label: scenario,
+				initialBlocks: [ createBaselineRichTextPairBlock( seed ) ],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					blocks[ 0 ].attributes.second = remoteMarker;
+				},
+				applyLocal( blocks ) {
+					blocks[ 0 ].attributes.first = localMarker;
+				},
+			};
+
+		case 'rich-text-sibling-delete':
+			return {
+				label: scenario,
+				initialBlocks: [
+					{
+						...createBaselineRichTextPairBlock( seed ),
+						attributes: {
+							first: `pair-${ seed }-first`,
+							second: remoteMarker,
+						},
+					},
+				],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: false,
+				applyRemote( blocks ) {
+					delete blocks[ 0 ].attributes.second;
+				},
+				applyLocal( blocks ) {
+					blocks[ 0 ].attributes.first = localMarker;
+				},
+			};
+
+		case 'object-query-add':
+			return {
+				label: scenario,
+				initialBlocks: [ createBaselineNestedRichTextBlock( seed ) ],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.caption =
+						remoteMarker;
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.headline =
+						localMarker;
+				},
+			};
+
+		case 'object-query-update':
+			return {
+				label: scenario,
+				initialBlocks: [
+					createBaselineNestedRichTextBlock( seed, {
+						heroCaption: `hero-${ seed }-caption`,
+					} ),
+				],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.caption =
+						remoteMarker;
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.headline =
+						localMarker;
+				},
+			};
+
+		case 'object-query-delete':
+			return {
+				label: scenario,
+				initialBlocks: [
+					createBaselineNestedRichTextBlock( seed, {
+						heroCaption: remoteMarker,
+					} ),
+				],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: false,
+				applyRemote( blocks ) {
+					delete getNestedRichTextAttributes( blocks ).hero.caption;
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.headline =
+						localMarker;
+				},
+			};
+
+		case 'array-query-cell-update':
+			return {
+				label: scenario,
+				initialBlocks: [ createBaselineNestedRichTextBlock( seed ) ],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					getNestedRichTextAttributes( blocks ).cards[ 1 ].body =
+						remoteMarker;
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).cards[ 0 ].title =
+						localMarker;
+				},
+			};
+
+		case 'array-query-nested-object-update':
+			return {
+				label: scenario,
+				initialBlocks: [ createBaselineNestedRichTextBlock( seed ) ],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					getNestedRichTextAttributes(
+						blocks
+					).cards[ 1 ].meta.caption = remoteMarker;
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).cards[ 0 ].title =
+						localMarker;
+				},
+			};
+
+		case 'array-query-append':
+			return {
+				label: scenario,
+				initialBlocks: [ createBaselineNestedRichTextBlock( seed ) ],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					getNestedRichTextAttributes( blocks ).cards.push(
+						createRemoteCard( seed, remoteMarker )
+					);
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.headline =
+						localMarker;
+				},
+			};
+
+		case 'array-query-prepend':
+			return {
+				label: scenario,
+				initialBlocks: [ createBaselineNestedRichTextBlock( seed ) ],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					getNestedRichTextAttributes( blocks ).cards.unshift(
+						createRemoteCard( seed, remoteMarker )
+					);
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.headline =
+						localMarker;
+				},
+			};
+
+		case 'array-query-delete': {
+			const initialBlock = createBaselineNestedRichTextBlock( seed );
+			( initialBlock.attributes as NestedRichTextAttributes ).cards = [
+				{
+					title: `card-${ seed }-0-title`,
+					body: `card-${ seed }-0-body`,
+					meta: {
+						caption: `card-${ seed }-0-caption`,
+					},
+				},
+				createRemoteCard( seed, remoteMarker ),
+				{
+					title: `card-${ seed }-2-title`,
+					body: `card-${ seed }-2-body`,
+					meta: {
+						caption: `card-${ seed }-2-caption`,
+					},
+				},
+			];
+
+			return {
+				label: scenario,
+				initialBlocks: [ initialBlock ],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: false,
+				applyRemote( blocks ) {
+					getNestedRichTextAttributes( blocks ).cards.splice( 1, 1 );
+				},
+				applyLocal( blocks ) {
+					getNestedRichTextAttributes( blocks ).hero.headline =
+						localMarker;
+				},
+			};
+		}
+
+		case 'top-level-append':
+			return {
+				label: scenario,
+				initialBlocks: [
+					createMarkedParagraphBlock(
+						seed,
+						`paragraph-${ seed }-initial`
+					),
+				],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: true,
+				applyRemote( blocks ) {
+					blocks.push(
+						createMarkedParagraphBlock( seed, remoteMarker )
+					);
+				},
+				applyLocal( blocks ) {
+					blocks[ 0 ].attributes.content = localMarker;
+				},
+			};
+
+		case 'top-level-delete':
+			return {
+				label: scenario,
+				initialBlocks: [
+					createMarkedParagraphBlock(
+						seed,
+						`paragraph-${ seed }-initial`
+					),
+					createMarkedParagraphBlock( seed, remoteMarker ),
+				],
+				localMarker,
+				remoteMarker,
+				remoteShouldExist: false,
+				applyRemote( blocks ) {
+					blocks.splice( 1, 1 );
+				},
+				applyLocal( blocks ) {
+					blocks[ 0 ].attributes.content = localMarker;
+				},
+			};
+	}
+}
+
+// This models the UI interleaving that convergence-only tests miss: A receives a
+// remote Yjs update, then emits an older full block snapshot containing a distinct
+// local edit. The remote operation is acknowledged and must not be reverted.
+function runStaleSnapshotScenario( seed: number ) {
+	const rng = createSeededRandom( seed );
+	const scenario = createStaleSnapshotScenario( seed, rng );
+	const trace: string[] = [ `scenario ${ scenario.label }` ];
+	const docA = new Y.Doc();
+	const docB = new Y.Doc();
+	const yblocksA = docA.getArray< YBlock >( 'blocks' );
+	const yblocksB = docB.getArray< YBlock >( 'blocks' );
+
+	try {
+		const staleLocalBlocks = cloneBlocks( scenario.initialBlocks );
+
+		mergeCrdtBlocks( yblocksA, scenario.initialBlocks, null );
+		Y.applyUpdateV2(
+			docB,
+			Y.encodeStateAsUpdateV2( docA ),
+			INITIAL_SYNC_ORIGIN
+		);
+
+		const remoteBlocks = getBlocks( yblocksB );
+		scenario.applyRemote( remoteBlocks );
+		trace.push( `remote ${ scenario.remoteMarker }` );
+		mergeCrdtBlocks( yblocksB, remoteBlocks, null );
+		Y.applyUpdateV2(
+			docA,
+			Y.encodeStateAsUpdateV2( docB ),
+			REMOTE_SYNC_ORIGIN
+		);
+
+		assertMarkerState(
+			getBlocks( yblocksA ),
+			scenario.remoteMarker,
+			scenario.remoteShouldExist,
+			trace
+		);
+
+		scenario.applyLocal( staleLocalBlocks );
+		trace.push( `stale local ${ scenario.localMarker }` );
+		mergeCrdtBlocks( yblocksA, staleLocalBlocks, null );
+
+		const blocksAfterStaleMerge = getBlocks( yblocksA );
+		assertMarkerState(
+			blocksAfterStaleMerge,
+			scenario.remoteMarker,
+			scenario.remoteShouldExist,
+			trace
+		);
+		assertMarkerState(
+			blocksAfterStaleMerge,
+			scenario.localMarker,
+			true,
+			trace
+		);
+	} catch ( error ) {
+		throw new Error(
+			`Stale snapshot fuzz failed for seed ${ seed }\n${ trace.join(
+				'\n'
+			) }\n${ error instanceof Error ? error.message : String( error ) }`
+		);
+	} finally {
+		docA.destroy();
+		docB.destroy();
+	}
+}
+
 function runScenario( seed: number ) {
 	const rng = createSeededRandom( seed );
 	const pendingUpdates: PendingUpdate[] = [];
@@ -717,6 +1197,13 @@ describe( 'crdt-blocks fuzzing', () => {
 		'concurrent-block-tree-edits-preserve-structure (seed %i)',
 		( seed ) => {
 			expect( () => runScenario( seed ) ).not.toThrow();
+		}
+	);
+
+	it.each( STALE_SNAPSHOT_SEEDS )(
+		'stale-local-snapshots-preserve-acknowledged-remote-operations (seed %i)',
+		( seed ) => {
+			expect( () => runStaleSnapshotScenario( seed ) ).not.toThrow();
 		}
 	);
 } );
