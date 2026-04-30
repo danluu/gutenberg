@@ -38,6 +38,7 @@ import {
 	updateSelectionHistory,
 } from './crdt-selection';
 import {
+	createRichTextOffset,
 	createYMap,
 	getRootMap,
 	isYMap,
@@ -291,7 +292,7 @@ function getMergeCursorPosition(
 	return {
 		attributeKey: selectionStart.attributeKey,
 		clientId: selectionStart.clientId,
-		offset: selectionStart.offset,
+		offset: createRichTextOffset( selectionStart.offset ),
 	};
 }
 

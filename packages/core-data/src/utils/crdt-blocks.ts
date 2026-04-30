@@ -15,8 +15,11 @@ import { Y } from '@wordpress/sync';
  * Internal dependencies
  */
 import {
+	createRichTextOffset,
 	createYMap,
 	richTextOffsetToHtmlIndex,
+	type HtmlStringIndex,
+	type RichTextOffset,
 	type YMapRecord,
 	type YMapWrap,
 } from './crdt-utils';
@@ -69,7 +72,7 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 export interface RichTextCursorSelection {
 	attributeKey: string;
 	clientId: string;
-	offset: number;
+	offset: RichTextOffset;
 }
 
 export type MergeCursorPosition = number | RichTextCursorSelection | null;
@@ -401,7 +404,7 @@ function createNewYBlock( block: Block ): YBlock {
  *
  * @param yblocks        The blocks in the local Y.Doc.
  * @param incomingBlocks Gutenberg blocks being synced.
- * @param cursorPosition The position of the cursor after the change occurs.
+ * @param cursorPosition The rich-text cursor hint after the change occurs.
  */
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
@@ -946,10 +949,7 @@ function mergeYMapValues(
 
 	// Delete properties absent from the incoming object.
 	for ( const key of yMap.keys() ) {
-		if (
-			key !== ARRAY_ELEMENT_ID_KEY &&
-			! Object.hasOwn( newObj, key )
-		) {
+		if ( key !== ARRAY_ELEMENT_ID_KEY && ! Object.hasOwn( newObj, key ) ) {
 			yMap.delete( key );
 		}
 	}
@@ -1001,13 +1001,16 @@ function resolveRichTextCursorPosition(
 	cursorPosition: MergeCursorPosition,
 	cursorScope: RichTextCursorScope,
 	updatedValue: string
-): number | null {
+): HtmlStringIndex | null {
 	if ( cursorPosition === null ) {
 		return null;
 	}
 
 	if ( typeof cursorPosition === 'number' ) {
-		return richTextOffsetToHtmlIndex( updatedValue, cursorPosition );
+		return richTextOffsetToHtmlIndex(
+			updatedValue,
+			createRichTextOffset( cursorPosition )
+		);
 	}
 
 	if ( cursorPosition.clientId !== cursorScope.blockClientId ) {
@@ -1116,14 +1119,14 @@ let localDoc: Y.Doc;
  * Given a Y.Text object and an updated string value, diff the new value and
  * apply the delta to the Y.Text.
  *
- * @param blockYText     The Y.Text to update.
- * @param updatedValue   The updated value.
- * @param cursorPosition The position of the cursor after the change occurs.
+ * @param blockYText      The Y.Text to update.
+ * @param updatedValue    The updated value.
+ * @param htmlCursorIndex The cursor index in the updated HTML string.
  */
 export function mergeRichTextUpdate(
 	blockYText: Y.Text,
 	updatedValue: string,
-	cursorPosition: number | null = null
+	htmlCursorIndex: HtmlStringIndex | null = null
 ): void {
 	// Gutenberg does not use Yjs shared types natively, so we can only subscribe
 	// to changes from store and apply them to Yjs types that we create and
@@ -1148,10 +1151,10 @@ export function mergeRichTextUpdate(
 	const updatedValueAsDelta = new Delta( localYText.toDelta() );
 	const deltaDiff = currentValueAsDelta.diffWithCursor(
 		updatedValueAsDelta,
-		cursorPosition
+		htmlCursorIndex
 	);
 	const safeDiff =
-		cursorPosition !== null &&
+		htmlCursorIndex !== null &&
 		! isDeltaVerificationMatch( blockYText, deltaDiff, updatedValue )
 			? currentValueAsDelta.diff( updatedValueAsDelta )
 			: deltaDiff;
