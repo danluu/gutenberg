@@ -144,8 +144,14 @@ export function getYTextByAttributeKey(
 		return directValue;
 	}
 
-	let value: unknown = attributes;
-	for ( const pathPart of attributeKey.split( '.' ) ) {
+	const pathParts = attributeKey.split( '.' );
+	let value: unknown = attributes.get( pathParts[ 0 ] );
+
+	if ( pathParts.length === 1 ) {
+		return findUniqueYText( value );
+	}
+
+	for ( const pathPart of pathParts.slice( 1 ) ) {
 		if ( value instanceof Y.Map ) {
 			value = value.get( pathPart );
 		} else if ( value instanceof Y.Array ) {
@@ -164,6 +170,40 @@ export function getYTextByAttributeKey(
 	}
 
 	return value instanceof Y.Text ? value : null;
+}
+
+function findYTexts( value: unknown ): Y.Text[] {
+	if ( value instanceof Y.Text ) {
+		return [ value ];
+	}
+
+	if ( value instanceof Y.Map ) {
+		const yTexts: Y.Text[] = [];
+
+		for ( const nestedValue of value.values() ) {
+			yTexts.push( ...findYTexts( nestedValue ) );
+		}
+
+		return yTexts;
+	}
+
+	if ( value instanceof Y.Array ) {
+		const yTexts: Y.Text[] = [];
+
+		for ( const nestedValue of value ) {
+			yTexts.push( ...findYTexts( nestedValue ) );
+		}
+
+		return yTexts;
+	}
+
+	return [];
+}
+
+function findUniqueYText( value: unknown ): Y.Text | null {
+	const yTexts = findYTexts( value );
+
+	return yTexts.length === 1 ? yTexts[ 0 ] : null;
 }
 
 function findYTextPath(
