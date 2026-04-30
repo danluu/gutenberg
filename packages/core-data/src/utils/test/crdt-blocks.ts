@@ -1185,6 +1185,46 @@ describe( 'crdt-blocks', () => {
 	} );
 
 	describe( 'table block', () => {
+		type TableBody = {
+			cells: { content: string; tag: string }[];
+		}[];
+
+		const createTableBlock = ( body: TableBody ): Block => ( {
+			name: 'core/table',
+			attributes: { body },
+			innerBlocks: [],
+		} );
+
+		const getTableBody = ( blocks: Y.Array< YBlock > ): TableBody => {
+			const attrs = blocks
+				.get( 0 )
+				.get( 'attributes' ) as YBlockAttributes;
+			return (
+				attrs.get( 'body' ) as Y.Array< unknown >
+			 ).toJSON() as TableBody;
+		};
+
+		const syncInitialTableToSecondDoc = ( body: TableBody ) => {
+			mergeCrdtBlocks( yblocks, [ createTableBlock( body ) ], null );
+
+			const doc2 = new Y.Doc();
+			const yblocks2 = doc2.getArray< YBlock >();
+			Y.applyUpdate( doc2, Y.encodeStateAsUpdate( doc ) );
+
+			return { doc2, yblocks2 };
+		};
+
+		const editTableBlockCell = (
+			blocks: Block[],
+			rowIndex: number,
+			cellIndex: number,
+			content: string
+		) => {
+			( blocks[ 0 ].attributes as { body: TableBody } ).body[
+				rowIndex
+			].cells[ cellIndex ].content = content;
+		};
+
 		it( 'preserves table cell content through CRDT round-trip', () => {
 			const tableBlocks: Block[] = [
 				{
@@ -1827,6 +1867,208 @@ describe( 'crdt-blocks', () => {
 			}
 
 			doc2.destroy();
+		} );
+
+		it( 'preserves a remote cell edit when a stale local table snapshot edits another cell', () => {
+			const initialBody = [
+				{
+					cells: [
+						{ content: 'A1', tag: 'td' },
+						{ content: 'B1', tag: 'td' },
+					],
+				},
+			];
+			const staleLocalBlocks = [ createTableBlock( initialBody ) ];
+			const { doc2, yblocks2 } =
+				syncInitialTableToSecondDoc( initialBody );
+
+			try {
+				mergeCrdtBlocks(
+					yblocks2,
+					[
+						createTableBlock( [
+							{
+								cells: [
+									{ content: 'A1', tag: 'td' },
+									{ content: 'B1-remote', tag: 'td' },
+								],
+							},
+						] ),
+					],
+					null
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( doc2 ) );
+				expect( getTableBody( yblocks )[ 0 ].cells[ 1 ].content ).toBe(
+					'B1-remote'
+				);
+
+				editTableBlockCell( staleLocalBlocks, 0, 0, 'A1-local' );
+				mergeCrdtBlocks( yblocks, staleLocalBlocks, null );
+
+				expect( getTableBody( yblocks ) ).toMatchObject( [
+					{
+						cells: [
+							{ content: 'A1-local' },
+							{ content: 'B1-remote' },
+						],
+					},
+				] );
+			} finally {
+				doc2.destroy();
+			}
+		} );
+
+		it( 'preserves a remotely appended table row when a stale local table snapshot edits another cell', () => {
+			const initialBody = [
+				{
+					cells: [
+						{ content: 'A1', tag: 'td' },
+						{ content: 'B1', tag: 'td' },
+					],
+				},
+				{
+					cells: [
+						{ content: 'A2', tag: 'td' },
+						{ content: 'B2', tag: 'td' },
+					],
+				},
+			];
+			const staleLocalBlocks = [ createTableBlock( initialBody ) ];
+			const { doc2, yblocks2 } =
+				syncInitialTableToSecondDoc( initialBody );
+
+			try {
+				mergeCrdtBlocks(
+					yblocks2,
+					[
+						createTableBlock( [
+							...initialBody,
+							{
+								cells: [
+									{ content: 'A3-remote', tag: 'td' },
+									{ content: 'B3-remote', tag: 'td' },
+								],
+							},
+						] ),
+					],
+					null
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( doc2 ) );
+				expect( getTableBody( yblocks ) ).toHaveLength( 3 );
+
+				editTableBlockCell( staleLocalBlocks, 0, 0, 'A1-local' );
+				mergeCrdtBlocks( yblocks, staleLocalBlocks, null );
+
+				const body = getTableBody( yblocks );
+				expect( body ).toHaveLength( 3 );
+				expect( body[ 0 ].cells[ 0 ].content ).toBe( 'A1-local' );
+				expect( body[ 2 ].cells[ 0 ].content ).toBe( 'A3-remote' );
+			} finally {
+				doc2.destroy();
+			}
+		} );
+
+		it( 'preserves a remotely prepended table row when a stale local table snapshot edits another cell', () => {
+			const initialBody = [
+				{
+					cells: [
+						{ content: 'A1', tag: 'td' },
+						{ content: 'B1', tag: 'td' },
+					],
+				},
+				{
+					cells: [
+						{ content: 'A2', tag: 'td' },
+						{ content: 'B2', tag: 'td' },
+					],
+				},
+			];
+			const staleLocalBlocks = [ createTableBlock( initialBody ) ];
+			const { doc2, yblocks2 } =
+				syncInitialTableToSecondDoc( initialBody );
+
+			try {
+				mergeCrdtBlocks(
+					yblocks2,
+					[
+						createTableBlock( [
+							{
+								cells: [
+									{ content: 'A0-remote', tag: 'td' },
+									{ content: 'B0-remote', tag: 'td' },
+								],
+							},
+							...initialBody,
+						] ),
+					],
+					null
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( doc2 ) );
+				expect( getTableBody( yblocks ) ).toHaveLength( 3 );
+
+				editTableBlockCell( staleLocalBlocks, 0, 0, 'A1-local' );
+				mergeCrdtBlocks( yblocks, staleLocalBlocks, null );
+
+				const body = getTableBody( yblocks );
+				expect( body ).toHaveLength( 3 );
+				expect( body[ 0 ].cells[ 0 ].content ).toBe( 'A0-remote' );
+				expect( body[ 1 ].cells[ 0 ].content ).toBe( 'A1-local' );
+			} finally {
+				doc2.destroy();
+			}
+		} );
+
+		it( 'preserves a remote table row deletion when a stale local table snapshot edits another cell', () => {
+			const initialBody = [
+				{
+					cells: [
+						{ content: 'A1', tag: 'td' },
+						{ content: 'B1', tag: 'td' },
+					],
+				},
+				{
+					cells: [
+						{ content: 'A2-remote-delete', tag: 'td' },
+						{ content: 'B2-remote-delete', tag: 'td' },
+					],
+				},
+				{
+					cells: [
+						{ content: 'A3', tag: 'td' },
+						{ content: 'B3', tag: 'td' },
+					],
+				},
+			];
+			const staleLocalBlocks = [ createTableBlock( initialBody ) ];
+			const { doc2, yblocks2 } =
+				syncInitialTableToSecondDoc( initialBody );
+
+			try {
+				mergeCrdtBlocks(
+					yblocks2,
+					[
+						createTableBlock( [
+							initialBody[ 0 ],
+							initialBody[ 2 ],
+						] ),
+					],
+					null
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( doc2 ) );
+				expect( getTableBody( yblocks ) ).toHaveLength( 2 );
+
+				editTableBlockCell( staleLocalBlocks, 0, 0, 'A1-local' );
+				mergeCrdtBlocks( yblocks, staleLocalBlocks, null );
+
+				const body = getTableBody( yblocks );
+				expect( body ).toHaveLength( 2 );
+				expect( body[ 0 ].cells[ 0 ].content ).toBe( 'A1-local' );
+				expect(
+					JSON.stringify( body ).includes( 'remote-delete' )
+				).toBe( false );
+			} finally {
+				doc2.destroy();
+			}
 		} );
 
 		it( 'preserves Y.Map identity for untouched rows when a row is appended', () => {
