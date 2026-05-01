@@ -38,6 +38,7 @@ export const SECOND_USER: UserCredentials = {
 };
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
+const SYNC_REQUEST_ROUTE = /wp-sync/;
 
 function isSyncRequestRoute( route: Route ) {
 	const request = route.request();
@@ -49,6 +50,10 @@ export default class CollaborationUtils {
 	private editor: Editor;
 	private requestUtils: RequestUtils;
 	private primaryPage: Page;
+	private pendingSyncRouteHandlers = new WeakMap<
+		Page,
+		( route: Route ) => Promise< void >
+	>();
 	private sessions: UserSession[] = [];
 
 	constructor( {
@@ -311,10 +316,23 @@ export default class CollaborationUtils {
 		);
 	}
 
+	async clearPendingSyncRequestRoute( page: Page ) {
+		const existingHandler = this.pendingSyncRouteHandlers.get( page );
+
+		if ( ! existingHandler ) {
+			return;
+		}
+
+		this.pendingSyncRouteHandlers.delete( page );
+		await page.unroute( SYNC_REQUEST_ROUTE, existingHandler );
+	}
+
 	async routeNextSyncRequest(
 		page: Page,
 		onMatch: ( route: Route ) => Promise< void >
 	) {
+		await this.clearPendingSyncRequestRoute( page );
+
 		let handled = false;
 		const handler = async ( route: Route ) => {
 			if ( handled || ! isSyncRequestRoute( route ) ) {
@@ -323,11 +341,12 @@ export default class CollaborationUtils {
 			}
 
 			handled = true;
-			await page.unroute( '**/*', handler );
+			await this.clearPendingSyncRequestRoute( page );
 			await onMatch( route );
 		};
 
-		await page.route( '**/*', handler );
+		this.pendingSyncRouteHandlers.set( page, handler );
+		await page.route( SYNC_REQUEST_ROUTE, handler );
 	}
 
 	async delayNextSyncRequest( page: Page, delayMs: number ) {
