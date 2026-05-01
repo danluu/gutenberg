@@ -270,7 +270,8 @@ function areBlocksEqual( gblock: Block, yblock: YBlock ): boolean {
 
 function createNewYAttributeMap(
 	blockName: string,
-	attributes: BlockAttributes
+	attributes: BlockAttributes,
+	blockPath?: string
 ): YBlockAttributes {
 	return new Y.Map(
 		Object.entries( attributes ).map(
@@ -280,7 +281,10 @@ function createNewYAttributeMap(
 					createNewYAttributeValue(
 						blockName,
 						attributeName,
-						attributeValue
+						attributeValue,
+						blockPath
+							? `${ blockPath }/attributes/${ attributeName }`
+							: undefined
 					),
 				];
 			}
@@ -291,10 +295,11 @@ function createNewYAttributeMap(
 function createNewYAttributeValue(
 	blockName: string,
 	attributeName: string,
-	attributeValue: unknown
+	attributeValue: unknown,
+	attributePath?: string
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
-	return createYValueFromSchema( schema, attributeValue );
+	return createYValueFromSchema( schema, attributeValue, attributePath );
 }
 
 /**
@@ -306,13 +311,15 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema           The attribute type definition.
+ * @param value            The plain JS value to convert.
+ * @param arrayElementPath Optional stable path used to seed array element IDs.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
 	schema: BlockAttributeSchema | undefined,
-	value: unknown
+	value: unknown,
+	arrayElementPath?: string
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	if ( ! schema ) {
 		return value;
@@ -328,14 +335,22 @@ function createYValueFromSchema(
 
 		yArray.insert(
 			0,
-			value.map( ( item ) => createYMapFromQuery( query, item ) )
+			value.map( ( item, index ) =>
+				createYMapFromQuery(
+					query,
+					item,
+					arrayElementPath
+						? `${ arrayElementPath }/${ index }`
+						: undefined
+				)
+			)
 		);
 
 		return yArray;
 	}
 
 	if ( schema.type === 'object' && schema.query && isRecord( value ) ) {
-		return createYMapFromQuery( schema.query, value );
+		return createYMapFromQuery( schema.query, value, arrayElementPath );
 	}
 
 	return value;
@@ -355,32 +370,42 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Optional stable ID for this array element.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
 	query: Record< string, BlockAttributeSchema >,
-	obj: unknown
+	obj: unknown,
+	arrayElementId?: string
 ): Y.Map< unknown > {
 	if ( ! isRecord( obj ) ) {
 		return new Y.Map();
 	}
 
-	const arrayElementId = getArrayElementId( obj ) ?? uuidv4();
+	const resolvedArrayElementId =
+		getArrayElementId( obj ) ?? arrayElementId ?? uuidv4();
 	const entries: [ string, unknown ][] = Object.entries( obj )
 		.filter( ( [ key ] ) => key !== ARRAY_ELEMENT_ID_KEY )
 		.map( ( [ key, val ] ): [ string, unknown ] => {
 			const subSchema = query[ key ];
-			return [ key, createYValueFromSchema( subSchema, val ) ];
+			return [
+				key,
+				createYValueFromSchema(
+					subSchema,
+					val,
+					`${ resolvedArrayElementId }/${ key }`
+				),
+			];
 		} );
 
-	entries.push( [ ARRAY_ELEMENT_ID_KEY, arrayElementId ] );
+	entries.push( [ ARRAY_ELEMENT_ID_KEY, resolvedArrayElementId ] );
 
 	return new Y.Map( entries );
 }
 
-function createNewYBlock( block: Block ): YBlock {
+function createNewYBlock( block: Block, blockPath?: string ): YBlock {
 	return createYMap< YBlockRecord >(
 		Object.fromEntries(
 			Object.entries( block ).map( ( [ key, value ] ) => {
@@ -388,7 +413,11 @@ function createNewYBlock( block: Block ): YBlock {
 					case 'attributes': {
 						return [
 							key,
-							createNewYAttributeMap( block.name, value ),
+							createNewYAttributeMap(
+								block.name,
+								value,
+								blockPath
+							),
 						];
 					}
 
@@ -402,8 +431,13 @@ function createNewYBlock( block: Block ): YBlock {
 
 						innerBlocks.insert(
 							0,
-							value.map( ( innerBlock: Block ) =>
-								createNewYBlock( innerBlock )
+							value.map( ( innerBlock: Block, index: number ) =>
+								createNewYBlock(
+									innerBlock,
+									blockPath
+										? `${ blockPath }/innerBlocks/${ index }`
+										: undefined
+								)
 							)
 						);
 
@@ -655,7 +689,9 @@ function mergeCrdtBlocksIntoYBlocks(
 
 	// inserts
 	for ( let i = 0; i < numOfInsertionsNeeded; i++, left++ ) {
-		const newBlock = [ createNewYBlock( blocksToSync[ left ] ) ];
+		const newBlock = [
+			createNewYBlock( blocksToSync[ left ], String( left ) ),
+		];
 
 		yblocks.insert( left, newBlock );
 	}
