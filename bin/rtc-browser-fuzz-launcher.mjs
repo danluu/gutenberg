@@ -18,6 +18,8 @@ const NPM_BIN = path.join(
 	REPO_ROOT,
 	'.tooling/node-v20.19.0-darwin-arm64/bin/npm'
 );
+const RESOLVED_NODE_BIN = await resolveExecutable( NODE_BIN, 'node' );
+const RESOLVED_NPM_BIN = await resolveExecutable( NPM_BIN, 'npm' );
 const SHARED_PATH = [
 	path.join( REPO_ROOT, '.tooling/node-v20.19.0-darwin-arm64/bin' ),
 	path.join( REPO_ROOT, 'node_modules/.bin' ),
@@ -70,6 +72,27 @@ function getPositiveNumberEnv( name, fallback ) {
 	return parsedValue;
 }
 
+async function resolveExecutable( preferredPath, executableName ) {
+	try {
+		await fs.access( preferredPath );
+		return preferredPath;
+	} catch {}
+
+	if ( executableName === 'node' ) {
+		return process.execPath;
+	}
+
+	try {
+		return execFileSync( 'which', [ executableName ], {
+			encoding: 'utf8',
+		} ).trim();
+	} catch {
+		throw new Error(
+			`Could not find ${ executableName }. Checked ${ preferredPath } and PATH.`
+		);
+	}
+}
+
 function createTimestamp() {
 	return new Date()
 		.toISOString()
@@ -100,19 +123,23 @@ function getPerformanceCoreCount() {
 }
 
 async function ensureLocalNodeToolchain() {
-	await fs.access( NODE_BIN );
-	await fs.access( NPM_BIN );
+	await fs.access( RESOLVED_NODE_BIN );
+	await fs.access( RESOLVED_NPM_BIN );
 }
 
 async function runWpEnvStatusCheck() {
-	const result = spawn( NPM_BIN, [ 'run', 'wp-env-test', '--', 'status' ], {
-		cwd: REPO_ROOT,
-		env: {
-			...process.env,
-			PATH: SHARED_PATH,
-		},
-		stdio: [ 'ignore', 'pipe', 'pipe' ],
-	} );
+	const result = spawn(
+		RESOLVED_NPM_BIN,
+		[ 'run', 'wp-env-test', '--', 'status' ],
+		{
+			cwd: REPO_ROOT,
+			env: {
+				...process.env,
+				PATH: SHARED_PATH,
+			},
+			stdio: [ 'ignore', 'pipe', 'pipe' ],
+		}
+	);
 	const chunks = [];
 
 	result.stdout.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
@@ -143,21 +170,25 @@ async function main() {
 		const launcherLogPath = path.join( laneOutputDir, 'launcher.log' );
 		const launcherLog = await fs.open( launcherLogPath, 'a' );
 		const laneSeed = START_SEED + laneIndex;
-		const child = spawn( NODE_BIN, [ 'bin/rtc-browser-fuzz-runner.mjs' ], {
-			cwd: REPO_ROOT,
-			detached: true,
-			stdio: [ 'ignore', launcherLog.fd, launcherLog.fd ],
-			env: {
-				...process.env,
-				PATH: SHARED_PATH,
-				RTC_FUZZ_DURATION_HOURS: String( DURATION_HOURS ),
-				RTC_FUZZ_OUTPUT_DIR: laneOutputDir,
-				RTC_FUZZ_SEED_STRIDE: String( LANE_COUNT ),
-				RTC_FUZZ_START_SEED: String( laneSeed ),
-				RTC_FUZZ_STEP_COUNT: String( STEP_COUNT ),
-				RTC_FUZZ_LANE_LABEL: laneLabel,
-			},
-		} );
+		const child = spawn(
+			RESOLVED_NODE_BIN,
+			[ 'bin/rtc-browser-fuzz-runner.mjs' ],
+			{
+				cwd: REPO_ROOT,
+				detached: true,
+				stdio: [ 'ignore', launcherLog.fd, launcherLog.fd ],
+				env: {
+					...process.env,
+					PATH: SHARED_PATH,
+					RTC_FUZZ_DURATION_HOURS: String( DURATION_HOURS ),
+					RTC_FUZZ_OUTPUT_DIR: laneOutputDir,
+					RTC_FUZZ_SEED_STRIDE: String( LANE_COUNT ),
+					RTC_FUZZ_START_SEED: String( laneSeed ),
+					RTC_FUZZ_STEP_COUNT: String( STEP_COUNT ),
+					RTC_FUZZ_LANE_LABEL: laneLabel,
+				},
+			}
+		);
 		child.unref();
 		await launcherLog.close();
 
