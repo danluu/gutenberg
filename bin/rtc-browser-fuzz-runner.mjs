@@ -89,6 +89,11 @@ const COLLABORATOR_MODE =
 const LANE_LABEL = process.env.RTC_FUZZ_LANE_LABEL ?? `seed-${ START_SEED }`;
 const ASSUME_WP_ENV_RUNNING =
 	process.env.RTC_FUZZ_ASSUME_WP_ENV_RUNNING === '1';
+const INLINE_CODEX = ( process.env.RTC_FUZZ_INLINE_CODEX ?? '1' ) !== '0';
+const SKIP_GLOBAL_POST_CLEANUP =
+	process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ??
+	process.env.GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP ??
+	'0';
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 
 const state = {
@@ -173,6 +178,8 @@ function getBrowserFuzzEnv( overrides = {} ) {
 		GUTENBERG_RTC_BROWSER_DISABLE_RELOAD: DISABLE_RELOAD,
 		GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE:
 			DISABLE_REVISION_RESTORE,
+		GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP:
+			SKIP_GLOBAL_POST_CLEANUP,
 		...( ENABLE_REVISION_RESTORE_PROBE
 			? {
 					GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE:
@@ -560,13 +567,13 @@ function buildCodexPrompt( {
 			'- Only inspect local repository files and the listed command logs.',
 			'Tasks:',
 			'1. Determine whether this is a real collaboration bug, a test bug, or a harness/environment issue.',
-			'2. If it is not real, modify the fuzzing setup to reduce this false-positive class without suppressing legitimate editor/runtime failures.',
-			'3. If you change the harness, validate the fix by rerunning the relevant preflight or the failing seed.',
+			'2. Do not edit shared source, tests, package files, or run configuration.',
+			'3. If this looks like a false positive, describe the smallest harness change that should be made later.',
 			'4. Output only JSON that matches the provided schema.',
 			'Rules:',
 			'- Do not weaken coverage by broad string matching or skipping large classes of failures.',
 			'- Prefer preflight validation and explicit infra classification over ignoring failing logs.',
-			'- List every changed file relative to the repo root in changedFiles.',
+			'- changedFiles must be an empty array because this analysis is read-only.',
 		].join( '\n' )
 	);
 }
@@ -595,6 +602,42 @@ async function runCodexFailureAnalysis( {
 		failureSnippet,
 	} );
 	await fs.writeFile( promptPath, prompt );
+
+	if ( ! INLINE_CODEX ) {
+		const result = {
+			classification:
+				localClassification === 'harness' ||
+				localClassification === 'environment'
+					? 'not_real'
+					: 'uncertain',
+			confidence: 'low',
+			summary:
+				'Inline Codex analysis is disabled for this long-running fuzz run; the asynchronous deep-triage watcher owns detailed analysis.',
+			evidence: attempts.map(
+				( attempt ) =>
+					`${ attempt.label }: ${ attempt.logPath } (ok=${ attempt.ok }, code=${ attempt.code })`
+			),
+			recommendedRunnerAction: 'keep-running',
+			harnessChangesApplied: false,
+			changedFiles: [],
+			validationSummary:
+				'No inline validation was run; seed attempts and logs were persisted for deep triage.',
+		};
+		await fs.writeFile(
+			resultPath,
+			JSON.stringify( result, null, 2 ) + '\n'
+		);
+		await fs.writeFile( stdoutPath, '' );
+		await fs.writeFile( stderrPath, '' );
+		return {
+			ok: true,
+			durationMs: 0,
+			stdoutPath,
+			stderrPath,
+			resultPath,
+			result,
+		};
+	}
 
 	const codexResult = await runCodexCommand( {
 		command: 'codex',
