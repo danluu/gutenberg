@@ -136,6 +136,88 @@ block UI immediately consumed the remote prop update and did not retain a stale
 object snapshot. The retained local draft variant is still natural for a block
 form and exercises the real editor data path.
 
+### Stock Table browser repro evidence
+
+The proposed fix branch also carries a browser-level repro using only the stock
+`core/table` block and ordinary editor controls:
+`test/e2e/specs/editor/collaboration/collaboration-table-stale-snapshot.spec.ts`.
+This is the realistic browser repro used for PR-readiness because it does not
+register a custom block, mutate a Y.Doc directly, mutate editor stores, pause
+clocks or networks, or use fault injection.
+
+Minimal user flow:
+
+1. Create a draft containing a normal two-row Table block with cells
+   `A1/B1` and `A2/B2`.
+2. User A opens the stock Table block's built-in **Edit as HTML** mode,
+   retaining a local HTML snapshot.
+3. User B uses the stock Table toolbar's **Insert row after** action and types
+   `A-new/B-new` into the inserted row.
+4. User A edits only `A1` in the stock HTML textarea to
+   `A1 local HTML edit`, then switches the block back to visual mode.
+
+Expected final visible table on both editors:
+
+```js
+[ 'A1 local HTML edit', 'B1', 'A-new', 'B-new', 'A2', 'B2' ]
+```
+
+Repeated baseline command, run from a detached baseline worktree at
+`c62047002d1` (`trunk` plus the repro tests, without the fix):
+
+```bash
+WP_ENV_PORT=8920 WP_BASE_URL=http://localhost:8920 \
+WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-baseline-check/artifacts/repeat-baseline-fill-8920 \
+npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-stale-snapshot.spec.ts --project=chromium --grep "stale HTML snapshot" --repeat-each=5 --retries=0
+```
+
+Result on the unfixed baseline: 5/5 repeats failed the user-visible preservation
+assertion. In 3/5 repeats the remotely inserted `A-new/B-new` row disappeared
+and the final visible table was:
+
+```js
+[ 'A1 local HTML edit', 'B1', 'A2', 'B2' ]
+```
+
+In 2/5 repeats the stale HTML handoff lost User A's local `A1` edit while
+retaining User B's row:
+
+```js
+[ 'A1', 'B1', 'A-new', 'B-new', 'A2', 'B2' ]
+```
+
+Both outcomes are visible editor data loss from the same normal stock Table
+workflow; the first is the stale-snapshot overwrite symptom this fix targets,
+and the second is the same workflow failing the preservation invariant in the
+other direction. The repeated baseline artifacts are under:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-baseline-check/artifacts/repeat-baseline-fill-8920/
+```
+
+Repeated fix-branch command, run from
+`/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr` at
+`e7c9e8610ee`:
+
+```bash
+WP_ENV_PORT=8921 WP_BASE_URL=http://localhost:8921 \
+WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr/artifacts/repeat-fix-final-8921 \
+npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-stale-snapshot.spec.ts --project=chromium --grep "stale HTML snapshot" --repeat-each=5 --retries=0
+```
+
+Result on the fix branch: 5/5 repeats passed. The repeated fix artifacts are
+under:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr/artifacts/repeat-fix-final-8921/
+```
+
+I also tried a keyboard-typing variant of the HTML textarea edit. It was less
+useful as evidence because it sometimes failed before the final preservation
+assertion when the textarea had already left HTML mode. The committed repro uses
+Playwright's normal form-control `fill()` action on the stock HTML textarea,
+which produced a clean 5/5 baseline-fails and 5/5 fix-passes split.
+
 Verification commands that passed before writing this handoff:
 
 ```bash
