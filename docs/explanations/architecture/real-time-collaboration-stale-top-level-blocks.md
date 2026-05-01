@@ -50,6 +50,28 @@ It passed two external Playwright runs and then lost the collaborator append on
 the third run. Treat the current fix branch as model/unit-test-clean but blocked
 on browser-level save-race stability.
 
+Current-upstream recheck on 2026-05-01:
+
+| Branch / ref | Why checked | Command | Result |
+| --- | --- | --- | --- |
+| `origin/trunk` `68484244df2` plus only the Playwright repro test | Current upstream baseline with no Issue 4 fix | `WP_BASE_URL=http://localhost:8924 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-top-level-blocks-stale-save-loop.spec.ts --project=chromium` with the repro loop tightened to 24 repeats | Failed at repeat 2. Expected `Gamma remote stale save loop 2`; received `["A local stale save loop 2lpha local stale save loo","Beta"]`. Log/artifacts: `/Users/danluu/dev/fuzz/gutenberg-stale-top-level-blocks-trunk-baseline/test/e2e/artifacts/stale-top-level-current-trunk/baseline/run-2-24repeat.log` and `run-2-24repeat-artifacts/trace.zip`. |
+| `danluu/try/stale-top-level-blocks-pr` `d4f43fbf695` | Rebased proposed Issue 4 branch, preserving three commits | Same 24-repeat Playwright command on `WP_BASE_URL=http://localhost:8934`; targeted JS lint, `git diff --check`, and `npm run build -- --skip-types` also passed before the run | Failed at repeat 5. Expected `Gamma remote stale save loop 5`; received `["Alpha local stale save loop 5","Beta"]`. Log/artifacts: `/Users/danluu/dev/fuzz/gutenberg-stale-top-level-blocks-pr/test/e2e/artifacts/stale-top-level-current-trunk/pr-branch/run-1-24repeat.log` and `run-1-24repeat-artifacts/trace.zip`. |
+| `danluu/try/stale-content-overwrite-pr` `54ff99db222` | Plausible newer fix: touches `entities.js`, `crdt.ts`, `crdt-blocks.ts`, `sync/manager.ts`, and adds stale top-level/content overwrite tests | `npm run test:unit packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts -- --runInBand`; then the same 24-repeat Playwright repro cherry-picked onto the branch and run on `WP_BASE_URL=http://localhost:8944` | Unit test passed 5/5, including remote append/delete preservation and post-adapter content derivation. Browser repro passed 24/24 in 4.6m. Log: `/Users/danluu/dev/fuzz/gutenberg-stale-top-level-candidate-stale-content/test/e2e/artifacts/stale-top-level-current-trunk/stale-content-overwrite-pr/run-1-24repeat.log`. |
+
+I inspected recent `danluu` branches by committer date and file diffs before
+running candidates. Other plausible branches included
+`danluu/try/stale-query-object-map-pr`,
+`danluu/try/stale-rich-text-sibling-pr`,
+`danluu/try/form-content-overwrite-pr`,
+`danluu/try/draft-reopens-blank-pr`,
+`danluu/try/nav-menu-stale-save-pr`,
+`danluu/try/rtc-duplicate-table-body-revision-loss-pr`,
+`danluu/try/rtc-table-stale-snapshot-pr`, and
+`danluu/fix/rtc-autodraft-autosave-loss-pr`. Per the handoff instruction, I
+stopped after `danluu/try/stale-content-overwrite-pr` demonstrated that a newer
+submitted branch already fixes the issue at both the lower level and the
+realistic browser level.
+
 ## Reproductions
 
 Focused unit/model and package-adapter repro:
