@@ -197,6 +197,7 @@ async function main() {
 					RTC_FUZZ_START_SEED: String( laneSeed ),
 					RTC_FUZZ_STEP_COUNT: String( STEP_COUNT ),
 					RTC_FUZZ_LANE_LABEL: laneLabel,
+					RTC_FUZZ_ASSUME_WP_ENV_RUNNING: '1',
 				},
 			}
 		);
@@ -221,6 +222,7 @@ async function main() {
 		laneCount: LANE_COUNT,
 		outputDir: OUTPUT_DIR,
 		pCoreCount: getPerformanceCoreCount(),
+		lanesAssumeWpEnvRunning: true,
 		startSeed: START_SEED,
 		stepCount: STEP_COUNT,
 		lanes,

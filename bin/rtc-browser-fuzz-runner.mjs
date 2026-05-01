@@ -87,6 +87,8 @@ const COLLABORATOR_MODE =
 	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE ??
 	'';
 const LANE_LABEL = process.env.RTC_FUZZ_LANE_LABEL ?? `seed-${ START_SEED }`;
+const ASSUME_WP_ENV_RUNNING =
+	process.env.RTC_FUZZ_ASSUME_WP_ENV_RUNNING === '1';
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 
 const state = {
@@ -335,6 +337,13 @@ async function runCodexCommand( {
 }
 
 async function ensureWpEnvRunning() {
+	if ( ASSUME_WP_ENV_RUNNING ) {
+		await log(
+			'Assuming wp-env-test is running because the launcher already checked it.'
+		);
+		return;
+	}
+
 	const statusLogPath = path.join( OUTPUT_DIR, 'wp-env-status.log' );
 	const statusResult = await runCombinedCommand( {
 		command: 'npm',
