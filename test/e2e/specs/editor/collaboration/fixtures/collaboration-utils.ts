@@ -59,6 +59,23 @@ function isSyncRequestRoute( route: Route ) {
 	return request.method() === 'POST' && request.url().includes( 'wp-sync' );
 }
 
+function isRouteAlreadyHandledError( error: unknown ) {
+	return (
+		error instanceof Error &&
+		error.message.includes( 'Route is already handled' )
+	);
+}
+
+async function ignoreAlreadyHandledRoute( callback: () => Promise< void > ) {
+	try {
+		await callback();
+	} catch ( error ) {
+		if ( ! isRouteAlreadyHandledError( error ) ) {
+			throw error;
+		}
+	}
+}
+
 export default class CollaborationUtils {
 	private admin: Admin;
 	private cleanupUsersMode: CleanupUsersMode;
@@ -431,7 +448,7 @@ export default class CollaborationUtils {
 		let handled = false;
 		const handler = async ( route: Route ) => {
 			if ( handled || ! isSyncRequestRoute( route ) ) {
-				await route.continue();
+				await ignoreAlreadyHandledRoute( () => route.continue() );
 				return;
 			}
 
@@ -447,21 +464,24 @@ export default class CollaborationUtils {
 	async delayNextSyncRequest( page: Page, delayMs: number ) {
 		await this.routeNextSyncRequest( page, async ( route ) => {
 			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
-			await route.continue();
+			await ignoreAlreadyHandledRoute( () => route.continue() );
 		} );
 	}
 
 	async failNextSyncRequest( page: Page, status: number ) {
 		await this.routeNextSyncRequest( page, async ( route ) => {
-			await route.fulfill( {
-				status,
-				contentType: 'application/json',
-				body: JSON.stringify( {
-					code: 'rtc_fuzz_injected_sync_failure',
-					message: 'Injected sync failure from RTC browser fuzzer.',
-					data: { status },
-				} ),
-			} );
+			await ignoreAlreadyHandledRoute( () =>
+				route.fulfill( {
+					status,
+					contentType: 'application/json',
+					body: JSON.stringify( {
+						code: 'rtc_fuzz_injected_sync_failure',
+						message:
+							'Injected sync failure from RTC browser fuzzer.',
+						data: { status },
+					} ),
+				} )
+			);
 		} );
 	}
 
