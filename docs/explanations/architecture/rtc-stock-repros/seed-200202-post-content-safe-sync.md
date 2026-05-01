@@ -14,6 +14,30 @@ That commit changed post entity sync from a broad set that included `blocks` and
 
 Current `origin/trunk` at `e1e460ae2c8224cf9b3772a4a578cb7c1b4a009f` does not have this title-only allowlist and passes the focused existing RTC paragraph sync scenario after a clean e2e database reset. However, trunk still has the broader unsafe sync surface. The fix should replace the failed privilege-containment attempt with a small fail-closed content allowlist that includes the fields users normally edit.
 
+## Relationship To Known Fixes
+
+This is not one of the already-known RTC bugs fixed by the known-fixes stack. It is a regression introduced by that stack.
+
+The relevant known-fixes and overnight branches still contain the title-only safe sync allowlist:
+
+- `try/fuzz-all-local-known-fixes`
+- `try/fuzz-known-issues-fixed-campaign`
+- `try/fuzz-known-fixes-runtime`
+- `try/fuzz-revision-loss-known-fixes`
+- `try/fuzz-overnight-20260501`
+
+Those branches contain the duplicate local commit `d9a5b94bb62d3940f97d62ecfcec08a2b96c3781`, `Contain RTC privilege escalation sync surface`, which has the same product diff as `7cbe36591fa2c2986693c9c90f2606e65b567aff`. In those branches:
+
+```ts
+export const SAFE_POST_SYNC_PROPERTIES = new Set< string >( [ 'title' ] );
+```
+
+That means the "known fixes" line still admits `title` but does not admit `blocks` or `content`.
+
+I also re-ran the natural keyboard repro against `try/fuzz-all-local-known-fixes`. It reproduced the bug after successful sync cycles: user B's editor had the typed paragraph, user A's editor still had no paragraph, and the generated local result was `bugPresent: true` in `artifacts/rtc-post-content-safe-sync/known-fixes-video/result.json`.
+
+Older branches that predate the privilege-containment patch do not show this same failure mode because they still use the broad post sync set that includes `blocks` and `content`. That does not mean an existing known fix solved seed 200202; it means the seed 200202 regression did not exist until the title-only allowlist was added. The previous known RTC fixes cover separate problems such as sync storage races, oversized update handling, persisted hydration, cursor/selection bookkeeping, and autosave/draft behavior. This bug is specifically the post-room content admission gate dropping normal editor payloads.
+
 ## Repro Levels
 
 ### Handoff Repro
@@ -153,4 +177,3 @@ The repro must avoid becoming a test artifact. It should use natural user action
 5. Add tests proving safe content fields sync and unsafe fields do not.
 6. Add a Playwright repro with normal keyboard input from user B and a user A convergence assertion.
 7. Keep the PR branch split into three commits: non-Playwright tests, Playwright repro, fix.
-
