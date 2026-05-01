@@ -299,19 +299,26 @@ The plan needs better histories. A flaky E2E run is a distributed trace across b
 
 The biggest risk is spending days hero-debugging memorable UI flakes while the actual CI pain is dominated by boring infrastructure and stale issue hygiene. Measure base rates, close stale rows, rank by expected saved CI minutes, and make failures cheaper to triage. The plan should include mundane ownership and dashboards because flaky-test work fails when it depends on occasional heroic attention.
 
+### Coverage-preservation check
+
+The previous revised plan did not fully guarantee coverage preservation. It preferred better readiness signals, but it also allowed quarantine and deletion paths without requiring proof that the protected behavior remained covered. The revised plan below adds an explicit no-coverage-regression gate: every flake fix must preserve the same behavioral invariant, move it to equivalent replacement coverage, or document why another cited test already protects it. Quarantine is temporary noise control, not a fix.
+
 ## Revised Fix Plan
 
-1. Build a clean flake ledger. Generate a daily machine-readable table keyed by `(title, path)` with open issue numbers, first/last seen, retry count, trunk count, latest failure class, and owning package/spec. Close or mark stale any open issue with no sighting in 90 days, and automatically cross-link duplicates.
+0. Preserve behavioral coverage. Before changing a flaky test, write down the behavior/invariant it protects, the user-visible risk if it regresses, and the replacement assertion if the test is split, moved, or deleted. A flake fix is not complete if it only removes the failing assertion path.
+1. Build a clean flake ledger. Generate a daily machine-readable table keyed by `(title, path)` with open issue numbers, first/last seen, retry count, trunk count, latest failure class, owning package/spec, protected behavior, and replacement-coverage status. Close or mark stale any open issue with no sighting in 90 days, and automatically cross-link duplicates.
 2. Split reporting into `test assertion flake` and `environment flake`. Do not file or update the test issue for `socket hang up` without attaching wp-env logs, server health, shard id, and failing API route. File those under a separate infrastructure issue if they recur across unrelated specs.
-3. Fix the current high-signal flakes in this order: homepage-settings duplicate fixture names; post-content-focus-mode canvas readiness; DataViews keyboard focus readiness; upload-save-lock upload-count synchronization; Classic post-undo block selection; Openverse/external-media isolation; global-styles pagination readiness.
-4. For each subsystem, add one reusable readiness helper only after two or more tests need the same predicate: DataViews grid focus-ready, router idle/request captured, editor entity saved, frontend style applied, media upload complete, RTC all-clients-synced.
-5. Quarantine only tests that are both high-cost and not fixable in one sitting. Every quarantine entry must include owner, expiry date, reproduction command, current failure class, and issue link. Expired quarantines fail CI.
-6. Use repeat validation, not optimism. A candidate fix is not done until the target spec passes repeated runs and the trunk flake ledger shows zero new sightings for a fixed observation window.
-7. After the first pass, reconsider old open flakes with low or stale activity. Either reproduce and fix them, close as stale with a bot rule that reopens on a new sighting, or delete tests whose behavior is covered by lower-level tests.
+3. Prefer deterministic rewrites over removals. The default fix is the same behavior at the same test layer with better fixture isolation, explicit readiness signals, or less ambiguous selectors. Moving coverage to a lower-level unit/integration test is acceptable only when the remaining E2E suite still covers the user journey at least once.
+4. Fix the current high-signal flakes in this order: homepage-settings duplicate fixture names; post-content-focus-mode canvas readiness; DataViews keyboard focus readiness; upload-save-lock upload-count synchronization; Classic post-undo block selection; Openverse/external-media isolation; global-styles pagination readiness.
+5. For each subsystem, add one reusable readiness helper only after two or more tests need the same predicate: DataViews grid focus-ready, router idle/request captured, editor entity saved, frontend style applied, media upload complete, RTC all-clients-synced.
+6. Quarantine only tests that are both high-cost and not fixable in one sitting. Quarantine is a temporary CI-noise control, not a fix. Every quarantine entry must include owner, expiry date, reproduction command, current failure class, issue link, protected behavior, and the replacement or pending coverage plan. Expired quarantines fail CI.
+7. Delete or narrow a flaky test only after proving duplicate coverage. The PR must cite the replacement test(s), show they fail for the same class of regression when practical, and state what coverage was removed or intentionally moved. If the test covers a unique user workflow, rewrite or split it instead of deleting it.
+8. Use repeat validation, not optimism. A candidate fix is not done until the target behavior is still asserted, the target spec passes repeated runs, and the trunk flake ledger shows zero new sightings for a fixed observation window.
+9. After the first pass, reconsider old open flakes with low or stale activity. Either reproduce and fix them, close as stale with a bot rule that reopens on a new sighting, or replace them with explicitly cited equivalent coverage before deletion.
 
 ## Concrete First PRs
 
-1. `packages/report-flaky-tests`: key issues by title and path, prefer open issues, add duplicate detection, and add latest failure class metadata to the issue body.
+1. `packages/report-flaky-tests`: key issues by title and path, prefer open issues, add duplicate detection, and add latest failure class, protected behavior, and replacement-coverage metadata to the issue body.
 2. `packages/e2e-test-utils-playwright/src/request-utils/rest.ts` plus E2E setup: add transient retry/backoff for `socket hang up`/connection resets, and upload wp-env/Docker logs plus requestUtils health diagnostics on any setup timeout.
 3. `test/e2e/specs/site-editor/homepage-settings.spec.js`: delete pages before setup or use unique page titles, and replace broad row filters with exact row locators.
 4. `test/e2e/specs/site-editor/dataviews-list-layout-keyboard.spec.js`: add a grid/focus readiness helper and remove assumptions based solely on a fixed number of `Tab` presses.
