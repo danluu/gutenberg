@@ -23,6 +23,7 @@ import {
 	getPostChangesFromCRDTDoc,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
 } from './utils/crdt';
+import { mergeStaleNavigationMenuContent } from './utils/navigation-menu-content';
 
 export const DEFAULT_ENTITY_KEY = 'id';
 const POST_RAW_ATTRIBUTES = [ 'title', 'excerpt', 'content' ];
@@ -298,6 +299,25 @@ export const prePersistPostType = async (
 	const newEdits = {};
 	const objectType = `postType/${ name }`;
 	const objectId = persistedRecord?.id;
+
+	if (
+		name === 'wp_navigation' &&
+		persistedRecord?.id &&
+		Object.hasOwn( edits, 'content' )
+	) {
+		const latestRecord = await apiFetch( {
+			path: `/wp/v2/navigation/${ persistedRecord.id }?context=edit`,
+		} );
+		const mergedContent = mergeStaleNavigationMenuContent(
+			persistedRecord.content,
+			edits.content,
+			latestRecord?.content
+		);
+
+		if ( mergedContent !== undefined ) {
+			newEdits.content = mergedContent;
+		}
+	}
 
 	if ( ! isTemplate && persistedRecord?.status === 'auto-draft' ) {
 		// Saving an auto-draft should create a draft by default.
