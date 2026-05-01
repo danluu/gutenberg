@@ -38,7 +38,9 @@ The relevant known fixes are:
 As of May 1, 2026, I do not know of a merged upstream PR that fixes the
 normal-user Playwright repro on `origin/trunk`. The open #77658 PR does fix the
 natural Playwright repro when tested in a clean PR-head worktree with matching
-dependencies and a successful build.
+dependencies and a successful build. A May 1 repeated browser validation found
+the committed normal-user repro fails 3/3 times on the tests-only unfixed base
+and passes 3/3 times on #77658.
 
 Local checks:
 
@@ -177,6 +179,116 @@ Expected on the broken implementation: author reaches
 Expected after a complete fix: both editors show
 `italic<em>beta</em>beta`.
 
+Local status update on May 1, 2026:
+
+The normal-user Playwright repro is committed in
+`test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts`
+at `70a64c95ea2` (`Add RTC rich-text offset-space repro tests`). The second test
+is the handoff-level repro. It uses browser actions for the edit itself:
+clicking the paragraph, `End`, `Backspace`, four `Shift+ArrowLeft` presses, and
+the Italic shortcut. The only `page.evaluate()` calls in that test read editor
+selection offsets for assertions; they do not mutate the store, mutate a Y.Doc,
+pause clocks/network, or inject faults.
+
+I reran the repro from a fresh tests-only worktree:
+`/tmp/gutenberg-rich-text-user-repro` at `70a64c95ea2`. Setup was:
+
+```bash
+npm ci
+npm run build -- --skip-types
+WP_ENV_PORT=8903 WP_ENV_PHPMYADMIN_PORT=9103 npm run wp-env start
+```
+
+The fresh wp-env did not include the local e2e disable-animations test plugin,
+so I copied the existing test plugin into the WordPress plugins directory before
+running Playwright:
+
+```bash
+WP_ENV_PORT=8903 WP_ENV_PHPMYADMIN_PORT=9103 \
+  npm run wp-env run cli -- bash -lc \
+  'cp /var/www/html/wp-content/plugins/gutenberg-rich-text-user-repro/packages/e2e-tests/plugins/disable-animations.php /var/www/html/wp-content/plugins/gutenberg-test-plugin-disables-the-css-animations.php'
+```
+
+Repeated broken-base command:
+
+```bash
+for i in 1 2 3; do
+  WP_BASE_URL=http://localhost:8903 \
+  WP_ARTIFACTS_PATH=/tmp/rtc-rich-text-natural-baseline-70a64/run-$i \
+    npm run test:e2e -- \
+    test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+    --project=chromium \
+    --grep="user unitalicizes" \
+    --trace=on
+done
+```
+
+Result: failed 3/3 times at the intended collaborator assertion. Each run showed
+the author-side expected HTML but the collaborator-side corruption:
+
+```text
+Expected content: italic<em>beta</em>beta
+Received content: italic<em>beta</em>/em>
+```
+
+Broken-base artifacts:
+
+```text
+/tmp/rtc-rich-text-natural-baseline-70a64/loop.log
+/tmp/rtc-rich-text-natural-baseline-70a64/run-1/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+/tmp/rtc-rich-text-natural-baseline-70a64/run-2/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+/tmp/rtc-rich-text-natural-baseline-70a64/run-3/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+```
+
+I reran the same test against a clean #77658 worktree:
+`/tmp/gutenberg-pr77658-deep` at `610e02e28b6`. Setup was:
+
+```bash
+npm run build -- --skip-types
+WP_ENV_PORT=8902 WP_ENV_PHPMYADMIN_PORT=9102 npm run wp-env start
+```
+
+and the same local e2e plugin copy, with the PR-head plugin path:
+
+```bash
+WP_ENV_PORT=8902 WP_ENV_PHPMYADMIN_PORT=9102 \
+  npm run wp-env run cli -- bash -lc \
+  'cp /var/www/html/wp-content/plugins/gutenberg-pr77658-deep/packages/e2e-tests/plugins/disable-animations.php /var/www/html/wp-content/plugins/gutenberg-test-plugin-disables-the-css-animations.php'
+```
+
+Repeated #77658 command:
+
+```bash
+for i in 1 2 3; do
+  WP_BASE_URL=http://localhost:8902 \
+  WP_ARTIFACTS_PATH=/tmp/rtc-rich-text-natural-pr77658/run-$i \
+    npm run test:e2e -- \
+    test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+    --project=chromium \
+    --grep="user unitalicizes" \
+    --trace=on
+done
+```
+
+Result: passed 3/3 times. Passing artifacts:
+
+```text
+/tmp/rtc-rich-text-natural-pr77658/loop.log
+/tmp/rtc-rich-text-natural-pr77658/run-1/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+/tmp/rtc-rich-text-natural-pr77658/run-2/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+/tmp/rtc-rich-text-natural-pr77658/run-3/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+```
+
+Bundle verification:
+
+```text
+baseline served: http://localhost:8903/wp-content/plugins/gutenberg-rich-text-user-repro/build/scripts/core-data/index.js?ver=80dab1b7ebe54cd9ba83
+#77658 served:   http://localhost:8902/wp-content/plugins/gutenberg-pr77658-deep/build/scripts/core-data/index.js?ver=603bd24d5723510ae5e6
+```
+
+The built baseline bundle did not contain the `verification-text` guard. The
+built #77658 bundle did contain it.
+
 Local status update on April 29, 2026:
 
 Broken/repro branch command, run from
@@ -231,7 +343,8 @@ http://localhost:8898/wp-includes/js/dist/core-data.min.js?ver=4d15c0f82a9fb01a0
 
 That is WordPress core's script, not the Gutenberg plugin script generated from
 the #77658 worktree. In a valid plugin-override run, the editor should load a
-URL under `wp-content/plugins/.../build/scripts/core-data/index.min.js`.
+URL under `wp-content/plugins/.../build/scripts/core-data/index.js` or
+`index.min.js`.
 
 Invalid PR-head local video:
 
