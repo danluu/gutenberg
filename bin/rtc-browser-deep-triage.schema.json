@@ -1,0 +1,148 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"classification",
+		"confidence",
+		"distinctBugType",
+		"isDuplicateOf",
+		"summary",
+		"evidence",
+		"rootCauseHypothesis",
+		"reproducibility",
+		"reproAttempts",
+		"realisticPlaywrightRepro",
+		"artifacts",
+		"recommendedAction",
+		"hoursSpent",
+		"changedFiles"
+	],
+	"properties": {
+		"classification": {
+			"type": "string",
+			"enum": [ "real", "not_real", "infra", "uncertain" ]
+		},
+		"confidence": {
+			"type": "string",
+			"enum": [ "low", "medium", "high" ]
+		},
+		"distinctBugType": {
+			"type": "string"
+		},
+		"isDuplicateOf": {
+			"type": [ "string", "null" ]
+		},
+		"summary": {
+			"type": "string"
+		},
+		"evidence": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"rootCauseHypothesis": {
+			"type": "string"
+		},
+		"reproducibility": {
+			"type": "string",
+			"enum": [
+				"confirmed",
+				"intermittent",
+				"not_reproduced",
+				"not_applicable"
+			]
+		},
+		"reproAttempts": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": [
+					"level",
+					"commandOrPath",
+					"result",
+					"realistic",
+					"notes"
+				],
+				"properties": {
+					"level": {
+						"type": "string",
+						"enum": [
+							"unit",
+							"rest",
+							"browser",
+							"playwright",
+							"manual",
+							"other"
+						]
+					},
+					"commandOrPath": {
+						"type": "string"
+					},
+					"result": {
+						"type": "string"
+					},
+					"realistic": {
+						"type": "boolean"
+					},
+					"notes": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"realisticPlaywrightRepro": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": [ "status", "path", "command", "notes" ],
+			"properties": {
+				"status": {
+					"type": "string",
+					"enum": [
+						"produced",
+						"not_found",
+						"not_needed",
+						"needs_more_time"
+					]
+				},
+				"path": {
+					"type": [ "string", "null" ]
+				},
+				"command": {
+					"type": [ "string", "null" ]
+				},
+				"notes": {
+					"type": "string"
+				}
+			}
+		},
+		"artifacts": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"recommendedAction": {
+			"type": "string",
+			"enum": [
+				"file_bug",
+				"create_fix",
+				"keep_fuzzing",
+				"suppress_as_infra",
+				"manual_triage"
+			]
+		},
+		"hoursSpent": {
+			"type": "number",
+			"minimum": 0
+		},
+		"changedFiles": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		}
+	}
+}
