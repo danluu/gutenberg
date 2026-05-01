@@ -40,7 +40,11 @@ normal-user Playwright repro on `origin/trunk`. The open #77658 PR does fix the
 natural Playwright repro when tested in a clean PR-head worktree with matching
 dependencies and a successful build. A May 1 repeated browser validation found
 the committed normal-user repro fails 3/3 times on the tests-only unfixed base
-and passes 3/3 times on #77658.
+and passes 3/3 times on #77658. A later May 1 current-upstream validation
+rebased `danluu/try/offset-space-bug-pr` to `f136c427533b` on
+`origin/trunk` `68484244df2d`, confirmed current trunk still fails 3/3, and
+confirmed the rebased fix still passes 3/3. Newer plausible danluu RTC/sync
+fix branches were also checked and did not fix this repro.
 
 Local checks:
 
@@ -288,6 +292,211 @@ baseline served: http://localhost:8903/wp-content/plugins/gutenberg-rich-text-us
 
 The built baseline bundle did not contain the `verification-text` guard. The
 built #77658 bundle did contain it.
+
+Current upstream validation on May 1, 2026:
+
+I fetched current refs before retesting:
+
+```bash
+git fetch origin trunk
+git fetch danluu '+refs/heads/*:refs/remotes/danluu/*'
+```
+
+`origin/trunk` was `68484244df2d` (`Media editor modal: name landmark regions
+and add panel headings (#77875)`). I rebased the proposed fix branch
+`danluu/try/offset-space-bug-pr` from `610e02e28b6a` onto that trunk. The
+rebased branch head is `f136c427533b`. `git range-diff` showed the three-commit
+stack was preserved:
+
+```text
+1:  0a217a34ddf = 1:  064ba3d3331 Add RTC rich-text offset-space repro tests
+2:  cfcfe75228f = 2:  664ec12429a Fix RTC rich-text offset-space cursor handling
+3:  610e02e28b6 = 3:  f136c427533 Strengthen RTC rich-text cursor types
+```
+
+I pushed the rebased branch back to the existing danluu branch with:
+
+```bash
+git push --force-with-lease=refs/heads/try/offset-space-bug-pr:610e02e28b6a091da264c14b6a275c4e5fdde95e \
+  danluu HEAD:try/offset-space-bug-pr
+```
+
+Current-trunk browser baseline setup used a tests-only worktree at
+`/tmp/gutenberg-issue5-trunk-baseline`, based on `origin/trunk` with only the
+normal-user Playwright repro file copied from `70a64c95ea2`. Ports `8941` and
+`9141` were checked free before starting wp-env.
+
+```bash
+npm ci
+npm run build -- --skip-types
+WP_ENV_PORT=8941 WP_ENV_PHPMYADMIN_PORT=9141 npm run wp-env start
+WP_ENV_PORT=8941 WP_ENV_PHPMYADMIN_PORT=9141 \
+  npm run wp-env run cli -- bash -lc \
+  'cp /var/www/html/wp-content/plugins/gutenberg-issue5-trunk-baseline/packages/e2e-tests/plugins/disable-animations.php /var/www/html/wp-content/plugins/gutenberg-test-plugin-disables-the-css-animations.php'
+
+for i in 1 2 3; do
+  WP_BASE_URL=http://localhost:8941 \
+  WP_ARTIFACTS_PATH=/tmp/rtc-issue5-current-trunk-baseline/run-$i \
+    npm run test:e2e -- \
+    test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+    --project=chromium \
+    --grep="user unitalicizes" \
+    --trace=on
+done
+```
+
+Result: failed 3/3 times at the intended product assertion. Each run showed
+`Expected content: italic<em>beta</em>beta` and
+`Received content: italic<em>beta</em>/em>`. Logs and traces:
+
+```text
+/tmp/rtc-issue5-current-trunk-baseline/loop.log
+/tmp/rtc-issue5-current-trunk-baseline/run-1/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+/tmp/rtc-issue5-current-trunk-baseline/run-2/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+/tmp/rtc-issue5-current-trunk-baseline/run-3/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+```
+
+Rebased fix setup used `/tmp/gutenberg-issue5-pr-rebase` at `f136c427533b`. The
+branch itself carries lower-level repro tests; for the browser rerun I copied
+only the same Playwright repro file from `70a64c95ea2` into the scratch worktree.
+Ports `8942` and `9142` were checked free before starting wp-env.
+
+```bash
+npm ci
+npm run build -- --skip-types
+WP_ENV_PORT=8942 WP_ENV_PHPMYADMIN_PORT=9142 npm run wp-env start
+WP_ENV_PORT=8942 WP_ENV_PHPMYADMIN_PORT=9142 \
+  npm run wp-env run cli -- bash -lc \
+  'cp /var/www/html/wp-content/plugins/gutenberg-issue5-pr-rebase/packages/e2e-tests/plugins/disable-animations.php /var/www/html/wp-content/plugins/gutenberg-test-plugin-disables-the-css-animations.php'
+
+git checkout 70a64c95ea2 -- \
+  test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts
+
+for i in 1 2 3; do
+  WP_BASE_URL=http://localhost:8942 \
+  WP_ARTIFACTS_PATH=/tmp/rtc-issue5-rebased-pr-browser/run-$i \
+    npm run test:e2e -- \
+    test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+    --project=chromium \
+    --grep="user unitalicizes" \
+    --trace=on
+done
+```
+
+Result: passed 3/3 times. Passing log:
+
+```text
+/tmp/rtc-issue5-rebased-pr-browser/loop.log
+```
+
+Targeted checks on the rebased fix also passed:
+
+```bash
+npm run build -- --skip-types
+npm run test:unit -- \
+  packages/core-data/src/utils/test/rtc-rich-text-offset-space.test.js \
+  packages/core-data/src/test/rtc-rich-text-offset-space.test.js
+npm run lint:js -- \
+  packages/core-data/src/awareness/post-editor-awareness.ts \
+  packages/core-data/src/test/rtc-rich-text-offset-space.test.js \
+  packages/core-data/src/utils/block-selection-history.ts \
+  packages/core-data/src/utils/crdt-blocks.ts \
+  packages/core-data/src/utils/crdt-selection.ts \
+  packages/core-data/src/utils/crdt-user-selections.ts \
+  packages/core-data/src/utils/crdt-utils.ts \
+  packages/core-data/src/utils/crdt.ts \
+  packages/core-data/src/utils/test/crdt-blocks.ts \
+  packages/core-data/src/utils/test/crdt-utils.ts \
+  packages/core-data/src/utils/test/rtc-rich-text-offset-space.test.js
+```
+
+Newer danluu branch check:
+
+I inspected recent `danluu` branches by committer date and included branches with
+production changes touching RTC, sync, stale-save merging, rich text, tables,
+query blocks, or top-level block handling. In a scratch worktree
+`/tmp/gutenberg-issue5-branch-check`, I cherry-picked only the test commit
+`064ba3d3331` onto each candidate and ran:
+
+```bash
+npm run test:unit -- \
+  packages/core-data/src/utils/test/rtc-rich-text-offset-space.test.js \
+  packages/core-data/src/test/rtc-rich-text-offset-space.test.js
+```
+
+All candidate failures were product assertion failures, not harness failures.
+Representative assertion: expected `"<em>italic</em>beta"` and received
+`"<em>italic</em>bet>"`.
+
+I also inspected recent companion branches that contained only documentation or
+repro-test changes, not production fixes: `danluu/try/stale-top-level-blocks`
+(`5dc53be84b75`), `danluu/try/stale-query-object-map` (`d027ad13af59`),
+`danluu/try/stale-rich-text-sibling` (`73691fd22d28`),
+`danluu/try/stale-query-array` (`97b9e88e363c`),
+`danluu/try/form-content-overwrite` (`28b7f047b0b2`),
+`danluu/try/stale-content-overwrite` (`99bbe5f3db5f`),
+`danluu/try/draft-reopens-blank` (`81299fc396f0`), and
+`danluu/try/nav-menu-stale-save` (`738a3b3d59ba`). I did not count these as
+newer submitted fixes because their diffs did not include production code for
+this issue.
+
+| Branch | SHA | Why checked | Command | Result |
+| --- | --- | --- | --- | --- |
+| `origin/trunk` | `68484244df2d` | Current upstream control | unit command above | Failed |
+| `danluu/fix/rtc-autodraft-autosave-loss-pr` | `b677576fbfe8` | RTC autosave/sync production fix | unit command above | Failed |
+| `danluu/try/stale-rich-text-sibling-pr` | `1455411c8049` | Rich-text sibling CRDT merge production fix | unit command above and Playwright spot-check below | Failed |
+| `danluu/try/stale-top-level-blocks-pr` | `0b375470eef2` | Top-level stale merge/sync production fix | unit command above | Failed |
+| `danluu/try/stale-content-overwrite-pr` | `54ff99db2227` | Stale content merge/sync production fix | unit command above | Failed |
+| `danluu/try/form-content-overwrite-pr` | `cd6822b89c95` | Stale form content merge/sync production fix | unit command above | Failed |
+| `danluu/try/draft-reopens-blank-pr` | `a3e4dbc6e81a` | RTC polling/bootstrap production fix | unit command above | Failed |
+| `danluu/try/rtc-duplicate-table-body-revision-loss-pr` | `c7ef8332801b` | Table CRDT merge production fix | unit command above | Failed |
+| `danluu/try/nav-menu-stale-save-pr` | `82c7692768c4` | Navigation entity stale-save production fix | unit command above | Failed |
+| `danluu/try/stale-query-object-map-pr` | `17f5c915e932` | Query-object CRDT merge production fix | unit command above | Failed |
+| `danluu/try/rtc-table-stale-snapshot-pr` | `876398df67b8` | Table/query stale snapshot production fix | unit command above | Failed |
+| `danluu/fix-connection-error-large-update-pr` | `077986ffaa17` | RTC sync large-update production fix | unit command above | Failed |
+| `danluu/try/rtc-undo-cross-entity-stock-repro-pr-trunk` | `e60a0cbd5d37` | RTC undo/sync entity production fix | unit command above | Failed |
+
+Unit logs:
+
+```text
+/tmp/rtc-issue5-newer-branch-unit-valid/summary.tsv
+/tmp/rtc-issue5-newer-branch-unit-valid/*.log
+```
+
+The closest newer rich-text production branch also received a Playwright-level
+spot-check. I switched `/tmp/gutenberg-issue5-branch-check` to
+`danluu/try/stale-rich-text-sibling-pr`, copied only the browser repro spec from
+`70a64c95ea2`, built, and ran wp-env on checked-free ports `8943` and `9143`:
+
+```bash
+git switch --detach refs/remotes/danluu/try/stale-rich-text-sibling-pr
+git checkout 70a64c95ea2 -- \
+  test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts
+npm run build -- --skip-types
+WP_ENV_PORT=8943 WP_ENV_PHPMYADMIN_PORT=9143 npm run wp-env start
+WP_ENV_PORT=8943 WP_ENV_PHPMYADMIN_PORT=9143 \
+  npm run wp-env run cli -- bash -lc \
+  'cp /var/www/html/wp-content/plugins/gutenberg-issue5-branch-check/packages/e2e-tests/plugins/disable-animations.php /var/www/html/wp-content/plugins/gutenberg-test-plugin-disables-the-css-animations.php'
+WP_BASE_URL=http://localhost:8943 \
+WP_ARTIFACTS_PATH=/tmp/rtc-issue5-newer-branch-playwright/stale-rich-text-sibling-pr/run-1 \
+  npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+  --project=chromium \
+  --grep="user unitalicizes" \
+  --trace=on
+```
+
+Result: failed at the same user-visible browser assertion,
+`italic<em>beta</em>/em>` instead of `italic<em>beta</em>beta`.
+
+```text
+/tmp/rtc-issue5-newer-branch-playwright/stale-rich-text-sibling-pr/run.log
+/tmp/rtc-issue5-newer-branch-playwright/stale-rich-text-sibling-pr/run-1/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+```
+
+Conclusion from the newer-branch sweep: none of the inspected newer danluu fix
+branches already fixes Issue 5. The rebased `try/offset-space-bug-pr` remains
+the branch that fixes the natural Playwright repro.
 
 Local status update on April 29, 2026:
 
