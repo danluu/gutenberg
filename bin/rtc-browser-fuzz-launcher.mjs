@@ -122,6 +122,17 @@ function getPerformanceCoreCount() {
 	return Math.max( 1, fallback );
 }
 
+function getGitValue( args, fallback ) {
+	try {
+		return execFileSync( 'git', args, {
+			cwd: REPO_ROOT,
+			encoding: 'utf8',
+		} ).trim();
+	} catch {
+		return fallback;
+	}
+}
+
 async function ensureLocalNodeToolchain() {
 	await fs.access( RESOLVED_NODE_BIN );
 	await fs.access( RESOLVED_NPM_BIN );
@@ -203,6 +214,8 @@ async function main() {
 	}
 
 	const manifest = {
+		branch: getGitValue( [ 'branch', '--show-current' ], null ),
+		commit: getGitValue( [ 'rev-parse', 'HEAD' ], null ),
 		createdAt: new Date().toISOString(),
 		durationHours: DURATION_HOURS,
 		laneCount: LANE_COUNT,
