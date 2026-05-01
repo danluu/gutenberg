@@ -227,11 +227,9 @@ async function main() {
 		outputDir: OUTPUT_DIR,
 		pCoreCount: getPerformanceCoreCount(),
 		lanesAssumeWpEnvRunning: true,
-		inlineCodex:
-			( process.env.RTC_FUZZ_INLINE_CODEX ?? '0' ) !== '0',
+		inlineCodex: ( process.env.RTC_FUZZ_INLINE_CODEX ?? '0' ) !== '0',
 		skipGlobalPostCleanup:
-			( process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ?? '1' ) ===
-			'1',
+			( process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ?? '1' ) === '1',
 		startSeed: START_SEED,
 		stepCount: STEP_COUNT,
 		lanes,

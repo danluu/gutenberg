@@ -267,7 +267,7 @@ For Jest-based layers, shrinking should be automatic if a property-based library
 -   Add sync and polling state-machine fuzzing with mocked transport.
 <!-- Deferred for later:
 -   Run these in CI with fixed seeds and a small iteration budget.
--->
+    -->
 
 ### Phase 2: seeded browser fuzzing
 
@@ -275,7 +275,7 @@ For Jest-based layers, shrinking should be automatic if a property-based library
 -   Store traces and action logs for failures.
 <!-- Deferred for later:
 -   Run a small number of seeds in CI.
--->
+    -->
 
 ### Phase 3: broader exploration
 
@@ -283,7 +283,7 @@ For Jest-based layers, shrinking should be automatic if a property-based library
 -   Expand from two to three participants once failures are reproducible and triageable.
 <!-- Deferred for later:
 -   Run longer browser fuzz jobs nightly or on demand.
--->
+    -->
 
 ### Phase 4: hardening
 

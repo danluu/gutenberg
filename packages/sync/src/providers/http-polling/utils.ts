@@ -25,8 +25,7 @@ function isJsonResponseLike( value: unknown ): value is JsonResponseLike {
 	return (
 		!! value &&
 		'object' === typeof value &&
-		'function' ===
-			typeof ( value as Partial< JsonResponseLike > ).json
+		'function' === typeof ( value as Partial< JsonResponseLike > ).json
 	);
 }
 
@@ -110,8 +109,8 @@ export function createUpdateQueue(
 			if ( ! preserveCompaction ) {
 				filtered = restoredUpdates.filter(
 					( u ) => u.type !== SyncUpdateType.COMPACTION
-					);
-				}
+				);
+			}
 
 			if ( 0 === filtered.length ) {
 				return;
