@@ -4,7 +4,7 @@
 
 Two editor windows for the same WordPress account, including support/SU-style sessions, can edit the same post or page. Window A saves current content. Window B was opened before A's save and still has stale local editor state. If B makes a small edit and saves, the REST `content` body can be replaced by B's stale full body plus B's small edit, dropping A's already-saved content.
 
-This is the content/title-loss class from Zendesk #11173217 and the content/title part of #11112607. It is distinct from the large-update "Connection lost" issue, which matches #77669.
+This is the same-account/support-session content/title-loss class. It is distinct from the large-update "Connection lost" issue, which matches #77669.
 
 ## Repros
 
