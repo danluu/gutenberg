@@ -82,10 +82,28 @@ export interface YPostRecord extends YMapRecord {
 
 export const POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE = '_crdt_document';
 
+/**
+ * Post properties that are safe to sync through the post room without
+ * preserving the origin user's per-field authorization.
+ */
+export const SAFE_POST_SYNC_PROPERTIES = new Set< string >( [
+	'blocks',
+	'content',
+	'excerpt',
+	'title',
+] );
+
 // Post meta keys that should *not* be synced.
 const disallowedPostMetaKeys = new Set< string >( [
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
 ] );
+
+function shouldSyncPostProperty(
+	key: string,
+	syncedProperties: Set< string >
+): boolean {
+	return SAFE_POST_SYNC_PROPERTIES.has( key ) && syncedProperties.has( key );
+}
 
 /**
  * Given a set of local changes to a generic entity record, apply those changes
@@ -137,7 +155,7 @@ export function applyPostChangesToCRDTDoc(
 		syncedProperties.has( 'content' ) && Array.isArray( changes.blocks );
 
 	Object.keys( changes ).forEach( ( key ) => {
-		if ( ! syncedProperties.has( key ) ) {
+		if ( ! shouldSyncPostProperty( key, syncedProperties ) ) {
 			return;
 		}
 
@@ -334,7 +352,7 @@ export function getPostChangesFromCRDTDoc(
 
 	const changes = Object.fromEntries(
 		Object.entries( ymap.toJSON() ).filter( ( [ key, newValue ] ) => {
-			if ( ! syncedProperties.has( key ) ) {
+			if ( ! shouldSyncPostProperty( key, syncedProperties ) ) {
 				return false;
 			}
 
