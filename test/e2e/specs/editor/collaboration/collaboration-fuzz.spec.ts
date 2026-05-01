@@ -511,7 +511,10 @@ function getBaseInitialContent( seed: number ): string {
 function getInitialContent( seed: number ): string {
 	const baseContent = getBaseInitialContent( seed );
 
-	if ( ACTION_PROFILE === 'persistence' ) {
+	if (
+		ACTION_PROFILE === 'persistence' ||
+		ACTION_PROFILE === 'persistence-no-title'
+	) {
 		return baseContent;
 	}
 
