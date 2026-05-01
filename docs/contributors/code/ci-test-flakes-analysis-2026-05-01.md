@@ -264,7 +264,7 @@ DataViews keyboard tests assume a fixed focus sequence after `grid` visibility. 
 
 ### 4. Several high-volume flakes are old Playwright migrations
 
-Many open flakes entered during Playwright migrations in 2022-2024. That does not mean Playwright caused the product behavior; it often means a broad, user-like test was preserved without adding deterministic readiness signals. Long-lived flaky tests need ownership: fix, rewrite, quarantine with owner/date, or delete if the behavior is now covered elsewhere.
+Many open flakes entered during Playwright migrations in 2022-2024. That does not mean Playwright caused the product behavior; it often means a broad, user-like test was preserved without adding deterministic readiness signals. Long-lived flaky tests need ownership and rewrites that preserve the protected behavior. Skips, quarantines, and "temporary" softening should not be part of ordinary flake-fix PRs because they are easy to forget and can quietly reduce coverage.
 
 ## How Flakes Were Introduced
 
@@ -282,7 +282,7 @@ The per-row `Introduced by` column captures individual introductions. At the col
 2. Separate infrastructure from test assertion flakes: classify `socket hang up`, browser/context-closed, and setup hook timeouts separately; upload wp-env/Docker logs and request timing for every shard; add a server health check before requestUtils calls.
 3. Fix the top active real flakes by volume: homepage fixture collision, post-content-focus-mode canvas selection race, DataViews focus assertions, upload-save-lock synchronization, classic media modal actionability, and global-styles pagination actionability.
 4. Create subsystem sweeps for Navigation, Interactivity router, Site Editor template persistence, Inserter, Media, and RTC. Each sweep should reduce broad UI workflows into smaller tests with explicit state readiness signals.
-5. Quarantine only with owner, expiry, issue link, and reproduction command. Do not add blind retries as a fix.
+5. Do not merge temporary skips, quarantines, assertion weakening, or blind retries as flake fixes. If a test is too unstable to fix immediately, leave the issue open and fix the underlying readiness, fixture, or infrastructure problem in a follow-up PR that still preserves the behavior.
 6. Validate fixes with `npm run test:e2e -- <spec> --repeat-each=N` locally or in CI, then monitor at least 50 trunk E2E runs before closing high-volume flake issues.
 
 ## Review Of The Initial Plan
@@ -301,7 +301,7 @@ The biggest risk is spending days hero-debugging memorable UI flakes while the a
 
 ### Coverage-preservation check
 
-The previous revised plan did not fully guarantee coverage preservation. It preferred better readiness signals, but it also allowed quarantine and deletion paths without requiring proof that the protected behavior remained covered. The revised plan below adds an explicit no-coverage-regression gate: every flake fix must preserve the same behavioral invariant, move it to equivalent replacement coverage, or document why another cited test already protects it. Quarantine is temporary noise control, not a fix.
+The previous revised plan did not fully guarantee coverage preservation. It preferred better readiness signals, but it also allowed quarantine and deletion paths without requiring proof that the protected behavior remained covered. The revised plan below adds an explicit no-coverage-regression gate: every flake fix must preserve the same behavioral invariant, move it to equivalent replacement coverage, or document why another cited test already protects it. It also removes quarantine from the normal PR path because temporary CI-noise controls often become permanent.
 
 ## Revised Fix Plan
 
@@ -311,10 +311,10 @@ The previous revised plan did not fully guarantee coverage preservation. It pref
 3. Prefer deterministic rewrites over removals. The default fix is the same behavior at the same test layer with better fixture isolation, explicit readiness signals, or less ambiguous selectors. Moving coverage to a lower-level unit/integration test is acceptable only when the remaining E2E suite still covers the user journey at least once.
 4. Fix the current high-signal flakes in this order: homepage-settings duplicate fixture names; post-content-focus-mode canvas readiness; DataViews keyboard focus readiness; upload-save-lock upload-count synchronization; Classic post-undo block selection; Openverse/external-media isolation; global-styles pagination readiness.
 5. For each subsystem, add one reusable readiness helper only after two or more tests need the same predicate: DataViews grid focus-ready, router idle/request captured, editor entity saved, frontend style applied, media upload complete, RTC all-clients-synced.
-6. Quarantine only tests that are both high-cost and not fixable in one sitting. Quarantine is a temporary CI-noise control, not a fix. Every quarantine entry must include owner, expiry date, reproduction command, current failure class, issue link, protected behavior, and the replacement or pending coverage plan. Expired quarantines fail CI.
-7. Delete or narrow a flaky test only after proving duplicate coverage. The PR must cite the replacement test(s), show they fail for the same class of regression when practical, and state what coverage was removed or intentionally moved. If the test covers a unique user workflow, rewrite or split it instead of deleting it.
+6. No temporary PR fixes. Do not merge `.skip`, quarantine lists, reduced assertions, relaxed expectations, or extra retries as a flake fix. Emergency disables are outside this flake-fix plan and must not be represented as fixing the flake.
+7. Be extraordinarily cautious about deletion or narrowing. The default answer is no deletion. Delete or materially narrow a flaky test only when confidence is extraordinarily high: the PR cites identical or stronger replacement coverage, the replacement is at the same or a more appropriate layer, maintainers for the owning area agree the original user workflow is redundant, and the replacement can be shown to fail for the same class of regression when practical. If any of those are uncertain, rewrite or split the test instead.
 8. Use repeat validation, not optimism. A candidate fix is not done until the target behavior is still asserted, the target spec passes repeated runs, and the trunk flake ledger shows zero new sightings for a fixed observation window.
-9. After the first pass, reconsider old open flakes with low or stale activity. Either reproduce and fix them, close as stale with a bot rule that reopens on a new sighting, or replace them with explicitly cited equivalent coverage before deletion.
+9. After the first pass, reconsider old open flakes with low or stale activity. Close stale issues only as issue hygiene when there is no current reproduction; do not remove the underlying test for staleness alone. If a stale flaky test later fails again, reopen or file a fresh issue and fix it with preserved coverage.
 
 ## Concrete First PRs
 
