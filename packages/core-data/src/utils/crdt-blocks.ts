@@ -151,6 +151,26 @@ function makeBlocksSerializable( blocks: Block[] ): Block[] {
 	} );
 }
 
+function getPreviousLocalBlock(
+	previousBlocks: Block[] | undefined,
+	block: Block,
+	index: number
+): Block | undefined {
+	const previousBlock = previousBlocks?.[ index ];
+
+	if ( ! previousBlock || previousBlock.name !== block.name ) {
+		return undefined;
+	}
+
+	if ( block.clientId || previousBlock.clientId ) {
+		return block.clientId === previousBlock.clientId
+			? previousBlock
+			: undefined;
+	}
+
+	return previousBlock;
+}
+
 function getBlockClientId( block: Block ): string | undefined {
 	return 'string' === typeof block.clientId && block.clientId
 		? block.clientId
@@ -852,7 +872,11 @@ function mergeCrdtBlocksIntoYBlocks(
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
 		const block = blocksToSync[ left ];
 		const yblock = yblocks.get( left );
-		const previousBlock = previousBlocks?.[ left ];
+		const previousBlock = getPreviousLocalBlock(
+			previousBlocks,
+			block,
+			left
+		);
 
 		Object.entries( block ).forEach( ( [ key, value ] ) => {
 			switch ( key ) {
