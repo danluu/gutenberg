@@ -20,6 +20,7 @@ import {
 	__experimentalBatch,
 } from '../actions';
 import { getSyncManager } from '../sync';
+import { prePersistPostType } from '../entities';
 
 jest.mock( '../batch', () => {
 	const { createBatch } = jest.requireActual( '../batch' );
@@ -920,6 +921,83 @@ describe( 'saveEntityRecord', () => {
 		);
 
 		expect( result ).toBe( updatedRecord );
+	} );
+
+	it( 'merges stale wp_navigation content with the latest server content before save', async () => {
+		const baseContent =
+			'<!-- wp:navigation-link {"label":"Home","type":"custom","url":"http://localhost:8897/","kind":"custom"} /-->';
+		const restoredPageLink =
+			'<!-- wp:navigation-link {"label":"Debussy Images","type":"page","id":123,"url":"http://localhost:8897/debussy/","kind":"post-type"} /-->';
+		const staleSupportLink =
+			'<!-- wp:navigation-link {"label":"Support","type":"custom","url":"https://example.com/support","kind":"custom"} /-->';
+		const post = {
+			id: 10,
+			content: { raw: baseContent },
+			status: 'publish',
+		};
+		const editedPost = {
+			id: 10,
+			content: `${ baseContent }\n\n${ staleSupportLink }`,
+		};
+		const configs = [
+			{
+				name: 'wp_navigation',
+				kind: 'postType',
+				baseURL: '/wp/v2/navigation',
+				__unstablePrePersist: ( persistedRecord, edits ) =>
+					prePersistPostType(
+						persistedRecord,
+						edits,
+						'wp_navigation',
+						false
+					),
+			},
+		];
+		const select = {
+			getRawEntityRecord: () => post,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+		const updatedRecord = { ...post, content: editedPost.content };
+
+		apiFetch.mockImplementation( ( { method, data } ) => {
+			if ( method === 'PUT' ) {
+				updatedRecord.content = data.content;
+				return updatedRecord;
+			}
+
+			return {
+				...post,
+				content: {
+					raw: `${ baseContent }\n\n${ restoredPageLink }`,
+				},
+			};
+		} );
+
+		await saveEntityRecord(
+			'postType',
+			'wp_navigation',
+			editedPost
+		)( {
+			select,
+			dispatch,
+			resolveSelect,
+		} );
+
+		expect( apiFetch ).toHaveBeenCalledTimes( 2 );
+		expect( apiFetch ).toHaveBeenNthCalledWith( 1, {
+			path: '/wp/v2/navigation/10?context=edit',
+		} );
+		expect( apiFetch ).toHaveBeenNthCalledWith( 2, {
+			path: '/wp/v2/navigation/10',
+			method: 'PUT',
+			data: expect.objectContaining( {
+				id: 10,
+				content: expect.stringContaining( 'Debussy Images' ),
+			} ),
+		} );
+		expect( apiFetch.mock.calls[ 1 ][ 0 ].data.content ).toContain(
+			'Support'
+		);
 	} );
 
 	it( 'triggers a PUT request for an existing record with a custom key', async () => {
