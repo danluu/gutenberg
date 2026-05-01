@@ -68,8 +68,8 @@ import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
 
-// Default synced properties matching the base set built in entities.js,
-// plus 'categories' and 'tags' as example taxonomy rest_base values.
+// Intentionally over-broad synced properties. Post sync must still fail closed
+// at the CRDT boundary and only admit explicitly safe post content fields.
 const defaultSyncedProperties = new Set< string >( [
 	'blocks',
 	'categories',
@@ -245,14 +245,14 @@ describe( 'crdt', () => {
 			expect( map.has( 'slug' ) ).toBe( false );
 		} );
 
-		it( 'syncs non-empty slug', () => {
+		it( 'does not sync non-empty slug', () => {
 			const changes = {
 				slug: 'my-post-slug',
 			};
 
 			applyPostChangesToCRDTDoc( doc, changes, defaultSyncedProperties );
 
-			expect( map.get( 'slug' ) ).toBe( 'my-post-slug' );
+			expect( map.has( 'slug' ) ).toBe( false );
 		} );
 
 		it( 'merges blocks changes', () => {
@@ -390,7 +390,7 @@ describe( 'crdt', () => {
 			expect( map.get( 'excerpt' )?.toString() ).toBe( 'New excerpt' );
 		} );
 
-		it( 'syncs meta fields', () => {
+		it( 'does not sync meta fields', () => {
 			const changes = {
 				meta: {
 					some_meta: 'new value',
@@ -403,10 +403,10 @@ describe( 'crdt', () => {
 
 			applyPostChangesToCRDTDoc( doc, changes, defaultSyncedProperties );
 
-			expect( metaMap.get( 'some_meta' ) ).toBe( 'new value' );
+			expect( metaMap.get( 'some_meta' ) ).toBe( 'old value' );
 		} );
 
-		it( 'syncs non-single meta fields', () => {
+		it( 'does not sync non-single meta fields', () => {
 			const changes = {
 				meta: {
 					some_meta: [ 'value', 'value 2' ],
@@ -419,13 +419,10 @@ describe( 'crdt', () => {
 
 			applyPostChangesToCRDTDoc( doc, changes, defaultSyncedProperties );
 
-			expect( metaMap.get( 'some_meta' ) ).toStrictEqual( [
-				'value',
-				'value 2',
-			] );
+			expect( metaMap.get( 'some_meta' ) ).toBe( 'old value' );
 		} );
 
-		it( 'initializes meta as Y.Map when not present', () => {
+		it( 'does not initialize meta as Y.Map when not present', () => {
 			const changes = {
 				meta: {
 					custom_field: 'value',
@@ -434,12 +431,10 @@ describe( 'crdt', () => {
 
 			applyPostChangesToCRDTDoc( doc, changes, defaultSyncedProperties );
 
-			const metaMap = map.get( 'meta' );
-			expect( metaMap ).toBeInstanceOf( Y.Map );
-			expect( metaMap?.get( 'custom_field' ) ).toBe( 'value' );
+			expect( map.has( 'meta' ) ).toBe( false );
 		} );
 
-		it( 'syncs taxonomy rest_base values included in syncedProperties', () => {
+		it( 'does not sync taxonomy rest_base values included in syncedProperties', () => {
 			const changes = {
 				categories: [ 1, 2, 3 ],
 				genre: [ 10, 20 ], // should be ignored
@@ -448,9 +443,9 @@ describe( 'crdt', () => {
 
 			applyPostChangesToCRDTDoc( doc, changes, defaultSyncedProperties );
 
-			expect( map.get( 'categories' ) ).toEqual( [ 1, 2, 3 ] );
+			expect( map.get( 'categories' ) ).toBeUndefined();
 			expect( map.get( 'genre' ) ).toBeUndefined();
-			expect( map.get( 'tags' ) ).toEqual( [ 4, 5 ] );
+			expect( map.get( 'tags' ) ).toBeUndefined();
 
 			const customSyncedProperties = new Set( [
 				...defaultSyncedProperties,
@@ -459,9 +454,9 @@ describe( 'crdt', () => {
 
 			applyPostChangesToCRDTDoc( doc, changes, customSyncedProperties );
 
-			expect( map.get( 'categories' ) ).toEqual( [ 1, 2, 3 ] );
-			expect( map.get( 'genre' ) ).toEqual( [ 10, 20 ] );
-			expect( map.get( 'tags' ) ).toEqual( [ 4, 5 ] );
+			expect( map.get( 'categories' ) ).toBeUndefined();
+			expect( map.get( 'genre' ) ).toBeUndefined();
+			expect( map.get( 'tags' ) ).toBeUndefined();
 		} );
 	} );
 
@@ -506,8 +501,8 @@ describe( 'crdt', () => {
 			expect( changes.title ).toBe( 'Test title' );
 		} );
 
-		it( 'does not sync auto-draft status', () => {
-			map.set( 'status', 'auto-draft' );
+		it( 'does not sync status changes', () => {
+			map.set( 'status', 'publish' );
 
 			const editedRecord = {
 				status: 'draft',
@@ -520,6 +515,23 @@ describe( 'crdt', () => {
 			);
 
 			expect( changes ).not.toHaveProperty( 'status' );
+		} );
+
+		it( 'does not sync date changes', () => {
+			map.set( 'date', '2025-01-02' );
+
+			const editedRecord = {
+				date: '2025-01-01',
+				modified: '2025-01-03',
+			} as unknown as Post;
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				editedRecord,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'date' );
 		} );
 
 		it( 'does not overwrite null floating date', () => {
@@ -729,7 +741,7 @@ describe( 'crdt', () => {
 			expect( changes ).not.toHaveProperty( 'content' );
 		} );
 
-		it( 'includes meta in changes', () => {
+		it( 'does not include meta in changes', () => {
 			const metaMap = createYMap();
 			metaMap.set( 'public_meta', 'new value' );
 			map.set( 'meta', metaMap );
@@ -746,12 +758,10 @@ describe( 'crdt', () => {
 				defaultSyncedProperties
 			);
 
-			expect( changes.meta ).toEqual( {
-				public_meta: 'new value', // from CRDT
-			} );
+			expect( changes ).not.toHaveProperty( 'meta' );
 		} );
 
-		it( 'includes non-single meta in changes', () => {
+		it( 'does not include non-single meta in changes', () => {
 			const metaMap = createYMap();
 			metaMap.set( 'public_meta', [ 'value', 'value 2' ] );
 			map.set( 'meta', metaMap );
@@ -768,9 +778,7 @@ describe( 'crdt', () => {
 				defaultSyncedProperties
 			);
 
-			expect( changes.meta ).toEqual( {
-				public_meta: [ 'value', 'value 2' ], // from CRDT
-			} );
+			expect( changes ).not.toHaveProperty( 'meta' );
 		} );
 
 		it( 'excludes orphaned meta keys not present on the edited record', () => {
@@ -797,7 +805,7 @@ describe( 'crdt', () => {
 			expect( changes ).not.toHaveProperty( 'meta' );
 		} );
 
-		it( 'excludes disallowed meta keys in changes', () => {
+		it( 'excludes all meta keys in changes', () => {
 			const metaMap = createYMap();
 			metaMap.set( 'public_meta', 'new value' );
 			metaMap.set( POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE, 'exclude me' );
@@ -815,15 +823,10 @@ describe( 'crdt', () => {
 				defaultSyncedProperties
 			);
 
-			expect( changes.meta ).toEqual( {
-				public_meta: 'new value', // from CRDT
-			} );
-			expect( changes.meta ).not.toHaveProperty(
-				POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-			);
+			expect( changes ).not.toHaveProperty( 'meta' );
 		} );
 
-		it( 'returns taxonomy rest_base changes when in syncedProperties', () => {
+		it( 'does not return taxonomy rest_base changes when in syncedProperties', () => {
 			map.set( 'categories', [ 1, 2 ] );
 			map.set( 'genre', [ 10, 20 ] );
 			map.set( 'tags', [ 3 ] );
@@ -840,9 +843,9 @@ describe( 'crdt', () => {
 				defaultSyncedProperties
 			) as Record< string, unknown >;
 
-			expect( changes.categories ).toEqual( [ 1, 2 ] );
+			expect( changes.categories ).toBeUndefined();
 			expect( changes.genre ).toBeUndefined();
-			expect( changes.tags ).toEqual( [ 3 ] );
+			expect( changes.tags ).toBeUndefined();
 
 			const customSyncedProperties = new Set( [
 				...defaultSyncedProperties,
@@ -855,9 +858,9 @@ describe( 'crdt', () => {
 				customSyncedProperties
 			) as Record< string, unknown >;
 
-			expect( changes2.categories ).toEqual( [ 1, 2 ] );
-			expect( changes2.genre ).toEqual( [ 10, 20 ] );
-			expect( changes2.tags ).toEqual( [ 3 ] );
+			expect( changes2.categories ).toBeUndefined();
+			expect( changes2.genre ).toBeUndefined();
+			expect( changes2.tags ).toBeUndefined();
 		} );
 
 		describe( 'selection recalculation', () => {
