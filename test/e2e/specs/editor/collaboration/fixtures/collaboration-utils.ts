@@ -213,7 +213,11 @@ export default class CollaborationUtils {
 			)
 		);
 
-		await Promise.all( pages.map( ( pg ) => this.waitForSyncCycle( pg ) ) );
+		await Promise.all(
+			pages.map( ( pg ) =>
+				this.waitForSyncCycle( pg, 3, { timeout: resolvedTimeout } )
+			)
+		);
 	}
 
 	/**
