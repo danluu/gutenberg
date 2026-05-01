@@ -1628,7 +1628,10 @@ function getActiveActions(): PageAction[] {
 		return ACTIONS;
 	}
 
-	if ( ACTION_PROFILE === 'persistence' ) {
+	if (
+		ACTION_PROFILE === 'persistence' ||
+		ACTION_PROFILE === 'persistence-no-title'
+	) {
 		const persistenceActionLabels = new Set( [
 			'insert-paragraph',
 			'append-paragraph',
@@ -1641,8 +1644,11 @@ function getActiveActions(): PageAction[] {
 			'edit-table-array-attributes',
 		] );
 
-		return ACTIONS.filter( ( action ) =>
-			persistenceActionLabels.has( action.label )
+		return ACTIONS.filter(
+			( action ) =>
+				persistenceActionLabels.has( action.label ) &&
+				( ACTION_PROFILE !== 'persistence-no-title' ||
+					action.label !== 'edit-title' )
 		);
 	}
 
