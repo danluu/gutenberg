@@ -662,6 +662,30 @@ export function createSyncManager( debug = false ): SyncManager {
 		return serializeCrdtDoc( entityState.ydoc );
 	}
 
+	async function applyPersistedCRDTDoc(
+		objectType: ObjectType,
+		objectId: ObjectID,
+		record: ObjectData
+	): Promise< void > {
+		internal.applyPersistedCrdtDoc( objectType, objectId, record );
+
+		// Applying a persisted document can schedule local store updates. Yield so
+		// callers that immediately inspect the document see the completed merge.
+		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+	}
+
+	function getCRDTRecordData(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): ObjectData | undefined {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+
+		return entityState?.ydoc.getMap( CRDT_RECORD_MAP_KEY ).toJSON() as
+			| ObjectData
+			| undefined;
+	}
+
 	// Collect internal functions so that they can be wrapped before calling.
 	const internal = {
 		applyPersistedCrdtDoc: debugWrap( _applyPersistedCrdtDoc ),
@@ -670,7 +694,9 @@ export function createSyncManager( debug = false ): SyncManager {
 
 	// Wrap and return the public API.
 	return {
+		applyPersistedCRDTDoc: debugWrap( applyPersistedCRDTDoc ),
 		createPersistedCRDTDoc: debugWrap( createPersistedCRDTDoc ),
+		getCRDTRecordData: debugWrap( getCRDTRecordData ),
 		getAwareness,
 		load: debugWrap( loadEntity ),
 		loadCollection: debugWrap( loadCollection ),

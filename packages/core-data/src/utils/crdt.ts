@@ -128,6 +128,8 @@ export function applyPostChangesToCRDTDoc(
 	syncedProperties: Set< string >
 ): void {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
+	const shouldDeriveContentFromBlocks =
+		syncedProperties.has( 'content' ) && Array.isArray( changes.blocks );
 
 	Object.keys( changes ).forEach( ( key ) => {
 		if ( ! syncedProperties.has( key ) ) {
@@ -173,6 +175,10 @@ export function applyPostChangesToCRDTDoc(
 			case 'content':
 			case 'excerpt':
 			case 'title': {
+				if ( key === 'content' && shouldDeriveContentFromBlocks ) {
+					break;
+				}
+
 				const currentValue = ymap.get( key );
 				let rawValue = getRawValue( newValue );
 
@@ -245,6 +251,23 @@ export function applyPostChangesToCRDTDoc(
 			}
 		}
 	} );
+
+	if ( shouldDeriveContentFromBlocks ) {
+		const currentBlocks = ymap.get( 'blocks' );
+
+		if ( currentBlocks instanceof Y.Array ) {
+			const currentValue = ymap.get( 'content' );
+			const rawValue = __unstableSerializeAndClean(
+				currentBlocks.toJSON()
+			).trim();
+
+			if ( currentValue instanceof Y.Text ) {
+				mergeRichTextUpdate( currentValue, rawValue );
+			} else {
+				ymap.set( 'content', new Y.Text( rawValue ) );
+			}
+		}
+	}
 
 	// Process changes that we don't want to persist to the CRDT document.
 	if ( changes.selection ) {
