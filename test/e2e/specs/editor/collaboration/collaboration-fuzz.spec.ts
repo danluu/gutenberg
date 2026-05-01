@@ -1591,7 +1591,7 @@ async function restoreRevisionViaBrowserAndVerify( {
 			.getByTestId( 'snackbar' )
 			.filter( { hasText: 'Restored to revision' } )
 			.first()
-	).toBeVisible();
+	).toBeVisible( { timeout: CONVERGENCE_TIMEOUT_MS } );
 
 	await reloadAndWait( restorer.page, collaborationUtils );
 

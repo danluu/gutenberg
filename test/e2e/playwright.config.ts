@@ -10,12 +10,17 @@ import { defineConfig, devices } from '@playwright/test';
  */
 import baseConfig from '@wordpress/scripts/config/playwright.config.js';
 
+const assumeWpEnvRunning =
+	process.env.GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING === '1';
+
 const config = defineConfig( {
 	...baseConfig,
-	webServer: {
-		...baseConfig.webServer,
-		command: 'npm run --prefix ../.. wp-env-test -- start',
-	},
+	webServer: assumeWpEnvRunning
+		? undefined
+		: {
+				...baseConfig.webServer,
+				command: 'npm run --prefix ../.. wp-env-test -- start',
+		  },
 	reporter: process.env.CI
 		? [ [ 'github' ], [ './config/flaky-tests-reporter.ts' ], [ 'blob' ] ]
 		: 'list',
