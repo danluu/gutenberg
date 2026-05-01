@@ -26,11 +26,12 @@ const SHARED_PATH = [
 ].join( path.delimiter );
 
 const args = process.argv.slice( 2 );
+const DAEMON = args.includes( '--daemon' );
 
 if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 	process.stdout.write(
 		[
-			'Usage: node bin/rtc-browser-fuzz-triage-watcher.mjs <run-output-dir> [--once]',
+			'Usage: node bin/rtc-browser-fuzz-triage-watcher.mjs <run-output-dir> [--once] [--daemon]',
 			'',
 			'Scans RTC browser fuzz artifacts, dedupes failures, and launches',
 			'independent Codex deep-triage jobs for distinct failure signatures.',
@@ -75,6 +76,44 @@ const CODEX_TIMEOUT_MS = getPositiveIntegerEnv(
 
 const activeJobs = new Map();
 let shuttingDown = false;
+
+async function launchDaemon() {
+	await fs.mkdir( STATE_DIR, { recursive: true } );
+
+	const logPath = path.join( STATE_DIR, 'watcher.log' );
+	const logHandle = await fs.open( logPath, 'a' );
+	const child = spawn(
+		process.execPath,
+		[
+			fileURLToPath( import.meta.url ),
+			...args.filter( ( arg ) => arg !== '--daemon' ),
+		],
+		{
+			cwd: REPO_ROOT,
+			detached: true,
+			env: {
+				...process.env,
+				PATH: SHARED_PATH,
+			},
+			stdio: [ 'ignore', logHandle.fd, logHandle.fd ],
+		}
+	);
+	child.unref();
+	await logHandle.close();
+
+	process.stdout.write(
+		JSON.stringify(
+			{
+				pid: child.pid,
+				runDir: RUN_DIR,
+				statePath: STATE_PATH,
+				logPath,
+			},
+			null,
+			2
+		) + '\n'
+	);
+}
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -134,7 +173,15 @@ async function writeState( state ) {
 }
 
 async function findSummaryFiles( directory ) {
-	const entries = await fs.readdir( directory, { withFileTypes: true } );
+	let entries;
+	try {
+		entries = await fs.readdir( directory, { withFileTypes: true } );
+	} catch ( error ) {
+		if ( [ 'ENOENT', 'ENOTDIR' ].includes( error.code ) ) {
+			return [];
+		}
+		throw error;
+	}
 	const files = [];
 
 	for ( const entry of entries ) {
@@ -357,6 +404,35 @@ async function launchQueuedJobs( state ) {
 	}
 }
 
+async function reconcileExternallyCompletedJobs( state ) {
+	for ( const signature of Object.values( state.signatures ) ) {
+		if (
+			signature.status !== 'running' ||
+			! fsSync.existsSync( signature.resultPath ) ||
+			activeJobs.has( signature.hash )
+		) {
+			continue;
+		}
+
+		let result = null;
+		try {
+			result = JSON.parse(
+				await fs.readFile( signature.resultPath, 'utf8' )
+			);
+		} catch {}
+
+		signature.result = result;
+		signature.pid = null;
+		signature.lastCompletedAt =
+			signature.lastCompletedAt ?? new Date().toISOString();
+		signature.status = getStatusFromResult( result, result ? 0 : 1 );
+		await writeStatusMarkdown(
+			path.join( signature.jobDir, 'STATUS.md' ),
+			signature
+		);
+	}
+}
+
 function shouldLaunch( signature ) {
 	if (
 		[ 'completed', 'not-real', 'infra', 'no-realistic-repro' ].includes(
@@ -367,10 +443,27 @@ function shouldLaunch( signature ) {
 	}
 
 	if ( signature.status === 'running' ) {
-		return ! fsSync.existsSync( signature.resultPath );
+		if ( fsSync.existsSync( signature.resultPath ) ) {
+			return false;
+		}
+
+		return ! isProcessAlive( signature.pid );
 	}
 
 	return signature.status === 'queued' || signature.status === 'retry';
+}
+
+function isProcessAlive( pid ) {
+	if ( ! pid ) {
+		return false;
+	}
+
+	try {
+		process.kill( pid, 0 );
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 async function launchCodexJob( state, signature ) {
@@ -425,6 +518,9 @@ async function launchCodexJob( state, signature ) {
 		}
 	);
 
+	signature.pid = child.pid ?? null;
+	await writeState( state );
+
 	const timeout = setTimeout( () => {
 		child.kill( 'SIGTERM' );
 		setTimeout( () => child.kill( 'SIGKILL' ), 5000 ).unref();
@@ -432,6 +528,22 @@ async function launchCodexJob( state, signature ) {
 	const startedAt = Date.now();
 
 	activeJobs.set( signature.hash, child );
+	child.on( 'error', async ( error ) => {
+		clearTimeout( timeout );
+		activeJobs.delete( signature.hash );
+
+		const nextState = await readState();
+		const nextSignature = nextState.signatures[ signature.hash ];
+		if ( ! nextSignature ) {
+			return;
+		}
+
+		nextSignature.status = 'retry';
+		nextSignature.lastError = error.message;
+		nextSignature.lastCompletedAt = new Date().toISOString();
+		await writeStatusMarkdown( statusPath, nextSignature );
+		await writeState( nextState );
+	} );
 	child.on( 'close', async ( code, signal ) => {
 		clearTimeout( timeout );
 		activeJobs.delete( signature.hash );
@@ -446,6 +558,7 @@ async function launchCodexJob( state, signature ) {
 		nextSignature.durationMs = Date.now() - startedAt;
 		nextSignature.exitCode = code;
 		nextSignature.signal = signal;
+		nextSignature.pid = null;
 
 		let result = null;
 		try {
@@ -565,6 +678,7 @@ async function runScanCycle() {
 	const candidates = await readFailureCandidates();
 	const groups = groupCandidatesBySignature( candidates );
 	await updateDiscoveredSignatures( state, groups );
+	await reconcileExternallyCompletedJobs( state );
 	await launchQueuedJobs( state );
 	await writeState( state );
 	process.stdout.write(
@@ -576,6 +690,11 @@ async function runScanCycle() {
 
 async function main() {
 	await fs.mkdir( STATE_DIR, { recursive: true } );
+
+	if ( DAEMON ) {
+		await launchDaemon();
+		return;
+	}
 
 	process.on( 'SIGINT', () => {
 		shuttingDown = true;
