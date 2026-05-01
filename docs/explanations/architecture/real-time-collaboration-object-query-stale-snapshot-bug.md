@@ -163,11 +163,11 @@ Expected final visible table on both editors:
 ```
 
 Repeated baseline command, run from a detached baseline worktree at
-`c62047002d1` (`trunk` plus the repro tests, without the fix):
+`7fa898389e0` (`trunk` plus the repro tests, without the fix):
 
 ```bash
-WP_ENV_PORT=8920 WP_BASE_URL=http://localhost:8920 \
-WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-baseline-check/artifacts/repeat-baseline-fill-8920 \
+WP_ENV_PORT=8922 WP_BASE_URL=http://localhost:8922 \
+WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-baseline-rebased-check/artifacts/repeat-baseline-post-rebase-8922 \
 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-stale-snapshot.spec.ts --project=chromium --grep "stale HTML snapshot" --repeat-each=5 --retries=0
 ```
 
@@ -192,16 +192,16 @@ and the second is the same workflow failing the preservation invariant in the
 other direction. The repeated baseline artifacts are under:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-baseline-check/artifacts/repeat-baseline-fill-8920/
+/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-baseline-rebased-check/artifacts/repeat-baseline-post-rebase-8922/
 ```
 
 Repeated fix-branch command, run from
 `/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr` at
-`e7c9e8610ee`:
+`17f5c915e93`:
 
 ```bash
 WP_ENV_PORT=8921 WP_BASE_URL=http://localhost:8921 \
-WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr/artifacts/repeat-fix-final-8921 \
+WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr/artifacts/repeat-fix-post-rebase-8921 \
 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-table-stale-snapshot.spec.ts --project=chromium --grep "stale HTML snapshot" --repeat-each=5 --retries=0
 ```
 
@@ -209,7 +209,7 @@ Result on the fix branch: 5/5 repeats passed. The repeated fix artifacts are
 under:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr/artifacts/repeat-fix-final-8921/
+/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr/artifacts/repeat-fix-post-rebase-8921/
 ```
 
 I also tried a keyboard-typing variant of the HTML textarea edit. It was less
