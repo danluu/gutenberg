@@ -131,13 +131,16 @@ test.describe( 'Collaboration - Stale rich-text sibling snapshots', () => {
 		);
 
 		await collaborationUtils.waitForSyncCycle( page, 1 );
+		const settleAfterRemoteEdit = Promise.all( [
+			collaborationUtils.waitForSyncCycle( page, 1 ),
+			collaborationUtils.waitForSyncCycle( page2, 1 ),
+		] );
 		await replaceText( page2, fileNameB, 'Remote file', {
 			delay: 20,
 		} );
 
 		await typingA;
-		await collaborationUtils.waitForSyncCycle( page );
-		await collaborationUtils.waitForSyncCycle( page2 );
+		await settleAfterRemoteEdit;
 
 		await expect( async () => {
 			const fileA = getFileBlock( await editor.getBlocks() );
