@@ -390,7 +390,9 @@ function deliverSomeUpdates(
 			applyUpdate( peer, packet.update );
 			if ( rng.bool( 0.1 ) ) {
 				applyUpdate( peer, packet.update );
-				trace.push( `duplicate ${ packet.from } update to ${ peer.id }` );
+				trace.push(
+					`duplicate ${ packet.from } update to ${ peer.id }`
+				);
 			}
 		}
 	}
@@ -406,16 +408,18 @@ function compactFromPeer( peer: Peer, peers: Peer[], trace: string[] ): void {
 	}
 }
 
-function syncOneWay(source: Peer, target: Peer, trace: string[] ): void {
+function syncOneWay( source: Peer, target: Peer, trace: string[] ): void {
 	const update = Y.encodeStateAsUpdateV2(
 		source.doc,
 		Y.encodeStateVector( target.doc )
 	);
-	trace.push( `${ source.id } -> ${ target.id } sync ${ update.byteLength } bytes` );
+	trace.push(
+		`${ source.id } -> ${ target.id } sync ${ update.byteLength } bytes`
+	);
 	applyUpdate( target, update );
 }
 
-function flushAll(peers: Peer[], trace: string[] ): void {
+function flushAll( peers: Peer[], trace: string[] ): void {
 	for ( const source of peers ) {
 		for ( const target of peers ) {
 			if ( source.id !== target.id ) {
