@@ -168,6 +168,10 @@ const DISCOVERY_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_DISCOVERY_TIMEOUT_MS',
 	15000
 );
+const SESSION_SETTLE_TIMEOUT_MS = Math.max(
+	CONVERGENCE_TIMEOUT_MS,
+	DISCOVERY_TIMEOUT_MS
+);
 const DISABLE_SYNC_FAULTS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS === '1';
 const DISABLE_RELOAD = process.env.GUTENBERG_RTC_BROWSER_DISABLE_RELOAD === '1';
@@ -1266,7 +1270,7 @@ async function reloadAndWait(
 		timeout: CONVERGENCE_TIMEOUT_MS,
 	} );
 	await waitForCollaborationSessionSettled( collaborationUtils, {
-		timeout: CONVERGENCE_TIMEOUT_MS,
+		timeout: SESSION_SETTLE_TIMEOUT_MS,
 	} );
 }
 
