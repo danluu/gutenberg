@@ -27,11 +27,96 @@ import { mergeStaleNavigationMenuContent } from './utils/navigation-menu-content
 
 export const DEFAULT_ENTITY_KEY = 'id';
 const POST_RAW_ATTRIBUTES = [ 'title', 'excerpt', 'content' ];
+const POST_TYPES_WITH_STALE_SAVE_PROTECTION = new Set( [ 'post', 'page' ] );
 
 function getRawPostValue( value ) {
 	return value && typeof value === 'object' && 'raw' in value
 		? value.raw
 		: value;
+}
+
+function getSerializedBlockValue( block ) {
+	return __unstableSerializeAndClean( [ block ] ).trim();
+}
+
+function mergeStaleSerializedBlockContent(
+	baseContent,
+	latestContent,
+	localContent
+) {
+	if (
+		typeof baseContent !== 'string' ||
+		typeof latestContent !== 'string' ||
+		typeof localContent !== 'string'
+	) {
+		return;
+	}
+
+	const baseBlocks = parse( baseContent );
+	const latestBlocks = parse( latestContent );
+	const localBlocks = parse( localContent );
+
+	if (
+		! baseBlocks.length ||
+		! latestBlocks.length ||
+		! localBlocks.length
+	) {
+		return;
+	}
+
+	if (
+		latestBlocks.length > localBlocks.length &&
+		baseBlocks.length === latestBlocks.length
+	) {
+		for ( let index = 0; index < localBlocks.length; index++ ) {
+			if ( localBlocks[ index ].name !== latestBlocks[ index ].name ) {
+				return;
+			}
+		}
+
+		return __unstableSerializeAndClean( [
+			...localBlocks,
+			...latestBlocks.slice( localBlocks.length ),
+		] );
+	}
+
+	if (
+		baseBlocks.length !== latestBlocks.length ||
+		baseBlocks.length !== localBlocks.length
+	) {
+		return;
+	}
+
+	const mergedBlocks = [];
+
+	for ( let index = 0; index < baseBlocks.length; index++ ) {
+		const baseBlock = baseBlocks[ index ];
+		const latestBlock = latestBlocks[ index ];
+		const localBlock = localBlocks[ index ];
+
+		if (
+			baseBlock.name !== latestBlock.name ||
+			baseBlock.name !== localBlock.name
+		) {
+			return;
+		}
+
+		const baseValue = getSerializedBlockValue( baseBlock );
+		const latestValue = getSerializedBlockValue( latestBlock );
+		const localValue = getSerializedBlockValue( localBlock );
+
+		if ( localValue === latestValue ) {
+			mergedBlocks.push( localBlock );
+		} else if ( localValue === baseValue ) {
+			mergedBlocks.push( latestBlock );
+		} else if ( latestValue === baseValue ) {
+			mergedBlocks.push( localBlock );
+		} else {
+			return;
+		}
+	}
+
+	return __unstableSerializeAndClean( mergedBlocks );
 }
 
 const blocksTransientEdits = {
@@ -287,6 +372,7 @@ export const additionalEntityConfigLoaders = [
  * @param {Object}  edits           Edits.
  * @param {string}  name            Post type name.
  * @param {boolean} isTemplate      Whether the post type is a template.
+ * @param {string}  baseURL         REST base URL for the post type.
  * @return {Promise< Object >} Updated edits.
  */
 export const prePersistPostType = async (
@@ -299,6 +385,9 @@ export const prePersistPostType = async (
 	const newEdits = {};
 	const objectType = `postType/${ name }`;
 	const objectId = persistedRecord?.id;
+	let syncManager;
+	let serializedDoc;
+	let hasSerializedDoc = false;
 
 	if (
 		name === 'wp_navigation' &&
@@ -338,41 +427,81 @@ export const prePersistPostType = async (
 
 	if (
 		window._wpCollaborationEnabled &&
+		POST_TYPES_WITH_STALE_SAVE_PROTECTION.has( name ) &&
 		baseURL &&
 		objectId &&
 		( 'content' in edits || 'title' in edits || 'excerpt' in edits )
 	) {
 		try {
+			syncManager = getSyncManager();
+			serializedDoc = await syncManager?.createPersistedCRDTDoc(
+				objectType,
+				objectId
+			);
+			hasSerializedDoc = true;
 			const latestRecord = await apiFetch( {
 				path: addQueryArgs( `${ baseURL }/${ objectId }`, {
 					context: 'edit',
 				} ),
 			} );
-			const changedSavedFields = [ 'content', 'title', 'excerpt' ].filter(
-				( key ) =>
-					key in edits &&
-					getRawPostValue( latestRecord?.[ key ] ) !==
-						getRawPostValue( persistedRecord?.[ key ] )
+			const editedSavedFields = [ 'content', 'title', 'excerpt' ].filter(
+				( key ) => key in edits
 			);
-
-			if ( changedSavedFields.length ) {
-				const syncManager = getSyncManager();
-
-				await syncManager?.applyPersistedCRDTDoc?.(
+			const changedSavedFields = editedSavedFields.filter(
+				( key ) =>
+					getRawPostValue( latestRecord?.[ key ] ) !==
+					getRawPostValue( persistedRecord?.[ key ] )
+			);
+			const hasLatestPersistedCRDTDoc = Boolean(
+				latestRecord?.meta?.[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]
+			);
+			const didApplyLatestCRDTDoc =
+				( await syncManager?.applyPersistedCRDTDoc?.(
 					objectType,
 					objectId,
 					latestRecord
-				);
+				) ) ?? false;
 
+			if (
+				hasLatestPersistedCRDTDoc &&
+				( didApplyLatestCRDTDoc || changedSavedFields.length )
+			) {
+				serializedDoc = await syncManager?.createPersistedCRDTDoc(
+					objectType,
+					objectId
+				);
+				hasSerializedDoc = true;
 				const crdtRecord = syncManager?.getCRDTRecordData?.(
 					objectType,
 					objectId
 				);
 
-				for ( const key of changedSavedFields ) {
+				for ( const key of editedSavedFields ) {
 					if ( key in ( crdtRecord ?? {} ) ) {
-						newEdits[ key ] = getRawPostValue( crdtRecord[ key ] );
+						const crdtValue = getRawPostValue( crdtRecord[ key ] );
+
+						if (
+							crdtValue !==
+							getRawPostValue( latestRecord?.[ key ] )
+						) {
+							newEdits[ key ] = crdtValue;
+						}
 					}
+				}
+			}
+
+			if ( 'content' in edits && ! ( 'content' in newEdits ) ) {
+				const mergedContent = mergeStaleSerializedBlockContent(
+					getRawPostValue( persistedRecord?.content ),
+					getRawPostValue( latestRecord?.content ),
+					getRawPostValue( edits.content )
+				);
+
+				if (
+					mergedContent !== undefined &&
+					mergedContent !== getRawPostValue( edits.content )
+				) {
+					newEdits.content = mergedContent;
 				}
 			}
 		} catch {
@@ -383,10 +512,11 @@ export const prePersistPostType = async (
 
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
-		const serializedDoc = await getSyncManager()?.createPersistedCRDTDoc(
-			objectType,
-			objectId
-		);
+		if ( ! hasSerializedDoc ) {
+			serializedDoc = await (
+				syncManager ?? getSyncManager()
+			)?.createPersistedCRDTDoc( objectType, objectId );
+		}
 
 		if ( serializedDoc ) {
 			newEdits.meta = {

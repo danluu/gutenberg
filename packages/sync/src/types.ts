@@ -161,7 +161,7 @@ export interface SyncManager {
 		objectType: ObjectType,
 		objectId: ObjectID,
 		record: ObjectData
-	) => Promise< void >;
+	) => Promise< boolean >;
 	createPersistedCRDTDoc: (
 		objectType: ObjectType,
 		objectId: ObjectID

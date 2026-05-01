@@ -47,7 +47,10 @@ import {
 } from './crdt-utils';
 
 // Changes that can be applied to a post entity record.
-export type PostChanges = Partial< Post > & {
+export type PostChanges = Omit<
+	Partial< Post >,
+	'blocks' | 'content' | 'excerpt' | 'selection' | 'title'
+> & {
 	blocks?: Block[];
 	content?: Post[ 'content' ] | string;
 	excerpt?: Post[ 'excerpt' ] | string;

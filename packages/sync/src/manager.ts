@@ -60,6 +60,14 @@ interface EntityState {
 	ydoc: CRDTDoc;
 }
 
+function areUint8ArraysEqual( a: Uint8Array, b: Uint8Array ): boolean {
+	if ( a.length !== b.length ) {
+		return false;
+	}
+
+	return a.every( ( value, index ) => value === b[ index ] );
+}
+
 /**
  * Get the entity ID for the given object type and object ID.
  *
@@ -666,12 +674,28 @@ export function createSyncManager( debug = false ): SyncManager {
 		objectType: ObjectType,
 		objectId: ObjectID,
 		record: ObjectData
-	): Promise< void > {
+	): Promise< boolean > {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+		const previousStateVector = entityState?.ydoc
+			? Y.encodeStateVector( entityState.ydoc )
+			: null;
+
 		internal.applyPersistedCrdtDoc( objectType, objectId, record );
 
 		// Applying a persisted document can schedule local store updates. Yield so
 		// callers that immediately inspect the document see the completed merge.
 		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		const nextStateVector = entityState?.ydoc
+			? Y.encodeStateVector( entityState.ydoc )
+			: null;
+
+		return !! (
+			previousStateVector &&
+			nextStateVector &&
+			! areUint8ArraysEqual( previousStateVector, nextStateVector )
+		);
 	}
 
 	function getCRDTRecordData(
