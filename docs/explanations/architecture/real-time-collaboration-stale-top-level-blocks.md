@@ -21,10 +21,10 @@ base64 update size (#77669)`). This base includes the merged known fixes
 [#77669](https://github.com/WordPress/gutenberg/pull/77669) and
 [#77681](https://github.com/WordPress/gutenberg/pull/77681).
 
-I rechecked the tracking issue on 2026-04-29:
+I rechecked the tracking issue on 2026-05-01:
 [#77716](https://github.com/WordPress/gutenberg/issues/77716) and the linked
-items. The open or issue-only items there focus on rich-text offset/cursor
-handling ([#77532](https://github.com/WordPress/gutenberg/issues/77532),
+items. The listed items still focus on rich-text offset/cursor handling
+([#77532](https://github.com/WordPress/gutenberg/issues/77532),
 [#77658](https://github.com/WordPress/gutenberg/pull/77658),
 [#77662](https://github.com/WordPress/gutenberg/pull/77662)), reload/save or
 storage/presence problems ([#77666](https://github.com/WordPress/gutenberg/pull/77666),
@@ -42,6 +42,13 @@ stack does not add a local-base top-level block-array merge. The original
 handoff fuzz commands depend on a modified fuzz harness that is not on clean
 `origin/trunk`, so I used focused repros for this issue instead of claiming the
 handoff seed commands run cleanly on trunk.
+
+Repeated browser checks on 2026-05-01 tightened the status: the unfixed
+analysis branch reliably reproduces true top-level append loss, but the proposed
+fix branch `danluu/try/stale-top-level-blocks-pr` is not yet browser-verified.
+It passed two external Playwright runs and then lost the collaborator append on
+the third run. Treat the current fix branch as model/unit-test-clean but blocked
+on browser-level save-race stability.
 
 ## Reproductions
 
@@ -96,24 +103,63 @@ WP_BASE_URL=http://localhost:8890 npm run test:e2e -- \
 	--project=chromium
 ```
 
-Actual result on the tested base: the latest post-format rerun preserved the
-append on repeat 0 and failed on repeat 1 with the intended bug signal:
+The repro test uses normal UI actions only. It does not mutate Y.Doc state,
+dispatch editor-store actions directly, pause clocks or networking, install
+scheduler hooks, inject provider faults, or use custom stale-block test tricks.
+The test first verifies that the collaborator's editor contains the appended
+paragraph, then both users type in the editor and click the `Save draft` button.
+After the primary editor reloads, the assertion inspects the visible editor
+block contents.
+
+The failure predicate was tightened on 2026-05-01 so it only counts true
+top-level append loss: the local edit must be present and no paragraph may start
+with `Gamma`. This separates this issue from partial collaborator-text
+truncation seen in some exploratory runs.
+
+Strict unfixed-branch result on `try/stale-top-level-blocks`: 5/5 external runs
+found true top-level append loss within the loop. The failing repeat indices
+were `0, 0, 2, 2, 0`.
 
 ```text
-stale-save-loop-1 { primary: [ 'Alpha local stale save loop 1', 'Beta' ] }
-Error: Found verified stale save repro 1: {"primary":["Alpha local stale save loop 1","Beta"]}
+run 1: Found verified top-level append loss 0: {"primary":["Alpha local stale save loop 0","Beta"]}
+run 2: Found verified top-level append loss 0: {"primary":["Alpha local stale save loop 0","Beta"]}
+run 3: Found verified top-level append loss 2: {"primary":["Alpha local stale save loop 2","Beta"]}
+run 4: Found verified top-level append loss 2: {"primary":["Alpha local stale save loop 2","Beta"]}
+run 5: Found verified top-level append loss 0: {"primary":["Alpha local stale save loop 0","Beta"]}
 ```
 
-The test first verifies that the collaborator's editor contains the appended
-paragraph, then uses normal UI actions only: both users type in the editor and
-click the `Save draft` button. After the primary editor reloads, the local edit
-is persisted but the verified collaborator append is missing. Some runs emit
-normal sync-update retry logs during the overlap, and the same target state has
-also reproduced in a run without visible sync-error logs. The latest video
-artifact from this run is:
+Local video, trace, screenshot, and log artifacts were copied under:
 
 ```text
-test/e2e/artifacts/test-results/editor-collaboration-colla-ae96a-plus-overlapping-stale-save-chromium/video.webm
+test/e2e/artifacts/stale-top-level-evidence/baseline-top-level/run-1-artifacts/video.webm
+test/e2e/artifacts/stale-top-level-evidence/baseline-top-level/run-2-artifacts/video.webm
+test/e2e/artifacts/stale-top-level-evidence/baseline-top-level/run-3-artifacts/video.webm
+test/e2e/artifacts/stale-top-level-evidence/baseline-top-level/run-4-artifacts/video.webm
+test/e2e/artifacts/stale-top-level-evidence/baseline-top-level/run-5-artifacts/video.webm
+test/e2e/artifacts/stale-top-level-evidence/baseline-top-level/run-*.log
+```
+
+Proposed fix branch check:
+
+```bash
+WP_BASE_URL=http://localhost:8914 npm run test:e2e -- \
+	test/e2e/specs/editor/collaboration/collaboration-stale-top-level-blocks-stale-save-loop.spec.ts \
+	--project=chromium
+```
+
+Actual result on `danluu/try/stale-top-level-blocks-pr` at
+`0b375470eef`: 2/3 external runs passed, then run 3 failed at internal repeat 1.
+
+```text
+Expected value: "Gamma remote stale save loop 1"
+Received array: ["Alpha local stale save loop 1 local stale save loop 1", "Beta"]
+```
+
+The failure artifact is preserved locally at:
+
+```text
+test/e2e/artifacts/stale-top-level-evidence/fix-pass/run-3.log
+test/e2e/artifacts/stale-top-level-evidence/fix-pass/run-3-failure-artifacts/trace.zip
 ```
 
 Additional natural attempts that did not hit the bug were kept out of the branch
@@ -171,6 +217,14 @@ append is absent. The deterministic adapter tests prove that the current
 write-path can turn an older full block array into a delete of a remote top-level
 append; the Playwright repro demonstrates that a realistic editor/save history
 can surface the data loss without fault injection.
+
+The repeated fix-branch run also shows this browser scenario can include a
+broader save ordering race: one failed fix-branch run lost `Gamma` while the
+primary editor appears not to have received the collaborator append before its
+save. That makes the browser repro useful evidence of user-visible data loss,
+but not yet a clean pass/fail proof for the proposed fix. The deterministic unit
+and adapter tests remain the isolated proof for the stale local snapshot
+overwrite mechanism.
 
 ## How this was introduced
 
@@ -257,6 +311,10 @@ teaching `mergeCrdtBlocks()` to guess whether differences are local or remote.
 6. Keep the focused failing tests in `crdt-stale-top-level-blocks.ts`, then add
    a browser regression that fails on a naturally reachable stale ordering before
    marking the issue fixed.
+7. Before proposing the fix, harden the save path so saving from one editor
+   cannot persist an older CRDT document over a collaborator's already-saved
+   top-level append. The current candidate branch passes the focused model tests
+   but does not yet pass repeated browser save-race checks.
 
 ## Open questions
 

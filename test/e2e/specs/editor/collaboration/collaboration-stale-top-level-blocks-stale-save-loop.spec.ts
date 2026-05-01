@@ -96,6 +96,7 @@ test.describe( 'Collaboration - stale top-level block save repro', () => {
 
 		for ( let repeat = 0; repeat < 24; repeat++ ) {
 			const localText = `Alpha local stale save loop ${ repeat }`;
+			const remoteBlockPrefix = 'Gamma';
 			const remoteText = `Gamma remote stale save loop ${ repeat }`;
 			const post = await requestUtils.createPost( {
 				title: `RTC stale save loop ${ repeat }`,
@@ -137,10 +138,12 @@ test.describe( 'Collaboration - stale top-level block save repro', () => {
 
 			if (
 				primary.includes( localText ) &&
-				! primary.includes( remoteText )
+				! primary.some(
+					( content ) => content?.startsWith( remoteBlockPrefix )
+				)
 			) {
 				throw new Error(
-					`Found verified stale save repro ${ repeat }: ${ JSON.stringify(
+					`Found verified top-level append loss ${ repeat }: ${ JSON.stringify(
 						{
 							primary,
 						}
