@@ -62,6 +62,9 @@ export type YBlocks = Y.Array< YBlock >;
 export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+// Incoming editor snapshots are full block trees. Remember the last local
+// snapshot so stale values can be ignored when only sibling attributes changed.
+const previousLocalBlocksByYBlocks = new WeakMap< YBlocks, Block[] >();
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -121,6 +124,77 @@ function makeBlocksSerializable( blocks: Block[] ): Block[] {
 			innerBlocks: makeBlocksSerializable( innerBlocks ),
 		};
 	} );
+}
+
+function rememberLocalBlockSnapshot( yblocks: YBlocks, blocks: Block[] ): void {
+	const snapshot = makeBlocksSerializable( blocks );
+	rememberSerializableBlockSnapshot( yblocks, snapshot );
+}
+
+function rememberSerializableBlockSnapshot(
+	yblocks: YBlocks,
+	blocks: Block[]
+): void {
+	previousLocalBlocksByYBlocks.set( yblocks, blocks );
+
+	for ( let i = 0; i < Math.min( yblocks.length, blocks.length ); i++ ) {
+		const yInnerBlocks = yblocks.get( i ).get( 'innerBlocks' );
+
+		if ( yInnerBlocks instanceof Y.Array ) {
+			rememberSerializableBlockSnapshot(
+				yInnerBlocks,
+				blocks[ i ].innerBlocks ?? []
+			);
+		}
+	}
+}
+
+function getPreviousLocalBlock(
+	previousBlocks: Block[] | undefined,
+	block: Block,
+	index: number
+): Block | undefined {
+	const previousBlock = previousBlocks?.[ index ];
+
+	if ( ! previousBlock || previousBlock.name !== block.name ) {
+		return undefined;
+	}
+
+	if ( block.clientId || previousBlock.clientId ) {
+		return block.clientId === previousBlock.clientId
+			? previousBlock
+			: undefined;
+	}
+
+	return previousBlock;
+}
+
+function hasLocalAttributeChange(
+	previousBlock: Block | undefined,
+	attributeName: string,
+	attributeValue: unknown
+): boolean {
+	if ( ! previousBlock ) {
+		return true;
+	}
+
+	const previousAttributes = previousBlock.attributes ?? {};
+
+	return (
+		! Object.hasOwn( previousAttributes, attributeName ) ||
+		! fastDeepEqual( previousAttributes[ attributeName ], attributeValue )
+	);
+}
+
+function hasLocalAttributeDelete(
+	previousBlock: Block | undefined,
+	attributeName: string
+): boolean {
+	if ( ! previousBlock ) {
+		return true;
+	}
+
+	return Object.hasOwn( previousBlock.attributes ?? {}, attributeName );
 }
 
 /**
@@ -398,6 +472,7 @@ export function mergeCrdtBlocks(
 		);
 	}
 	const blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const previousBlocks = previousLocalBlocksByYBlocks.get( yblocks );
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -457,6 +532,11 @@ export function mergeCrdtBlocks(
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
 		const block = blocksToSync[ left ];
 		const yblock = yblocks.get( left );
+		const previousBlock = getPreviousLocalBlock(
+			previousBlocks,
+			block,
+			left
+		);
 
 		Object.entries( block ).forEach( ( [ key, value ] ) => {
 			switch ( key ) {
@@ -474,6 +554,16 @@ export function mergeCrdtBlocks(
 
 					Object.entries( value ).forEach(
 						( [ attributeName, attributeValue ] ) => {
+							if (
+								! hasLocalAttributeChange(
+									previousBlock,
+									attributeName,
+									attributeValue
+								)
+							) {
+								return;
+							}
+
 							const currentAttribute =
 								currentAttributes?.get( attributeName );
 
@@ -513,7 +603,13 @@ export function mergeCrdtBlocks(
 					// Delete any attributes that are no longer present.
 					currentAttributes.forEach(
 						( _attrValue: unknown, attrName: string ) => {
-							if ( ! value.hasOwnProperty( attrName ) ) {
+							if (
+								! value.hasOwnProperty( attrName ) &&
+								hasLocalAttributeDelete(
+									previousBlock,
+									attrName
+								)
+							) {
 								currentAttributes.delete( attrName );
 							}
 						}
@@ -579,6 +675,8 @@ export function mergeCrdtBlocks(
 		}
 		knownClientIds.add( clientId );
 	}
+
+	rememberLocalBlockSnapshot( yblocks, blocksToSync );
 }
 
 /**
