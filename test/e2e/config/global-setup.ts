@@ -25,18 +25,26 @@ async function globalSetup( config: FullConfig ) {
 	// Authenticate and save the storageState to disk.
 	await requestUtils.setupRest();
 
+	const skipGlobalPostCleanup =
+		process.env.GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP === '1';
+
 	// Reset the test environment before running the tests.
-	await Promise.all( [
+	const resetTasks = [
 		requestUtils.activateTheme( 'twentytwentyone' ),
 		// Disable this test plugin as it's conflicting with some of the tests.
 		// We already have reduced motion enabled and Playwright will wait for most of the animations anyway.
 		requestUtils.deactivatePlugin(
 			'gutenberg-test-plugin-disables-the-css-animations'
 		),
-		requestUtils.deleteAllPosts(),
 		requestUtils.deleteAllBlocks(),
 		requestUtils.resetPreferences(),
-	] );
+	];
+
+	if ( ! skipGlobalPostCleanup ) {
+		resetTasks.push( requestUtils.deleteAllPosts() );
+	}
+
+	await Promise.all( resetTasks );
 
 	await requestContext.dispose();
 }

@@ -198,6 +198,10 @@ async function main() {
 					RTC_FUZZ_STEP_COUNT: String( STEP_COUNT ),
 					RTC_FUZZ_LANE_LABEL: laneLabel,
 					RTC_FUZZ_ASSUME_WP_ENV_RUNNING: '1',
+					RTC_FUZZ_INLINE_CODEX:
+						process.env.RTC_FUZZ_INLINE_CODEX ?? '0',
+					RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP:
+						process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ?? '1',
 				},
 			}
 		);
@@ -223,6 +227,11 @@ async function main() {
 		outputDir: OUTPUT_DIR,
 		pCoreCount: getPerformanceCoreCount(),
 		lanesAssumeWpEnvRunning: true,
+		inlineCodex:
+			( process.env.RTC_FUZZ_INLINE_CODEX ?? '0' ) !== '0',
+		skipGlobalPostCleanup:
+			( process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ?? '1' ) ===
+			'1',
 		startSeed: START_SEED,
 		stepCount: STEP_COUNT,
 		lanes,
