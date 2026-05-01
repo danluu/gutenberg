@@ -285,38 +285,37 @@ The per-row `Introduced by` column captures individual introductions. At the col
 5. Do not merge temporary skips, quarantines, assertion weakening, or blind retries as flake fixes. If a test is too unstable to fix immediately, leave the issue open and fix the underlying readiness, fixture, or infrastructure problem in a follow-up PR that still preserves the behavior.
 6. Validate fixes with `npm run test:e2e -- <spec> --repeat-each=N` locally or in CI, then monitor at least 50 trunk E2E runs before closing high-volume flake issues.
 
-## Review Of The Initial Plan
+## Audit Of The PR-Scoped Plan
 
 ### Linus Torvalds lens
 
-The plan must not hide broken tests behind labels and process. The useful part is attacking concrete top offenders and deleting duplicate/stale bookkeeping. The weak part is any wording that allows "infra" to become an excuse. If the local server falls over, that is also a bug in the CI system, and it needs logs, a reproducer, and an owner. No new abstraction should be added until a repeated failure demonstrates the need.
+The PR-scoped plan is better because it avoids process and temporary skips, but it still lists too many possible fixes. A good PR should not be a grab bag across Site Editor, router, Classic, upload, and publish panel behavior. Pick the boring, obvious test bugs first. Do not touch production code, shared helpers, reporter code, or broad infrastructure in this PR. If a test cannot be fixed with a small deterministic wait, fixture isolation, or exact locator, it does not belong in this PR.
 
 ### Kyle Kingsbury / Jepsen lens
 
-The plan needs better histories. A flaky E2E run is a distributed trace across browser, WordPress REST, database, iframe editor, frontend route, and sometimes multiple clients. The current report stores a final stack, not enough causal context. For RTC and router flakes, add explicit event histories, clocks/sequence IDs, and quiescence predicates. Tests should state what invariant is expected after which operations have completed; otherwise a retrying assertion is just sampling an eventually consistent system at arbitrary times.
+The plan correctly avoids ongoing tracing machinery, but it should be stricter about waits. Replacing a flaky assertion with a different arbitrary wait is still sampling an async system. Each changed wait should correspond to the operation being tested: a panel is closed, a specific block is attached, a save request completed, or a known navigation response was captured. RTC and broad router synchronization are distributed-state problems and should not be mixed into a low-risk PR unless the PR fixes one explicit stale wait with one explicit completion signal.
 
 ### Dan Luu lens
 
-The biggest risk is spending days hero-debugging memorable UI flakes while the actual CI pain is dominated by boring infrastructure and stale issue hygiene. For a process-heavy program, measuring base rates and ownership would help. For the immediate PR, though, that creates ongoing work and follow-up risk. The practical PR should avoid new process machinery and only make small deterministic fixes that are easy to review.
+The plan now avoids ongoing work, which is the right direction. The remaining risk is scope creep disguised as "local" fixes. A low-risk PR should have a short diff, a short reviewer story, and no dependency on later cleanup. It should also avoid fixing flakes whose latest evidence is infrastructure-only; those may be real problems, but they are not low-risk test fixes.
 
 ### Coverage-preservation check
 
-The previous revised plan did not fully guarantee coverage preservation and still required ongoing work such as a flake ledger. The PR-shaped plan below removes ongoing machinery and keeps the no-coverage-regression gate: every flake fix must preserve the same behavioral invariant. The plan also excludes quarantine, skips, broad retries, reporter rewrites, and deletion from the low-risk PR.
+The previous revised plan did not fully guarantee coverage preservation and still required ongoing work such as a flake ledger. The PR-shaped plan below removes ongoing machinery and keeps the no-coverage-regression gate: every flake fix must preserve the same behavioral invariant. The audit above also narrows the PR to the smallest clear fixes and excludes quarantine, skips, broad retries, reporter rewrites, shared helper redesigns, infrastructure work, and deletion from the low-risk PR.
 
 ## Revised Fix Plan
 
 0. Keep the PR small and test-focused. Do not include a flake ledger, reporter rewrite, CI workflow redesign, broad `requestUtils` retry layer, dashboard, bot rule, skip/quarantine mechanism, or any other change that requires ongoing follow-up.
 1. Preserve the asserted behavior exactly. For each touched test, state the behavior protected by the current assertion and keep that assertion or an equivalent assertion in the same PR. Do not reduce expectations, loosen assertions, or turn an end-to-end behavior into only lower-level coverage.
 2. Do not delete tests in this PR. Deletion or material narrowing should be treated as out of scope unless the certainty is extraordinarily high and reviewers can see identical or stronger replacement coverage. The default is to rewrite the flaky interaction, not remove it.
-3. Only fix flakes with a concrete, local mechanism. Good candidates are fixture isolation, ambiguous locators, stale navigation waits, missing block selection, and waiting for an existing save/upload state. Skip entries whose latest evidence is only `socket hang up` unless the same PR fixes a local assertion race in that spec.
-4. Prefer local changes over shared abstractions. Add a helper only inside the affected spec when it removes duplication in that file. Avoid new cross-suite readiness APIs unless a separate PR is justified.
-5. Candidate low-risk fixes: isolate homepage page fixtures and exact row selection; wait for publish-panel closure before focus assertion; wait for Post Content canvas/block attachment before selecting; wait for explicit router request/navigation completion; wait for editor save completion before REST reads; select the Classic block after undo before toolbar use; make upload-save-lock assertions observe lock and button state together.
-6. Defer higher-risk work. Do not include Openverse mocking, global REST retry/backoff, flake issue deduplication, or broad DataViews/RTC helper refactors in the same PR. Those can be separate proposals, but they are not needed for a low-risk flake-fix PR.
-7. Validate only the changed surface. Run the directly affected spec(s), preferably with `--repeat-each` for the modified tests, and ensure the original behavior is still asserted. Do not make post-merge monitoring or future cleanup part of the PR's correctness.
+3. Fix only flakes with a concrete, local mechanism and a small patch. Acceptable mechanisms are fixture isolation, exact locator scoping, waiting for an already-observable UI state, and explicitly selecting an existing block before using its toolbar. Do not include entries whose latest evidence is only `socket hang up`.
+4. Avoid shared abstractions. Do not add cross-suite readiness APIs or package-level helpers. A small helper inside a touched spec is acceptable only if it keeps the diff simpler and has no behavior outside that file.
+5. Exclude higher-risk areas from this PR: Openverse mocking, global REST retry/backoff, flake issue deduplication, DataViews helper design, RTC synchronization, upload lifecycle semantics, and broad router synchronization. Those may deserve separate focused PRs, but they add risk here.
+6. Validate only the changed surface. Run the directly affected spec(s), preferably with `--repeat-each` for the modified tests, and verify the original behavior is still asserted. Do not make post-merge monitoring or future cleanup part of the PR's correctness.
 
 ## Low-Risk PR Shape
 
-1. Start with one or two test-only fixes whose root cause is already clear, such as `homepage-settings.spec.js` fixture isolation and `publish-panel.spec.js` waiting for panel closure before focus assertion.
-2. If that PR remains small, add similarly local changes: `post-content-focus-mode.spec.js` canvas/block readiness and `classic.spec.js` explicit selection after undo.
-3. Keep router fixes in their own PR if needed, because they touch a different subsystem. Limit them to replacing stale waits with explicit request or navigation completion waits.
-4. Leave infrastructure-heavy flakes, Openverse replacement, REST retry/backoff, DataViews helper design, and RTC synchronization rewrites out of this low-risk PR unless they are each handled as a separate focused change.
+1. Best first PR: fix `homepage-settings.spec.js` only. It is a clear test-fixture/locator bug: isolate page fixtures and scope rows exactly while preserving the same homepage/posts-page action assertions.
+2. If a second fix is included, choose `publish-panel.spec.js` only if the change is a narrow wait for panel closure or `aria-expanded=false` before the existing focus assertion. Keep it test-only.
+3. Keep `post-content-focus-mode.spec.js` and `classic.spec.js` as follow-up PRs unless the first PR remains trivially small. They are still local, but they touch different editor flows and are easier to review separately.
+4. Keep router, DataViews, RTC, upload-save-lock, Openverse/media, REST retry/backoff, and reporter work out of this low-risk PR.
