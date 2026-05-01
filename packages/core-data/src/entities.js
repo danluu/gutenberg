@@ -310,7 +310,17 @@ export const prePersistPostType = async (
 	if ( persistedRecord ) {
 		const objectType = `postType/${ name }`;
 		const objectId = persistedRecord.id;
-		const serializedDoc = await getSyncManager()?.createPersistedCRDTDoc(
+		const syncManager = getSyncManager();
+		const crdtRecord = await syncManager?.getRecordFromCRDTDoc?.(
+			objectType,
+			objectId
+		);
+
+		if ( Array.isArray( crdtRecord?.blocks ) ) {
+			newEdits.content = __unstableSerializeAndClean( crdtRecord.blocks );
+		}
+
+		const serializedDoc = await syncManager?.createPersistedCRDTDoc(
 			objectType,
 			objectId
 		);
