@@ -9,6 +9,7 @@ import { capitalCase, pascalCase } from 'change-case';
 import apiFetch from '@wordpress/api-fetch';
 import { __unstableSerializeAndClean, parse } from '@wordpress/blocks';
 import { __ } from '@wordpress/i18n';
+import { addQueryArgs } from '@wordpress/url';
 
 /**
  * Internal dependencies
@@ -25,6 +26,12 @@ import {
 
 export const DEFAULT_ENTITY_KEY = 'id';
 const POST_RAW_ATTRIBUTES = [ 'title', 'excerpt', 'content' ];
+
+function getRawPostValue( value ) {
+	return value && typeof value === 'object' && 'raw' in value
+		? value.raw
+		: value;
+}
 
 const blocksTransientEdits = {
 	blocks: {
@@ -285,9 +292,12 @@ export const prePersistPostType = async (
 	persistedRecord,
 	edits,
 	name,
-	isTemplate
+	isTemplate,
+	baseURL
 ) => {
 	const newEdits = {};
+	const objectType = `postType/${ name }`;
+	const objectId = persistedRecord?.id;
 
 	if ( ! isTemplate && persistedRecord?.status === 'auto-draft' ) {
 		// Saving an auto-draft should create a draft by default.
@@ -306,10 +316,53 @@ export const prePersistPostType = async (
 		}
 	}
 
+	if (
+		window._wpCollaborationEnabled &&
+		baseURL &&
+		objectId &&
+		( 'content' in edits || 'title' in edits || 'excerpt' in edits )
+	) {
+		try {
+			const latestRecord = await apiFetch( {
+				path: addQueryArgs( `${ baseURL }/${ objectId }`, {
+					context: 'edit',
+				} ),
+			} );
+			const changedSavedFields = [ 'content', 'title', 'excerpt' ].filter(
+				( key ) =>
+					key in edits &&
+					getRawPostValue( latestRecord?.[ key ] ) !==
+						getRawPostValue( persistedRecord?.[ key ] )
+			);
+
+			if ( changedSavedFields.length ) {
+				const syncManager = getSyncManager();
+
+				await syncManager?.applyPersistedCRDTDoc?.(
+					objectType,
+					objectId,
+					latestRecord
+				);
+
+				const crdtRecord = syncManager?.getCRDTRecordData?.(
+					objectType,
+					objectId
+				);
+
+				for ( const key of changedSavedFields ) {
+					if ( key in ( crdtRecord ?? {} ) ) {
+						newEdits[ key ] = getRawPostValue( crdtRecord[ key ] );
+					}
+				}
+			}
+		} catch {
+			// A failed freshness check should not block saving. The request itself
+			// will still surface any real save errors to the editor.
+		}
+	}
+
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
-		const objectType = `postType/${ name }`;
-		const objectId = persistedRecord.id;
 		const serializedDoc = await getSyncManager()?.createPersistedCRDTDoc(
 			objectType,
 			objectId
@@ -387,7 +440,13 @@ async function loadPostTypeEntities() {
 					? capitalCase( record.slug ?? '' )
 					: String( record.id ) ),
 			__unstablePrePersist: ( persistedRecord, edits ) =>
-				prePersistPostType( persistedRecord, edits, name, isTemplate ),
+				prePersistPostType(
+					persistedRecord,
+					edits,
+					name,
+					isTemplate,
+					`/${ namespace }/${ postType.rest_base }`
+				),
 			__unstable_rest_base: postType.rest_base,
 			supportsPagination: true,
 			getRevisionsUrl: ( parentId, revisionId ) =>
