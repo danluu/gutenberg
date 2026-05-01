@@ -2,7 +2,7 @@
 
 ## Summary
 
-Issue 1 from the RTC fuzz handoff is still reproducible in the CRDT merge layer on `origin/trunk` at `5ddf4ad1b34bb0798185a663437955e7f10da01b`.
+Issue 1 from the RTC fuzz handoff is still reproducible in the CRDT merge layer on current `origin/trunk` at `e4fcfecee9271267101a15ebda121374c7410fed`.
 
 When one client receives a remote rich-text attribute change and then emits an older local full-block snapshot that only intended to change a sibling rich-text attribute, `mergeCrdtBlocks` treats the stale sibling value as the desired current state. The result is a lost remote update or a resurrected remote delete.
 
@@ -24,6 +24,21 @@ Checked against the known fixes tracked from [WordPress/gutenberg#77716](https:/
 No matching stale-local-snapshot rich-text sibling fix was found in the tracking issue or repository searches.
 
 I also applied the focused direct merge repro to the existing known-fixes runtime branch `try/fuzz-known-fixes-runtime` at `86b2df5cacc18ea1ac3ddffc976d83428fd05dae`. The repro still failed there: the remote `second` value was replaced with the stale initial value.
+
+### Current trunk and newer danluu branch revalidation
+
+On 2026-05-01, I fetched current `origin/trunk` and all `danluu` branch refs, then re-ran the natural Playwright repro against current trunk, the rebased proposed PR branch, and the newer plausible `danluu` fix branches. All runs used normal browser actions only and asserted the user-visible `core/file` sibling text loss.
+
+| Branch | HEAD tested | Why tested | Command and artifact | Result |
+| --- | --- | --- | --- | --- |
+| `origin/trunk` | `e4fcfecee9271267101a15ebda121374c7410fed` | Current upstream baseline with only the repro copied in | `WP_BASE_URL=http://localhost:8945 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-rich-text-sibling.spec.ts --project=chromium --repeat-each=3`; `/Users/danluu/dev/fuzz/gutenberg-stale-rich-text-current-trunk/artifacts/stale-rich-text-candidate-search/current_origin_trunk_repro_repeat3.log` | Failed 2/3 on the real visible file-name assertion: expected `Remote file`, received `Re`. |
+| `danluu/try/stale-rich-text-sibling-pr` | `40480dc4243501438c39cf704d9082ebff8581d1` | Proposed Issue 1 fix branch after rebase onto current trunk | `WP_BASE_URL=http://localhost:8946 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-rich-text-sibling.spec.ts --project=chromium --repeat-each=3`; `/Users/danluu/dev/fuzz/gutenberg-stale-rich-text-sibling-pr/artifacts/stale-rich-text-candidate-search/rebased_pr_branch_repro_repeat3.log` | Failed 2/3; unit/lint/build passed, but the strengthened browser repro still observed truncated `fileName` values (`Remote f`, `Remo`). |
+| `danluu/try/stale-content-overwrite-pr` | `244072e083d4997eb9e87adcaac3cd6aa866b516` | New broad stale snapshot/content overwrite fix branch | `WP_BASE_URL=http://localhost:8940 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-rich-text-sibling.spec.ts --project=chromium --repeat-each=3`; `/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-pr/artifacts/stale-rich-text-candidate-search/danluu_stale_content_overwrite_pr_repro_repeat3.log` | Failed 2/3 on the visible file-name assertion (`Remote `, `Remo`). |
+| `danluu/try/stale-top-level-blocks-pr` | `d4f43fbf6954e72cff69dc6577222358fcf7d354` | New stale top-level block merge fix branch touching CRDT snapshot preservation | `WP_BASE_URL=http://localhost:8941 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-rich-text-sibling.spec.ts --project=chromium --repeat-each=3`; `/Users/danluu/dev/fuzz/gutenberg-stale-top-level-blocks-pr/artifacts/stale-rich-text-candidate-search/danluu_stale_top_level_blocks_pr_repro_repeat3.log` | Failed 2/3, including visible file-name truncation (`R`). |
+| `danluu/try/stale-query-object-map-pr` | `17f5c915e9326c9a566d5506aa99a4d9d464882e` | New stale object/query CRDT merge branch touching related merge code | `WP_BASE_URL=http://localhost:8942 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-rich-text-sibling.spec.ts --project=chromium --repeat-each=3`; `/Users/danluu/dev/fuzz/gutenberg-stale-query-object-map-pr/artifacts/stale-rich-text-candidate-search/danluu_stale_query_object_map_pr_repro_repeat3.log` | Failed 1/3 on the visible file-name assertion (`Remote `). |
+| `danluu/try/offset-space-bug-pr` | `f136c427533badb2ba67bd38957f8be8dfea128a` | New rich-text cursor/selection fix branch | `WP_BASE_URL=http://localhost:8944 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-rich-text-sibling.spec.ts --project=chromium --repeat-each=3`; `/private/tmp/gutenberg-issue5-pr-rebase/artifacts/stale-rich-text-candidate-search/danluu_offset_space_bug_pr_repro_repeat3.log` | Failed 3/3 on the visible file-name assertion (`Re`, `Rem`, `Remot`). |
+
+`danluu/try/rich-text-html-corruption` was considered because of its rich-text name, but it is an analysis-only branch and does not contain a candidate code fix for this issue.
 
 ## Reproductions
 
