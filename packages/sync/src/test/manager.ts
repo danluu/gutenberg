@@ -418,6 +418,30 @@ describe( 'SyncManager', () => {
 					1
 				);
 			} );
+
+			it( 'applies the supplied save record before serializing the CRDT doc', async () => {
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				jest.clearAllMocks();
+
+				await manager.createPersistedCRDTDoc( 'post', '123', {
+					record: { title: 'Title being saved' },
+				} );
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).toHaveBeenCalledWith( expect.any( Y.Doc ), {
+					title: 'Title being saved',
+				} );
+			} );
 		} );
 	} );
 

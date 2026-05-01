@@ -170,7 +170,8 @@ describe( 'prePersistPostType', () => {
 		expect( getSyncManager ).toHaveBeenCalled();
 		expect( getSyncManager().createPersistedCRDTDoc ).toHaveBeenCalledWith(
 			'postType/post',
-			123
+			123,
+			{ record: {} }
 		);
 
 		getSyncManager.mockReset();
@@ -415,6 +416,115 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'preserves independently appended stale local and latest saved blocks', async () => {
+		const latestContent = pageContent( [
+			'Initial body.',
+			'latest saved append',
+		] );
+		const staleLocalContent = pageContent( [
+			'Initial body.',
+			'stale local append',
+		] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: latestContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: staleLocalContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: latestContent },
+			},
+			{ content: staleLocalContent },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( result.content ).toContain( 'Initial body.' );
+		expect( result.content ).toContain( 'stale local append' );
+		expect( result.content ).toContain( 'latest saved append' );
+		expect( result.meta ).toEqual( {
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenCalledWith(
+			'postType/page',
+			123,
+			expect.objectContaining( {
+				record: expect.objectContaining( {
+					content: expect.stringContaining( 'latest saved append' ),
+					blocks: expect.any( Array ),
+				} ),
+			} )
+		);
+	} );
+
+	it( 'merges latest saved blocks when the CRDT record still contains stale local content', async () => {
+		const initialContent = pageContent( [ 'Initial body.' ] );
+		const latestContent = pageContent( [
+			'Initial body.',
+			'latest saved append',
+		] );
+		const staleLocalContent = pageContent( [
+			'Initial body.',
+			'stale local append',
+		] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: latestContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: staleLocalContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: initialContent },
+			},
+			{ content: staleLocalContent },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+			'postType/page',
+			123
+		);
+		expect( result.content ).toContain( 'Initial body.' );
+		expect( result.content ).toContain( 'stale local append' );
+		expect( result.content ).toContain( 'latest saved append' );
+		expect( result.meta ).toEqual( {
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+	} );
+
 	it( 'does not merge stale serialized content edits when the same block changed locally and remotely', async () => {
 		const latestRecord = {
 			id: 123,
@@ -461,10 +571,7 @@ describe( 'prePersistPostType', () => {
 		};
 		const syncManager = {
 			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
-			createPersistedCRDTDoc: jest
-				.fn()
-				.mockResolvedValueOnce( 'before-apply-doc' )
-				.mockResolvedValueOnce( 'after-apply-doc' ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
 			getCRDTRecordData: jest.fn( () => ( {
 				content: 'partially flushed local crdt content',
 			} ) ),
@@ -493,7 +600,7 @@ describe( 'prePersistPostType', () => {
 		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
 		expect( result ).toEqual( {
 			meta: {
-				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'after-apply-doc',
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
 			},
 		} );
 	} );
