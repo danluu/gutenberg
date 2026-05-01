@@ -35,9 +35,10 @@ The relevant known fixes are:
   [#77681](https://github.com/WordPress/gutenberg/pull/77681) cover other RTC
   failure modes and do not directly target this closing-tag corruption.
 
-As of April 29, 2026, I do not know of an open or merged upstream PR that fixes
-the normal-user Playwright repro. #77658 is the closest candidate, but it still
-fails the natural repro locally at PR head `610e02e28b6`.
+As of May 1, 2026, I do not know of a merged upstream PR that fixes the
+normal-user Playwright repro on `origin/trunk`. The open #77658 PR does fix the
+natural Playwright repro when tested in a clean PR-head worktree with matching
+dependencies and a successful build.
 
 Local checks:
 
@@ -54,12 +55,14 @@ Local checks:
   that as blocked for the exact fuzzer oracle, not as evidence that Issue 5 still
   reproduces.
 
-Updated conclusion after the local Playwright run: Issue 5 is not proven fixed
-by #77658. The fuzzer seed passes on an earlier rich-text offset fix branch, but
-the normal-user Playwright repro still fails on the current #77658 PR head when
-the repro spec is copied into that worktree. The fix is still not merged into
-`origin/trunk`, and the natural browser repro needs more investigation before
-this issue should be marked fixed.
+Updated conclusion after a clean PR-head Playwright rerun: Issue 5 is fixed by
+#77658's code, but the fix is not merged into `origin/trunk`. An earlier
+PR-head Playwright run that appeared to fail was invalid: its Playwright trace
+shows the editor loaded WordPress core's
+`/wp-includes/js/dist/core-data.min.js`, not the Gutenberg plugin override at
+`/wp-content/plugins/.../build/scripts/core-data/index.min.js`. That happened
+after an incomplete/mismatched local build, so the browser never exercised
+#77658's fixed bundle.
 
 ## Reproductions
 
@@ -200,7 +203,7 @@ Local video:
 /tmp/rtc-rich-text-playwright-artifacts-isolated/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/video.webm
 ```
 
-Current #77658 PR-head command, run from
+Invalid #77658 PR-head command, run from
 `/tmp/gutenberg-rich-text-playwright-fix` at `610e02e28b6` with the same
 normal-user repro spec copied in, `WP_ENV_PORT=8898`,
 `WP_BASE_URL=http://localhost:8898`, and forced video recording:
@@ -215,14 +218,57 @@ WP_BASE_URL=http://localhost:8898 \
   --grep="user unitalicizes"
 ```
 
-Result: failed the same way. The collaborator received
+Initial result: failed the same way. The collaborator received
 `italic<em>beta</em>/em>` instead of `italic<em>beta</em>beta`.
 
-PR-head local video:
+This result is not a valid test of #77658. The trace for this failed run shows
+the browser loaded:
+
+```text
+http://localhost:8898/wp-includes/js/dist/core-data.min.js?ver=4d15c0f82a9fb01a04ed
+```
+
+That is WordPress core's script, not the Gutenberg plugin script generated from
+the #77658 worktree. In a valid plugin-override run, the editor should load a
+URL under `wp-content/plugins/.../build/scripts/core-data/index.min.js`.
+
+Invalid PR-head local video:
 
 ```text
 /tmp/rtc-rich-text-playwright-artifacts-fix/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/video.webm
 ```
+
+Clean #77658 PR-head command, run from `/tmp/gutenberg-pr77658-deep` at
+`610e02e28b6` after `npm ci`, a successful `npm run build -- --skip-types`, and
+verification that the served `core-data` bundle contained the #77658
+verification path:
+
+```bash
+WP_ENV_PORT=8902 \
+WP_ARTIFACTS_PATH=/tmp/pr77658-deep-artifacts \
+WP_BASE_URL=http://localhost:8902 \
+  npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-rich-text-offset-space.spec.ts \
+  --project=chromium \
+  --grep="user unitalicizes"
+```
+
+Result: passed. The same command with `--trace=on` also passed and wrote:
+
+```text
+/tmp/pr77658-deep-trace-artifacts/test-results/editor-collaboration-colla-e3706-cizes-part-of-an-italic-run-chromium/trace.zip
+```
+
+The passing trace shows the browser loaded:
+
+```text
+http://localhost:8902/wp-content/plugins/gutenberg-pr77658-deep/build/scripts/core-data/index.min.js?ver=603bd24d5723510ae5e6
+```
+
+That served bundle includes the #77658 `verification-text` guard and
+`diffWithCursor()` path. The earlier failed trace did not load this plugin
+bundle, so the discrepancy was a local build/asset-registration problem, not a
+remaining bug in #77658's rich-text offset fix.
 
 Annotated side-by-side video with a running log:
 
@@ -237,9 +283,10 @@ the block HTML read by Playwright. The final frame shows the author at
 `italic<em>beta</em>beta` and the collaborator at
 `italic<em>beta</em>/em>`.
 
-Both local builds reported a primitive color token generation failure after
-`build:js` and `build:php` completed. The Playwright tests still ran against the
-isolated wp-env instances and reached the rich-text corruption assertion.
+The invalid failing run reported a build failure before the browser test. That
+left the wp-env instance using WordPress core's `core-data` package rather than
+the #77658 Gutenberg plugin package. The clean rerun used a dependency install
+from the PR-head lockfile and a successful build before starting wp-env.
 
 The first Playwright test in that file uses `editEntityRecord()` from
 `page.evaluate()`. I do not count that as a valid handoff-level Playwright repro
@@ -291,8 +338,9 @@ nested rich-text fields, but the top-level corruption bug already existed after
 
 ## Initial fix plan
 
-1. Treat #77658 as an incomplete candidate until the normal-user Playwright repro
-   passes on the PR branch.
+1. Treat #77658 as the Issue 5 fix candidate; it passes the normal-user
+   Playwright repro when the browser loads the plugin bundle generated from the
+   PR branch.
 2. Keep cursor information as a scoped descriptor:
    `clientId`, `attributeKey`, and editor-space rich-text offset.
 3. Convert with `richTextOffsetToHtmlIndex()` only when the merge reaches the
@@ -301,7 +349,10 @@ nested rich-text fields, but the top-level corruption bug already existed after
 5. Keep the candidate-delta verification guard so malformed cursor hints fall
    back to a normal diff instead of corrupting shared content.
 6. Keep #77662 or equivalent regression coverage for the cursor-scope variant.
-7. Update the fuzz oracle to tolerate expected `__unstableSyncId` metadata, then
+7. Add an explicit test-handoff guard for browser repro runs: verify the trace or
+   served script URL points at `wp-content/plugins/.../build/scripts/core-data/`
+   before interpreting a Playwright result as a #77658 result.
+8. Update the fuzz oracle to tolerate expected `__unstableSyncId` metadata, then
    rerun Issue 5 representative seeds against the combined known-fixes branch.
 
 ## Fix plan audit
@@ -342,8 +393,8 @@ handoff proof.
 
 ## Revised fix plan
 
-1. Do not land #77658 as the full Issue 5 fix until the normal-user Playwright
-   repro passes on the PR branch.
+1. #77658 is sufficient for Issue 5's rich-text closing-tag corruption mechanism
+   based on the clean source, bundle, unit, and natural Playwright checks.
 2. Keep the merge API typed so call sites cannot pass an unscoped cursor number
    except through a clearly legacy/internal compatibility path.
 3. Preserve the exact-result delta verification guard, but treat guard fallback
@@ -353,10 +404,14 @@ handoff proof.
 5. Add a small natural Playwright suite that covers the user-action offset-space
    repro and one cursor-scope repro, while avoiding direct store mutation for the
    reproduction action.
-6. Fix the fuzz expected-state normalization for `__unstableSyncId`, then rerun
+6. For every browser repro validation, record the loaded `core-data` script URL
+   or grep the served bundle for the #77658 guard. A failed run that loads
+   `wp-includes/js/dist/core-data.min.js` is a setup failure for this PR, not a
+   product failure.
+7. Fix the fuzz expected-state normalization for `__unstableSyncId`, then rerun
    seeds `2`, `3`, `8`, `17`, `18`, `25`, `30`, and `35` on the combined
    known-fixes branch.
-7. After merge, rerun the Issue 5 fuzzer command on `origin/trunk`; do not mark
+8. After merge, rerun the Issue 5 fuzzer command on `origin/trunk`; do not mark
    this issue closed until the natural Playwright repro passes on the fix and
    fails on a pre-fix tests-only base.
 
