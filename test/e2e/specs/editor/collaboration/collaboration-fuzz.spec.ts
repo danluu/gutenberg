@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -1412,50 +1412,122 @@ async function chooseOldRevisionInBrowser( {
 	const slider = page.getByRole( 'slider', { name: 'Revision' } );
 	await slider.focus();
 
-	for ( let attempt = 0; attempt < 50; attempt++ ) {
-		const oldContentVisible = await editor.canvas
-			.getByText( oldCheckpoint.marker )
-			.first()
-			.isVisible()
-			.catch( () => false );
-		const oldOptionVisible = await editor.canvas
-			.getByText( oldCheckpoint.optionMarker )
-			.first()
-			.isVisible()
-			.catch( () => false );
-		const newerContentVisible = await editor.canvas
-			.getByText( newerCheckpoint.marker )
-			.first()
-			.isVisible()
-			.catch( () => false );
-		const newerOptionVisible = await editor.canvas
-			.getByText( newerCheckpoint.optionMarker )
-			.first()
-			.isVisible()
-			.catch( () => false );
+	for ( const key of [ 'ArrowLeft', 'ArrowRight' ] ) {
+		for ( let attempt = 0; attempt < 50; attempt++ ) {
+			if (
+				await isTargetRevisionSelected( {
+					editor,
+					newerCheckpoint,
+					oldCheckpoint,
+					page,
+				} )
+			) {
+				return;
+			}
 
-		if (
-			oldContentVisible &&
-			oldOptionVisible &&
-			! newerContentVisible &&
-			! newerOptionVisible
-		) {
-			return;
+			const changed = await pressRevisionSlider( page, slider, key );
+			if ( ! changed ) {
+				break;
+			}
 		}
-
-		const previousSliderValue =
-			await slider.getAttribute( 'aria-valuenow' );
-		await slider.press( 'ArrowLeft' );
-		await expect
-			.poll( () => slider.getAttribute( 'aria-valuenow' ), {
-				timeout: 1000,
-			} )
-			.not.toBe( previousSliderValue );
 	}
 
 	throw new Error(
 		`Could not select old revision containing ${ oldCheckpoint.marker } without ${ newerCheckpoint.marker } through the revision UI.`
 	);
+}
+
+async function isTargetRevisionSelected( {
+	editor,
+	newerCheckpoint,
+	oldCheckpoint,
+	page,
+}: {
+	editor: Editor;
+	newerCheckpoint: SaveCheckpoint;
+	oldCheckpoint: SaveCheckpoint;
+	page: Page;
+} ) {
+	const oldTitleVisible = await page
+		.getByText( oldCheckpoint.titleMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const newerTitleVisible = await page
+		.getByText( newerCheckpoint.titleMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+
+	if ( oldTitleVisible && ! newerTitleVisible ) {
+		return true;
+	}
+
+	const oldContentVisible = await editor.canvas
+		.getByText( oldCheckpoint.marker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const oldOptionVisible = await editor.canvas
+		.getByText( oldCheckpoint.optionMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const newerContentVisible = await editor.canvas
+		.getByText( newerCheckpoint.marker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const newerOptionVisible = await editor.canvas
+		.getByText( newerCheckpoint.optionMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+
+	return (
+		oldContentVisible &&
+		oldOptionVisible &&
+		! newerContentVisible &&
+		! newerOptionVisible
+	);
+}
+
+async function pressRevisionSlider(
+	page: Page,
+	slider: Locator,
+	key: 'ArrowLeft' | 'ArrowRight'
+) {
+	const previousSliderValue = await getRevisionSliderValue( slider );
+	await page.keyboard.press( key );
+
+	if ( previousSliderValue === null ) {
+		return true;
+	}
+
+	try {
+		await expect
+			.poll( () => getRevisionSliderValue( slider ), {
+				timeout: 1000,
+			} )
+			.not.toBe( previousSliderValue );
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+async function getRevisionSliderValue( slider: Locator ) {
+	return slider.evaluate( ( element ) => {
+		if ( element instanceof HTMLInputElement ) {
+			return element.value;
+		}
+
+		return (
+			element.getAttribute( 'aria-valuenow' ) ??
+			element.getAttribute( 'aria-valuetext' ) ??
+			element.getAttribute( 'value' )
+		);
+	} );
 }
 
 async function restoreRevisionViaBrowserAndVerify( {
@@ -1515,7 +1587,10 @@ async function restoreRevisionViaBrowserAndVerify( {
 	await restoreButton.click();
 
 	await expect(
-		restorer.page.getByText( 'Restored to revision' )
+		restorer.page
+			.getByTestId( 'snackbar' )
+			.filter( { hasText: 'Restored to revision' } )
+			.first()
 	).toBeVisible();
 
 	await reloadAndWait( restorer.page, collaborationUtils );
