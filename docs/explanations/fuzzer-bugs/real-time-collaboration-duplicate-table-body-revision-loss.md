@@ -66,12 +66,15 @@ Expected failure on the buggy code:
 -   The revisions contain the two-row table and the original three-row table.
 -   No revision contains `edited-second-duplicate`.
 
-## Why This Is Distinct From The Known Duplicate-Table Bug
+## Relationship To Known RTC Table And Revision Bugs
 
-The earlier duplicate-table bug was about ambiguous value matching for duplicate
+### Duplicate Table Row Divergence: #77723
+
+[WordPress/gutenberg#77723](https://github.com/WordPress/gutenberg/pull/77723)
+is the closest known bug. It was about ambiguous value matching for duplicate
 query-array entries. Dan's stable table query-array identity work fixed the
-shared-CRDT case by carrying an internal `__unstableSyncId` through runtime table
-attributes without serializing it into post content.
+shared-CRDT case by carrying an internal `__unstableSyncId` through runtime
+table attributes without serializing it into post content.
 
 That fix is present on this base, and the existing control repro passes:
 
@@ -88,12 +91,49 @@ content and no shared persisted identity, "delete the earlier `same` row" and
 "edit the later `same` row" are still ambiguous after the two independent CRDT
 states meet.
 
-I also checked the browser repro on Dan's hardened duplicate-table branch
+I checked the browser repro on Dan's hardened duplicate-table branch
 `try/rtc-duplicate-table-rows-stock-repro-pr-trunk` (`2e153b32280`, containing
 `Harden table query identity sync`). The stock table-body repro still fails
 there, and the revision-level browser repro still saves a two-row table whose
 revisions omit `edited-second-duplicate`. This is therefore not just a re-find
 of the earlier shared-CRDT duplicate-table fix.
+
+### Stale Local Table Snapshot Loss: #77775
+
+[WordPress/gutenberg#77775](https://github.com/WordPress/gutenberg/pull/77775)
+is related because it also touches the RTC table/query-array merge path, but it
+is a different invariant. That bug is about a client applying a stale full local
+block snapshot after it has already received a remote CRDT update. The stale
+snapshot can overwrite, delete, or resurrect remote table data even when the row
+or cell identity is already known.
+
+This duplicate-body revision-loss bug does not require a stale local snapshot.
+It starts earlier: two no-CRDT sessions independently bootstrap from the same
+serialized table HTML and therefore assign incompatible internal identities to
+the same visible duplicate rows. The lower-level CRDT and SyncManager repros
+fail before the PHP autosave path and before any browser stale-snapshot recovery
+logic is relevant.
+
+The fixes are complementary. #77775 changes when a local snapshot is allowed to
+write into the current Y.Doc. This bug changes how independently bootstrapped
+old/no-CRDT table rows get a shared logical identity in the first place.
+
+### Auto-Draft Autosave Retention: #77865
+
+[WordPress/gutenberg#77865](https://github.com/WordPress/gutenberg/pull/77865)
+is a revision/data-loss bug, but it is not the same bug. That PR changes the
+PHP autosave controller so a new `auto-draft` is promoted to a visible `draft`
+when RTC is enabled. This table-body repro creates a normal draft fixture with
+serialized table content, opens two collaborative editor sessions, loses the
+body edit during RTC convergence, and then performs a normal Save draft. It does
+not rely on `post-new.php`, automatic autosave, or auto-draft promotion.
+
+There is an indirect interaction: #77865 can create another normal user path to
+a visible draft whose content came from serialized HTML and may not yet have a
+matching persisted CRDT document. If that draft contains duplicate table rows,
+it can satisfy the independent-bootstrap precondition for this bug. But #77865
+does not touch `mergeCrdtBlocks()`, table query-array identity, or table state
+helpers, so it does not fix this table-body loss.
 
 ## Root Cause
 
