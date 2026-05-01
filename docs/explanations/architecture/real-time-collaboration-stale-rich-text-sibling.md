@@ -193,3 +193,58 @@ Implement a base-aware block merge path rather than patching rich-text diffing i
 -   After remote CRDT updates reconcile into the editor store, when should the local base advance without making older queued local snapshots look current?
 -   Is the 2,000-paragraph Playwright repro acceptable as a regression test despite its runtime, or should it be kept as an issue-specific reproducer while unit/adapter coverage guards the fix in CI?
 -   How should the same local-base contract be extended to nested blocks and array/object attributes without duplicating diff logic in multiple merge helpers?
+
+## 2026-05-01 audit of the proposed fix
+
+I re-audited the proposed `try/stale-rich-text-sibling-pr` fix after the strengthened Playwright repro showed that the branch still failed.
+
+### Linus Torvalds lens
+
+The existing proposed fix is a half measure. It remembers a previous local block snapshot inside `mergeCrdtBlocks`, but the data being merged is still a full editor snapshot, not an operation. That means the merge function is still being asked to infer causality from two values that do not contain enough information.
+
+The code-level smell is that correctness depends on guessing whether a full rich-text value is stale. Prefix checks, active-selection checks, and sibling-name checks can improve one trace, but they are policy guesses inside a low-level merge helper. The robust boundary is earlier: convert editor snapshots into explicit local operations before they are applied to the Y.Doc, or carry an ordered editor base with the snapshot so the merge does not have to guess.
+
+### Kyle Kingsbury / Jepsen lens
+
+The failed browser runs show a real lost-update anomaly, not just delayed convergence. A user-visible `fileName` value that B typed as `Remote file` converges to prefixes such as `Re`, `Rem`, `Remot`, or `Remote fil`.
+
+The important invariant is monotonic intent, not monotonic string length. A stale local operation must not erase another operation that it neither observed nor conflicts with. The current system does not attach a causal base or sequence number to local block snapshots, so an older full snapshot can be applied after a newer one and still look valid.
+
+Any accepted fix should pass the realistic browser repro repeatedly and should also pass lower-level tests for:
+
+-   stale sibling update preservation;
+-   stale sibling delete preservation;
+-   observed remote prefix followed by sibling local edits;
+-   older active-field snapshots arriving after newer active-field snapshots.
+
+### Dan Luu lens
+
+The current repro is valuable because it found the gap between a plausible unit fix and actual UI scheduling. The first attempted improvement passed the focused unit tests and improved one Playwright run from 0/3 to 2/3, but it still failed on `Remote`. Subsequent heuristics also passed units while failing the browser repro. That is a signal that the units were still too close to the hoped-for mechanism and not close enough to the browser's event ordering.
+
+The fix should be observable. When a local snapshot is dropped or partially applied, it should be possible in a debug build to answer: what editor base was used, what changed locally, what changed remotely, and why this attribute was applied or preserved.
+
+## 2026-05-01 attempted fix results
+
+I tried three local fix variants in `/Users/danluu/dev/fuzz/gutenberg-stale-rich-text-sibling-pr`. These were not pushed because the realistic browser repro still failed.
+
+| Attempt | Idea | Focused unit result | Playwright result |
+| --- | --- | --- | --- |
+| Editor-base tracking | Remember the block tree returned from `getPostChangesFromCRDTDoc` as the next editor base, then skip rich-text siblings that did not change relative to that base. | Passed 4 focused tests. | `active_editor_base_fix_repro_repeat3.log`: 2 passed, 1 failed with `Remote` instead of `Remote file`. |
+| Active sibling intent gate | If selection is in one rich-text attribute, reject changed sibling rich-text attributes from the same full snapshot. | Passed 4 focused tests. | `active_sibling_intent_fix_repro_repeat3.log`: 1 passed, 2 failed with `Re`. |
+| Prefix rollback guard | Reject a non-active rich-text snapshot that tries to replace the remembered or current CRDT value with its own shorter prefix. Added a unit for observed full value followed by stale prefix rollback. | Passed 5 focused tests. | `current_prefix_rollback_fix_repro_repeat3_rerun.log`: 0 passed, 3 failed with `Rem`, `Remot`, and `Remote fil`. |
+
+The failed attempts show that value-level heuristics are not enough. They can block some stale sibling writes, but the browser still produces orderings where an older snapshot is accepted as if it were the latest local operation.
+
+## Revised fix plan after failed attempts
+
+The fix needs to move from value reconciliation to ordered local operation extraction.
+
+1. Add an entity-scoped editor snapshot sequencer in the sync manager or post CRDT adapter. Each outbound local block snapshot gets a monotonically increasing local sequence number and the editor-base sequence it was derived from.
+2. Store the last applied local sequence per synced entity and rich-text attribute path. If a snapshot arrives with a sequence older than the last applied sequence for that path, ignore that path instead of reapplying its full value.
+3. Maintain the editor base from both directions: advance it when CRDT changes are actually dispatched into the editor, and advance it after accepted local operations. Do not advance it with rejected stale paths.
+4. Convert a full block snapshot into an attribute-path change set against its declared editor base. Apply only changed paths. For rich-text attributes, compute local intent against that base and reject paths whose base is older than the CRDT state and whose local sequence is stale.
+5. Keep structural block insert/delete/reorder handling separate from rich-text attribute handling. If block identity cannot be matched by `clientId` and position, preserve current remote data and request a resync rather than deleting fields from an ambiguous stale snapshot.
+6. Add unit tests that simulate out-of-order local snapshots explicitly: local sequence 3 applies `Remote file`; local sequence 2 later tries `Rem`; sequence 2 must be ignored unless it is an explicit undo/delete operation with a newer sequence.
+7. Only then rerun the Playwright repro. The acceptance bar should be at least two repeat-3 runs with no product assertion failures, because several heuristic attempts produced partial passes.
+
+This plan is larger than the current `mergeCrdtBlocks` patch, but it matches the actual failure: the system needs to know which local snapshot is newer and what base it was derived from. Without that ordering metadata, the merge code is forced to guess from values, and the realistic browser repro keeps finding counterexamples.
