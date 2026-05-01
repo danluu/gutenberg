@@ -64,6 +64,14 @@ interface PersistedCrdtDocHydrationResult {
 	invalidatedChanges: Partial< ObjectData > | null;
 }
 
+function areUint8ArraysEqual( a: Uint8Array, b: Uint8Array ): boolean {
+	if ( a.length !== b.length ) {
+		return false;
+	}
+
+	return a.every( ( value, index ) => value === b[ index ] );
+}
+
 /**
  * Get the entity ID for the given object type and object ID.
  *
@@ -725,6 +733,46 @@ export function createSyncManager( debug = false ): SyncManager {
 		return serializeCrdtDoc( entityState.ydoc );
 	}
 
+	async function applyPersistedCRDTDoc(
+		objectType: ObjectType,
+		objectId: ObjectID,
+		record: ObjectData
+	): Promise< boolean > {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+		const previousStateVector = entityState?.ydoc
+			? Y.encodeStateVector( entityState.ydoc )
+			: null;
+
+		internal.applyPersistedCrdtDoc( objectType, objectId, record );
+
+		// Applying a persisted document can schedule local store updates. Yield so
+		// callers that immediately inspect the document see the completed merge.
+		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		const nextStateVector = entityState?.ydoc
+			? Y.encodeStateVector( entityState.ydoc )
+			: null;
+
+		return !! (
+			previousStateVector &&
+			nextStateVector &&
+			! areUint8ArraysEqual( previousStateVector, nextStateVector )
+		);
+	}
+
+	function getCRDTRecordData(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): ObjectData | undefined {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+
+		return entityState?.ydoc.getMap( CRDT_RECORD_MAP_KEY ).toJSON() as
+			| ObjectData
+			| undefined;
+	}
+
 	// Collect internal functions so that they can be wrapped before calling.
 	const internal = {
 		applyPersistedCrdtDoc: debugWrap( _applyPersistedCrdtDoc ),
@@ -733,7 +781,9 @@ export function createSyncManager( debug = false ): SyncManager {
 
 	// Wrap and return the public API.
 	return {
+		applyPersistedCRDTDoc: debugWrap( applyPersistedCRDTDoc ),
 		createPersistedCRDTDoc: debugWrap( createPersistedCRDTDoc ),
+		getCRDTRecordData: debugWrap( getCRDTRecordData ),
 		getAwareness,
 		load: debugWrap( loadEntity ),
 		loadCollection: debugWrap( loadCollection ),
