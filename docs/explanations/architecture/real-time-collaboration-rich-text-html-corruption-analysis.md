@@ -18,22 +18,22 @@ produce internally valid Yjs text with invalid HTML.
 Checked tracking issue: [#77716](https://github.com/WordPress/gutenberg/issues/77716).
 The relevant known fixes are:
 
-- [#77658](https://github.com/WordPress/gutenberg/pull/77658), open, not merged:
-  carries scoped rich-text cursor hints, converts editor offsets to HTML indices
-  only for the matching rich-text field, and verifies cursor-guided deltas before
-  applying them.
-- [#77662](https://github.com/WordPress/gutenberg/pull/77662), open, not merged:
-  adds tests for a related cursor-scope corruption case. It changes only test
-  coverage and does not fix this offset-space Playwright repro.
-- [#77669](https://github.com/WordPress/gutenberg/pull/77669), merged into
-  `origin/trunk` at `5ddf4ad1b34`, fixes update-size accounting and is not a
-  rich-text corruption fix.
-- [#77666](https://github.com/WordPress/gutenberg/pull/77666),
-  [#77673](https://github.com/WordPress/gutenberg/pull/77673),
-  [#77675](https://github.com/WordPress/gutenberg/pull/77675),
-  [#77678](https://github.com/WordPress/gutenberg/issues/77678), and
-  [#77681](https://github.com/WordPress/gutenberg/pull/77681) cover other RTC
-  failure modes and do not directly target this closing-tag corruption.
+-   [#77658](https://github.com/WordPress/gutenberg/pull/77658), open, not merged:
+    carries scoped rich-text cursor hints, converts editor offsets to HTML indices
+    only for the matching rich-text field, and verifies cursor-guided deltas before
+    applying them.
+-   [#77662](https://github.com/WordPress/gutenberg/pull/77662), open, not merged:
+    adds tests for a related cursor-scope corruption case. It changes only test
+    coverage and does not fix this offset-space Playwright repro.
+-   [#77669](https://github.com/WordPress/gutenberg/pull/77669), merged into
+    `origin/trunk` at `5ddf4ad1b34`, fixes update-size accounting and is not a
+    rich-text corruption fix.
+-   [#77666](https://github.com/WordPress/gutenberg/pull/77666),
+    [#77673](https://github.com/WordPress/gutenberg/pull/77673),
+    [#77675](https://github.com/WordPress/gutenberg/pull/77675),
+    [#77678](https://github.com/WordPress/gutenberg/issues/77678), and
+    [#77681](https://github.com/WordPress/gutenberg/pull/77681) cover other RTC
+    failure modes and do not directly target this closing-tag corruption.
 
 As of May 1, 2026, I do not know of a merged upstream PR that fixes the
 normal-user Playwright repro on `origin/trunk`. The open #77658 PR does fix the
@@ -42,27 +42,28 @@ dependencies and a successful build.
 
 Local checks:
 
-- Broken base: `danluu/try/fuzz` at `4c5412d8361`. Seed 2 fails with the exact
-  closing-tag corruption.
-- Known rich-text fix base:
-  `/Users/danluu/dev/fuzz/gutenberg-fuzz-with-rich-text-offset-fix` at
-  `58b6239cb57`, which contains `48058d67104` (`Fix RTC rich-text offset-space
-  cursor handling`). Seed 2 passes.
-- Scratch all-known-fixes runtime base:
-  `/Users/danluu/dev/fuzz/gutenberg-try-fuzz` at `86b2df5cacc`. The same fuzz
-  command fails because expected objects do not include new `__unstableSyncId`
-  fields, but the diff no longer shows malformed rich-text closing tags. I treat
-  that as blocked for the exact fuzzer oracle, not as evidence that Issue 5 still
-  reproduces.
+-   Broken base: `danluu/try/fuzz` at `4c5412d8361`. Seed 2 fails with the exact
+    closing-tag corruption.
+-   Known rich-text fix base:
+    `/Users/danluu/dev/fuzz/gutenberg-fuzz-with-rich-text-offset-fix` at
+    `58b6239cb57`, which contains `48058d67104`, the RTC rich-text offset-space
+    cursor fix. Seed 2 passes.
+-   Scratch all-known-fixes runtime base:
+    `/Users/danluu/dev/fuzz/gutenberg-try-fuzz` at `86b2df5cacc`. The same fuzz
+    command fails because expected objects do not include new `__unstableSyncId`
+    fields, but the diff no longer shows malformed rich-text closing tags. I treat
+    that as blocked for the exact fuzzer oracle, not as evidence that Issue 5 still
+    reproduces.
 
 Updated conclusion after a clean PR-head Playwright rerun: Issue 5 is fixed by
-#77658's code, but the fix is not merged into `origin/trunk`. An earlier
+[#77658](https://github.com/WordPress/gutenberg/pull/77658)'s code, but the fix
+is not merged into `origin/trunk`. An earlier
 PR-head Playwright run that appeared to fail was invalid: its Playwright trace
 shows the editor loaded WordPress core's
 `/wp-includes/js/dist/core-data.min.js`, not the Gutenberg plugin override at
 `/wp-content/plugins/.../build/scripts/core-data/index.min.js`. That happened
 after an incomplete/mismatched local build, so the browser never exercised
-#77658's fixed bundle.
+[#77658](https://github.com/WordPress/gutenberg/pull/77658)'s fixed bundle.
 
 ## Reproductions
 
@@ -308,11 +309,12 @@ The failing path is:
    `</strong>`, so the cursor-guided diff emits a delta that produces malformed
    HTML while still being a valid Yjs text operation.
 
-#77658 fixes both parts of the contract violation: it keeps the cursor scoped to
-the selected block and attribute, and converts the rich-text offset to the HTML
-index only when merging that exact field. Its verification guard also prevents a
-bad cursor-guided delta from being applied if the candidate result does not equal
-the requested updated HTML.
+[#77658](https://github.com/WordPress/gutenberg/pull/77658) fixes both parts of
+the contract violation: it keeps the cursor scoped to the selected block and
+attribute, and converts the rich-text offset to the HTML index only when merging
+that exact field. Its verification guard also prevents a bad cursor-guided delta
+from being applied if the candidate result does not equal the requested updated
+HTML.
 
 ## How this was introduced
 
@@ -334,7 +336,7 @@ block merge write path.
 extended the same cursor plumbing into schema-aware nested object and array
 merges. That widened the area where a bare cursor could be misapplied, including
 nested rich-text fields, but the top-level corruption bug already existed after
-#73699.
+[#73699](https://github.com/WordPress/gutenberg/pull/73699).
 
 ## Initial fix plan
 
@@ -417,10 +419,10 @@ handoff proof.
 
 ## Open questions
 
-- Should the delta verification fallback produce a development-only warning or
-  metric so future cursor-space bugs are visible before fuzzing finds them?
-- Should `mergeRichTextUpdate()` reject cursor hints that are known editor-space
-  objects, forcing callers to resolve scope and coordinate conversion earlier?
-- Should the Issue 5 fuzzer canonicalizer strip internal sync IDs, or should
-  `__unstableSyncId` be made explicit in expected outputs for query arrays and
-  nested objects?
+-   Should the delta verification fallback produce a development-only warning or
+    metric so future cursor-space bugs are visible before fuzzing finds them?
+-   Should `mergeRichTextUpdate()` reject cursor hints that are known editor-space
+    objects, forcing callers to resolve scope and coordinate conversion earlier?
+-   Should the Issue 5 fuzzer canonicalizer strip internal sync IDs, or should
+    `__unstableSyncId` be made explicit in expected outputs for query arrays and
+    nested objects?
