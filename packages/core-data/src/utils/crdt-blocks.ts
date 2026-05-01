@@ -801,11 +801,27 @@ export function mergeCrdtBlocks(
 	}
 	const localBlocksToSync =
 		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const previousBlocks = previousBlocksByYArray.get( yblocks );
 	const blocksToSync = reconcileStaleLocalBlocks(
 		yblocks,
 		localBlocksToSync
 	);
 
+	mergeCrdtBlocksIntoYBlocks(
+		yblocks,
+		blocksToSync,
+		attributeCursor,
+		previousBlocks
+	);
+	previousBlocksByYArray.set( yblocks, localBlocksToSync );
+}
+
+function mergeCrdtBlocksIntoYBlocks(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	attributeCursor: MergeCursorPosition,
+	previousBlocks?: Block[]
+): void {
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
 	// A better implementation would also diff the textual content and represent it
@@ -862,130 +878,151 @@ export function mergeCrdtBlocks(
 
 	// updates
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
-		const incomingYBlock = blocksToSync[ left ];
-		const localYBlock = yblocks.get( left );
+		const block = blocksToSync[ left ];
+		const yblock = yblocks.get( left );
+		const previousBlock = previousBlocks?.[ left ];
 
-		Object.entries( incomingYBlock ).forEach(
-			( [ incomingBlockProperty, incomingBlockPropertyValue ] ) => {
-				switch ( incomingBlockProperty ) {
-					case 'attributes': {
-						const localAttributes = localYBlock.get(
-							incomingBlockProperty
-						);
-						const incomingAttributes = incomingBlockPropertyValue;
+		Object.entries( block ).forEach( ( [ key, value ] ) => {
+			switch ( key ) {
+				case 'attributes': {
+					const currentAttributes = yblock.get( key );
+					const incomingAttributes = value as BlockAttributes;
+					const previousAttributes = previousBlock?.attributes;
 
-						// When the local block has no attributes, adopt the incoming set.
-						if ( ! localAttributes ) {
-							localYBlock.set(
-								incomingBlockProperty,
-								createNewYAttributeMap(
-									incomingYBlock.name,
-									incomingAttributes
-								)
-							);
-							break;
-						}
-
-						// Otherwise the attributes need to be merged.
-						Object.entries( incomingAttributes ).forEach(
-							( [
-								incomingAttributeName,
-								incomingAttributeValue,
-							] ) => {
-								const currentAttribute = localAttributes?.get(
-									incomingAttributeName
-								);
-
-								const isExpectedType = isExpectedAttributeType(
-									incomingYBlock.name,
-									incomingAttributeName,
-									currentAttribute
-								);
-
-								// Y types (Y.Text, Y.Array, Y.Map) cannot be
-								// compared with fastDeepEqual against plain values.
-								// Delegate to mergeYValue which handles no-op
-								// detection at the edges.
-								const isYType =
-									currentAttribute instanceof Y.AbstractType;
-
-								const isAttributeChanged =
-									! isExpectedType ||
-									isYType ||
-									! fastDeepEqual(
-										currentAttribute,
-										incomingAttributeValue
-									);
-
-								if ( isAttributeChanged ) {
-									updateYBlockAttribute(
-										incomingYBlock.name,
-										incomingYBlock.clientId,
-										incomingAttributeName,
-										incomingAttributeValue,
-										localAttributes,
-										attributeCursor
-									);
-								}
-							}
-						);
-
-						// Delete any attributes that are no longer present.
-						localAttributes.forEach(
-							( _attrValue: unknown, attrName: string ) => {
-								if (
-									! incomingBlockPropertyValue.hasOwnProperty(
-										attrName
-									)
-								) {
-									localAttributes.delete( attrName );
-								}
-							}
-						);
-
-						break;
-					}
-
-					case 'innerBlocks': {
-						// Recursively merge innerBlocks
-						let yInnerBlocks = localYBlock.get(
-							incomingBlockProperty
-						);
-
-						if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
-							yInnerBlocks = new Y.Array< YBlock >();
-							localYBlock.set(
-								incomingBlockProperty,
-								yInnerBlocks
-							);
-						}
-
-						mergeCrdtBlocks(
-							yInnerBlocks,
-							incomingBlockPropertyValue ?? [],
-							attributeCursor
-						);
-						break;
-					}
-
-					default:
-						if (
-							! fastDeepEqual(
-								incomingYBlock[ incomingBlockProperty ],
-								localYBlock.get( incomingBlockProperty )
+					// When the local block has no attributes, adopt the incoming set.
+					if ( ! currentAttributes ) {
+						yblock.set(
+							key,
+							createNewYAttributeMap(
+								block.name,
+								incomingAttributes
 							)
-						) {
-							localYBlock.set(
-								incomingBlockProperty,
-								incomingBlockPropertyValue
+						);
+						break;
+					}
+
+					// Otherwise the attributes need to be merged.
+					Object.entries( incomingAttributes ).forEach(
+						( [ attributeName, attributeValue ] ) => {
+							const currentAttribute =
+								currentAttributes.get( attributeName );
+							const previousAttributeValue =
+								previousAttributes?.[ attributeName ];
+
+							const isExpectedType = isExpectedAttributeType(
+								block.name,
+								attributeName,
+								currentAttribute
 							);
+
+							if (
+								previousAttributes &&
+								Object.hasOwn(
+									previousAttributes,
+									attributeName
+								) &&
+								arePlainValuesEqual(
+									previousAttributeValue,
+									attributeValue
+								) &&
+								isExpectedType
+							) {
+								return;
+							}
+
+							// Y types (Y.Text, Y.Array, Y.Map) cannot be
+							// compared with fastDeepEqual against plain values.
+							// Delegate to mergeYValue which handles no-op
+							// detection at the edges.
+							const isYType =
+								currentAttribute instanceof Y.AbstractType;
+
+							const isAttributeChanged =
+								! isExpectedType ||
+								isYType ||
+								! fastDeepEqual(
+									currentAttribute,
+									attributeValue
+								);
+
+							if ( isAttributeChanged ) {
+								updateYBlockAttribute(
+									block.name,
+									block.clientId,
+									attributeName,
+									attributeValue,
+									currentAttributes,
+									attributeCursor,
+									previousAttributeValue
+								);
+							}
 						}
+					);
+
+					// Delete any attributes that are no longer present.
+					currentAttributes.forEach(
+						( _attrValue: unknown, attrName: string ) => {
+							if (
+								! Object.hasOwn(
+									incomingAttributes,
+									attrName
+								) &&
+								( ! previousAttributes ||
+									Object.hasOwn(
+										previousAttributes,
+										attrName
+									) )
+							) {
+								currentAttributes.delete( attrName );
+							}
+						}
+					);
+
+					break;
 				}
+
+				case 'innerBlocks': {
+					// Recursively merge innerBlocks
+					let yInnerBlocks = yblock.get( key );
+
+					if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
+						yInnerBlocks = new Y.Array< YBlock >();
+						yblock.set( key, yInnerBlocks );
+					}
+
+					mergeCrdtBlocksIntoYBlocks(
+						yInnerBlocks,
+						( value as Block[] | undefined ) ?? [],
+						attributeCursor,
+						previousBlock?.innerBlocks
+					);
+					break;
+				}
+
+				default:
+					if (
+						previousBlock &&
+						arePlainValuesEqual(
+							value,
+							( previousBlock as Record< string, unknown > )[
+								key
+							]
+						)
+					) {
+						break;
+					}
+
+					if ( ! fastDeepEqual( value, yblock.get( key ) ) ) {
+						yblock.set( key, value );
+					}
 			}
-		);
-		localYBlock.forEach( ( _v, k ) => {
-			if ( ! incomingYBlock.hasOwnProperty( k ) ) {
-				localYBlock.delete( k );
+		} );
+		yblock.forEach( ( _v, k ) => {
+			if (
+				! block.hasOwnProperty( k ) &&
+				( ! previousBlock || previousBlock.hasOwnProperty( k ) )
+			) {
+				yblock.delete( k );
 			}
 		} );
 	}
@@ -1019,8 +1056,6 @@ export function mergeCrdtBlocks(
 		}
 		knownClientIds.add( clientId );
 	}
-
-	previousBlocksByYArray.set( yblocks, localBlocksToSync );
 }
 
 /**
@@ -1148,7 +1183,13 @@ function mergeYArrayByElementIds(
 			}
 		} else {
 			yArray.insert( index, [
-				createYMapFromQuery( query, newElement ),
+				createYMapFromQuery(
+					query,
+					newElement,
+					[ ...cursorScope.attributePath, String( index ) ].join(
+						'/'
+					)
+				),
 			] );
 		}
 
@@ -1157,6 +1198,123 @@ function mergeYArrayByElementIds(
 
 	if ( yArray.length > index ) {
 		yArray.delete( index, yArray.length - index );
+	}
+
+	return true;
+}
+
+function arePlainValuesEqual( a: unknown, b: unknown ): boolean {
+	return fastDeepEqual( a, b );
+}
+
+function isExpectedYValueTypeForSchema(
+	schema: BlockAttributeSchema | undefined,
+	newVal: unknown,
+	currentVal: unknown
+): boolean {
+	if ( schema?.type === 'rich-text' ) {
+		return currentVal instanceof Y.Text;
+	}
+
+	if ( schema?.type === 'array' && schema.query && Array.isArray( newVal ) ) {
+		return currentVal instanceof Y.Array;
+	}
+
+	if ( schema?.type === 'object' && schema.query && isRecord( newVal ) ) {
+		return currentVal instanceof Y.Map;
+	}
+
+	return true;
+}
+
+function isYArrayEqualToPlainArray(
+	yArray: Y.Array< unknown >,
+	value: unknown[]
+): boolean {
+	return (
+		yArray.length === value.length &&
+		value.every( ( element, index ) =>
+			areArrayElementsEqual( element, yArray.get( index ) )
+		)
+	);
+}
+
+function findYArrayElementIndex(
+	yArray: Y.Array< unknown >,
+	previousElement: unknown,
+	preferredIndex: number,
+	previousLength: number
+): number {
+	for ( let i = 0; i < yArray.length; i++ ) {
+		if ( areArrayElementsEqual( previousElement, yArray.get( i ) ) ) {
+			return i;
+		}
+	}
+
+	if ( yArray.length === previousLength && preferredIndex < yArray.length ) {
+		return preferredIndex;
+	}
+
+	return preferredIndex < yArray.length ? preferredIndex : -1;
+}
+
+function mergeYArrayLocalChanges(
+	yArray: Y.Array< unknown >,
+	newValue: unknown[],
+	previousValue: unknown[],
+	query: Record< string, BlockAttributeSchema >,
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope
+): boolean {
+	if ( arePlainValuesEqual( newValue, previousValue ) ) {
+		return true;
+	}
+
+	// No remote divergence: preserve existing behavior for ordinary local
+	// inserts/deletes/reorders.
+	if ( isYArrayEqualToPlainArray( yArray, previousValue ) ) {
+		return false;
+	}
+
+	const sharedLength = Math.min( previousValue.length, newValue.length );
+
+	for ( let i = 0; i < sharedLength; i++ ) {
+		const previousElement = previousValue[ i ];
+		const newElement = newValue[ i ];
+
+		if ( arePlainValuesEqual( previousElement, newElement ) ) {
+			continue;
+		}
+
+		const currentIndex = findYArrayElementIndex(
+			yArray,
+			previousElement,
+			i,
+			previousValue.length
+		);
+
+		if ( currentIndex === -1 ) {
+			continue;
+		}
+
+		const currentElement = yArray.get( currentIndex );
+
+		if ( currentElement instanceof Y.Map && isRecord( newElement ) ) {
+			mergeYMapValues(
+				currentElement,
+				newElement,
+				query,
+				cursorPosition,
+				{
+					...cursorScope,
+					attributePath: [
+						...cursorScope.attributePath,
+						String( currentIndex ),
+					],
+				},
+				isRecord( previousElement ) ? previousElement : undefined
+			);
+		}
 	}
 
 	return true;
@@ -1176,19 +1334,35 @@ function mergeYArrayByElementIds(
  * @param schema         The attribute schema (must have `query`).
  * @param cursorPosition The local cursor position for rich-text delta merges.
  * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
+ * @param previousValue  The previous plain local array value.
  */
 function mergeYArray(
 	yArray: Y.Array< unknown >,
 	newValue: unknown[],
 	schema: BlockAttributeSchema,
 	cursorPosition: MergeCursorPosition,
-	cursorScope: RichTextCursorScope
+	cursorScope: RichTextCursorScope,
+	previousValue?: unknown[]
 ): void {
 	if ( ! schema.query ) {
 		return;
 	}
 
 	const query = schema.query;
+
+	if (
+		previousValue &&
+		mergeYArrayLocalChanges(
+			yArray,
+			newValue,
+			previousValue,
+			query,
+			cursorPosition,
+			cursorScope
+		)
+	) {
+		return;
+	}
 
 	if (
 		mergeYArrayByElementIds(
@@ -1243,7 +1417,16 @@ function mergeYArray(
 				newElement,
 				query,
 				cursorPosition,
-				cursorScope
+				{
+					...cursorScope,
+					attributePath: [
+						...cursorScope.attributePath,
+						String( left + i ),
+					],
+				},
+				previousValue && isRecord( previousValue[ left + i ] )
+					? previousValue[ left + i ]
+					: undefined
 			);
 		} else {
 			// Element is the wrong type (e.g. partial migration) or the
@@ -1251,7 +1434,16 @@ function mergeYArray(
 			yArray.delete( 0, yArray.length );
 			yArray.insert(
 				0,
-				newValue.map( ( item ) => createYMapFromQuery( query, item ) )
+				newValue.map( ( item, index ) =>
+					createYMapFromQuery(
+						query,
+						item,
+						[
+							...cursorScope.attributePath,
+							String( index ),
+						].join( '/' )
+					)
+				)
 			);
 			return;
 		}
@@ -1279,7 +1471,11 @@ function mergeYArray(
 		for ( let i = 0; i < numOfInsertionsNeeded; i++ ) {
 			itemsToInsert[ i ] = createYMapFromQuery(
 				query,
-				newValue[ insertAt + i ]
+				newValue[ insertAt + i ],
+				[
+					...cursorScope.attributePath,
+					String( insertAt + i ),
+				].join( '/' )
 			);
 		}
 
@@ -1302,6 +1498,7 @@ function mergeYArray(
  * @param cursorPosition The cursor position for rich-text delta merges from the updated value.
  * @param cursorScope    Indicates a specific block and attribute associated with the editor;
  *                       determines whether the cursor should be updated based on the change.
+ * @param previousVal    The previous plain local value for this entry.
  */
 function mergeYValue(
 	schema: BlockAttributeSchema | undefined,
@@ -1309,9 +1506,19 @@ function mergeYValue(
 	yMap: Y.Map< unknown >,
 	key: string,
 	cursorPosition: MergeCursorPosition,
-	cursorScope: RichTextCursorScope
+	cursorScope: RichTextCursorScope,
+	previousVal?: unknown
 ): void {
 	const currentVal = yMap.get( key );
+
+	if (
+		previousVal !== undefined &&
+		arePlainValuesEqual( previousVal, newVal ) &&
+		isExpectedYValueTypeForSchema( schema, newVal, currentVal )
+	) {
+		return;
+	}
+
 	if (
 		schema?.type === 'rich-text' &&
 		typeof newVal === 'string' &&
@@ -1328,7 +1535,14 @@ function mergeYValue(
 		Array.isArray( newVal ) &&
 		currentVal instanceof Y.Array
 	) {
-		mergeYArray( currentVal, newVal, schema, cursorPosition, cursorScope );
+		mergeYArray(
+			currentVal,
+			newVal,
+			schema,
+			cursorPosition,
+			cursorScope,
+			Array.isArray( previousVal ) ? previousVal : undefined
+		);
 	} else if (
 		schema?.type === 'object' &&
 		schema.query &&
@@ -1340,7 +1554,8 @@ function mergeYValue(
 			newVal,
 			schema.query,
 			cursorPosition,
-			cursorScope
+			cursorScope,
+			isRecord( previousVal ) ? previousVal : undefined
 		);
 	} else {
 		const newYValue = createYValueFromSchema( schema, newVal );
@@ -1365,22 +1580,43 @@ function mergeYValue(
  * @param query          The query schema defining property types.
  * @param cursorPosition The local cursor position for rich-text delta merges.
  * @param cursorScope    The selected block attribute scope for rich-text cursor hints.
+ * @param previousObj    The previous plain local object value.
  */
 function mergeYMapValues(
 	yMap: Y.Map< unknown >,
 	newObj: Record< string, unknown >,
 	query: Record< string, BlockAttributeSchema >,
 	cursorPosition: MergeCursorPosition,
-	cursorScope: RichTextCursorScope
+	cursorScope: RichTextCursorScope,
+	previousObj?: Record< string, unknown >
 ): void {
 	for ( const [ key, newVal ] of Object.entries( newObj ) ) {
+		const previousVal = previousObj?.[ key ];
+
+		if (
+			previousObj &&
+			Object.hasOwn( previousObj, key ) &&
+			arePlainValuesEqual( previousVal, newVal ) &&
+			isExpectedYValueTypeForSchema(
+				query[ key ],
+				newVal,
+				yMap.get( key )
+			)
+		) {
+			continue;
+		}
+
 		mergeYValue(
 			query[ key ],
 			newVal,
 			yMap,
 			key,
 			cursorPosition,
-			cursorScope
+			{
+				...cursorScope,
+				attributePath: [ ...cursorScope.attributePath, key ],
+			},
+			previousVal
 		);
 	}
 
@@ -1388,7 +1624,8 @@ function mergeYMapValues(
 	for ( const key of yMap.keys() ) {
 		if (
 			key !== ARRAY_ELEMENT_ID_KEY &&
-			! Object.hasOwn( newObj, key )
+			! Object.hasOwn( newObj, key ) &&
+			( ! previousObj || Object.hasOwn( previousObj, key ) )
 		) {
 			yMap.delete( key );
 		}
@@ -1406,6 +1643,7 @@ function mergeYMapValues(
  * @param newCursorPosition The cursor position for rich-text delta merges from the updated value.
  *                          Notably, this may not correspond to the attribute being edited and is
  *                          used to determine if any cursors need shifting in response to the change.
+ * @param previousAttributeValue The previous plain local value for the attribute.
  */
 function updateYBlockAttribute(
 	blockName: string,
@@ -1413,7 +1651,8 @@ function updateYBlockAttribute(
 	attributeName: string,
 	attributeValue: unknown,
 	currentAttributes: YBlockAttributes,
-	newCursorPosition: MergeCursorPosition
+	newCursorPosition: MergeCursorPosition,
+	previousAttributeValue?: unknown
 ): void {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
 
@@ -1432,7 +1671,12 @@ function updateYBlockAttribute(
 		currentAttributes,
 		attributeName,
 		newCursorPosition,
-		{ attributeKey: attributeName, clientId }
+		{
+			attributeKey: attributeName,
+			attributePath: [ attributeName ],
+			clientId,
+		},
+		previousAttributeValue
 	);
 }
 
@@ -1445,6 +1689,7 @@ function updateYBlockAttribute(
  */
 interface RichTextCursorScope {
 	attributeKey: string;
+	attributePath: string[];
 	clientId: string | undefined;
 }
 
