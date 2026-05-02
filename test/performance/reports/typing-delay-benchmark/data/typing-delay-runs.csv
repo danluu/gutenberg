@@ -629,3 +629,59 @@ timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,0,600,0,953,9,9,
 timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,0,700,0,953,9,9,18,9,9,1777757450256,1777757456889,6633
 timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,0,990,0,953,9,9,18,9,9,1777757456918,1777757466129,9211
 timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,0,1000,0,953,9,9,18,9,9,1777757466183,1777757475501,9318
+after_persistence_scan,"Wait for persistence, then wait",large post,0,0,0,953,9,9,18,9,9,1777758189761,1777758194504,4743
+after_persistence_scan,"Wait for persistence, then wait",large post,0,25,0,953,9,9,18,9,9,1777758194515,1777758199494,4979
+after_persistence_scan,"Wait for persistence, then wait",large post,0,50,0,953,9,9,18,9,9,1777758199504,1777758205711,6207
+after_persistence_scan,"Wait for persistence, then wait",large post,0,75,0,953,9,9,18,9,9,1777758205721,1777758211212,5491
+after_persistence_scan,"Wait for persistence, then wait",large post,0,100,0,953,9,9,18,9,9,1777758211223,1777758217806,6583
+after_persistence_scan,"Wait for persistence, then wait",large post,0,125,0,953,9,9,18,9,9,1777758217815,1777758223770,5955
+after_persistence_scan,"Wait for persistence, then wait",large post,0,150,0,953,9,9,18,9,9,1777758223781,1777758230904,7123
+after_persistence_scan,"Wait for persistence, then wait",large post,0,175,0,953,9,9,18,9,9,1777758230913,1777758237407,6494
+after_persistence_scan,"Wait for persistence, then wait",large post,0,200,0,953,9,9,18,9,9,1777758237418,1777758245021,7603
+after_persistence_scan,"Wait for persistence, then wait",large post,0,250,0,953,9,9,18,9,9,1777758245031,1777758252168,7137
+after_persistence_scan,"Wait for persistence, then wait",large post,0,300,0,953,9,9,18,9,9,1777758252178,1777758260701,8523
+after_persistence_scan,"Wait for persistence, then wait",large post,0,400,0,953,9,9,18,9,9,1777758260711,1777758269298,8587
+after_persistence_scan,"Wait for persistence, then wait",large post,1,0,0,953,9,9,18,9,9,1777758269308,1777758274855,5547
+after_persistence_scan,"Wait for persistence, then wait",large post,1,25,0,953,9,9,18,9,9,1777758274865,1777758279842,4977
+after_persistence_scan,"Wait for persistence, then wait",large post,1,50,0,953,9,9,18,9,9,1777758279855,1777758286034,6179
+after_persistence_scan,"Wait for persistence, then wait",large post,1,75,0,953,9,9,18,9,9,1777758286045,1777758291483,5438
+after_persistence_scan,"Wait for persistence, then wait",large post,1,100,0,953,9,9,18,9,9,1777758291493,1777758298083,6590
+after_persistence_scan,"Wait for persistence, then wait",large post,1,125,0,953,9,9,18,9,9,1777758298093,1777758304092,5999
+after_persistence_scan,"Wait for persistence, then wait",large post,1,150,0,953,9,9,18,9,9,1777758304102,1777758311269,7167
+after_persistence_scan,"Wait for persistence, then wait",large post,1,175,0,953,9,9,18,9,9,1777758311280,1777758317766,6486
+after_persistence_scan,"Wait for persistence, then wait",large post,1,200,0,953,9,9,18,9,9,1777758317776,1777758325425,7649
+after_persistence_scan,"Wait for persistence, then wait",large post,1,250,0,953,9,9,18,9,9,1777758325435,1777758332668,7233
+after_persistence_scan,"Wait for persistence, then wait",large post,1,300,0,953,9,9,18,9,9,1777758332679,1777758341230,8551
+after_persistence_scan,"Wait for persistence, then wait",large post,1,400,0,953,9,9,18,9,9,1777758341240,1777758349884,8644
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1000,0,953,5,5,10,5,5,1777758386189,1777758391555,5366
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1100,0,953,5,5,10,5,5,1777758391633,1777758397299,5666
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1150,0,953,5,5,10,5,5,1777758397368,1777758403295,5927
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1180,0,953,5,5,10,5,5,1777758403363,1777758409433,6070
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1190,0,953,5,5,10,5,5,1777758409503,1777758415624,6121
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1200,0,953,5,5,10,5,5,1777758415697,1777758421883,6186
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1300,0,953,5,5,10,5,5,1777758421960,1777758428656,6696
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1510,0,953,5,5,10,5,5,1777758428722,1777758436450,7728
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1550,0,953,5,5,10,5,5,1777758436516,1777758444418,7902
+keyhold_schedulers,Key-hold scheduler trace,large post,0,1580,0,953,5,5,10,5,5,1777758444482,1777758452636,8154
+between_keys,"Complete keypress, then wait",large post,0,0,0,953,9,9,18,9,9,1777758545134,1777758545502,368
+between_keys,"Complete keypress, then wait",large post,0,100,0,953,9,9,18,9,9,1777758545511,1777758546834,1323
+between_keys,"Complete keypress, then wait",large post,0,500,0,953,9,9,18,9,9,1777758546845,1777758551429,4584
+between_keys,"Complete keypress, then wait",large post,0,900,0,953,9,9,18,9,9,1777758551441,1777758559323,7882
+between_keys,"Complete keypress, then wait",large post,0,990,0,953,9,9,18,9,9,1777758559334,1777758567967,8633
+between_keys,"Complete keypress, then wait",large post,0,1000,0,953,9,9,18,9,9,1777758567978,1777758576627,8649
+between_keys,"Complete keypress, then wait",large post,0,1010,0,953,9,9,18,9,9,1777758576638,1777758585382,8744
+between_keys,"Complete keypress, then wait",large post,0,1100,0,953,9,9,18,9,9,1777758585391,1777758594782,9391
+between_keys,"Complete keypress, then wait",large post,0,1200,0,953,9,9,18,9,9,1777758594793,1777758605217,10424
+between_keys,"Complete keypress, then wait",large post,0,1300,0,953,9,9,18,9,9,1777758605230,1777758616325,11095
+between_keys,"Complete keypress, then wait",large post,0,2000,0,953,9,9,18,9,9,1777758616336,1777758632956,16620
+between_keys,"Complete keypress, then wait",large post,1,0,0,953,9,9,18,9,9,1777758632980,1777758633273,293
+between_keys,"Complete keypress, then wait",large post,1,100,0,953,9,9,18,9,9,1777758633282,1777758634558,1276
+between_keys,"Complete keypress, then wait",large post,1,500,0,953,9,9,18,9,9,1777758634568,1777758639153,4585
+between_keys,"Complete keypress, then wait",large post,1,900,0,953,9,9,18,9,9,1777758639165,1777758647037,7872
+between_keys,"Complete keypress, then wait",large post,1,990,0,953,9,9,18,9,9,1777758647047,1777758655677,8630
+between_keys,"Complete keypress, then wait",large post,1,1000,0,953,9,9,18,9,9,1777758655687,1777758664364,8677
+between_keys,"Complete keypress, then wait",large post,1,1010,0,953,9,9,18,9,9,1777758664375,1777758673121,8746
+between_keys,"Complete keypress, then wait",large post,1,1100,0,953,9,9,18,9,9,1777758673133,1777758682550,9417
+between_keys,"Complete keypress, then wait",large post,1,1200,0,953,9,9,18,9,9,1777758682563,1777758692906,10343
+between_keys,"Complete keypress, then wait",large post,1,1300,0,953,9,9,18,9,9,1777758692917,1777758703999,11082
+between_keys,"Complete keypress, then wait",large post,1,2000,0,953,9,9,18,9,9,1777758704009,1777758720666,16657

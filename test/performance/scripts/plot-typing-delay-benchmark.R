@@ -33,7 +33,10 @@ run_specs <- tribble(
 	"dense_1110_2000", "1110-2000ms, 10ms step", "artifacts/typing-delay-benchmark-1110-2000-dense/typing-delay-benchmark-1777755635782.json", "large post", "1 round, dense extension",
 	"landmarks_0_2000", "0-2000ms landmarks", "artifacts/typing-delay-benchmark-0-2000-landmarks/typing-delay-benchmark-1777756530004.json", "large post", "3 rounds, selected delays",
 	"cliff_actions", "Cliff action trace", "artifacts/typing-delay-benchmark-cliff-actions/typing-delay-benchmark-1777757272784.json", "large post", "action instrumentation from 990 to 1300ms",
-	"timeout_500_rewrite", "1000ms timers rewritten to 500ms", "artifacts/typing-delay-benchmark-timeout-500/typing-delay-benchmark-1777757430029.json", "large post", "timer intervention: 1000ms setTimeout calls rewritten to 500ms"
+	"timeout_500_rewrite", "1000ms timers rewritten to 500ms", "artifacts/typing-delay-benchmark-timeout-500/typing-delay-benchmark-1777757430029.json", "large post", "timer intervention: 1000ms setTimeout calls rewritten to 500ms",
+	"after_persistence_scan", "Wait for persistence, then wait", "artifacts/typing-delay-benchmark-after-persistence-scan/typing-delay-benchmark-1777758189761.json", "large post", "delay after isLastBlockChangePersistent()",
+	"keyhold_schedulers", "Key-hold scheduler trace", "artifacts/typing-delay-benchmark-keyhold-schedulers/typing-delay-benchmark-1777758386189.json", "large post", "normal Playwright delay with action/timer/scheduler tracing",
+	"between_keys", "Complete keypress, then wait", "artifacts/typing-delay-benchmark-between-keys/typing-delay-benchmark-1777758545134.json", "large post", "delay after full keydown/keypress/input/keyup sequence"
 ) %>%
 	mutate(json_abs_path = file.path(repo_root, json_path))
 
@@ -61,6 +64,7 @@ read_raw_runs <- function() {
 	browser_events <- list()
 	action_events <- list()
 	timer_events <- list()
+	scheduler_events <- list()
 
 	for (i in seq_len(nrow(available))) {
 		spec <- available[i, ]
@@ -171,6 +175,29 @@ read_raw_runs <- function() {
 				}
 			)
 		}
+
+		if ("schedulerEvents" %in% names(run_summaries)) {
+			scheduler_events[[spec$run_id]] <- map_dfr(
+				seq_len(nrow(run_summaries)),
+				function(row_index) {
+					events <- run_summaries$schedulerEvents[[row_index]]
+					if (is.null(events) || nrow(events) == 0) {
+						return(tibble())
+					}
+					as_tibble(events) %>%
+						mutate(
+							run_id = spec$run_id,
+							run_label = spec$run_label,
+							round = run_summaries$round[[row_index]],
+							delayMs = run_summaries$delayMs[[row_index]],
+							scheduledEventMs = scheduledAtMs -
+								run_summaries$runStartedAtBrowserNowMs[[row_index]],
+							firedEventMs = firedAtMs -
+								run_summaries$runStartedAtBrowserNowMs[[row_index]]
+						)
+				}
+			)
+		}
 	}
 
 	list(
@@ -179,7 +206,8 @@ read_raw_runs <- function() {
 		persistence_events = bind_rows(persistence_events),
 		browser_events = bind_rows(browser_events),
 		action_events = bind_rows(action_events),
-		timer_events = bind_rows(timer_events)
+		timer_events = bind_rows(timer_events),
+		scheduler_events = bind_rows(scheduler_events)
 	)
 }
 
@@ -252,6 +280,9 @@ write_derived_data <- function(data) {
 	if (nrow(data$timer_events) > 0) {
 		write_csv(data$timer_events, file.path(data_dir, "typing-delay-timer-events.csv"))
 	}
+	if (nrow(data$scheduler_events) > 0) {
+		write_csv(data$scheduler_events, file.path(data_dir, "typing-delay-scheduler-events.csv"))
+	}
 
 	list(records = records, by_delay = by_delay, runs = runs)
 }
@@ -280,6 +311,11 @@ read_derived_data <- function() {
 			read_csv(file.path(data_dir, "typing-delay-timer-events.csv"), show_col_types = FALSE)
 		} else {
 			tibble()
+		},
+		scheduler_events = if (file.exists(file.path(data_dir, "typing-delay-scheduler-events.csv"))) {
+			read_csv(file.path(data_dir, "typing-delay-scheduler-events.csv"), show_col_types = FALSE)
+		} else {
+			tibble()
 		}
 	)
 }
@@ -289,7 +325,7 @@ derived <- if (is.null(raw_data)) {
 	read_derived_data()
 } else {
 	written <- write_derived_data(raw_data)
-	c(written, raw_data[c("persistence_events", "browser_events", "action_events", "timer_events")])
+	c(written, raw_data[c("persistence_events", "browser_events", "action_events", "timer_events", "scheduler_events")])
 }
 
 theme_set(theme_minimal(base_size = 12))
@@ -514,5 +550,135 @@ save_plot(
 		),
 	"09-keydown-event-count-audit.png"
 )
+
+mode_comparison <- by_delay %>%
+	filter(run_id %in% c("landmarks_0_2000", "between_keys", "after_persistence_scan")) %>%
+	mutate(mode_label = recode(
+		run_id,
+		landmarks_0_2000 = "Playwright delay: hold key down",
+		between_keys = "Complete keypress, then wait",
+		after_persistence_scan = "Wait for persistence, then wait"
+	))
+
+save_plot(
+	ggplot(mode_comparison, aes(delay_ms, median_ms, color = mode_label)) +
+		geom_line(linewidth = 0.75) +
+		geom_point(size = 2.1) +
+		scale_x_continuous(breaks = c(0, 100, 500, 900, 1000, 1100, 1200, 1300, 2000)) +
+		labs(
+			title = "The slow plateau is mostly a long synthetic key-hold effect",
+			subtitle = "Waiting after keyup, or after persistence, does not reproduce the 1200-2000ms plateau",
+			x = "Configured delay",
+			y = "p50 latency (ms)",
+			color = NULL
+		),
+	"10-delay-mode-comparison.png"
+)
+
+build_key_groups <- function(events) {
+	events <- events %>% arrange(eventMs)
+	groups <- list()
+	current <- list(keydowns = numeric(), keypress = NA_real_, input = NA_real_, keyup = NA_real_)
+	for (row_index in seq_len(nrow(events))) {
+		event <- events[row_index, ]
+		if (event$type == "keydown" && (!is.na(current$keypress) || !is.na(current$keyup))) {
+			current <- list(keydowns = numeric(), keypress = NA_real_, input = NA_real_, keyup = NA_real_)
+		}
+		if (event$type == "keydown") {
+			current$keydowns <- c(current$keydowns, event$eventMs)
+		} else if (event$type == "keypress") {
+			current$keypress <- event$eventMs
+		} else if (event$type == "input") {
+			current$input <- event$eventMs
+		} else if (event$type == "keyup") {
+			current$keyup <- event$eventMs
+			if (length(current$keydowns) > 0 && !is.na(current$keypress)) {
+				groups[[length(groups) + 1]] <- tibble(
+					key_index = length(groups),
+					first_keydown_ms = current$keydowns[[1]],
+					last_keydown_ms = current$keydowns[[length(current$keydowns)]],
+					keypress_ms = current$keypress,
+					input_ms = current$input,
+					keyup_ms = current$keyup
+				)
+			}
+			current <- list(keydowns = numeric(), keypress = NA_real_, input = NA_real_, keyup = NA_real_)
+		}
+	}
+	bind_rows(groups)
+}
+
+mark_gap <- if (
+	nrow(derived$browser_events) > 0 &&
+	nrow(derived$action_events) > 0 &&
+	"eventMs" %in% names(derived$browser_events)
+) {
+	derived$browser_events %>%
+		filter(run_id == "keyhold_schedulers", type %in% c("keydown", "keypress", "input", "keyup")) %>%
+		group_by(run_id, run_label, round, delayMs) %>%
+		group_modify(~ build_key_groups(.x)) %>%
+		ungroup() %>%
+		group_by(run_id, run_label, round, delayMs) %>%
+		mutate(previous_input_ms = lag(input_ms)) %>%
+		ungroup() %>%
+		rowwise() %>%
+		mutate(
+			mark_event_ms = {
+				current_round <- round
+				current_delay <- delayMs
+				current_previous_input_ms <- previous_input_ms
+				current_first_keydown_ms <- first_keydown_ms
+				marks <- derived$action_events %>%
+					filter(
+						run_id == "keyhold_schedulers",
+						round == .env$current_round,
+						delayMs == .env$current_delay,
+						storeName == "core/block-editor",
+						actionName == "__unstableMarkLastChangeAsPersistent",
+						eventMs > .env$current_previous_input_ms,
+						eventMs < .env$current_first_keydown_ms
+					) %>%
+					arrange(desc(eventMs))
+				if (nrow(marks) == 0) NA_real_ else marks$eventMs[[1]]
+			},
+			mark_to_keydown_ms = first_keydown_ms - mark_event_ms,
+			mark_to_previous_keyup_ms = keyup_ms - mark_event_ms
+		) %>%
+		ungroup() %>%
+		left_join(
+			records %>%
+				filter(run_id == "keyhold_schedulers") %>%
+				transmute(
+					run_id,
+					round,
+					delayMs = delay_ms,
+					key_index = sample_index,
+					is_throwaway,
+					latency_ms
+				),
+			by = c("run_id", "round", "delayMs", "key_index")
+		) %>%
+		filter(!is_throwaway, !is.na(mark_to_keydown_ms))
+} else {
+	tibble()
+}
+
+if (nrow(mark_gap) > 0) {
+	write_csv(mark_gap, file.path(data_dir, "typing-delay-keyhold-mark-gap.csv"))
+	save_plot(
+		ggplot(mark_gap, aes(mark_to_keydown_ms, latency_ms, color = delayMs)) +
+			geom_point(size = 2.3, alpha = 0.85) +
+			geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = "#111827", linewidth = 0.75) +
+			scale_color_viridis_c(option = "C", end = 0.9) +
+			labs(
+				title = "Normal Playwright delay leaves the previous key held after persistence",
+				subtitle = "Latency rises when the next key arrives ~180-300ms after the persistence timer fired",
+				x = "Time from previous rich-text persistence marker to current keydown (ms)",
+				y = "Current key latency (ms)",
+				color = "Delay"
+			),
+		"11-keyhold-mark-gap-vs-latency.png"
+	)
+}
 
 message("Wrote plots to: ", figure_dir)

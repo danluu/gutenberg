@@ -7385,3 +7385,467 @@ timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,large-post-parag
 timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,large-post-paragraph,0,1000,6,FALSE,5,60,53,36154,17.412,18.852,2,0.389,1.829,16.405,0.618
 timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,large-post-paragraph,0,1000,7,FALSE,6,61,54,36154,18.316000000000003,19.597,2,0.373,1.654,17.242,0.701
 timeout_500_rewrite,1000ms timers rewritten to 500ms,large post,large-post-paragraph,0,1000,8,FALSE,7,62,55,36154,11.695999999999998,12.302999999999999,2,0.171,0.778,11.155,0.37
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,0,TRUE,NA,0,NA,0,12.552,14.475,2,0.296,2.219,12.199,0.057
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,1,FALSE,0,1,0,0,6.065,6.4030000000000005,2,0.094,0.43200000000000005,5.923,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,2,FALSE,1,2,1,0,9.664000000000001,10.498000000000001,2,0.234,1.068,9.377,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,3,FALSE,2,3,2,0,8.722999999999999,9.239999999999998,2,0.134,0.651,8.54,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,4,FALSE,3,4,3,0,10.593,11.229000000000001,2,0.174,0.81,10.371,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,5,FALSE,4,5,4,0,7.9239999999999995,8.704,2,0.119,0.899,7.77,0.035
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,6,FALSE,5,6,5,0,10.206999999999999,10.755999999999998,2,0.122,0.671,10.043,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,7,FALSE,6,7,6,0,7.997,8.488,2,0.108,0.599,7.847,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,0,8,FALSE,7,8,7,0,10.123,10.633,2,0.134,0.644,9.918,0.071
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,0,TRUE,NA,9,NA,4754,6.729,7.0889999999999995,2,0.089,0.44899999999999995,6.606,0.034
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,1,FALSE,0,10,8,4754,9.867999999999999,10.427,2,0.139,0.6980000000000001,9.686,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,2,FALSE,1,11,9,4754,7.7410000000000005,8.169,2,0.113,0.541,7.594,0.034
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,3,FALSE,2,12,10,4754,9.599,10.017,2,0.098,0.516,9.465,0.036
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,4,FALSE,3,13,11,4754,7.5809999999999995,7.978,2,0.092,0.489,7.459,0.03
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,5,FALSE,4,14,12,4754,9.4,9.804,2,0.121,0.525,9.225,0.054
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,6,FALSE,5,15,13,4754,8.521,9.112,2,0.146,0.737,8.254,0.121
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,7,FALSE,6,16,14,4754,9.559,9.984,2,0.091,0.516,9.428,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,25,8,FALSE,7,17,15,4754,9.268,9.781,2,0.106,0.619,9.128,0.034
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,0,TRUE,NA,18,NA,9743,9.876,10.421,2,0.111,0.656,9.729,0.036
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,1,FALSE,0,19,16,9743,9.298,9.682,2,0.086,0.47,9.176,0.036
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,2,FALSE,1,20,17,9743,10.022000000000002,10.623000000000001,2,0.15,0.751,9.835,0.037
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,3,FALSE,2,21,18,9743,9.270000000000001,9.693000000000001,2,0.108,0.531,9.117,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,4,FALSE,3,22,19,9743,10.29,10.745999999999999,2,0.1,0.556,10.152,0.038
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,5,FALSE,4,23,20,9743,9.483,10.033000000000001,2,0.115,0.665,9.33,0.038
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,6,FALSE,5,24,21,9743,10.463,11.122,2,0.145,0.804,10.258,0.06
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,7,FALSE,6,25,22,9743,9.89,10.462,2,0.13,0.702,9.699,0.061
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,50,8,FALSE,7,26,23,9743,9.804,10.414000000000001,2,0.129,0.739,9.634,0.041
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,0,TRUE,NA,27,NA,15960,8.755,9.189,2,0.101,0.535,8.61,0.044
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,1,FALSE,0,28,24,15960,10.482,11.059,2,0.116,0.693,10.324,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,2,FALSE,1,29,25,15960,7.3549999999999995,7.768999999999999,2,0.091,0.505,7.228,0.036
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,3,FALSE,2,30,26,15960,10.852,11.47,2,0.158,0.776,10.656,0.038
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,4,FALSE,3,31,27,15960,9.616,10.136,2,0.135,0.655,9.446,0.035
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,5,FALSE,4,32,28,15960,10.202000000000002,10.748000000000001,2,0.117,0.663,10.044,0.041
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,6,FALSE,5,33,29,15960,10.501,11.077,2,0.119,0.695,10.334,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,7,FALSE,6,34,30,15960,10.354,10.79,2,0.11,0.546,10.196,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,75,8,FALSE,7,35,31,15960,10.084999999999999,10.697,2,0.132,0.744,9.91,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,0,TRUE,NA,36,NA,21462,10.089999999999998,10.681999999999999,2,0.12,0.712,9.902,0.068
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,1,FALSE,0,37,32,21462,10.15,10.708,2,0.122,0.68,9.987,0.041
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,2,FALSE,1,38,33,21462,9.899000000000001,10.451,2,0.124,0.676,9.741,0.034
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,3,FALSE,2,39,34,21462,9.947000000000001,10.55,2,0.119,0.722,9.787,0.041
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,4,FALSE,3,40,35,21462,9.609,10.207,2,0.119,0.717,9.441,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,5,FALSE,4,41,36,21462,9.495,9.963,2,0.106,0.5740000000000001,9.331,0.058
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,6,FALSE,5,42,37,21462,10.085,10.671,2,0.117,0.703,9.913,0.055
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,7,FALSE,6,43,38,21462,9.684999999999999,10.445999999999998,2,0.256,1.017,9.383,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,100,8,FALSE,7,44,39,21462,10.439,11.032,2,0.132,0.725,10.263,0.044
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,0,TRUE,NA,45,NA,28054,10.057,10.506,2,0.101,0.55,9.914,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,1,FALSE,0,46,40,28054,10.949,11.523,2,0.121,0.695,10.036,0.792
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,2,FALSE,1,47,41,28054,9.930000000000001,10.496,2,0.127,0.693,9.756,0.047
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,3,FALSE,2,48,42,28054,10.536,11.16,2,0.157,0.781,10.327,0.052
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,4,FALSE,3,49,43,28054,9.674999999999999,10.084,2,0.113,0.522,9.522,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,5,FALSE,4,50,44,28054,11.02,11.61,2,0.128,0.718,10.844,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,6,FALSE,5,51,45,28054,9.682,10.084,2,0.098,0.5,9.544,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,7,FALSE,6,52,46,28054,10.617999999999999,11.208,2,0.133,0.723,10.439,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,125,8,FALSE,7,53,47,28054,9.626,10.153999999999998,2,0.108,0.636,9.478,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,0,TRUE,NA,54,NA,34020,10.286999999999999,10.806,2,0.116,0.635,10.133,0.038
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,1,FALSE,0,55,48,34020,10.187,11.215,2,0.16,1.188,9.975,0.052
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,2,FALSE,1,56,49,34020,10.148000000000001,10.611000000000002,2,0.106,0.5690000000000001,9.992,0.05
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,3,FALSE,2,57,50,34020,10.801,11.439,2,0.137,0.775,10.618,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,4,FALSE,3,58,51,34020,9.906,10.385,2,0.121,0.6,9.747,0.038
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,5,FALSE,4,59,52,34020,10.651,11.268,2,0.138,0.755,10.471,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,6,FALSE,5,60,53,34020,10.375,10.883999999999999,2,0.143,0.652,10.184,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,7,FALSE,6,61,54,34020,10.345,10.977,2,0.13,0.762,10.176,0.039
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,150,8,FALSE,7,62,55,34020,10.703000000000001,11.295,2,0.137,0.729,10.515,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,0,TRUE,NA,63,NA,41152,7.566,7.9079999999999995,2,0.086,0.42800000000000005,7.441,0.039
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,1,FALSE,0,64,56,41152,10.457,11.136000000000001,2,0.189,0.8680000000000001,10.226,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,2,FALSE,1,65,57,41152,10.501,11.107,2,0.139,0.745,10.314,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,3,FALSE,2,66,58,41152,10.328,11.017999999999999,2,0.132,0.822,10.15,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,4,FALSE,3,67,59,41152,10.251000000000001,10.751000000000001,2,0.127,0.627,10.079,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,5,FALSE,4,68,60,41152,10.738000000000001,11.355000000000002,2,0.157,0.774,10.489,0.092
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,6,FALSE,5,69,61,41152,10.040999999999999,10.491,2,0.116,0.5660000000000001,9.853,0.072
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,7,FALSE,6,70,62,41152,10.839,11.464,2,0.14,0.765,10.654,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,175,8,FALSE,7,71,63,41152,10.396,11.021,2,0.135,0.76,10.217,0.044
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,0,TRUE,NA,72,NA,47657,10.748000000000001,11.308000000000002,2,0.137,0.6970000000000001,10.566,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,1,FALSE,0,73,64,47657,10.58,11.087,2,0.134,0.641,10.403,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,2,FALSE,1,74,65,47657,10.911999999999999,11.508,2,0.147,0.743,10.703,0.062
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,3,FALSE,2,75,66,47657,10.065999999999999,10.651999999999997,2,0.124,0.71,9.902,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,4,FALSE,3,76,67,47657,10.802000000000001,11.441,2,0.146,0.785,10.603,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,5,FALSE,4,77,68,47657,10.784,11.443000000000001,2,0.149,0.808,10.582,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,6,FALSE,5,78,69,47657,10.775999999999998,11.271999999999998,2,0.123,0.619,10.597,0.056
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,7,FALSE,6,79,70,47657,10.698999999999998,11.332999999999998,2,0.142,0.776,10.508,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,200,8,FALSE,7,80,71,47657,10.028,10.654000000000002,2,0.136,0.762,9.845,0.047
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,0,TRUE,NA,81,NA,55270,10.579,11.459999999999999,2,0.178,1.059,10.354,0.047
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,1,FALSE,0,82,72,55270,10.353,10.982999999999999,2,0.124,0.754,10.18,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,2,FALSE,1,83,73,55270,9.428,9.851,2,0.095,0.518,9.169,0.164
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,3,FALSE,2,84,74,55270,10.472,11.212,2,0.27,1.01,9.939,0.263
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,4,FALSE,3,85,75,55270,10.227,10.836,2,0.132,0.741,10.021,0.074
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,5,FALSE,4,86,76,55270,10.74,11.279,2,0.125,0.664,10.562,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,6,FALSE,5,87,77,55270,10.777999999999999,11.395,2,0.187,0.804,10.536,0.055
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,7,FALSE,6,88,78,55270,10.384,11.002,2,0.141,0.759,10.193,0.05
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,250,8,FALSE,7,89,79,55270,9.831,10.254999999999999,2,0.109,0.533,9.673,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,0,TRUE,NA,90,NA,62417,10.829,11.343,2,0.127,0.641,10.643,0.059
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,1,FALSE,0,91,80,62417,10.48,11.1,2,0.134,0.754,10.281,0.065
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,2,FALSE,1,92,81,62417,10.434999999999999,11.033,2,0.142,0.74,10.25,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,3,FALSE,2,93,82,62417,10.934000000000001,11.532000000000002,2,0.142,0.74,10.694,0.098
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,4,FALSE,3,94,83,62417,10.601,11.254000000000001,2,0.148,0.801,10.345,0.108
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,5,FALSE,4,95,84,62417,10.299,10.912,2,0.139,0.752,10.106,0.054
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,6,FALSE,5,96,85,62417,11.082999999999998,11.713,2,0.142,0.772,10.885,0.056
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,7,FALSE,6,97,86,62417,10.534,11.22,2,0.141,0.8270000000000001,10.326,0.067
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,300,8,FALSE,7,98,87,62417,10.043999999999999,10.677,2,0.17,0.803,9.822,0.052
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,0,TRUE,NA,99,NA,70950,9.514999999999999,9.979,2,0.104,0.5680000000000001,9.366,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,1,FALSE,0,100,88,70950,10.665,11.349,2,0.149,0.8330000000000001,10.463,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,2,FALSE,1,101,89,70950,10.849999999999998,11.341,2,0.12,0.611,10.681,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,3,FALSE,2,102,90,70950,10.693,11.389,2,0.151,0.847,10.481,0.061
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,4,FALSE,3,103,91,70950,10.715,11.318,2,0.141,0.744,10.531,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,5,FALSE,4,104,92,70950,10.543000000000001,11.037,2,0.121,0.615,10.371,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,6,FALSE,5,105,93,70950,11.528,12.251000000000001,2,0.141,0.864,11.304,0.083
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,7,FALSE,6,106,94,70950,10.608,11.166,2,0.139,0.6970000000000001,10.384,0.085
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,0,400,8,FALSE,7,107,95,70950,10.355000000000002,10.854000000000001,2,0.117,0.616,10.188,0.05
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,0,TRUE,NA,108,NA,79547,8.690999999999999,9.27,2,0.125,0.704,8.523,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,1,FALSE,8,109,96,79547,7.1610000000000005,7.615,2,0.093,0.547,7.025,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,2,FALSE,9,110,97,79547,8.572,9.195,2,0.235,0.858,8.294,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,3,FALSE,10,111,98,79547,7.972,8.332,2,0.081,0.441,7.855,0.036
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,4,FALSE,11,112,99,79547,9.993,10.496,2,0.132,0.635,9.81,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,5,FALSE,12,113,100,79547,8.376999999999999,8.847,2,0.103,0.573,8.235,0.039
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,6,FALSE,13,114,101,79547,10.671000000000001,11.161000000000001,2,0.14,0.63,10.449,0.082
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,7,FALSE,14,115,102,79547,7.866,8.335999999999999,2,0.097,0.567,7.701,0.068
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,0,8,FALSE,15,116,103,79547,9.146999999999998,10.024,2,0.107,0.984,8.994,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,0,TRUE,NA,117,NA,85104,6.182,6.586,2,0.105,0.509,6.037,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,1,FALSE,8,118,104,85104,8.895000000000001,9.271,2,0.086,0.46199999999999997,8.771,0.038
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,2,FALSE,9,119,105,85104,6.938,7.247,2,0.075,0.384,6.832,0.031
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,3,FALSE,10,120,106,85104,8.854000000000001,9.358,2,0.108,0.612,8.673,0.073
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,4,FALSE,11,121,107,85104,7.146,7.555000000000001,2,0.087,0.496,7.006,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,5,FALSE,12,122,108,85104,10.055,10.533000000000001,2,0.111,0.589,9.593,0.351
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,6,FALSE,13,123,109,85104,7.2219999999999995,7.614,2,0.087,0.479,7.092,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,7,FALSE,14,124,110,85104,9.672,10.147,2,0.102,0.577,9.521,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,25,8,FALSE,15,125,111,85104,6.8260000000000005,7.274,2,0.099,0.547,6.682,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,0,TRUE,NA,126,NA,90094,9.744,10.339,2,0.149,0.744,9.547,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,1,FALSE,8,127,112,90094,8.996,9.799,2,0.159,0.9620000000000001,8.783,0.054
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,2,FALSE,9,128,113,90094,8.997000000000002,9.947000000000001,2,0.163,1.113,8.797,0.037
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,3,FALSE,10,129,114,90094,9.489,9.989,2,0.105,0.605,9.315,0.069
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,4,FALSE,11,130,115,90094,9.474,10.022,2,0.118,0.666,9.318,0.038
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,5,FALSE,12,131,116,90094,8.992,9.521,2,0.118,0.647,8.842,0.032
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,6,FALSE,13,132,117,90094,9.978000000000002,10.507000000000001,2,0.111,0.64,9.791,0.076
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,7,FALSE,14,133,118,90094,8.373000000000001,9.387,2,0.112,1.1260000000000001,8.227,0.034
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,50,8,FALSE,15,134,119,90094,8.956000000000001,9.331000000000001,2,0.095,0.47,8.739,0.122
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,0,TRUE,NA,135,NA,96284,9.123999999999999,9.558,2,0.107,0.541,8.977,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,1,FALSE,8,136,120,96284,9.98,10.613000000000001,2,0.119,0.752,9.792,0.069
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,2,FALSE,9,137,121,96284,9.278,9.683000000000002,2,0.091,0.496,9.146,0.041
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,3,FALSE,10,138,122,96284,8.817,9.618,2,0.228,1.0290000000000001,8.492,0.097
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,4,FALSE,11,139,123,96284,10.475,11.025,2,0.112,0.662,10.312,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,5,FALSE,12,140,124,96284,9.629,10.155,2,0.113,0.639,9.461,0.055
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,6,FALSE,13,141,125,96284,9.591999999999999,10.188999999999998,2,0.125,0.722,9.418,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,7,FALSE,14,142,126,96284,9.503,10.009,2,0.115,0.621,9.349,0.039
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,75,8,FALSE,15,143,127,96284,9.473999999999998,10.021999999999998,2,0.119,0.667,9.312,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,0,TRUE,NA,144,NA,101732,9.631,10.083,2,0.103,0.555,9.486,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,1,FALSE,8,145,128,101732,9.185,9.809000000000001,2,0.106,0.73,9.032,0.047
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,2,FALSE,9,146,129,101732,10.239,10.82,2,0.116,0.697,10.079,0.044
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,3,FALSE,10,147,130,101732,9.674000000000001,10.238,2,0.13,0.694,9.5,0.044
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,4,FALSE,11,148,131,101732,9.735000000000001,10.645000000000001,2,0.319,1.229,9.371,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,5,FALSE,12,149,132,101732,8.691999999999998,9.193999999999999,2,0.094,0.596,8.562,0.036
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,6,FALSE,13,150,133,101732,9.45,10.004999999999999,2,0.121,0.676,9.29,0.039
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,7,FALSE,14,151,134,101732,9.744,10.184999999999999,2,0.111,0.552,9.59,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,100,8,FALSE,15,152,135,101732,9.899000000000001,10.468000000000002,2,0.122,0.691,9.726,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,0,TRUE,NA,153,NA,108332,9.885,10.467,2,0.136,0.718,9.698,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,1,FALSE,8,154,136,108332,10.535,11.155000000000001,2,0.136,0.756,10.339,0.06
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,2,FALSE,9,155,137,108332,9.809,10.586,2,0.119,0.896,9.647,0.043
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,3,FALSE,10,156,138,108332,10.84,11.484,2,0.137,0.781,10.651,0.052
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,4,FALSE,11,157,139,108332,10.075,10.67,2,0.132,0.727,9.903,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,5,FALSE,12,158,140,108332,10.409999999999998,11.052999999999999,2,0.141,0.784,10.229,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,6,FALSE,13,159,141,108332,9.440999999999999,10.036,2,0.126,0.721,9.275,0.04
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,7,FALSE,14,160,142,108332,9.55,10.162,2,0.124,0.736,9.374,0.052
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,125,8,FALSE,15,161,143,108332,9.584999999999999,10.373,2,0.25,1.038,9.29,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,0,TRUE,NA,162,NA,114341,10.143,10.587,2,0.115,0.559,9.983,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,1,FALSE,8,163,144,114341,9.942,10.41,2,0.097,0.5650000000000001,9.8,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,2,FALSE,9,164,145,114341,10.253,10.831999999999999,2,0.134,0.713,10.056,0.063
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,3,FALSE,10,165,146,114341,9.512,10.043,2,0.105,0.636,9.356,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,4,FALSE,11,166,147,114341,10.344,10.954,2,0.136,0.746,9.957,0.251
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,5,FALSE,12,167,148,114341,10.443999999999999,10.978,2,0.129,0.663,10.27,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,6,FALSE,13,168,149,114341,10.477,11.049,2,0.13,0.702,10.299,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,7,FALSE,14,169,150,114341,9.722,10.734,2,0.18,1.192,9.5,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,150,8,FALSE,15,170,151,114341,9.175,9.742,2,0.16,0.727,8.962,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,0,TRUE,NA,171,NA,121519,10.402000000000001,11.074,2,0.153,0.8250000000000001,10.199,0.05
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,1,FALSE,8,172,152,121519,10.736,11.375,2,0.134,0.773,10.554,0.048
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,2,FALSE,9,173,153,121519,10.133,10.704,2,0.136,0.707,9.953,0.044
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,3,FALSE,10,174,154,121519,10.956000000000001,11.575000000000001,2,0.138,0.757,10.768,0.05
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,4,FALSE,11,175,155,121519,10.572000000000001,11.209,2,0.146,0.783,10.38,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,5,FALSE,12,176,156,121519,10.384,10.865,2,0.112,0.593,10.23,0.042
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,6,FALSE,13,177,157,121519,10.248,10.708,2,0.122,0.5820000000000001,10.071,0.055
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,7,FALSE,14,178,158,121519,10.517,11.154,2,0.138,0.775,10.33,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,175,8,FALSE,15,179,159,121519,9.197000000000001,9.754,2,0.114,0.671,9.034,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,0,TRUE,NA,180,NA,128015,10.576,11.234,2,0.144,0.802,10.382,0.05
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,1,FALSE,8,181,160,128015,10.55,11.183,2,0.143,0.776,10.356,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,2,FALSE,9,182,161,128015,10.518,10.987,2,0.125,0.594,10.348,0.045
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,3,FALSE,10,183,162,128015,10.042000000000002,10.778,2,0.224,0.96,9.755,0.063
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,4,FALSE,11,184,163,128015,9.756000000000002,10.607000000000001,2,0.118,0.969,9.585,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,5,FALSE,12,185,164,128015,10.242999999999999,10.938999999999998,2,0.103,0.7989999999999999,10.091,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,6,FALSE,13,186,165,128015,10.098,10.749,2,0.189,0.8400000000000001,9.852,0.057
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,7,FALSE,14,187,166,128015,10.145,10.946,2,0.267,1.068,9.832,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,200,8,FALSE,15,188,167,128015,10.86,11.476,2,0.139,0.755,10.672,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,0,TRUE,NA,189,NA,135674,10.785,11.421,2,0.146,0.782,10.59,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,1,FALSE,8,190,168,135674,10.900999999999998,11.512999999999998,2,0.136,0.748,10.713,0.052
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,2,FALSE,9,191,169,135674,10.469,11.108,2,0.136,0.775,10.172,0.161
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,3,FALSE,10,192,170,135674,11.164,11.767,2,0.138,0.741,10.979,0.047
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,4,FALSE,11,193,171,135674,10.626999999999999,11.241,2,0.136,0.75,10.432,0.059
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,5,FALSE,12,194,172,135674,12.3,12.856000000000002,2,0.17,0.7260000000000001,11.977,0.153
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,6,FALSE,13,195,173,135674,10.148,10.690999999999999,2,0.115,0.658,9.982,0.051
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,7,FALSE,14,196,174,135674,9.758000000000001,10.21,2,0.1,0.552,9.579,0.079
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,250,8,FALSE,15,197,175,135674,10.535,11.120000000000001,2,0.136,0.721,10.355,0.044
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,0,TRUE,NA,198,NA,142918,10.346000000000002,10.814000000000002,2,0.117,0.5850000000000001,10.162,0.067
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,1,FALSE,8,199,176,142918,10.299999999999999,10.905,2,0.116,0.721,10.138,0.046
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,2,FALSE,9,200,177,142918,10.379,10.800999999999998,2,0.111,0.533,10.219,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,3,FALSE,10,201,178,142918,10.558,11.136999999999999,2,0.15,0.729,10.353,0.055
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,4,FALSE,11,202,179,142918,10.450000000000001,10.921000000000001,2,0.112,0.583,10.278,0.06
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,5,FALSE,12,203,180,142918,10.959999999999999,11.649999999999999,2,0.134,0.824,10.777,0.049
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,6,FALSE,13,204,181,142918,10.829,11.323,2,0.117,0.611,10.202,0.51
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,7,FALSE,14,205,182,142918,11.121,11.806,2,0.162,0.8470000000000001,10.868,0.091
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,300,8,FALSE,15,206,183,142918,10.507,11.514000000000001,2,0.12,1.1269999999999998,10.333,0.054
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,0,TRUE,NA,207,NA,151479,10.843000000000002,11.441,2,0.14,0.738,10.662,0.041
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,1,FALSE,8,208,184,151479,10.019000000000002,10.489,2,0.111,0.581,9.858,0.05
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,2,FALSE,9,209,185,151479,10.694,11.139000000000001,2,0.115,0.56,10.519,0.06
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,3,FALSE,10,210,186,151479,10.467,11.127,2,0.141,0.801,10.272,0.054
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,4,FALSE,11,211,187,151479,11.158,11.55,2,0.104,0.496,10.984,0.07
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,5,FALSE,12,212,188,151479,11.152000000000001,11.771,2,0.137,0.756,10.962,0.053
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,6,FALSE,13,213,189,151479,11.345,11.959,2,0.144,0.758,11.14,0.061
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,7,FALSE,14,214,190,151479,10.450999999999999,11.056,2,0.136,0.741,10.26,0.055
+after_persistence_scan,"Wait for persistence, then wait",large post,large-post-paragraph,1,400,8,FALSE,15,215,191,151479,10.707999999999998,11.225999999999999,2,0.126,0.644,10.511,0.071
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1000,0,TRUE,NA,0,NA,0,51.987,53.864,2,0.289,2.166,50.903,0.795
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1000,1,FALSE,0,1,0,0,20.501,22.148000000000003,2,0.45,2.097,19.765,0.286
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1000,2,FALSE,1,2,1,0,16.574,17.852,2,0.268,1.546,15.983,0.323
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1000,3,FALSE,2,3,2,0,10.715,11.461,2,0.185,0.931,10.267,0.263
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1000,4,FALSE,3,4,3,0,13.26,13.924,2,0.231,0.895,12.732,0.297
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1100,0,TRUE,NA,5,NA,5444,6.43,6.856,2,0.122,0.548,5.978,0.33
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1100,1,FALSE,0,6,4,5444,11.876,12.382,2,0.156,0.662,11.373,0.347
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1100,2,FALSE,1,7,5,5444,11.439,11.968,2,0.164,0.6930000000000001,11,0.275
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1100,3,FALSE,2,8,6,5444,12.226,12.801,2,0.157,0.732,11.727,0.342
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1100,4,FALSE,3,9,7,5444,10.818000000000001,11.619000000000002,2,0.205,1.006,10.294,0.319
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1150,0,TRUE,NA,10,NA,11179,9.661,10.122,2,0.135,0.5960000000000001,9.158,0.368
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1150,1,FALSE,0,11,8,11179,12.866,13.532,2,0.219,0.885,12.348,0.299
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1150,2,FALSE,1,12,9,11179,12.583,13.173,2,0.174,0.764,12.182,0.227
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1150,3,FALSE,2,13,10,11179,12.871,13.41,2,0.18,0.7190000000000001,12.101,0.59
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1150,4,FALSE,3,14,11,11179,12.379000000000001,12.892000000000001,2,0.178,0.6910000000000001,11.903,0.298
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1180,0,TRUE,NA,15,NA,17174,7.426,7.944,2,0.128,0.646,6.704,0.594
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1180,1,FALSE,0,16,12,17174,18.97,20.605999999999998,2,0.492,2.128,18.055,0.423
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1180,2,FALSE,1,17,13,17174,13.435999999999998,14.097999999999999,2,0.242,0.904,12.53,0.664
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1180,3,FALSE,2,18,14,17174,16.33,17.619,2,0.446,1.7349999999999999,15.241,0.643
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1180,4,FALSE,3,19,15,17174,15.004999999999999,16.136,2,0.328,1.459,13.921,0.756
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1190,0,TRUE,NA,20,NA,23314,7.712,8.118,2,0.1,0.506,7.052,0.56
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1190,1,FALSE,0,21,16,23314,12.701,13.294,2,0.187,0.78,11.983,0.531
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1190,2,FALSE,1,22,17,23314,15.219,16.349,2,0.372,1.5019999999999998,14.352,0.495
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1190,3,FALSE,2,23,18,23314,16.251,17.512999999999998,2,0.424,1.686,15.162,0.665
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1190,4,FALSE,3,24,19,23314,16.931,18.241,2,0.382,1.6920000000000002,14.268,2.281
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1200,0,TRUE,NA,25,NA,29508,7.8260000000000005,8.278,2,0.094,0.546,6.977,0.755
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1200,1,FALSE,0,26,20,29508,18.251,19.679,2,0.443,1.871,16.955,0.853
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1200,2,FALSE,1,27,21,29508,18.547,20.037000000000003,2,0.363,1.853,16.882,1.302
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1200,3,FALSE,2,28,22,29508,18.848,20.176,2,0.402,1.73,17.746,0.7
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1200,4,FALSE,3,29,23,29508,16.443,17.832,2,0.478,1.867,15.128,0.837
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1300,0,TRUE,NA,30,NA,35771,7.885,8.32,2,0.112,0.547,7.172,0.601
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1300,1,FALSE,0,31,24,35771,19.761,20.933999999999997,2,0.428,1.601,18.453,0.88
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1300,2,FALSE,1,32,25,35771,20.04,21.654999999999998,2,0.536,2.151,18.801,0.703
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1300,3,FALSE,2,33,26,35771,18.51,20.169,2,0.719,2.378,17.007,0.784
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1300,4,FALSE,3,34,27,35771,18.246,19.814999999999998,2,0.396,1.9649999999999999,17.249,0.601
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1510,0,TRUE,NA,35,NA,42533,7.662,8.161999999999999,2,0.119,0.619,6.952,0.591
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1510,1,FALSE,0,36,28,42533,12.509,13.308,2,0.166,0.9650000000000001,12.102,0.241
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1510,2,FALSE,1,37,29,42533,12.884,13.551000000000002,2,0.194,0.861,12.073,0.617
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1510,3,FALSE,2,38,30,42533,19.687,21.195,2,0.376,1.884,18.764,0.547
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1510,4,FALSE,3,39,31,42533,15.674,17.052,2,0.357,1.7349999999999999,14.655,0.662
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1550,0,TRUE,NA,40,NA,50327,7.827999999999999,8.295,2,0.098,0.5650000000000001,6.853,0.877
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1550,1,FALSE,0,41,32,50327,12.657,13.476999999999999,2,0.217,1.037,12.11,0.33
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1550,2,FALSE,1,42,33,50327,12.272,13.118,2,0.163,1.009,11.81,0.299
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1550,3,FALSE,2,43,34,50327,12.604,13.238,2,0.202,0.8360000000000001,12.065,0.337
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1550,4,FALSE,3,44,35,50327,12.671999999999999,13.408,2,0.251,0.987,12.206,0.215
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1580,0,TRUE,NA,45,NA,58293,8.699,9.200999999999999,2,0.104,0.606,7.411,1.184
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1580,1,FALSE,0,46,36,58293,13.858999999999998,15.134999999999998,2,0.372,1.6480000000000001,13.149,0.338
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1580,2,FALSE,1,47,37,58293,15.787,16.811,2,0.259,1.283,14.894,0.634
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1580,3,FALSE,2,48,38,58293,17.116999999999997,18.121,2,0.339,1.343,16.131,0.647
+keyhold_schedulers,Key-hold scheduler trace,large post,large-post-paragraph,0,1580,4,FALSE,3,49,39,58293,19.108999999999998,20.607,2,0.543,2.041,17.956,0.61
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,0,TRUE,NA,0,NA,0,11.888,13.718,2,0.287,2.117,11.529,0.072
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,1,FALSE,0,1,0,0,6.066000000000001,6.44,2,0.102,0.476,5.924,0.04
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,2,FALSE,1,2,1,0,5.654,5.979,2,0.098,0.42300000000000004,5.523,0.033
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,3,FALSE,2,3,2,0,5.7589999999999995,6.092,2,0.101,0.43400000000000005,5.616,0.042
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,4,FALSE,3,4,3,0,5.349,5.656,2,0.097,0.404,5.225,0.027
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,5,FALSE,4,5,4,0,5.515,5.867,2,0.106,0.45799999999999996,5.37,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,6,FALSE,5,6,5,0,5.1049999999999995,5.377,2,0.079,0.35100000000000003,4.99,0.036
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,7,FALSE,6,7,6,0,5.018999999999999,5.268,2,0.071,0.32,4.901,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,0,8,FALSE,7,8,7,0,5.371,5.713,2,0.102,0.444,5.238,0.031
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,0,TRUE,NA,9,NA,377,5.4590000000000005,5.890000000000001,2,0.113,0.544,5.317,0.029
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,1,FALSE,0,10,8,377,10.029,10.69,2,0.119,0.78,9.865,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,2,FALSE,1,11,9,377,9.507,9.971,2,0.125,0.589,9.346,0.036
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,3,FALSE,2,12,10,377,10.332,10.950000000000001,2,0.126,0.744,10.156,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,4,FALSE,3,13,11,377,9.891,10.336,2,0.118,0.563,9.728,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,5,FALSE,4,14,12,377,10.130999999999998,10.7,2,0.145,0.714,9.934,0.052
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,6,FALSE,5,15,13,377,9.371,10.224,2,0.205,1.058,9.122,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,7,FALSE,6,16,14,377,10.076,10.649000000000001,2,0.116,0.689,9.922,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,100,8,FALSE,7,17,15,377,10,10.778,2,0.106,0.884,9.835,0.059
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,0,TRUE,NA,18,NA,1711,7.236,7.673,2,0.088,0.525,7.114,0.034
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,1,FALSE,0,19,16,1711,10.382,10.876,2,0.113,0.607,10.225,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,2,FALSE,1,20,17,1711,11.108,11.963,2,0.287,1.142,10.672,0.149
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,3,FALSE,2,21,18,1711,10.407,10.856,2,0.122,0.571,10.235,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,4,FALSE,3,22,19,1711,10.454,11.078,2,0.124,0.748,10.288,0.042
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,5,FALSE,4,23,20,1711,10.513,10.972999999999999,2,0.108,0.5680000000000001,10.357,0.048
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,6,FALSE,5,24,21,1711,10.752,11.386,2,0.156,0.79,10.553,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,7,FALSE,6,25,22,1711,9.918,10.364999999999998,2,0.118,0.565,9.757,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,500,8,FALSE,7,26,23,1711,10.065,10.565,2,0.122,0.622,9.889,0.054
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,0,TRUE,NA,27,NA,6307,7.375,7.8229999999999995,2,0.088,0.536,7.253,0.034
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,1,FALSE,0,28,24,6307,10.958999999999998,11.614999999999998,2,0.136,0.792,10.777,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,2,FALSE,1,29,25,6307,10.421,10.908,2,0.119,0.606,10.25,0.052
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,3,FALSE,2,30,26,6307,10.544,11.163,2,0.162,0.781,10.333,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,4,FALSE,3,31,27,6307,10.907,11.546999999999999,2,0.146,0.786,10.699,0.062
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,5,FALSE,4,32,28,6307,10.779,11.433,2,0.156,0.81,10.572,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,6,FALSE,5,33,29,6307,11.049,11.633999999999999,2,0.131,0.716,10.873,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,7,FALSE,6,34,30,6307,11.077,11.672,2,0.131,0.726,10.899,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,900,8,FALSE,7,35,31,6307,11.051,11.631,2,0.144,0.724,10.86,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,0,TRUE,NA,36,NA,14200,7.497000000000001,8.341000000000001,2,0.158,1.002,7.304,0.035
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,1,FALSE,0,37,32,14200,8.722,9.295,2,0.126,0.699,8.552,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,2,FALSE,1,38,33,14200,9.795000000000002,10.311000000000002,2,0.121,0.637,9.627,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,3,FALSE,2,39,34,14200,9.336,9.881,2,0.112,0.657,9.19,0.034
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,4,FALSE,3,40,35,14200,9.154,9.528,2,0.09,0.46399999999999997,9.025,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,5,FALSE,4,41,36,14200,9.620000000000001,10.190000000000001,2,0.118,0.688,9.464,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,6,FALSE,5,42,37,14200,8.808,9.395,2,0.116,0.703,8.654,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,7,FALSE,6,43,38,14200,9.189,9.722,2,0.106,0.639,9.038,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,990,8,FALSE,7,44,39,14200,9.068000000000001,9.611000000000002,2,0.119,0.662,8.912,0.037
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,0,TRUE,NA,45,NA,22844,6.944000000000001,7.371,2,0.089,0.516,6.804,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,1,FALSE,0,46,40,22844,8.948,9.502,2,0.112,0.666,8.797,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,2,FALSE,1,47,41,22844,9.247,9.832,2,0.126,0.711,9.036,0.085
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,3,FALSE,2,48,42,22844,9.301,9.726,2,0.091,0.516,9.169,0.041
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,4,FALSE,3,49,43,22844,9.735000000000001,10.297,2,0.111,0.673,9.585,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,5,FALSE,4,50,44,22844,8.806000000000001,9.397,2,0.109,0.7,8.659,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,6,FALSE,5,51,45,22844,10.102,10.684,2,0.114,0.696,9.321,0.667
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,7,FALSE,6,52,46,22844,9.190000000000001,9.733,2,0.111,0.654,9.041,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1000,8,FALSE,7,53,47,22844,9.283999999999999,9.821,2,0.112,0.649,9.136,0.036
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,0,TRUE,NA,54,NA,31504,6.747,7.157,2,0.087,0.497,6.626,0.034
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,1,FALSE,0,55,48,31504,9.251999999999999,9.819999999999999,2,0.119,0.6869999999999999,9.094,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,2,FALSE,1,56,49,31504,9.192000000000002,9.71,2,0.105,0.623,9.05,0.037
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,3,FALSE,2,57,50,31504,9.525,10.13,2,0.126,0.731,9.352,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,4,FALSE,3,58,51,31504,9.408,9.966,2,0.114,0.672,9.254,0.04
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,5,FALSE,4,59,52,31504,10.388,11.013,2,0.113,0.738,10.226,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,6,FALSE,5,60,53,31504,9.559,9.926,2,0.094,0.46099999999999997,9.425,0.04
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,7,FALSE,6,61,54,31504,9.514,10.264,2,0.16,0.91,9.267,0.087
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1010,8,FALSE,7,62,55,31504,15.469000000000001,16.07,2,0.116,0.717,15.268,0.085
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,0,TRUE,NA,63,NA,40257,5.760999999999999,6.093999999999999,2,0.085,0.41800000000000004,5.645,0.031
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,1,FALSE,0,64,56,40257,9.996,10.455,2,0.105,0.5640000000000001,9.845,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,2,FALSE,1,65,57,40257,10.259,10.875,2,0.142,0.758,10.067,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,3,FALSE,2,66,58,40257,10.263,10.766,2,0.142,0.645,10.068,0.053
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,4,FALSE,3,67,59,40257,10.121,10.726,2,0.135,0.74,9.942,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,5,FALSE,4,68,60,40257,10.450000000000001,11.093,2,0.153,0.796,10.226,0.071
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,6,FALSE,5,69,61,40257,10.104000000000001,10.711,2,0.13,0.737,9.929,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,7,FALSE,6,70,62,40257,10.270999999999999,10.889999999999999,2,0.135,0.754,10.084,0.052
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1100,8,FALSE,7,71,63,40257,9.64,10.045,2,0.108,0.513,9.489,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,0,TRUE,NA,72,NA,49659,7.119,7.595,2,0.096,0.572,6.987,0.036
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,1,FALSE,0,73,64,49659,11.184999999999999,11.874999999999998,2,0.167,0.857,10.966,0.052
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,2,FALSE,1,74,65,49659,11.388,12.181000000000001,2,0.132,0.925,11.21,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,3,FALSE,2,75,66,49659,10.636000000000001,11.219,2,0.143,0.726,10.413,0.08
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,4,FALSE,3,76,67,49659,10.353,10.786,2,0.111,0.544,10.184,0.058
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,5,FALSE,4,77,68,49659,10.568000000000001,11.211,2,0.15,0.793,10.374,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,6,FALSE,5,78,69,49659,10.727999999999998,11.384999999999998,2,0.142,0.799,10.54,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,7,FALSE,6,79,70,49659,10.455000000000002,10.920000000000002,2,0.117,0.5820000000000001,9.865,0.473
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1200,8,FALSE,7,80,71,49659,11.115,11.829,2,0.138,0.852,10.933,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,0,TRUE,NA,81,NA,60096,5.66,5.99,2,0.074,0.404,5.522,0.064
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,1,FALSE,0,82,72,60096,10.325000000000001,10.968000000000002,2,0.144,0.787,10.127,0.054
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,2,FALSE,1,83,73,60096,10.207999999999998,11.043,2,0.132,0.967,10.027,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,3,FALSE,2,84,74,60096,11.098,11.801,2,0.172,0.875,10.874,0.052
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,4,FALSE,3,85,75,60096,10.946,11.58,2,0.148,0.782,10.699,0.099
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,5,FALSE,4,86,76,60096,10.576,11.271,2,0.188,0.883,10.339,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,6,FALSE,5,87,77,60096,11.219000000000001,11.871,2,0.147,0.799,11.019,0.053
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,7,FALSE,6,88,78,60096,10.479,11.09,2,0.142,0.753,10.289,0.048
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,1300,8,FALSE,7,89,79,60096,10.207999999999998,10.851999999999999,2,0.152,0.796,10.007,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,0,TRUE,NA,90,NA,71202,7.025,7.523000000000001,2,0.108,0.606,6.884,0.033
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,1,FALSE,0,91,80,71202,9.852,10.472,2,0.156,0.776,9.647,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,2,FALSE,1,92,81,71202,10.392000000000001,10.905000000000001,2,0.134,0.647,10.207,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,3,FALSE,2,93,82,71202,11.015,11.632000000000001,2,0.133,0.75,10.835,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,4,FALSE,3,94,83,71202,10.040000000000001,10.479,2,0.117,0.556,9.874,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,5,FALSE,4,95,84,71202,10.346999999999998,10.975999999999999,2,0.139,0.768,10.165,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,6,FALSE,5,96,85,71202,10.267,10.864999999999998,2,0.14,0.738,10.078,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,7,FALSE,6,97,86,71202,10.982,11.631999999999998,2,0.143,0.793,10.764,0.075
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,0,2000,8,FALSE,7,98,87,71202,10.24,10.693000000000001,2,0.116,0.5690000000000001,10.069,0.055
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,0,TRUE,NA,99,NA,87846,6.377000000000001,6.836,2,0.086,0.545,6.264,0.027
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,1,FALSE,8,100,88,87846,5.1129999999999995,5.393999999999999,2,0.088,0.369,4.994,0.031
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,2,FALSE,9,101,89,87846,5.436999999999999,5.732999999999999,2,0.075,0.371,5.326,0.036
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,3,FALSE,10,102,90,87846,4.861000000000001,5.194000000000001,2,0.088,0.42100000000000004,4.748,0.025
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,4,FALSE,11,103,91,87846,4.959,5.257,2,0.08,0.378,4.84,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,5,FALSE,12,104,92,87846,4.766,4.998,2,0.066,0.29800000000000004,4.667,0.033
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,6,FALSE,13,105,93,87846,5.425,5.864,2,0.071,0.51,5.325,0.029
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,7,FALSE,14,106,94,87846,4.726,4.994,2,0.072,0.34,4.62,0.034
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,0,8,FALSE,15,107,95,87846,4.627,4.868,2,0.071,0.312,4.526,0.03
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,0,TRUE,NA,108,NA,88148,5.189,5.47,2,0.073,0.35400000000000004,5.084,0.032
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,1,FALSE,8,109,96,88148,9.582,10.138000000000002,2,0.126,0.682,9.371,0.085
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,2,FALSE,9,110,97,88148,10.593000000000002,11.15,2,0.117,0.674,10.102,0.374
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,3,FALSE,10,111,98,88148,10.279,10.86,2,0.124,0.705,10.096,0.059
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,4,FALSE,11,112,99,88148,9.473,9.894,2,0.106,0.527,9.32,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,5,FALSE,12,113,100,88148,9.652000000000001,10.412,2,0.188,0.948,9.417,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,6,FALSE,13,114,101,88148,9.197,9.607999999999999,2,0.099,0.51,9.059,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,7,FALSE,14,115,102,88148,10.054,10.634,2,0.118,0.698,9.892,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,100,8,FALSE,15,116,103,88148,9.457999999999998,10.038999999999998,2,0.151,0.732,9.264,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,0,TRUE,NA,117,NA,89434,7.07,7.4590000000000005,2,0.087,0.476,6.945,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,1,FALSE,8,118,104,89434,9.845,10.3,2,0.11,0.5650000000000001,9.685,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,2,FALSE,9,119,105,89434,10.012,10.569,2,0.128,0.685,9.84,0.044
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,3,FALSE,10,120,106,89434,10.144,10.595,2,0.115,0.5660000000000001,9.965,0.064
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,4,FALSE,11,121,107,89434,10.264999999999999,10.854,2,0.131,0.72,10.062,0.072
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,5,FALSE,12,122,108,89434,9.878,10.356,2,0.115,0.593,9.717,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,6,FALSE,13,123,109,89434,10.648,11.251,2,0.131,0.734,10.466,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,7,FALSE,14,124,110,89434,10.04,10.587,2,0.107,0.654,9.808,0.125
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,500,8,FALSE,15,125,111,89434,9.991,10.904,2,0.126,1.0390000000000001,9.817,0.048
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,0,TRUE,NA,126,NA,94031,7.38,7.833,2,0.109,0.562,7.225,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,1,FALSE,8,127,112,94031,10.314999999999998,10.854,2,0.184,0.7230000000000001,10.072,0.059
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,2,FALSE,9,128,113,94031,10.418,10.927,2,0.133,0.642,10.232,0.053
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,3,FALSE,10,129,114,94031,10.654000000000002,11.294000000000002,2,0.141,0.781,10.46,0.053
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,4,FALSE,11,130,115,94031,10.952,11.559,2,0.143,0.75,10.753,0.056
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,5,FALSE,12,131,116,94031,10.624,11.237,2,0.143,0.756,10.392,0.089
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,6,FALSE,13,132,117,94031,10.517,11.203999999999999,2,0.153,0.8400000000000001,10.309,0.055
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,7,FALSE,14,133,118,94031,10.586,11.205,2,0.147,0.766,10.398,0.041
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,900,8,FALSE,15,134,119,94031,10.68,11.334,2,0.15,0.804,10.485,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,0,TRUE,NA,135,NA,101913,7.1579999999999995,7.587999999999999,2,0.094,0.524,7.028,0.036
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,1,FALSE,8,136,120,101913,8.87,9.472999999999999,2,0.131,0.734,8.7,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,2,FALSE,9,137,121,101913,11.040000000000001,11.664000000000001,2,0.144,0.768,10.82,0.076
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,3,FALSE,10,138,122,101913,9.495999999999999,9.927,2,0.103,0.534,9.299,0.094
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,4,FALSE,11,139,123,101913,9.324,9.883,2,0.114,0.673,9.161,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,5,FALSE,12,140,124,101913,9.167,9.697,2,0.119,0.649,9.01,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,6,FALSE,13,141,125,101913,9.335999999999999,10.182999999999998,2,0.093,0.94,9.203,0.04
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,7,FALSE,14,142,126,101913,9.517999999999999,9.951999999999998,2,0.109,0.543,9.363,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,990,8,FALSE,15,143,127,101913,9.994,10.569,2,0.123,0.698,9.826,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,0,TRUE,NA,144,NA,110553,6.803,7.154,2,0.08,0.431,6.692,0.031
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,1,FALSE,8,145,128,110553,9.255,9.780000000000001,2,0.116,0.641,9.073,0.066
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,2,FALSE,9,146,129,110553,9.164,9.943999999999999,2,0.095,0.875,9.027,0.042
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,3,FALSE,10,147,130,110553,9.366,9.901,2,0.113,0.648,9.203,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,4,FALSE,11,148,131,110553,9.917000000000002,10.544,2,0.121,0.748,9.726,0.07
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,5,FALSE,12,149,132,110553,9.761000000000001,10.280000000000001,2,0.093,0.612,9.615,0.053
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,6,FALSE,13,150,133,110553,9.129,9.706,2,0.137,0.714,8.95,0.042
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,7,FALSE,14,151,134,110553,9.363999999999999,9.979,2,0.126,0.741,9.195,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1000,8,FALSE,15,152,135,110553,8.479999999999999,9.001,2,0.1,0.621,8.042,0.338
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,0,TRUE,NA,153,NA,119241,6.6610000000000005,7.055000000000001,2,0.086,0.48,6.542,0.033
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,1,FALSE,8,154,136,119241,9.469,10.041,2,0.132,0.704,9.294,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,2,FALSE,9,155,137,119241,9.659,10.242,2,0.118,0.701,9.494,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,3,FALSE,10,156,138,119241,9.17,9.56,2,0.097,0.487,9.034,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,4,FALSE,11,157,139,119241,9.268,9.838000000000001,2,0.116,0.6859999999999999,9.098,0.054
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,5,FALSE,12,158,140,119241,9.202,9.764999999999999,2,0.118,0.6809999999999999,9.045,0.039
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,6,FALSE,13,159,141,119241,9.036000000000001,9.877,2,0.175,1.016,8.823,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,7,FALSE,14,160,142,119241,10.19,10.81,2,0.123,0.743,10.03,0.037
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1010,8,FALSE,15,161,143,119241,9.604000000000001,10.131,2,0.114,0.641,9.404,0.086
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,0,TRUE,NA,162,NA,127999,5.502,5.812,2,0.079,0.389,5.396,0.027
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,1,FALSE,8,163,144,127999,10.258,10.913,2,0.132,0.787,10.083,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,2,FALSE,9,164,145,127999,10.449,10.964,2,0.16,0.675,10.228,0.061
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,3,FALSE,10,165,146,127999,10.473,11.099000000000002,2,0.145,0.771,10.278,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,4,FALSE,11,166,147,127999,10.238999999999999,10.834999999999999,2,0.135,0.731,10.059,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,5,FALSE,12,167,148,127999,10.036,10.485,2,0.15,0.599,9.84,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,6,FALSE,13,168,149,127999,9.555,10.017,2,0.148,0.61,9.365,0.042
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,7,FALSE,14,169,150,127999,10.485,11.007,2,0.136,0.658,10.281,0.068
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1100,8,FALSE,15,170,151,127999,10.577,11.262,2,0.185,0.8700000000000001,10.354,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,0,TRUE,NA,171,NA,137429,6.931,7.351,2,0.095,0.515,6.798,0.038
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,1,FALSE,8,172,152,137429,10.553999999999998,11.219,2,0.125,0.79,10.373,0.056
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,2,FALSE,9,173,153,137429,10.685,11.411,2,0.221,0.947,10.413,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,3,FALSE,10,174,154,137429,11.554,12.311,2,0.15,0.907,11.333,0.071
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,4,FALSE,11,175,155,137429,10.985999999999999,11.469,2,0.129,0.612,10.799,0.058
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,5,FALSE,12,176,156,137429,10.642,11.116,2,0.123,0.597,10.471,0.048
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,6,FALSE,13,177,157,137429,10.738,11.299,2,0.158,0.7190000000000001,10.506,0.074
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,7,FALSE,14,178,158,137429,10.713,11.368,2,0.152,0.807,10.511,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1200,8,FALSE,15,179,159,137429,10.669,11.211,2,0.124,0.666,10.494,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,0,TRUE,NA,180,NA,147783,7.293,7.725,2,0.102,0.534,7.157,0.034
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,1,FALSE,8,181,160,147783,11.014999999999999,11.890999999999998,2,0.183,1.059,10.196,0.636
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,2,FALSE,9,182,161,147783,10.806,11.433,2,0.144,0.771,10.613,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,3,FALSE,10,183,162,147783,10.394,10.979000000000001,2,0.141,0.726,10.205,0.048
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,4,FALSE,11,184,163,147783,11.081999999999999,11.748,2,0.149,0.8150000000000001,10.887,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,5,FALSE,12,185,164,147783,10.978,11.564,2,0.139,0.725,10.788,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,6,FALSE,13,186,165,147783,10.871,11.499,2,0.151,0.779,10.675,0.045
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,7,FALSE,14,187,166,147783,10.640999999999998,11.299999999999999,2,0.145,0.804,10.45,0.046
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,1300,8,FALSE,15,188,167,147783,11.23,11.935,2,0.152,0.857,11.025,0.053
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,0,TRUE,NA,189,NA,158875,7.226,7.6259999999999994,2,0.086,0.486,7.103,0.037
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,1,FALSE,8,190,168,158875,10.001,10.61,2,0.142,0.751,9.808,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,2,FALSE,9,191,169,158875,10.327,10.905000000000001,2,0.132,0.71,10.148,0.047
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,3,FALSE,10,192,170,158875,10.161,10.766,2,0.144,0.749,9.966,0.051
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,4,FALSE,11,193,171,158875,10.484,11.095,2,0.139,0.75,10.297,0.048
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,5,FALSE,12,194,172,158875,9.984,10.613,2,0.138,0.767,9.803,0.043
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,6,FALSE,13,195,173,158875,10.438999999999998,11.084,2,0.136,0.781,10.254,0.049
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,7,FALSE,14,196,174,158875,10.196,10.727,2,0.145,0.676,10.001,0.05
+between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,8,FALSE,15,197,175,158875,10.277999999999999,10.772999999999998,2,0.112,0.607,10.12,0.046

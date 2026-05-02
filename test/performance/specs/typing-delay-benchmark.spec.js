@@ -47,6 +47,7 @@ const settleBetweenDelayRunsMs = intEnv(
 	0
 );
 const orderMode = process.env.BENCHMARK_ORDER_MODE || 'mixed';
+const delayMode = process.env.BENCHMARK_DELAY_MODE || 'keyboard';
 const scenario = process.env.BENCHMARK_SCENARIO || 'large-post-paragraph';
 const seed = intEnv( 'BENCHMARK_SEED', 51383 );
 const tracePersistence =
@@ -63,6 +64,9 @@ const traceTimers =
 	process.env.BENCHMARK_TRACE_TIMERS === '1' ||
 	process.env.BENCHMARK_TRACE_TIMERS === 'true' ||
 	rewriteTimeout1000Ms !== null;
+const traceSchedulers =
+	process.env.BENCHMARK_TRACE_SCHEDULERS === '1' ||
+	process.env.BENCHMARK_TRACE_SCHEDULERS === 'true';
 const freshEditorPerDelay =
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === '1' ||
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === 'true';
@@ -90,6 +94,7 @@ const supportedScenarios = [
 	'large-post-paragraph',
 	'thousand-paragraphs-paragraph',
 ];
+const supportedDelayModes = [ 'keyboard', 'between-keys', 'after-persistence' ];
 
 if ( delayStepMs <= 0 ) {
 	throw new Error( 'BENCHMARK_DELAY_STEP_MS must be greater than 0.' );
@@ -104,6 +109,13 @@ if ( maxDelayMs < minDelayMs ) {
 if ( ( maxDelayMs - minDelayMs ) % delayStepMs !== 0 ) {
 	throw new Error(
 		'Delay range must be exactly divisible by BENCHMARK_DELAY_STEP_MS.'
+	);
+}
+
+if ( ! supportedDelayModes.includes( delayMode ) ) {
+	throw new Error(
+		`Unsupported BENCHMARK_DELAY_MODE: ${ delayMode }. ` +
+			`Supported modes: ${ supportedDelayModes.join( ', ' ) }.`
 	);
 }
 
@@ -245,9 +257,10 @@ function benchmarkTimeoutMs() {
 		delays.reduce( ( sum, delay ) => sum + delay, 0 );
 	const settleMs = rounds * delays.length * settleBetweenDelayRunsMs;
 	const setupCount = freshEditorPerDelay ? rounds * delays.length : 1;
-	const stateWaitMs = waitForPersistenceBetweenKeys
-		? rounds * delays.length * sampleCount * 1500
-		: 0;
+	const stateWaitMs =
+		waitForPersistenceBetweenKeys || delayMode === 'after-persistence'
+			? rounds * delays.length * sampleCount * 1500
+			: 0;
 	const setupAllowanceMs =
 		20 * 60 * 1000 + setupCount * ( 60 * 1000 + settleAfterEditorSetupMs );
 
@@ -494,62 +507,273 @@ test.describe( 'Typing delay benchmark', () => {
 		}
 
 		async function setupTimerTracing() {
-			if ( ! traceTimers ) {
+			if ( ! traceTimers && ! traceSchedulers ) {
 				return;
 			}
 
-			await page.evaluate( ( timeoutRewriteMs ) => {
-				if ( ! window.__typingBenchmarkOriginalSetTimeout ) {
-					window.__typingBenchmarkOriginalSetTimeout =
-						window.setTimeout.bind( window );
-				}
-				if ( ! window.__typingBenchmarkOriginalClearTimeout ) {
-					window.__typingBenchmarkOriginalClearTimeout =
-						window.clearTimeout.bind( window );
-				}
+			await page.evaluate(
+				( { timeoutRewriteMs, shouldTraceSchedulers } ) => {
+					if ( ! window.__typingBenchmarkOriginalSetTimeout ) {
+						window.__typingBenchmarkOriginalSetTimeout =
+							window.setTimeout.bind( window );
+					}
+					if ( ! window.__typingBenchmarkOriginalClearTimeout ) {
+						window.__typingBenchmarkOriginalClearTimeout =
+							window.clearTimeout.bind( window );
+					}
+					if (
+						! window.__typingBenchmarkOriginalRequestAnimationFrame
+					) {
+						window.__typingBenchmarkOriginalRequestAnimationFrame =
+							window.requestAnimationFrame?.bind( window );
+					}
+					if (
+						! window.__typingBenchmarkOriginalCancelAnimationFrame
+					) {
+						window.__typingBenchmarkOriginalCancelAnimationFrame =
+							window.cancelAnimationFrame?.bind( window );
+					}
+					if (
+						! window.__typingBenchmarkOriginalRequestIdleCallback
+					) {
+						window.__typingBenchmarkOriginalRequestIdleCallback =
+							window.requestIdleCallback?.bind( window );
+					}
+					if (
+						! window.__typingBenchmarkOriginalCancelIdleCallback
+					) {
+						window.__typingBenchmarkOriginalCancelIdleCallback =
+							window.cancelIdleCallback?.bind( window );
+					}
 
-				const originalSetTimeout =
-					window.__typingBenchmarkOriginalSetTimeout;
-				window.__typingBenchmarkTimerEvents = [];
-				window.setTimeout = ( callback, timeout, ...args ) => {
-					const requestedTimeoutMs = Number( timeout );
-					const shouldRewrite =
-						timeoutRewriteMs !== null &&
-						requestedTimeoutMs === 1000;
-					const event = {
-						scheduledAtMs: performance.now(),
-						requestedTimeoutMs,
-						effectiveTimeoutMs: shouldRewrite
-							? timeoutRewriteMs
-							: requestedTimeoutMs,
-						rewritten: shouldRewrite,
-						callbackSource:
+					const originalSetTimeout =
+						window.__typingBenchmarkOriginalSetTimeout;
+					const originalClearTimeout =
+						window.__typingBenchmarkOriginalClearTimeout;
+					const originalRequestAnimationFrame =
+						window.__typingBenchmarkOriginalRequestAnimationFrame;
+					const originalCancelAnimationFrame =
+						window.__typingBenchmarkOriginalCancelAnimationFrame;
+					const originalRequestIdleCallback =
+						window.__typingBenchmarkOriginalRequestIdleCallback;
+					const originalCancelIdleCallback =
+						window.__typingBenchmarkOriginalCancelIdleCallback;
+
+					window.__typingBenchmarkTimerEvents = [];
+					window.__typingBenchmarkSchedulerEvents = [];
+					let schedulerEventId = 0;
+
+					function callbackSource( callback ) {
+						return typeof callback === 'function'
+							? Function.prototype.toString
+									.call( callback )
+									.slice( 0, 240 )
+							: String( callback ).slice( 0, 240 );
+					}
+
+					function stackTrace() {
+						return new Error().stack?.slice( 0, 1000 );
+					}
+
+					window.setTimeout = ( callback, timeout, ...args ) => {
+						const requestedTimeoutMs = Number( timeout );
+						const shouldRewrite =
+							timeoutRewriteMs !== null &&
+							requestedTimeoutMs === 1000;
+						const event = {
+							id: ++schedulerEventId,
+							type: 'setTimeout',
+							scheduledAtMs: performance.now(),
+							requestedTimeoutMs,
+							effectiveTimeoutMs: shouldRewrite
+								? timeoutRewriteMs
+								: requestedTimeoutMs,
+							rewritten: shouldRewrite,
+							callbackSource: callbackSource( callback ),
+							stack: stackTrace(),
+						};
+						window.__typingBenchmarkTimerEvents.push( event );
+						if ( shouldTraceSchedulers ) {
+							window.__typingBenchmarkSchedulerEvents.push(
+								event
+							);
+						}
+
+						const wrappedCallback =
 							typeof callback === 'function'
-								? Function.prototype.toString
-										.call( callback )
-										.slice( 0, 240 )
-								: String( callback ).slice( 0, 240 ),
-						stack: new Error().stack?.slice( 0, 1000 ),
+								? function wrappedTypingBenchmarkTimer(
+										...callbackArgs
+								  ) {
+										event.firedAtMs = performance.now();
+										try {
+											return callback.apply(
+												this,
+												callbackArgs
+											);
+										} finally {
+											event.finishedAtMs =
+												performance.now();
+										}
+								  }
+								: callback;
+
+						const timeoutId = originalSetTimeout(
+							wrappedCallback,
+							shouldRewrite ? timeoutRewriteMs : timeout,
+							...args
+						);
+						event.nativeId = Number( timeoutId );
+						return timeoutId;
 					};
-					window.__typingBenchmarkTimerEvents.push( event );
 
-					const wrappedCallback =
-						typeof callback === 'function'
-							? function wrappedTypingBenchmarkTimer(
-									...callbackArgs
-							  ) {
+					window.clearTimeout = ( timeoutId ) => {
+						const numericTimeoutId = Number( timeoutId );
+						for (
+							let i =
+								window.__typingBenchmarkTimerEvents.length - 1;
+							i >= 0;
+							i--
+						) {
+							const event =
+								window.__typingBenchmarkTimerEvents[ i ];
+							if (
+								event.nativeId === numericTimeoutId &&
+								event.clearedAtMs === undefined
+							) {
+								event.clearedAtMs = performance.now();
+								break;
+							}
+						}
+						return originalClearTimeout( timeoutId );
+					};
+
+					if (
+						shouldTraceSchedulers &&
+						originalRequestAnimationFrame
+					) {
+						window.requestAnimationFrame = ( callback ) => {
+							const event = {
+								id: ++schedulerEventId,
+								type: 'requestAnimationFrame',
+								scheduledAtMs: performance.now(),
+								callbackSource: callbackSource( callback ),
+								stack: stackTrace(),
+							};
+							window.__typingBenchmarkSchedulerEvents.push(
+								event
+							);
+
+							const frameId = originalRequestAnimationFrame(
+								function wrappedTypingBenchmarkAnimationFrame(
+									timestamp
+								) {
 									event.firedAtMs = performance.now();
-									return callback.apply( this, callbackArgs );
-							  }
-							: callback;
+									event.frameTimestampMs = timestamp;
+									try {
+										return callback.call( this, timestamp );
+									} finally {
+										event.finishedAtMs = performance.now();
+									}
+								}
+							);
+							event.nativeId = Number( frameId );
+							return frameId;
+						};
 
-					return originalSetTimeout(
-						wrappedCallback,
-						shouldRewrite ? timeoutRewriteMs : timeout,
-						...args
-					);
-				};
-			}, rewriteTimeout1000Ms );
+						window.cancelAnimationFrame = ( frameId ) => {
+							const numericFrameId = Number( frameId );
+							for (
+								let i =
+									window.__typingBenchmarkSchedulerEvents
+										.length - 1;
+								i >= 0;
+								i--
+							) {
+								const event =
+									window.__typingBenchmarkSchedulerEvents[
+										i
+									];
+								if (
+									event.type === 'requestAnimationFrame' &&
+									event.nativeId === numericFrameId &&
+									event.clearedAtMs === undefined
+								) {
+									event.clearedAtMs = performance.now();
+									break;
+								}
+							}
+							return originalCancelAnimationFrame?.( frameId );
+						};
+					}
+
+					if (
+						shouldTraceSchedulers &&
+						originalRequestIdleCallback
+					) {
+						window.requestIdleCallback = ( callback, options ) => {
+							const event = {
+								id: ++schedulerEventId,
+								type: 'requestIdleCallback',
+								scheduledAtMs: performance.now(),
+								timeoutMs: options?.timeout,
+								callbackSource: callbackSource( callback ),
+								stack: stackTrace(),
+							};
+							window.__typingBenchmarkSchedulerEvents.push(
+								event
+							);
+
+							const idleId = originalRequestIdleCallback(
+								function wrappedTypingBenchmarkIdleCallback(
+									deadline
+								) {
+									event.firedAtMs = performance.now();
+									event.didTimeout = deadline.didTimeout;
+									event.timeRemainingMs =
+										deadline.timeRemaining();
+									try {
+										return callback.call( this, deadline );
+									} finally {
+										event.finishedAtMs = performance.now();
+									}
+								},
+								options
+							);
+							event.nativeId = Number( idleId );
+							return idleId;
+						};
+
+						window.cancelIdleCallback = ( idleId ) => {
+							const numericIdleId = Number( idleId );
+							for (
+								let i =
+									window.__typingBenchmarkSchedulerEvents
+										.length - 1;
+								i >= 0;
+								i--
+							) {
+								const event =
+									window.__typingBenchmarkSchedulerEvents[
+										i
+									];
+								if (
+									event.type === 'requestIdleCallback' &&
+									event.nativeId === numericIdleId &&
+									event.clearedAtMs === undefined
+								) {
+									event.clearedAtMs = performance.now();
+									break;
+								}
+							}
+							return originalCancelIdleCallback?.( idleId );
+						};
+					}
+				},
+				{
+					timeoutRewriteMs: rewriteTimeout1000Ms,
+					shouldTraceSchedulers: traceSchedulers,
+				}
+			);
 		}
 
 		let editorSetupIndex = -1;
@@ -632,7 +856,10 @@ test.describe( 'Typing delay benchmark', () => {
 				);
 
 				await metrics.startTracing();
-				if ( waitForPersistenceBetweenKeys ) {
+				if (
+					waitForPersistenceBetweenKeys ||
+					delayMode === 'after-persistence'
+				) {
 					for ( let i = 0; i < sampleCount; i++ ) {
 						await page.waitForFunction(
 							() =>
@@ -643,7 +870,22 @@ test.describe( 'Typing delay benchmark', () => {
 								timeout: Math.max( 30_000, delayMs * 4 ),
 							}
 						);
+						if (
+							delayMode === 'after-persistence' &&
+							delayMs > 0
+						) {
+							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+							await page.waitForTimeout( delayMs );
+						}
 						await page.keyboard.type( 'x' );
+					}
+				} else if ( delayMode === 'between-keys' ) {
+					for ( let i = 0; i < sampleCount; i++ ) {
+						await page.keyboard.type( 'x' );
+						if ( delayMs > 0 && i < sampleCount - 1 ) {
+							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+							await page.waitForTimeout( delayMs );
+						}
 					}
 				} else {
 					await page.keyboard.type( 'x'.repeat( sampleCount ), {
@@ -732,6 +974,22 @@ test.describe( 'Typing delay benchmark', () => {
 						? await page.evaluate(
 								( { startMs, stopMs } ) =>
 									window.__typingBenchmarkTimerEvents.filter(
+										( event ) =>
+											event.scheduledAtMs <= stopMs + 5 &&
+											( event.firedAtMs ??
+												event.scheduledAtMs ) >=
+												startMs - 5
+									),
+								{
+									startMs: runStartedAtBrowserNowMs,
+									stopMs: runStoppedAtBrowserNowMs,
+								}
+						  )
+						: undefined,
+					schedulerEvents: traceSchedulers
+						? await page.evaluate(
+								( { startMs, stopMs } ) =>
+									window.__typingBenchmarkSchedulerEvents.filter(
 										( event ) =>
 											event.scheduledAtMs <= stopMs + 5 &&
 											( event.firedAtMs ??
@@ -834,8 +1092,11 @@ test.describe( 'Typing delay benchmark', () => {
 				samplesPerDelay,
 				throwawayPerDelay,
 				traceData,
+				traceTimers,
+				traceSchedulers,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
+				delayMode,
 				settleAfterEditorSetupMs,
 				settleBetweenDelayRunsMs,
 				orderMode,

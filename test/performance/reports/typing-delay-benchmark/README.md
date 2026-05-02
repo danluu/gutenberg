@@ -14,6 +14,9 @@ The short version:
     crosses a different editor-state boundary.
 -   The `2000ms` point is slower than the `1000-1110ms` fast band, but it is not
     uniquely slow. It is part of a later high-latency plateau.
+-   The later high-latency plateau is mostly an artifact of how Playwright applies
+    `keyboard.type(..., { delay })`: for US-keyboard characters it holds the key
+    down for the delay, then sends `keyup`.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -73,6 +76,10 @@ run:
 -   persistence-state tracing;
 -   data-action tracing;
 -   timer tracing and timer intervention.
+-   alternate delay modes:
+    -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
+    -   `between-keys`: type a complete keypress, then wait;
+    -   `after-persistence`: wait for `isLastBlockChangePersistent()`, then wait.
 
 The benchmark records every retained sample rather than only aggregate values.
 The R script derives:
@@ -84,6 +91,10 @@ The R script derives:
 -   `data/typing-delay-action-events.csv`: instrumented data actions;
 -   `data/typing-delay-timer-events.csv`: instrumented timers;
 -   `data/typing-delay-browser-events.csv`: instrumented browser events.
+-   `data/typing-delay-scheduler-events.csv`: instrumented timer/RAF/idle
+    scheduler events;
+-   `data/typing-delay-keyhold-mark-gap.csv`: derived timing from rich-text
+    persistence marker to the next keydown in the key-hold trace.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -255,6 +266,74 @@ random browser scheduling artifact. Moving the timer moves the first cliff.
 The intervention run should not be treated as a production benchmark. Wrapping
 `setTimeout` can perturb scheduling. Its purpose is causal attribution.
 
+## Deeper Pass: The Delay Is A Key Hold
+
+The first report explained the `~1000ms` cliff but left the later `1200-2000ms`
+plateau partly open. The deeper pass found a more fundamental benchmark issue:
+Playwright's `keyboard.type( text, { delay } )` is not equivalent to "type a
+complete character, wait, type the next complete character."
+
+In the installed Playwright implementation, `keyboard.type()` loops over
+characters and calls `press( char, { delay } )`. `press()` sends `keydown`, waits
+for `delay`, then sends `keyup`. The browser event traces confirm this:
+`keydown` / `keypress` / `input` happen near the start of each sample, then
+`keyup` happens roughly `delay` milliseconds later, and the next `keydown`
+follows almost immediately.
+
+That means the original delay sweep is mostly a synthetic key-hold-duration
+sweep. A person who types once every second is not normally holding each key down
+for one second.
+
+![Delay mode comparison](figures/10-delay-mode-comparison.png)
+
+Two additional runs separate these cases:
+
+1. `between-keys`: type `x` with no Playwright delay, then wait after `keyup`.
+2. `after-persistence`: wait for `isLastBlockChangePersistent()`, then wait, then
+   type `x`.
+
+Selected p50s:
+
+| Mode                            |    Delay |        p50 |
+| ------------------------------- | -------: | ---------: |
+| Playwright key-hold delay       | `1200ms` | `17.682ms` |
+| Playwright key-hold delay       | `2000ms` | `18.248ms` |
+| Complete keypress, then wait    | `1200ms` |   `10.7ms` |
+| Complete keypress, then wait    | `2000ms` |   `10.3ms` |
+| Wait for persistence, then wait |  `200ms` |   `10.5ms` |
+| Wait for persistence, then wait |  `400ms` |   `10.7ms` |
+
+This falsifies the simple "more idle time after persistence makes typing slow"
+explanation. Waiting after the key has completed does not reproduce the slow
+plateau. Waiting after the rich-text persistence marker does not reproduce it
+either.
+
+The slow plateau appears when the rich-text persistence timer fires while the
+previous synthetic key is still held down, and then the next key arrives after
+some additional key-hold slack.
+
+![Key hold mark gap vs latency](figures/11-keyhold-mark-gap-vs-latency.png)
+
+In the scheduler/action trace:
+
+|    Delay | Median time from previous persistence marker to next keydown | Median latency |
+| -------: | -----------------------------------------------------------: | -------------: |
+| `1100ms` |                                                     `~101ms` |       `11.7ms` |
+| `1150ms` |                                                     `~151ms` |       `12.7ms` |
+| `1180ms` |                                                     `~182ms` |       `15.7ms` |
+| `1200ms` |                                                     `~203ms` |       `18.4ms` |
+| `1300ms` |                                                     `~304ms` |       `19.1ms` |
+| `1510ms` |                                                     `~512ms` |       `14.3ms` |
+| `1550ms` |                                                     `~551ms` |       `12.6ms` |
+| `1580ms` |                                                     `~584ms` |       `16.5ms` |
+
+The relationship is not perfectly monotonic; the `1510-1550ms` dip remains a
+browser/event-loop phase effect rather than a clean editor-state transition. But
+the comparison with `between-keys` and `after-persistence` is enough to say that
+the `1200-2000ms` plateau is not a normal "pause between characters" effect. It
+is tied to holding a synthetic key down while Gutenberg's one-second rich-text
+timer fires.
+
 ## Scenario Sensitivity
 
 ![Scenario boundary checks](figures/08-scenario-boundary-checks.png)
@@ -281,7 +360,7 @@ Selected p50s:
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
 
 In this local Chromium environment, every retained sample had two `keydown`
-`EventDispatch` entries. Across 6756 retained samples in the committed derived
+`EventDispatch` entries. Across 7164 retained samples in the committed derived
 data, zero had a `keydown` count other than two.
 
 That means any parser that assumes exactly one `keydown` trace event per typed
@@ -308,6 +387,9 @@ Problems:
     and persistent-undo-path latency are different workloads.
 -   **Delay changes editor semantics.** At `1000ms`, the rich-text persistence
     timer fires between keys, so the benchmark changes the state path it measures.
+-   **Playwright's delay is a key-hold delay.** For US-keyboard characters, the
+    delay is applied between `keydown` and `keyup`, so large values do not model a
+    user pausing between completed keystrokes.
 -   **`1000ms` was selected because it looked stable.** It is stable partly because
     it enters a special path. That makes it a poor representative of normal typing.
 -   **Long delays are unrealistic as typing.** A one-second or two-second gap may be
@@ -325,6 +407,9 @@ Known problems:
     endpoint.
 -   **Synthetic keyboard input is not real keyboard input.** Playwright's
     `page.keyboard.type()` is useful, but it is not a hardware-to-screen pipeline.
+-   **There are now multiple delay modes.** This is useful for diagnosis, but any
+    CI metric has to choose one deliberately and name it according to what it
+    actually measures.
 -   **The local machine is uncontrolled.** CPU governor, thermal state, background
     processes, browser version, and OS scheduling were not isolated in a Krun-like
     environment.
@@ -398,6 +483,9 @@ For CI:
     "typing".
 -   Do not choose `1000ms` as a generic stable delay. It crosses the rich-text
     persistence boundary.
+-   Do not use `keyboard.type(..., { delay: 1000 })` or `2000` to mean "wait
+    after typing a character." It holds the key down. Use an explicit wait after a
+    complete keypress if that is the intended workload.
 -   If the goal is "after rich text has persisted", wait on
     `isLastBlockChangePersistent()` explicitly and name the metric that way.
 -   Store per-sample results and at least p50/p90/CV, not only averages.
@@ -436,6 +524,10 @@ The key runs used in this report were:
 -   `cliff_actions`: action trace from `990ms` through `1300ms`.
 -   `timeout_500_rewrite`: timer intervention rewriting `1000ms` timers to
     `500ms`.
+-   `after_persistence_scan`: wait for persistence, then wait `0..400ms`.
+-   `keyhold_schedulers`: normal Playwright key-hold delay with scheduler/action
+    tracing.
+-   `between_keys`: complete keypress, then wait through `2000ms`.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
