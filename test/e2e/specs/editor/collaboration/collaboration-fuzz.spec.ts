@@ -38,10 +38,7 @@ const ADMIN_USER: UserCredentials = {
 const COLLABORATOR_MODE =
 	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE ?? 'distinct-user';
 const COLLABORATOR_ROLES = (
-	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_ROLES ??
-	( process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE
-		? 'administrator'
-		: 'editor' )
+	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_ROLES ?? 'editor'
 )
 	.split( ',' )
 	.map( ( role ) => role.trim() )
