@@ -44,7 +44,11 @@ run_specs <- tribble(
 	"listener_keyhold", "Listener trace: key held during delay", "artifacts/typing-delay-benchmark-listener-keyhold/typing-delay-benchmark-1777760461776.json", "large post", "event-listener timing trace for normal Playwright delay",
 	"listener_between_keys", "Listener trace: wait after keyup", "artifacts/typing-delay-benchmark-listener-between-keys/typing-delay-benchmark-1777760561998.json", "large post", "event-listener timing trace for delay after full keypress",
 	"listener_empty_keyhold", "Empty listener trace: key held during delay", "test/performance/artifacts/typing-delay-benchmark-listener-empty-keyhold/typing-delay-benchmark-1777761105618.json", "empty post", "empty-post event-listener timing trace for normal Playwright delay",
-	"listener_empty_between_keys", "Empty listener trace: wait after keyup", "test/performance/artifacts/typing-delay-benchmark-listener-empty-between-keys/typing-delay-benchmark-1777761157309.json", "empty post", "empty-post event-listener timing trace for delay after full keypress"
+	"listener_empty_between_keys", "Empty listener trace: wait after keyup", "test/performance/artifacts/typing-delay-benchmark-listener-empty-between-keys/typing-delay-benchmark-1777761157309.json", "empty post", "empty-post event-listener timing trace for delay after full keypress",
+	"rich_text_spans_large_keyhold", "RichText span trace: large post, key held", "artifacts/typing-delay-benchmark-rich-text-spans-batch-large-keyhold/typing-delay-benchmark-1777762086721.json", "large post", "source-level RichText span trace for normal Playwright delay",
+	"rich_text_spans_large_between_keys", "RichText span trace: large post, wait after keyup", "artifacts/typing-delay-benchmark-rich-text-spans-batch-large-between-keys/typing-delay-benchmark-1777762154516.json", "large post", "source-level RichText span trace for delay after full keypress",
+	"rich_text_spans_empty_keyhold", "RichText span trace: empty post, key held", "artifacts/typing-delay-benchmark-rich-text-spans-batch-empty-keyhold/typing-delay-benchmark-1777762215740.json", "empty post", "source-level RichText span trace for normal Playwright delay",
+	"rich_text_spans_empty_between_keys", "RichText span trace: empty post, wait after keyup", "artifacts/typing-delay-benchmark-rich-text-spans-batch-empty-between-keys/typing-delay-benchmark-1777762283041.json", "empty post", "source-level RichText span trace for delay after full keypress"
 ) %>%
 	mutate(json_abs_path = file.path(repo_root, json_path))
 
@@ -78,6 +82,7 @@ read_raw_runs <- function() {
 	timer_events <- list()
 	scheduler_events <- list()
 	event_listener_events <- list()
+	rich_text_span_events <- list()
 
 	for (i in seq_len(nrow(available))) {
 		spec <- available[i, ]
@@ -232,6 +237,27 @@ read_raw_runs <- function() {
 				}
 			)
 		}
+
+		if ("richTextSpanEvents" %in% names(run_summaries)) {
+			rich_text_span_events[[spec$run_id]] <- map_dfr(
+				seq_len(nrow(run_summaries)),
+				function(row_index) {
+					events <- run_summaries$richTextSpanEvents[[row_index]]
+					if (is_empty_events(events)) {
+						return(tibble())
+					}
+					as_tibble(events) %>%
+						mutate(
+							run_id = spec$run_id,
+							run_label = spec$run_label,
+							round = run_summaries$round[[row_index]],
+							delayMs = run_summaries$delayMs[[row_index]],
+							eventMs = startedAtMs -
+								run_summaries$runStartedAtBrowserNowMs[[row_index]]
+						)
+				}
+			)
+		}
 	}
 
 	list(
@@ -242,7 +268,8 @@ read_raw_runs <- function() {
 		action_events = bind_rows(action_events),
 		timer_events = bind_rows(timer_events),
 		scheduler_events = bind_rows(scheduler_events),
-		event_listener_events = bind_rows(event_listener_events)
+		event_listener_events = bind_rows(event_listener_events),
+		rich_text_span_events = bind_rows(rich_text_span_events)
 	)
 }
 
@@ -320,6 +347,7 @@ write_derived_data <- function(data, existing = NULL) {
 		data$timer_events <- replace_by_run(existing$timer_events, data$timer_events)
 		data$scheduler_events <- replace_by_run(existing$scheduler_events, data$scheduler_events)
 		data$event_listener_events <- replace_by_run(existing$event_listener_events, data$event_listener_events)
+		data$rich_text_span_events <- replace_by_run(existing$rich_text_span_events, data$rich_text_span_events)
 	}
 
 	write_csv(records, file.path(data_dir, "typing-delay-records.csv"))
@@ -344,6 +372,9 @@ write_derived_data <- function(data, existing = NULL) {
 	if (nrow(data$event_listener_events) > 0) {
 		write_csv(data$event_listener_events, file.path(data_dir, "typing-delay-event-listener-events.csv"))
 	}
+	if (nrow(data$rich_text_span_events) > 0) {
+		write_csv(data$rich_text_span_events, file.path(data_dir, "typing-delay-rich-text-span-events.csv"))
+	}
 
 	list(
 		records = records,
@@ -354,7 +385,8 @@ write_derived_data <- function(data, existing = NULL) {
 		action_events = data$action_events,
 		timer_events = data$timer_events,
 		scheduler_events = data$scheduler_events,
-		event_listener_events = data$event_listener_events
+		event_listener_events = data$event_listener_events,
+		rich_text_span_events = data$rich_text_span_events
 	)
 }
 
@@ -390,6 +422,11 @@ read_derived_data <- function() {
 		},
 		event_listener_events = if (file.exists(file.path(data_dir, "typing-delay-event-listener-events.csv"))) {
 			read_csv(file.path(data_dir, "typing-delay-event-listener-events.csv"), show_col_types = FALSE)
+		} else {
+			tibble()
+		},
+		rich_text_span_events = if (file.exists(file.path(data_dir, "typing-delay-rich-text-span-events.csv"))) {
+			read_csv(file.path(data_dir, "typing-delay-rich-text-span-events.csv"), show_col_types = FALSE)
 		} else {
 			tibble()
 		}
@@ -1249,6 +1286,216 @@ listener_action_summary <- derived$action_events %>%
 
 if (nrow(listener_action_summary) > 0) {
 	write_csv(listener_action_summary, file.path(data_dir, "typing-delay-listener-action-summary.csv"))
+}
+
+rich_text_span_run_ids <- c(
+	"rich_text_spans_large_keyhold",
+	"rich_text_spans_large_between_keys",
+	"rich_text_spans_empty_keyhold",
+	"rich_text_spans_empty_between_keys"
+)
+
+rich_text_spans <- derived$rich_text_span_events %>%
+	mutate(
+		mode_label = recode(
+			run_id,
+			rich_text_spans_large_keyhold = "Playwright delay: key held down",
+			rich_text_spans_large_between_keys = "Complete keypress, then wait",
+			rich_text_spans_empty_keyhold = "Playwright delay: key held down",
+			rich_text_spans_empty_between_keys = "Complete keypress, then wait",
+			.default = run_label
+		),
+		span_scenario_label = recode(
+			run_id,
+			rich_text_spans_large_keyhold = "large post",
+			rich_text_spans_large_between_keys = "large post",
+			rich_text_spans_empty_keyhold = "empty post",
+			rich_text_spans_empty_between_keys = "empty post",
+			.default = NA_character_
+		),
+		span_label = recode(
+			name,
+			`rich-text.onInput.total` = "onInput total",
+			`rich-text.createRecord.create` = "create DOM record",
+			`rich-text.onInput.updateFormats` = "update formats",
+			`rich-text.handleChange.applyRecord` = "apply record",
+			`rich-text.handleChange.serialize` = "serialize",
+			`rich-text.handleChange.registryBatch` = "registry.batch",
+			`rich-text.handleChange.onSelectionChange` = "onSelectionChange",
+			`rich-text.handleChange.onChange` = "onChange",
+			`rich-text.handleChange.forceRender` = "forceRender",
+			.default = name
+		)
+	)
+
+rich_text_span_summary <- rich_text_spans %>%
+	filter(run_id %in% rich_text_span_run_ids) %>%
+	group_by(run_id, mode_label, span_scenario_label, delayMs, name, span_label) %>%
+	summarise(
+		n = n(),
+		total_ms = sum(durationMs, na.rm = TRUE),
+		median_ms = median(durationMs, na.rm = TRUE),
+		p90_ms = quant(durationMs, 0.9),
+		.groups = "drop"
+	)
+
+if (nrow(rich_text_span_summary) > 0) {
+	write_csv(rich_text_span_summary, file.path(data_dir, "typing-delay-rich-text-span-summary.csv"))
+
+	span_line_plot <- rich_text_span_summary %>%
+		filter(
+			name %in% c(
+				"rich-text.onInput.total",
+				"rich-text.handleChange.registryBatch",
+				"rich-text.createRecord.create",
+				"rich-text.handleChange.applyRecord",
+				"rich-text.handleChange.serialize",
+				"rich-text.handleChange.forceRender"
+			)
+		) %>%
+		mutate(
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			span_scenario_label = factor(
+				span_scenario_label,
+				levels = c("large post", "empty post")
+			),
+			span_label = factor(
+				span_label,
+				levels = c(
+					"onInput total",
+					"registry.batch",
+					"create DOM record",
+					"apply record",
+					"serialize",
+					"forceRender"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(span_line_plot, aes(delayMs, median_ms, color = span_label)) +
+			geom_line(linewidth = 0.75) +
+			geom_point(size = 1.9) +
+			facet_grid(span_scenario_label ~ mode_label) +
+			scale_color_manual(values = c(
+				"onInput total" = "#111827",
+				"registry.batch" = "#b91c1c",
+				"create DOM record" = "#0369a1",
+				"apply record" = "#16a34a",
+				"serialize" = "#7c3aed",
+				"forceRender" = "#f97316"
+			)) +
+			labs(
+				title = "Source-level RichText spans put the cost inside registry.batch",
+				subtitle = "DOM parsing, apply, serialization, and forceRender are small in these targeted traces",
+				x = "Configured delay",
+				y = "Median span duration per invocation (ms)",
+				color = "Span"
+			),
+		"17-rich-text-source-span-breakdown.png",
+		width = 12,
+		height = 8
+	)
+}
+
+rich_text_batch_parts <- rich_text_spans %>%
+	filter(
+		run_id %in% rich_text_span_run_ids,
+		name %in% c(
+			"rich-text.handleChange.registryBatch",
+			"rich-text.handleChange.onSelectionChange",
+			"rich-text.handleChange.onChange"
+		)
+	) %>%
+	group_by(run_id, mode_label, span_scenario_label, round, delayMs, name) %>%
+	mutate(span_index = row_number()) %>%
+	ungroup() %>%
+	select(run_id, mode_label, span_scenario_label, round, delayMs, span_index, name, durationMs) %>%
+	pivot_wider(names_from = name, values_from = durationMs) %>%
+	mutate(
+		registry_batch_ms = `rich-text.handleChange.registryBatch`,
+		selection_change_ms = `rich-text.handleChange.onSelectionChange` %||% 0,
+		on_change_ms = `rich-text.handleChange.onChange` %||% 0,
+		batch_remainder_ms = pmax(registry_batch_ms - selection_change_ms - on_change_ms, 0)
+	) %>%
+	select(
+		run_id, mode_label, span_scenario_label, round, delayMs, span_index,
+		registry_batch_ms, selection_change_ms, on_change_ms, batch_remainder_ms
+	)
+
+rich_text_batch_summary <- rich_text_batch_parts %>%
+	group_by(run_id, mode_label, span_scenario_label, delayMs) %>%
+	summarise(
+		n = n(),
+		registry_batch_median_ms = median(registry_batch_ms, na.rm = TRUE),
+		selection_change_median_ms = median(selection_change_ms, na.rm = TRUE),
+		on_change_median_ms = median(on_change_ms, na.rm = TRUE),
+		batch_remainder_median_ms = median(batch_remainder_ms, na.rm = TRUE),
+		.groups = "drop"
+	)
+
+if (nrow(rich_text_batch_summary) > 0) {
+	write_csv(rich_text_batch_parts, file.path(data_dir, "typing-delay-rich-text-batch-parts.csv"))
+	write_csv(rich_text_batch_summary, file.path(data_dir, "typing-delay-rich-text-batch-summary.csv"))
+
+	batch_plot <- rich_text_batch_summary %>%
+		mutate(
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			span_scenario_label = factor(
+				span_scenario_label,
+				levels = c("large post", "empty post")
+			)
+		) %>%
+		pivot_longer(
+			c(selection_change_median_ms, on_change_median_ms, batch_remainder_median_ms),
+			names_to = "component",
+			values_to = "median_ms"
+		) %>%
+		mutate(
+			component = recode(
+				component,
+				selection_change_median_ms = "onSelectionChange",
+				on_change_median_ms = "onChange",
+				batch_remainder_median_ms = "registry.batch remainder"
+			),
+			component = factor(
+				component,
+				levels = c("onSelectionChange", "onChange", "registry.batch remainder")
+			)
+		)
+
+	save_plot(
+		ggplot(batch_plot, aes(factor(delayMs), median_ms, fill = component)) +
+			geom_col(width = 0.72) +
+			facet_grid(span_scenario_label ~ mode_label) +
+			scale_fill_manual(values = c(
+				"onSelectionChange" = "#0369a1",
+				"onChange" = "#16a34a",
+				"registry.batch remainder" = "#b91c1c"
+			)) +
+			labs(
+				title = "Most registry.batch time is outside the two direct callbacks",
+				subtitle = "The remainder is the synchronous data-store notification/render work hidden behind registry.batch",
+				x = "Configured delay",
+				y = "Median duration (ms)",
+				fill = "Component"
+			),
+		"18-rich-text-registry-batch-breakdown.png",
+		width = 12,
+		height = 8
+	)
 }
 
 message("Wrote plots to: ", figure_dir)

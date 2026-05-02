@@ -59,6 +59,9 @@ const traceData =
 const traceEventListeners =
 	process.env.BENCHMARK_TRACE_EVENT_LISTENERS === '1' ||
 	process.env.BENCHMARK_TRACE_EVENT_LISTENERS === 'true';
+const traceRichTextSpans =
+	process.env.BENCHMARK_TRACE_RICH_TEXT_SPANS === '1' ||
+	process.env.BENCHMARK_TRACE_RICH_TEXT_SPANS === 'true';
 const rewriteTimeout1000Ms =
 	process.env.BENCHMARK_REWRITE_TIMEOUT_1000_MS === undefined
 		? null
@@ -312,6 +315,80 @@ function installEventListenerTracing() {
 	window.__typingBenchmarkEventListenerFrameObserverInstalled = true;
 }
 
+function installRichTextSpanTracing() {
+	if ( window.__typingBenchmarkRichTextSpanTracingInstalled ) {
+		window.__typingBenchmarkRichTextSpanEvents =
+			window.__typingBenchmarkRichTextSpanEvents || [];
+		return;
+	}
+
+	window.__typingBenchmarkRichTextSpanEvents = [];
+	let depth = 0;
+
+	window.__typingBenchmarkTraceRichTextSpan = function traceRichTextSpan(
+		name,
+		callback,
+		metadata = {}
+	) {
+		const startedAtMs = performance.now();
+		const currentDepth = depth;
+		depth++;
+		let status = 'returned';
+		let result;
+
+		try {
+			result = callback();
+		} catch ( error ) {
+			status = 'threw';
+			throw error;
+		} finally {
+			depth--;
+			window.__typingBenchmarkRichTextSpanEvents.push( {
+				name,
+				startedAtMs,
+				durationMs: performance.now() - startedAtMs,
+				status,
+				depth: currentDepth,
+				metadata,
+			} );
+		}
+
+		return result;
+	};
+
+	window.__typingBenchmarkRichTextSpanTracingInstalled = true;
+
+	if ( window.__typingBenchmarkRichTextSpanFrameObserverInstalled ) {
+		return;
+	}
+
+	const installerSource = `(${ installRichTextSpanTracing.toString() })()`;
+
+	function installInChildFrames() {
+		for ( const iframe of document.querySelectorAll( 'iframe' ) ) {
+			try {
+				const childWindow = iframe.contentWindow;
+				if (
+					childWindow &&
+					! childWindow.__typingBenchmarkRichTextSpanTracingInstalled
+				) {
+					childWindow.eval( installerSource );
+				}
+			} catch {
+				// Cross-origin or not-yet-ready frames are irrelevant here.
+			}
+		}
+	}
+
+	installInChildFrames();
+	new MutationObserver( installInChildFrames ).observe( document, {
+		childList: true,
+		subtree: true,
+	} );
+	window.setInterval( installInChildFrames, 50 );
+	window.__typingBenchmarkRichTextSpanFrameObserverInstalled = true;
+}
+
 if ( delayStepMs <= 0 ) {
 	throw new Error( 'BENCHMARK_DELAY_STEP_MS must be greater than 0.' );
 }
@@ -559,6 +636,48 @@ test.describe( 'Typing delay benchmark', () => {
 			} );
 		}
 
+		async function setupRichTextSpanTracingInitScript() {
+			if ( ! traceRichTextSpans ) {
+				return;
+			}
+
+			await page.addInitScript( installRichTextSpanTracing );
+			await page
+				.evaluate( installRichTextSpanTracing )
+				.catch( () => undefined );
+		}
+
+		async function setupRichTextSpanTracingInCurrentContext() {
+			if ( ! traceRichTextSpans ) {
+				return;
+			}
+
+			await page.evaluate( installRichTextSpanTracing );
+		}
+
+		async function resetRichTextSpanTracing() {
+			if ( ! traceRichTextSpans ) {
+				return;
+			}
+
+			await page.evaluate( () => {
+				const windows = [ window ];
+				for ( const iframe of document.querySelectorAll( 'iframe' ) ) {
+					try {
+						if ( iframe.contentWindow ) {
+							windows.push( iframe.contentWindow );
+						}
+					} catch {
+						// Ignore inaccessible frames.
+					}
+				}
+
+				for ( const currentWindow of windows ) {
+					currentWindow.__typingBenchmarkRichTextSpanEvents = [];
+				}
+			} );
+		}
+
 		async function setupPersistenceTracing() {
 			if ( ! tracePersistence ) {
 				return;
@@ -608,6 +727,7 @@ test.describe( 'Typing delay benchmark', () => {
 		async function setupDataTracing() {
 			if ( ! traceData ) {
 				await resetEventListenerTracing();
+				await resetRichTextSpanTracing();
 				return;
 			}
 
@@ -624,6 +744,7 @@ test.describe( 'Typing delay benchmark', () => {
 				window.__typingBenchmarkDataEvents = [];
 				window.__typingBenchmarkDataInstrumentation = [];
 				window.__typingBenchmarkEventListenerEvents = [];
+				window.__typingBenchmarkRichTextSpanEvents = [];
 				window.__typingBenchmarkBrowserUnsubscribers?.forEach(
 					( unsubscribe ) => unsubscribe()
 				);
@@ -1092,6 +1213,7 @@ test.describe( 'Typing delay benchmark', () => {
 						</body>
 					</html>` );
 				await setupEventListenerTracingInCurrentContext();
+				await setupRichTextSpanTracingInCurrentContext();
 				await setupTimerTracing();
 				await page.evaluate( () => {
 					const target = document.getElementById(
@@ -1138,6 +1260,7 @@ test.describe( 'Typing delay benchmark', () => {
 				await setupPersistenceTracing();
 				const dataTracingSetup = await setupDataTracing();
 				await resetEventListenerTracing();
+				await resetRichTextSpanTracing();
 				paragraph = page.getByRole( 'textbox', {
 					name: 'Typing benchmark target',
 				} );
@@ -1178,10 +1301,12 @@ test.describe( 'Typing delay benchmark', () => {
 			} );
 
 			await paragraph.click();
+			await setupRichTextSpanTracingInCurrentContext();
 			await setupTimerTracing();
 			await setupPersistenceTracing();
 			const dataTracingSetup = await setupDataTracing();
 			await resetEventListenerTracing();
+			await resetRichTextSpanTracing();
 
 			if ( settleAfterEditorSetupMs > 0 ) {
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
@@ -1199,6 +1324,7 @@ test.describe( 'Typing delay benchmark', () => {
 
 		let editorSetup = null;
 		await setupEventListenerTracingInitScript();
+		await setupRichTextSpanTracingInitScript();
 		if ( ! freshEditorPerDelay ) {
 			editorSetup = await setupEditor();
 		}
@@ -1427,6 +1553,55 @@ test.describe( 'Typing delay benchmark', () => {
 								}
 						  )
 						: undefined,
+					richTextSpanEvents: traceRichTextSpans
+						? await page.evaluate(
+								( { startMs, stopMs } ) => {
+									const windows = [
+										{ name: 'parent', window },
+									];
+									for ( const iframe of document.querySelectorAll(
+										'iframe'
+									) ) {
+										try {
+											if ( iframe.contentWindow ) {
+												windows.push( {
+													name:
+														iframe.name ||
+														iframe.id ||
+														'iframe',
+													window: iframe.contentWindow,
+												} );
+											}
+										} catch {
+											// Ignore inaccessible frames.
+										}
+									}
+
+									return windows.flatMap(
+										( { name, window: currentWindow } ) =>
+											(
+												currentWindow.__typingBenchmarkRichTextSpanEvents ||
+												[]
+											)
+												.filter(
+													( event ) =>
+														event.startedAtMs >=
+															startMs - 5 &&
+														event.startedAtMs <=
+															stopMs + 5
+												)
+												.map( ( event ) => ( {
+													...event,
+													windowName: name,
+												} ) )
+									);
+								},
+								{
+									startMs: runStartedAtBrowserNowMs,
+									stopMs: runStoppedAtBrowserNowMs,
+								}
+						  )
+						: undefined,
 				} );
 
 				for (
@@ -1520,6 +1695,7 @@ test.describe( 'Typing delay benchmark', () => {
 				traceTimers,
 				traceSchedulers,
 				traceEventListeners,
+				traceRichTextSpans,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,

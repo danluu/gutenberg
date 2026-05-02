@@ -4,6 +4,7 @@
 import { getActiveFormats } from '../../get-active-formats';
 import { isCollapsed } from '../../is-collapsed';
 import { updateFormats } from '../../update-formats';
+import { traceRichTextSpan } from '../../benchmark-tracing';
 
 /**
  * All inserting input types that would insert HTML into the DOM.
@@ -58,52 +59,64 @@ export default ( props ) => ( element ) => {
 	let isComposing = false;
 
 	function onInput( event ) {
-		// Do not trigger a change if characters are being composed. Browsers
-		// will usually emit a final `input` event when the characters are
-		// composed. As of December 2019, Safari doesn't support
-		// nativeEvent.isComposing.
-		if ( isComposing ) {
-			return;
-		}
+		return traceRichTextSpan(
+			'rich-text.onInput.total',
+			() => {
+				// Do not trigger a change if characters are being composed. Browsers
+				// will usually emit a final `input` event when the characters are
+				// composed. As of December 2019, Safari doesn't support
+				// nativeEvent.isComposing.
+				if ( isComposing ) {
+					return;
+				}
 
-		let inputType;
+				let inputType;
 
-		if ( event ) {
-			inputType = event.inputType;
-		}
+				if ( event ) {
+					inputType = event.inputType;
+				}
 
-		const { record, applyRecord, createRecord, handleChange } =
-			props.current;
+				const { record, applyRecord, createRecord, handleChange } =
+					props.current;
 
-		// The browser formatted something or tried to insert HTML. Overwrite
-		// it. It will be handled later by the format library if needed.
-		if (
-			inputType &&
-			( inputType.indexOf( 'format' ) === 0 ||
-				INSERTION_INPUT_TYPES_TO_IGNORE.has( inputType ) )
-		) {
-			applyRecord( record.current );
-			return;
-		}
+				// The browser formatted something or tried to insert HTML. Overwrite
+				// it. It will be handled later by the format library if needed.
+				if (
+					inputType &&
+					( inputType.indexOf( 'format' ) === 0 ||
+						INSERTION_INPUT_TYPES_TO_IGNORE.has( inputType ) )
+				) {
+					applyRecord( record.current );
+					return;
+				}
 
-		const currentValue = createRecord();
-		const { start, activeFormats: oldActiveFormats = [] } = record.current;
+				const currentValue = createRecord();
+				const { start, activeFormats: oldActiveFormats = [] } =
+					record.current;
 
-		// When a non-collapsed selection is deleted (not replaced with new
-		// text), the old active formats refer to the deleted content and
-		// should not be carried forward.
-		const clearFormats =
-			! isCollapsed( record.current ) && currentValue.start <= start;
+				// When a non-collapsed selection is deleted (not replaced with new
+				// text), the old active formats refer to the deleted content and
+				// should not be carried forward.
+				const clearFormats =
+					! isCollapsed( record.current ) &&
+					currentValue.start <= start;
 
-		// Update the formats between the last and new caret position.
-		const change = updateFormats( {
-			value: currentValue,
-			start,
-			end: currentValue.start,
-			formats: clearFormats ? [] : oldActiveFormats,
-		} );
+				// Update the formats between the last and new caret position.
+				const change = traceRichTextSpan(
+					'rich-text.onInput.updateFormats',
+					() =>
+						updateFormats( {
+							value: currentValue,
+							start,
+							end: currentValue.start,
+							formats: clearFormats ? [] : oldActiveFormats,
+						} )
+				);
 
-		handleChange( change );
+				handleChange( change );
+			},
+			{ inputType: event?.inputType }
+		);
 	}
 
 	/**

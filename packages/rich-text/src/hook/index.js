@@ -17,6 +17,7 @@ import { useDefaultStyle } from './use-default-style';
 import { useBoundaryStyle } from './use-boundary-style';
 import { useEventListeners } from './event-listeners';
 import { useFormatTypes } from './use-format-types';
+import { traceRichTextSpan } from '../benchmark-tracing';
 
 function useRichTextBase( {
 	value = '',
@@ -38,28 +39,43 @@ function useRichTextBase( {
 	const ref = useRef();
 
 	function createRecord() {
-		const {
-			ownerDocument: { defaultView },
-		} = ref.current;
-		const selection = defaultView.getSelection();
-		const range =
-			selection.rangeCount > 0 ? selection.getRangeAt( 0 ) : null;
+		return traceRichTextSpan( 'rich-text.createRecord.total', () => {
+			const {
+				ownerDocument: { defaultView },
+			} = ref.current;
+			const range = traceRichTextSpan(
+				'rich-text.createRecord.selection',
+				() => {
+					const selection = defaultView.getSelection();
+					return selection.rangeCount > 0
+						? selection.getRangeAt( 0 )
+						: null;
+				}
+			);
 
-		return create( {
-			element: ref.current,
-			range,
-			__unstableIsEditableTree: true,
+			return traceRichTextSpan( 'rich-text.createRecord.create', () =>
+				create( {
+					element: ref.current,
+					range,
+					__unstableIsEditableTree: true,
+				} )
+			);
 		} );
 	}
 
 	function applyRecord( newRecord, { domOnly } = {} ) {
-		apply( {
-			value: newRecord,
-			current: ref.current,
-			prepareEditableTree: __unstableAddInvisibleFormats,
-			__unstableDomOnly: domOnly,
-			placeholder,
-		} );
+		return traceRichTextSpan(
+			'rich-text.applyRecord',
+			() =>
+				apply( {
+					value: newRecord,
+					current: ref.current,
+					prepareEditableTree: __unstableAddInvisibleFormats,
+					__unstableDomOnly: domOnly,
+					placeholder,
+				} ),
+			{ domOnly: !! domOnly }
+		);
 	}
 
 	// Internal values are updated synchronously, unlike props and state.
@@ -120,39 +136,54 @@ function useRichTextBase( {
 	 * @param {Object} newRecord The record to sync and apply.
 	 */
 	function handleChange( newRecord ) {
-		recordRef.current = newRecord;
-		applyRecord( newRecord );
+		return traceRichTextSpan( 'rich-text.handleChange.total', () => {
+			recordRef.current = newRecord;
+			traceRichTextSpan( 'rich-text.handleChange.applyRecord', () =>
+				applyRecord( newRecord )
+			);
 
-		if ( disableFormats ) {
-			_valueRef.current = newRecord.text;
-		} else {
-			const newFormats = __unstableBeforeSerialize
-				? __unstableBeforeSerialize( newRecord )
-				: newRecord.formats;
-			newRecord = { ...newRecord, formats: newFormats };
-			if ( typeof value === 'string' ) {
-				_valueRef.current = toHTMLString( {
-					value: newRecord,
-					preserveWhiteSpace,
-				} );
-			} else {
-				_valueRef.current = new RichTextData( newRecord );
-			}
-		}
-
-		const { start, end, formats, text } = recordRef.current;
-
-		// Selection must be updated first, so it is recorded in history when
-		// the content change happens.
-		// We batch both calls to only attempt to rerender once.
-		registry.batch( () => {
-			onSelectionChange( start, end );
-			onChange( _valueRef.current, {
-				__unstableFormats: formats,
-				__unstableText: text,
+			traceRichTextSpan( 'rich-text.handleChange.serialize', () => {
+				if ( disableFormats ) {
+					_valueRef.current = newRecord.text;
+				} else {
+					const newFormats = __unstableBeforeSerialize
+						? __unstableBeforeSerialize( newRecord )
+						: newRecord.formats;
+					newRecord = { ...newRecord, formats: newFormats };
+					if ( typeof value === 'string' ) {
+						_valueRef.current = toHTMLString( {
+							value: newRecord,
+							preserveWhiteSpace,
+						} );
+					} else {
+						_valueRef.current = new RichTextData( newRecord );
+					}
+				}
 			} );
+
+			const { start, end, formats, text } = recordRef.current;
+
+			// Selection must be updated first, so it is recorded in history when
+			// the content change happens.
+			// We batch both calls to only attempt to rerender once.
+			traceRichTextSpan( 'rich-text.handleChange.registryBatch', () => {
+				registry.batch( () => {
+					traceRichTextSpan(
+						'rich-text.handleChange.onSelectionChange',
+						() => onSelectionChange( start, end )
+					);
+					traceRichTextSpan( 'rich-text.handleChange.onChange', () =>
+						onChange( _valueRef.current, {
+							__unstableFormats: formats,
+							__unstableText: text,
+						} )
+					);
+				} );
+			} );
+			traceRichTextSpan( 'rich-text.handleChange.forceRender', () =>
+				forceRender()
+			);
 		} );
-		forceRender();
 	}
 
 	function applyFromProps() {

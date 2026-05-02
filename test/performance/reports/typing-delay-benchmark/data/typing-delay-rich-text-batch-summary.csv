@@ -1,0 +1,25 @@
+run_id,mode_label,span_scenario_label,delayMs,n,registry_batch_median_ms,selection_change_median_ms,on_change_median_ms,batch_remainder_median_ms
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,7,3,0.09999990463256836,0.09999990463256836,2.799999952316284
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,7,2.799999952316284,0.09999990463256836,0.09999990463256836,2.5999999046325684
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,7,2.5999999046325684,0.09999990463256836,0,2.5
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,7,2.700000047683716,0.09999990463256836,0.09999990463256836,2.500000238418579
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,7,2.700000047683716,0.09999990463256836,0.10000014305114746,2.5
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,7,2.799999952316284,0.09999990463256836,0.09999990463256836,2.6000001430511475
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,7,5.400000095367432,0.10000014305114746,0.19999980926513672,5.1000001430511475
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,7,4.5,0.10000014305114746,0.09999990463256836,4.200000047683716
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,7,5.200000047683716,0.10000014305114746,0.09999990463256836,4.900000095367432
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,7,5.299999952316284,0.19999980926513672,0.10000014305114746,5
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,7,3,0.09999990463256836,0.09999990463256836,2.8999998569488525
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,7,5.3999998569488525,0.10000014305114746,0.20000004768371582,5.099999904632568
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,7,6.5,0.2999999523162842,0.39999985694885254,5.800000190734863
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,7,5.8999998569488525,0.20000004768371582,0.3000001907348633,5.300000190734863
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,7,7.1000001430511475,0.20000004768371582,0.5,6.3999998569488525
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,7,7.1000001430511475,0.2999999523162842,0.40000009536743164,6.300000190734863
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,7,6.799999952316284,0.2999999523162842,0.40000009536743164,6.199999809265137
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,7,6.5,0.2999999523162842,0.40000009536743164,5.700000047683716
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,7,10.5,0.5,1.4000000953674316,8.5
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,7,6.5,0.20000004768371582,0.5,5.799999952316284
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,7,8.700000047683716,0.39999985694885254,1.0999999046325684,7.1000001430511475
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,7,9.599999904632568,0.5,1.2000000476837158,7.8999998569488525
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,7,8.100000143051147,0.2999999523162842,0.5999999046325684,7.1000001430511475
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,7,9.700000047683716,0.5,1,8.200000047683716

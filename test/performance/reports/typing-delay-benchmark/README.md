@@ -28,6 +28,9 @@ The short version:
     input handling. The dominant measured callback is registered from
     `rich-text`; source-map lookup identifies it as the `onInput` path in
     `packages/rich-text/src/hook/event-listeners/input-and-selection.js`.
+-   Source-level RichText spans put nearly all of that `onInput` time inside
+    `registry.batch()`, not DOM parsing, format updating, DOM apply,
+    serialization, or the direct `onSelectionChange` / `onChange` callbacks.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -88,6 +91,7 @@ run:
 -   data-action tracing;
 -   timer tracing and timer intervention.
 -   event-listener invocation tracing;
+-   source-level RichText span tracing;
 -   alternate delay modes:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
@@ -121,6 +125,14 @@ The R script derives:
     the listener-traced runs.
 -   `data/typing-delay-listener-source-map.csv`: source-map lookup for the
     minified RichText listener registration stack.
+-   `data/typing-delay-rich-text-span-events.csv`: source-level RichText timing
+    spans from targeted instrumented runs.
+-   `data/typing-delay-rich-text-span-summary.csv`: per-delay summary of those
+    spans.
+-   `data/typing-delay-rich-text-batch-parts.csv`: per-input split of
+    `registry.batch()` into direct callbacks and remaining synchronous work.
+-   `data/typing-delay-rich-text-batch-summary.csv`: per-delay summary of the
+    batch split.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -536,6 +548,63 @@ median dispatch times in these traces. The heavier
 median is much larger in the large-post listener run (`~12ms`) than in the
 empty-post control (`~3ms`).
 
+### Source-Level RichText Spans
+
+The listener trace still treated `onInput` as one callback. I added opt-in
+benchmark spans inside `@wordpress/rich-text` and reran targeted traces for the
+large-post and empty-post scenarios, in both key-held and wait-after-keyup modes.
+These runs used the same delay set: `990ms`, `1000ms`, `1200ms`, `1300ms`,
+`1550ms`, and `2000ms`.
+
+![RichText source span breakdown](figures/17-rich-text-source-span-breakdown.png)
+
+The split is sharp: `createRecord()`, `updateFormats()`, `applyRecord()`,
+serialization, and `forceRender()` are all small at this timer resolution. The
+dominant span is `registry.batch()` inside `handleChange()`.
+
+Selected medians:
+
+| Scenario   | Mode             |    Delay | `onInput` | `registry.batch` | Create DOM record | Apply record | Serialize |
+| ---------- | ---------------- | -------: | --------: | ---------------: | ----------------: | -----------: | --------: |
+| large post | key held         |  `990ms` |  `10.9ms` |         `10.5ms` |           `0.0ms` |      `0.1ms` |   `0.0ms` |
+| large post | key held         | `1000ms` |   `6.6ms` |          `6.5ms` |           `0.0ms` |      `0.1ms` |   `0.0ms` |
+| large post | key held         | `1300ms` |  `10.2ms` |          `9.6ms` |           `0.1ms` |      `0.2ms` |   `0.0ms` |
+| large post | wait after keyup | `1300ms` |   `7.1ms` |          `7.1ms` |           `0.0ms` |      `0.0ms` |   `0.0ms` |
+| empty post | key held         | `1300ms` |   `5.6ms` |          `5.3ms` |           `0.1ms` |      `0.1ms` |   `0.0ms` |
+| empty post | wait after keyup | `1300ms` |   `2.8ms` |          `2.7ms` |           `0.0ms` |      `0.1ms` |   `0.0ms` |
+
+That changes the next hypothesis. The expensive part is not DOM-to-RichText
+record creation or HTML serialization. It is synchronous work hidden behind
+`registry.batch()` after RichText calls into the block editor.
+
+I then split the batch itself into direct `onSelectionChange`, direct `onChange`,
+and the remaining time.
+
+![RichText registry batch breakdown](figures/18-rich-text-registry-batch-breakdown.png)
+
+The direct callbacks are small. The large-post key-held `1300ms` case had median
+`registry.batch()` time of `9.6ms`, but direct `onSelectionChange` was `0.5ms`
+and direct `onChange` was `1.2ms`. The remaining `~7.9ms` is synchronous work
+around the batch, most likely data-store notification/subscriber/render work
+triggered when the batch completes. This is an inference from the span nesting,
+not yet a direct subscriber-level attribution.
+
+Selected batch split:
+
+| Scenario   | Mode             |    Delay | `registry.batch` | Direct selection | Direct change | Batch remainder |
+| ---------- | ---------------- | -------: | ---------------: | ---------------: | ------------: | --------------: |
+| large post | key held         |  `990ms` |         `10.5ms` |          `0.5ms` |       `1.4ms` |         `8.5ms` |
+| large post | key held         | `1000ms` |          `6.5ms` |          `0.2ms` |       `0.5ms` |         `5.8ms` |
+| large post | key held         | `1300ms` |          `9.6ms` |          `0.5ms` |       `1.2ms` |         `7.9ms` |
+| large post | wait after keyup | `1300ms` |          `7.1ms` |          `0.3ms` |       `0.4ms` |         `6.3ms` |
+| empty post | key held         | `1300ms` |          `5.3ms` |          `0.2ms` |       `0.1ms` |         `5.0ms` |
+| empty post | wait after keyup | `1300ms` |          `2.7ms` |          `0.1ms` |       `0.1ms` |         `2.5ms` |
+
+This also explains why the large-post fixture matters. The same path exists in
+the empty post, but the post/editor state makes the synchronous batch remainder
+larger. The key-held mode makes it larger again, especially outside the `1000ms`
+fast band.
+
 ## Scenario Sensitivity
 
 ![Scenario boundary checks](figures/08-scenario-boundary-checks.png)
@@ -562,7 +631,7 @@ Selected p50s:
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
 
 In the Gutenberg editor traces in this local Chromium environment, every retained
-sample had two `keydown` `EventDispatch` entries. Across 7448 retained Gutenberg
+sample had two `keydown` `EventDispatch` entries. Across 7640 retained Gutenberg
 samples in the committed derived data, zero had a `keydown` count other than two.
 The native `contenteditable` baseline had one `keydown` per retained sample.
 
@@ -624,6 +693,9 @@ Known problems:
 -   **Listener tracing perturbs behavior even more.** It monkey-patches
     `addEventListener`, so use it only to localize costs, not to report latency
     scores.
+-   **Source-level RichText span tracing also perturbs behavior.** It adds timing
+    calls inside hot input code and requires rebuilding the package scripts. It is
+    diagnostic attribution, not a benchmark score.
 -   **The paired trace is diagnostic, not a score run.** It uses only 8 retained
     samples per delay and heavy instrumentation. Its value is in comparing modes
     under similar tracing overhead.
@@ -711,6 +783,8 @@ For investigation:
     values.
 -   Split the RichText `onInput` callback into source-level timing spans for
     `createRecord`, `applyRecord`, serialization, data dispatch, and render.
+-   Split the `@wordpress/data` batch flush into subscriber/store/render spans;
+    that is now the largest unattributed synchronous region.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Add a textarea/native baseline to estimate browser/editor overhead.
@@ -754,8 +828,23 @@ The key runs used in this report were:
     timing.
 -   `listener_empty_between_keys`: empty-post complete-keypress-then-wait trace
     with event-listener timing.
+-   `rich_text_spans_large_keyhold`: large-post key-hold trace with source-level
+    RichText spans.
+-   `rich_text_spans_large_between_keys`: large-post complete-keypress-then-wait
+    trace with source-level RichText spans.
+-   `rich_text_spans_empty_keyhold`: empty-post key-hold trace with source-level
+    RichText spans.
+-   `rich_text_spans_empty_between_keys`: empty-post complete-keypress-then-wait
+    trace with source-level RichText spans.
 
 The local environment used `nvm` default Node `v20.20.2`.
+
+The source-level RichText span runs require rebuilding the browser scripts after
+the probe changes:
+
+```sh
+npm run build -- --skip-types
+```
 
 ## References
 

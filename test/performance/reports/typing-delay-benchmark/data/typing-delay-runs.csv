@@ -755,3 +755,27 @@ listener_between_keys,Listener trace: wait after keyup,large post,0,1510,0,953,7
 listener_between_keys,Listener trace: wait after keyup,large post,0,1550,0,953,7,7,14,7,7,1777760608852,1777760618650,9798
 listener_between_keys,Listener trace: wait after keyup,large post,0,1580,0,953,7,7,14,7,7,1777760618720,1777760628727,10007
 listener_between_keys,Listener trace: wait after keyup,large post,0,2000,0,953,7,7,14,7,7,1777760628796,1777760641299,12503
+rich_text_spans_large_keyhold,"RichText span trace: large post, key held",large post,0,990,0,953,7,7,14,7,7,1777762086721,1777762093972,7251
+rich_text_spans_large_keyhold,"RichText span trace: large post, key held",large post,0,1000,0,953,7,7,14,7,7,1777762093991,1777762101379,7388
+rich_text_spans_large_keyhold,"RichText span trace: large post, key held",large post,0,1200,0,953,7,7,14,7,7,1777762101407,1777762110083,8676
+rich_text_spans_large_keyhold,"RichText span trace: large post, key held",large post,0,1300,0,953,7,7,14,7,7,1777762110103,1777762119467,9364
+rich_text_spans_large_keyhold,"RichText span trace: large post, key held",large post,0,1550,0,953,7,7,14,7,7,1777762119486,1777762130593,11107
+rich_text_spans_large_keyhold,"RichText span trace: large post, key held",large post,0,2000,0,953,7,7,14,7,7,1777762130614,1777762144919,14305
+rich_text_spans_large_between_keys,"RichText span trace: large post, wait after keyup",large post,0,990,0,953,7,7,14,7,7,1777762154516,1777762161065,6549
+rich_text_spans_large_between_keys,"RichText span trace: large post, wait after keyup",large post,0,1000,0,953,7,7,14,7,7,1777762161085,1777762167613,6528
+rich_text_spans_large_between_keys,"RichText span trace: large post, wait after keyup",large post,0,1200,0,953,7,7,14,7,7,1777762167628,1777762175342,7714
+rich_text_spans_large_between_keys,"RichText span trace: large post, wait after keyup",large post,0,1300,0,953,7,7,14,7,7,1777762175359,1777762183759,8400
+rich_text_spans_large_between_keys,"RichText span trace: large post, wait after keyup",large post,0,1550,0,953,7,7,14,7,7,1777762183777,1777762193637,9860
+rich_text_spans_large_between_keys,"RichText span trace: large post, wait after keyup",large post,0,2000,0,953,7,7,14,7,7,1777762193652,1777762206193,12541
+rich_text_spans_empty_keyhold,"RichText span trace: empty post, key held",empty post,0,990,0,1,7,7,14,7,7,1777762215740,1777762222866,7126
+rich_text_spans_empty_keyhold,"RichText span trace: empty post, key held",empty post,0,1000,0,1,7,7,14,7,7,1777762222875,1777762230067,7192
+rich_text_spans_empty_keyhold,"RichText span trace: empty post, key held",empty post,0,1200,0,1,7,7,14,7,7,1777762230082,1777762238666,8584
+rich_text_spans_empty_keyhold,"RichText span trace: empty post, key held",empty post,0,1300,0,1,7,7,14,7,7,1777762238676,1777762247987,9311
+rich_text_spans_empty_keyhold,"RichText span trace: empty post, key held",empty post,0,1550,0,1,7,7,14,7,7,1777762247998,1777762259012,11014
+rich_text_spans_empty_keyhold,"RichText span trace: empty post, key held",empty post,0,2000,0,1,7,7,14,7,7,1777762259030,1777762273232,14202
+rich_text_spans_empty_between_keys,"RichText span trace: empty post, wait after keyup",empty post,0,990,0,1,7,7,14,7,7,1777762283041,1777762289276,6235
+rich_text_spans_empty_between_keys,"RichText span trace: empty post, wait after keyup",empty post,0,1000,0,1,7,7,14,7,7,1777762289290,1777762295525,6235
+rich_text_spans_empty_between_keys,"RichText span trace: empty post, wait after keyup",empty post,0,1200,0,1,7,7,14,7,7,1777762295534,1777762303014,7480
+rich_text_spans_empty_between_keys,"RichText span trace: empty post, wait after keyup",empty post,0,1300,0,1,7,7,14,7,7,1777762303027,1777762311087,8060
+rich_text_spans_empty_between_keys,"RichText span trace: empty post, wait after keyup",empty post,0,1550,0,1,7,7,14,7,7,1777762311097,1777762320669,9572
+rich_text_spans_empty_between_keys,"RichText span trace: empty post, wait after keyup",empty post,0,2000,0,1,7,7,14,7,7,1777762320677,1777762332936,12259

@@ -1,0 +1,313 @@
+run_id,mode_label,span_scenario_label,delayMs,name,span_label,n,total_ms,median_ms,p90_ms
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.applyRecord,rich-text.applyRecord,7,0.6999998092651367,0.09999990463256836,0.20000004768371582
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.createRecord.create,create DOM record,14,0.5,0,0.10000007152557372
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.10000014305114746,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.createRecord.total,rich-text.createRecord.total,14,0.6000001430511475,0,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.handleChange.applyRecord,apply record,7,0.6999998092651367,0.09999990463256836,0.20000004768371582
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.handleChange.forceRender,forceRender,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.handleChange.onChange,onChange,7,0.5,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.4999997615814209,0.09999990463256836,0.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.handleChange.registryBatch,registry.batch,7,19.09999990463257,3,3.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.handleChange.serialize,serialize,7,0.20000004768371582,0,0.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.handleChange.total,rich-text.handleChange.total,7,20.09999966621399,3.0999999046325684,3.239999866485596
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.onInput.total,onInput total,7,20.799999713897705,3.200000047683716,3.299999952316284
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,rich-text.onInput.updateFormats,update formats,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.applyRecord,rich-text.applyRecord,7,0.39999985694885254,0.09999990463256836,0.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.createRecord.create,create DOM record,14,0.19999980926513672,0,0.06999993324279796
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.09999990463256836,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.createRecord.total,rich-text.createRecord.total,14,0.2999997138977051,0,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.handleChange.applyRecord,apply record,7,0.39999985694885254,0.09999990463256836,0.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.handleChange.forceRender,forceRender,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.handleChange.onChange,onChange,7,0.40000033378601074,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.8999996185302734,0.09999990463256836,0.19999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.handleChange.registryBatch,registry.batch,7,19.5,2.799999952316284,2.9000000953674316
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.handleChange.serialize,serialize,7,0.20000004768371582,0,0.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.handleChange.total,rich-text.handleChange.total,7,20.199999809265137,2.8999998569488525,3
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.onInput.total,onInput total,7,20.399999618530273,2.8999998569488525,3.0399999618530273
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.applyRecord,rich-text.applyRecord,7,0.40000057220458984,0.10000014305114746,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.createRecord.create,create DOM record,14,0.39999961853027344,0,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.2999997138977051,0,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.createRecord.total,rich-text.createRecord.total,14,0.6999993324279785,0.04999995231628418,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.handleChange.applyRecord,apply record,7,0.5000004768371582,0.10000014305114746,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.handleChange.forceRender,forceRender,7,0.19999980926513672,0,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.handleChange.onChange,onChange,7,0.3000001907348633,0,0.14000010490417486
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.5999996662139893,0.09999990463256836,0.13999996185302738
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.handleChange.registryBatch,registry.batch,7,18.199999570846558,2.5999999046325684,2.9999999523162844
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.handleChange.serialize,serialize,7,0.20000004768371582,0,0.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.handleChange.total,rich-text.handleChange.total,7,19.09999990463257,2.799999952316284,3.0999999523162844
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.onInput.total,onInput total,7,19.59999966621399,2.8999998569488525,3.140000057220459
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,rich-text.onInput.updateFormats,update formats,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.applyRecord,rich-text.applyRecord,7,0.39999961853027344,0.09999990463256836,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.createRecord.create,create DOM record,14,0.3000004291534424,0,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.20000004768371582,0,0.06999993324279796
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.createRecord.total,rich-text.createRecord.total,14,0.6000006198883057,0,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.handleChange.applyRecord,apply record,7,0.39999961853027344,0.09999990463256836,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.handleChange.forceRender,forceRender,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.handleChange.onChange,onChange,7,0.5,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.5,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.handleChange.registryBatch,registry.batch,7,18.200000286102295,2.700000047683716,2.8799999713897706
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.handleChange.serialize,serialize,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.handleChange.total,rich-text.handleChange.total,7,18.799999713897705,2.799999952316284,2.9399999141693116
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.onInput.total,onInput total,7,19.300000429153442,2.799999952316284,3.040000057220459
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.applyRecord,rich-text.applyRecord,7,0.5000002384185791,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.createRecord.create,create DOM record,14,0.5999999046325684,0,0.10000007152557372
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.createRecord.total,rich-text.createRecord.total,14,0.5999999046325684,0,0.10000007152557372
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.handleChange.applyRecord,apply record,7,0.5000002384185791,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.handleChange.forceRender,forceRender,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.handleChange.onChange,onChange,7,0.7000002861022949,0.10000014305114746,0.14000010490417486
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.39999985694885254,0.09999990463256836,0.1
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.handleChange.registryBatch,registry.batch,7,18.5,2.700000047683716,2.8200000286102296
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.handleChange.total,rich-text.handleChange.total,7,19.200000047683716,2.799999952316284,2.979999876022339
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.onInput.total,onInput total,7,19.399999856948853,2.8000001907348633,3.0199998378753663
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.applyRecord,rich-text.applyRecord,7,0.5000002384185791,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.createRecord.create,create DOM record,14,0.09999990463256836,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.09999990463256836,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.createRecord.total,rich-text.createRecord.total,14,0.19999980926513672,0,0.06999993324279796
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.handleChange.applyRecord,apply record,7,0.5000002384185791,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.handleChange.forceRender,forceRender,7,0,0,0
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.handleChange.onChange,onChange,7,0.39999961853027344,0.09999990463256836,0.09999990463256836
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.5000002384185791,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.handleChange.registryBatch,registry.batch,7,18.899999618530273,2.799999952316284,3.179999876022339
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.handleChange.serialize,serialize,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.handleChange.total,rich-text.handleChange.total,7,19.5,2.8000001907348633,3.2800000190734866
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.onInput.total,onInput total,7,19.699999809265137,2.8999998569488525,3.2800000190734866
+rich_text_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.applyRecord,rich-text.applyRecord,7,1.4000003337860107,0.20000004768371582,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.createRecord.create,create DOM record,14,0.5,0,0.10000007152557372
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.createRecord.total,rich-text.createRecord.total,14,0.6999998092651367,0,0.10000007152557372
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.handleChange.applyRecord,apply record,7,1.4000003337860107,0.20000004768371582,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.handleChange.forceRender,forceRender,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.handleChange.onChange,onChange,7,1.299999713897705,0.19999980926513672,0.28000006675720224
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.9000000953674316,0.10000014305114746,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.handleChange.registryBatch,registry.batch,7,33.799999952316284,5.400000095367432,6.040000009536744
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.handleChange.total,rich-text.handleChange.total,7,35.30000019073486,5.6000001430511475,6.24000005722046
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.onInput.total,onInput total,7,36.5,5.700000047683716,6.400000047683716
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,990,rich-text.onInput.updateFormats,update formats,7,0.2999999523162842,0,0.13999996185302738
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.applyRecord,rich-text.applyRecord,7,0.9000000953674316,0.10000014305114746,0.27999997138977056
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.createRecord.create,create DOM record,14,0.9000000953674316,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.10000014305114746,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.createRecord.total,rich-text.createRecord.total,14,1.000000238418579,0.09999990463256836,0.17000007629394542
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.handleChange.applyRecord,apply record,7,0.9000000953674316,0.10000014305114746,0.27999997138977056
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.handleChange.forceRender,forceRender,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.handleChange.onChange,onChange,7,0.8999996185302734,0.09999990463256836,0.2999999523162842
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.8000004291534424,0.10000014305114746,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.handleChange.registryBatch,registry.batch,7,27.100000143051147,4.5,5.039999961853027
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.handleChange.serialize,serialize,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.handleChange.total,rich-text.handleChange.total,7,28.200000286102295,4.800000190734863,5.139999961853027
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.onInput.total,onInput total,7,29.300000190734863,4.900000095367432,5.3399999141693115
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,rich-text.onInput.updateFormats,update formats,7,0.19999980926513672,0,0.09999990463256836
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.applyRecord,rich-text.applyRecord,7,0.5,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.createRecord.create,create DOM record,14,0.7999997138977051,0.09999990463256836,0.10000007152557372
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.10000014305114746,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.createRecord.total,rich-text.createRecord.total,14,0.8999998569488525,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.handleChange.applyRecord,apply record,7,0.5,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.handleChange.forceRender,forceRender,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.handleChange.onChange,onChange,7,0.6999998092651367,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.8000001907348633,0.10000014305114746,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.handleChange.registryBatch,registry.batch,7,33.39999985694885,5.200000047683716,5.399999952316284
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.handleChange.serialize,serialize,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.handleChange.total,rich-text.handleChange.total,7,34.19999980926514,5.200000047683716,5.539999961853027
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.onInput.total,onInput total,7,34.799999713897705,5.299999952316284,5.639999866485596
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.applyRecord,rich-text.applyRecord,7,0.6000001430511475,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.createRecord.create,create DOM record,14,0.6999998092651367,0.04999995231628418,0.10000007152557372
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.10000014305114746,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.createRecord.total,rich-text.createRecord.total,14,0.9999997615814209,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.handleChange.applyRecord,apply record,7,0.6000001430511475,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.handleChange.forceRender,forceRender,7,0.20000004768371582,0,0.1
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.handleChange.onChange,onChange,7,0.8000001907348633,0.10000014305114746,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.0999999046325684,0.19999980926513672,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.handleChange.registryBatch,registry.batch,7,32.59999966621399,5.299999952316284,5.619999980926513
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.handleChange.total,rich-text.handleChange.total,7,33.39999985694885,5.3999998569488525,5.760000085830688
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.onInput.total,onInput total,7,34.299999952316284,5.599999904632568,5.9400001049041755
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,rich-text.onInput.updateFormats,update formats,7,0.20000028610229492,0,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.applyRecord,rich-text.applyRecord,7,0.5,0.09999990463256836,0.1400000095367432
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.createRecord.create,create DOM record,14,0.3000004291534424,0,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.20000004768371582,0,0.06999993324279796
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.createRecord.total,rich-text.createRecord.total,14,0.6000006198883057,0,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.handleChange.applyRecord,apply record,7,0.5,0.09999990463256836,0.1400000095367432
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.handleChange.forceRender,forceRender,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.handleChange.onChange,onChange,7,0.5,0.09999990463256836,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.handleChange.onSelectionChange,onSelectionChange,7,0.6000001430511475,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.handleChange.registryBatch,registry.batch,7,22.700000047683716,3,4.020000076293946
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.handleChange.total,rich-text.handleChange.total,7,23.299999952316284,3,4.1000000000000005
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.onInput.total,onInput total,7,23.800000429153442,3.1000001430511475,4.200000143051148
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.applyRecord,rich-text.applyRecord,7,0.5999999046325684,0.09999990463256836,0.14000010490417486
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.createRecord.create,create DOM record,14,0.7000000476837158,0,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.createRecord.total,rich-text.createRecord.total,14,0.7999999523162842,0.04999995231628418,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.handleChange.applyRecord,apply record,7,0.6999998092651367,0.09999990463256836,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.handleChange.forceRender,forceRender,7,0.39999961853027344,0.09999990463256836,0.09999990463256836
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.handleChange.onChange,onChange,7,1,0.20000004768371582,0.20000004768371582
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.0999999046325684,0.10000014305114746,0.2400000095367432
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.handleChange.registryBatch,registry.batch,7,37.200000047683716,5.3999998569488525,7.0800000667572025
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.handleChange.serialize,serialize,7,0.3000001907348633,0,0.10000014305114746
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.handleChange.total,rich-text.handleChange.total,7,38.59999966621399,5.599999904632568,7.239999914169312
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.onInput.total,onInput total,7,39.19999980926514,5.599999904632568,7.340000057220459
+rich_text_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.applyRecord,rich-text.applyRecord,7,0.4999997615814209,0,0.17999992370605475
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.createRecord.create,create DOM record,14,0.20000004768371582,0,0.06999993324279796
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.09999990463256836,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.createRecord.total,rich-text.createRecord.total,14,0.5000002384185791,0,0.10000014305114746
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.handleChange.applyRecord,apply record,7,0.6999998092651367,0.09999990463256836,0.2199999809265138
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.handleChange.forceRender,forceRender,7,0.20000004768371582,0,0.1
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.handleChange.onChange,onChange,7,3.0999996662139893,0.39999985694885254,0.5800000190734864
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.9000003337860107,0.2999999523162842,0.3400001525878907
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.handleChange.registryBatch,registry.batch,7,43.90000033378601,6.5,7.459999990463256
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.handleChange.serialize,serialize,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.handleChange.total,rich-text.handleChange.total,7,44.90000009536743,6.6000001430511475,7.519999933242797
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.onInput.total,onInput total,7,45.30000019073486,6.6000001430511475,7.680000066757202
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,990,rich-text.onInput.updateFormats,update formats,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.applyRecord,rich-text.applyRecord,7,0.39999985694885254,0,0.1400000095367432
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.createRecord.create,create DOM record,14,0.09999990463256836,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.createRecord.total,rich-text.createRecord.total,14,0.19999980926513672,0,0.06999993324279796
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.handleChange.applyRecord,apply record,7,0.39999985694885254,0,0.1400000095367432
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.handleChange.forceRender,forceRender,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.handleChange.onChange,onChange,7,2.4000003337860107,0.3000001907348633,0.40000009536743164
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.4999995231628418,0.20000004768371582,0.2999999523162842
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.handleChange.registryBatch,registry.batch,7,39.5,5.8999998569488525,6.140000104904175
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.handleChange.total,rich-text.handleChange.total,7,40.09999990463257,5.900000095367432,6.3399999141693115
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.onInput.total,onInput total,7,40.5,6,6.37999997138977
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1000,rich-text.onInput.updateFormats,update formats,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.applyRecord,rich-text.applyRecord,7,0.40000009536743164,0,0.14000010490417486
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.createRecord.create,create DOM record,14,0.39999985694885254,0,0.09999990463256836
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.createRecord.total,rich-text.createRecord.total,14,0.39999985694885254,0,0.09999990463256836
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.handleChange.applyRecord,apply record,7,0.6000001430511475,0.09999990463256836,0.14000010490417486
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.handleChange.forceRender,forceRender,7,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.handleChange.onChange,onChange,7,3.5999996662139893,0.5,0.6399998664855957
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.6000006198883057,0.20000004768371582,0.3000001907348633
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.handleChange.registryBatch,registry.batch,7,47.00000023841858,7.1000001430511475,7.4400001049041755
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.handleChange.total,rich-text.handleChange.total,7,47.60000038146973,7.1000001430511475,7.540000152587891
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.onInput.total,onInput total,7,48,7.200000047683716,7.600000095367432
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1200,rich-text.onInput.updateFormats,update formats,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.applyRecord,rich-text.applyRecord,7,0.19999980926513672,0,0.09999990463256836
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.createRecord.create,create DOM record,14,0.5,0,0.10000007152557372
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.createRecord.total,rich-text.createRecord.total,14,0.5,0,0.10000007152557372
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.handleChange.applyRecord,apply record,7,0.19999980926513672,0,0.09999990463256836
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.handleChange.forceRender,forceRender,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.handleChange.onChange,onChange,7,3.000000238418579,0.40000009536743164,0.5
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.8999996185302734,0.2999999523162842,0.2999999523162842
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.handleChange.registryBatch,registry.batch,7,46.80000042915344,7.1000001430511475,7.180000066757202
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.handleChange.total,rich-text.handleChange.total,7,47.10000014305115,7.1000001430511475,7.240000009536743
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.onInput.total,onInput total,7,47.700000047683716,7.1000001430511475,7.340000057220459
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1300,rich-text.onInput.updateFormats,update formats,7,0.19999980926513672,0,0.09999990463256836
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.applyRecord,rich-text.applyRecord,7,0.40000033378601074,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.createRecord.create,create DOM record,14,0.39999985694885254,0,0.09999990463256836
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.createRecord.total,rich-text.createRecord.total,14,0.39999985694885254,0,0.09999990463256836
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.handleChange.applyRecord,apply record,7,0.40000033378601074,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.handleChange.forceRender,forceRender,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.handleChange.onChange,onChange,7,2.5,0.40000009536743164,0.440000057220459
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.6999998092651367,0.2999999523162842,0.2999999523162842
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.handleChange.registryBatch,registry.batch,7,45.19999980926514,6.799999952316284,7.319999885559082
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.handleChange.serialize,serialize,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.handleChange.total,rich-text.handleChange.total,7,45.80000019073486,6.900000095367432,7.37999997138977
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.onInput.total,onInput total,7,46.10000014305115,7,7.4199999332427975
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,1550,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.applyRecord,rich-text.applyRecord,7,0.3000001907348633,0,0.10000014305114746
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.createRecord.create,create DOM record,14,0.6999998092651367,0.04999995231628418,0.10000007152557372
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.09999990463256836,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.createRecord.total,rich-text.createRecord.total,14,0.8999996185302734,0.09999990463256836,0.10000007152557372
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.handleChange.applyRecord,apply record,7,0.3000001907348633,0,0.10000014305114746
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.handleChange.forceRender,forceRender,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.handleChange.onChange,onChange,7,2.8000004291534424,0.40000009536743164,0.440000057220459
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.6999998092651367,0.2999999523162842,0.2999999523162842
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.handleChange.registryBatch,registry.batch,7,43.09999990463257,6.5,6.760000085830688
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.handleChange.total,rich-text.handleChange.total,7,43.50000023841858,6.6000001430511475,6.760000085830688
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.onInput.total,onInput total,7,44.30000019073486,6.700000047683716,6.9199999332427975
+rich_text_spans_large_between_keys,"Complete keypress, then wait",large post,2000,rich-text.onInput.updateFormats,update formats,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.applyRecord,rich-text.applyRecord,7,1.1000001430511475,0.10000014305114746,0.3200000286102296
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.createRecord.create,create DOM record,14,0.6000001430511475,0,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.createRecord.total,rich-text.createRecord.total,14,0.7000000476837158,0,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.handleChange.applyRecord,apply record,7,1.1000001430511475,0.10000014305114746,0.3200000286102296
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.handleChange.forceRender,forceRender,7,0.3000001907348633,0,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.handleChange.onChange,onChange,7,8.900000095367432,1.4000000953674316,1.5399999618530273
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.handleChange.onSelectionChange,onSelectionChange,7,3.4000000953674316,0.5,0.6400001049041748
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.handleChange.registryBatch,registry.batch,7,67.59999942779541,10.5,11.179999923706056
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.handleChange.serialize,serialize,7,0.09999990463256836,0,0.03999996185302738
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.handleChange.total,rich-text.handleChange.total,7,69.2999997138977,10.600000143051147,11.380000019073487
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.onInput.total,onInput total,7,70.59999990463257,10.899999856948853,11.580000066757204
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,990,rich-text.onInput.updateFormats,update formats,7,0.5,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.applyRecord,rich-text.applyRecord,7,0.5999999046325684,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.createRecord.create,create DOM record,14,0.40000009536743164,0,0.10000007152557372
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.createRecord.total,rich-text.createRecord.total,14,0.40000009536743164,0,0.10000007152557372
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.handleChange.applyRecord,apply record,7,0.5999999046325684,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.handleChange.forceRender,forceRender,7,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.handleChange.onChange,onChange,7,3.200000047683716,0.5,0.5400000572204591
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,1.6000001430511475,0.20000004768371582,0.3000000476837158
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.handleChange.registryBatch,registry.batch,7,44.19999980926514,6.5,7.380000019073487
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.handleChange.total,rich-text.handleChange.total,7,44.799999713897705,6.5,7.480000019073486
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.onInput.total,onInput total,7,44.99999976158142,6.599999904632568,7.480000019073486
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1000,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.applyRecord,rich-text.applyRecord,7,0.5999996662139893,0.09999990463256836,0.1
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.createRecord.create,create DOM record,14,0.9999997615814209,0.04999995231628418,0.20000004768371582
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.10000014305114746,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.createRecord.total,rich-text.createRecord.total,14,1.0999999046325684,0.04999995231628418,0.20000004768371582
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.handleChange.applyRecord,apply record,7,0.5999996662139893,0.09999990463256836,0.1
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.handleChange.forceRender,forceRender,7,0.19999980926513672,0,0.09999990463256836
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.handleChange.onChange,onChange,7,6.299999713897705,1.0999999046325684,1.2999999523162842
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.handleChange.onSelectionChange,onSelectionChange,7,2.6999998092651367,0.39999985694885254,0.5399999618530273
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.handleChange.registryBatch,registry.batch,7,58.200000286102295,8.700000047683716,10.220000076293946
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.handleChange.serialize,serialize,7,0.20000004768371582,0,0.1
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.handleChange.total,rich-text.handleChange.total,7,59.19999980926514,8.799999952316284,10.359999942779542
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.onInput.total,onInput total,7,60.30000019073486,9.100000143051147,10.559999990463258
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1200,rich-text.onInput.updateFormats,update formats,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.applyRecord,rich-text.applyRecord,7,1.1000001430511475,0.19999980926513672,0.20000004768371582
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.createRecord.create,create DOM record,14,0.9999997615814209,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.createRecord.total,rich-text.createRecord.total,14,0.9999997615814209,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.handleChange.applyRecord,apply record,7,1.1000001430511475,0.19999980926513672,0.20000004768371582
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.handleChange.forceRender,forceRender,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.handleChange.onChange,onChange,7,7.800000190734863,1.2000000476837158,1.3400001525878906
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.handleChange.onSelectionChange,onSelectionChange,7,3.1999998092651367,0.5,0.5999999046325684
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.handleChange.registryBatch,registry.batch,7,63.10000014305115,9.599999904632568,10.500000047683717
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.handleChange.serialize,serialize,7,0.2999999523162842,0,0.1
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.handleChange.total,rich-text.handleChange.total,7,64.60000038146973,10,10.7
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.onInput.total,onInput total,7,65.40000009536743,10.200000047683716,10.8
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1300,rich-text.onInput.updateFormats,update formats,7,0.10000014305114746,0,0.04000005722045902
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.applyRecord,rich-text.applyRecord,7,0.40000009536743164,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.createRecord.create,create DOM record,14,0.9000000953674316,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0.09999990463256836,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.createRecord.total,rich-text.createRecord.total,14,1.0999999046325684,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.handleChange.applyRecord,apply record,7,0.40000009536743164,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.handleChange.forceRender,forceRender,7,0.19999980926513672,0,0.09999990463256836
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.handleChange.onChange,onChange,7,4.1000001430511475,0.5999999046325684,0.7000000476837158
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.handleChange.onSelectionChange,onSelectionChange,7,2.0999999046325684,0.2999999523162842,0.40000009536743164
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.handleChange.registryBatch,registry.batch,7,53.60000014305115,8.100000143051147,8.380000114440918
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.handleChange.total,rich-text.handleChange.total,7,54.200000047683716,8.200000047683716,8.380000114440918
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.onInput.total,onInput total,7,54.89999961853027,8.399999856948853,8.480000019073486
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,1550,rich-text.onInput.updateFormats,update formats,7,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.applyRecord,rich-text.applyRecord,7,1,0.20000004768371582,0.20000004768371582
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.createRecord.create,create DOM record,14,1,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.createRecord.selection,rich-text.createRecord.selection,14,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.createRecord.total,rich-text.createRecord.total,14,1,0.09999990463256836,0.10000014305114746
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.handleChange.applyRecord,apply record,7,1,0.20000004768371582,0.20000004768371582
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.handleChange.forceRender,forceRender,7,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.handleChange.onChange,onChange,7,5.900000095367432,1,1.0399999618530273
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.handleChange.onSelectionChange,onSelectionChange,7,3,0.5,0.5400000572204591
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.handleChange.registryBatch,registry.batch,7,62.10000014305115,9.700000047683716,10.520000076293945
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.handleChange.serialize,serialize,7,0,0,0
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.handleChange.total,rich-text.handleChange.total,7,63.10000014305115,9.900000095367432,10.600000095367431
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.onInput.total,onInput total,7,63.799999713897705,10,10.75999994277954
+rich_text_spans_large_keyhold,Playwright delay: key held down,large post,2000,rich-text.onInput.updateFormats,update formats,7,0,0,0
