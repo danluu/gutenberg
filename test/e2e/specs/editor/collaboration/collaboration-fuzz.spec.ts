@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, Route } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -190,6 +190,9 @@ const ENABLE_REVISION_RESTORE_PROBE =
 		'1' ) === '1';
 const ACTION_PROFILE =
 	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
+const ENABLE_STALE_TAB_PROBE = [ 'surface', 'stale-tab' ].includes(
+	ACTION_PROFILE
+);
 const RETRIABLE_SYNC_FAILURE_STATUSES = [ 429, 500, 503 ];
 
 function getEnvInt( name: string, fallback: number ): number {
@@ -450,6 +453,61 @@ function freeformParserContent( seed: number ): string {
 	].join( '\n' );
 }
 
+function layoutAndMediaContent( seed: number ): string {
+	return [
+		'<!-- wp:columns -->',
+		'<div class="wp-block-columns">',
+		'<!-- wp:column -->',
+		'<div class="wp-block-column">',
+		paragraph( `Column A nested paragraph ${ seed }.` ),
+		'</div>',
+		'<!-- /wp:column -->',
+		'<!-- wp:column -->',
+		'<div class="wp-block-column">',
+		paragraph( `Column B nested paragraph ${ seed }.` ),
+		'</div>',
+		'<!-- /wp:column -->',
+		'</div>',
+		'<!-- /wp:columns -->',
+		`${ blockDelimiter( 'image', {
+			alt: `Fuzz image alt ${ seed }`,
+			caption: `Fuzz image caption ${ seed }`,
+			url: `https://example.com/fuzz-image-${ seed }.jpg`,
+		} ) }\n<figure class="wp-block-image"><img src="https://example.com/fuzz-image-${ seed }.jpg" alt="Fuzz image alt ${ seed }"/><figcaption class="wp-element-caption">Fuzz image caption ${ seed }</figcaption></figure>\n<!-- /wp:image -->`,
+		`${ blockDelimiter( 'file', {
+			href: `https://example.com/fuzz-file-${ seed }.pdf`,
+		} ) }\n<div class="wp-block-file"><a href="https://example.com/fuzz-file-${ seed }.pdf">Fuzz file ${ seed }</a><a href="https://example.com/fuzz-file-${ seed }.pdf" class="wp-block-file__button wp-element-button" download>Download</a></div>\n<!-- /wp:file -->`,
+	].join( '\n' );
+}
+
+function queryAndNavigationLikeContent( seed: number ): string {
+	return [
+		`${ blockDelimiter( 'query', {
+			queryId: seed % 1000,
+			query: {
+				author: '',
+				exclude: [],
+				inherit: false,
+				offset: 0,
+				order: 'desc',
+				orderBy: 'date',
+				pages: 0,
+				perPage: 3,
+				postType: 'post',
+				search: '',
+				sticky: '',
+			},
+		} ) }\n<div class="wp-block-query"><!-- wp:post-template --><!-- wp:post-title /--><!-- wp:post-excerpt /--><!-- /wp:post-template --></div>\n<!-- /wp:query -->`,
+		'<!-- wp:buttons -->',
+		'<div class="wp-block-buttons">',
+		`${ blockDelimiter( 'button', {
+			url: `https://example.com/button-${ seed }`,
+		} ) }\n<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://example.com/button-${ seed }">Button ${ seed }</a></div>\n<!-- /wp:button -->`,
+		'</div>',
+		'<!-- /wp:buttons -->',
+	].join( '\n' );
+}
+
 function getParserStressContent(
 	seed: number,
 	step = 0,
@@ -463,6 +521,8 @@ function getParserStressContent(
 		validationFixContent,
 		equivalentHtmlContent,
 		freeformParserContent,
+		layoutAndMediaContent,
+		queryAndNavigationLikeContent,
 	];
 
 	return pick( rng, variants )( variantSeed );
@@ -528,7 +588,7 @@ function getInitialContent( seed: number ): string {
 		return baseContent;
 	}
 
-	switch ( seed % 6 ) {
+	switch ( seed % 8 ) {
 		case 1:
 			return [ baseContent, htmlEntityReferenceContent( seed ) ].join(
 				'\n'
@@ -541,6 +601,12 @@ function getInitialContent( seed: number ): string {
 			return [ baseContent, equivalentHtmlContent( seed ) ].join( '\n' );
 		case 5:
 			return [ baseContent, freeformParserContent( seed ) ].join( '\n' );
+		case 6:
+			return [ baseContent, layoutAndMediaContent( seed ) ].join( '\n' );
+		case 7:
+			return [ baseContent, queryAndNavigationLikeContent( seed ) ].join(
+				'\n'
+			);
 		default:
 			return baseContent;
 	}
@@ -1229,6 +1295,337 @@ async function editTableArrayAttributes(
 	);
 }
 
+async function insertLayoutCompositeBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number
+) {
+	await page.evaluate(
+		( { fuzzSeed, fuzzStep, fuzzUserIndex } ) => {
+			const blocks = ( window as any ).wp.blocks;
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const marker = `layout-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }`;
+			const columns = blocks.createBlock( 'core/columns', {}, [
+				blocks.createBlock( 'core/column', {}, [
+					blocks.createBlock( 'core/paragraph', {
+						content: `${ marker } left column paragraph`,
+					} ),
+					blocks.createBlock( 'core/buttons', {}, [
+						blocks.createBlock( 'core/button', {
+							text: `${ marker } button`,
+							url: `https://example.com/${ marker }`,
+						} ),
+					] ),
+				] ),
+				blocks.createBlock( 'core/column', {}, [
+					blocks.createBlock( 'core/heading', {
+						content: `${ marker } right heading`,
+						level: 3,
+					} ),
+				] ),
+			] );
+
+			blockEditor.insertBlock( columns );
+		},
+		{ fuzzSeed: seed, fuzzStep: step, fuzzUserIndex: userIndex }
+	);
+}
+
+async function editNestedBlockAttributes(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number
+) {
+	await page.evaluate(
+		( { fuzzSeed, fuzzStep, fuzzUserIndex } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blockSelect = ( window as any ).wp.data.select(
+				'core/block-editor'
+			);
+			const blocksApi = ( window as any ).wp.blocks;
+			const marker = `nested-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }`;
+			const flattenBlocks = ( blocks: any[] ): any[] =>
+				blocks.flatMap( ( block ) => [
+					block,
+					...flattenBlocks( block.innerBlocks ?? [] ),
+				] );
+			const allBlocks = flattenBlocks( blockSelect.getBlocks() );
+			const nestedEditable = allBlocks.find(
+				( block ) =>
+					block.name === 'core/paragraph' &&
+					block.innerBlocks?.length === 0 &&
+					allBlocks.some( ( candidate ) =>
+						( candidate.innerBlocks ?? [] ).some(
+							( child: { clientId: string } ) =>
+								child.clientId === block.clientId
+						)
+					)
+			);
+
+			if ( nestedEditable ) {
+				blockEditor.updateBlockAttributes( nestedEditable.clientId, {
+					content: `${ marker } edited nested paragraph`,
+				} );
+				return;
+			}
+
+			blockEditor.insertBlock(
+				blocksApi.createBlock( 'core/group', {}, [
+					blocksApi.createBlock( 'core/paragraph', {
+						content: `${ marker } inserted nested paragraph`,
+					} ),
+				] )
+			);
+		},
+		{ fuzzSeed: seed, fuzzStep: step, fuzzUserIndex: userIndex }
+	);
+}
+
+async function editMediaReferenceBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const variant = Math.floor( rng() * 3 );
+
+	await page.evaluate(
+		( { fuzzSeed, fuzzStep, fuzzUserIndex, mediaVariant } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			const blocksApi = ( window as any ).wp.blocks;
+			const marker = `media-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }-${ mediaVariant }`;
+			let block = blocks.find( ( candidate: { name: string } ) =>
+				[ 'core/image', 'core/file' ].includes( candidate.name )
+			);
+
+			if ( ! block ) {
+				block =
+					mediaVariant === 0
+						? blocksApi.createBlock( 'core/image', {
+								alt: `${ marker } alt`,
+								caption: `${ marker } caption`,
+								url: `https://example.com/${ marker }.jpg`,
+						  } )
+						: blocksApi.createBlock( 'core/file', {
+								href: `https://example.com/${ marker }.pdf`,
+								textLinkHref: `https://example.com/${ marker }.pdf`,
+								textLinkTarget: '_blank',
+						  } );
+				blockEditor.insertBlock( block );
+				return;
+			}
+
+			if ( block.name === 'core/image' ) {
+				blockEditor.updateBlockAttributes( block.clientId, {
+					alt: `${ marker } updated alt`,
+					caption: `${ marker } updated caption`,
+					url: `https://example.com/${ marker }-updated.jpg`,
+				} );
+				return;
+			}
+
+			blockEditor.updateBlockAttributes( block.clientId, {
+				href: `https://example.com/${ marker }-updated.pdf`,
+				textLinkHref: `https://example.com/${ marker }-updated.pdf`,
+				textLinkTarget: mediaVariant === 2 ? '_blank' : undefined,
+			} );
+		},
+		{
+			fuzzSeed: seed,
+			fuzzStep: step,
+			fuzzUserIndex: userIndex,
+			mediaVariant: variant,
+		}
+	);
+}
+
+async function editQueryBlockAttributes(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const variant = Math.floor( rng() * 5 );
+
+	await page.evaluate(
+		( { fuzzSeed, fuzzStep, fuzzUserIndex, queryVariant } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocksApi = ( window as any ).wp.blocks;
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			let block = blocks.find(
+				( candidate: { name: string } ) =>
+					candidate.name === 'core/query'
+			);
+
+			if ( ! block ) {
+				block = blocksApi.createBlock(
+					'core/query',
+					{
+						queryId: ( fuzzSeed + fuzzStep ) % 1000,
+						query: {
+							author: '',
+							exclude: [],
+							inherit: false,
+							offset: 0,
+							order: 'desc',
+							orderBy: 'date',
+							pages: 0,
+							perPage: 3,
+							postType: 'post',
+							search: '',
+							sticky: '',
+						},
+					},
+					[
+						blocksApi.createBlock( 'core/post-template', {}, [
+							blocksApi.createBlock( 'core/post-title' ),
+							blocksApi.createBlock( 'core/post-excerpt' ),
+						] ),
+					]
+				);
+				blockEditor.insertBlock( block );
+				return;
+			}
+
+			const query = {
+				...( block.attributes.query ?? {} ),
+				exclude: [ fuzzSeed % 7, ( fuzzStep + fuzzUserIndex ) % 11 ],
+				offset: queryVariant,
+				order: queryVariant % 2 === 0 ? 'desc' : 'asc',
+				orderBy: queryVariant % 3 === 0 ? 'modified' : 'date',
+				perPage: 1 + queryVariant,
+				search: `query-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }`,
+			};
+
+			blockEditor.updateBlockAttributes( block.clientId, {
+				query,
+				queryId: ( fuzzSeed + fuzzStep + queryVariant ) % 1000,
+			} );
+		},
+		{
+			fuzzSeed: seed,
+			fuzzStep: step,
+			fuzzUserIndex: userIndex,
+			queryVariant: variant,
+		}
+	);
+}
+
+async function triggerServerAutosave(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number
+) {
+	await page.evaluate(
+		async ( { marker } ) => {
+			const blocks = ( window as any ).wp.blocks;
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			blockEditor.insertBlock(
+				blocks.createBlock( 'core/paragraph', {
+					content: `${ marker } autosave target`,
+				} )
+			);
+			await ( window as any ).wp.data
+				.dispatch( 'core/editor' )
+				.autosave();
+		},
+		{ marker: `autosave-${ seed }-${ step }-${ userIndex }` }
+	);
+
+	await page.waitForFunction(
+		() => {
+			const editor = ( window as any ).wp.data.select( 'core/editor' );
+			return (
+				! editor.isSavingPost() &&
+				( ! editor.isAutosavingPost || ! editor.isAutosavingPost() )
+			);
+		},
+		undefined,
+		{ timeout: CONVERGENCE_TIMEOUT_MS }
+	);
+}
+
+async function publishAndReturnToDraft(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number
+) {
+	await page.evaluate(
+		async ( { title } ) => {
+			const editor = ( window as any ).wp.data.dispatch( 'core/editor' );
+			editor.editPost( { status: 'publish', title } );
+			await editor.savePost();
+			editor.editPost( { status: 'draft' } );
+			await editor.savePost();
+		},
+		{
+			title: `RTC published draft ${ seed } ${ step } ${ userIndex }`,
+		}
+	);
+
+	await page.waitForFunction(
+		() =>
+			! ( window as any ).wp.data.select( 'core/editor' ).isSavingPost(),
+		undefined,
+		{ timeout: CONVERGENCE_TIMEOUT_MS }
+	);
+}
+
+async function undoRedoRecentChange(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number
+) {
+	await page.evaluate(
+		async ( { marker } ) => {
+			const blocks = ( window as any ).wp.blocks;
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const editor = ( window as any ).wp.data.dispatch( 'core/editor' );
+			const editorSelect = ( window as any ).wp.data.select(
+				'core/editor'
+			);
+			blockEditor.insertBlock(
+				blocks.createBlock( 'core/paragraph', {
+					content: `${ marker } undo-redo target`,
+				} )
+			);
+
+			if ( editorSelect.hasEditorUndo?.() !== false ) {
+				editor.undo();
+			}
+
+			if ( editorSelect.hasEditorRedo?.() !== false ) {
+				editor.redo();
+			}
+		},
+		{ marker: `undo-redo-${ seed }-${ step }-${ userIndex }` }
+	);
+}
+
 async function reparseEditedContent(
 	page: Page,
 	seed: number,
@@ -1265,6 +1662,90 @@ async function saveDraft( page: Page ) {
 		undefined,
 		{ timeout: CONVERGENCE_TIMEOUT_MS }
 	);
+}
+
+async function pauseSyncRequests(
+	page: Page
+): Promise< () => Promise< void > > {
+	const handler = async ( route: Route ) => {
+		if (
+			route.request().method() === 'POST' &&
+			route.request().url().includes( 'wp-sync' )
+		) {
+			await route.abort( 'failed' );
+			return;
+		}
+
+		await route.continue();
+	};
+
+	await page.route( /wp-sync/, handler );
+
+	return async () => {
+		await page.unroute( /wp-sync/, handler );
+	};
+}
+
+async function runStaleTabSaveProbe( {
+	collaborationUtils,
+	postId,
+	requestUtils,
+	seed,
+}: {
+	collaborationUtils: CollaborationUtils;
+	postId: number;
+	requestUtils: RestRequestUtils;
+	seed: number;
+} ) {
+	if ( COLLABORATOR_MODE !== 'same-user' ) {
+		await collaborationUtils.joinUser( postId, ADMIN_USER );
+		await waitForCollaborationSessionSettled( collaborationUtils, {
+			timeout: DISCOVERY_TIMEOUT_MS,
+		} );
+	}
+
+	const pages = collaborationUtils.allPages.map( ( page, userIndex ) => ( {
+		editor: collaborationUtils.allEditors[ userIndex ],
+		page,
+		userIndex,
+	} ) );
+	const active = pages[ 0 ];
+	const stale = pages[ pages.length - 1 ];
+	const activeMarker = `stale-tab-active-${ seed }`;
+	const staleMarker = `stale-tab-resume-${ seed }`;
+	const resumeSync = await pauseSyncRequests( stale.page );
+
+	try {
+		await insertCheckpointMarker( active.page, activeMarker );
+		await saveDraft( active.page );
+		await waitForPersistedPostContentMarker(
+			requestUtils,
+			postId,
+			activeMarker
+		);
+
+		await insertCheckpointMarker( stale.page, staleMarker );
+		await saveDraft( stale.page );
+	} finally {
+		await resumeSync();
+	}
+
+	await reloadAndWait( active.page, collaborationUtils );
+	const stateAfterStaleSave = await collaborationUtils.waitForConvergence( {
+		includeCrdtDocument: true,
+		timeout: SESSION_SETTLE_TIMEOUT_MS,
+	} );
+	expect( hasMarker( stateAfterStaleSave.blocks, activeMarker ) ).toBe(
+		true
+	);
+	expect( hasMarker( stateAfterStaleSave.blocks, staleMarker ) ).toBe( true );
+
+	const persistedContent = await waitForPersistedPostContentMarker(
+		requestUtils,
+		postId,
+		activeMarker
+	);
+	expect( persistedContent ).toContain( staleMarker );
 }
 
 async function reloadAndWait(
@@ -1698,6 +2179,41 @@ const ACTIONS: PageAction[] = [
 			editTableArrayAttributes( page, seed, step, userIndex, rng ),
 	},
 	{
+		label: 'insert-layout-composite-block',
+		run: async ( page, seed, step, userIndex ) =>
+			insertLayoutCompositeBlock( page, seed, step, userIndex ),
+	},
+	{
+		label: 'edit-nested-block-attributes',
+		run: async ( page, seed, step, userIndex ) =>
+			editNestedBlockAttributes( page, seed, step, userIndex ),
+	},
+	{
+		label: 'edit-media-reference-block',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			editMediaReferenceBlock( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'edit-query-block-attributes',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			editQueryBlockAttributes( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'server-autosave',
+		run: async ( page, seed, step, userIndex ) =>
+			triggerServerAutosave( page, seed, step, userIndex ),
+	},
+	{
+		label: 'publish-and-return-to-draft',
+		run: async ( page, seed, step, userIndex ) =>
+			publishAndReturnToDraft( page, seed, step, userIndex ),
+	},
+	{
+		label: 'undo-redo-recent-change',
+		run: async ( page, seed, step, userIndex ) =>
+			undoRedoRecentChange( page, seed, step, userIndex ),
+	},
+	{
 		label: 'reparse-edited-content',
 		run: async ( page, seed, step, userIndex ) =>
 			reparseEditedContent( page, seed, step, userIndex ),
@@ -1712,8 +2228,22 @@ const ACTIONS: PageAction[] = [
 ];
 
 function getActiveActions(): PageAction[] {
-	if ( ACTION_PROFILE === 'full' ) {
+	if ( ACTION_PROFILE === 'full' || ACTION_PROFILE === 'surface' ) {
 		return ACTIONS;
+	}
+
+	if ( ACTION_PROFILE === 'stale-tab' ) {
+		const staleTabActionLabels = new Set( [
+			'insert-paragraph',
+			'append-paragraph',
+			'edit-paragraph',
+			'edit-title',
+			'insert-heading',
+		] );
+
+		return ACTIONS.filter( ( action ) =>
+			staleTabActionLabels.has( action.label )
+		);
 	}
 
 	if (
@@ -1762,7 +2292,13 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			collaborationUtils,
 			requestUtils,
 		} ) => {
-			test.setTimeout( Math.max( 90000, STEP_COUNT * 15000 ) );
+			test.setTimeout(
+				Math.max(
+					ENABLE_STALE_TAB_PROBE ? 180000 : 90000,
+					STEP_COUNT *
+						( ACTION_PROFILE === 'surface' ? 25000 : 15000 )
+				)
+			);
 
 			const rng = createRng( seed );
 			const post = await requestUtils.createPost( {
@@ -1898,6 +2434,15 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				requestUtils,
 				restorer: pick( rng, pages ),
 			} );
+
+			if ( ENABLE_STALE_TAB_PROBE ) {
+				await runStaleTabSaveProbe( {
+					collaborationUtils,
+					postId: post.id,
+					requestUtils,
+					seed,
+				} );
+			}
 		} );
 	}
 } );
