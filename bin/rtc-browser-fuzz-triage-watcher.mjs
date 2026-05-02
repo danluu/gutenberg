@@ -387,12 +387,14 @@ function mergeExamples( currentExamples = [], newExamples = [] ) {
 }
 
 async function launchQueuedJobs( state ) {
+	const activeHashes = getActiveJobHashes( state );
+
 	for ( const signature of Object.values( state.signatures ) ) {
-		if ( activeJobs.size >= MAX_PARALLEL ) {
+		if ( activeHashes.size >= MAX_PARALLEL ) {
 			return;
 		}
 
-		if ( activeJobs.has( signature.hash ) ) {
+		if ( activeHashes.has( signature.hash ) ) {
 			continue;
 		}
 
@@ -401,7 +403,24 @@ async function launchQueuedJobs( state ) {
 		}
 
 		await launchCodexJob( state, signature );
+		activeHashes.add( signature.hash );
 	}
+}
+
+function getActiveJobHashes( state ) {
+	const hashes = new Set( activeJobs.keys() );
+
+	for ( const signature of Object.values( state.signatures ) ) {
+		if (
+			signature.status === 'running' &&
+			! fsSync.existsSync( signature.resultPath ) &&
+			isProcessAlive( signature.pid )
+		) {
+			hashes.add( signature.hash );
+		}
+	}
+
+	return hashes;
 }
 
 async function reconcileExternallyCompletedJobs( state ) {
@@ -630,6 +649,7 @@ function buildCodexPrompt( signature ) {
 		'11. Never run a Playwright repro command against the shared port 8950 environment unless the command sets GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1, GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1, WP_ENV_PORT=8950, WP_BASE_URL=http://localhost:8950, and WP_ARTIFACTS_PATH under the triage job directory. The default Playwright global setup deletes all posts and can invalidate active fuzz lanes.',
 		'12. Do not run tests or fixtures that call deleteAllPosts(), deleteAllUsers(), wp-env clean, wp-env start, or other destructive shared-environment cleanup against port 8950 while fuzz lanes are active. Use a separate worktree/port for destructive reproduction attempts.',
 		'13. You may launch additional codex exec processes or terminal subprocesses for independent repro searches when helpful. Keep every artifact and status file under the triage job directory.',
+		'14. Prefer Codex-heavy trace, screenshot, log, and code analysis before starting browser work. Only launch Playwright once you have a concrete hypothesis, and do not run multiple long browser loops concurrently from this job.',
 		'',
 		'Output only JSON matching the schema. The JSON should point at the artifacts you wrote.',
 	].join( '\n' );
@@ -689,7 +709,9 @@ async function runScanCycle() {
 	process.stdout.write(
 		`[${ new Date().toISOString() }] candidates=${
 			candidates.length
-		} signatures=${ groups.length } active=${ activeJobs.size }\n`
+		} signatures=${ groups.length } active=${
+			getActiveJobHashes( state ).size
+		}\n`
 	);
 }
 
