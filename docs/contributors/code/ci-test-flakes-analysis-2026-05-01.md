@@ -303,6 +303,14 @@ The plan now avoids ongoing work, which is the right direction. The remaining ri
 
 The previous revised plan did not fully guarantee coverage preservation and still required ongoing work such as a flake ledger. The PR-shaped plan below removes ongoing machinery and keeps the no-coverage-regression gate: every flake fix must preserve the same behavioral invariant. The audit above also narrows the PR to the smallest clear fixes and excludes quarantine, skips, broad retries, reporter rewrites, shared helper redesigns, infrastructure work, and deletion from the low-risk PR.
 
+## Fix Plan Explanation
+
+The revised plan is a PR boundary, not a complete flake program. Its purpose is to select fixes where the cause is local, the reviewer can understand the change from one spec file, and the original behavior remains covered by the same end-to-end assertion. That is why the best first PR is limited to `homepage-settings.spec.js`: the failure mechanism is a fixture and locator problem, and the fix can isolate the page fixtures and scope row selection without deleting coverage or changing the user-visible behavior under test.
+
+The plan intentionally rejects fixes that depend on later cleanup, monitoring, or policy enforcement. It does not use skips, quarantines, broad retries, weakened assertions, or test deletion because those reduce the chance that the PR actually improves correctness. A fix is acceptable only when it replaces a race with a deterministic condition tied to the operation being tested, such as an exact locator, an already-observable UI state, or a clearly completed editor action.
+
+The excluded areas are not dismissed as unimportant. RTC synchronization, router readiness, Openverse/media behavior, upload lifecycle semantics, REST retry policy, and reporter hygiene can all be real sources of flakiness. They are excluded from the first PR because each has a wider review surface and a higher risk of either changing product behavior or adding infrastructure that needs ongoing ownership. Those should be handled as separate focused changes only when there is concrete causal evidence and the fix preserves or strengthens the existing coverage.
+
 ## Revised Fix Plan
 
 0. Keep the PR small and test-focused. Do not include a flake ledger, reporter rewrite, CI workflow redesign, broad `requestUtils` retry layer, dashboard, bot rule, skip/quarantine mechanism, or any other change that requires ongoing follow-up.
