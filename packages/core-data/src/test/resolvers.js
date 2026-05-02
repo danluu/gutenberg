@@ -285,7 +285,8 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			EDITED_RECORD
+			EDITED_RECORD,
+			{ __unstableSkipSyncUpdate: true }
 		);
 	} );
 
@@ -336,7 +337,8 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			POST_RECORD
+			POST_RECORD,
+			{ __unstableSkipSyncUpdate: true }
 		);
 	} );
 

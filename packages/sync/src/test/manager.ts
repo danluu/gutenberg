@@ -154,6 +154,39 @@ describe( 'SyncManager', () => {
 			} );
 		} );
 
+		it( 'reconciles remote provider updates that arrive during provider creation', async () => {
+			const remoteTitle = 'Remote title from provider bootstrap';
+			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+				const remoteDoc = new Y.Doc();
+				remoteDoc
+					.getMap( CRDT_RECORD_MAP_KEY )
+					.set( 'title', remoteTitle );
+				Y.applyUpdateV2(
+					ydoc,
+					Y.encodeStateAsUpdateV2( remoteDoc ),
+					'test-provider'
+				);
+				remoteDoc.destroy();
+
+				return mockProviderResult;
+			} );
+
+			const manager = createSyncManager();
+
+			await manager.load(
+				mockSyncConfig,
+				'postType/post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
+				title: remoteTitle,
+			} );
+		} );
+
 		it( 'does not load entity when no providers are available', async () => {
 			mockGetProviderCreators.mockReturnValue( [] );
 
@@ -809,12 +842,17 @@ describe( 'SyncManager', () => {
 
 			// Simulate a remote change.
 			const remoteDoc = new Y.Doc();
+			Y.applyUpdateV2(
+				remoteDoc,
+				Y.encodeStateAsUpdateV2( capturedDoc as unknown as Y.Doc )
+			);
+			const remoteStateVector = Y.encodeStateVector( remoteDoc );
 			remoteDoc
 				.getMap( CRDT_RECORD_MAP_KEY )
 				.set( 'title', 'Title from remote peer' );
 			Y.applyUpdateV2(
 				capturedDoc as unknown as Y.Doc,
-				Y.encodeStateAsUpdateV2( remoteDoc )
+				Y.encodeStateAsUpdateV2( remoteDoc, remoteStateVector )
 			);
 			remoteDoc.destroy();
 
@@ -825,6 +863,75 @@ describe( 'SyncManager', () => {
 			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
 				title: 'Title from remote peer',
 			} );
+		} );
+
+		it( 'filters stale local keys while remote updates are reconciling', async () => {
+			let capturedDoc: Y.Doc | null = null;
+			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+				capturedDoc = ydoc;
+				return mockProviderResult;
+			} );
+			mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
+				( ydoc: CRDTDoc, changes: Partial< ObjectData > ) => {
+					const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+					Object.entries( changes ).forEach( ( [ key, value ] ) =>
+						ymap.set( key, value )
+					);
+				}
+			);
+
+			const manager = createSyncManager();
+
+			await manager.load(
+				mockSyncConfig,
+				'post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+
+			mockSyncConfig.applyChangesToCRDTDoc.mockClear();
+			mockHandlers.editRecord.mockClear();
+
+			const remoteDoc = new Y.Doc();
+			Y.applyUpdateV2(
+				remoteDoc,
+				Y.encodeStateAsUpdateV2( capturedDoc as unknown as Y.Doc )
+			);
+			const remoteStateVector = Y.encodeStateVector( remoteDoc );
+			remoteDoc
+				.getMap( CRDT_RECORD_MAP_KEY )
+				.set( 'title', 'Title from remote peer' );
+			Y.applyUpdateV2(
+				capturedDoc as unknown as Y.Doc,
+				Y.encodeStateAsUpdateV2( remoteDoc, remoteStateVector )
+			);
+			remoteDoc.destroy();
+
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
+				title: 'Title from remote peer',
+			} );
+
+			manager.update(
+				'post',
+				'123',
+				{
+					content: 'Local content edit',
+					title: mockRecord.title,
+				},
+				LOCAL_EDITOR_ORIGIN
+			);
+
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			expect( mockSyncConfig.applyChangesToCRDTDoc ).toHaveBeenCalledWith(
+				capturedDoc,
+				{
+					content: 'Local content edit',
+				}
+			);
 		} );
 
 		it( 'does not edit the local record for local transactions', async () => {
