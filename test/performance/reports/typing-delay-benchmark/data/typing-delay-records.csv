@@ -1,4 +1,60 @@
 run_id,run_label,scenario_label,scenario,round,delay_ms,sample_index,is_throwaway,delay_sample_index,global_typed_character_index,global_retained_sample_index,elapsed_ms_since_benchmark_start,latency_ms,latency_all_keydowns_ms,keydown_event_count,keydown_ms,keydown_all_ms,keypress_ms,keyup_ms
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1200,0,TRUE,NA,0,NA,0,24.875,26.329,2,0.339,1.793,22.89,1.646
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1200,1,FALSE,0,1,0,0,11.991,14.056,2,0.611,2.676,10.895,0.485
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1200,2,FALSE,1,2,1,0,10.104,11.529,2,0.423,1.848,9.112,0.569
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1200,3,FALSE,2,3,2,0,9.711,11.676,2,0.67,2.635,8.448,0.593
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1200,4,FALSE,3,4,3,0,11.634,13.566,2,0.629,2.561,10.034,0.971
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1200,5,FALSE,4,5,4,0,12.42,14.374,2,0.604,2.558,10.951,0.865
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1200,6,FALSE,5,6,5,0,12.338,14.399,2,0.461,2.522,10.923,0.954
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1300,0,TRUE,NA,7,NA,8705,5.035,5.725,2,0.128,0.818,4.03,0.877
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1300,1,FALSE,0,8,6,8705,11.677,13.8,2,0.668,2.7910000000000004,10.105,0.904
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1300,2,FALSE,1,9,7,8705,10.847,12.678,2,0.542,2.373,9.56,0.745
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1300,3,FALSE,2,10,8,8705,11.137,12.781,2,0.587,2.231,9.977,0.573
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1300,4,FALSE,3,11,9,8705,11.547,13.256,2,0.56,2.269,9.94,1.047
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1300,5,FALSE,4,12,10,8705,10.784,11.759,2,0.309,1.284,9.746,0.729
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1300,6,FALSE,5,13,11,8705,11.232,12.865,2,0.43,2.063,9.91,0.892
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1550,0,TRUE,NA,14,NA,18036,3.928,4.58,2,0.212,0.864,3.385,0.331
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1550,1,FALSE,0,15,12,18036,7.117,7.983,2,0.276,1.142,6.282,0.559
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1550,2,FALSE,1,16,13,18036,8.535,9.707,2,0.379,1.551,7.801,0.355
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1550,3,FALSE,2,17,14,18036,7.464,8.336,2,0.252,1.124,6.431,0.781
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1550,4,FALSE,3,18,15,18036,7.590000000000001,8.886,2,0.309,1.605,6.94,0.341
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1550,5,FALSE,4,19,16,18036,8.252,9.68,2,0.37,1.798,7.244,0.638
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,1550,6,FALSE,5,20,17,18036,8.037,9.812,2,0.551,2.326,7.16,0.326
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,2000,0,TRUE,NA,21,NA,29079,5.561,6.114000000000001,2,0.115,0.668,3.391,2.055
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,2000,1,FALSE,0,22,18,29079,8.766,10.585,2,0.519,2.338,7.998,0.249
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,2000,2,FALSE,1,23,19,29079,7.2010000000000005,8.083,2,0.285,1.167,6.564,0.352
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,2000,3,FALSE,2,24,20,29079,7.486999999999999,8.456,2,0.289,1.258,6.427,0.771
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,2000,4,FALSE,3,25,21,29079,10.48,12.091,2,0.536,2.147,9.515,0.429
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,2000,5,FALSE,4,26,22,29079,10.946,12.525,2,0.416,1.995,9.702,0.828
+listener_empty_keyhold,Empty listener trace: key held during delay,empty post,empty-post-paragraph,0,2000,6,FALSE,5,27,23,29079,12.592,14.69,2,0.522,2.62,11.393,0.677
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1200,0,TRUE,NA,0,NA,0,22.336,23.772,2,0.371,1.807,21.845,0.12
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1200,1,FALSE,0,1,0,0,7.426,8.721,2,0.245,1.54,7.091,0.09
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1200,2,FALSE,1,2,1,0,7.402,8.423,2,0.295,1.3159999999999998,6.995,0.112
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1200,3,FALSE,2,3,2,0,6.542,7.305,2,0.199,0.962,6.248,0.095
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1200,4,FALSE,3,4,3,0,6.545,7.432,2,0.236,1.123,6.247,0.062
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1200,5,FALSE,4,5,4,0,7.0760000000000005,8.062000000000001,2,0.236,1.222,6.751,0.089
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1200,6,FALSE,5,6,5,0,7.121999999999999,8.171,2,0.252,1.301,6.786,0.084
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1300,0,TRUE,NA,7,NA,7598,3.733,4.32,2,0.122,0.709,3.56,0.051
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1300,1,FALSE,0,8,6,7598,6.2,7.396,2,0.226,1.422,5.894,0.08
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1300,2,FALSE,1,9,7,7598,6.695,7.788,2,0.252,1.345,6.36,0.083
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1300,3,FALSE,2,10,8,7598,6.343,7.364,2,0.276,1.297,5.963,0.104
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1300,4,FALSE,3,11,9,7598,6.138,7.108,2,0.268,1.238,5.795,0.075
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1300,5,FALSE,4,12,10,7598,6.053,6.928,2,0.204,1.079,5.774,0.075
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1300,6,FALSE,5,13,11,7598,6.415,7.373,2,0.228,1.186,6.099,0.088
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1550,0,TRUE,NA,14,NA,15720,4.232,4.937,2,0.157,0.862,4.034,0.041
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1550,1,FALSE,0,15,12,15720,6.179,7.170999999999999,2,0.243,1.235,5.866,0.07
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1550,2,FALSE,1,16,13,15720,5.882000000000001,6.641,2,0.179,0.938,5.63,0.073
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1550,3,FALSE,2,17,14,15720,5.596,6.254,2,0.168,0.8260000000000001,5.351,0.077
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1550,4,FALSE,3,18,15,15720,6.016,6.922000000000001,2,0.201,1.107,5.748,0.067
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1550,5,FALSE,4,19,16,15720,6.2410000000000005,7.151000000000001,2,0.203,1.113,5.966,0.072
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,1550,6,FALSE,5,20,17,15720,6.307,7.305000000000001,2,0.254,1.252,5.964,0.089
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,0,TRUE,NA,21,NA,25289,3.907,4.537,2,0.137,0.767,3.72,0.05
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,1,FALSE,0,22,18,25289,6.2010000000000005,7.064,2,0.206,1.069,5.924,0.071
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,2,FALSE,1,23,19,25289,7.061,7.976000000000001,2,0.2,1.115,5.881,0.98
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,3,FALSE,2,24,20,25289,6.516,7.507,2,0.232,1.223,6.161,0.123
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,4,FALSE,3,25,21,25289,5.462000000000001,6.336,2,0.182,1.056,5.216,0.064
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,5,FALSE,4,26,22,25289,5.398999999999999,6.25,2,0.185,1.036,5.153,0.061
+listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,6,FALSE,5,27,23,25289,6.141,7.043,2,0.203,1.105,5.85,0.088
 full_0_1100,"0-1100ms, 10ms step",large post,large-post-paragraph,0,0,0,TRUE,NA,0,NA,0,11.293,13.221,2,0.293,2.221,10.941,0.059
 full_0_1100,"0-1100ms, 10ms step",large post,large-post-paragraph,0,0,1,FALSE,0,1,0,0,5.9910000000000005,6.313000000000001,2,0.091,0.41300000000000003,5.863,0.037
 full_0_1100,"0-1100ms, 10ms step",large post,large-post-paragraph,0,0,2,FALSE,1,2,1,0,4.7410000000000005,4.9670000000000005,2,0.082,0.308,4.626,0.033

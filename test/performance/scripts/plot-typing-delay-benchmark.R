@@ -42,7 +42,9 @@ run_specs <- tribble(
 	"native_keyhold_timer", "Native contenteditable: key held during delay", "artifacts/typing-delay-benchmark-native-keyhold-timer/typing-delay-benchmark-1777759696881.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and normal Playwright delay",
 	"native_between_keys_timer", "Native contenteditable: wait after keyup", "artifacts/typing-delay-benchmark-native-between-keys-timer/typing-delay-benchmark-1777759836791.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and delay after full keypress",
 	"listener_keyhold", "Listener trace: key held during delay", "artifacts/typing-delay-benchmark-listener-keyhold/typing-delay-benchmark-1777760461776.json", "large post", "event-listener timing trace for normal Playwright delay",
-	"listener_between_keys", "Listener trace: wait after keyup", "artifacts/typing-delay-benchmark-listener-between-keys/typing-delay-benchmark-1777760561998.json", "large post", "event-listener timing trace for delay after full keypress"
+	"listener_between_keys", "Listener trace: wait after keyup", "artifacts/typing-delay-benchmark-listener-between-keys/typing-delay-benchmark-1777760561998.json", "large post", "event-listener timing trace for delay after full keypress",
+	"listener_empty_keyhold", "Empty listener trace: key held during delay", "test/performance/artifacts/typing-delay-benchmark-listener-empty-keyhold/typing-delay-benchmark-1777761105618.json", "empty post", "empty-post event-listener timing trace for normal Playwright delay",
+	"listener_empty_between_keys", "Empty listener trace: wait after keyup", "test/performance/artifacts/typing-delay-benchmark-listener-empty-between-keys/typing-delay-benchmark-1777761157309.json", "empty post", "empty-post event-listener timing trace for delay after full keypress"
 ) %>%
 	mutate(json_abs_path = file.path(repo_root, json_path))
 
@@ -244,7 +246,7 @@ read_raw_runs <- function() {
 	)
 }
 
-write_derived_data <- function(data) {
+write_derived_data <- function(data, existing = NULL) {
 	records <- data$records %>%
 		transmute(
 			run_id, run_label, scenario_label,
@@ -297,6 +299,29 @@ write_derived_data <- function(data) {
 			run_duration_ms = runStoppedAtEpochMs - runStartedAtEpochMs
 		)
 
+	if (!is.null(existing)) {
+		replace_run_ids <- unique(records$run_id)
+		replace_by_run <- function(old_table, new_table) {
+			if (is.null(old_table) || nrow(old_table) == 0) {
+				return(new_table)
+			}
+			bind_rows(
+				old_table %>% filter(!run_id %in% replace_run_ids),
+				new_table
+			)
+		}
+
+		records <- replace_by_run(existing$records, records)
+		by_delay <- replace_by_run(existing$by_delay, by_delay)
+		runs <- replace_by_run(existing$runs, runs)
+		data$persistence_events <- replace_by_run(existing$persistence_events, data$persistence_events)
+		data$browser_events <- replace_by_run(existing$browser_events, data$browser_events)
+		data$action_events <- replace_by_run(existing$action_events, data$action_events)
+		data$timer_events <- replace_by_run(existing$timer_events, data$timer_events)
+		data$scheduler_events <- replace_by_run(existing$scheduler_events, data$scheduler_events)
+		data$event_listener_events <- replace_by_run(existing$event_listener_events, data$event_listener_events)
+	}
+
 	write_csv(records, file.path(data_dir, "typing-delay-records.csv"))
 	write_csv(by_delay, file.path(data_dir, "typing-delay-by-delay.csv"))
 	write_csv(runs, file.path(data_dir, "typing-delay-runs.csv"))
@@ -320,7 +345,17 @@ write_derived_data <- function(data) {
 		write_csv(data$event_listener_events, file.path(data_dir, "typing-delay-event-listener-events.csv"))
 	}
 
-	list(records = records, by_delay = by_delay, runs = runs)
+	list(
+		records = records,
+		by_delay = by_delay,
+		runs = runs,
+		persistence_events = data$persistence_events,
+		browser_events = data$browser_events,
+		action_events = data$action_events,
+		timer_events = data$timer_events,
+		scheduler_events = data$scheduler_events,
+		event_listener_events = data$event_listener_events
+	)
 }
 
 read_derived_data <- function() {
@@ -365,8 +400,12 @@ raw_data <- read_raw_runs()
 derived <- if (is.null(raw_data)) {
 	read_derived_data()
 } else {
-	written <- write_derived_data(raw_data)
-	c(written, raw_data[c("persistence_events", "browser_events", "action_events", "timer_events", "scheduler_events", "event_listener_events")])
+	existing <- if (file.exists(file.path(data_dir, "typing-delay-records.csv"))) {
+		read_derived_data()
+	} else {
+		NULL
+	}
+	write_derived_data(raw_data, existing = existing)
 }
 
 theme_set(theme_minimal(base_size = 12))
@@ -1040,6 +1079,11 @@ if (nrow(native_key_event_timing) > 0) {
 }
 
 listener_trace_run_ids <- c("listener_keyhold", "listener_between_keys")
+listener_scenario_trace_run_ids <- c(
+	listener_trace_run_ids,
+	"listener_empty_keyhold",
+	"listener_empty_between_keys"
+)
 
 listener_events <- derived$event_listener_events %>%
 	mutate(
@@ -1060,7 +1104,17 @@ listener_events <- derived$event_listener_events %>%
 			run_id,
 			listener_keyhold = "Playwright delay: key held down",
 			listener_between_keys = "Complete keypress, then wait",
+			listener_empty_keyhold = "Playwright delay: key held down",
+			listener_empty_between_keys = "Complete keypress, then wait",
 			.default = run_label
+		),
+		listener_scenario_label = recode(
+			run_id,
+			listener_keyhold = "large post",
+			listener_between_keys = "large post",
+			listener_empty_keyhold = "empty post",
+			listener_empty_between_keys = "empty post",
+			.default = NA_character_
 		)
 	)
 
@@ -1114,6 +1168,87 @@ if (nrow(listener_input_summary) > 0) {
 		width = 11,
 		height = 8
 	)
+}
+
+listener_input_scenario_summary <- listener_events %>%
+	filter(run_id %in% listener_scenario_trace_run_ids, type == "input", script_label == "rich-text") %>%
+	group_by(run_id, mode_label, listener_scenario_label, delayMs) %>%
+	summarise(
+		n = n(),
+		total_ms = sum(durationMs, na.rm = TRUE),
+		median_ms = median(durationMs, na.rm = TRUE),
+		p90_ms = quant(durationMs, 0.9),
+		.groups = "drop"
+	)
+
+if (nrow(listener_input_scenario_summary) > 0) {
+	write_csv(listener_input_scenario_summary, file.path(data_dir, "typing-delay-listener-input-scenario-summary.csv"))
+	listener_scenario_plot <- listener_input_scenario_summary %>%
+		mutate(
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			listener_scenario_label = factor(
+				listener_scenario_label,
+				levels = c("large post", "empty post")
+			)
+		)
+
+	save_plot(
+		ggplot(listener_scenario_plot, aes(delayMs, median_ms, color = listener_scenario_label)) +
+			geom_line(linewidth = 0.8) +
+			geom_point(size = 2.2) +
+			facet_wrap(~ mode_label, ncol = 1) +
+			scale_color_manual(values = c(
+				"large post" = "#b91c1c",
+				"empty post" = "#0369a1"
+			)) +
+			labs(
+				title = "The RichText input listener is still visible in an empty post",
+				subtitle = "The active editable element carries several milliseconds of callback work even without the large-post fixture",
+				x = "Configured delay",
+				y = "Median RichText input listener duration (ms)",
+				color = "Scenario"
+			),
+		"16-rich-text-listener-scenario-control.png",
+		width = 11,
+		height = 8
+	)
+}
+
+listener_action_summary <- derived$action_events %>%
+	filter(run_id %in% listener_scenario_trace_run_ids) %>%
+	mutate(
+		mode_label = recode(
+			run_id,
+			listener_keyhold = "Playwright delay: key held down",
+			listener_between_keys = "Complete keypress, then wait",
+			listener_empty_keyhold = "Playwright delay: key held down",
+			listener_empty_between_keys = "Complete keypress, then wait"
+		),
+		listener_scenario_label = recode(
+			run_id,
+			listener_keyhold = "large post",
+			listener_between_keys = "large post",
+			listener_empty_keyhold = "empty post",
+			listener_empty_between_keys = "empty post"
+		)
+	) %>%
+	group_by(run_id, mode_label, listener_scenario_label, delayMs, storeName, actionName) %>%
+	summarise(
+		n = n(),
+		total_ms = sum(durationMs, na.rm = TRUE),
+		median_ms = median(durationMs, na.rm = TRUE),
+		p90_ms = quant(durationMs, 0.9),
+		.groups = "drop"
+	)
+
+if (nrow(listener_action_summary) > 0) {
+	write_csv(listener_action_summary, file.path(data_dir, "typing-delay-listener-action-summary.csv"))
 }
 
 message("Wrote plots to: ", figure_dir)

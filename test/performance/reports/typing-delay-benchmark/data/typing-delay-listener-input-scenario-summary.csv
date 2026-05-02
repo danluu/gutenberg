@@ -1,0 +1,27 @@
+run_id,mode_label,listener_scenario_label,delayMs,n,total_ms,median_ms,p90_ms
+listener_between_keys,"Complete keypress, then wait",large post,990,12,37.50000023841858,2.4500001668930054,6.929999995231629
+listener_between_keys,"Complete keypress, then wait",large post,1000,12,34.799999952316284,2.700000047683716,6.050000119209289
+listener_between_keys,"Complete keypress, then wait",large post,1180,12,41.799999713897705,3.3000000715255737,7
+listener_between_keys,"Complete keypress, then wait",large post,1200,12,41.40000009536743,3.350000023841858,7
+listener_between_keys,"Complete keypress, then wait",large post,1300,12,42.700000286102295,3.5000001192092896,7.2000000238418576
+listener_between_keys,"Complete keypress, then wait",large post,1510,12,39.799999952316284,3.200000047683716,6.78999993801117
+listener_between_keys,"Complete keypress, then wait",large post,1550,12,38.19999980926514,3.100000023841858,6.479999995231628
+listener_between_keys,"Complete keypress, then wait",large post,1580,12,39.200000047683716,3.149999976158142,6.5
+listener_between_keys,"Complete keypress, then wait",large post,2000,12,37.200000286102295,2.799999952316284,6.390000104904175
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,12,18.500000476837158,1.4500000476837158,3.200000047683716
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1300,12,17.299999713897705,1.3499999046325684,3
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1550,12,16.399999856948853,1.25,2.799999952316284
+listener_empty_between_keys,"Complete keypress, then wait",empty post,2000,12,16.399999380111694,1.149999976158142,2.8899998664855957
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,12,31.700000762939453,2.1500000953674316,5.5800001382827755
+listener_empty_keyhold,Playwright delay: key held down,empty post,1300,12,32.299999475479126,2.149999976158142,5.78999993801117
+listener_empty_keyhold,Playwright delay: key held down,empty post,1550,12,22.100000143051147,1.5500000715255737,4.229999971389771
+listener_empty_keyhold,Playwright delay: key held down,empty post,2000,12,28.09999966621399,1.600000023841858,5.389999866485596
+listener_keyhold,Playwright delay: key held down,large post,990,12,62.59999990463257,4.600000023841858,10.789999961853027
+listener_keyhold,Playwright delay: key held down,large post,1000,12,41.59999990463257,3.1999999284744263,7.200000047683716
+listener_keyhold,Playwright delay: key held down,large post,1180,12,48.30000019073486,3.3000000715255737,8.289999961853027
+listener_keyhold,Playwright delay: key held down,large post,1200,12,55,4.050000071525574,10.03999991416931
+listener_keyhold,Playwright delay: key held down,large post,1300,12,58.90000033378601,4.100000023841858,10.540000128746033
+listener_keyhold,Playwright delay: key held down,large post,1510,12,46.40000009536743,3.6500000953674316,7.889999866485596
+listener_keyhold,Playwright delay: key held down,large post,1550,12,44.99999952316284,3.700000047683716,7.669999814033508
+listener_keyhold,Playwright delay: key held down,large post,1580,12,47.700000047683716,3.799999952316284,8.379999876022339
+listener_keyhold,Playwright delay: key held down,large post,2000,12,48.89999961853027,3.7499998807907104,8.269999957084657

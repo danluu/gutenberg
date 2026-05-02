@@ -1,0 +1,113 @@
+run_id,mode_label,listener_scenario_label,delayMs,storeName,actionName,n,total_ms,median_ms,p90_ms
+listener_between_keys,"Complete keypress, then wait",large post,990,core/block-editor,__unstableMarkLastChangeAsPersistent,5,46.30000042915344,10.5,13.000000190734863
+listener_between_keys,"Complete keypress, then wait",large post,990,core/block-editor,clearSelectedBlock,1,3.8999998569488525,3.8999998569488525,3.8999998569488525
+listener_between_keys,"Complete keypress, then wait",large post,990,core/block-editor,selectionChange,7,7.599999666213989,0.2999999523162842,2.6199999332428
+listener_between_keys,"Complete keypress, then wait",large post,990,core/block-editor,updateBlockAttributes,7,2.700000047683716,0.2999999523162842,0.5400000572204591
+listener_between_keys,"Complete keypress, then wait",large post,990,core/editor,setEditedPost,1,0.2999999523162842,0.2999999523162842,0.2999999523162842
+listener_between_keys,"Complete keypress, then wait",large post,990,core/editor,setRenderingMode,1,3.8999998569488525,3.8999998569488525,3.8999998569488525
+listener_between_keys,"Complete keypress, then wait",large post,990,core/editor,unlockPostAutosaving,1,0.3000001907348633,0.3000001907348633,0.3000001907348633
+listener_between_keys,"Complete keypress, then wait",large post,990,core/editor,unlockPostSaving,1,0.2999999523162842,0.2999999523162842,0.2999999523162842
+listener_between_keys,"Complete keypress, then wait",large post,990,core/editor,updateEditorSettings,2,0.6000001430511475,0.30000007152557373,0.38000009059906004
+listener_between_keys,"Complete keypress, then wait",large post,990,core/interface,enableComplementaryArea,2,0,0,0
+listener_between_keys,"Complete keypress, then wait",large post,1000,core/block-editor,__unstableMarkLastChangeAsPersistent,6,74.60000014305115,12.600000023841858,13.649999976158142
+listener_between_keys,"Complete keypress, then wait",large post,1000,core/block-editor,selectionChange,7,1.1999998092651367,0.19999980926513672,0.20000004768371582
+listener_between_keys,"Complete keypress, then wait",large post,1000,core/block-editor,updateBlockAttributes,7,2.0999996662139893,0.2999999523162842,0.340000057220459
+listener_between_keys,"Complete keypress, then wait",large post,1180,core/block-editor,__unstableMarkLastChangeAsPersistent,6,75.30000019073486,12.5,13.850000023841858
+listener_between_keys,"Complete keypress, then wait",large post,1180,core/block-editor,selectionChange,7,1.8000001907348633,0.20000004768371582,0.3400001525878907
+listener_between_keys,"Complete keypress, then wait",large post,1180,core/block-editor,updateBlockAttributes,7,2.299999713897705,0.3000001907348633,0.39999985694885254
+listener_between_keys,"Complete keypress, then wait",large post,1200,core/block-editor,__unstableMarkLastChangeAsPersistent,6,70.59999990463257,12.949999928474426,13.549999952316284
+listener_between_keys,"Complete keypress, then wait",large post,1200,core/block-editor,selectionChange,7,2,0.20000004768371582,0.48000011444091806
+listener_between_keys,"Complete keypress, then wait",large post,1200,core/block-editor,updateBlockAttributes,7,2.3999998569488525,0.39999985694885254,0.40000009536743164
+listener_between_keys,"Complete keypress, then wait",large post,1300,core/block-editor,__unstableMarkLastChangeAsPersistent,6,77.59999990463257,12.649999976158142,14.200000047683716
+listener_between_keys,"Complete keypress, then wait",large post,1300,core/block-editor,selectionChange,7,1.7999999523162842,0.20000004768371582,0.3799999713897706
+listener_between_keys,"Complete keypress, then wait",large post,1300,core/block-editor,updateBlockAttributes,7,2.6000001430511475,0.40000009536743164,0.440000057220459
+listener_between_keys,"Complete keypress, then wait",large post,1510,core/block-editor,__unstableMarkLastChangeAsPersistent,6,79.10000014305115,13.100000023841858,13.850000023841858
+listener_between_keys,"Complete keypress, then wait",large post,1510,core/block-editor,selectionChange,7,1.9000000953674316,0.20000004768371582,0.4200000762939454
+listener_between_keys,"Complete keypress, then wait",large post,1510,core/block-editor,updateBlockAttributes,7,2.200000286102295,0.3000001907348633,0.40000009536743164
+listener_between_keys,"Complete keypress, then wait",large post,1550,core/block-editor,__unstableMarkLastChangeAsPersistent,6,75.10000014305115,12.600000023841858,13.149999976158142
+listener_between_keys,"Complete keypress, then wait",large post,1550,core/block-editor,selectionChange,7,1.4000003337860107,0.20000004768371582,0.2400000095367432
+listener_between_keys,"Complete keypress, then wait",large post,1550,core/block-editor,updateBlockAttributes,7,2.0999996662139893,0.2999999523162842,0.39999995231628416
+listener_between_keys,"Complete keypress, then wait",large post,1580,core/block-editor,__unstableMarkLastChangeAsPersistent,6,74.49999976158142,12.699999928474426,13.049999952316284
+listener_between_keys,"Complete keypress, then wait",large post,1580,core/block-editor,selectionChange,7,1.8999998569488525,0.20000004768371582,0.459999990463257
+listener_between_keys,"Complete keypress, then wait",large post,1580,core/block-editor,updateBlockAttributes,7,2.500000476837158,0.40000009536743164,0.40000009536743164
+listener_between_keys,"Complete keypress, then wait",large post,1580,core/editor,autosave,1,10.5,10.5,10.5
+listener_between_keys,"Complete keypress, then wait",large post,1580,core/editor,editPost,1,1.0999999046325684,1.0999999046325684,1.0999999046325684
+listener_between_keys,"Complete keypress, then wait",large post,1580,core/editor,savePost,1,10.399999856948853,10.399999856948853,10.399999856948853
+listener_between_keys,"Complete keypress, then wait",large post,2000,core/block-editor,__unstableMarkLastChangeAsPersistent,6,75.09999990463257,12.49999988079071,13.350000023841858
+listener_between_keys,"Complete keypress, then wait",large post,2000,core/block-editor,selectionChange,7,1.5999999046325684,0.20000004768371582,0.2999999523162842
+listener_between_keys,"Complete keypress, then wait",large post,2000,core/block-editor,updateBlockAttributes,7,2.200000286102295,0.2999999523162842,0.40000009536743164
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/block-editor,__unstableMarkLastChangeAsPersistent,5,15.90000033378601,3.299999952316284,3.6600001335144046
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/block-editor,clearSelectedBlock,1,0.7000000476837158,0.7000000476837158,0.7000000476837158
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/block-editor,selectionChange,7,4.199999570846558,0.09999990463256836,1.5199998855590833
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/block-editor,updateBlockAttributes,7,0.7999999523162842,0.09999990463256836,0.22000012397766128
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/editor,setEditedPost,1,0.2999999523162842,0.2999999523162842,0.2999999523162842
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/editor,setRenderingMode,1,0.7000000476837158,0.7000000476837158,0.7000000476837158
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/editor,unlockPostAutosaving,1,0.20000004768371585,0.20000004768371585,0.20000004768371585
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/editor,unlockPostSaving,1,0.2999999523162842,0.2999999523162842,0.2999999523162842
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/editor,updateEditorSettings,2,0.5999999046325684,0.2999999523162842,0.2999999523162842
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/interface,enableComplementaryArea,2,0.09999990463256836,0.04999995231628418,0.08999991416931151
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/block-editor,__unstableMarkLastChangeAsPersistent,6,17.600000381469727,2.950000047683716,3.1500000953674316
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/block-editor,selectionChange,7,0.40000009536743164,0,0.14000010490417486
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/block-editor,updateBlockAttributes,7,0.20000028610229492,0,0.10000014305114746
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/block-editor,__unstableMarkLastChangeAsPersistent,6,15.400000095367432,2.5500000715255737,2.799999952316284
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/block-editor,selectionChange,7,0.5000004768371582,0.10000014305114746,0.10000014305114746
+listener_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/block-editor,updateBlockAttributes,7,0.39999961853027344,0.09999990463256836,0.09999990463256836
+listener_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/block-editor,__unstableMarkLastChangeAsPersistent,6,16.40000009536743,2.899999976158142,3.3000000715255737
+listener_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/block-editor,selectionChange,7,0.4999995231628418,0.09999990463256836,0.09999990463256836
+listener_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/block-editor,updateBlockAttributes,7,0.6000001430511475,0.09999990463256836,0.14000010490417486
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/block-editor,__unstableMarkLastChangeAsPersistent,6,17.700000047683716,2.850000023841858,4.100000023841858
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/block-editor,clearSelectedBlock,1,0.6999998092651367,0.6999998092651367,0.6999998092651367
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/block-editor,selectionChange,7,2.6000001430511475,0.20000004768371585,0.7599999904632573
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/block-editor,updateBlockAttributes,7,1.2000000476837158,0.19999980926513672,0.2999999523162842
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/editor,setEditedPost,1,0.39999985694885254,0.39999985694885254,0.39999985694885254
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/editor,setRenderingMode,1,0.7999999523162842,0.7999999523162842,0.7999999523162842
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/editor,unlockPostAutosaving,1,0.19999980926513672,0.19999980926513672,0.19999980926513672
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/editor,unlockPostSaving,1,0.3000001907348633,0.3000001907348633,0.3000001907348633
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/editor,updateEditorSettings,2,0.5,0.25,0.28999996185302734
+listener_empty_keyhold,Playwright delay: key held down,empty post,1200,core/interface,enableComplementaryArea,2,0.20000004768371582,0.10000002384185791,0.10000011920928956
+listener_empty_keyhold,Playwright delay: key held down,empty post,1300,core/block-editor,__unstableMarkLastChangeAsPersistent,7,20.499999523162842,2.799999952316284,3.1999999046325684
+listener_empty_keyhold,Playwright delay: key held down,empty post,1300,core/block-editor,selectionChange,7,0.6000001430511475,0.09999990463256836,0.14000010490417486
+listener_empty_keyhold,Playwright delay: key held down,empty post,1300,core/block-editor,updateBlockAttributes,7,0.7000000476837158,0.09999990463256836,0.20000004768371585
+listener_empty_keyhold,Playwright delay: key held down,empty post,1550,core/block-editor,__unstableMarkLastChangeAsPersistent,7,20.600000381469727,3,3.180000066757202
+listener_empty_keyhold,Playwright delay: key held down,empty post,1550,core/block-editor,selectionChange,7,0.5999994277954102,0.09999990463256836,0.09999990463256836
+listener_empty_keyhold,Playwright delay: key held down,empty post,1550,core/block-editor,updateBlockAttributes,7,0.39999985694885254,0.09999990463256836,0.1
+listener_empty_keyhold,Playwright delay: key held down,empty post,2000,core/block-editor,__unstableMarkLastChangeAsPersistent,7,20.799999952316284,3.200000047683716,3.4399999141693116
+listener_empty_keyhold,Playwright delay: key held down,empty post,2000,core/block-editor,selectionChange,7,0.6999998092651367,0.09999990463256836,0.1999999046325684
+listener_empty_keyhold,Playwright delay: key held down,empty post,2000,core/block-editor,updateBlockAttributes,7,0.6000001430511475,0.09999990463256836,0.14000010490417486
+listener_keyhold,Playwright delay: key held down,large post,990,core/block-editor,__unstableMarkLastChangeAsPersistent,1,6.199999809265137,6.199999809265137,6.199999809265137
+listener_keyhold,Playwright delay: key held down,large post,990,core/block-editor,clearSelectedBlock,1,4,4,4
+listener_keyhold,Playwright delay: key held down,large post,990,core/block-editor,selectionChange,7,8.200000286102295,0.5,2.56000008583069
+listener_keyhold,Playwright delay: key held down,large post,990,core/block-editor,updateBlockAttributes,7,6.5,0.9000000953674316,1.3399999141693115
+listener_keyhold,Playwright delay: key held down,large post,990,core/editor,setEditedPost,1,0.2999999523162842,0.2999999523162842,0.2999999523162842
+listener_keyhold,Playwright delay: key held down,large post,990,core/editor,setRenderingMode,1,4.099999904632568,4.099999904632568,4.099999904632568
+listener_keyhold,Playwright delay: key held down,large post,990,core/editor,unlockPostAutosaving,1,0.2999999523162842,0.2999999523162842,0.2999999523162842
+listener_keyhold,Playwright delay: key held down,large post,990,core/editor,unlockPostSaving,1,0.3000001907348633,0.3000001907348633,0.3000001907348633
+listener_keyhold,Playwright delay: key held down,large post,990,core/editor,updateEditorSettings,2,0.5999999046325684,0.2999999523162842,0.37999987602233887
+listener_keyhold,Playwright delay: key held down,large post,990,core/interface,enableComplementaryArea,2,0,0,0
+listener_keyhold,Playwright delay: key held down,large post,1000,core/block-editor,__unstableMarkLastChangeAsPersistent,7,88.59999990463257,12.799999952316284,13.620000028610228
+listener_keyhold,Playwright delay: key held down,large post,1000,core/block-editor,selectionChange,7,1.3999998569488525,0.20000004768371582,0.2400000095367432
+listener_keyhold,Playwright delay: key held down,large post,1000,core/block-editor,updateBlockAttributes,7,3.299999952316284,0.5,0.5800000190734864
+listener_keyhold,Playwright delay: key held down,large post,1180,core/block-editor,__unstableMarkLastChangeAsPersistent,7,83.80000019073486,12.300000190734863,14.119999933242799
+listener_keyhold,Playwright delay: key held down,large post,1180,core/block-editor,selectionChange,7,2.200000047683716,0.2999999523162842,0.4800000190734864
+listener_keyhold,Playwright delay: key held down,large post,1180,core/block-editor,updateBlockAttributes,7,3.9000000953674316,0.5,0.8599999904632569
+listener_keyhold,Playwright delay: key held down,large post,1200,core/block-editor,__unstableMarkLastChangeAsPersistent,7,82.49999976158142,11.700000047683716,12.519999933242797
+listener_keyhold,Playwright delay: key held down,large post,1200,core/block-editor,selectionChange,7,3.0999996662139893,0.40000009536743164,0.5999999046325684
+listener_keyhold,Playwright delay: key held down,large post,1200,core/block-editor,updateBlockAttributes,7,4.899999618530273,0.7999999523162842,1
+listener_keyhold,Playwright delay: key held down,large post,1300,core/block-editor,__unstableMarkLastChangeAsPersistent,7,84.39999961853027,11.799999952316284,13.439999914169313
+listener_keyhold,Playwright delay: key held down,large post,1300,core/block-editor,selectionChange,7,2.8000001907348633,0.5,0.5
+listener_keyhold,Playwright delay: key held down,large post,1300,core/block-editor,updateBlockAttributes,7,6.099999666213989,1,1.140000009536743
+listener_keyhold,Playwright delay: key held down,large post,1510,core/block-editor,__unstableMarkLastChangeAsPersistent,7,77.79999995231628,11.899999856948853,12.46000008583069
+listener_keyhold,Playwright delay: key held down,large post,1510,core/block-editor,selectionChange,7,1.8999996185302734,0.2999999523162842,0.2999999523162842
+listener_keyhold,Playwright delay: key held down,large post,1510,core/block-editor,updateBlockAttributes,7,3.3999998569488525,0.5,0.6
+listener_keyhold,Playwright delay: key held down,large post,1550,core/block-editor,__unstableMarkLastChangeAsPersistent,7,89.89999985694885,12.599999904632568,14.159999990463255
+listener_keyhold,Playwright delay: key held down,large post,1550,core/block-editor,selectionChange,7,2.000000238418579,0.2999999523162842,0.3400001525878907
+listener_keyhold,Playwright delay: key held down,large post,1550,core/block-editor,updateBlockAttributes,7,3.6000001430511475,0.5,0.6400000095367432
+listener_keyhold,Playwright delay: key held down,large post,1550,core/editor,autosave,1,23.200000047683716,23.200000047683716,23.200000047683716
+listener_keyhold,Playwright delay: key held down,large post,1550,core/editor,editPost,1,1.5,1.5,1.5
+listener_keyhold,Playwright delay: key held down,large post,1550,core/editor,savePost,1,23,23,23
+listener_keyhold,Playwright delay: key held down,large post,1580,core/block-editor,__unstableMarkLastChangeAsPersistent,7,84.90000009536743,12.099999904632568,13.359999942779542
+listener_keyhold,Playwright delay: key held down,large post,1580,core/block-editor,selectionChange,7,2.8000001907348633,0.40000009536743164,0.6
+listener_keyhold,Playwright delay: key held down,large post,1580,core/block-editor,updateBlockAttributes,7,4.1999993324279785,0.5999999046325684,0.7799998283386231
+listener_keyhold,Playwright delay: key held down,large post,2000,core/block-editor,__unstableMarkLastChangeAsPersistent,7,82.60000014305115,12.600000143051147,13.739999961853027
+listener_keyhold,Playwright delay: key held down,large post,2000,core/block-editor,selectionChange,7,2.299999713897705,0.2999999523162842,0.4800000190734864
+listener_keyhold,Playwright delay: key held down,large post,2000,core/block-editor,updateBlockAttributes,7,4.900000333786011,0.6000001430511475,1.1399999618530274

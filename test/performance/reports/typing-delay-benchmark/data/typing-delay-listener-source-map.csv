@@ -1,0 +1,4 @@
+generated_file,generated_line,generated_column,source,line,column,name,meaning
+build/scripts/rich-text/index.min.js,4,19679,packages/rich-text/src/hook/event-listeners/input-and-selection.js,255,9,,"Registers element.addEventListener('input', onInput)."
+build/scripts/rich-text/index.min.js,4,21304,packages/rich-text/src/hook/event-listeners/index.js,40,50,effect,"Calls a ref effect while installing RichText event listeners."
+build/scripts/rich-text/index.min.js,4,21297,packages/rich-text/src/hook/event-listeners/index.js,40,31,,"Maps RichText ref effects over the editable element."

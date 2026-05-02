@@ -26,7 +26,8 @@ The short version:
     was held" is not sufficient by itself; Gutenberg editor work is required.
 -   Event-listener timing narrows the visible Gutenberg work to editor-canvas
     input handling. The dominant measured callback is registered from
-    `rich-text`.
+    `rich-text`; source-map lookup identifies it as the `onInput` path in
+    `packages/rich-text/src/hook/event-listeners/input-and-selection.js`.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -37,9 +38,9 @@ Rscript test/performance/scripts/plot-typing-delay-benchmark.R
 ```
 
 The script uses `tidyverse`, `ggplot2`, `jsonlite`, and `scales`. It reads raw
-benchmark JSON from `artifacts/` when present, writes derived CSVs to `data/`,
-and renders plots to `figures/`. If raw JSON is absent, it can regenerate the
-plots from the committed CSVs.
+benchmark JSON from `artifacts/` when present, merges available raw runs into the
+derived CSVs in `data/`, and renders plots to `figures/`. If raw JSON is absent,
+it can regenerate the plots from the committed CSVs.
 
 ## Source Context
 
@@ -114,6 +115,12 @@ The R script derives:
 -   `data/typing-delay-event-listener-events.csv`: per-listener invocation timing;
 -   `data/typing-delay-listener-input-summary.csv`: input-listener summaries by
     delay and registration script.
+-   `data/typing-delay-listener-input-scenario-summary.csv`: RichText
+    input-listener comparison between the large-post and empty-post scenarios.
+-   `data/typing-delay-listener-action-summary.csv`: data-action summaries from
+    the listener-traced runs.
+-   `data/typing-delay-listener-source-map.csv`: source-map lookup for the
+    minified RichText listener registration stack.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -485,6 +492,50 @@ question about the `1510-1550ms` dip. The dip is visible inside the same
 RichText-input path, not in parent-frame keyboard shortcuts or generic React
 delegation.
 
+Source-map lookup of the hot registration stack maps
+`build/scripts/rich-text/index.min.js:4:19679` to
+`packages/rich-text/src/hook/event-listeners/input-and-selection.js:255`, the
+`element.addEventListener( 'input', onInput )` registration. That `onInput`
+callback calls:
+
+-   `createRecord()` in `packages/rich-text/src/hook/index.js`, which reads the
+    selection/range and parses the editable DOM through
+    `packages/rich-text/src/create.js`;
+-   `updateFormats()` in `packages/rich-text/src/update-formats.js`;
+-   `handleChange()` in `packages/rich-text/src/hook/index.js`, which applies the
+    record, serializes it, batches `onSelectionChange` and `onChange`, then forces
+    a render.
+
+The listener wrapper measures the whole callback, so it does not prove which
+sub-step dominates. It does rule out the parent frame, keyboard shortcuts, and
+generic React delegation as the main visible callback cost.
+
+![RichText listener scenario control](figures/16-rich-text-listener-scenario-control.png)
+
+I also ran an empty-post listener trace at `1200ms`, `1300ms`, `1550ms`, and
+`2000ms`. The same RichText input listener remains visible, but it is cheaper
+than in the large-post fixture. That means the active RichText input path has a
+baseline cost, while the larger editor/post state makes the path substantially
+more expensive.
+
+Selected values from the listener traces:
+
+| Scenario   | Mode             |    Delay | Latency p50 | RichText input median | RichText input p90 |
+| ---------- | ---------------- | -------: | ----------: | --------------------: | -----------------: |
+| large post | key held         | `1200ms` |    `17.5ms` |               `4.1ms` |           `10.0ms` |
+| empty post | key held         | `1200ms` |    `11.8ms` |               `2.2ms` |            `5.6ms` |
+| large post | wait after keyup | `1200ms` |    `11.0ms` |               `3.4ms` |            `7.0ms` |
+| empty post | wait after keyup | `1200ms` |     `7.1ms` |               `1.5ms` |            `3.2ms` |
+| large post | key held         | `2000ms` |    `15.2ms` |               `3.7ms` |            `8.3ms` |
+| empty post | key held         | `2000ms` |     `9.6ms` |               `1.6ms` |            `5.4ms` |
+
+The data-action trace from the same runs is consistent with this. Ordinary input
+actions such as `selectionChange` and `updateBlockAttributes` have sub-millisecond
+median dispatch times in these traces. The heavier
+`__unstableMarkLastChangeAsPersistent` action is a timer-side event, and its
+median is much larger in the large-post listener run (`~12ms`) than in the
+empty-post control (`~3ms`).
+
 ## Scenario Sensitivity
 
 ![Scenario boundary checks](figures/08-scenario-boundary-checks.png)
@@ -658,6 +709,8 @@ For investigation:
     fixed number of samples per delay.
 -   Run fresh browser contexts and fresh posts for each delay when comparing delay
     values.
+-   Split the RichText `onInput` callback into source-level timing spans for
+    `createRecord`, `applyRecord`, serialization, data dispatch, and render.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Add a textarea/native baseline to estimate browser/editor overhead.
@@ -697,6 +750,10 @@ The key runs used in this report were:
 -   `listener_keyhold`: Gutenberg key-hold trace with event-listener timing.
 -   `listener_between_keys`: Gutenberg complete-keypress-then-wait trace with
     event-listener timing.
+-   `listener_empty_keyhold`: empty-post key-hold trace with event-listener
+    timing.
+-   `listener_empty_between_keys`: empty-post complete-keypress-then-wait trace
+    with event-listener timing.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
