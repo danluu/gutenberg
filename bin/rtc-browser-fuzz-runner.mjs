@@ -59,6 +59,10 @@ const FULL_PREFLIGHT_INTERVAL_SEEDS = getPositiveIntegerEnv(
 	'RTC_FUZZ_FULL_PREFLIGHT_INTERVAL_SEEDS',
 	25
 );
+const HEALTH_CHECK_INTERVAL_SEEDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS',
+	1
+);
 const BASE_URL = process.env.RTC_FUZZ_BASE_URL ?? process.env.WP_BASE_URL ?? '';
 const DISABLE_SYNC_FAULTS =
 	process.env.RTC_FUZZ_DISABLE_SYNC_FAULTS ??
@@ -426,6 +430,60 @@ async function runFullPreflight( label ) {
 	} );
 }
 
+async function runEnvironmentHealthCheck( label ) {
+	const healthLogPath = path.join( OUTPUT_DIR, `${ label }-health.log` );
+	const requiredPluginPath =
+		'gutenberg-test-plugins/disable-animations.php';
+	const requiredTheme = 'twentytwentyone';
+	const php = [
+		`$plugin = WP_PLUGIN_DIR . '/${ requiredPluginPath }';`,
+		`if ( ! file_exists( $plugin ) ) { fwrite( STDERR, "missing plugin ${ requiredPluginPath }\\n" ); exit( 2 ); }`,
+		`if ( ! wp_get_theme( '${ requiredTheme }' )->exists() ) { fwrite( STDERR, "missing theme ${ requiredTheme }\\n" ); exit( 3 ); }`,
+		`echo "rtc-fuzz-health-ok\\n";`,
+	].join( ' ' );
+
+	return runCombinedCommand( {
+		command: 'npm',
+		args: [
+			'run',
+			'wp-env-test',
+			'--',
+			'run',
+			'cli',
+			'wp',
+			'eval',
+			php,
+		],
+		env: getSharedEnv(),
+		logPath: healthLogPath,
+		timeoutMs: 2 * 60 * 1000,
+	} );
+}
+
+async function stopForInfraFailure( { seed = null, stage, result } ) {
+	const failureSnippet = extractFailureSnippet( result.output );
+	await appendSummary( {
+		kind: 'infra',
+		discoveredAt: new Date().toISOString(),
+		...( seed === null ? {} : { seed } ),
+		stage,
+		failureSnippet,
+		logPath: result.logPath,
+	} );
+	await updateState( {
+		infraFailures: state.infraFailures + 1,
+		stopReason:
+			seed === null
+				? `${ stage }-failed`
+				: `seed-${ seed }-${ stage }-failed`,
+	} );
+	await log(
+		`Stopping after ${ stage } failure${
+			seed === null ? '' : ` for seed ${ seed }`
+		}. See ${ result.logPath }.`
+	);
+}
+
 function extractFailureSnippet( output ) {
 	const trimmed = output.trim();
 
@@ -722,19 +780,22 @@ async function main() {
 	await ensureFileExists( path.join( REPO_ROOT, 'package.json' ) );
 	await ensureWpEnvRunning();
 
+	const startupHealth = await runEnvironmentHealthCheck( 'startup' );
+	if ( ! startupHealth.ok ) {
+		await stopForInfraFailure( {
+			stage: 'startup-health',
+			result: startupHealth,
+		} );
+		throw new Error(
+			`Startup health check failed. See ${ startupHealth.logPath }.`
+		);
+	}
+
 	const startupPreflight = await runFullPreflight( 'startup' );
 	if ( ! startupPreflight.ok ) {
-		const failureSnippet = extractFailureSnippet( startupPreflight.output );
-		await appendSummary( {
-			kind: 'infra',
-			discoveredAt: new Date().toISOString(),
+		await stopForInfraFailure( {
 			stage: 'startup-preflight',
-			failureSnippet,
-			logPath: startupPreflight.logPath,
-		} );
-		await updateState( {
-			infraFailures: state.infraFailures + 1,
-			stopReason: 'startup-preflight-failed',
+			result: startupPreflight,
 		} );
 		throw new Error(
 			`Startup preflight failed. See ${ startupPreflight.logPath }.`
@@ -743,6 +804,7 @@ async function main() {
 
 	let seed = START_SEED;
 	let lastFullPreflightSeed = START_SEED;
+	let lastHealthCheckSeed = START_SEED - HEALTH_CHECK_INTERVAL_SEEDS;
 	let forceFullPreflight = false;
 
 	while ( Date.now() < END_AT ) {
@@ -754,30 +816,34 @@ async function main() {
 		await ensureFileExists( path.join( REPO_ROOT, SPEC_PATH ) );
 
 		if (
+			seed === START_SEED ||
+			seed - lastHealthCheckSeed >= HEALTH_CHECK_INTERVAL_SEEDS
+		) {
+			const health = await runEnvironmentHealthCheck( `seed-${ seed }` );
+			if ( ! health.ok ) {
+				await stopForInfraFailure( {
+					seed,
+					stage: 'health',
+					result: health,
+				} );
+				break;
+			}
+
+			lastHealthCheckSeed = seed;
+		}
+
+		if (
 			forceFullPreflight ||
 			seed === START_SEED ||
 			seed - lastFullPreflightSeed >= FULL_PREFLIGHT_INTERVAL_SEEDS
 		) {
 			const preflight = await runFullPreflight( `seed-${ seed }` );
 			if ( ! preflight.ok ) {
-				const failureSnippet = extractFailureSnippet(
-					preflight.output
-				);
-				await appendSummary( {
-					kind: 'infra',
-					discoveredAt: new Date().toISOString(),
+				await stopForInfraFailure( {
 					seed,
-					stage: 'seed-preflight',
-					failureSnippet,
-					logPath: preflight.logPath,
+					stage: 'preflight',
+					result: preflight,
 				} );
-				await updateState( {
-					infraFailures: state.infraFailures + 1,
-					stopReason: `seed-${ seed }-preflight-failed`,
-				} );
-				await log(
-					`Stopping after preflight failure for seed ${ seed }. See ${ preflight.logPath }.`
-				);
 				break;
 			}
 
