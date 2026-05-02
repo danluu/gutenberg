@@ -11,6 +11,7 @@ const REPO_ROOT = path.resolve(
 );
 const SPEC_PATH =
 	'test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts';
+const BEHAVIORAL_COVERAGE_FILENAME = 'rtc-behavioral-coverage.ndjson';
 const SCHEMA_PATH = path.join(
 	REPO_ROOT,
 	'bin/rtc-browser-failure-analysis.schema.json'
@@ -458,9 +459,12 @@ async function runEnvironmentHealthCheck( label ) {
 		};
 	}
 
-	let endpoint;
+	let endpoints;
 	try {
-		endpoint = new URL( '/wp-json/', BASE_URL ).toString();
+		endpoints = [
+			new URL( '/wp-json/', BASE_URL ).toString(),
+			new URL( '/index.php?rest_route=/', BASE_URL ).toString(),
+		];
 	} catch ( error ) {
 		record( `Invalid base URL "${ BASE_URL }": ${ error.message }` );
 		const text = output.join( '\n' ) + '\n';
@@ -476,55 +480,76 @@ async function runEnvironmentHealthCheck( label ) {
 		};
 	}
 
-	const controller = new AbortController();
 	let timedOut = false;
-	const timeout = setTimeout( () => {
-		timedOut = true;
-		controller.abort();
-	}, HTTP_HEALTH_TIMEOUT_MS );
-	timeout.unref();
+	let lastResult = null;
 
-	try {
-		record( `GET ${ endpoint }` );
-		const response = await fetch( endpoint, {
-			headers: {
-				Accept: 'application/json',
-				'User-Agent': 'rtc-browser-fuzz-health',
-			},
-			signal: controller.signal,
-		} );
-		const body = await response.text();
-		const bodySnippet = body.slice( 0, 1000 );
-		const ok = response.ok && body.includes( '"namespaces"' );
-		record( `status=${ response.status } ok=${ ok }` );
-		record( `body-snippet=${ JSON.stringify( bodySnippet ) }` );
-		const text = output.join( '\n' ) + '\n';
-		await fs.writeFile( healthLogPath, text );
-		return {
-			code: ok ? 0 : 1,
-			signal: null,
-			ok,
-			timedOut,
-			durationMs: Date.now() - start,
-			output: text,
-			logPath: healthLogPath,
-		};
-	} catch ( error ) {
-		record( `request failed: ${ error.stack ?? error.message }` );
-		const text = output.join( '\n' ) + '\n';
-		await fs.writeFile( healthLogPath, text );
-		return {
+	for ( const endpoint of endpoints ) {
+		const controller = new AbortController();
+		const timeout = setTimeout( () => {
+			timedOut = true;
+			controller.abort();
+		}, HTTP_HEALTH_TIMEOUT_MS );
+		timeout.unref();
+
+		try {
+			record( `GET ${ endpoint }` );
+			const response = await fetch( endpoint, {
+				headers: {
+					Accept: 'application/json',
+					'User-Agent': 'rtc-browser-fuzz-health',
+				},
+				signal: controller.signal,
+			} );
+			const body = await response.text();
+			const bodySnippet = body.slice( 0, 1000 );
+			const ok = response.ok && body.includes( '"namespaces"' );
+			record( `status=${ response.status } ok=${ ok }` );
+			record( `body-snippet=${ JSON.stringify( bodySnippet ) }` );
+			lastResult = {
+				code: ok ? 0 : 1,
+				signal: null,
+				ok,
+				timedOut,
+				durationMs: Date.now() - start,
+				logPath: healthLogPath,
+			};
+
+			if ( ok ) {
+				const text = output.join( '\n' ) + '\n';
+				await fs.writeFile( healthLogPath, text );
+				return {
+					...lastResult,
+					output: text,
+				};
+			}
+		} catch ( error ) {
+			record( `request failed: ${ error.stack ?? error.message }` );
+			lastResult = {
+				code: 1,
+				signal: null,
+				ok: false,
+				timedOut,
+				durationMs: Date.now() - start,
+				logPath: healthLogPath,
+			};
+		} finally {
+			clearTimeout( timeout );
+		}
+	}
+
+	const text = output.join( '\n' ) + '\n';
+	await fs.writeFile( healthLogPath, text );
+	return {
+		...( lastResult ?? {
 			code: 1,
 			signal: null,
 			ok: false,
 			timedOut,
 			durationMs: Date.now() - start,
-			output: text,
 			logPath: healthLogPath,
-		};
-	} finally {
-		clearTimeout( timeout );
-	}
+		} ),
+		output: text,
+	};
 }
 
 async function stopForInfraFailure( { seed = null, stage, result } ) {
@@ -596,6 +621,30 @@ function classifyReproducibility( attempts ) {
 	return 'unconfirmed';
 }
 
+async function readNdjsonFile( filePath ) {
+	let text;
+	try {
+		text = await fs.readFile( filePath, 'utf8' );
+	} catch {
+		return [];
+	}
+
+	return text
+		.split( '\n' )
+		.map( ( line ) => line.trim() )
+		.filter( Boolean )
+		.map( ( line ) => {
+			try {
+				return JSON.parse( line );
+			} catch ( error ) {
+				return {
+					parseError: error.message,
+					raw: line.slice( 0, 1000 ),
+				};
+			}
+		} );
+}
+
 function mapAnalysisKind( analysis, localClassification ) {
 	if ( ! analysis ) {
 		return localClassification === 'harness' ||
@@ -642,6 +691,11 @@ async function runSeedAttempt( seed, label, convergenceTimeoutMs ) {
 		logPath: path.join( attemptDir, 'command.log' ),
 		timeoutMs: RUN_TIMEOUT_MS,
 	} );
+	const behavioralCoveragePath = path.join(
+		artifactsDir,
+		BEHAVIORAL_COVERAGE_FILENAME
+	);
+	const behavioralCoverage = await readNdjsonFile( behavioralCoveragePath );
 
 	return {
 		seed,
@@ -652,6 +706,8 @@ async function runSeedAttempt( seed, label, convergenceTimeoutMs ) {
 		timedOut: commandResult.timedOut,
 		durationMs: commandResult.durationMs,
 		artifactsDir,
+		behavioralCoverage,
+		behavioralCoveragePath,
 		logPath: commandResult.logPath,
 		output: commandResult.output,
 	};

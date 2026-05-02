@@ -1,6 +1,9 @@
 /**
  * External dependencies
  */
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import path from 'path';
 import type { Locator, Page, Route } from '@playwright/test';
 
 /**
@@ -115,7 +118,10 @@ type RestRequestUtils = {
 	rest: < T = unknown >( options: {
 		data?: Record< string, unknown >;
 		method?: string;
-		params?: Record< string, unknown >;
+		params?:
+			| string
+			| Record< string, string | number | boolean >
+			| URLSearchParams;
 		path: string;
 	} ) => Promise< T >;
 };
@@ -141,6 +147,14 @@ type RestRevision = {
 	title?: RestRenderedField | string;
 };
 
+type CreatedUser = {
+	id: number;
+};
+
+type UserCreatingRequestUtils = RestRequestUtils & {
+	createUser: ( user: UserCredentials ) => Promise< CreatedUser >;
+};
+
 type SaveCheckpoint = {
 	content: string;
 	marker: string;
@@ -160,6 +174,75 @@ type PageAction = {
 		rng: Random,
 		pages: PageRef[]
 	) => Promise< void >;
+};
+
+type BehaviorActionTrace = {
+	label: string;
+	step: number;
+	userIndex: number;
+};
+
+type BehaviorFaultTrace = {
+	delayMs?: number;
+	status?: number;
+	step: number;
+	type: 'delay' | 'fail';
+	userIndex: number;
+};
+
+type CdpSession = {
+	detach: () => Promise< void >;
+	send: (
+		method: string,
+		params?: Record< string, unknown >
+	) => Promise< any >;
+};
+
+type CdpCoverageSummary = {
+	coveredFunctionCount: number;
+	coveredRangeCount: number;
+	hash: string;
+	scriptCount: number;
+};
+
+type BehaviorCoverage = {
+	actionProfile: string;
+	actions: BehaviorActionTrace[];
+	blockStats?: ReturnType< typeof getBlockStats >;
+	cdpCoverage?: CdpCoverageSummary;
+	collaboratorMode: string;
+	disableParserStress: boolean;
+	disableReload: boolean;
+	disableRevisionRestore: boolean;
+	disableSyncFaults: boolean;
+	error?: string;
+	extraCollaborators: number;
+	faults: BehaviorFaultTrace[];
+	initialContentProfile: string;
+	laneLabel: string;
+	lifecycleEvents: Array< {
+		step: number;
+		type: string;
+		userCount: number;
+	} >;
+	reloadStep: number;
+	reloads: Array< {
+		step: number;
+		userIndex: number;
+	} >;
+	revisionRestore: {
+		eligible: boolean;
+		enabled: boolean;
+	};
+	saveCheckpointSteps: Array< {
+		step: number;
+		userIndex: number;
+	} >;
+	seed: number;
+	status: 'passed' | 'failed';
+	stepCount: number;
+	transport: 'http' | 'ws';
+	userCount: number;
 };
 
 const SEED_START = getEnvInt( 'GUTENBERG_RTC_BROWSER_SEED_START', 701 );
@@ -190,6 +273,18 @@ const ENABLE_REVISION_RESTORE_PROBE =
 		'1' ) === '1';
 const ACTION_PROFILE =
 	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
+const DISABLE_PARSER_STRESS =
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS === '1';
+const EXTRA_COLLABORATOR_COUNT = getEnvNonNegativeInt(
+	'GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS',
+	ACTION_PROFILE === 'session-lifecycle' ? 1 : 0
+);
+const ENABLE_LIFECYCLE_EVENTS =
+	process.env.GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS === '1' ||
+	ACTION_PROFILE === 'session-lifecycle';
+const COLLECT_CDP_COVERAGE =
+	process.env.GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE === '1';
+const BEHAVIORAL_COVERAGE_FILENAME = 'rtc-behavioral-coverage.ndjson';
 const ENABLE_STALE_TAB_PROBE = [ 'surface', 'stale-tab' ].includes(
 	ACTION_PROFILE
 );
@@ -206,6 +301,22 @@ function getEnvInt( name: string, fallback: number ): number {
 
 	if ( Number.isNaN( parsedValue ) || parsedValue <= 0 ) {
 		throw new Error( `Expected ${ name } to be a positive integer.` );
+	}
+
+	return parsedValue;
+}
+
+function getEnvNonNegativeInt( name: string, fallback: number ): number {
+	const rawValue = process.env[ name ];
+
+	if ( ! rawValue ) {
+		return fallback;
+	}
+
+	const parsedValue = Number.parseInt( rawValue, 10 );
+
+	if ( Number.isNaN( parsedValue ) || parsedValue < 0 ) {
+		throw new Error( `Expected ${ name } to be a non-negative integer.` );
 	}
 
 	return parsedValue;
@@ -252,6 +363,220 @@ function createRng( seed: number ): Random {
 
 function pick< T >( rng: Random, values: T[] ): T {
 	return values[ Math.floor( rng() * values.length ) ];
+}
+
+function getTransport(): 'http' | 'ws' {
+	return process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1' ? 'ws' : 'http';
+}
+
+function getInitialContentProfile( seed: number ): string {
+	if (
+		DISABLE_PARSER_STRESS ||
+		ACTION_PROFILE === 'persistence' ||
+		ACTION_PROFILE === 'persistence-no-title'
+	) {
+		return `base-${ seed % 4 }`;
+	}
+
+	switch ( seed % 8 ) {
+		case 1:
+			return 'html-entity-reference';
+		case 2:
+			return 'deprecated-block-content';
+		case 3:
+			return 'validation-fix-content';
+		case 4:
+			return 'equivalent-html-content';
+		case 5:
+			return 'freeform-parser-content';
+		case 6:
+			return 'layout-and-media-content';
+		case 7:
+			return 'query-and-navigation-like-content';
+		default:
+			return `base-${ seed % 4 }`;
+	}
+}
+
+function createBehaviorCoverage( seed: number ): BehaviorCoverage {
+	return {
+		actionProfile: ACTION_PROFILE,
+		actions: [],
+		collaboratorMode: COLLABORATOR_MODE,
+		disableParserStress: DISABLE_PARSER_STRESS,
+		disableReload: DISABLE_RELOAD,
+		disableRevisionRestore: DISABLE_REVISION_RESTORE,
+		disableSyncFaults: DISABLE_SYNC_FAULTS,
+		extraCollaborators: EXTRA_COLLABORATOR_COUNT,
+		faults: [],
+		initialContentProfile: getInitialContentProfile( seed ),
+		laneLabel: process.env.GUTENBERG_RTC_LANE_LABEL ?? 'unknown',
+		lifecycleEvents: [],
+		reloadStep: -1,
+		reloads: [],
+		revisionRestore: {
+			eligible: false,
+			enabled: ENABLE_REVISION_RESTORE_PROBE,
+		},
+		saveCheckpointSteps: [],
+		seed,
+		status: 'failed',
+		stepCount: STEP_COUNT,
+		transport: getTransport(),
+		userCount: 0,
+	};
+}
+
+function getBlockStats( blocks: Array< any > ) {
+	const counts: Record< string, number > = {};
+	let totalBlocks = 0;
+	let maxDepth = 0;
+
+	const visit = ( currentBlocks: Array< any >, depth: number ) => {
+		maxDepth = Math.max( maxDepth, depth );
+
+		for ( const block of currentBlocks ) {
+			totalBlocks += 1;
+			counts[ block.name ] = ( counts[ block.name ] ?? 0 ) + 1;
+			visit( block.innerBlocks ?? [], depth + 1 );
+		}
+	};
+
+	visit( blocks, 0 );
+
+	return {
+		counts,
+		maxDepth,
+		totalBlocks,
+		types: Object.keys( counts ).sort(),
+	};
+}
+
+async function writeBehaviorCoverage( coverage: BehaviorCoverage ) {
+	const artifactsPath = process.env.WP_ARTIFACTS_PATH;
+
+	if ( ! artifactsPath ) {
+		return;
+	}
+
+	await fs.mkdir( artifactsPath, { recursive: true } );
+	const record = {
+		...coverage,
+		recordedAt: new Date().toISOString(),
+	};
+	const line = JSON.stringify( record ) + '\n';
+	await fs.appendFile(
+		path.join( artifactsPath, BEHAVIORAL_COVERAGE_FILENAME ),
+		line
+	);
+	await fs.writeFile(
+		path.join(
+			artifactsPath,
+			`rtc-behavioral-coverage-${ coverage.seed }.json`
+		),
+		JSON.stringify( record, null, 2 ) + '\n'
+	);
+}
+
+async function startCdpCoverage( pages: PageRef[] ): Promise< CdpSession[] > {
+	if ( ! COLLECT_CDP_COVERAGE ) {
+		return [];
+	}
+
+	const sessions: CdpSession[] = [];
+
+	for ( const { page } of pages ) {
+		const session = await page.context().newCDPSession( page );
+		await session.send( 'Profiler.enable' );
+		await session.send( 'Profiler.startPreciseCoverage', {
+			callCount: false,
+			detailed: false,
+		} );
+		sessions.push( session );
+	}
+
+	return sessions;
+}
+
+async function stopCdpCoverage(
+	sessions: CdpSession[]
+): Promise< CdpCoverageSummary | undefined > {
+	if ( sessions.length === 0 ) {
+		return undefined;
+	}
+
+	const keys: string[] = [];
+	let scriptCount = 0;
+	let coveredFunctionCount = 0;
+	let coveredRangeCount = 0;
+
+	for ( const session of sessions ) {
+		try {
+			const result = await session.send( 'Profiler.takePreciseCoverage' );
+
+			for ( const script of result.result ?? [] ) {
+				const url = script.url ?? '';
+
+				if (
+					! url.includes( '/wp-content/' ) &&
+					! url.includes( '/wp-includes/' )
+				) {
+					continue;
+				}
+
+				let scriptCovered = false;
+				for ( const fn of script.functions ?? [] ) {
+					const coveredRanges = ( fn.ranges ?? [] ).filter(
+						( range: { count?: number } ) =>
+							( range.count ?? 0 ) > 0
+					);
+
+					if ( coveredRanges.length === 0 ) {
+						continue;
+					}
+
+					scriptCovered = true;
+					coveredFunctionCount += 1;
+					coveredRangeCount += coveredRanges.length;
+					keys.push(
+						`${ url }#${ fn.functionName ?? '' }#${ coveredRanges
+							.map(
+								( range: {
+									endOffset?: number;
+									startOffset?: number;
+								} ) =>
+									`${ range.startOffset ?? 0 }-${
+										range.endOffset ?? 0
+									}`
+							)
+							.join( ',' ) }`
+					);
+				}
+
+				if ( scriptCovered ) {
+					scriptCount += 1;
+				}
+			}
+		} finally {
+			await session
+				.send( 'Profiler.stopPreciseCoverage' )
+				.catch( () => {} );
+			await session.detach().catch( () => {} );
+		}
+	}
+
+	const hash = crypto
+		.createHash( 'sha256' )
+		.update( keys.sort().join( '\n' ) )
+		.digest( 'hex' )
+		.slice( 0, 16 );
+
+	return {
+		coveredFunctionCount,
+		coveredRangeCount,
+		hash,
+		scriptCount,
+	};
 }
 
 function chooseMilestoneStep(
@@ -582,6 +907,7 @@ function getInitialContent( seed: number ): string {
 	const baseContent = getBaseInitialContent( seed );
 
 	if (
+		DISABLE_PARSER_STRESS ||
 		ACTION_PROFILE === 'persistence' ||
 		ACTION_PROFILE === 'persistence-no-title'
 	) {
@@ -2120,6 +2446,50 @@ async function restoreRevisionViaBrowserAndVerify( {
 	expect( persistedTitle ).not.toContain( newerCheckpoint.titleMarker );
 }
 
+function getPageRefs( collaborationUtils: CollaborationUtils ): PageRef[] {
+	return collaborationUtils.allPages.map( ( page, userIndex ) => ( {
+		editor: collaborationUtils.allEditors[ userIndex ],
+		page,
+		userIndex,
+	} ) );
+}
+
+async function createAdditionalCollaborator(
+	requestUtils: UserCreatingRequestUtils,
+	collaborationUtils: CollaborationUtils,
+	testInfo: { parallelIndex: number; workerIndex: number },
+	index: number
+): Promise< UserCredentials > {
+	if ( COLLABORATOR_MODE === 'same-user' ) {
+		return ADMIN_USER;
+	}
+
+	const laneLabel = process.env.GUTENBERG_RTC_LANE_LABEL ?? 'lane0';
+	const uniqueSuffix = [
+		laneLabel,
+		process.pid.toString( 36 ),
+		testInfo.workerIndex.toString( 36 ),
+		testInfo.parallelIndex.toString( 36 ),
+		index.toString( 36 ),
+		Date.now().toString( 36 ),
+	]
+		.join( '' )
+		.replaceAll( /[^a-z0-9]/gi, '' )
+		.toLowerCase()
+		.slice( -20 );
+	const user = {
+		username: `rtcfzx${ uniqueSuffix }`,
+		email: `rtcfzx+${ uniqueSuffix }@example.com`,
+		firstName: 'RTC',
+		lastName: 'Novelty',
+		password: 'password',
+		roles: COLLABORATOR_ROLES,
+	};
+	const createdUser = await requestUtils.createUser( user );
+	collaborationUtils.registerCleanupUser( createdUser.id );
+	return user;
+}
+
 const ACTIONS: PageAction[] = [
 	{
 		label: 'insert-paragraph',
@@ -2229,6 +2599,16 @@ const ACTIONS: PageAction[] = [
 
 function getActiveActions(): PageAction[] {
 	if ( ACTION_PROFILE === 'full' || ACTION_PROFILE === 'surface' ) {
+		if ( DISABLE_PARSER_STRESS ) {
+			const parserStressActionLabels = new Set( [
+				'reparse-edited-content',
+				'append-parser-stress-content',
+			] );
+			return ACTIONS.filter(
+				( action ) => ! parserStressActionLabels.has( action.label )
+			);
+		}
+
 		return ACTIONS;
 	}
 
@@ -2243,6 +2623,50 @@ function getActiveActions(): PageAction[] {
 
 		return ACTIONS.filter( ( action ) =>
 			staleTabActionLabels.has( action.label )
+		);
+	}
+
+	if ( ACTION_PROFILE === 'structure' ) {
+		const structureActionLabels = new Set( [
+			'insert-paragraph',
+			'append-paragraph',
+			'edit-paragraph',
+			'delete-block',
+			'move-block',
+			'concurrent-paragraphs',
+			'insert-heading',
+			'edit-table-array-attributes',
+			'insert-layout-composite-block',
+			'edit-nested-block-attributes',
+			'edit-media-reference-block',
+			'edit-query-block-attributes',
+			'undo-redo-recent-change',
+		] );
+
+		return ACTIONS.filter( ( action ) =>
+			structureActionLabels.has( action.label )
+		);
+	}
+
+	if ( ACTION_PROFILE === 'session-lifecycle' ) {
+		const lifecycleActionLabels = new Set( [
+			'insert-paragraph',
+			'append-paragraph',
+			'edit-paragraph',
+			'delete-block',
+			'move-block',
+			'edit-title',
+			'concurrent-paragraphs',
+			'insert-heading',
+			'edit-table-array-attributes',
+			'insert-layout-composite-block',
+			'edit-nested-block-attributes',
+			'server-autosave',
+			'undo-redo-recent-change',
+		] );
+
+		return ACTIONS.filter( ( action ) =>
+			lifecycleActionLabels.has( action.label )
 		);
 	}
 
@@ -2291,157 +2715,297 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			collaboratorUser,
 			collaborationUtils,
 			requestUtils,
-		} ) => {
+		}, testInfo ) => {
 			test.setTimeout(
 				Math.max(
 					ENABLE_STALE_TAB_PROBE ? 180000 : 90000,
 					STEP_COUNT *
-						( ACTION_PROFILE === 'surface' ? 25000 : 15000 )
+						( [ 'surface', 'session-lifecycle' ].includes(
+							ACTION_PROFILE
+						)
+							? 25000
+							: 15000 )
 				)
 			);
 
 			const rng = createRng( seed );
-			const post = await requestUtils.createPost( {
-				title: `RTC seed ${ seed } initial title`,
-				status: 'draft',
-				date_gmt: new Date().toISOString(),
-				content: getInitialContent( seed ),
-			} );
+			const behavior = createBehaviorCoverage( seed );
+			let pages: PageRef[] = [];
+			let cdpSessions: CdpSession[] = [];
+			let lastState: { blocks?: Array< any > } | null = null;
 
-			await collaborationUtils.openPost( post.id );
-			await collaborationUtils.joinUser( post.id, collaboratorUser );
-			await waitForCollaborationSessionSettled( collaborationUtils, {
-				timeout: DISCOVERY_TIMEOUT_MS,
-			} );
-			await collaborationUtils.waitForConvergence( {
-				timeout: CONVERGENCE_TIMEOUT_MS,
-			} );
+			try {
+				const post = await requestUtils.createPost( {
+					title: `RTC seed ${ seed } initial title`,
+					status: 'draft',
+					date_gmt: new Date().toISOString(),
+					content: getInitialContent( seed ),
+				} );
 
-			const pages = collaborationUtils.allPages.map(
-				( page, userIndex ) => ( {
-					editor: collaborationUtils.allEditors[ userIndex ],
-					page,
-					userIndex,
-				} )
-			);
-			const usedMilestones = new Set< number >();
-			const saveSteps = chooseMilestoneSteps(
-				rng,
-				STEP_COUNT,
-				usedMilestones,
-				STEP_COUNT >= 3 ? 2 : 1
-			);
-			const reloadStep = DISABLE_RELOAD
-				? -1
-				: chooseMilestoneStep( rng, STEP_COUNT, usedMilestones );
-			const saveCheckpoints: SaveCheckpoint[] = [];
+				await collaborationUtils.openPost( post.id );
+				await collaborationUtils.joinUser( post.id, collaboratorUser );
 
-			for ( let step = 0; step < STEP_COUNT; step++ ) {
-				const actor = pick( rng, pages );
-				const faultRoll = rng();
-
-				if ( ! DISABLE_SYNC_FAULTS && faultRoll < 0.15 ) {
-					await collaborationUtils.delayNextSyncRequest(
-						actor.page,
-						250 + Math.floor( rng() * 1250 )
-					);
-				} else if ( ! DISABLE_SYNC_FAULTS && faultRoll < 0.25 ) {
-					// 403 is a semantic permission failure, not a transient sync
-					// fault. The runtime correctly unregisters the room on 403,
-					// so injecting it here only produces harness-level false
-					// positives.
-					await collaborationUtils.failNextSyncRequest(
-						actor.page,
-						pick( rng, RETRIABLE_SYNC_FAILURE_STATUSES )
+				const additionalCollaborators: UserCredentials[] = [];
+				for (
+					let index = 0;
+					index < EXTRA_COLLABORATOR_COUNT;
+					index++
+				) {
+					additionalCollaborators.push(
+						await createAdditionalCollaborator(
+							requestUtils as UserCreatingRequestUtils,
+							collaborationUtils,
+							testInfo,
+							index
+						)
 					);
 				}
 
-				const action = pick( rng, ACTIVE_ACTIONS );
+				if ( ! ENABLE_LIFECYCLE_EVENTS ) {
+					for ( const user of additionalCollaborators ) {
+						await collaborationUtils.joinUser( post.id, user );
+					}
+				}
 
-				await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
-					await action.run(
-						actor.page,
-						seed,
-						step,
-						actor.userIndex,
-						rng,
-						pages
-					);
+				await waitForCollaborationSessionSettled( collaborationUtils, {
+					timeout: DISCOVERY_TIMEOUT_MS,
 				} );
-
-				const state = await collaborationUtils.waitForConvergence( {
+				lastState = await collaborationUtils.waitForConvergence( {
 					timeout: CONVERGENCE_TIMEOUT_MS,
 				} );
-				expect( state.blocks.length ).toBeGreaterThan( 0 );
 
-				if ( saveSteps.has( step ) ) {
-					const saver = pick( rng, pages );
-					const viewer =
-						pages.find(
-							( candidate ) =>
-								candidate.userIndex !== saver.userIndex
-						) ?? saver;
-					const marker = getCheckpointMarker(
-						seed,
-						step,
-						saver.userIndex
-					);
+				pages = getPageRefs( collaborationUtils );
+				behavior.userCount = pages.length;
+				cdpSessions = await startCdpCoverage( pages );
 
-					const checkpoint = await saveCheckpointAndVerify( {
-						collaborationUtils,
-						marker,
-						postId: post.id,
-						requestUtils,
-						saver,
+				const usedMilestones = new Set< number >();
+				const saveSteps = chooseMilestoneSteps(
+					rng,
+					STEP_COUNT,
+					usedMilestones,
+					STEP_COUNT >= 3 ? 2 : 1
+				);
+				const reloadStep = DISABLE_RELOAD
+					? -1
+					: chooseMilestoneStep( rng, STEP_COUNT, usedMilestones );
+				const lateJoinStep =
+					ENABLE_LIFECYCLE_EVENTS &&
+					additionalCollaborators.length > 0
+						? chooseMilestoneStep( rng, STEP_COUNT, usedMilestones )
+						: -1;
+				const lifecycleReloadSteps =
+					ENABLE_LIFECYCLE_EVENTS && ! DISABLE_RELOAD
+						? chooseMilestoneSteps(
+								rng,
+								STEP_COUNT,
+								usedMilestones,
+								1
+						  )
+						: new Set< number >();
+				const saveCheckpoints: SaveCheckpoint[] = [];
+				behavior.reloadStep = reloadStep;
+
+				for ( let step = 0; step < STEP_COUNT; step++ ) {
+					if ( step === lateJoinStep ) {
+						const previousPageCount = pages.length;
+						for ( const user of additionalCollaborators ) {
+							await collaborationUtils.joinUser( post.id, user );
+						}
+						await waitForCollaborationSessionSettled(
+							collaborationUtils,
+							{
+								timeout: DISCOVERY_TIMEOUT_MS,
+							}
+						);
+						pages = getPageRefs( collaborationUtils );
+						behavior.userCount = pages.length;
+						behavior.lifecycleEvents.push( {
+							step,
+							type: 'late-join',
+							userCount: pages.length,
+						} );
+						cdpSessions.push(
+							...( await startCdpCoverage(
+								pages.slice( previousPageCount )
+							) )
+						);
+					}
+
+					const actor = pick( rng, pages );
+					const faultRoll = rng();
+
+					if ( ! DISABLE_SYNC_FAULTS && faultRoll < 0.15 ) {
+						const delayMs = 250 + Math.floor( rng() * 1250 );
+						behavior.faults.push( {
+							delayMs,
+							step,
+							type: 'delay',
+							userIndex: actor.userIndex,
+						} );
+						await collaborationUtils.delayNextSyncRequest(
+							actor.page,
+							delayMs
+						);
+					} else if ( ! DISABLE_SYNC_FAULTS && faultRoll < 0.25 ) {
+						// 403 is a semantic permission failure, not a transient sync
+						// fault. The runtime correctly unregisters the room on 403,
+						// so injecting it here only produces harness-level false
+						// positives.
+						const status = pick(
+							rng,
+							RETRIABLE_SYNC_FAILURE_STATUSES
+						);
+						behavior.faults.push( {
+							status,
+							step,
+							type: 'fail',
+							userIndex: actor.userIndex,
+						} );
+						await collaborationUtils.failNextSyncRequest(
+							actor.page,
+							status
+						);
+					}
+
+					const action = pick( rng, ACTIVE_ACTIONS );
+					behavior.actions.push( {
+						label: action.label,
 						step,
-						viewer,
+						userIndex: actor.userIndex,
 					} );
 
-					saveCheckpoints.push( checkpoint );
-				}
+					await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
+						await action.run(
+							actor.page,
+							seed,
+							step,
+							actor.userIndex,
+							rng,
+							pages
+						);
+					} );
 
-				let reloadedState = null;
-				if ( step === reloadStep ) {
-					await reloadAndWait(
-						pick( rng, pages ).page,
-						collaborationUtils
-					);
-					reloadedState = await collaborationUtils.waitForConvergence(
-						{
-							includeCrdtDocument: true,
-							timeout: CONVERGENCE_TIMEOUT_MS,
+					const state = await collaborationUtils.waitForConvergence( {
+						timeout: CONVERGENCE_TIMEOUT_MS,
+					} );
+					lastState = state;
+					expect( state.blocks.length ).toBeGreaterThan( 0 );
+
+					if ( saveSteps.has( step ) ) {
+						const saver = pick( rng, pages );
+						const viewer =
+							pages.find(
+								( candidate ) =>
+									candidate.userIndex !== saver.userIndex
+							) ?? saver;
+						const marker = getCheckpointMarker(
+							seed,
+							step,
+							saver.userIndex
+						);
+						behavior.saveCheckpointSteps.push( {
+							step,
+							userIndex: saver.userIndex,
+						} );
+
+						const checkpoint = await saveCheckpointAndVerify( {
+							collaborationUtils,
+							marker,
+							postId: post.id,
+							requestUtils,
+							saver,
+							step,
+							viewer,
+						} );
+
+						saveCheckpoints.push( checkpoint );
+					}
+
+					let reloadedState = null;
+					if (
+						step === reloadStep ||
+						lifecycleReloadSteps.has( step )
+					) {
+						const reloader = pick( rng, pages );
+						await reloadAndWait(
+							reloader.page,
+							collaborationUtils
+						);
+						reloadedState =
+							await collaborationUtils.waitForConvergence( {
+								includeCrdtDocument: true,
+								timeout: CONVERGENCE_TIMEOUT_MS,
+							} );
+						lastState = reloadedState;
+						behavior.reloads.push( {
+							step,
+							userIndex: reloader.userIndex,
+						} );
+						if ( lifecycleReloadSteps.has( step ) ) {
+							behavior.lifecycleEvents.push( {
+								step,
+								type: 'lifecycle-reload',
+								userCount: pages.length,
+							} );
 						}
-					);
+					}
+					expect(
+						step === reloadStep || lifecycleReloadSteps.has( step )
+							? reloadedState?.blocks.length
+							: 1
+					).toBeGreaterThan( 0 );
 				}
-				expect(
-					step === reloadStep ? reloadedState?.blocks.length : 1
-				).toBeGreaterThan( 0 );
-			}
 
-			const finalState = await collaborationUtils.waitForConvergence( {
-				includeCrdtDocument: true,
-				timeout: CONVERGENCE_TIMEOUT_MS,
-			} );
+				const finalState = await collaborationUtils.waitForConvergence(
+					{
+						includeCrdtDocument: true,
+						timeout: CONVERGENCE_TIMEOUT_MS,
+					}
+				);
+				lastState = finalState;
+				behavior.blockStats = getBlockStats( finalState.blocks );
 
-			expect( finalState.title ).not.toBe( '' );
-			expect( finalState.blocks.length ).toBeGreaterThan( 0 );
-			expect( finalState.crdtDocument ).not.toBeNull();
+				expect( finalState.title ).not.toBe( '' );
+				expect( finalState.blocks.length ).toBeGreaterThan( 0 );
+				expect( finalState.crdtDocument ).not.toBeNull();
 
-			await restoreRevisionViaBrowserAndVerify( {
-				checkpoints: saveCheckpoints,
-				collaborationUtils,
-				postId: post.id,
-				requestUtils,
-				restorer: pick( rng, pages ),
-			} );
-
-			if ( ENABLE_STALE_TAB_PROBE ) {
-				await runStaleTabSaveProbe( {
+				behavior.revisionRestore.eligible =
+					ENABLE_REVISION_RESTORE_PROBE &&
+					saveCheckpoints.length >= 2;
+				await restoreRevisionViaBrowserAndVerify( {
+					checkpoints: saveCheckpoints,
 					collaborationUtils,
 					postId: post.id,
 					requestUtils,
-					seed,
+					restorer: pick( rng, pages ),
 				} );
+
+				if ( ENABLE_STALE_TAB_PROBE ) {
+					await runStaleTabSaveProbe( {
+						collaborationUtils,
+						postId: post.id,
+						requestUtils,
+						seed,
+					} );
+				}
+
+				behavior.status = 'passed';
+			} catch ( error ) {
+				behavior.error =
+					error instanceof Error
+						? error.stack ?? error.message
+						: String( error );
+				throw error;
+			} finally {
+				behavior.userCount = Math.max(
+					behavior.userCount,
+					pages.length
+				);
+				if ( ! behavior.blockStats && lastState?.blocks ) {
+					behavior.blockStats = getBlockStats( lastState.blocks );
+				}
+				behavior.cdpCoverage = await stopCdpCoverage( cdpSessions );
+				await writeBehaviorCoverage( behavior ).catch( () => {} );
 			}
 		} );
 	}
