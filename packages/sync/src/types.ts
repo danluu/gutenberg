@@ -123,6 +123,10 @@ export interface SyncManagerUpdateOptions {
 	isNewUndoLevel?: boolean;
 }
 
+export interface CreatePersistedCRDTDocOptions {
+	basePersistedCRDTDoc?: string | null;
+}
+
 export interface RecordHandlers {
 	addUndoMeta: ( ydoc: Y.Doc, meta: Map< string, any > ) => void;
 	editRecord: (
@@ -164,7 +168,8 @@ export interface SyncManager {
 	) => Promise< boolean >;
 	createPersistedCRDTDoc: (
 		objectType: ObjectType,
-		objectId: ObjectID
+		objectId: ObjectID,
+		options?: CreatePersistedCRDTDocOptions
 	) => Promise< string | null >;
 	getCRDTRecordData: (
 		objectType: ObjectType,
