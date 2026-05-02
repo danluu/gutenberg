@@ -37,6 +37,8 @@ run_specs <- tribble(
 	"after_persistence_scan", "Wait for persistence, then wait", "artifacts/typing-delay-benchmark-after-persistence-scan/typing-delay-benchmark-1777758189761.json", "large post", "delay after isLastBlockChangePersistent()",
 	"keyhold_schedulers", "Key-hold scheduler trace", "artifacts/typing-delay-benchmark-keyhold-schedulers/typing-delay-benchmark-1777758386189.json", "large post", "normal Playwright delay with action/timer/scheduler tracing",
 	"between_keys", "Complete keypress, then wait", "artifacts/typing-delay-benchmark-between-keys/typing-delay-benchmark-1777758545134.json", "large post", "delay after full keydown/keypress/input/keyup sequence",
+	"between_keys_0_1100_dense", "Complete keypress, then wait: 0-1100ms, 10ms step", "artifacts/typing-delay-benchmark-between-keys-0-1100-dense/typing-delay-benchmark-1777764334188.json", "large post", "delay after full keydown/keypress/input/keyup sequence, dense 0-1100ms scan",
+	"between_keys_1110_2000_dense", "Complete keypress, then wait: 1110-2000ms, 10ms step", "artifacts/typing-delay-benchmark-between-keys-1110-2000-dense/typing-delay-benchmark-1777764764748.json", "large post", "delay after full keydown/keypress/input/keyup sequence, dense 1110-2000ms extension",
 	"mode_trace_keyhold", "Paired trace: key held during delay", "artifacts/typing-delay-benchmark-mode-trace-keyhold/typing-delay-benchmark-1777759091224.json", "large post", "paired browser/action/timer trace for normal Playwright delay",
 	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress",
 	"native_keyhold_timer", "Native contenteditable: key held during delay", "artifacts/typing-delay-benchmark-native-keyhold-timer/typing-delay-benchmark-1777759696881.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and normal Playwright delay",
@@ -697,23 +699,42 @@ save_plot(
 	"09-keydown-event-count-audit.png"
 )
 
-mode_comparison <- by_delay %>%
-	filter(run_id %in% c("landmarks_0_2000", "between_keys", "after_persistence_scan")) %>%
-	mutate(mode_label = recode(
-		run_id,
-		landmarks_0_2000 = "Playwright delay: hold key down",
-		between_keys = "Complete keypress, then wait",
-		after_persistence_scan = "Wait for persistence, then wait"
-	))
+dense_mode_comparison <- by_delay %>%
+	filter(
+		run_id %in% c(
+			"full_0_1100",
+			"dense_1110_2000",
+			"between_keys_0_1100_dense",
+			"between_keys_1110_2000_dense"
+		)
+	) %>%
+	mutate(
+		mode_label = case_when(
+			run_id %in% c("full_0_1100", "dense_1110_2000") ~ "Playwright delay: key held down",
+			run_id %in% c("between_keys_0_1100_dense", "between_keys_1110_2000_dense") ~ "Complete keypress, then wait",
+			TRUE ~ run_label
+		),
+		mode_label = factor(
+			mode_label,
+			levels = c(
+				"Playwright delay: key held down",
+				"Complete keypress, then wait"
+			)
+		)
+	)
 
 save_plot(
-	ggplot(mode_comparison, aes(delay_ms, median_ms, color = mode_label)) +
+	ggplot(dense_mode_comparison, aes(delay_ms, median_ms, color = mode_label)) +
 		geom_line(linewidth = 0.75) +
-		geom_point(size = 2.1) +
-		scale_x_continuous(breaks = c(0, 100, 500, 900, 1000, 1100, 1200, 1300, 2000)) +
+		geom_vline(xintercept = 1000, linetype = "dashed", color = "#64748b") +
+		scale_color_manual(values = c(
+			"Playwright delay: key held down" = "#b91c1c",
+			"Complete keypress, then wait" = "#0369a1"
+		)) +
+		scale_x_continuous(breaks = c(seq(0, 2000, 250), 1000)) +
 		labs(
-			title = "The slow plateau is mostly a long synthetic key-hold effect",
-			subtitle = "Waiting after keyup, or after persistence, does not reproduce the 1200-2000ms plateau",
+			title = "Dense delay-mode comparison: key-hold vs wait-after-keyup",
+			subtitle = "Both modes are similar before the 1000ms persistence timer; the slow plateau appears when the synthetic key remains held",
 			x = "Configured delay",
 			y = "p50 latency (ms)",
 			color = NULL

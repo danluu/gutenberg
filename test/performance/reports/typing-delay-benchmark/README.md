@@ -21,6 +21,10 @@ The short version:
     dispatch time. The distinguishing condition is not just "persistence already
     fired"; it is that persistence fired while the previous synthetic key was
     still held down.
+-   The short-delay region is not irrelevant. A dense wait-after-keyup scan over
+    `0..2000ms` shows that key-hold and wait-after-keyup are already different
+    well before `990ms`; the `1000ms+` targeted traces explain the largest cliff,
+    but they do not cover the whole delay-mode effect.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -337,27 +341,44 @@ for one second.
 
 ![Delay mode comparison](figures/10-delay-mode-comparison.png)
 
-Two additional runs separate these cases:
+The first version of this comparison used landmark delays, mostly near and above
+the `1000ms` timer boundary. I added dense complete-keypress-then-wait runs for
+the full `0..2000ms` range, in `10ms` steps, and compare them with the existing
+dense key-hold scan.
 
-1. `between-keys`: type `x` with no Playwright delay, then wait after `keyup`.
-2. `after-persistence`: wait for `isLastBlockChangePersistent()`, then wait, then
-   type `x`.
+Two modes are compared:
+
+1. Playwright's normal `keyboard.type(..., { delay })`: keydown/keypress/input
+   happen, the key remains held for roughly `delay`, then keyup happens.
+2. Complete keypress, then wait: keydown/keypress/input/keyup happen first, then
+   the benchmark waits for `delay`.
+
+Shorter delays are not irrelevant. The one-second rich-text persistence timer
+cannot explain differences below `1000ms`, but the dense scan shows the two modes
+are already different there. The key-hold run has a broad slower region before
+the `1000ms` fast band; the wait-after-keyup run is flatter and does not
+reproduce the high `1200..2000ms` plateau.
 
 Selected p50s:
 
-| Mode                            |    Delay |        p50 |
-| ------------------------------- | -------: | ---------: |
-| Playwright key-hold delay       | `1200ms` | `17.682ms` |
-| Playwright key-hold delay       | `2000ms` | `18.248ms` |
-| Complete keypress, then wait    | `1200ms` |   `10.7ms` |
-| Complete keypress, then wait    | `2000ms` |   `10.3ms` |
-| Wait for persistence, then wait |  `200ms` |   `10.5ms` |
-| Wait for persistence, then wait |  `400ms` |   `10.7ms` |
+|    Delay | Key held | Wait after keyup |
+| -------: | -------: | ---------------: |
+|    `0ms` |  `5.4ms` |          `8.0ms` |
+|  `100ms` |  `7.9ms` |         `10.2ms` |
+|  `500ms` | `16.7ms` |         `11.4ms` |
+|  `900ms` | `18.9ms` |         `11.3ms` |
+|  `990ms` | `17.9ms` |         `10.2ms` |
+| `1000ms` |  `7.8ms` |         `10.1ms` |
+| `1100ms` |  `8.9ms` |         `14.1ms` |
+| `1200ms` | `17.4ms` |         `11.9ms` |
+| `1300ms` | `18.9ms` |         `11.4ms` |
+| `1550ms` | `12.8ms` |         `11.3ms` |
+| `2000ms` | `18.2ms` |         `12.2ms` |
 
 This falsifies the simple "more idle time after persistence makes typing slow"
 explanation. Waiting after the key has completed does not reproduce the slow
-plateau. Waiting after the rich-text persistence marker does not reproduce it
-either.
+plateau. Earlier `after-persistence` landmark runs also showed that waiting
+after the rich-text persistence marker does not reproduce it either.
 
 The slow plateau appears when the rich-text persistence timer fires while the
 previous synthetic key is still held down, and then the next key arrives after
@@ -879,6 +900,10 @@ The key runs used in this report were:
 -   `keyhold_schedulers`: normal Playwright key-hold delay with scheduler/action
     tracing.
 -   `between_keys`: complete keypress, then wait through `2000ms`.
+-   `between_keys_0_1100_dense`: complete keypress, then wait `0..1100ms` with a
+    `10ms` step.
+-   `between_keys_1110_2000_dense`: complete keypress, then wait `1110..2000ms`
+    with a `10ms` step.
 -   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
 -   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer
