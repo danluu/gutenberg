@@ -125,7 +125,8 @@ function defaultApplyChangesToCRDTDoc(
 export function applyPostChangesToCRDTDoc(
 	ydoc: CRDTDoc,
 	changes: PostChanges,
-	syncedProperties: Set< string >
+	syncedProperties: Set< string >,
+	options: { baseRecord?: ObjectData } = {}
 ): void {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
 
@@ -166,7 +167,12 @@ export function applyPostChangesToCRDTDoc(
 
 				// Merge blocks does not need `setValue` because it is operating on a
 				// Yjs type that is already in the Y.Doc.
-				mergeCrdtBlocks( currentBlocks, newValue, cursorPosition );
+				mergeCrdtBlocks(
+					currentBlocks,
+					newValue,
+					cursorPosition,
+					( options.baseRecord as Post | undefined )?.blocks
+				);
 				break;
 			}
 

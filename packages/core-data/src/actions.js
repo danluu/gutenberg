@@ -462,7 +462,7 @@ export const editEntityRecord =
 				objectId,
 				editsWithMerges,
 				origin,
-				{ isNewUndoLevel }
+				{ baseRecord: editedRecord, isNewUndoLevel }
 			);
 		}
 		if ( ! options.undoIgnore ) {
@@ -593,21 +593,23 @@ export const __unstableCreateUndoLevel =
  * @param {Function} [options.__unstableFetch]    Internal use only. Function to
  *                                                call instead of `apiFetch()`.
  *                                                Must return a promise.
+ * @param {boolean}  [options.__unstableSkipSyncUpdate=false]
+ *                                                Whether to mark synced entities
+ *                                                as saved without applying the
+ *                                                server response to the CRDT.
  * @param {boolean}  [options.throwOnError=false] If false, this action suppresses all
  *                                                the exceptions. Defaults to false.
  */
 export const saveEntityRecord =
-	(
-		kind,
-		name,
-		record,
-		{
+	( kind, name, record, options = {} ) =>
+	async ( { select, resolveSelect, dispatch } ) => {
+		const {
 			isAutosave = false,
 			__unstableFetch = apiFetch,
+			__unstableSkipSyncUpdate = false,
 			throwOnError = false,
-		} = {}
-	) =>
-	async ( { select, resolveSelect, dispatch } ) => {
+		} = options;
+
 		logEntityDeprecation( kind, name, 'saveEntityRecord' );
 		const configs = await resolveSelect.getEntitiesConfig( kind );
 		const entityConfig = configs.find(
@@ -798,7 +800,7 @@ export const saveEntityRecord =
 						getSyncManager()?.update(
 							`${ kind }/${ name }`,
 							recordId,
-							updatedRecord,
+							__unstableSkipSyncUpdate ? {} : updatedRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);

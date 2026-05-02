@@ -377,6 +377,291 @@ function createNewYBlock( block: Block ): YBlock {
 	);
 }
 
+function getBlockClientId( block: Block ): string | null {
+	return block.clientId || null;
+}
+
+function getYBlockClientId( yblock: YBlock ): string | null {
+	const clientId = yblock.get( 'clientId' );
+	return typeof clientId === 'string' && clientId ? clientId : null;
+}
+
+function canReorderYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[]
+): boolean {
+	if ( yblocks.length !== blocksToSync.length || yblocks.length < 2 ) {
+		return false;
+	}
+
+	const incomingClientIds = blocksToSync.map( getBlockClientId );
+	const currentClientIds = yblocks.toArray().map( getYBlockClientId );
+
+	if (
+		incomingClientIds.some( ( clientId ) => ! clientId ) ||
+		currentClientIds.some( ( clientId ) => ! clientId )
+	) {
+		return false;
+	}
+
+	const incomingSet = new Set( incomingClientIds );
+
+	if ( incomingSet.size !== incomingClientIds.length ) {
+		return false;
+	}
+
+	const currentSet = new Set( currentClientIds );
+
+	return (
+		currentSet.size === currentClientIds.length &&
+		currentSet.size === incomingSet.size &&
+		currentClientIds.every( ( clientId ) => incomingSet.has( clientId ) )
+	);
+}
+
+function canReorderBlocksByClientId(
+	baseBlocks: Block[],
+	blocksToSync: Block[]
+): boolean {
+	if ( baseBlocks.length !== blocksToSync.length || baseBlocks.length < 2 ) {
+		return false;
+	}
+
+	const baseClientIds = baseBlocks.map( getBlockClientId );
+	const incomingClientIds = blocksToSync.map( getBlockClientId );
+
+	if (
+		baseClientIds.some( ( clientId ) => ! clientId ) ||
+		incomingClientIds.some( ( clientId ) => ! clientId )
+	) {
+		return false;
+	}
+
+	const baseSet = new Set( baseClientIds );
+
+	return (
+		baseSet.size === baseClientIds.length &&
+		baseSet.size === incomingClientIds.length &&
+		incomingClientIds.every( ( clientId ) => baseSet.has( clientId ) )
+	);
+}
+
+function reorderYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[]
+): void {
+	if ( ! canReorderYBlocksByClientId( yblocks, blocksToSync ) ) {
+		return;
+	}
+
+	for (
+		let targetIndex = 0;
+		targetIndex < blocksToSync.length;
+		targetIndex++
+	) {
+		const targetClientId = getBlockClientId( blocksToSync[ targetIndex ] );
+
+		if (
+			getYBlockClientId( yblocks.get( targetIndex ) ) === targetClientId
+		) {
+			continue;
+		}
+
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === targetClientId
+			);
+
+		if ( currentIndex === -1 ) {
+			return;
+		}
+
+		const reorderedBlock = createNewYBlock( blocksToSync[ targetIndex ] );
+		yblocks.delete( currentIndex, 1 );
+		yblocks.insert( targetIndex, [ reorderedBlock ] );
+	}
+}
+
+function rebaseYBlocksByClientId(
+	yblocks: YBlocks,
+	baseBlocks: Block[] | undefined,
+	blocksToSync: Block[]
+): boolean {
+	if (
+		! baseBlocks ||
+		! canReorderYBlocksByClientId( yblocks, baseBlocks ) ||
+		! canReorderBlocksByClientId( baseBlocks, blocksToSync )
+	) {
+		return false;
+	}
+
+	const rebasedClientIds = baseBlocks.map( getBlockClientId );
+
+	for (
+		let targetIndex = 0;
+		targetIndex < blocksToSync.length;
+		targetIndex++
+	) {
+		const targetClientId = getBlockClientId( blocksToSync[ targetIndex ] );
+
+		if ( rebasedClientIds[ targetIndex ] === targetClientId ) {
+			continue;
+		}
+
+		const baseIndex = rebasedClientIds.indexOf( targetClientId );
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === targetClientId
+			);
+
+		if ( baseIndex === -1 || currentIndex === -1 ) {
+			return false;
+		}
+
+		const reorderedBlock = createNewYBlock(
+			yblocks.get( currentIndex ).toJSON() as Block
+		);
+		yblocks.delete( currentIndex, 1 );
+		yblocks.insert( targetIndex, [ reorderedBlock ] );
+
+		rebasedClientIds.splice( baseIndex, 1 );
+		rebasedClientIds.splice( targetIndex, 0, targetClientId );
+	}
+
+	return true;
+}
+
+function mergeBlockIntoYBlock(
+	yblock: YBlock,
+	block: Block,
+	cursorPosition: number | null,
+	baseBlock?: Block
+): void {
+	Object.entries( block ).forEach( ( [ key, value ] ) => {
+		switch ( key ) {
+			case 'attributes': {
+				const currentAttributes = yblock.get( key );
+
+				// If attributes are not set on the yblock, use the new values.
+				if ( ! currentAttributes ) {
+					yblock.set(
+						key,
+						createNewYAttributeMap( block.name, value )
+					);
+					break;
+				}
+
+				Object.entries( value ).forEach(
+					( [ attributeName, attributeValue ] ) => {
+						const currentAttribute =
+							currentAttributes?.get( attributeName );
+
+						const isExpectedType = isExpectedAttributeType(
+							block.name,
+							attributeName,
+							currentAttribute
+						);
+
+						// Y types (Y.Text, Y.Array, Y.Map) cannot be compared
+						// with fastDeepEqual against plain values. Delegate to
+						// mergeYValue which handles no-op detection at the edges.
+						const isYType =
+							currentAttribute instanceof Y.AbstractType;
+
+						const isAttributeChanged =
+							! isExpectedType ||
+							isYType ||
+							! fastDeepEqual( currentAttribute, attributeValue );
+
+						if ( isAttributeChanged ) {
+							updateYBlockAttribute(
+								block.name,
+								attributeName,
+								attributeValue,
+								currentAttributes,
+								cursorPosition
+							);
+						}
+					}
+				);
+
+				// Delete any attributes that are no longer present.
+				currentAttributes.forEach(
+					( _attrValue: unknown, attrName: string ) => {
+						if ( ! value.hasOwnProperty( attrName ) ) {
+							currentAttributes.delete( attrName );
+						}
+					}
+				);
+
+				break;
+			}
+
+			case 'innerBlocks': {
+				// Recursively merge innerBlocks
+				let yInnerBlocks = yblock.get( key );
+
+				if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
+					yInnerBlocks = new Y.Array< YBlock >();
+					yblock.set( key, yInnerBlocks );
+				}
+
+				mergeCrdtBlocks(
+					yInnerBlocks,
+					value ?? [],
+					cursorPosition,
+					baseBlock?.innerBlocks
+				);
+				break;
+			}
+
+			default:
+				if ( ! fastDeepEqual( block[ key ], yblock.get( key ) ) ) {
+					yblock.set( key, value );
+				}
+		}
+	} );
+	yblock.forEach( ( _v, k ) => {
+		if ( ! block.hasOwnProperty( k ) ) {
+			yblock.delete( k );
+		}
+	} );
+}
+
+function mergeYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	cursorPosition: number | null,
+	baseBlocks?: Block[]
+): void {
+	const incomingBlocksByClientId = new Map(
+		blocksToSync.map( ( block ) => [ getBlockClientId( block ), block ] )
+	);
+	const baseBlocksByClientId = new Map(
+		( baseBlocks ?? [] ).map( ( block ) => [
+			getBlockClientId( block ),
+			block,
+		] )
+	);
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+		const clientId = getYBlockClientId( yblock );
+		const block = incomingBlocksByClientId.get( clientId );
+
+		if ( block ) {
+			mergeBlockIntoYBlock(
+				yblock,
+				block,
+				cursorPosition,
+				baseBlocksByClientId.get( clientId )
+			);
+		}
+	}
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -388,7 +673,8 @@ function createNewYBlock( block: Block ): YBlock {
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
-	cursorPosition: number | null
+	cursorPosition: number | null,
+	baseBlocks?: Block[]
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -398,6 +684,22 @@ export function mergeCrdtBlocks(
 		);
 	}
 	const blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const baseBlocksToSync = baseBlocks
+		? makeBlocksSerializable( baseBlocks )
+		: undefined;
+
+	if ( rebaseYBlocksByClientId( yblocks, baseBlocksToSync, blocksToSync ) ) {
+		mergeYBlocksByClientId(
+			yblocks,
+			blocksToSync,
+			cursorPosition,
+			baseBlocksToSync
+		);
+		removeDuplicateClientIds( yblocks );
+		return;
+	}
+
+	reorderYBlocksByClientId( yblocks, blocksToSync );
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -458,98 +760,12 @@ export function mergeCrdtBlocks(
 		const block = blocksToSync[ left ];
 		const yblock = yblocks.get( left );
 
-		Object.entries( block ).forEach( ( [ key, value ] ) => {
-			switch ( key ) {
-				case 'attributes': {
-					const currentAttributes = yblock.get( key );
-
-					// If attributes are not set on the yblock, use the new values.
-					if ( ! currentAttributes ) {
-						yblock.set(
-							key,
-							createNewYAttributeMap( block.name, value )
-						);
-						break;
-					}
-
-					Object.entries( value ).forEach(
-						( [ attributeName, attributeValue ] ) => {
-							const currentAttribute =
-								currentAttributes?.get( attributeName );
-
-							const isExpectedType = isExpectedAttributeType(
-								block.name,
-								attributeName,
-								currentAttribute
-							);
-
-							// Y types (Y.Text, Y.Array, Y.Map) cannot be
-							// compared with fastDeepEqual against plain values.
-							// Delegate to mergeYValue which handles no-op
-							// detection at the edges.
-							const isYType =
-								currentAttribute instanceof Y.AbstractType;
-
-							const isAttributeChanged =
-								! isExpectedType ||
-								isYType ||
-								! fastDeepEqual(
-									currentAttribute,
-									attributeValue
-								);
-
-							if ( isAttributeChanged ) {
-								updateYBlockAttribute(
-									block.name,
-									attributeName,
-									attributeValue,
-									currentAttributes,
-									cursorPosition
-								);
-							}
-						}
-					);
-
-					// Delete any attributes that are no longer present.
-					currentAttributes.forEach(
-						( _attrValue: unknown, attrName: string ) => {
-							if ( ! value.hasOwnProperty( attrName ) ) {
-								currentAttributes.delete( attrName );
-							}
-						}
-					);
-
-					break;
-				}
-
-				case 'innerBlocks': {
-					// Recursively merge innerBlocks
-					let yInnerBlocks = yblock.get( key );
-
-					if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
-						yInnerBlocks = new Y.Array< YBlock >();
-						yblock.set( key, yInnerBlocks );
-					}
-
-					mergeCrdtBlocks(
-						yInnerBlocks,
-						value ?? [],
-						cursorPosition
-					);
-					break;
-				}
-
-				default:
-					if ( ! fastDeepEqual( block[ key ], yblock.get( key ) ) ) {
-						yblock.set( key, value );
-					}
-			}
-		} );
-		yblock.forEach( ( _v, k ) => {
-			if ( ! block.hasOwnProperty( k ) ) {
-				yblock.delete( k );
-			}
-		} );
+		mergeBlockIntoYBlock(
+			yblock,
+			block,
+			cursorPosition,
+			baseBlocksToSync?.[ left ]
+		);
 	}
 
 	// deletes
@@ -562,7 +778,10 @@ export function mergeCrdtBlocks(
 		yblocks.insert( left, newBlock );
 	}
 
-	// remove duplicate clientids
+	removeDuplicateClientIds( yblocks );
+}
+
+function removeDuplicateClientIds( yblocks: YBlocks ): void {
 	const knownClientIds = new Set< string >();
 	for ( let j = 0; j < yblocks.length; j++ ) {
 		const yblock: YBlock = yblocks.get( j );

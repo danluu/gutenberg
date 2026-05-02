@@ -414,8 +414,21 @@ async function loadPostTypeEntities() {
 			 * @param {Partial< import('@wordpress/sync').ObjectData >} changes
 			 * @return {void}
 			 */
-			applyChangesToCRDTDoc: ( crdtDoc, changes ) =>
-				applyPostChangesToCRDTDoc( crdtDoc, changes, syncedProperties ),
+			applyChangesToCRDTDoc: ( crdtDoc, changes, options ) => {
+				if ( options ) {
+					return applyPostChangesToCRDTDoc(
+						crdtDoc,
+						changes,
+						syncedProperties,
+						options
+					);
+				}
+				return applyPostChangesToCRDTDoc(
+					crdtDoc,
+					changes,
+					syncedProperties
+				);
+			},
 
 			/**
 			 * Create the awareness instance for the entity's CRDT document.
