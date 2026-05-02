@@ -495,6 +495,10 @@ save_plot <- function(plot, filename, width = 9, height = 5.5) {
 	)
 }
 
+brewer_color <- function(palette, index, type = "qual", n = 8) {
+	brewer_pal(type = type, palette = palette)(n)[[index]]
+}
+
 records <- derived$records
 by_delay <- derived$by_delay
 runs <- derived$runs
@@ -504,15 +508,14 @@ full_curve <- by_delay %>%
 
 save_plot(
 	ggplot(full_curve, aes(delay_ms, median_ms)) +
-		geom_ribbon(aes(ymin = p10_ms, ymax = p90_ms), fill = "#94a3b8", alpha = 0.25) +
-		geom_line(color = "#0f766e", linewidth = 0.7) +
-		geom_point(color = "#0f766e", size = 1.2) +
-		geom_vline(xintercept = 1000, linetype = "dashed", color = "#b91c1c") +
+		geom_ribbon(aes(ymin = p10_ms, ymax = p90_ms), fill = brewer_color("Blues", 3, type = "seq", n = 9), alpha = 0.25) +
+		geom_point(color = brewer_color("Dark2", 1), size = 1.2) +
+		geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Set1", 1)) +
 		annotate("label", x = 1000, y = max(full_curve$p90_ms), label = "1000ms rich-text persistence timer", hjust = 1.05, size = 3) +
 		scale_x_continuous(breaks = seq(0, 1100, 100)) +
 		labs(
 			title = "Typing latency is not monotonic in key delay",
-			subtitle = "0-1100ms scan, 10ms steps; line is p50 and band is p10-p90",
+			subtitle = "0-1100ms scan, 10ms steps; points are p50 and band is p10-p90",
 			x = "Configured Playwright delay between key events",
 			y = "Latency, keydown + keypress + keyup (ms)"
 		),
@@ -524,13 +527,9 @@ extended_curve <- by_delay %>%
 
 save_plot(
 	ggplot(extended_curve, aes(delay_ms, median_ms, color = run_label)) +
-		geom_line(data = filter(extended_curve, run_id == "dense_1110_2000"), linewidth = 0.7) +
 		geom_point(size = 2) +
-		geom_vline(xintercept = c(1000, 1200, 1580), linetype = "dotted", color = "#475569") +
-		scale_color_manual(values = c(
-			"1110-2000ms, 10ms step" = "#2563eb",
-			"0-2000ms landmarks" = "#b45309"
-		)) +
+		geom_vline(xintercept = c(1000, 1200, 1580), linetype = "dotted", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+		scale_color_brewer(type = "qual", palette = "Dark2") +
 		scale_x_continuous(breaks = seq(900, 2000, 100)) +
 		labs(
 			title = "The 1000ms fast band ends; 2000ms is not uniquely slow",
@@ -552,8 +551,8 @@ selected_distribution <- records %>%
 
 save_plot(
 	ggplot(selected_distribution, aes(delay_label, latency_ms)) +
-		geom_boxplot(outlier.shape = NA, fill = "#e2e8f0", color = "#334155") +
-		geom_jitter(width = 0.15, height = 0, alpha = 0.45, size = 1, color = "#0f766e") +
+		geom_boxplot(outlier.shape = NA, fill = brewer_color("Blues", 2, type = "seq", n = 9), color = brewer_color("Blues", 8, type = "seq", n = 9)) +
+		geom_jitter(width = 0.15, height = 0, alpha = 0.45, size = 1, color = brewer_color("Dark2", 1)) +
 		labs(
 			title = "Landmark delays: the 1000-1110ms band is a separate regime",
 			subtitle = "Each dot is one retained key sample",
@@ -569,8 +568,8 @@ variance_curve <- by_delay %>%
 
 save_plot(
 	ggplot(variance_curve, aes(delay_ms, cv, color = run_label)) +
-		geom_line(linewidth = 0.65) +
 		geom_point(size = 1.1) +
+		scale_color_brewer(type = "qual", palette = "Dark2") +
 		scale_y_continuous(labels = percent_format(accuracy = 1)) +
 		labs(
 			title = "Volatility depends on delay and regime",
@@ -589,12 +588,12 @@ time_order <- records %>%
 save_plot(
 	ggplot(time_order, aes(global_retained_sample_index, latency_ms)) +
 		geom_point(aes(color = delay_ms), alpha = 0.18, size = 0.7) +
-		geom_smooth(color = "#111827", se = FALSE, method = "loess", formula = y ~ x, span = 0.35, linewidth = 0.8) +
+		geom_smooth(color = brewer_color("Greys", 9, type = "seq", n = 9), se = FALSE, method = "loess", formula = y ~ x, span = 0.35, linewidth = 0.8) +
 		facet_wrap(~run_label, scales = "free_x", ncol = 1) +
-		scale_color_viridis_c(option = "C", end = 0.9) +
+		scale_color_distiller(type = "seq", palette = "YlGnBu", direction = 1) +
 		labs(
 			title = "No simple warmup story explains the results",
-			subtitle = "Latency over retained-sample order; black line is a loess trend",
+			subtitle = "Latency over retained-sample order; dark line is a loess trend",
 			x = "Retained sample order within run",
 			y = "Latency (ms)",
 			color = "Delay"
@@ -623,7 +622,7 @@ action_events <- derived$action_events %>%
 save_plot(
 	ggplot(action_events, aes(eventMs / 1000, delay_label)) +
 		geom_point(aes(shape = action_label, color = persistent_after), size = 2.6, alpha = 0.9) +
-		scale_color_manual(values = c("transient after" = "#b91c1c", "persistent after" = "#047857"), na.value = "#334155") +
+		scale_color_brewer(type = "qual", palette = "Set1", na.value = brewer_color("Greys", 7, type = "seq", n = 9)) +
 		labs(
 			title = "At 1000ms and above, the persistent marker fires between keys",
 			subtitle = "Data-action instrumentation around the cliff",
@@ -645,10 +644,9 @@ timer_events <- derived$timer_events %>%
 
 save_plot(
 	ggplot(timer_rewrite, aes(delay_ms, median_ms)) +
-		geom_line(color = "#7c3aed", linewidth = 0.75) +
-		geom_point(color = "#7c3aed", size = 2.3) +
-		geom_text(aes(label = round(median_ms, 1)), nudge_y = 0.65, size = 3) +
-		geom_vline(xintercept = 500, linetype = "dashed", color = "#b91c1c") +
+		geom_point(color = brewer_color("Dark2", 3), size = 2.3) +
+		geom_text(aes(label = round(median_ms, 1)), nudge_y = 0.65, size = 3, color = brewer_color("Greys", 9, type = "seq", n = 9)) +
+		geom_vline(xintercept = 500, linetype = "dashed", color = brewer_color("Set1", 1)) +
 		annotate("label", x = 500, y = max(timer_rewrite$median_ms), label = "1000ms timers rewritten to 500ms", hjust = 0, size = 3) +
 		labs(
 			title = "Moving the timer moves the cliff",
@@ -669,9 +667,9 @@ scenario_boundary <- by_delay %>%
 
 save_plot(
 	ggplot(scenario_boundary, aes(delay_ms, median_ms, color = run_label)) +
-		geom_line(linewidth = 0.75) +
 		geom_point(size = 2.2) +
-		geom_vline(xintercept = 1000, linetype = "dashed", color = "#475569") +
+		geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+		scale_color_brewer(type = "qual", palette = "Set2") +
 		labs(
 			title = "The boundary is real, but scenario size changes the absolute latency",
 			subtitle = "Fresh editor and alternate post-size checks around 1000ms",
@@ -689,6 +687,7 @@ keydown_counts <- records %>%
 save_plot(
 	ggplot(keydown_counts, aes(factor(keydown_event_count), n, fill = run_label)) +
 		geom_col(position = "dodge") +
+		scale_fill_brewer(type = "qual", palette = "Set2") +
 		labs(
 			title = "Chromium emitted two keydown EventDispatch entries per typed character",
 			subtitle = "This is why the benchmark groups keydown/keypress/keyup by sequence instead of assuming one keydown",
@@ -725,16 +724,13 @@ dense_mode_comparison <- by_delay %>%
 
 save_plot(
 	ggplot(dense_mode_comparison, aes(delay_ms, median_ms, color = mode_label)) +
-		geom_line(linewidth = 0.75) +
-		geom_vline(xintercept = 1000, linetype = "dashed", color = "#64748b") +
-		scale_color_manual(values = c(
-			"Playwright delay: key held down" = "#b91c1c",
-			"Complete keypress, then wait" = "#0369a1"
-		)) +
+		geom_point(size = 1.45, alpha = 0.88) +
+		geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+		scale_color_brewer(type = "qual", palette = "Set1") +
 		scale_x_continuous(breaks = c(seq(0, 2000, 250), 1000)) +
 		labs(
 			title = "Dense delay-mode comparison: key-hold vs wait-after-keyup",
-			subtitle = "Both modes are similar before the 1000ms persistence timer; the slow plateau appears when the synthetic key remains held",
+			subtitle = "The modes already differ below 1000ms; the 1200-2000ms slow plateau is specific to key-hold",
 			x = "Configured delay",
 			y = "p50 latency (ms)",
 			color = NULL
@@ -835,8 +831,8 @@ if (nrow(mark_gap) > 0) {
 	save_plot(
 		ggplot(mark_gap, aes(mark_to_keydown_ms, latency_ms, color = delayMs)) +
 			geom_point(size = 2.3, alpha = 0.85) +
-			geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = "#111827", linewidth = 0.75) +
-			scale_color_viridis_c(option = "C", end = 0.9) +
+			geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = brewer_color("Greys", 9, type = "seq", n = 9), linewidth = 0.75) +
+			scale_color_distiller(type = "seq", palette = "YlOrRd", direction = 1) +
 			labs(
 				title = "Normal Playwright delay leaves the previous key held after persistence",
 				subtitle = "Latency rises when the next key arrives ~180-300ms after the persistence timer fired",
@@ -894,11 +890,7 @@ if (nrow(component_breakdown) > 0) {
 		ggplot(component_breakdown, aes(factor(delay_ms), component_ms, fill = component)) +
 			geom_col(width = 0.72) +
 			facet_wrap(~ mode_label, ncol = 1) +
-			scale_fill_manual(values = c(
-				keydown = "#2563eb",
-				keypress = "#f97316",
-				keyup = "#16a34a"
-			)) +
+			scale_fill_brewer(type = "qual", palette = "Set2") +
 			labs(
 				title = "The extra measured latency is almost entirely keypress dispatch",
 				subtitle = "Paired trace-heavy runs using the same delay list; only the key-hold mode returns to the high plateau",
@@ -995,12 +987,9 @@ if (nrow(key_event_timing) > 0) {
 
 	save_plot(
 		ggplot(timing_plot, aes(previous_keyup_to_mark_ms, keypress_duration_ms, color = mode_label, shape = mark_state)) +
-			geom_vline(xintercept = 0, linetype = "dashed", color = "#475569") +
+			geom_vline(xintercept = 0, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
 			geom_point(size = 2.5, alpha = 0.82) +
-			scale_color_manual(values = c(
-				"Playwright delay: key held down" = "#b91c1c",
-				"Complete keypress, then wait" = "#0369a1"
-			)) +
+			scale_color_brewer(type = "qual", palette = "Set1") +
 			labs(
 				title = "The slow path appears when persistence fires while the previous key is still held",
 				subtitle = "Negative x means the one-second persistence marker fired before keyup; the y-axis is the dominant latency component",
@@ -1067,29 +1056,16 @@ native_comparison <- records %>%
 
 if (nrow(native_comparison) > 0) {
 	save_plot(
-		ggplot(native_comparison, aes(delay_ms, duration_ms, color = mode_label, linetype = mode_label)) +
-			geom_line(linewidth = 0.8) +
+		ggplot(native_comparison, aes(delay_ms, duration_ms, color = mode_label)) +
 			geom_point(size = 2.1) +
 			facet_wrap(~ metric, ncol = 1) +
-			scale_color_manual(values = c(
-				"Gutenberg: key held down" = "#b91c1c",
-				"Gutenberg: wait after keyup" = "#0369a1",
-				"Native: key held down" = "#f97316",
-				"Native: wait after keyup" = "#16a34a"
-			)) +
-			scale_linetype_manual(values = c(
-				"Gutenberg: key held down" = "solid",
-				"Gutenberg: wait after keyup" = "solid",
-				"Native: key held down" = "dashed",
-				"Native: wait after keyup" = "dashed"
-			)) +
+			scale_color_brewer(type = "qual", palette = "Set1") +
 			labs(
 				title = "The native contenteditable baseline does not reproduce Gutenberg's key-hold plateau",
 				subtitle = "Both native modes include a 1000ms clear-and-reschedule input timer; the Gutenberg key-hold mode remains the outlier",
 				x = "Configured delay",
 				y = "Median EventDispatch duration (ms)",
-				color = NULL,
-				linetype = NULL
+				color = NULL
 			),
 		"14-native-contenteditable-comparison.png",
 		width = 11,
@@ -1236,14 +1212,9 @@ if (nrow(listener_input_summary) > 0) {
 
 	save_plot(
 		ggplot(listener_plot, aes(delayMs, median_ms, color = script_label)) +
-			geom_line(linewidth = 0.8) +
 			geom_point(size = 2.2) +
 			facet_wrap(~ mode_label, ncol = 1) +
-			scale_color_manual(values = c(
-				"rich-text" = "#b91c1c",
-				"block-editor" = "#0369a1",
-				"react-dom" = "#7c3aed"
-			)) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
 			labs(
 				title = "The dominant measured callback is RichText's input listener",
 				subtitle = "Listener timing is diagnostic and adds overhead, but it localizes the key-hold cost inside editor-canvas input handling",
@@ -1287,13 +1258,9 @@ if (nrow(listener_input_scenario_summary) > 0) {
 
 	save_plot(
 		ggplot(listener_scenario_plot, aes(delayMs, median_ms, color = listener_scenario_label)) +
-			geom_line(linewidth = 0.8) +
 			geom_point(size = 2.2) +
 			facet_wrap(~ mode_label, ncol = 1) +
-			scale_color_manual(values = c(
-				"large post" = "#b91c1c",
-				"empty post" = "#0369a1"
-			)) +
+			scale_color_brewer(type = "qual", palette = "Set1") +
 			labs(
 				title = "The RichText input listener is still visible in an empty post",
 				subtitle = "The active editable element carries several milliseconds of callback work even without the large-post fixture",
@@ -1430,17 +1397,9 @@ if (nrow(rich_text_span_summary) > 0) {
 
 	save_plot(
 		ggplot(span_line_plot, aes(delayMs, median_ms, color = span_label)) +
-			geom_line(linewidth = 0.75) +
 			geom_point(size = 1.9) +
 			facet_grid(span_scenario_label ~ mode_label) +
-			scale_color_manual(values = c(
-				"onInput total" = "#111827",
-				"registry.batch" = "#b91c1c",
-				"create DOM record" = "#0369a1",
-				"apply record" = "#16a34a",
-				"serialize" = "#7c3aed",
-				"forceRender" = "#f97316"
-			)) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
 			labs(
 				title = "Source-level RichText spans put the cost inside registry.batch",
 				subtitle = "DOM parsing, apply, serialization, and forceRender are small in these targeted traces",
@@ -1530,11 +1489,7 @@ if (nrow(rich_text_batch_summary) > 0) {
 		ggplot(batch_plot, aes(factor(delayMs), median_ms, fill = component)) +
 			geom_col(width = 0.72) +
 			facet_grid(span_scenario_label ~ mode_label) +
-			scale_fill_manual(values = c(
-				"onSelectionChange" = "#0369a1",
-				"onChange" = "#16a34a",
-				"registry.batch remainder" = "#b91c1c"
-			)) +
+			scale_fill_brewer(type = "qual", palette = "Set2") +
 			labs(
 				title = "Most registry.batch time is outside the two direct callbacks",
 				subtitle = "The remainder is the synchronous data-store notification/render work hidden behind registry.batch",
@@ -1782,20 +1737,12 @@ if (nrow(data_spans) > 0) {
 
 	save_plot(
 		ggplot(data_batch_plot, aes(delayMs, median_ms, color = component)) +
-			geom_line(linewidth = 0.75) +
 			geom_point(size = 1.9) +
 			facet_grid(span_scenario_label ~ mode_label) +
-			scale_color_manual(values = c(
-				"registry.batch total" = "#111827",
-				"batch callback" = "#7c3aed",
-				"resume core/block-editor" = "#b91c1c",
-				"core/block-editor subscribers" = "#ea580c",
-				"useSelect onChange" = "#0369a1",
-				"useSelect mapSelect" = "#16a34a"
-			)) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
 			labs(
 				title = "Data spans put the batch remainder in core/block-editor subscriber fanout",
-				subtitle = "Input-matched registry.batch calls; nested lines are attribution aids, not additive totals",
+				subtitle = "Input-matched registry.batch calls; nested points are attribution aids, not additive totals",
 				x = "Configured delay",
 				y = "Median duration per input batch (ms)",
 				color = "Span"
@@ -1808,7 +1755,7 @@ if (nrow(data_spans) > 0) {
 	top_resume_stores <- data_store_resume_summary %>%
 		group_by(store_name) %>%
 		summarise(max_median_ms = max(median_ms, na.rm = TRUE), .groups = "drop") %>%
-		slice_max(max_median_ms, n = 6) %>%
+		slice_max(max_median_ms, n = 6, with_ties = FALSE) %>%
 		pull(store_name)
 
 	store_resume_plot <- data_store_resume_summary %>%
@@ -1829,9 +1776,9 @@ if (nrow(data_spans) > 0) {
 
 	save_plot(
 		ggplot(store_resume_plot, aes(delayMs, median_ms, color = store_name)) +
-			geom_line(linewidth = 0.75) +
 			geom_point(size = 1.8) +
 			facet_grid(span_scenario_label ~ mode_label) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
 			labs(
 				title = "core/block-editor is the expensive store resume",
 				subtitle = "Other store emitter resumes are small in the input-matched data spans",
@@ -1897,20 +1844,12 @@ if (
 
 	save_plot(
 		ggplot(data_batch_plot, aes(delayMs, median_ms, color = component)) +
-			geom_line(linewidth = 0.75) +
 			geom_point(size = 1.9) +
 			facet_grid(span_scenario_label ~ mode_label) +
-			scale_color_manual(values = c(
-				"registry.batch total" = "#111827",
-				"batch callback" = "#7c3aed",
-				"resume core/block-editor" = "#b91c1c",
-				"core/block-editor subscribers" = "#ea580c",
-				"useSelect onChange" = "#0369a1",
-				"useSelect mapSelect" = "#16a34a"
-			)) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
 			labs(
 				title = "Data spans put the batch remainder in core/block-editor subscriber fanout",
-				subtitle = "Input-matched registry.batch calls; nested lines are attribution aids, not additive totals",
+				subtitle = "Input-matched registry.batch calls; nested points are attribution aids, not additive totals",
 				x = "Configured delay",
 				y = "Median duration per input batch (ms)",
 				color = "Span"
@@ -1923,7 +1862,7 @@ if (
 	top_resume_stores <- data_store_resume_summary %>%
 		group_by(store_name) %>%
 		summarise(max_median_ms = max(median_ms, na.rm = TRUE), .groups = "drop") %>%
-		slice_max(max_median_ms, n = 6) %>%
+		slice_max(max_median_ms, n = 6, with_ties = FALSE) %>%
 		pull(store_name)
 
 	store_resume_plot <- data_store_resume_summary %>%
@@ -1944,9 +1883,9 @@ if (
 
 	save_plot(
 		ggplot(store_resume_plot, aes(delayMs, median_ms, color = store_name)) +
-			geom_line(linewidth = 0.75) +
 			geom_point(size = 1.8) +
 			facet_grid(span_scenario_label ~ mode_label) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
 			labs(
 				title = "core/block-editor is the expensive store resume",
 				subtitle = "Other store emitter resumes are small in the input-matched data spans",
