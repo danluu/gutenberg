@@ -1,0 +1,188 @@
+nowMs,isPersistent,isTyping,run_id,run_label,round,delayMs,eventMs
+3111.399999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,39.59999990463257
+4155.899999856949,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,1084.0999999046326
+5173,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,2101.2000000476837
+2946.899999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,980,25.299999952316284
+3958.0999999046326,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,980,1036.5
+13989.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,980,11068.200000047684
+2829.9000000953674,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,990,15.900000095367432
+3841.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,990,1027.9000000953674
+13971.599999904633,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,990,11157.599999904633
+2869.300000190735,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,18.700000047683716
+3900.5,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,1049.8999998569489
+4918.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,2067.5999999046326
+2849,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,17.799999952316284
+3879.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,1048.7000000476837
+4895.900000095367,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,2064.7000000476837
+2886.7999999523163,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,17.100000143051147
+3919.899999856949,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,1050.2000000476837
+4936.099999904633,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,2066.4000000953674
+2919.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,16.600000143051147
+3951.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,1048.8000001907349
+4966.299999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,2063.4000000953674
+2864.2000000476837,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,990,16.299999952316284
+3883.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,990,1036
+14037.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,990,11189.599999904633
+2957.9000000953674,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,27.600000143051147
+4003.600000143051,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,1073.3000001907349
+5021.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,2091.5
+2874.100000143051,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,980,16.700000047683716
+3886.800000190735,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,980,1029.4000000953674
+13935.300000190735,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,980,11077.900000095367
+2902.899999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,22.59999990463257
+3938.2000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,1057.9000000953674
+4955.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,2074.9000000953674
+2930.2999999523163,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,27.5
+3964.4000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,1061.6000001430511
+4983.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,2080.4000000953674
+2940.2000000476837,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,980,26.40000009536743
+3954.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,980,1040.9000000953674
+13986.900000095367,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,980,11073.100000143051
+2913.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,16.5
+3952.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,1055.7000000476837
+4970.100000143051,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,2073.100000143051
+2940.0999999046326,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,990,27.59999990463257
+3964.2000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,990,1051.7000000476837
+14119.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,990,11207.299999952316
+3191.4000000953674,TRUE,TRUE,state_actions,Action trace near 1000ms,0,530,63.700000047683716
+3808.7000000476837,FALSE,TRUE,state_actions,Action trace near 1000ms,0,530,681
+2987,TRUE,TRUE,state_actions,Action trace near 1000ms,0,990,30.40000009536743
+4126,FALSE,TRUE,state_actions,Action trace near 1000ms,0,990,1169.4000000953674
+9207.900000095367,TRUE,TRUE,state_actions,Action trace near 1000ms,0,990,6251.300000190735
+3034.0999999046326,TRUE,TRUE,state_actions,Action trace near 1000ms,0,130,30.299999952316284
+3254.399999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,0,130,250.59999990463257
+3095.800000190735,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1010,25.800000190734863
+4183.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,0,1010,1113.6000001430511
+5201.100000143051,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1010,2131.100000143051
+3015.7000000476837,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1000,22.799999952316284
+4110.900000095367,FALSE,TRUE,state_actions,Action trace near 1000ms,0,1000,1118
+5130.299999952316,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1000,2137.399999856949
+3071.5,TRUE,TRUE,state_actions,Action trace near 1000ms,0,910,30.899999856948853
+4086,FALSE,TRUE,state_actions,Action trace near 1000ms,0,910,1045.3999998569489
+2967.5,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1010,24.5
+4056.300000190735,FALSE,TRUE,state_actions,Action trace near 1000ms,1,1010,1113.3000001907349
+5073.5,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1010,2130.5
+3016.2999999523163,TRUE,TRUE,state_actions,Action trace near 1000ms,1,990,37.799999952316284
+4122.399999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,1,990,1143.8999998569489
+9198.599999904633,TRUE,TRUE,state_actions,Action trace near 1000ms,1,990,6220.099999904633
+3015.199999809265,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1000,23.699999809265137
+4121.899999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,1,1000,1130.3999998569489
+5139.599999904633,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1000,2148.0999999046326
+3034.100000143051,TRUE,TRUE,state_actions,Action trace near 1000ms,1,910,41.30000019073486
+4101.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,1,910,1108.8000001907349
+3078.7000000476837,TRUE,TRUE,state_actions,Action trace near 1000ms,1,530,42.40000009536743
+3794.9000000953674,FALSE,TRUE,state_actions,Action trace near 1000ms,1,530,758.6000001430511
+3067.4000000953674,TRUE,TRUE,state_actions,Action trace near 1000ms,1,130,24.200000047683716
+3266.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,1,130,223.40000009536743
+3175.5,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,62.30000019073486
+3248,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,134.80000019073486
+4260.599999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,1147.4000000953674
+4385.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,1272.5
+5401.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,2288
+5523.399999856949,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,2410.2000000476837
+6537.699999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,3424.5
+6660.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,3547.5
+7676.099999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,4562.900000095367
+7797.099999904633,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,4683.900000095367
+8812.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,5699
+3003.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,59.39999985694885
+3078.5999999046326,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,134.09999990463257
+4093.2000000476837,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,1148.7000000476837
+4230.299999952316,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,1285.7999999523163
+5247.5,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,2303
+5372.5,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,2428
+6386.700000047684,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,3442.2000000476837
+6508.099999904633,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,3563.5999999046326
+7524,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,4579.5
+7647.899999856949,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,4703.399999856949
+8664.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,5720.399999856949
+3062.7999999523163,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,67.29999995231628
+3234.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,239.19999980926514
+4249.099999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,1253.5999999046326
+4379,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,1383.5
+5394.299999952316,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,2398.7999999523163
+5499.799999952316,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,2504.2999999523163
+6517.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,3521.699999809265
+6641.199999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,3645.699999809265
+7657.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,4662.399999856949
+7786,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,4790.5
+8794.799999952316,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,5799.299999952316
+2104.4000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,0,1020,37.200000047683716
+3140.300000190735,FALSE,TRUE,empty_boundary,Empty post boundary,0,1020,1073.1000001430511
+4148.900000095367,TRUE,TRUE,empty_boundary,Empty post boundary,0,1020,2081.7000000476837
+1986,TRUE,TRUE,empty_boundary,Empty post boundary,0,980,11.200000047683716
+2987.4000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,0,980,1012.6000001430511
+12969,TRUE,TRUE,empty_boundary,Empty post boundary,0,980,10994.200000047684
+1904.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,0,990,9.099999904632568
+2917.800000190735,FALSE,TRUE,empty_boundary,Empty post boundary,0,990,1022.7000000476837
+12989.100000143051,TRUE,TRUE,empty_boundary,Empty post boundary,0,990,11094
+1907.1999998092651,TRUE,TRUE,empty_boundary,Empty post boundary,0,1010,8
+2934.0999999046326,FALSE,TRUE,empty_boundary,Empty post boundary,0,1010,1034.9000000953674
+3942.2999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,0,1010,2043.1000001430511
+1906.7999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,0,1000,8.899999856948853
+2927.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,0,1000,1030
+3935.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,0,1000,2037.7999999523163
+1922.8999998569489,TRUE,TRUE,empty_boundary,Empty post boundary,1,1010,8.599999904632568
+2955.5,FALSE,TRUE,empty_boundary,Empty post boundary,1,1010,1041.2000000476837
+3964.0999999046326,TRUE,TRUE,empty_boundary,Empty post boundary,1,1010,2049.7999999523163
+1944.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,1,1000,8.700000047683716
+2966.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,1,1000,1030.9000000953674
+3974.9000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,1,1000,2038.9000000953674
+1905.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,1,990,9
+2916.2999999523163,FALSE,TRUE,empty_boundary,Empty post boundary,1,990,1020.0999999046326
+12985.5,TRUE,TRUE,empty_boundary,Empty post boundary,1,990,11089.299999952316
+1905,TRUE,TRUE,empty_boundary,Empty post boundary,1,1020,8.799999952316284
+2943.800000190735,FALSE,TRUE,empty_boundary,Empty post boundary,1,1020,1047.6000001430511
+3951.5,TRUE,TRUE,empty_boundary,Empty post boundary,1,1020,2055.2999999523163
+1932.7999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,1,980,8.600000143051147
+2934.0999999046326,FALSE,TRUE,empty_boundary,Empty post boundary,1,980,1009.9000000953674
+12917.899999856949,TRUE,TRUE,empty_boundary,Empty post boundary,1,980,10993.700000047684
+1927.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,2,1000,13.600000143051147
+2952.2000000476837,FALSE,TRUE,empty_boundary,Empty post boundary,2,1000,1038.6000001430511
+3961.399999856949,TRUE,TRUE,empty_boundary,Empty post boundary,2,1000,2047.7999999523163
+1934.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,2,1010,8.799999952316284
+2961.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,2,1010,1036
+3969.600000143051,TRUE,TRUE,empty_boundary,Empty post boundary,2,1010,2043.7000000476837
+1889.4000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,2,980,8.799999952316284
+2893,FALSE,TRUE,empty_boundary,Empty post boundary,2,980,1012.3999998569489
+12879.800000190735,TRUE,TRUE,empty_boundary,Empty post boundary,2,980,10999.200000047684
+1929.1999998092651,TRUE,TRUE,empty_boundary,Empty post boundary,2,1020,8.799999952316284
+2963.899999856949,FALSE,TRUE,empty_boundary,Empty post boundary,2,1020,1043.5
+3971.199999809265,TRUE,TRUE,empty_boundary,Empty post boundary,2,1020,2050.7999999523163
+1887.9000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,2,990,5.799999952316284
+2895.7999999523163,FALSE,TRUE,empty_boundary,Empty post boundary,2,990,1013.6999998092651
+12957,TRUE,TRUE,empty_boundary,Empty post boundary,2,990,11074.899999856949
+2517.100000143051,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,25
+3554,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,1061.8999998569489
+4564.700000047684,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,2072.5999999046326
+2366,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,19.299999952316284
+3373.9000000953674,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,1027.2000000476837
+8423.099999904633,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,6076.399999856949
+2316.7000000476837,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,10.400000095367432
+3345.4000000953674,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,1039.1000001430511
+4355.5,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,2049.2000000476837
+2304.9000000953674,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,10.200000047683716
+3320.7000000476837,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,1026
+8367.5,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,6072.799999952316
+1809.8999998569489,TRUE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,31.699999809265137
+2948.899999856949,FALSE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,1170.6999998092651
+3964.899999856949,TRUE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,2186.699999809265
+1878.2999999523163,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,33.5
+2806.2999999523163,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,961.5
+12121.799999952316,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,10277
+13200.899999856949,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,990,1030.8999998569489
+23339.89999985695,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,990,11169.899999856949
+332264.89999985695,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,990,1031.2999999523163
+342386,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,990,11152.400000095367
+343403.2000000477,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,900,945.6000001430511
+352725.7999999523,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,900,10268.200000047684
+458194.39999985695,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,900,941.5999999046326
+467498.09999990463,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,1200,0
+494603.7000000477,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,1041.7000000476837
+504721.5,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,11159.5
+1876.9000000953674,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,32.799999952316284
+2934.2999999523163,FALSE,TRUE,cliff_actions,Cliff action trace,0,990,1090.1999998092651
+8017,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,6172.899999856949
+1852.5,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,34
+2375.7999999523163,FALSE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,557.2999999523163
+6493.299999952316,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,4674.799999952316

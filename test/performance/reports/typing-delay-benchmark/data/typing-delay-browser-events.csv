@@ -1,0 +1,925 @@
+nowMs,documentName,type,key,code,targetTagName,targetRole,isPersistent,isTyping,blockCount,selectedBlockClientId,inputType,data,run_id,run_label,round,delayMs,eventMs
+3183.100000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,55.40000009536743
+3185.100000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,57.40000009536743
+3185.7000000476837,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,58
+3195.100000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,67.40000009536743
+3196.4000000953674,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,68.70000004768372
+3277,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,0,530,149.29999995231628
+3796.2000000476837,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,668.5
+3797.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,669.7999999523163
+3798.100000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,670.4000000953674
+3798.2999999523163,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,670.5999999046326
+3798.4000000953674,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,670.7000000476837
+3800.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,672.7999999523163
+3814.9000000953674,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,687.2000000476837
+4343.700000047684,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1216
+4344.299999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1216.5999999046326
+4344.799999952316,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1217.0999999046326
+4345,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1217.2999999523163
+4345.200000047684,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,1217.5
+4346.799999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,1219.0999999046326
+4360.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1232.5
+4890.400000095367,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1762.7000000476837
+4891,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1763.2999999523163
+4891.400000095367,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1763.7000000476837
+4891.900000095367,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1764.2000000476837
+4892,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,1764.2999999523163
+4893.200000047684,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,1765.5
+4906.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,1779.0999999046326
+5436.799999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2309.0999999046326
+5437.5,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2309.7999999523163
+5437.900000095367,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2310.2000000476837
+5438.100000143051,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2310.4000000953674
+5438.100000143051,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,2310.4000000953674
+5439.799999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,2312.0999999046326
+5452.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2325.2000000476837
+5982.600000143051,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2854.9000000953674
+5983.200000047684,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2855.5
+5983.900000095367,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2856.2000000476837
+5984.200000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2856.5
+5984.200000047684,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,2856.5
+5985.600000143051,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,insertText,x,state_actions,Action trace near 1000ms,0,530,2857.9000000953674
+5997.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,2870
+6528.100000143051,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,e0ac6cf8-72e8-48ce-924e-e249f6f994f3,NA,NA,state_actions,Action trace near 1000ms,0,530,3400.4000000953674
+2975.9000000953674,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,19.300000190734863
+2977.7000000476837,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,21.100000143051147
+2978,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,21.40000009536743
+2991.7999999523163,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,35.200000047683716
+2993.0999999046326,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,36.5
+3117.7000000476837,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,0,990,161.10000014305115
+4107.599999904633,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,1151
+4109.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,1153.1000001430511
+4110.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,1153.9000000953674
+4111,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,1154.4000000953674
+4111.099999904633,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,1154.5
+4115.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,1158.7000000476837
+4132.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,1175.7000000476837
+5121.5,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,2164.9000000953674
+5123.799999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,2167.2000000476837
+5124.799999952316,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,2168.2000000476837
+5125.299999952316,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,2168.7000000476837
+5125.400000095367,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,2168.800000190735
+5129.599999904633,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,2173
+5144.400000095367,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,2187.800000190735
+6134.5,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,3177.9000000953674
+6136.299999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,3179.7000000476837
+6137.200000047684,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,3180.600000143051
+6137.700000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,3181.100000143051
+6137.799999952316,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,3181.2000000476837
+6142.299999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,3185.7000000476837
+6158.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,3201.7000000476837
+7148.599999904633,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,4192
+7150.700000047684,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,4194.100000143051
+7151.5,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,4194.900000095367
+7151.900000095367,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,4195.300000190735
+7152.099999904633,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,4195.5
+7157.200000047684,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,4200.600000143051
+7172.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,4216.300000190735
+8163.099999904633,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,5206.5
+8165.5,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,5208.900000095367
+8166.299999952316,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,5209.700000047684
+8166.700000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,5210.100000143051
+8166.900000095367,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,5210.300000190735
+8171.099999904633,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,insertText,x,state_actions,Action trace near 1000ms,0,990,5214.5
+8187.599999904633,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,5231
+9177,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f3cd9853-a40b-440b-b54b-f6e4774ca80b,NA,NA,state_actions,Action trace near 1000ms,0,990,6220.400000095367
+3028,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,24.200000047683716
+3028.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,24.700000047683716
+3028.7999999523163,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,25
+3037.5999999046326,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,33.799999952316284
+3038.7999999523163,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,35
+3116.5999999046326,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,0,130,112.79999995231628
+3247.199999809265,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,243.39999985694885
+3247.5999999046326,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,243.79999995231628
+3247.7999999523163,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,244
+3247.899999856949,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,244.09999990463257
+3247.899999856949,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,244.09999990463257
+3248.899999856949,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,245.09999990463257
+3257.899999856949,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,254.09999990463257
+3388.199999809265,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,384.39999985694885
+3388.699999809265,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,384.89999985694885
+3389.0999999046326,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,385.2999999523163
+3389.199999809265,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,385.39999985694885
+3389.199999809265,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,385.39999985694885
+3390.7999999523163,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,387
+3402.899999856949,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,399.09999990463257
+3532.199999809265,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,528.3999998569489
+3532.699999809265,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,528.8999998569489
+3533.0999999046326,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,529.2999999523163
+3533.199999809265,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,529.3999998569489
+3533.2999999523163,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,529.5
+3535.2999999523163,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,531.5
+3547.699999809265,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,543.8999998569489
+3677.5,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,673.7000000476837
+3677.899999856949,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,674.0999999046326
+3678.399999856949,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,674.5999999046326
+3678.399999856949,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,674.5999999046326
+3678.5999999046326,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,674.7999999523163
+3679.7999999523163,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,676
+3692.7999999523163,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,689
+3822.699999809265,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,818.8999998569489
+3823.2999999523163,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,819.5
+3823.5999999046326,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,819.7999999523163
+3823.899999856949,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,820.0999999046326
+3823.899999856949,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,820.0999999046326
+3825.5999999046326,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,insertText,x,state_actions,Action trace near 1000ms,0,130,821.7999999523163
+3839,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,835.2000000476837
+3970,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,587b5114-a378-4224-b603-072dec913344,NA,NA,state_actions,Action trace near 1000ms,0,130,966.2000000476837
+3089.100000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,19.100000143051147
+3089.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,19.600000143051147
+3089.800000190735,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,19.800000190734863
+3099.300000190735,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,29.300000190734863
+3100.600000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,30.600000143051147
+3160,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,0,1010,90
+4169.300000190735,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,1099.3000001907349
+4171.400000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,1101.4000000953674
+4172.100000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,1102.1000001430511
+4172.600000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,1102.6000001430511
+4172.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,1102.7000000476837
+4174.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,1104.7000000476837
+4190.100000143051,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,1120.1000001430511
+5201.800000190735,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,2131.800000190735
+5234.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,2164.5
+5235,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,2165
+5235.100000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,2165.100000143051
+5235.100000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,2165.100000143051
+5236.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,2166.7000000476837
+5247.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,2177.9000000953674
+6260.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,3190.9000000953674
+6266.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,3196.2000000476837
+6266.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,3196.600000143051
+6266.800000190735,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,3196.800000190735
+6266.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,3196.9000000953674
+6268.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,3198.5
+6281.400000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,3211.4000000953674
+7296.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,4226.5
+7329,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,4259
+7329.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,4259.5
+7329.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,4259.700000047684
+7329.800000190735,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,4259.800000190735
+7331.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,4261.200000047684
+7342.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,4272.5
+8355.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,5285.5
+8388.300000190735,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,5318.300000190735
+8388.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,5318.600000143051
+8388.800000190735,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,5318.800000190735
+8388.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,5318.900000095367
+8390.100000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,insertText,x,state_actions,Action trace near 1000ms,0,1010,5320.100000143051
+8400.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,5330.900000095367
+9414.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,88dede24-be04-4b6d-a5c1-db808afd4ff1,NA,NA,state_actions,Action trace near 1000ms,0,1010,6344.200000047684
+3008.7999999523163,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,15.899999856948853
+3009.2999999523163,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,16.399999856948853
+3009.600000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,16.700000047683716
+3019.2999999523163,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,26.399999856948853
+3021.100000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,28.200000047683716
+3098.7999999523163,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,0,1000,105.89999985694885
+4098.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,1105.8999998569489
+4099.600000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,1106.7000000476837
+4100.100000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,1107.2000000476837
+4100.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,1107.5
+4100.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,1107.5
+4102.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,1109.5
+4116.600000143051,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,1123.7000000476837
+5131.600000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,2138.7000000476837
+5166,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,2173.0999999046326
+5166.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,2173.5
+5166.600000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,2173.7000000476837
+5166.600000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,2173.7000000476837
+5168.100000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,2175.2000000476837
+5180,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,2187.0999999046326
+6194.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,3201.399999856949
+6227.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,3234.7999999523163
+6228,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,3235.0999999046326
+6228,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,3235.0999999046326
+6228.100000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,3235.2000000476837
+6229.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,3236.2999999523163
+6241.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,3248.2999999523163
+7254,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,4261.099999904633
+7287.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,4294.899999856949
+7288.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,4295.299999952316
+7288.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,4295.5
+7288.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,4295.5
+7289.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,4296.899999856949
+7300.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,4308
+8312.600000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,5319.700000047684
+8315.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,5322.399999856949
+8315.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,5322.899999856949
+8315.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,5323
+8315.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,5323
+8317.600000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,insertText,x,state_actions,Action trace near 1000ms,0,1000,5324.700000047684
+8331.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,5339
+9344.400000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,5a137708-bd2b-427d-909f-3e82a59e0fd0,NA,NA,state_actions,Action trace near 1000ms,0,1000,6351.5
+3065.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,24.899999856948853
+3066.100000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,25.5
+3066.4000000953674,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,25.799999952316284
+3075,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,34.39999985694885
+3076.2000000476837,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,35.59999990463257
+3157,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,0,910,116.39999985694885
+4067.7000000476837,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1027.0999999046326
+4069.7000000476837,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1029.0999999046326
+4070.4000000953674,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1029.7999999523163
+4070.9000000953674,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1030.2999999523163
+4071,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,1030.3999998569489
+4075.100000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,1034.5
+4092.5,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1051.8999998569489
+5002.300000190735,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1961.7000000476837
+5004.200000047684,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1963.5999999046326
+5004.800000190735,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1964.2000000476837
+5005,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1964.3999998569489
+5005.100000143051,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,1964.5
+5008.800000190735,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,1968.2000000476837
+5026.400000095367,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,1985.7999999523163
+5936.400000095367,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,2895.7999999523163
+5937.900000095367,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,2897.2999999523163
+5938.900000095367,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,2898.2999999523163
+5939.300000190735,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,2898.7000000476837
+5939.400000095367,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,2898.7999999523163
+5943.700000047684,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,2903.0999999046326
+5961.5,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,2920.899999856949
+6872.200000047684,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,3831.5999999046326
+6873.900000095367,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,3833.2999999523163
+6874.700000047684,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,3834.0999999046326
+6875.200000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,3834.5999999046326
+6875.300000190735,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,3834.7000000476837
+6879.300000190735,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,3838.7000000476837
+6897.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,3857.0999999046326
+7808.600000143051,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,4768
+7811.600000143051,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,4771
+7812.400000095367,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,4771.799999952316
+7812.900000095367,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,4772.299999952316
+7812.900000095367,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,4772.299999952316
+7817.400000095367,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,insertText,x,state_actions,Action trace near 1000ms,0,910,4776.799999952316
+7835.300000190735,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,4794.700000047684
+8745.5,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,20c71935-5274-449c-a134-f6338cb74c74,NA,NA,state_actions,Action trace near 1000ms,0,910,5704.899999856949
+2960.9000000953674,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,17.90000009536743
+2961.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,18.600000143051147
+2961.7000000476837,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,18.700000047683716
+2970.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,27.5
+2972.2000000476837,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,29.200000047683716
+3034.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,1,1010,91.5
+4043.9000000953674,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,1100.9000000953674
+4044.7000000476837,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,1101.7000000476837
+4045.2000000476837,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,1102.2000000476837
+4045.4000000953674,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,1102.4000000953674
+4045.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,1102.5
+4047.600000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,1104.6000001430511
+4062.4000000953674,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,1119.4000000953674
+5074.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,2131.5
+5089.600000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,2146.600000143051
+5090.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,2147.2000000476837
+5090.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,2147.4000000953674
+5090.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,2147.5
+5092.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,2149.7000000476837
+5106.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,2163.7000000476837
+6118.800000190735,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,3175.800000190735
+6150.900000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,3207.9000000953674
+6151.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,3208.4000000953674
+6151.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,3208.5
+6151.600000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,3208.600000143051
+6153.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,3210.2000000476837
+6164.800000190735,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,3221.800000190735
+7178.600000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,4235.600000143051
+7212.600000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,4269.600000143051
+7213,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,4270
+7213.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,4270.200000047684
+7213.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,4270.200000047684
+7214.800000190735,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,4271.800000190735
+7227.400000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,4284.400000095367
+8241.600000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,5298.600000143051
+8273.600000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,5330.600000143051
+8274,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,5331
+8274.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,5331.200000047684
+8274.300000190735,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,5331.300000190735
+8275.800000190735,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,insertText,x,state_actions,Action trace near 1000ms,1,1010,5332.800000190735
+8286.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,5343.700000047684
+9300.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,9bf6432a-7325-4c94-a471-9ed62738fda4,NA,NA,state_actions,Action trace near 1000ms,1,1010,6357.5
+3007.2999999523163,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,28.799999952316284
+3008.0999999046326,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,29.59999990463257
+3008.2999999523163,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,29.799999952316284
+3021.2999999523163,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,42.799999952316284
+3022.399999856949,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,43.89999985694885
+3113.5999999046326,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,1,990,135.09999990463257
+4102.699999809265,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,1124.1999998092651
+4104.899999856949,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,1126.3999998569489
+4105.599999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,1127.0999999046326
+4106.199999809265,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,1127.6999998092651
+4106.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,1127.7999999523163
+4111,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,1132.5
+4128.899999856949,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,1150.3999998569489
+5119.899999856949,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,2141.399999856949
+5120.299999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,2141.7999999523163
+5120.699999809265,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,2142.199999809265
+5120.899999856949,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,2142.399999856949
+5121,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,2142.5
+5122,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,2143.5
+5135.199999809265,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,2156.699999809265
+6125.699999809265,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,3147.199999809265
+6127.399999856949,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,3148.899999856949
+6128.399999856949,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,3149.899999856949
+6128.799999952316,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,3150.2999999523163
+6128.899999856949,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,3150.399999856949
+6132.699999809265,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,3154.199999809265
+6149.699999809265,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,3171.199999809265
+7137.799999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,4159.299999952316
+7139.799999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,4161.299999952316
+7140.699999809265,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,4162.199999809265
+7141.199999809265,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,4162.699999809265
+7141.299999952316,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,4162.799999952316
+7145.299999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,4166.799999952316
+7163.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,4185.299999952316
+8154.199999809265,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,5175.699999809265
+8156.5,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,5178
+8157.399999856949,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,5178.899999856949
+8157.899999856949,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,5179.399999856949
+8158,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,5179.5
+8162.299999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,insertText,x,state_actions,Action trace near 1000ms,1,990,5183.799999952316
+8179.899999856949,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,5201.399999856949
+9169.899999856949,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,f35468ad-ffe0-401f-8c04-3d0e40a88890,NA,NA,state_actions,Action trace near 1000ms,1,990,6191.399999856949
+3008.399999856949,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,16.899999856948853
+3009,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,17.5
+3009.399999856949,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,17.899999856948853
+3018.5999999046326,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,27.09999990463257
+3019.899999856949,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,28.399999856948853
+3102.699999809265,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,1,1000,111.19999980926514
+4102.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,1111
+4104.399999856949,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,1112.8999998569489
+4105.399999856949,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,1113.8999998569489
+4105.899999856949,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,1114.3999998569489
+4106.099999904633,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,1114.5999999046326
+4110.599999904633,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,1119.0999999046326
+4128.199999809265,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,1136.6999998092651
+5140.599999904633,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,2149.0999999046326
+5173.899999856949,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,2182.399999856949
+5174.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,2183
+5174.599999904633,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,2183.0999999046326
+5174.599999904633,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,2183.0999999046326
+5176.199999809265,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,2184.699999809265
+5187.099999904633,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,2195.5999999046326
+6201.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,3210
+6234.699999809265,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,3243.199999809265
+6235,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,3243.5
+6235.199999809265,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,3243.699999809265
+6235.199999809265,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,3243.699999809265
+6237.099999904633,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,3245.5999999046326
+6248.099999904633,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,3256.5999999046326
+7260.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,4268.799999952316
+7293.699999809265,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,4302.199999809265
+7294.199999809265,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,4302.699999809265
+7294.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,4302.799999952316
+7294.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,4302.799999952316
+7295.899999856949,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,4304.399999856949
+7306.599999904633,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,4315.099999904633
+8319.399999856949,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,5327.899999856949
+8353.099999904633,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,5361.599999904633
+8353.399999856949,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,5361.899999856949
+8353.599999904633,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,5362.099999904633
+8353.599999904633,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,5362.099999904633
+8355.199999809265,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,insertText,x,state_actions,Action trace near 1000ms,1,1000,5363.699999809265
+8366.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,5375
+9380.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,a6d0029d-6bb8-4b6d-83f4-5a84aed8d9b3,NA,NA,state_actions,Action trace near 1000ms,1,1000,6388.799999952316
+3025.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,32.700000047683716
+3026.2999999523163,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,33.5
+3026.600000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,33.80000019073486
+3038.7000000476837,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,45.90000009536743
+3040.4000000953674,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,47.60000014305115
+3172.2000000476837,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,1,910,179.40000009536743
+4082.4000000953674,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,1089.6000001430511
+4084.600000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,1091.8000001907349
+4085.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,1092.8000001907349
+4086.2000000476837,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,1093.4000000953674
+4086.2999999523163,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,1093.5
+4089.9000000953674,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,1097.1000001430511
+4108.100000143051,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,1115.3000001907349
+5017.600000143051,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2024.8000001907349
+5019.600000143051,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2026.8000001907349
+5020.200000047684,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2027.4000000953674
+5020.600000143051,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2027.8000001907349
+5020.799999952316,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,2028
+5025.100000143051,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,2032.3000001907349
+5043.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2050.4000000953674
+5954.700000047684,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2961.9000000953674
+5956.700000047684,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2963.9000000953674
+5957.5,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2964.7000000476837
+5958,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2965.2000000476837
+5958.100000143051,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,2965.300000190735
+5962.5,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,2969.7000000476837
+5979.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,2987
+6890.400000095367,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,3897.600000143051
+6892.400000095367,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,3899.600000143051
+6893.400000095367,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,3900.600000143051
+6893.799999952316,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,3901
+6894.100000143051,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,3901.300000190735
+6897.799999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,3905
+6916.600000143051,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,3923.800000190735
+7827.400000095367,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,4834.600000143051
+7828.700000047684,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,4835.900000095367
+7829.299999952316,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,4836.5
+7829.600000143051,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,4836.800000190735
+7829.799999952316,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,4837
+7834,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,insertText,x,state_actions,Action trace near 1000ms,1,910,4841.200000047684
+7852.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,4860.100000143051
+8763.299999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,7be051ac-672c-4e59-92f3-fd0ac5cc035c,NA,NA,state_actions,Action trace near 1000ms,1,910,5770.5
+3070.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,34.200000047683716
+3071.5999999046326,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,35.299999952316284
+3071.7999999523163,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,35.5
+3083.4000000953674,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,47.10000014305115
+3084.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,48.200000047683716
+3254.2000000476837,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,1,530,217.90000009536743
+3783.7999999523163,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,747.5
+3784.5999999046326,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,748.2999999523163
+3784.9000000953674,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,748.6000001430511
+3785.0999999046326,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,748.7999999523163
+3785.0999999046326,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,748.7999999523163
+3786.9000000953674,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,750.6000001430511
+3800.9000000953674,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,764.6000001430511
+4330.799999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1294.5
+4331.299999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1295
+4331.700000047684,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1295.4000000953674
+4332,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1295.7000000476837
+4332,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,1295.7000000476837
+4333.799999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,1297.5
+4347.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1310.9000000953674
+4876.900000095367,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1840.6000001430511
+4877.5,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1841.2000000476837
+4878,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1841.7000000476837
+4878.200000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1841.9000000953674
+4878.200000047684,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,1841.9000000953674
+4880.400000095367,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,1844.1000001430511
+4894.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,1858
+5423.799999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2387.5
+5424.299999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2388
+5424.599999904633,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2388.2999999523163
+5424.799999952316,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2388.5
+5424.900000095367,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,2388.600000143051
+5426.799999952316,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,2390.5
+5440.5,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2404.2000000476837
+5969.700000047684,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2933.4000000953674
+5970.299999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2934
+5970.900000095367,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2934.600000143051
+5971.099999904633,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2934.7999999523163
+5971.200000047684,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,2934.9000000953674
+5972.700000047684,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,insertText,x,state_actions,Action trace near 1000ms,1,530,2936.4000000953674
+5986.099999904633,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,2949.7999999523163
+6516,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,98d31f88-cecd-4d7a-b752-068240a6ac6f,NA,NA,state_actions,Action trace near 1000ms,1,530,3479.7000000476837
+3060.800000190735,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,17.600000143051147
+3061.300000190735,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,18.100000143051147
+3061.4000000953674,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,18.200000047683716
+3070.800000190735,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,27.600000143051147
+3072.2000000476837,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,29
+3131.300000190735,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,state_actions,Action trace near 1000ms,1,130,88.10000014305115
+3260.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,217.29999995231628
+3260.9000000953674,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,217.70000004768372
+3261,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,217.79999995231628
+3261.2000000476837,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,218
+3261.2000000476837,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,218
+3262.2000000476837,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,219
+3270.300000190735,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,227.10000014305115
+3399.9000000953674,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,356.7000000476837
+3400.4000000953674,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,357.2000000476837
+3400.800000190735,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,357.60000014305115
+3401,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,357.7999999523163
+3401.100000143051,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,357.90000009536743
+3403,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,359.7999999523163
+3415.300000190735,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,372.10000014305115
+3545.2000000476837,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,502
+3545.9000000953674,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,502.7000000476837
+3546.100000143051,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,502.90000009536743
+3546.2000000476837,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,503
+3546.300000190735,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,503.10000014305115
+3547.800000190735,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,504.60000014305115
+3559.7000000476837,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,516.5
+3689.7000000476837,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,646.5
+3690.300000190735,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,647.1000001430511
+3690.600000143051,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,647.4000000953674
+3690.800000190735,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,647.6000001430511
+3690.800000190735,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,647.6000001430511
+3692.600000143051,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,649.4000000953674
+3705.5,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,662.2999999523163
+3834.300000190735,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,791.1000001430511
+3834.800000190735,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,791.6000001430511
+3835.100000143051,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,791.9000000953674
+3835.300000190735,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,792.1000001430511
+3835.300000190735,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,792.1000001430511
+3837.100000143051,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,insertText,x,state_actions,Action trace near 1000ms,1,130,793.9000000953674
+3849.4000000953674,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,806.2000000476837
+3979.4000000953674,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,d630bf05-e3ec-47cf-89d1-014beee6011e,NA,NA,state_actions,Action trace near 1000ms,1,130,936.2000000476837
+1871.4000000953674,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,27.299999952316284
+1873,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,28.899999856948853
+1873.2000000476837,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,29.09999990463257
+1879.2000000476837,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,35.09999990463257
+1879.9000000953674,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,35.799999952316284
+1934.9000000953674,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,cliff_actions,Cliff action trace,0,990,90.79999995231628
+2916.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,1072.3999998569489
+2918.4000000953674,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,1074.2999999523163
+2919.2000000476837,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,1075.0999999046326
+2919.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,1075.3999998569489
+2919.600000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,1075.5
+2923.9000000953674,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,1079.7999999523163
+2940.7999999523163,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,1096.6999998092651
+3931.7999999523163,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,2087.699999809265
+3934.100000143051,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,2090
+3935.2000000476837,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,2091.0999999046326
+3935.600000143051,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,2091.5
+3935.7000000476837,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,2091.5999999046326
+3939.2000000476837,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,2095.0999999046326
+3955.100000143051,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,2111
+4945.5,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,3101.399999856949
+4947.100000143051,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,3103
+4948.200000047684,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,3104.0999999046326
+4948.700000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,3104.5999999046326
+4948.799999952316,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,3104.699999809265
+4952.5,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,3108.399999856949
+4970,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,3125.899999856949
+5960.400000095367,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,4116.299999952316
+5962,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,4117.899999856949
+5963,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,4118.899999856949
+5963.700000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,4119.599999904633
+5963.799999952316,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,4119.699999809265
+5968.100000143051,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,4124
+5986,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,4141.899999856949
+6976.200000047684,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,5132.099999904633
+6978.200000047684,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,5134.099999904633
+6979.100000143051,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,5135
+6979.900000095367,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,5135.799999952316
+6980.100000143051,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,5136
+6984.100000143051,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,990,5140
+7000.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,5156.599999904633
+7992,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,990,6147.899999856949
+8160.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,12
+8160.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,12.300000190734863
+8160.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,12.400000095367432
+8160.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,12.5
+8161.600000143051,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,13.300000190734863
+8169.600000143051,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,21.300000190734863
+9182.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,1033.9000000953674
+9209.400000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,1061.1000001430511
+9209.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,1061.4000000953674
+9209.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,1061.6000001430511
+9209.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,1061.6000001430511
+9210.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,1062.6000001430511
+9219.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,1071.6000001430511
+10232.600000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,2084.300000190735
+10263.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,2115
+10263.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,2115.5
+10264,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,2115.7000000476837
+10264,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,2115.7000000476837
+10265.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,2117.100000143051
+10275.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,2127.5
+11289.100000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,3140.800000190735
+11291.900000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,3143.600000143051
+11292.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,3144.100000143051
+11292.600000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,3144.300000190735
+11292.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,3144.4000000953674
+11293.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,3145.600000143051
+11306.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,3158.600000143051
+12319,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,4170.700000047684
+12350.100000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,4201.800000190735
+12350.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,4202.200000047684
+12350.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,4202.200000047684
+12350.600000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,4202.300000190735
+12351.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,4203.200000047684
+12362,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,4213.700000047684
+13362,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,5213.700000047684
+13373.900000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,5225.600000143051
+13374.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,5226.300000190735
+13374.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,5226.600000143051
+13374.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,5226.600000143051
+13376.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1000,5228
+13388.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,5240.5
+14400.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1000,6252.400000095367
+14560.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,11
+14561,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,11.200000047683716
+14561.100000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,11.300000190734863
+14561.100000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,11.300000190734863
+14561.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,12
+14567.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,18.100000143051147
+15579.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,1029.7000000476837
+15611.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,1061.5
+15611.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,1061.8000001907349
+15611.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,1061.9000000953674
+15611.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,1061.9000000953674
+15613,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,1063.2000000476837
+15623.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,1073.7000000476837
+16637.400000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,2087.600000143051
+16667.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,2117.9000000953674
+16668,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,2118.2000000476837
+16668.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,2118.300000190735
+16668.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,2118.300000190735
+16669.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,2119.4000000953674
+16678.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,2128.9000000953674
+17692.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,3143.100000143051
+17723.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,3174
+17724.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,3174.4000000953674
+17724.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,3174.5
+17724.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,3174.600000143051
+17725.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,3176.100000143051
+17736.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,3186.7000000476837
+18750.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,4200.700000047684
+18780.400000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,4230.600000143051
+18780.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,4231
+18781,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,4231.200000047684
+18781,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,4231.200000047684
+18782.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,4232.600000143051
+18792.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,4243.100000143051
+19805.400000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,5255.600000143051
+19836,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,5286.200000047684
+19836.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,5286.5
+19836.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,5286.600000143051
+19836.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,5286.600000143051
+19837.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1010,5287.600000143051
+19847.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,5297.400000095367
+20860.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1010,6310.900000095367
+21036.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,20.40000009536743
+21037.10000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,20.800000190734863
+21037.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,20.90000009536743
+21037.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,20.90000009536743
+21038.10000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,21.800000190734863
+21044.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,28.600000143051147
+22146.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,1129.9000000953674
+22146.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,1130.5
+22147.10000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,1130.8000001907349
+22147.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,1131.1000001430511
+22147.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,1131.1000001430511
+22148.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,1132.5
+22160.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,1143.8000001907349
+23260.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,2244.300000190735
+23261.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,2244.800000190735
+23261.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,2245
+23261.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,2245.2000000476837
+23261.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,2245.2000000476837
+23262.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,2246.600000143051
+23274.400000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,2258.100000143051
+24374.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,3357.800000190735
+24374.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,3358.4000000953674
+24375.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,3359
+24375.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,3359.2000000476837
+24375.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,3359.2000000476837
+24376.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,3360.300000190735
+24387.400000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,3371.100000143051
+25488,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,4471.700000047684
+25488.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,4472.200000047684
+25488.900000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,4472.600000143051
+25489,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,4472.700000047684
+25489.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,4472.800000190735
+25490.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,4474.300000190735
+25501.60000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,4485.300000190735
+26601.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,5585.300000190735
+26602.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,5585.800000190735
+26602.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,5586.100000143051
+26602.60000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,5586.300000190735
+26602.60000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,5586.300000190735
+26604,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1100,5587.700000047684
+26615.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,5598.800000190735
+27716,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1100,6699.700000047684
+27833.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,12.200000047683716
+27833.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,12.400000095367432
+27833.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,12.5
+27833.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,12.5
+27834.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,13.400000095367432
+27842.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,21.200000047683716
+28951.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,1130.5
+28952,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,1131
+28952.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,1131.2999999523163
+28952.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,1131.5
+28952.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,1131.5
+28953.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,1132.9000000953674
+28964.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,1143.7000000476837
+30073.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,2252.7000000476837
+30074.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,2253.2999999523163
+30074.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,2253.7999999523163
+30075,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,2254
+30075.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,2254.100000143051
+30076.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,2255.2000000476837
+30087.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,2266.5
+31198.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,3377.2999999523163
+31199.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,3378.7000000476837
+31200.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,3379.2000000476837
+31200.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,3379.5
+31200.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,3379.5
+31201.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,3380.600000143051
+31213.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,3392.2000000476837
+32323.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,4502.100000143051
+32323.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,4502.799999952316
+32324.10000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,4503.100000143051
+32324.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,4503.299999952316
+32324.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,4503.299999952316
+32325.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,4504.5
+32336.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,4515.5
+33447.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,5626.299999952316
+33447.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,5626.799999952316
+33448.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,5627.200000047684
+33448.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,5627.400000095367
+33448.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,5627.400000095367
+33450,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1110,5629
+33462.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,5641.200000047684
+34572.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1110,6751.400000095367
+34688,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,13.299999952316284
+34688.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,13.599999904632568
+34688.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,13.700000047683716
+34688.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,13.700000047683716
+34689.40000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,14.700000047683716
+34697.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,22.59999990463257
+35847.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,1173
+35848.40000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,1173.7000000476837
+35848.90000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,1174.2000000476837
+35849.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,1174.4000000953674
+35849.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,1174.5
+35850.90000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,1176.2000000476837
+35863.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,1189
+37014.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,2339.5
+37014.90000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,2340.2000000476837
+37015.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,2340.5999999046326
+37015.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,2340.7999999523163
+37015.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,2340.7999999523163
+37016.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,2342.0999999046326
+37028.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,2354.0999999046326
+38177.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,3503.0999999046326
+38178.40000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,3503.7000000476837
+38178.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,3504.0999999046326
+38179,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,3504.2999999523163
+38179,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,3504.2999999523163
+38180.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,3505.7999999523163
+38193.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,3518.7999999523163
+39344,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,4669.299999952316
+39344.60000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,4669.900000095367
+39345,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,4670.299999952316
+39345.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,4670.5
+39345.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,4670.5
+39346.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,4672.099999904633
+39360.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,4685.400000095367
+40509.90000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,5835.200000047684
+40510.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,5835.799999952316
+40510.90000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,5836.200000047684
+40511.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,5836.400000095367
+40511.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,5836.5
+40512.90000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1150,5838.200000047684
+40525.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,5850.400000095367
+41675.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1150,7000.400000095367
+41798,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,13.399999856948853
+41798.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,13.699999809265137
+41798.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,13.799999952316284
+41798.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,13.799999952316284
+41799.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,14.699999809265137
+41807,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,22.399999856948853
+42988.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,1204
+42990.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,1205.5999999046326
+42991,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,1206.3999998569489
+42991.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,1206.7999999523163
+42991.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,1206.8999998569489
+42995.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,1210.5999999046326
+43009,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,1224.3999998569489
+44188,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,2403.399999856949
+44189.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,2404.5999999046326
+44189.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,2405
+44189.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,2405.199999809265
+44189.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,2405.2999999523163
+44191.90000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,2407.2999999523163
+44204.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,2419.899999856949
+45385.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,3600.5999999046326
+45387,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,3602.399999856949
+45388,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,3603.399999856949
+45388.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,3604.0999999046326
+45388.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,3604.199999809265
+45392.10000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,3607.5
+45404.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,3620.199999809265
+46584.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,4799.799999952316
+46584.90000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,4800.299999952316
+46585.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,4800.699999809265
+46585.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,4800.799999952316
+46585.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,4800.799999952316
+46586.40000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,4801.799999952316
+46595.40000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,4810.799999952316
+47776.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,5992.099999904633
+47778.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,5993.599999904633
+47779,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,5994.399999856949
+47779.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,5994.699999809265
+47779.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,5994.899999856949
+47783,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1180,5998.399999856949
+47796.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,6012.199999809265
+48977.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1180,7193.199999809265
+49150.60000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,13.200000047683716
+49150.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,13.399999856948853
+49151,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,13.599999904632568
+49151,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,13.599999904632568
+49152,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,14.599999904632568
+49158.90000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,21.5
+50349.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,1212.0999999046326
+50351.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,1213.7000000476837
+50351.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,1214.3999998569489
+50352.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,1215
+50352.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,1215.0999999046326
+50356.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,1219.3999998569489
+50374.40000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,1237
+51564.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,2426.7000000476837
+51564.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,2427.2999999523163
+51565.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,2427.7999999523163
+51565.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,2428
+51565.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,2428
+51567.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,2429.899999856949
+51579,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,2441.5999999046326
+52770.90000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,3633.5
+52773,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,3635.5999999046326
+52773.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,3636.2999999523163
+52774.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,3636.899999856949
+52774.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,3637
+52778,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,3640.5999999046326
+52792.90000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,3655.5
+53983.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,4846.200000047684
+53985.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,4847.899999856949
+53986.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,4848.799999952316
+53986.60000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,4849.200000047684
+53986.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,4849.299999952316
+53991,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,4853.599999904633
+54004.90000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,4867.5
+55195.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,6058.099999904633
+55197,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,6059.599999904633
+55197.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,6060.200000047684
+55198.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,6060.799999952316
+55198.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,6060.899999856949
+55201.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1190,6064.299999952316
+55217.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,6079.899999856949
+56408.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1190,7271.399999856949
+56584.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,12.800000190734863
+56584.40000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,13.100000143051147
+56584.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,13.200000047683716
+56584.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,13.200000047683716
+56585.40000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,14.100000143051147
+56591.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,20
+57793.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,1221.9000000953674
+57793.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,1222.5
+57794.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,1222.9000000953674
+57794.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,1223.1000001430511
+57794.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,1223.1000001430511
+57795.90000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,1224.6000001430511
+57808.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,1236.8000001907349
+59008.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,2437.300000190735
+59010.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,2439
+59010.90000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,2439.600000143051
+59011.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,2440.100000143051
+59011.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,2440.2000000476837
+59015.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,2444.4000000953674
+59031.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,2460
+60231.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,3659.800000190735
+60233.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,3662.4000000953674
+60234.40000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,3663.100000143051
+60234.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,3663.5
+60235,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,3663.7000000476837
+60238.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,3666.9000000953674
+60251.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,3680.2000000476837
+61453.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,4882.100000143051
+61461.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,4889.800000190735
+61462.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,4891.300000190735
+61463.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,4891.800000190735
+61463.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,4891.900000095367
+61466.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,4894.900000095367
+61479.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,4908.200000047684
+62680,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,6108.700000047684
+62681.90000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,6110.600000143051
+62682.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,6111.400000095367
+62683.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,6112
+62683.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,6112.100000143051
+62687.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1200,6116.200000047684
+62702.40000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,6131.100000143051
+63902,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1200,7330.700000047684
+64086.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,20.399999856948853
+64087,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,20.59999990463257
+64087.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,20.700000047683716
+64087.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,20.700000047683716
+64087.90000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,21.5
+64095.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,29.09999990463257
+65398.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,1331.7000000476837
+65400,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,1333.5999999046326
+65400.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,1334.3999998569489
+65401.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,1335
+65401.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,1335
+65405.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,1339.0999999046326
+65421.60000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,1355.2000000476837
+66722.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,2656.2000000476837
+66724.70000004768,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,2658.2999999523163
+66725.29999995232,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,2658.899999856949
+66725.90000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,2659.5
+66726,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,2659.5999999046326
+66730.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,2664.0999999046326
+66745,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,2678.5999999046326
+68046,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,3979.5999999046326
+68047.79999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,3981.399999856949
+68048.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,3982.2000000476837
+68049.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,3982.7000000476837
+68049.29999995232,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,3982.899999856949
+68052.90000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,3986.5
+68068.70000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,4002.2999999523163
+69369.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,5303
+69371.40000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,5305
+69372.20000004768,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,5305.799999952316
+69372.70000004768,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,5306.299999952316
+69372.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,5306.5
+69376.70000004768,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,5310.299999952316
+69393.20000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,5326.799999952316
+70694.20000004768,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,6627.799999952316
+70696.29999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,6629.899999856949
+70697.40000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,6631
+70697.90000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,6631.5
+70698,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,6631.599999904633
+70702.40000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,insertText,x,cliff_actions,Cliff action trace,0,1300,6636
+70718.20000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,6651.799999952316
+72017.79999995232,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,fd6d0eee-d0ce-4de8-af84-38f591530396,NA,NA,cliff_actions,Cliff action trace,0,1300,7951.399999856949
