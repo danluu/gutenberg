@@ -42,6 +42,7 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 			'  RTC_FUZZ_TRIAGE_REPRO_HOURS=3',
 			'  RTC_FUZZ_TRIAGE_CODEX_TIMEOUT_MS=<derived from repro hours>',
 			'  RTC_FUZZ_TRIAGE_STATE_DIR=<run-output-dir>/.triage-watcher',
+			'  RTC_FUZZ_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/analysis-tier',
 		].join( '\n' ) + '\n'
 	);
 	process.exit( 0 );
@@ -63,6 +64,9 @@ const STATE_DIR =
 	process.env.RTC_FUZZ_TRIAGE_STATE_DIR ??
 	path.join( RUN_DIR, '.triage-watcher' );
 const STATE_PATH = path.join( STATE_DIR, 'state.json' );
+const ANALYSIS_STATE_DIR =
+	process.env.RTC_FUZZ_ANALYSIS_STATE_DIR ??
+	path.join( STATE_DIR, 'analysis-tier' );
 const WATCH_INTERVAL_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_TRIAGE_INTERVAL_MS',
 	30000
@@ -388,9 +392,19 @@ function mergeExamples( currentExamples = [], newExamples = [] ) {
 
 async function launchQueuedJobs( state ) {
 	const activeHashes = getActiveJobHashes( state );
+	const analysisDecisions = await readAnalysisDecisions();
+	const sortedSignatures = sortSignaturesForLaunch(
+		Object.values( state.signatures ),
+		analysisDecisions
+	);
+	const analysisGated = await applyAnalysisGates(
+		sortedSignatures,
+		analysisDecisions
+	);
 
-	for ( const signature of Object.values( state.signatures ) ) {
+	for ( const signature of sortedSignatures ) {
 		if ( activeHashes.size >= MAX_PARALLEL ) {
+			state.lastAnalysisGatedCount = analysisGated;
 			return;
 		}
 
@@ -405,6 +419,127 @@ async function launchQueuedJobs( state ) {
 		await launchCodexJob( state, signature );
 		activeHashes.add( signature.hash );
 	}
+
+	state.lastAnalysisGatedCount = analysisGated;
+}
+
+async function applyAnalysisGates( signatures, analysisDecisions ) {
+	let analysisGated = 0;
+
+	for ( const signature of signatures ) {
+		const analysisDecision = analysisDecisions.get( signature.hash );
+		if ( ! shouldGateByAnalysis( analysisDecision ) ) {
+			continue;
+		}
+
+		if ( signature.status === 'queued' || signature.status === 'retry' ) {
+			signature.status = 'analysis-gated';
+			signature.analysisGate = {
+				gatedAt: new Date().toISOString(),
+				classification: analysisDecision.classification,
+				confidence: analysisDecision.confidence,
+				distinctBugType: analysisDecision.distinctBugType,
+				isDuplicateOf: analysisDecision.isDuplicateOf,
+				recommendedTriageAction:
+					analysisDecision.recommendedTriageAction,
+				summary: analysisDecision.summary,
+				resultPath: analysisDecision.resultPath,
+			};
+			await writeStatusMarkdown(
+				path.join( signature.jobDir, 'STATUS.md' ),
+				signature
+			);
+		}
+
+		analysisGated += 1;
+	}
+
+	return analysisGated;
+}
+
+async function readAnalysisDecisions() {
+	const analysisStatePath = path.join( ANALYSIS_STATE_DIR, 'state.json' );
+	let analysisState = null;
+
+	try {
+		analysisState = JSON.parse(
+			await fs.readFile( analysisStatePath, 'utf8' )
+		);
+	} catch {
+		return new Map();
+	}
+
+	const decisions = new Map();
+	for ( const job of Object.values( analysisState.jobs ?? {} ) ) {
+		if ( job.status !== 'completed' || ! job.resultPath ) {
+			continue;
+		}
+
+		let result = null;
+		try {
+			result = JSON.parse(
+				await fs.readFile( job.resultPath, 'utf8' )
+			);
+		} catch {
+			continue;
+		}
+
+		decisions.set( job.hash, {
+			...result,
+			resultPath: job.resultPath,
+		} );
+	}
+
+	return decisions;
+}
+
+function shouldGateByAnalysis( analysisDecision ) {
+	if ( ! analysisDecision || analysisDecision.shouldDeepTriage !== false ) {
+		return false;
+	}
+
+	return [
+		'merge_with_duplicate',
+		'suppress_as_infra',
+		'keep_collecting',
+	].includes( analysisDecision.recommendedTriageAction );
+}
+
+function sortSignaturesForLaunch( signatures, analysisDecisions ) {
+	return [ ...signatures ].sort( ( left, right ) => {
+		const leftPriority = getAnalysisLaunchPriority(
+			analysisDecisions.get( left.hash )
+		);
+		const rightPriority = getAnalysisLaunchPriority(
+			analysisDecisions.get( right.hash )
+		);
+
+		if ( leftPriority !== rightPriority ) {
+			return leftPriority - rightPriority;
+		}
+
+		return ( right.count ?? 0 ) - ( left.count ?? 0 );
+	} );
+}
+
+function getAnalysisLaunchPriority( analysisDecision ) {
+	if ( shouldGateByAnalysis( analysisDecision ) ) {
+		return 3;
+	}
+
+	if (
+		analysisDecision?.shouldDeepTriage === true &&
+		analysisDecision?.recommendedTriageAction ===
+			'prioritize_deep_triage'
+	) {
+		return 0;
+	}
+
+	if ( analysisDecision?.shouldDeepTriage === true ) {
+		return 1;
+	}
+
+	return 2;
 }
 
 function getActiveJobHashes( state ) {
@@ -454,9 +589,13 @@ async function reconcileExternallyCompletedJobs( state ) {
 
 function shouldLaunch( signature ) {
 	if (
-		[ 'completed', 'not-real', 'infra', 'no-realistic-repro' ].includes(
-			signature.status
-		)
+		[
+			'completed',
+			'not-real',
+			'infra',
+			'no-realistic-repro',
+			'analysis-gated',
+		].includes( signature.status )
 	) {
 		return false;
 	}
@@ -689,6 +828,19 @@ async function writeStatusMarkdown( statusPath, signature ) {
 			'',
 			result.realisticPlaywrightRepro.notes
 		);
+	} else if ( signature.analysisGate ) {
+		lines.push(
+			'Deep triage launch was gated by the high-parallel analysis tier.',
+			'',
+			`Analysis classification: ${ signature.analysisGate.classification }`,
+			`Analysis confidence: ${ signature.analysisGate.confidence }`,
+			`Distinct bug type: ${ signature.analysisGate.distinctBugType }`,
+			`Duplicate of: ${ signature.analysisGate.isDuplicateOf ?? 'none' }`,
+			`Recommended triage action: ${ signature.analysisGate.recommendedTriageAction }`,
+			`Analysis result: ${ signature.analysisGate.resultPath }`,
+			'',
+			signature.analysisGate.summary
+		);
 	} else {
 		lines.push(
 			'Codex did not produce a parseable result. The watcher will retry this signature.'
@@ -711,7 +863,7 @@ async function runScanCycle() {
 			candidates.length
 		} signatures=${ groups.length } active=${
 			getActiveJobHashes( state ).size
-		}\n`
+		} analysisGated=${ state.lastAnalysisGatedCount ?? 0 }\n`
 	);
 }
 
