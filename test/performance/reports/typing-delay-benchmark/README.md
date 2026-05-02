@@ -31,6 +31,10 @@ The short version:
 -   Source-level RichText spans put nearly all of that `onInput` time inside
     `registry.batch()`, not DOM parsing, format updating, DOM apply,
     serialization, or the direct `onSelectionChange` / `onChange` callbacks.
+-   Source-level `@wordpress/data` spans put that batch remainder mostly in
+    `core/block-editor` store-emitter resume and `useSelect` subscriber fanout.
+    The expensive path is selector/subscriber invalidation, not the two direct
+    RichText callbacks.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -92,6 +96,7 @@ run:
 -   timer tracing and timer intervention.
 -   event-listener invocation tracing;
 -   source-level RichText span tracing;
+-   source-level data registry / `useSelect` span tracing;
 -   alternate delay modes:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
@@ -133,6 +138,14 @@ The R script derives:
     `registry.batch()` into direct callbacks and remaining synchronous work.
 -   `data/typing-delay-rich-text-batch-summary.csv`: per-delay summary of the
     batch split.
+-   `data/typing-delay-data-span-summary.csv`: source-level data registry and
+    `useSelect` span summaries from targeted instrumented runs.
+-   `data/typing-delay-data-batch-parts.csv`: per-input, RichText-matched
+    breakdown of the `@wordpress/data` spans inside `registry.batch()`.
+-   `data/typing-delay-data-batch-summary.csv`: per-delay summary of that data
+    batch breakdown.
+-   `data/typing-delay-data-store-resume-summary.csv`: per-store resume timing
+    for input-matched data batches.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -605,6 +618,53 @@ the empty post, but the post/editor state makes the synchronous batch remainder
 larger. The key-held mode makes it larger again, especially outside the `1000ms`
 fast band.
 
+### Data Registry And useSelect Spans
+
+The RichText spans still could not say what happened inside `registry.batch()`.
+I added opt-in source spans in `@wordpress/data` around registry batching,
+emitter resume/notification, Redux-store subscriber loops, and `useSelect`
+subscriber callbacks. To keep the diagnostic data tractable, the default data
+span mode records only spans nested under an input-matched `registry.batch()`.
+
+The four data-span runs used the same six delays as the RichText runs:
+`990ms`, `1000ms`, `1200ms`, `1300ms`, `1550ms`, and `2000ms`, with large-post
+and empty-post fixtures in key-held and wait-after-keyup modes.
+
+![Data batch useSelect breakdown](figures/19-data-batch-use-select-breakdown.png)
+
+The next split is also sharp. For the large-post fixture, most of the batch time
+is `core/block-editor` store-emitter resume. Inside that, the largest measured
+piece is store-subscriber fanout, especially `useSelect` subscription callbacks.
+`useSelect` then spends a material fraction of that time recomputing selector
+results (`mapSelect`) before React's external-store listener returns.
+
+Selected input-matched medians:
+
+| Scenario   | Mode             |    Delay | Data batch | Callback | Resume `core/block-editor` | Block-editor subscribers | `useSelect` onChange | `mapSelect` |
+| ---------- | ---------------- | -------: | ---------: | -------: | -------------------------: | -----------------------: | -------------------: | ----------: |
+| large post | key held         |  `990ms` |   `23.4ms` |  `6.5ms` |                   `15.4ms` |                 `12.7ms` |              `7.8ms` |     `3.6ms` |
+| large post | key held         | `1000ms` |   `14.2ms` |  `3.5ms` |                   `10.0ms` |                  `8.5ms` |              `5.8ms` |     `2.8ms` |
+| large post | key held         | `1300ms` |   `23.7ms` |  `6.7ms` |                   `15.5ms` |                 `12.7ms` |              `7.9ms` |     `3.2ms` |
+| large post | wait after keyup | `1300ms` |   `15.3ms` |  `3.7ms` |                   `10.9ms` |                  `8.8ms` |              `5.8ms` |     `2.6ms` |
+| empty post | key held         | `1300ms` |    `8.1ms` |  `0.7ms` |                    `5.0ms` |                  `4.5ms` |              `4.1ms` |     `3.3ms` |
+| empty post | wait after keyup | `1300ms` |    `5.1ms` |  `0.5ms` |                    `3.1ms` |                  `2.8ms` |              `2.2ms` |     `1.6ms` |
+
+These spans are nested, so the columns should not be added together. For example,
+`core/block-editor` subscribers are inside `core/block-editor` resume, and
+`useSelect` work is inside the subscriber fanout.
+
+![Data store resume breakdown](figures/20-data-store-resume-breakdown.png)
+
+The store-resume plot shows why the earlier "data-store notification" inference
+was too broad. The expensive store is not an even spread across the registry:
+`core/block-editor` is the dominant resume in the input-matched batches. Other
+stores are small in this workload.
+
+The remaining unattributed work is now below the store/subscriber layer: which
+`useSelect` subscriptions and selectors are costly, and which React components
+they wake up. The current spans identify the mechanism but not the component
+owners.
+
 ## Scenario Sensitivity
 
 ![Scenario boundary checks](figures/08-scenario-boundary-checks.png)
@@ -696,6 +756,9 @@ Known problems:
 -   **Source-level RichText span tracing also perturbs behavior.** It adds timing
     calls inside hot input code and requires rebuilding the package scripts. It is
     diagnostic attribution, not a benchmark score.
+-   **Source-level data span tracing is heavier still.** Even after filtering to
+    input-matched batch spans, it instruments hot emitter and `useSelect` paths.
+    Treat it as attribution, not latency scoring.
 -   **The paired trace is diagnostic, not a score run.** It uses only 8 retained
     samples per delay and heavy instrumentation. Its value is in comparing modes
     under similar tracing overhead.
@@ -783,8 +846,9 @@ For investigation:
     values.
 -   Split the RichText `onInput` callback into source-level timing spans for
     `createRecord`, `applyRecord`, serialization, data dispatch, and render.
--   Split the `@wordpress/data` batch flush into subscriber/store/render spans;
-    that is now the largest unattributed synchronous region.
+-   Add component/subscription ownership to the `useSelect` span traces, so the
+    expensive selectors and components behind the `core/block-editor` fanout are
+    identifiable.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Add a textarea/native baseline to estimate browser/editor overhead.
@@ -836,11 +900,19 @@ The key runs used in this report were:
     RichText spans.
 -   `rich_text_spans_empty_between_keys`: empty-post complete-keypress-then-wait
     trace with source-level RichText spans.
+-   `data_spans_large_keyhold`: large-post key-hold trace with source-level data
+    registry and `useSelect` spans.
+-   `data_spans_large_between_keys`: large-post complete-keypress-then-wait trace
+    with source-level data registry and `useSelect` spans.
+-   `data_spans_empty_keyhold`: empty-post key-hold trace with source-level data
+    registry and `useSelect` spans.
+-   `data_spans_empty_between_keys`: empty-post complete-keypress-then-wait trace
+    with source-level data registry and `useSelect` spans.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
-The source-level RichText span runs require rebuilding the browser scripts after
-the probe changes:
+The source-level RichText and data span runs require rebuilding the browser
+scripts after the probe changes:
 
 ```sh
 npm run build -- --skip-types

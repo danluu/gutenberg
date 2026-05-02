@@ -1,0 +1,433 @@
+run_id,mode_label,span_scenario_label,delayMs,store_name,n,median_ms,p90_ms
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core,12,0.5,1.3899998664855957
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/abilities,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/block-directory,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/block-editor,12,0.7999999523162842,2.900000071525574
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/blocks,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/commands,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/data,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/edit-post,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/interface,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/keyboard-shortcuts,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/media-editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/notices,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/patterns,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/preferences,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/rich-text,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/upload-media,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/viewport,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core,12,0.30000007152557373,1.2000000476837158
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/abilities,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/block-directory,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/block-editor,12,0.75,2.700000047683716
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/blocks,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/commands,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/data,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/edit-post,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/interface,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/keyboard-shortcuts,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/media-editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/notices,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/patterns,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/preferences,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/rich-text,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/upload-media,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/viewport,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core,12,0.4500000476837158,1.4000000715255738
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/abilities,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/block-directory,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/block-editor,12,0.8000000715255737,3.2799999475479127
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/blocks,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/commands,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/data,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/edit-post,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/interface,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/keyboard-shortcuts,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/media-editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/notices,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/patterns,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/preferences,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/rich-text,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/upload-media,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/viewport,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core,12,0.2999999523162842,1.4899999856948853
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/abilities,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/block-directory,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/block-editor,12,0.6999999284744263,3.1000001430511475
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/blocks,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/commands,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/data,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/edit-post,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/interface,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/keyboard-shortcuts,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/media-editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/notices,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/patterns,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/preferences,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/rich-text,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/upload-media,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/viewport,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core,12,0.2999999523162842,1.4900000095367432
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/abilities,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/block-directory,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/block-editor,12,0.6000000238418579,3.0999999046325684
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/blocks,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/commands,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/data,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/edit-post,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/interface,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/keyboard-shortcuts,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/media-editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/notices,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/patterns,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/preferences,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/rich-text,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/upload-media,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/viewport,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core,12,0.40000009536743164,1.200000023841858
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/abilities,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/block-directory,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/block-editor,12,0.8000000715255737,2.6000001430511475
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/blocks,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/commands,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/data,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/edit-post,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/interface,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/keyboard-shortcuts,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/media-editor,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/notices,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/patterns,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/preferences,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/rich-text,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/upload-media,12,0,0
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/viewport,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core,12,0.5,3.0499999046325685
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/abilities,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/block-directory,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/block-editor,12,0.7999999523162842,6.839999890327454
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/blocks,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/commands,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/data,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/edit-post,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/interface,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/keyboard-shortcuts,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/media-editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/notices,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/patterns,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/preferences,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/rich-text,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/upload-media,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/viewport,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core,12,0.30000007152557373,2.490000009536743
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/abilities,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/block-directory,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/block-editor,12,0.7999999523162842,4.889999866485596
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/blocks,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/commands,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/data,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/edit-post,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/interface,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/keyboard-shortcuts,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/media-editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/notices,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/patterns,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/preferences,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/rich-text,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/upload-media,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/viewport,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core,12,0.3999999761581421,3.0500001430511476
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/abilities,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/block-directory,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/block-editor,12,0.6999999284744263,6.16000006198883
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/blocks,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/commands,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/data,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/edit-post,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/interface,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/keyboard-shortcuts,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/media-editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/notices,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/patterns,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/preferences,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/rich-text,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/upload-media,12,0,0.08999991416931157
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/viewport,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core,12,0.3500000238418579,2.759999942779541
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/abilities,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/block-directory,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/block-editor,12,0.6500000953674316,5.730000162124634
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/blocks,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/commands,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/data,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/edit-post,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/interface,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/keyboard-shortcuts,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/media-editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/notices,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/patterns,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/preferences,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/rich-text,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/upload-media,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/viewport,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core,12,0.3500000238418579,1.7799999475479127
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/abilities,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/block-directory,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/block-editor,12,0.6999999284744263,3.7799999475479127
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/blocks,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/commands,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/data,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/edit-post,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/interface,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/keyboard-shortcuts,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/media-editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/notices,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/patterns,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/preferences,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/rich-text,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/upload-media,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/viewport,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core,12,0.4500000476837158,2.669999837875366
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/abilities,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/block-directory,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/block-editor,12,0.8500000238418579,5.579999899864196
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/blocks,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/commands,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/data,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/edit-post,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/interface,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/keyboard-shortcuts,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/media-editor,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/notices,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/patterns,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/preferences,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/rich-text,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/upload-media,12,0,0
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/viewport,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core,12,0.25,0.7899999618530273
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/abilities,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/block-directory,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/block-editor,12,3.950000047683716,10.45
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/blocks,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/commands,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/data,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/edit-post,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/interface,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/keyboard-shortcuts,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/media-editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/notices,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/patterns,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/preferences,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/rich-text,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/upload-media,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/viewport,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core,12,0.25,0.690000057220459
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/abilities,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/block-directory,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/block-editor,12,3.950000047683716,9.370000076293945
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/blocks,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/commands,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/data,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/edit-post,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/interface,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/keyboard-shortcuts,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/media-editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/notices,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/patterns,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/preferences,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/rich-text,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/upload-media,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/viewport,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core,12,0.25,0.7999999523162842
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/abilities,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/block-directory,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/block-editor,12,3.899999976158142,11.069999933242798
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/blocks,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/commands,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/data,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/edit-post,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/interface,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/keyboard-shortcuts,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/media-editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/notices,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/patterns,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/preferences,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/rich-text,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/upload-media,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/viewport,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core,12,0.34999990463256836,0.890000081062317
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/abilities,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/block-directory,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/block-editor,12,4.5,11.090000128746032
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/blocks,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/commands,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/data,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/edit-post,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/interface,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/keyboard-shortcuts,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/media-editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/notices,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/patterns,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/preferences,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/rich-text,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/upload-media,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/viewport,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core,12,0.30000007152557373,0.9000000715255738
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/abilities,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/block-directory,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/block-editor,12,4.049999952316284,10.679999828338623
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/blocks,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/commands,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/data,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/edit-post,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/interface,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/keyboard-shortcuts,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/media-editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/notices,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/patterns,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/preferences,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/rich-text,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/upload-media,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/viewport,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core,12,0.2999999523162842,0.7899999618530273
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/abilities,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/block-directory,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/block-editor,12,3.950000047683716,10.769999957084657
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/blocks,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/commands,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/data,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/edit-post,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/interface,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/keyboard-shortcuts,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/media-editor,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/notices,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/patterns,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/preferences,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/rich-text,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/upload-media,12,0,0
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/viewport,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core,12,0.2999999523162842,1.2899999618530273
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/abilities,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/block-directory,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/block-editor,12,4,16.510000133514406
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/blocks,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/commands,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/data,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/edit-post,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/interface,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/keyboard-shortcuts,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/media-editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/notices,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/patterns,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/preferences,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/rich-text,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/upload-media,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/viewport,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core,12,0.2999999523162842,0.890000081062317
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/abilities,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/block-directory,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/block-editor,12,3.950000047683716,11.169999957084656
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/blocks,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/commands,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/data,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/edit-post,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/interface,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/keyboard-shortcuts,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/media-editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/notices,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/patterns,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/preferences,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/rich-text,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/upload-media,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/viewport,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core,12,0.2999999523162842,1.2999999523162842
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/abilities,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/block-directory,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/block-editor,12,3.9499999284744263,15.940000009536742
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/blocks,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/commands,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/data,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/edit-post,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/interface,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/keyboard-shortcuts,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/media-editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/notices,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/patterns,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/preferences,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/rich-text,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/upload-media,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/viewport,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core,12,0.3500000238418579,1.3000001668930055
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/abilities,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/block-directory,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/block-editor,12,4.399999976158142,15.779999947547914
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/blocks,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/commands,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/data,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/edit-post,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/interface,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/keyboard-shortcuts,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/media-editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/notices,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/patterns,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/preferences,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/rich-text,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/upload-media,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/viewport,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core,12,0.2999999523162842,1.2000000476837158
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/abilities,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/block-directory,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/block-editor,12,4.050000071525574,14.090000128746032
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/blocks,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/commands,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/data,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/edit-post,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/interface,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/keyboard-shortcuts,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/media-editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/notices,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/patterns,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/preferences,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/rich-text,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/upload-media,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/viewport,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core,12,0.34999990463256836,1.1800000429153443
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/abilities,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/block-directory,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/block-editor,12,4.200000047683716,13.470000004768373
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/blocks,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/commands,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/data,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/edit-post,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/interface,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/keyboard-shortcuts,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/media-editor,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/notices,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/patterns,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/preferences,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/rich-text,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/upload-media,12,0,0
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/viewport,12,0,0

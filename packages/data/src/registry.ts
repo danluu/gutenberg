@@ -9,6 +9,7 @@ import deprecated from '@wordpress/deprecated';
 import createReduxStore from './redux-store';
 import coreDataStore from './store';
 import { createEmitter } from './utils/emitter';
+import { traceDataSpan } from './benchmark-tracing';
 import { lock, unlock } from './lock-unlock';
 import type {
 	StoreDescriptor,
@@ -40,7 +41,7 @@ export function createRegistry(
 	parent: DataRegistry | null = null
 ): DataRegistry {
 	const stores: Record< string, InternalStoreInstance > = {};
-	const emitter = createEmitter();
+	const emitter = createEmitter( { emitterKind: 'registry' } );
 	let listeningStores: Set< string > | null = null;
 
 	/**
@@ -65,7 +66,9 @@ export function createRegistry(
 	): ( () => void ) => {
 		// subscribe to all stores
 		if ( ! storeNameOrDescriptor ) {
-			return emitter.subscribe( listener );
+			return emitter.subscribe( listener, {
+				listenerType: 'registry subscriber',
+			} );
 		}
 
 		// subscribe to one store
@@ -232,10 +235,18 @@ export function createRegistry(
 		// The emitter is used to keep track of active listeners when the registry
 		// get paused, that way, when resumed we should be able to call all these
 		// pending listeners.
-		store.emitter = createEmitter();
+		store.emitter = createEmitter( {
+			emitterKind: 'store',
+			storeName: name,
+		} );
 		const currentSubscribe = store.subscribe;
 		store.subscribe = ( listener: () => void ) => {
-			const unsubscribeFromEmitter = store.emitter.subscribe( listener );
+			const unsubscribeFromEmitter = store.emitter.subscribe( listener, {
+				listenerType:
+					listener === globalListener
+						? 'registry global listener'
+						: 'store subscriber',
+			} );
 			const unsubscribeFromStore = currentSubscribe( () => {
 				if ( store.emitter.isPaused ) {
 					store.emitter.emit();
@@ -322,22 +333,39 @@ export function createRegistry(
 	}
 
 	function batch( callback: () => void ) {
-		// If we're already batching, just call the callback.
-		if ( emitter.isPaused ) {
-			callback();
-			return;
-		}
+		return traceDataSpan( 'data.registry.batch.total', () => {
+			// If we're already batching, just call the callback.
+			if ( emitter.isPaused ) {
+				traceDataSpan( 'data.registry.batch.nestedCallback', callback );
+				return;
+			}
 
-		emitter.pause();
-		Object.values( stores ).forEach( ( store ) => store.emitter.pause() );
-		try {
-			callback();
-		} finally {
-			emitter.resume();
-			Object.values( stores ).forEach( ( store ) =>
-				store.emitter.resume()
+			const currentStores = Object.entries( stores );
+			traceDataSpan( 'data.registry.batch.pauseRegistry', () =>
+				emitter.pause()
 			);
-		}
+			currentStores.forEach( ( [ storeName, store ] ) =>
+				traceDataSpan(
+					'data.registry.batch.pauseStore',
+					() => store.emitter.pause(),
+					{ storeName }
+				)
+			);
+			try {
+				traceDataSpan( 'data.registry.batch.callback', callback );
+			} finally {
+				traceDataSpan( 'data.registry.batch.resumeRegistry', () =>
+					emitter.resume()
+				);
+				currentStores.forEach( ( [ storeName, store ] ) =>
+					traceDataSpan(
+						'data.registry.batch.resumeStore',
+						() => store.emitter.resume(),
+						{ storeName }
+					)
+				);
+			}
+		} );
 	}
 
 	let registry: DataRegistry = {

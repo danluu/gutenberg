@@ -15,6 +15,7 @@ import { compose } from '@wordpress/compose';
  * Internal dependencies
  */
 import { combineReducers } from './combine-reducers';
+import { traceDataSpan } from '../benchmark-tracing';
 import { builtinControls } from '../controls';
 import { lock } from '../lock-unlock';
 import promise from '../promise-middleware';
@@ -529,15 +530,31 @@ export default function createReduxStore< State, Actions, Selectors >(
 
 			let lastState = store.__unstableOriginalGetState();
 			store.subscribe( () => {
-				const state = store.__unstableOriginalGetState();
-				const hasChanged = state !== lastState;
-				lastState = state;
+				traceDataSpan(
+					'data.reduxStore.rootSubscribe',
+					() => {
+						const state = store.__unstableOriginalGetState();
+						const hasChanged = state !== lastState;
+						lastState = state;
 
-				if ( hasChanged ) {
-					for ( const listener of listeners ) {
-						listener();
-					}
-				}
+						if ( hasChanged ) {
+							let listenerIndex = 0;
+							for ( const listener of listeners ) {
+								traceDataSpan(
+									'data.reduxStore.listener',
+									listener,
+									{
+										storeName: key,
+										listenerIndex,
+										listenerCount: listeners.size,
+									}
+								);
+								listenerIndex++;
+							}
+						}
+					},
+					{ storeName: key, listenerCount: listeners.size }
+				);
 			} );
 
 			// This can be simplified to just { subscribe, getSelectors, getActions }

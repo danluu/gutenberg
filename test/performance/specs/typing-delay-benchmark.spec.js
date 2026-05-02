@@ -62,6 +62,12 @@ const traceEventListeners =
 const traceRichTextSpans =
 	process.env.BENCHMARK_TRACE_RICH_TEXT_SPANS === '1' ||
 	process.env.BENCHMARK_TRACE_RICH_TEXT_SPANS === 'true';
+const traceDataSpans =
+	process.env.BENCHMARK_TRACE_DATA_SPANS === '1' ||
+	process.env.BENCHMARK_TRACE_DATA_SPANS === 'true';
+const traceAllDataSpans =
+	process.env.BENCHMARK_TRACE_ALL_DATA_SPANS === '1' ||
+	process.env.BENCHMARK_TRACE_ALL_DATA_SPANS === 'true';
 const rewriteTimeout1000Ms =
 	process.env.BENCHMARK_REWRITE_TIMEOUT_1000_MS === undefined
 		? null
@@ -389,6 +395,99 @@ function installRichTextSpanTracing() {
 	window.__typingBenchmarkRichTextSpanFrameObserverInstalled = true;
 }
 
+function installDataSpanTracing() {
+	if ( window.__typingBenchmarkDataSpanTracingInstalled ) {
+		window.__typingBenchmarkDataSpanEvents =
+			window.__typingBenchmarkDataSpanEvents || [];
+		return;
+	}
+
+	window.__typingBenchmarkDataSpanEvents = [];
+	let depth = 0;
+	let batchDepth = 0;
+	const defaultExcludedSpanNames = new Set( [
+		'data.emitter.emit',
+		'data.reduxStore.listener',
+	] );
+
+	window.__typingBenchmarkTraceDataSpan = function traceDataSpan(
+		name,
+		callback,
+		metadata = {}
+	) {
+		const startedAtMs = performance.now();
+		const currentDepth = depth;
+		const isBatchRoot = name === 'data.registry.batch.total';
+		const shouldCapture =
+			window.__typingBenchmarkTraceAllDataSpans ||
+			( ! defaultExcludedSpanNames.has( name ) &&
+				( batchDepth > 0 ||
+					name.indexOf( 'data.registry.batch.' ) === 0 ) );
+		if ( isBatchRoot ) {
+			batchDepth++;
+		}
+		depth++;
+		let status = 'returned';
+		let result;
+
+		try {
+			result = callback();
+		} catch ( error ) {
+			status = 'threw';
+			throw error;
+		} finally {
+			depth--;
+			if ( shouldCapture ) {
+				window.__typingBenchmarkDataSpanEvents.push( {
+					name,
+					startedAtMs,
+					durationMs: performance.now() - startedAtMs,
+					status,
+					depth: currentDepth,
+					metadata,
+				} );
+			}
+			if ( isBatchRoot ) {
+				batchDepth--;
+			}
+		}
+
+		return result;
+	};
+
+	window.__typingBenchmarkDataSpanTracingInstalled = true;
+
+	if ( window.__typingBenchmarkDataSpanFrameObserverInstalled ) {
+		return;
+	}
+
+	const installerSource = `(${ installDataSpanTracing.toString() })()`;
+
+	function installInChildFrames() {
+		for ( const iframe of document.querySelectorAll( 'iframe' ) ) {
+			try {
+				const childWindow = iframe.contentWindow;
+				if (
+					childWindow &&
+					! childWindow.__typingBenchmarkDataSpanTracingInstalled
+				) {
+					childWindow.eval( installerSource );
+				}
+			} catch {
+				// Cross-origin or not-yet-ready frames are irrelevant here.
+			}
+		}
+	}
+
+	installInChildFrames();
+	new MutationObserver( installInChildFrames ).observe( document, {
+		childList: true,
+		subtree: true,
+	} );
+	window.setInterval( installInChildFrames, 50 );
+	window.__typingBenchmarkDataSpanFrameObserverInstalled = true;
+}
+
 if ( delayStepMs <= 0 ) {
 	throw new Error( 'BENCHMARK_DELAY_STEP_MS must be greater than 0.' );
 }
@@ -678,6 +777,62 @@ test.describe( 'Typing delay benchmark', () => {
 			} );
 		}
 
+		async function setupDataSpanTracingInitScript() {
+			if ( ! traceDataSpans ) {
+				return;
+			}
+
+			await page.addInitScript( ( shouldTraceAllDataSpans ) => {
+				window.__typingBenchmarkTraceAllDataSpans =
+					shouldTraceAllDataSpans;
+			}, traceAllDataSpans );
+			await page.addInitScript( installDataSpanTracing );
+			await page
+				.evaluate( ( shouldTraceAllDataSpans ) => {
+					window.__typingBenchmarkTraceAllDataSpans =
+						shouldTraceAllDataSpans;
+				}, traceAllDataSpans )
+				.catch( () => undefined );
+			await page
+				.evaluate( installDataSpanTracing )
+				.catch( () => undefined );
+		}
+
+		async function setupDataSpanTracingInCurrentContext() {
+			if ( ! traceDataSpans ) {
+				return;
+			}
+
+			await page.evaluate( ( shouldTraceAllDataSpans ) => {
+				window.__typingBenchmarkTraceAllDataSpans =
+					shouldTraceAllDataSpans;
+			}, traceAllDataSpans );
+			await page.evaluate( installDataSpanTracing );
+		}
+
+		async function resetDataSpanTracing() {
+			if ( ! traceDataSpans ) {
+				return;
+			}
+
+			await page.evaluate( () => {
+				const windows = [ window ];
+				for ( const iframe of document.querySelectorAll( 'iframe' ) ) {
+					try {
+						if ( iframe.contentWindow ) {
+							windows.push( iframe.contentWindow );
+						}
+					} catch {
+						// Ignore inaccessible frames.
+					}
+				}
+
+				for ( const currentWindow of windows ) {
+					currentWindow.__typingBenchmarkDataSpanEvents = [];
+				}
+			} );
+		}
+
 		async function setupPersistenceTracing() {
 			if ( ! tracePersistence ) {
 				return;
@@ -728,6 +883,7 @@ test.describe( 'Typing delay benchmark', () => {
 			if ( ! traceData ) {
 				await resetEventListenerTracing();
 				await resetRichTextSpanTracing();
+				await resetDataSpanTracing();
 				return;
 			}
 
@@ -745,6 +901,7 @@ test.describe( 'Typing delay benchmark', () => {
 				window.__typingBenchmarkDataInstrumentation = [];
 				window.__typingBenchmarkEventListenerEvents = [];
 				window.__typingBenchmarkRichTextSpanEvents = [];
+				window.__typingBenchmarkDataSpanEvents = [];
 				window.__typingBenchmarkBrowserUnsubscribers?.forEach(
 					( unsubscribe ) => unsubscribe()
 				);
@@ -1214,6 +1371,7 @@ test.describe( 'Typing delay benchmark', () => {
 					</html>` );
 				await setupEventListenerTracingInCurrentContext();
 				await setupRichTextSpanTracingInCurrentContext();
+				await setupDataSpanTracingInCurrentContext();
 				await setupTimerTracing();
 				await page.evaluate( () => {
 					const target = document.getElementById(
@@ -1261,6 +1419,7 @@ test.describe( 'Typing delay benchmark', () => {
 				const dataTracingSetup = await setupDataTracing();
 				await resetEventListenerTracing();
 				await resetRichTextSpanTracing();
+				await resetDataSpanTracing();
 				paragraph = page.getByRole( 'textbox', {
 					name: 'Typing benchmark target',
 				} );
@@ -1302,11 +1461,13 @@ test.describe( 'Typing delay benchmark', () => {
 
 			await paragraph.click();
 			await setupRichTextSpanTracingInCurrentContext();
+			await setupDataSpanTracingInCurrentContext();
 			await setupTimerTracing();
 			await setupPersistenceTracing();
 			const dataTracingSetup = await setupDataTracing();
 			await resetEventListenerTracing();
 			await resetRichTextSpanTracing();
+			await resetDataSpanTracing();
 
 			if ( settleAfterEditorSetupMs > 0 ) {
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
@@ -1325,6 +1486,7 @@ test.describe( 'Typing delay benchmark', () => {
 		let editorSetup = null;
 		await setupEventListenerTracingInitScript();
 		await setupRichTextSpanTracingInitScript();
+		await setupDataSpanTracingInitScript();
 		if ( ! freshEditorPerDelay ) {
 			editorSetup = await setupEditor();
 		}
@@ -1602,6 +1764,55 @@ test.describe( 'Typing delay benchmark', () => {
 								}
 						  )
 						: undefined,
+					dataSpanEvents: traceDataSpans
+						? await page.evaluate(
+								( { startMs, stopMs } ) => {
+									const windows = [
+										{ name: 'parent', window },
+									];
+									for ( const iframe of document.querySelectorAll(
+										'iframe'
+									) ) {
+										try {
+											if ( iframe.contentWindow ) {
+												windows.push( {
+													name:
+														iframe.name ||
+														iframe.id ||
+														'iframe',
+													window: iframe.contentWindow,
+												} );
+											}
+										} catch {
+											// Ignore inaccessible frames.
+										}
+									}
+
+									return windows.flatMap(
+										( { name, window: currentWindow } ) =>
+											(
+												currentWindow.__typingBenchmarkDataSpanEvents ||
+												[]
+											)
+												.filter(
+													( event ) =>
+														event.startedAtMs >=
+															startMs - 5 &&
+														event.startedAtMs <=
+															stopMs + 5
+												)
+												.map( ( event ) => ( {
+													...event,
+													windowName: name,
+												} ) )
+									);
+								},
+								{
+									startMs: runStartedAtBrowserNowMs,
+									stopMs: runStoppedAtBrowserNowMs,
+								}
+						  )
+						: undefined,
 				} );
 
 				for (
@@ -1696,6 +1907,8 @@ test.describe( 'Typing delay benchmark', () => {
 				traceSchedulers,
 				traceEventListeners,
 				traceRichTextSpans,
+				traceDataSpans,
+				traceAllDataSpans,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,

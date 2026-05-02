@@ -48,7 +48,11 @@ run_specs <- tribble(
 	"rich_text_spans_large_keyhold", "RichText span trace: large post, key held", "artifacts/typing-delay-benchmark-rich-text-spans-batch-large-keyhold/typing-delay-benchmark-1777762086721.json", "large post", "source-level RichText span trace for normal Playwright delay",
 	"rich_text_spans_large_between_keys", "RichText span trace: large post, wait after keyup", "artifacts/typing-delay-benchmark-rich-text-spans-batch-large-between-keys/typing-delay-benchmark-1777762154516.json", "large post", "source-level RichText span trace for delay after full keypress",
 	"rich_text_spans_empty_keyhold", "RichText span trace: empty post, key held", "artifacts/typing-delay-benchmark-rich-text-spans-batch-empty-keyhold/typing-delay-benchmark-1777762215740.json", "empty post", "source-level RichText span trace for normal Playwright delay",
-	"rich_text_spans_empty_between_keys", "RichText span trace: empty post, wait after keyup", "artifacts/typing-delay-benchmark-rich-text-spans-batch-empty-between-keys/typing-delay-benchmark-1777762283041.json", "empty post", "source-level RichText span trace for delay after full keypress"
+	"rich_text_spans_empty_between_keys", "RichText span trace: empty post, wait after keyup", "artifacts/typing-delay-benchmark-rich-text-spans-batch-empty-between-keys/typing-delay-benchmark-1777762283041.json", "empty post", "source-level RichText span trace for delay after full keypress",
+	"data_spans_large_keyhold", "Data span trace: large post, key held", "test/performance/artifacts/typing-delay-benchmark-data-spans-large-keyhold/typing-delay-benchmark-1777763210695.json", "large post", "source-level data registry/useSelect span trace for normal Playwright delay",
+	"data_spans_large_between_keys", "Data span trace: large post, wait after keyup", "test/performance/artifacts/typing-delay-benchmark-data-spans-large-between-keys/typing-delay-benchmark-1777763295424.json", "large post", "source-level data registry/useSelect span trace for delay after full keypress",
+	"data_spans_empty_keyhold", "Data span trace: empty post, key held", "test/performance/artifacts/typing-delay-benchmark-data-spans-empty-keyhold/typing-delay-benchmark-1777763369906.json", "empty post", "source-level data registry/useSelect span trace for normal Playwright delay",
+	"data_spans_empty_between_keys", "Data span trace: empty post, wait after keyup", "test/performance/artifacts/typing-delay-benchmark-data-spans-empty-between-keys/typing-delay-benchmark-1777763429072.json", "empty post", "source-level data registry/useSelect span trace for delay after full keypress"
 ) %>%
 	mutate(json_abs_path = file.path(repo_root, json_path))
 
@@ -83,6 +87,7 @@ read_raw_runs <- function() {
 	scheduler_events <- list()
 	event_listener_events <- list()
 	rich_text_span_events <- list()
+	data_span_events <- list()
 
 	for (i in seq_len(nrow(available))) {
 		spec <- available[i, ]
@@ -258,6 +263,27 @@ read_raw_runs <- function() {
 				}
 			)
 		}
+
+		if ("dataSpanEvents" %in% names(run_summaries)) {
+			data_span_events[[spec$run_id]] <- map_dfr(
+				seq_len(nrow(run_summaries)),
+				function(row_index) {
+					events <- run_summaries$dataSpanEvents[[row_index]]
+					if (is_empty_events(events)) {
+						return(tibble())
+					}
+					as_tibble(events) %>%
+						mutate(
+							run_id = spec$run_id,
+							run_label = spec$run_label,
+							round = run_summaries$round[[row_index]],
+							delayMs = run_summaries$delayMs[[row_index]],
+							eventMs = startedAtMs -
+								run_summaries$runStartedAtBrowserNowMs[[row_index]]
+						)
+				}
+			)
+		}
 	}
 
 	list(
@@ -269,7 +295,8 @@ read_raw_runs <- function() {
 		timer_events = bind_rows(timer_events),
 		scheduler_events = bind_rows(scheduler_events),
 		event_listener_events = bind_rows(event_listener_events),
-		rich_text_span_events = bind_rows(rich_text_span_events)
+		rich_text_span_events = bind_rows(rich_text_span_events),
+		data_span_events = bind_rows(data_span_events)
 	)
 }
 
@@ -386,7 +413,8 @@ write_derived_data <- function(data, existing = NULL) {
 		timer_events = data$timer_events,
 		scheduler_events = data$scheduler_events,
 		event_listener_events = data$event_listener_events,
-		rich_text_span_events = data$rich_text_span_events
+		rich_text_span_events = data$rich_text_span_events,
+		data_span_events = data$data_span_events
 	)
 }
 
@@ -429,7 +457,8 @@ read_derived_data <- function() {
 			read_csv(file.path(data_dir, "typing-delay-rich-text-span-events.csv"), show_col_types = FALSE)
 		} else {
 			tibble()
-		}
+		},
+		data_span_events = tibble()
 	)
 }
 
@@ -1493,6 +1522,418 @@ if (nrow(rich_text_batch_summary) > 0) {
 				fill = "Component"
 			),
 		"18-rich-text-registry-batch-breakdown.png",
+		width = 12,
+		height = 8
+	)
+}
+
+data_span_run_ids <- c(
+	"data_spans_large_keyhold",
+	"data_spans_large_between_keys",
+	"data_spans_empty_keyhold",
+	"data_spans_empty_between_keys"
+)
+
+assign_input_batches <- function(events, roots) {
+	if (nrow(events) == 0 || nrow(roots) == 0) {
+		return(tibble())
+	}
+
+	keys <- events %>% distinct(run_id, round, delayMs)
+	map_dfr(
+		seq_len(nrow(keys)),
+		function(key_index) {
+			key <- keys[key_index, ]
+			group_events <- events %>%
+				filter(
+					run_id == key$run_id,
+					round == key$round,
+					delayMs == key$delayMs
+				) %>%
+				arrange(startedAtMs)
+			group_roots <- roots %>%
+				filter(
+					run_id == key$run_id,
+					round == key$round,
+					delayMs == key$delayMs
+				) %>%
+				arrange(batch_start)
+
+			if (nrow(group_events) == 0 || nrow(group_roots) == 0) {
+				return(tibble())
+			}
+
+			root_index <- findInterval(group_events$startedAtMs, group_roots$batch_start)
+			matched <- root_index > 0 &
+				group_events$startedAtMs <= group_roots$batch_end[root_index] + 0.001
+
+			if (!any(matched)) {
+				return(tibble())
+			}
+
+			group_events[matched, ] %>%
+				mutate(
+					input_batch_index = group_roots$input_batch_index[root_index[matched]],
+					batch_start = group_roots$batch_start[root_index[matched]],
+					batch_end = group_roots$batch_end[root_index[matched]]
+				)
+		}
+	)
+}
+
+data_spans <- if (nrow(derived$data_span_events) > 0) {
+	derived$data_span_events %>%
+		filter(run_id %in% data_span_run_ids) %>%
+		mutate(
+			mode_label = recode(
+				run_id,
+				data_spans_large_keyhold = "Playwright delay: key held down",
+				data_spans_large_between_keys = "Complete keypress, then wait",
+				data_spans_empty_keyhold = "Playwright delay: key held down",
+				data_spans_empty_between_keys = "Complete keypress, then wait",
+				.default = run_label
+			),
+			span_scenario_label = recode(
+				run_id,
+				data_spans_large_keyhold = "large post",
+				data_spans_large_between_keys = "large post",
+				data_spans_empty_keyhold = "empty post",
+				data_spans_empty_between_keys = "empty post",
+				.default = NA_character_
+			)
+		)
+} else {
+	tibble()
+}
+
+if (nrow(data_spans) > 0) {
+	data_span_summary <- data_spans %>%
+		mutate(
+			emitter_kind = `metadata.emitterKind` %||% NA_character_,
+			store_name = `metadata.storeName` %||% NA_character_,
+			listener_type = `metadata.listenerType` %||% NA_character_
+		) %>%
+		group_by(
+			run_id, mode_label, span_scenario_label, delayMs,
+			name, emitter_kind, store_name, listener_type
+		) %>%
+		summarise(
+			n = n(),
+			total_ms = sum(durationMs, na.rm = TRUE),
+			median_ms = median(durationMs, na.rm = TRUE),
+			p90_ms = quant(durationMs, 0.9),
+			.groups = "drop"
+		)
+	write_csv(data_span_summary, file.path(data_dir, "typing-delay-data-span-summary.csv"))
+
+	data_rich_batches <- derived$rich_text_span_events %>%
+		filter(
+			run_id %in% data_span_run_ids,
+			name == "rich-text.handleChange.registryBatch"
+		) %>%
+		group_by(run_id, round, delayMs) %>%
+		arrange(startedAtMs, .by_group = TRUE) %>%
+		mutate(
+			input_batch_index = row_number(),
+			rich_batch_start = startedAtMs,
+			rich_batch_end = startedAtMs + durationMs
+		) %>%
+		ungroup() %>%
+		select(run_id, round, delayMs, input_batch_index, rich_batch_start, rich_batch_end)
+
+	data_batch_roots <- data_spans %>%
+		filter(name == "data.registry.batch.total") %>%
+		transmute(
+			run_id, mode_label, span_scenario_label, round, delayMs,
+			data_batch_start = startedAtMs,
+			data_batch_end = startedAtMs + durationMs,
+			data_batch_duration_ms = durationMs
+		)
+
+	input_data_batch_roots <- data_batch_roots %>%
+		inner_join(
+			data_rich_batches,
+			by = c("run_id", "round", "delayMs"),
+			relationship = "many-to-many"
+		) %>%
+		filter(
+			data_batch_start >= rich_batch_start - 0.05,
+			data_batch_start <= rich_batch_end + 0.05
+		) %>%
+		mutate(start_delta_ms = abs(data_batch_start - rich_batch_start)) %>%
+		group_by(run_id, round, delayMs, input_batch_index) %>%
+		slice_min(start_delta_ms, n = 1, with_ties = FALSE) %>%
+		ungroup() %>%
+		transmute(
+			run_id, mode_label, span_scenario_label, round, delayMs, input_batch_index,
+			batch_start = data_batch_start,
+			batch_end = data_batch_end
+		)
+
+	input_data_spans <- assign_input_batches(data_spans, input_data_batch_roots)
+
+	data_batch_parts <- input_data_spans %>%
+		mutate(
+			store_name = `metadata.storeName` %||% NA_character_,
+			emitter_kind = `metadata.emitterKind` %||% NA_character_,
+			listener_type = `metadata.listenerType` %||% NA_character_,
+			component = case_when(
+				name == "data.registry.batch.total" ~ "registry.batch total",
+				name == "data.registry.batch.callback" ~ "batch callback",
+				name == "data.registry.batch.resumeStore" & store_name == "core/block-editor" ~ "resume core/block-editor",
+				name == "data.emitter.notifyListeners" & emitter_kind == "store" & store_name == "core/block-editor" ~ "notify core/block-editor",
+				name == "data.emitter.listener" & emitter_kind == "store" & store_name == "core/block-editor" & listener_type == "store subscriber" ~ "core/block-editor subscribers",
+				name == "data.useSelect.onChange" ~ "useSelect onChange",
+				name == "data.useSelect.renderQueueAdd" ~ "renderQueue.add",
+				name == "data.useSelect.onStoreChange" ~ "useSelect onStoreChange",
+				name == "data.useSelect.reactListener" ~ "React external-store listener",
+				name == "data.useSelect.updateValue" ~ "useSelect updateValue",
+				name == "data.useSelect.mapSelect" ~ "useSelect mapSelect",
+				TRUE ~ NA_character_
+			)
+		) %>%
+		filter(!is.na(component)) %>%
+		group_by(
+			run_id, mode_label, span_scenario_label, round, delayMs,
+			input_batch_index, component
+		) %>%
+		summarise(duration_ms = sum(durationMs, na.rm = TRUE), .groups = "drop")
+
+	data_batch_summary <- data_batch_parts %>%
+		group_by(run_id, mode_label, span_scenario_label, delayMs, component) %>%
+		summarise(
+			n = n(),
+			median_ms = median(duration_ms, na.rm = TRUE),
+			p90_ms = quant(duration_ms, 0.9),
+			.groups = "drop"
+		)
+
+	data_store_resume_summary <- input_data_spans %>%
+		filter(name == "data.registry.batch.resumeStore") %>%
+		mutate(store_name = `metadata.storeName` %||% NA_character_) %>%
+		group_by(run_id, mode_label, span_scenario_label, delayMs, store_name) %>%
+		summarise(
+			n = n(),
+			median_ms = median(durationMs, na.rm = TRUE),
+			p90_ms = quant(durationMs, 0.9),
+			.groups = "drop"
+		)
+
+	write_csv(data_batch_parts, file.path(data_dir, "typing-delay-data-batch-parts.csv"))
+	write_csv(data_batch_summary, file.path(data_dir, "typing-delay-data-batch-summary.csv"))
+	write_csv(data_store_resume_summary, file.path(data_dir, "typing-delay-data-store-resume-summary.csv"))
+
+	data_batch_plot <- data_batch_summary %>%
+		filter(
+			component %in% c(
+				"registry.batch total",
+				"batch callback",
+				"resume core/block-editor",
+				"core/block-editor subscribers",
+				"useSelect onChange",
+				"useSelect mapSelect"
+			)
+		) %>%
+		mutate(
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			span_scenario_label = factor(
+				span_scenario_label,
+				levels = c("large post", "empty post")
+			),
+			component = factor(
+				component,
+				levels = c(
+					"registry.batch total",
+					"batch callback",
+					"resume core/block-editor",
+					"core/block-editor subscribers",
+					"useSelect onChange",
+					"useSelect mapSelect"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(data_batch_plot, aes(delayMs, median_ms, color = component)) +
+			geom_line(linewidth = 0.75) +
+			geom_point(size = 1.9) +
+			facet_grid(span_scenario_label ~ mode_label) +
+			scale_color_manual(values = c(
+				"registry.batch total" = "#111827",
+				"batch callback" = "#7c3aed",
+				"resume core/block-editor" = "#b91c1c",
+				"core/block-editor subscribers" = "#ea580c",
+				"useSelect onChange" = "#0369a1",
+				"useSelect mapSelect" = "#16a34a"
+			)) +
+			labs(
+				title = "Data spans put the batch remainder in core/block-editor subscriber fanout",
+				subtitle = "Input-matched registry.batch calls; nested lines are attribution aids, not additive totals",
+				x = "Configured delay",
+				y = "Median duration per input batch (ms)",
+				color = "Span"
+			),
+		"19-data-batch-use-select-breakdown.png",
+		width = 12,
+		height = 8
+	)
+
+	top_resume_stores <- data_store_resume_summary %>%
+		group_by(store_name) %>%
+		summarise(max_median_ms = max(median_ms, na.rm = TRUE), .groups = "drop") %>%
+		slice_max(max_median_ms, n = 6) %>%
+		pull(store_name)
+
+	store_resume_plot <- data_store_resume_summary %>%
+		filter(store_name %in% top_resume_stores) %>%
+		mutate(
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			span_scenario_label = factor(
+				span_scenario_label,
+				levels = c("large post", "empty post")
+			)
+		)
+
+	save_plot(
+		ggplot(store_resume_plot, aes(delayMs, median_ms, color = store_name)) +
+			geom_line(linewidth = 0.75) +
+			geom_point(size = 1.8) +
+			facet_grid(span_scenario_label ~ mode_label) +
+			labs(
+				title = "core/block-editor is the expensive store resume",
+				subtitle = "Other store emitter resumes are small in the input-matched data spans",
+				x = "Configured delay",
+				y = "Median store resume duration per input batch (ms)",
+				color = "Store"
+			),
+		"20-data-store-resume-breakdown.png",
+		width = 12,
+		height = 8
+	)
+}
+
+if (
+	nrow(data_spans) == 0 &&
+	file.exists(file.path(data_dir, "typing-delay-data-batch-summary.csv")) &&
+	file.exists(file.path(data_dir, "typing-delay-data-store-resume-summary.csv"))
+) {
+	data_batch_summary <- read_csv(
+		file.path(data_dir, "typing-delay-data-batch-summary.csv"),
+		show_col_types = FALSE
+	)
+	data_store_resume_summary <- read_csv(
+		file.path(data_dir, "typing-delay-data-store-resume-summary.csv"),
+		show_col_types = FALSE
+	)
+
+	data_batch_plot <- data_batch_summary %>%
+		filter(
+			component %in% c(
+				"registry.batch total",
+				"batch callback",
+				"resume core/block-editor",
+				"core/block-editor subscribers",
+				"useSelect onChange",
+				"useSelect mapSelect"
+			)
+		) %>%
+		mutate(
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			span_scenario_label = factor(
+				span_scenario_label,
+				levels = c("large post", "empty post")
+			),
+			component = factor(
+				component,
+				levels = c(
+					"registry.batch total",
+					"batch callback",
+					"resume core/block-editor",
+					"core/block-editor subscribers",
+					"useSelect onChange",
+					"useSelect mapSelect"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(data_batch_plot, aes(delayMs, median_ms, color = component)) +
+			geom_line(linewidth = 0.75) +
+			geom_point(size = 1.9) +
+			facet_grid(span_scenario_label ~ mode_label) +
+			scale_color_manual(values = c(
+				"registry.batch total" = "#111827",
+				"batch callback" = "#7c3aed",
+				"resume core/block-editor" = "#b91c1c",
+				"core/block-editor subscribers" = "#ea580c",
+				"useSelect onChange" = "#0369a1",
+				"useSelect mapSelect" = "#16a34a"
+			)) +
+			labs(
+				title = "Data spans put the batch remainder in core/block-editor subscriber fanout",
+				subtitle = "Input-matched registry.batch calls; nested lines are attribution aids, not additive totals",
+				x = "Configured delay",
+				y = "Median duration per input batch (ms)",
+				color = "Span"
+			),
+		"19-data-batch-use-select-breakdown.png",
+		width = 12,
+		height = 8
+	)
+
+	top_resume_stores <- data_store_resume_summary %>%
+		group_by(store_name) %>%
+		summarise(max_median_ms = max(median_ms, na.rm = TRUE), .groups = "drop") %>%
+		slice_max(max_median_ms, n = 6) %>%
+		pull(store_name)
+
+	store_resume_plot <- data_store_resume_summary %>%
+		filter(store_name %in% top_resume_stores) %>%
+		mutate(
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			span_scenario_label = factor(
+				span_scenario_label,
+				levels = c("large post", "empty post")
+			)
+		)
+
+	save_plot(
+		ggplot(store_resume_plot, aes(delayMs, median_ms, color = store_name)) +
+			geom_line(linewidth = 0.75) +
+			geom_point(size = 1.8) +
+			facet_grid(span_scenario_label ~ mode_label) +
+			labs(
+				title = "core/block-editor is the expensive store resume",
+				subtitle = "Other store emitter resumes are small in the input-matched data spans",
+				x = "Configured delay",
+				y = "Median store resume duration per input batch (ms)",
+				color = "Store"
+			),
+		"20-data-store-resume-breakdown.png",
 		width = 12,
 		height = 8
 	)

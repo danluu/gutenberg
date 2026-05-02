@@ -7,6 +7,30 @@ listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,0,
 listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,0,1300,0,1,7,7,14,7,7,1777761164907,1777761172971,8064
 listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,0,1550,0,1,7,7,14,7,7,1777761173029,1777761182553,9524
 listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,0,2000,0,1,7,7,14,7,7,1777761182598,1777761194839,12241
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,0,990,0,953,6,6,12,6,6,1777763210695,1777763216975,6280
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,0,1000,0,953,6,6,12,6,6,1777763220763,1777763227125,6362
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,0,1200,0,953,6,6,12,6,6,1777763230839,1777763238318,7479
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,0,1300,0,953,6,6,12,6,6,1777763242047,1777763250178,8131
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,0,1550,0,953,6,6,12,6,6,1777763253850,1777763263390,9540
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,0,2000,0,953,6,6,12,6,6,1777763267244,1777763279529,12285
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,0,990,0,953,6,6,12,6,6,1777763295424,1777763300875,5451
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,0,1000,0,953,6,6,12,6,6,1777763304683,1777763310111,5428
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,0,1200,0,953,6,6,12,6,6,1777763313821,1777763320260,6439
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,0,1300,0,953,6,6,12,6,6,1777763323949,1777763330961,7012
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,0,1550,0,953,6,6,12,6,6,1777763334702,1777763342907,8205
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,0,2000,0,953,6,6,12,6,6,1777763346688,1777763357105,10417
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,0,990,0,1,6,6,12,6,6,1777763369906,1777763376034,6128
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,0,1000,0,1,6,6,12,6,6,1777763376274,1777763382437,6163
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,0,1200,0,1,6,6,12,6,6,1777763382617,1777763389982,7365
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,0,1300,0,1,6,6,12,6,6,1777763390200,1777763398173,7973
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,0,1550,0,1,6,6,12,6,6,1777763398395,1777763407867,9472
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,0,2000,0,1,6,6,12,6,6,1777763408088,1777763420261,12173
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,0,990,0,1,6,6,12,6,6,1777763429072,1777763434279,5207
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,0,1000,0,1,6,6,12,6,6,1777763434506,1777763439687,5181
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,0,1200,0,1,6,6,12,6,6,1777763439867,1777763446087,6220
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,0,1300,0,1,6,6,12,6,6,1777763446309,1777763453033,6724
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,0,1550,0,1,6,6,12,6,6,1777763453224,1777763461200,7976
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,0,2000,0,1,6,6,12,6,6,1777763461428,1777763471629,10201
 full_0_1100,"0-1100ms, 10ms step",large post,0,0,NA,NA,11,11,22,11,11,1777749286874,1777749287088,214
 full_0_1100,"0-1100ms, 10ms step",large post,0,10,NA,NA,11,11,22,11,11,1777749287088,1777749287411,323
 full_0_1100,"0-1100ms, 10ms step",large post,0,20,NA,NA,11,11,22,11,11,1777749287412,1777749287768,356

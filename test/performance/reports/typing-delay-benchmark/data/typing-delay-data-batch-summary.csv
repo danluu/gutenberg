@@ -1,0 +1,253 @@
+run_id,mode_label,span_scenario_label,delayMs,component,n,median_ms,p90_ms
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,React external-store listener,6,2.0999999046325684,2.299999952316284
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,batch callback,6,0.4500000476837158,0.6000000238418579
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,core/block-editor subscribers,6,2.5999999046325684,2.8000000715255737
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,notify core/block-editor,6,2.8499999046325684,3.049999952316284
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,registry.batch total,6,4.599999904632568,5.099999785423279
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,resume core/block-editor,6,2.8499999046325684,3.049999952316284
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,useSelect mapSelect,6,1.8999998569488525,2.1000001430511475
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,useSelect onChange,6,2.249999761581421,2.399999976158142
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,useSelect onStoreChange,6,2.100000023841858,2.3499999046325684
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,990,useSelect updateValue,6,2.049999952316284,2.1500000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,React external-store listener,6,1.850000262260437,2.200000047683716
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,batch callback,6,0.34999990463256836,0.5
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,core/block-editor subscribers,6,2.450000047683716,2.600000023841858
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,notify core/block-editor,6,2.6999999284744263,2.850000023841858
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,registry.batch total,6,4.350000023841858,4.700000047683716
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,resume core/block-editor,6,2.6999999284744263,2.850000023841858
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,useSelect mapSelect,6,1.6000003814697266,1.9500000476837158
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,useSelect onChange,6,2.000000238418579,2.299999952316284
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,useSelect onStoreChange,6,1.9500001668930054,2.25
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1000,useSelect updateValue,6,1.7500003576278687,2.0999999046325684
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,React external-store listener,6,2.149999976158142,2.4499999284744263
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,batch callback,6,0.4499998092651367,0.5
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,core/block-editor subscribers,6,2.75,3
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,notify core/block-editor,6,3,3.3000000715255737
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,registry.batch total,6,4.899999976158142,5.3999998569488525
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,resume core/block-editor,6,3,3.3000000715255737
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,useSelect mapSelect,6,1.9500000476837158,2.149999976158142
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,useSelect onChange,6,2.3000000715255737,2.549999952316284
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,useSelect onStoreChange,6,2.25,2.549999952316284
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1200,useSelect updateValue,6,2.049999952316284,2.299999952316284
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,React external-store listener,6,2.0500000715255737,2.1500000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,batch callback,6,0.5000001192092896,0.5999999046325684
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,core/block-editor subscribers,6,2.75,2.850000023841858
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,notify core/block-editor,6,3.0500000715255737,3.200000047683716
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,registry.batch total,6,5.050000190734863,5.349999785423279
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,resume core/block-editor,6,3.0500000715255737,3.200000047683716
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,useSelect mapSelect,6,1.6000001430511475,1.7000000476837158
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,useSelect onChange,6,2.2000001668930054,2.350000262260437
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,useSelect onStoreChange,6,2.1000001430511475,2.1999999284744263
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1300,useSelect updateValue,6,1.75,1.9000000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,React external-store listener,6,2.249999761581421,2.350000023841858
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,batch callback,6,0.40000009536743164,0.45000016689300537
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,core/block-editor subscribers,6,2.75,2.9000000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,notify core/block-editor,6,3.049999952316284,3.149999976158142
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,registry.batch total,6,4.900000095367432,5.349999904632568
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,resume core/block-editor,6,3.049999952316284,3.149999976158142
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,useSelect mapSelect,6,1.899999976158142,1.9999998807907104
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,useSelect onChange,6,2.4000000953674316,2.5500000715255737
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,useSelect onStoreChange,6,2.2999998331069946,2.5
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,1550,useSelect updateValue,6,2.049999952316284,2.2499998807907104
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,React external-store listener,6,1.6499998569488525,2.100000023841858
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,batch callback,6,0.3500000238418579,0.5
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,core/block-editor subscribers,6,2.0499998331069946,2.4000000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,notify core/block-editor,6,2.350000023841858,2.6500000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,registry.batch total,6,3.950000047683716,4.400000095367432
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,resume core/block-editor,6,2.350000023841858,2.6500000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,useSelect mapSelect,6,1.499999761581421,1.8000000715255737
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,useSelect onChange,6,1.799999713897705,2.200000047683716
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,useSelect onStoreChange,6,1.6999998092651367,2.1500000953674316
+data_spans_empty_between_keys,"Complete keypress, then wait",empty post,2000,useSelect updateValue,6,1.499999761581421,2.100000023841858
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,React external-store listener,6,3.9499999284744263,4.7499998807907104
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,batch callback,6,1.0499999523162842,1.5500001907348633
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,core/block-editor subscribers,6,4.950000047683716,6.25
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,notify core/block-editor,6,5.700000047683716,6.899999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,registry.batch total,6,9.400000095367432,11.699999928474426
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,resume core/block-editor,6,5.700000047683716,6.949999928474426
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,useSelect mapSelect,6,3.2999998331069946,4.099999904632568
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,useSelect onChange,6,4.099999904632568,5.050000071525574
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,useSelect onStoreChange,6,3.9999998807907104,4.950000047683716
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,990,useSelect updateValue,6,3.700000047683716,4.599999785423279
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,React external-store listener,6,2.949999690055847,3.5499998331069946
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,batch callback,6,0.6499999761581421,0.8999998569488525
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,core/block-editor subscribers,6,3.6999998092651367,4.700000047683716
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,notify core/block-editor,6,4.099999904632568,5.2499998807907104
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,registry.batch total,6,6.949999928474426,8.899999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,resume core/block-editor,6,4.099999904632568,5.2499998807907104
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,useSelect mapSelect,6,2.399999737739563,3
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,useSelect onChange,6,3.1499998569488525,3.8499996662139893
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,useSelect onStoreChange,6,3.049999713897705,3.5499998331069946
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1000,useSelect updateValue,6,2.7499996423721313,3.350000023841858
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,React external-store listener,6,3.950000047683716,4.5
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,batch callback,6,0.8999998569488525,0.9000000953674316
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,core/block-editor subscribers,6,4.950000047683716,5.649999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,notify core/block-editor,6,5.550000071525574,6.25
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,registry.batch total,6,9.100000023841858,10.550000071525574
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,resume core/block-editor,6,5.550000071525574,6.300000071525574
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,useSelect mapSelect,6,3.6500000953674316,4.049999833106995
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,useSelect onChange,6,4.1499998569488525,4.700000047683716
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,useSelect onStoreChange,6,4,4.549999952316284
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1200,useSelect updateValue,6,3.8500001430511475,4.199999928474426
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,React external-store listener,6,3.850000023841858,4.550000309944153
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,batch callback,6,0.6499999761581421,1
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,core/block-editor subscribers,6,4.5000001192092896,5.450000166893005
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,notify core/block-editor,6,4.950000047683716,6.200000166893005
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,registry.batch total,6,8.050000071525574,10.350000143051147
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,resume core/block-editor,6,4.950000047683716,6.200000166893005
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,useSelect mapSelect,6,3.3000001907348633,4.0000001192092896
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,useSelect onChange,6,4.100000023841858,4.600000262260437
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,useSelect onStoreChange,6,3.9000000953674316,4.550000309944153
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1300,useSelect updateValue,6,3.500000238418579,4.2500001192092896
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,React external-store listener,6,2.4499999284744263,3.899999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,batch callback,6,0.5000001192092896,0.6500000953674316
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,core/block-editor subscribers,6,3.149999976158142,4.5000001192092896
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,notify core/block-editor,6,3.4499999284744263,4.899999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,registry.batch total,6,5.650000095367432,8.100000262260437
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,resume core/block-editor,6,3.4499999284744263,4.899999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,useSelect mapSelect,6,2.0000001192092896,3.6000001430511475
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,useSelect onChange,6,2.7499998807907104,4
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,useSelect onStoreChange,6,2.7499998807907104,3.899999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,1550,useSelect updateValue,6,2.3000000715255737,3.7000001668930054
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,React external-store listener,6,3.5999999046325684,4.450000047683716
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,batch callback,6,0.7000000476837158,0.8500000238418579
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,core/block-editor subscribers,6,4.549999952316284,5.5
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,notify core/block-editor,6,5.199999928474426,6
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,registry.batch total,6,8.399999976158142,9.75
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,resume core/block-editor,6,5.199999928474426,6
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,useSelect mapSelect,6,2.899999976158142,3.9000000953674316
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,useSelect onChange,6,3.7499998807907104,4.649999976158142
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,useSelect onStoreChange,6,3.6499998569488525,4.550000071525574
+data_spans_empty_keyhold,Playwright delay: key held down,empty post,2000,useSelect updateValue,6,3.3499999046325684,4.200000047683716
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,React external-store listener,6,2.6999999284744263,3.350000023841858
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,batch callback,6,3.200000047683716,3.649999976158142
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,core/block-editor subscribers,6,8.200000286102295,8.8499995470047
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,notify core/block-editor,6,9.599999904632568,10.850000023841858
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,registry.batch total,6,13.600000023841858,15.400000095367432
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,renderQueue.add,6,0.7500001192092896,0.9000000953674316
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,resume core/block-editor,6,9.599999904632568,10.850000023841858
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,useSelect mapSelect,6,2.1999999284744263,2.5500000715255737
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,useSelect onChange,6,5.450000166893005,5.9000004529953
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,useSelect onStoreChange,6,3.1000001430511475,3.700000047683716
+data_spans_large_between_keys,"Complete keypress, then wait",large post,990,useSelect updateValue,6,2.4999998807907104,2.9000000953674316
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,React external-store listener,6,2.9000003337860107,3.5500009059906006
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,batch callback,6,2.9000000953674316,3
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,core/block-editor subscribers,6,7.4000004529953,7.700000047683716
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,notify core/block-editor,6,8.849999904632568,9.50000011920929
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,registry.batch total,6,12.399999976158142,13.300000071525574
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,renderQueue.add,6,0.5,0.7000000476837158
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,resume core/block-editor,6,8.849999904632568,9.50000011920929
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,useSelect mapSelect,6,2.100000262260437,2.8500009775161743
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,useSelect onChange,6,5.000000476837158,5.6500004529953
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,useSelect onStoreChange,6,3.200000047683716,3.850001096725464
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1000,useSelect updateValue,6,2.600000262260437,3.2000010013580322
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,React external-store listener,6,3.4999996423721313,3.850000023841858
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,batch callback,6,3.549999952316284,3.8000000715255737
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,core/block-editor subscribers,6,9.25,9.799999833106995
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,notify core/block-editor,6,10.75000011920929,11.149999976158142
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,registry.batch total,6,15.200000047683716,15.700000047683716
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,renderQueue.add,6,0.7999999523162842,0.9999997615814209
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,resume core/block-editor,6,10.800000071525574,11.149999976158142
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,useSelect mapSelect,6,2.2999993562698364,2.6500000953674316
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,useSelect onChange,6,6.149999499320984,6.6499998569488525
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,useSelect onStoreChange,6,3.6999995708465576,4.250000238418579
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1200,useSelect updateValue,6,2.750000238418579,3.2499998807907104
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,React external-store listener,6,3.550000548362732,3.8499995470046997
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,batch callback,6,3.649999976158142,4.300000071525574
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,core/block-editor subscribers,6,8.74999988079071,9.4000004529953
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,notify core/block-editor,6,10.850000023841858,11.25
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,registry.batch total,6,15.349999904632568,16.100000023841858
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,renderQueue.add,6,0.3999999761581421,0.8500001430511475
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,resume core/block-editor,6,10.850000023841858,11.25
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,useSelect mapSelect,6,2.6000001430511475,2.8500003814697266
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,useSelect onChange,6,5.7499998807907104,6.049999952316284
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,useSelect onStoreChange,6,3.8000001907348633,4.149999618530273
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1300,useSelect updateValue,6,3.050000309944153,3.199999690055847
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,React external-store listener,6,3.500000238418579,3.850000262260437
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,batch callback,6,3.450000047683716,3.6999999284744263
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,core/block-editor subscribers,6,8.750000357627869,11.050000548362732
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,notify core/block-editor,6,10.299999952316284,12.699999809265137
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,registry.batch total,6,14.699999928474426,17.399999856948853
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,renderQueue.add,6,0.5499998331069946,1.0999999046325684
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,resume core/block-editor,6,10.299999952316284,12.699999809265137
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,useSelect mapSelect,6,2.5000003576278687,2.9000000953674316
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,useSelect onChange,6,5.900000095367432,6.800000071525574
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,useSelect onStoreChange,6,3.8000006675720215,4.099999904632568
+data_spans_large_between_keys,"Complete keypress, then wait",large post,1550,useSelect updateValue,6,2.9500001668930054,3.2500003576278687
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,React external-store listener,6,3.2000008821487427,3.8000000715255737
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,batch callback,6,3.3000000715255737,3.5
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,core/block-editor subscribers,6,8.650000929832458,9.149999976158142
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,notify core/block-editor,6,10.350000023841858,10.849999904632568
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,registry.batch total,6,14.50000011920929,15.099999904632568
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,renderQueue.add,6,0.7499998807907104,0.8500000238418579
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,resume core/block-editor,6,10.350000023841858,10.849999904632568
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,useSelect mapSelect,6,2.250000476837158,3.0000007152557373
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,useSelect onChange,6,5.600000739097595,6.250000476837158
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,useSelect onStoreChange,6,3.550000309944153,4.0000001192092896
+data_spans_large_between_keys,"Complete keypress, then wait",large post,2000,useSelect updateValue,6,2.7500005960464478,3.4500006437301636
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,React external-store listener,6,4.949999928474426,5.650000333786011
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,batch callback,6,6.5,7.400000095367432
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,core/block-editor subscribers,6,12.6500004529953,14.099999904632568
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,notify core/block-editor,6,15.399999976158142,16.700000047683716
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,registry.batch total,6,23.399999976158142,25.050000071525574
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,renderQueue.add,6,0.7999999523162842,1.25
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,resume core/block-editor,6,15.399999976158142,16.75
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,useSelect mapSelect,6,3.6000003814697266,4.099999666213989
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,useSelect onChange,6,7.800000071525574,8.50000011920929
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,useSelect onStoreChange,6,5.200000762939453,5.949999570846558
+data_spans_large_keyhold,Playwright delay: key held down,large post,990,useSelect updateValue,6,4.199999809265137,4.600000619888306
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,React external-store listener,6,3.500000476837158,3.950000047683716
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,batch callback,6,3.4499998092651367,3.9499999284744263
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,core/block-editor subscribers,6,8.450000166893005,8.800000190734863
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,notify core/block-editor,6,9.949999928474426,11.449999928474426
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,registry.batch total,6,14.24999988079071,16.549999833106995
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,renderQueue.add,6,0.7999997138977051,1
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,resume core/block-editor,6,9.949999928474426,11.49999988079071
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,useSelect mapSelect,6,2.8000000715255737,3.0499998331069946
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,useSelect onChange,6,5.7500001192092896,6.599999904632568
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,useSelect onStoreChange,6,3.700000286102295,4.100000023841858
+data_spans_large_keyhold,Playwright delay: key held down,large post,1000,useSelect updateValue,6,3.050000309944153,3.499999761581421
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,React external-store listener,6,4.499999761581421,4.700000286102295
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,batch callback,6,6.600000023841858,6.700000047683716
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,core/block-editor subscribers,6,12.650000095367432,13.450000405311584
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,notify core/block-editor,6,15.350000023841858,15.950000047683716
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,registry.batch total,6,23.399999976158142,24.25000011920929
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,renderQueue.add,6,0.8999999761581421,1.0500003099441528
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,resume core/block-editor,6,15.350000023841858,16
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,useSelect mapSelect,6,3.4499999284744263,3.600000262260437
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,useSelect onChange,6,7.700000882148743,8.450000047683716
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,useSelect onStoreChange,6,4.800000071525574,5.050000071525574
+data_spans_large_keyhold,Playwright delay: key held down,large post,1200,useSelect updateValue,6,3.9499998092651367,4.050000309944153
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,React external-store listener,6,4.449999690055847,4.849999904632568
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,batch callback,6,6.649999737739563,6.899999976158142
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,core/block-editor subscribers,6,12.650000214576721,13.100000381469727
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,notify core/block-editor,6,15.450000047683716,15.949999928474426
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,registry.batch total,6,23.700000047683716,24.049999952316284
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,renderQueue.add,6,0.9999998807907104,1.149999737739563
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,resume core/block-editor,6,15.450000047683716,15.949999928474426
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,useSelect mapSelect,6,3.1500000953674316,3.350000023841858
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,useSelect onChange,6,7.899999380111694,8.150000095367432
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,useSelect onStoreChange,6,4.599999666213989,5.300000190734863
+data_spans_large_keyhold,Playwright delay: key held down,large post,1300,useSelect updateValue,6,3.749999761581421,4.049999713897705
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,React external-store listener,6,4.500000357627869,6.050000429153442
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,batch callback,6,4.950000047683716,5.050000071525574
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,core/block-editor subscribers,6,11.900000214576721,12.000000238418579
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,notify core/block-editor,6,14,14.099999904632568
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,registry.batch total,6,20.100000023841858,20.300000190734863
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,renderQueue.add,6,0.6499999761581421,1.0999995470046997
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,resume core/block-editor,6,14,14.149999976158142
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,useSelect mapSelect,6,3.4000004529953003,4.050000429153442
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,useSelect onChange,6,7.5000001192092896,8.100000977516174
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,useSelect onStoreChange,6,4.899999976158142,6.400000691413879
+data_spans_large_keyhold,Playwright delay: key held down,large post,1550,useSelect updateValue,6,3.8000006675720215,4.750000238418579
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,React external-store listener,6,4.199999451637268,4.950000286102295
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,batch callback,6,5.149999976158142,5.900000095367432
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,core/block-editor subscribers,6,10.250000596046448,11.800000429153442
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,notify core/block-editor,6,12.899999976158142,13.950000047683716
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,registry.batch total,6,19.200000047683716,21.300000071525574
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,renderQueue.add,6,0.850000262260437,1.100000262260437
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,resume core/block-editor,6,12.899999976158142,13.950000047683716
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,useSelect mapSelect,6,3,3.9000003337860107
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,useSelect onChange,6,6.850000023841858,8.300000190734863
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,useSelect onStoreChange,6,4.3500001430511475,5.199999809265137
+data_spans_large_keyhold,Playwright delay: key held down,large post,2000,useSelect updateValue,6,3.499999761581421,4.500000238418579

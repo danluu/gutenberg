@@ -55,6 +55,150 @@ listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,em
 listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,4,FALSE,3,25,21,25289,5.462000000000001,6.336,2,0.182,1.056,5.216,0.064
 listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,5,FALSE,4,26,22,25289,5.398999999999999,6.25,2,0.185,1.036,5.153,0.061
 listener_empty_between_keys,Empty listener trace: wait after keyup,empty post,empty-post-paragraph,0,2000,6,FALSE,5,27,23,25289,6.141,7.043,2,0.203,1.105,5.85,0.088
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,990,0,TRUE,NA,0,NA,0,24.049,26.581,2,0.299,2.831,23.203,0.547
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,990,1,FALSE,0,1,0,0,30.602,32.428,2,0.495,2.321,29.496,0.611
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,990,2,FALSE,1,2,1,0,30.425,32.005,2,0.494,2.074,29.37,0.561
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,990,3,FALSE,2,3,2,0,31.56,33.042,2,0.459,1.941,30.407,0.694
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,990,4,FALSE,3,4,3,0,28.259,29.677,2,0.527,1.945,27.169,0.563
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,990,5,FALSE,4,5,4,0,28.743,30.451,2,0.681,2.389,27.896,0.166
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1000,0,TRUE,NA,6,NA,10068,12.729,13.086,2,0.081,0.438,12.536,0.112
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1000,1,FALSE,0,7,5,10068,17.8,18.247,2,0.134,0.581,17.415,0.251
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1000,2,FALSE,1,8,6,10068,20.255999999999997,20.938999999999997,2,0.235,0.918,19.766,0.255
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1000,3,FALSE,2,9,7,10068,15.367,15.694,2,0.106,0.433,15.036,0.225
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1000,4,FALSE,3,10,8,10068,16.194,16.557,2,0.117,0.48,15.86,0.217
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1000,5,FALSE,4,11,9,10068,16.096999999999998,16.484,2,0.123,0.51,15.741,0.233
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1200,0,TRUE,NA,12,NA,20144,12.796,13.105,2,0.082,0.391,12.206,0.508
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1200,1,FALSE,0,13,10,20144,28.537000000000003,29.588,2,0.356,1.407,27.53,0.651
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1200,2,FALSE,1,14,11,20144,29.49,30.812,2,0.515,1.837,28.627,0.348
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1200,3,FALSE,2,15,12,20144,27.299,28.207,2,0.339,1.247,26.48,0.48
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1200,4,FALSE,3,16,13,20144,29.225,30.449,2,0.345,1.569,28.377,0.503
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1200,5,FALSE,4,17,14,20144,29.047000000000004,30.417,2,0.388,1.758,28.094,0.565
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1300,0,TRUE,NA,18,NA,31352,16.241,16.635,2,0.083,0.477,13.59,2.568
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1300,1,FALSE,0,19,15,31352,29.811,31.211,2,0.37,1.77,28.816,0.625
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1300,2,FALSE,1,20,16,31352,29.885,31.278,2,0.527,1.92,28.585,0.773
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1300,3,FALSE,2,21,17,31352,30.511000000000003,31.843000000000004,2,0.425,1.757,29.576,0.51
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1300,4,FALSE,3,22,18,31352,29.883,31.166,2,0.38,1.6629999999999998,28.986,0.517
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1300,5,FALSE,4,23,19,31352,27.323,28.823,2,0.389,1.889,26.43,0.504
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1550,0,TRUE,NA,24,NA,43155,13.27,13.574000000000002,2,0.083,0.387,12.919,0.268
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1550,1,FALSE,0,25,20,43155,25.729999999999997,26.324,2,0.185,0.7789999999999999,25.298,0.247
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1550,2,FALSE,1,26,21,43155,22.863999999999997,23.499999999999996,2,0.2,0.8360000000000001,22.391,0.273
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1550,3,FALSE,2,27,22,43155,22.643,23.243,2,0.17,0.77,22.194,0.279
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1550,4,FALSE,3,28,23,43155,22.001,22.650999999999996,2,0.192,0.8420000000000001,21.54,0.269
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,1550,5,FALSE,4,29,24,43155,23.203999999999997,23.839,2,0.197,0.8320000000000001,22.322,0.685
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,2000,0,TRUE,NA,30,NA,56549,14.362,14.723,2,0.084,0.445,12.964,1.314
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,2000,1,FALSE,0,31,25,56549,22.788,24.025,2,0.36,1.597,22.102,0.326
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,2000,2,FALSE,1,32,26,56549,21.51,22.16,2,0.213,0.863,20.747,0.55
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,2000,3,FALSE,2,33,27,56549,28.418,29.624,2,0.384,1.59,27.137,0.897
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,2000,4,FALSE,3,34,28,56549,25.579,26.805,2,0.383,1.609,24.757,0.439
+data_spans_large_keyhold,"Data span trace: large post, key held",large post,large-post-paragraph,0,2000,5,FALSE,4,35,29,56549,25.823,27.012,2,0.377,1.566,25.053,0.393
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,990,0,TRUE,NA,0,NA,0,23.304,25.162,2,0.281,2.139,22.961,0.062
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,990,1,FALSE,0,1,0,0,17.802000000000003,18.366000000000003,2,0.138,0.702,17.602,0.062
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,990,2,FALSE,1,2,1,0,14.594,14.941,2,0.113,0.46,14.436,0.045
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,990,3,FALSE,2,3,2,0,13.591,13.915,2,0.1,0.424,13.449,0.042
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,990,4,FALSE,3,4,3,0,16.832,17.276,2,0.146,0.59,16.645,0.041
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,990,5,FALSE,4,5,4,0,16.150000000000002,16.567000000000004,2,0.132,0.5489999999999999,15.976,0.042
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1000,0,TRUE,NA,6,NA,9259,12.775999999999998,13.168,2,0.107,0.499,12.633,0.036
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1000,1,FALSE,0,7,5,9259,15.021,15.376,2,0.097,0.452,14.885,0.039
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1000,2,FALSE,1,8,6,9259,13.761,14.127,2,0.11,0.476,13.614,0.037
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1000,3,FALSE,2,9,7,9259,14.38,14.733,2,0.107,0.46,14.238,0.035
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1000,4,FALSE,3,10,8,9259,13.545,13.859,2,0.095,0.409,13.402,0.048
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1000,5,FALSE,4,11,9,9259,15.327,15.719,2,0.113,0.505,15.176,0.038
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1200,0,TRUE,NA,12,NA,18397,11.953,12.272,2,0.078,0.397,11.843,0.032
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1200,1,FALSE,0,13,10,18397,17.695999999999998,18.094,2,0.112,0.51,17.544,0.04
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1200,2,FALSE,1,14,11,18397,17.060000000000002,17.483,2,0.135,0.558,16.876,0.049
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1200,3,FALSE,2,15,12,18397,16.944999999999997,17.409,2,0.141,0.605,16.764,0.04
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1200,4,FALSE,3,16,13,18397,17.311999999999998,17.747999999999998,2,0.118,0.554,17.14,0.054
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1200,5,FALSE,4,17,14,18397,16.619,17.104,2,0.124,0.609,16.452,0.043
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1300,0,TRUE,NA,18,NA,28525,14.954,15.327,2,0.083,0.456,14.351,0.52
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1300,1,FALSE,0,19,15,28525,18.151999999999997,18.579,2,0.115,0.542,17.993,0.044
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1300,2,FALSE,1,20,16,28525,17.131000000000004,17.513,2,0.114,0.496,16.972,0.045
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1300,3,FALSE,2,21,17,28525,17.881,18.336,2,0.113,0.5680000000000001,17.725,0.043
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1300,4,FALSE,3,22,18,28525,17.416000000000004,17.818000000000005,2,0.114,0.516,17.263,0.039
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1300,5,FALSE,4,23,19,28525,16.947,17.363,2,0.119,0.5349999999999999,16.788,0.04
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1550,0,TRUE,NA,24,NA,39278,12.68,13.039,2,0.097,0.456,12.548,0.035
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1550,1,FALSE,0,25,20,39278,16.837,17.232,2,0.108,0.503,16.689,0.04
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1550,2,FALSE,1,26,21,39278,15.955,16.297,2,0.099,0.44100000000000006,15.82,0.036
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1550,3,FALSE,2,27,22,39278,22.797,23.431,2,0.132,0.766,22.602,0.063
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1550,4,FALSE,3,28,23,39278,15.261,15.6,2,0.091,0.4300000000000001,15.13,0.04
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,1550,5,FALSE,4,29,24,39278,16.844000000000005,17.244000000000003,2,0.109,0.509,16.696,0.039
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,2000,0,TRUE,NA,30,NA,51264,12.184,12.513,2,0.101,0.4300000000000001,12.052,0.031
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,2000,1,FALSE,0,31,25,51264,15.641,16.013,2,0.1,0.472,15.502,0.039
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,2000,2,FALSE,1,32,26,51264,16.101999999999997,16.500999999999998,2,0.115,0.514,15.947,0.04
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,2000,3,FALSE,2,33,27,51264,16.659,17.056,2,0.101,0.498,16.515,0.043
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,2000,4,FALSE,3,34,28,51264,17.141,17.526,2,0.104,0.489,16.68,0.357
+data_spans_large_between_keys,"Data span trace: large post, wait after keyup",large post,large-post-paragraph,0,2000,5,FALSE,4,35,29,51264,17.075000000000003,17.457000000000004,2,0.099,0.481,16.931,0.045
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,990,0,TRUE,NA,0,NA,0,8.488999999999999,10.972,2,0.254,2.737,7.212,1.023
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,990,1,FALSE,0,1,0,0,12.972,14.936,2,0.513,2.477,11.892,0.567
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,990,2,FALSE,1,2,1,0,14.498,16.087,2,0.545,2.134,13.401,0.552
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,990,3,FALSE,2,3,2,0,14.153,15.616,2,0.437,1.9,13.18,0.536
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,990,4,FALSE,3,4,3,0,12.906,14.553,2,0.494,2.141,11.923,0.489
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,990,5,FALSE,4,5,4,0,9.492,10.908,2,0.598,2.014,8.367,0.527
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1000,0,TRUE,NA,6,NA,6368,4.124,4.458,2,0.078,0.412,3.624,0.422
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1000,1,FALSE,0,7,5,6368,11.694,13.095,2,0.496,1.897,10.784,0.414
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1000,2,FALSE,1,8,6,6368,8.059,8.881999999999998,2,0.251,1.0739999999999998,7.579,0.229
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1000,3,FALSE,2,9,7,6368,6.631,7.266,2,0.2,0.835,5.91,0.521
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1000,4,FALSE,3,10,8,6368,10.942,12.302,2,0.492,1.852,10.081,0.369
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1000,5,FALSE,4,11,9,6368,11.585,12.682,2,0.335,1.432,10.911,0.339
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1200,0,TRUE,NA,12,NA,12711,3.931,4.233,2,0.075,0.377,3.29,0.566
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1200,1,FALSE,0,13,10,12711,12.434,13.746,2,0.388,1.7000000000000002,11.547,0.499
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1200,2,FALSE,1,14,11,12711,12.355,13.788,2,0.496,1.929,11.381,0.478
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1200,3,FALSE,2,15,12,12711,12.241,13.799,2,0.473,2.031,11.316,0.452
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1200,4,FALSE,3,16,13,12711,12.183,13.324,2,0.323,1.464,11.399,0.461
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1200,5,FALSE,4,17,14,12711,11.819,12.934,2,0.336,1.451,11.096,0.387
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1300,0,TRUE,NA,18,NA,20294,3.31,3.599,2,0.07,0.359,2.833,0.407
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1300,1,FALSE,0,19,15,20294,10.964,11.95,2,0.281,1.267,10.225,0.458
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1300,2,FALSE,1,20,16,20294,11.92,13.286,2,0.489,1.855,10.936,0.495
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1300,3,FALSE,2,21,17,20294,12.934,14.611,2,0.398,2.075,12.16,0.376
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1300,4,FALSE,3,22,18,20294,11.359,12.47,2,0.388,1.499,10.584,0.387
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1300,5,FALSE,4,23,19,20294,11.738,12.917000000000002,2,0.327,1.506,10.976,0.435
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1550,0,TRUE,NA,24,NA,28489,4.667,4.986,2,0.086,0.405,3.15,1.431
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1550,1,FALSE,0,25,20,28489,7.525,8.104,2,0.176,0.7549999999999999,6.896,0.453
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1550,2,FALSE,1,26,21,28489,7.762,8.544,2,0.197,0.979,6.965,0.6
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1550,3,FALSE,2,27,22,28489,8.116,8.933,2,0.197,1.014,7.682,0.237
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1550,4,FALSE,3,28,23,28489,7.946000000000001,8.614,2,0.203,0.871,7.315,0.428
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,1550,5,FALSE,4,29,24,28489,11.512,12.682,2,0.371,1.541,10.549,0.592
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,2000,0,TRUE,NA,30,NA,38182,4.213,4.6240000000000006,2,0.094,0.505,3.663,0.456
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,2000,1,FALSE,0,31,25,38182,12.012,13.064,2,0.329,1.381,11.2,0.483
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,2000,2,FALSE,1,32,26,38182,12.095,13.394,2,0.416,1.715,11.265,0.414
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,2000,3,FALSE,2,33,27,38182,11.587,12.666,2,0.313,1.392,10.923,0.351
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,2000,4,FALSE,3,34,28,38182,7.799,8.524,2,0.206,0.931,7.052,0.541
+data_spans_empty_keyhold,"Data span trace: empty post, key held",empty post,empty-post-paragraph,0,2000,5,FALSE,4,35,29,38182,12.428999999999998,13.631,2,0.386,1.588,11.674,0.369
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,990,0,TRUE,NA,0,NA,0,7.453,9.877,2,0.266,2.69,7.104,0.083
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,990,1,FALSE,0,1,0,0,6.592999999999999,7.590999999999999,2,0.215,1.213,6.318,0.06
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,990,2,FALSE,1,2,1,0,6.736000000000001,7.501,2,0.198,0.963,6.46,0.078
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,990,3,FALSE,2,3,2,0,7.817,8.587,2,0.212,0.982,7.508,0.097
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,990,4,FALSE,3,4,3,0,6.027,6.618,2,0.18,0.7709999999999999,5.809,0.038
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,990,5,FALSE,4,5,4,0,6.952,7.724,2,0.236,1.008,6.666,0.05
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1000,0,TRUE,NA,6,NA,5434,3.4219999999999997,3.739,2,0.085,0.402,3.308,0.029
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1000,1,FALSE,0,7,5,5434,6.509,7.23,2,0.178,0.899,6.274,0.057
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1000,2,FALSE,1,8,6,5434,6.214,6.9510000000000005,2,0.207,0.944,5.964,0.043
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1000,3,FALSE,2,9,7,5434,5.930000000000001,6.644,2,0.179,0.893,5.697,0.054
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1000,4,FALSE,3,10,8,5434,5.351000000000001,5.962000000000001,2,0.163,0.774,5.147,0.041
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1000,5,FALSE,4,11,9,5434,5.62,6.128,2,0.148,0.656,5.421,0.051
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1200,0,TRUE,NA,12,NA,10795,3.609,3.908,2,0.089,0.388,3.491,0.029
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1200,1,FALSE,0,13,10,10795,6.936999999999999,7.665,2,0.209,0.937,6.67,0.058
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1200,2,FALSE,1,14,11,10795,6.953,7.762,2,0.221,1.03,6.678,0.054
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1200,3,FALSE,2,15,12,10795,6.516000000000001,7.232000000000001,2,0.195,0.911,6.264,0.057
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1200,4,FALSE,3,16,13,10795,6.338,7.016,2,0.178,0.8560000000000001,6.114,0.046
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1200,5,FALSE,4,17,14,10795,6.954,7.677,2,0.172,0.895,6.731,0.051
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1300,0,TRUE,NA,18,NA,17237,3.061,3.366,2,0.073,0.378,2.952,0.036
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1300,1,FALSE,0,19,15,17237,6.917000000000001,7.595000000000001,2,0.171,0.8490000000000001,6.692,0.054
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1300,2,FALSE,1,20,16,17237,7.055,7.832,2,0.2,0.977,6.803,0.052
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1300,3,FALSE,2,21,17,17237,7.172999999999999,7.903999999999999,2,0.188,0.919,6.909,0.076
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1300,4,FALSE,3,22,18,17237,7.069999999999999,7.905,2,0.201,1.036,6.825,0.044
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1300,5,FALSE,4,23,19,17237,7.0329999999999995,7.786,2,0.188,0.941,6.795,0.05
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1550,0,TRUE,NA,24,NA,24152,2.9810000000000003,3.2890000000000006,2,0.089,0.397,2.865,0.027
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1550,1,FALSE,0,25,20,24152,6.7620000000000005,7.417000000000001,2,0.155,0.81,6.561,0.046
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1550,2,FALSE,1,26,21,24152,6.763999999999999,7.406999999999999,2,0.159,0.802,6.558,0.047
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1550,3,FALSE,2,27,22,24152,6.282000000000001,6.905,2,0.155,0.778,6.081,0.046
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1550,4,FALSE,3,28,23,24152,7.785,8.497,2,0.165,0.877,6.938,0.682
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,1550,5,FALSE,4,29,24,24152,6.257,6.811999999999999,2,0.141,0.6960000000000001,6.063,0.053
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,2000,0,TRUE,NA,30,NA,32356,3.666,4.026,2,0.087,0.4469999999999999,3.55,0.029
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,2000,1,FALSE,0,31,25,32356,5.502,6.029999999999999,2,0.144,0.672,5.298,0.06
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,2000,2,FALSE,1,32,26,32356,4.853,5.337,2,0.147,0.631,4.661,0.045
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,2000,3,FALSE,2,33,27,32356,5.538,6.0280000000000005,2,0.138,0.628,5.354,0.046
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,2000,4,FALSE,3,34,28,32356,4.207000000000001,4.575,2,0.107,0.475,4.035,0.065
+data_spans_empty_between_keys,"Data span trace: empty post, wait after keyup",empty post,empty-post-paragraph,0,2000,5,FALSE,4,35,29,32356,6.31,6.987,2,0.164,0.8410000000000001,6.096,0.05
 full_0_1100,"0-1100ms, 10ms step",large post,large-post-paragraph,0,0,0,TRUE,NA,0,NA,0,11.293,13.221,2,0.293,2.221,10.941,0.059
 full_0_1100,"0-1100ms, 10ms step",large post,large-post-paragraph,0,0,1,FALSE,0,1,0,0,5.9910000000000005,6.313000000000001,2,0.091,0.41300000000000003,5.863,0.037
 full_0_1100,"0-1100ms, 10ms step",large post,large-post-paragraph,0,0,2,FALSE,1,2,1,0,4.7410000000000005,4.9670000000000005,2,0.082,0.308,4.626,0.033

@@ -21,6 +21,7 @@ import { isShallowEqual } from '@wordpress/is-shallow-equal';
  */
 import useRegistry from '../registry-provider/use-registry';
 import useAsyncMode from '../async-mode-provider/use-async-mode';
+import { traceDataSpan } from '../../benchmark-tracing';
 import type {
 	MapSelect,
 	SelectFunction,
@@ -110,17 +111,54 @@ function Store( registry: DataRegistry, suspense: boolean ) {
 			storeStatesOnMount.clear();
 
 			const onStoreChange = () => {
-				// Invalidate the value on store update, so that a fresh value is computed.
-				lastMapResultValid = false;
-				listener();
+				traceDataSpan(
+					'data.useSelect.onStoreChange',
+					() => {
+						// Invalidate the value on store update, so that a fresh value is computed.
+						lastMapResultValid = false;
+						traceDataSpan(
+							'data.useSelect.reactListener',
+							listener,
+							{
+								activeStoreCount: activeStores.length,
+								activeStores: activeStores.join( ',' ),
+							}
+						);
+					},
+					{
+						activeStoreCount: activeStores.length,
+						activeStores: activeStores.join( ',' ),
+					}
+				);
 			};
 
 			const onChange = () => {
-				if ( lastIsAsync ) {
-					renderQueue.add( queueContext, onStoreChange );
-				} else {
-					onStoreChange();
-				}
+				traceDataSpan(
+					'data.useSelect.onChange',
+					() => {
+						if ( lastIsAsync ) {
+							traceDataSpan(
+								'data.useSelect.renderQueueAdd',
+								() =>
+									renderQueue.add(
+										queueContext,
+										onStoreChange
+									),
+								{
+									activeStoreCount: activeStores.length,
+									activeStores: activeStores.join( ',' ),
+								}
+							);
+						} else {
+							onStoreChange();
+						}
+					},
+					{
+						activeStoreCount: activeStores.length,
+						activeStores: activeStores.join( ',' ),
+						isAsync: !! lastIsAsync,
+					}
+				);
 			};
 
 			const unsubs: Array< VoidFunction > = [];
@@ -168,45 +206,77 @@ function Store( registry: DataRegistry, suspense: boolean ) {
 
 	return ( mapSelect: MapSelect, isAsync: boolean ) => {
 		function updateValue(): void {
-			// If the last value is valid, and the `mapSelect` callback hasn't changed,
-			// then we can safely return the cached value. The value can change only on
-			// store update, and in that case value will be invalidated by the listener.
-			if ( lastMapResultValid && mapSelect === lastMapSelect ) {
-				return;
-			}
-
-			const listeningStores = { current: null as string[] | null };
-			const mapResult = registry.__unstableMarkListeningStores(
-				() => mapSelect( select, registry ),
-				listeningStores
-			);
-
-			if ( ( globalThis as any ).SCRIPT_DEBUG ) {
-				if ( ! didWarnUnstableReference ) {
-					const secondMapResult = mapSelect( select, registry );
-					if ( ! isShallowEqual( mapResult, secondMapResult ) ) {
-						warnOnUnstableReference( mapResult, secondMapResult );
-						didWarnUnstableReference = true;
+			traceDataSpan(
+				'data.useSelect.updateValue',
+				() => {
+					// If the last value is valid, and the `mapSelect` callback hasn't changed,
+					// then we can safely return the cached value. The value can change only on
+					// store update, and in that case value will be invalidated by the listener.
+					if ( lastMapResultValid && mapSelect === lastMapSelect ) {
+						return;
 					}
-				}
-			}
 
-			if ( ! subscriber ) {
-				for ( const name of listeningStores.current! ) {
-					storeStatesOnMount.set( name, getStoreState( name ) );
-				}
-				subscriber = createSubscriber( listeningStores.current! );
-			} else {
-				subscriber.updateStores( listeningStores.current! );
-			}
+					const listeningStores = {
+						current: null as string[] | null,
+					};
+					const mapResult = traceDataSpan(
+						'data.useSelect.mapSelect',
+						() =>
+							registry.__unstableMarkListeningStores(
+								() => mapSelect( select, registry ),
+								listeningStores
+							),
+						{
+							isAsync,
+						}
+					);
 
-			// If the new value is shallow-equal to the old one, keep the old one so
-			// that we don't trigger unwanted updates that do a `===` check.
-			if ( ! isShallowEqual( lastMapResult, mapResult ) ) {
-				lastMapResult = mapResult;
-			}
-			lastMapSelect = mapSelect;
-			lastMapResultValid = true;
+					if ( ( globalThis as any ).SCRIPT_DEBUG ) {
+						if ( ! didWarnUnstableReference ) {
+							const secondMapResult = mapSelect(
+								select,
+								registry
+							);
+							if (
+								! isShallowEqual( mapResult, secondMapResult )
+							) {
+								warnOnUnstableReference(
+									mapResult,
+									secondMapResult
+								);
+								didWarnUnstableReference = true;
+							}
+						}
+					}
+
+					if ( ! subscriber ) {
+						for ( const name of listeningStores.current! ) {
+							storeStatesOnMount.set(
+								name,
+								getStoreState( name )
+							);
+						}
+						subscriber = createSubscriber(
+							listeningStores.current!
+						);
+					} else {
+						subscriber.updateStores( listeningStores.current! );
+					}
+
+					// If the new value is shallow-equal to the old one, keep the old one so
+					// that we don't trigger unwanted updates that do a `===` check.
+					if ( ! isShallowEqual( lastMapResult, mapResult ) ) {
+						lastMapResult = mapResult;
+					}
+					lastMapSelect = mapSelect;
+					lastMapResultValid = true;
+				},
+				{
+					isAsync,
+					lastMapResultValid,
+					hasCachedMapSelect: mapSelect === lastMapSelect,
+				}
+			);
 		}
 
 		function getValue() {
