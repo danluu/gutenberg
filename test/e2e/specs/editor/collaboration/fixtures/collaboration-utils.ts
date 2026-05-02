@@ -53,6 +53,7 @@ export const SECOND_USER: UserCredentials = {
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const SYNC_REQUEST_ROUTE = /wp-sync/;
+const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
 
 function isSyncRequestRoute( route: Route ) {
 	const request = route.request();
@@ -148,6 +149,7 @@ export default class CollaborationUtils {
 	): Promise< { page: Page; editor: Editor } > {
 		const context = await this.admin.browser.newContext( {
 			baseURL: BASE_URL,
+			storageState: { cookies: [], origins: [] },
 		} );
 		const newPage = await context.newPage();
 
@@ -240,6 +242,16 @@ export default class CollaborationUtils {
 		timeout: number,
 		roomName?: string
 	) {
+		if ( USE_TEST_WS_PROVIDER ) {
+			await this.waitForTestWebSocketAwarenessPeerCount(
+				page,
+				expectedPeerCount,
+				timeout,
+				roomName
+			);
+			return;
+		}
+
 		await page.waitForResponse(
 			async ( response ) => {
 				if (
@@ -263,6 +275,33 @@ export default class CollaborationUtils {
 					) ?? false
 				);
 			},
+			{ timeout }
+		);
+	}
+
+	async waitForTestWebSocketAwarenessPeerCount(
+		page: Page,
+		expectedPeerCount: number,
+		timeout: number,
+		roomName?: string
+	) {
+		await page.waitForFunction(
+			( { expected, room }: { expected: number; room?: string } ) => {
+				const state = ( window as any ).__gutenbergTestWebSocketSync;
+				const rooms = state?.rooms ?? {};
+				const matchingRoom = room
+					? rooms[ room ]
+					: Object.values( rooms ).find(
+							( candidate: any ) =>
+								candidate?.awarenessCount >= expected
+					  );
+
+				return (
+					matchingRoom?.status === 'connected' &&
+					matchingRoom?.awarenessCount >= expected
+				);
+			},
+			{ expected: expectedPeerCount, room: roomName },
 			{ timeout }
 		);
 	}
@@ -466,6 +505,15 @@ export default class CollaborationUtils {
 	}
 
 	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		if ( USE_TEST_WS_PROVIDER ) {
+			await page.evaluate( ( delay ) => {
+				const testWebSocketSync = ( window as any )
+					.__gutenbergTestWebSocketSync;
+				testWebSocketSync?.delayNextMessage?.( delay );
+			}, delayMs );
+			return;
+		}
+
 		await this.routeNextSyncRequest( page, async ( route ) => {
 			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
 			await ignoreAlreadyHandledRoute( () => route.continue() );
@@ -473,6 +521,15 @@ export default class CollaborationUtils {
 	}
 
 	async failNextSyncRequest( page: Page, status: number ) {
+		if ( USE_TEST_WS_PROVIDER ) {
+			await page.evaluate( () => {
+				const testWebSocketSync = ( window as any )
+					.__gutenbergTestWebSocketSync;
+				testWebSocketSync?.closeNextSocket?.();
+			} );
+			return;
+		}
+
 		await this.routeNextSyncRequest( page, async ( route ) => {
 			await ignoreAlreadyHandledRoute( () =>
 				route.fulfill( {
@@ -506,6 +563,22 @@ export default class CollaborationUtils {
 		cycles = 3,
 		{ timeout = 10000 }: { timeout?: number } = {}
 	) {
+		if ( USE_TEST_WS_PROVIDER ) {
+			await page.waitForFunction(
+				() => {
+					const state = ( window as any )
+						.__gutenbergTestWebSocketSync;
+					const rooms = Object.values( state?.rooms ?? {} );
+					return rooms.some(
+						( room: any ) => room?.status === 'connected'
+					);
+				},
+				undefined,
+				{ timeout }
+			);
+			return;
+		}
+
 		for ( let i = 0; i < cycles; i++ ) {
 			await page.waitForResponse(
 				( response ) =>
