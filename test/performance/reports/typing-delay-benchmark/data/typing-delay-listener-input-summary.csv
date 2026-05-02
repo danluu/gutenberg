@@ -1,0 +1,55 @@
+run_id,mode_label,delayMs,script_label,n,total_ms,median_ms,p90_ms
+listener_between_keys,"Complete keypress, then wait",990,block-editor,12,1.299999475479126,0.04999995231628418,0.28999993801116947
+listener_between_keys,"Complete keypress, then wait",990,react-dom,12,0.09999990463256836,0,0
+listener_between_keys,"Complete keypress, then wait",990,rich-text,12,37.50000023841858,2.4500001668930054,6.929999995231629
+listener_between_keys,"Complete keypress, then wait",1000,block-editor,12,1,0.09999990463256836,0.20000004768371582
+listener_between_keys,"Complete keypress, then wait",1000,react-dom,12,0.09999990463256836,0,0
+listener_between_keys,"Complete keypress, then wait",1000,rich-text,12,34.799999952316284,2.700000047683716,6.050000119209289
+listener_between_keys,"Complete keypress, then wait",1180,block-editor,12,1.2000000476837158,0.04999995231628418,0.20000004768371582
+listener_between_keys,"Complete keypress, then wait",1180,react-dom,12,0.19999980926513672,0,0.08999991416931157
+listener_between_keys,"Complete keypress, then wait",1180,rich-text,12,41.799999713897705,3.3000000715255737,7
+listener_between_keys,"Complete keypress, then wait",1200,block-editor,12,1.0999999046325684,0.09999990463256836,0.2000000238418579
+listener_between_keys,"Complete keypress, then wait",1200,react-dom,12,0.10000014305114746,0,0
+listener_between_keys,"Complete keypress, then wait",1200,rich-text,12,41.40000009536743,3.350000023841858,7
+listener_between_keys,"Complete keypress, then wait",1300,block-editor,12,1,0.04999995231628418,0.20000004768371582
+listener_between_keys,"Complete keypress, then wait",1300,react-dom,12,0.5,0,0.10000011920928956
+listener_between_keys,"Complete keypress, then wait",1300,rich-text,12,42.700000286102295,3.5000001192092896,7.2000000238418576
+listener_between_keys,"Complete keypress, then wait",1510,block-editor,12,1.2000000476837158,0.04999995231628418,0.28999996185302734
+listener_between_keys,"Complete keypress, then wait",1510,react-dom,12,0.10000014305114746,0,0
+listener_between_keys,"Complete keypress, then wait",1510,rich-text,12,39.799999952316284,3.200000047683716,6.78999993801117
+listener_between_keys,"Complete keypress, then wait",1550,block-editor,12,1.1999998092651367,0.04999995231628418,0.20000004768371582
+listener_between_keys,"Complete keypress, then wait",1550,react-dom,12,0.3000001907348633,0,0.10000011920928956
+listener_between_keys,"Complete keypress, then wait",1550,rich-text,12,38.19999980926514,3.100000023841858,6.479999995231628
+listener_between_keys,"Complete keypress, then wait",1580,block-editor,12,0.9000000953674316,0.04999995231628418,0.20000004768371582
+listener_between_keys,"Complete keypress, then wait",1580,react-dom,12,0.09999990463256836,0,0
+listener_between_keys,"Complete keypress, then wait",1580,rich-text,12,39.200000047683716,3.149999976158142,6.5
+listener_between_keys,"Complete keypress, then wait",2000,block-editor,12,1.1000001430511475,0.09999990463256836,0.20000004768371582
+listener_between_keys,"Complete keypress, then wait",2000,react-dom,12,0.10000014305114746,0,0
+listener_between_keys,"Complete keypress, then wait",2000,rich-text,12,37.200000286102295,2.799999952316284,6.390000104904175
+listener_keyhold,Playwright delay: key held down,990,block-editor,12,1.999999761581421,0.09999990463256836,0.2999999523162842
+listener_keyhold,Playwright delay: key held down,990,react-dom,12,0.5999996662139893,0.04999995231628418,0.09999990463256836
+listener_keyhold,Playwright delay: key held down,990,rich-text,12,62.59999990463257,4.600000023841858,10.789999961853027
+listener_keyhold,Playwright delay: key held down,1000,block-editor,12,1.2999999523162842,0.04999995231628418,0.28999996185302734
+listener_keyhold,Playwright delay: key held down,1000,react-dom,12,0.20000004768371582,0,0.08999991416931157
+listener_keyhold,Playwright delay: key held down,1000,rich-text,12,41.59999990463257,3.1999999284744263,7.200000047683716
+listener_keyhold,Playwright delay: key held down,1180,block-editor,12,1.299999713897705,0.09999990463256836,0.20000004768371582
+listener_keyhold,Playwright delay: key held down,1180,react-dom,12,0.3000001907348633,0,0.10000011920928956
+listener_keyhold,Playwright delay: key held down,1180,rich-text,12,48.30000019073486,3.3000000715255737,8.289999961853027
+listener_keyhold,Playwright delay: key held down,1200,block-editor,12,1.2999999523162842,0.10000002384185791,0.20000004768371582
+listener_keyhold,Playwright delay: key held down,1200,react-dom,12,0.3000001907348633,0,0.10000011920928956
+listener_keyhold,Playwright delay: key held down,1200,rich-text,12,55,4.050000071525574,10.03999991416931
+listener_keyhold,Playwright delay: key held down,1300,block-editor,12,1.3000001907348633,0.10000002384185791,0.20000004768371582
+listener_keyhold,Playwright delay: key held down,1300,react-dom,12,0.39999961853027344,0,0.09999990463256836
+listener_keyhold,Playwright delay: key held down,1300,rich-text,12,58.90000033378601,4.100000023841858,10.540000128746033
+listener_keyhold,Playwright delay: key held down,1510,block-editor,12,1.0999996662139893,0.09999990463256836,0.2000000238418579
+listener_keyhold,Playwright delay: key held down,1510,react-dom,12,0.2999999523162842,0,0.09999990463256836
+listener_keyhold,Playwright delay: key held down,1510,rich-text,12,46.40000009536743,3.6500000953674316,7.889999866485596
+listener_keyhold,Playwright delay: key held down,1550,block-editor,12,1.3000004291534424,0.05000007152557373,0.28999996185302734
+listener_keyhold,Playwright delay: key held down,1550,react-dom,12,0.20000004768371582,0,0.08999991416931157
+listener_keyhold,Playwright delay: key held down,1550,rich-text,12,44.99999952316284,3.700000047683716,7.669999814033508
+listener_keyhold,Playwright delay: key held down,1580,block-editor,12,1.5,0.09999990463256836,0.2999999523162842
+listener_keyhold,Playwright delay: key held down,1580,react-dom,12,0.10000014305114746,0,0
+listener_keyhold,Playwright delay: key held down,1580,rich-text,12,47.700000047683716,3.799999952316284,8.379999876022339
+listener_keyhold,Playwright delay: key held down,2000,block-editor,12,1.0999999046325684,0.04999995231628418,0.20000004768371582
+listener_keyhold,Playwright delay: key held down,2000,react-dom,12,0.2999999523162842,0,0.08999991416931157
+listener_keyhold,Playwright delay: key held down,2000,rich-text,12,48.89999961853027,3.7499998807907104,8.269999957084657

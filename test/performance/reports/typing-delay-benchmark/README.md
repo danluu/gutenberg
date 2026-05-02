@@ -24,6 +24,9 @@ The short version:
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
+-   Event-listener timing narrows the visible Gutenberg work to editor-canvas
+    input handling. The dominant measured callback is registered from
+    `rich-text`.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -83,6 +86,7 @@ run:
 -   persistence-state tracing;
 -   data-action tracing;
 -   timer tracing and timer intervention.
+-   event-listener invocation tracing;
 -   alternate delay modes:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
@@ -107,6 +111,9 @@ The R script derives:
     keyup, persistence marker, and next keydown.
 -   `data/typing-delay-native-key-event-timing.csv`: the same timing for the
     native `contenteditable` comparison.
+-   `data/typing-delay-event-listener-events.csv`: per-listener invocation timing;
+-   `data/typing-delay-listener-input-summary.csv`: input-listener summaries by
+    delay and registration script.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -443,6 +450,41 @@ This is narrower than the previous conclusion. The timer/key-hold timing is a
 necessary diagnostic signal in the Gutenberg traces, but not sufficient without
 Gutenberg's editor stack.
 
+### Listener Trace: RichText Input
+
+The next pass patched `EventTarget.prototype.addEventListener` before the editor
+loaded and injected the same tracer into the editor canvas iframe. This is
+diagnostic instrumentation, not a score run: wrapping listeners adds overhead and
+the listener durations do not need to sum exactly to Chromium's `EventDispatch`
+trace duration. It is still useful because it localizes where the measured
+JavaScript callback time is going.
+
+![RichText listener duration](figures/15-rich-text-listener-duration.png)
+
+In the targeted listener trace, the dominant measured callback was an
+editor-canvas `input` listener registered from `build/scripts/rich-text/`. Parent
+frame keydown listeners, React delegation wrappers, keyboard-shortcut listeners,
+and `block-editor` input listeners were small by comparison.
+
+Selected values:
+
+| Mode             |    Delay | Latency p50 | RichText input median | RichText input p90 |
+| ---------------- | -------: | ----------: | --------------------: | -----------------: |
+| key held         | `1200ms` |    `17.5ms` |               `4.1ms` |           `10.0ms` |
+| wait after keyup | `1200ms` |    `11.0ms` |               `3.4ms` |            `7.0ms` |
+| key held         | `1300ms` |    `18.7ms` |               `4.1ms` |           `10.5ms` |
+| wait after keyup | `1300ms` |    `11.4ms` |               `3.5ms` |            `7.2ms` |
+| key held         | `1550ms` |    `12.6ms` |               `3.7ms` |            `7.7ms` |
+| wait after keyup | `1550ms` |    `10.5ms` |               `3.1ms` |            `6.5ms` |
+
+This explains why the browser trace reports the cost as `keypress`
+`EventDispatch` even though the largest explicit listener callback is on `input`:
+for text entry, the key event causes the input path, and Chromium's dispatch
+slice covers that induced work. The listener trace also sharpens the open
+question about the `1510-1550ms` dip. The dip is visible inside the same
+RichText-input path, not in parent-frame keyboard shortcuts or generic React
+delegation.
+
 ## Scenario Sensitivity
 
 ![Scenario boundary checks](figures/08-scenario-boundary-checks.png)
@@ -469,7 +511,7 @@ Selected p50s:
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
 
 In the Gutenberg editor traces in this local Chromium environment, every retained
-sample had two `keydown` `EventDispatch` entries. Across 7340 retained Gutenberg
+sample had two `keydown` `EventDispatch` entries. Across 7448 retained Gutenberg
 samples in the committed derived data, zero had a `keydown` count other than two.
 The native `contenteditable` baseline had one `keydown` per retained sample.
 
@@ -527,6 +569,9 @@ Known problems:
     used one round, so it is a shape-finding run, not a high-confidence estimate.
 -   **Instrumentation perturbs behavior.** Action tracing and timer rewriting add
     overhead; they should be used to explain behavior, not to report benchmark
+    scores.
+-   **Listener tracing perturbs behavior even more.** It monkey-patches
+    `addEventListener`, so use it only to localize costs, not to report latency
     scores.
 -   **The paired trace is diagnostic, not a score run.** It uses only 8 retained
     samples per delay and heavy instrumentation. Its value is in comparing modes
@@ -649,6 +694,9 @@ The key runs used in this report were:
     and normal Playwright key-hold delay.
 -   `native_between_keys_timer`: native `contenteditable` with a `1000ms` input
     timer and delay after a complete keypress.
+-   `listener_keyhold`: Gutenberg key-hold trace with event-listener timing.
+-   `listener_between_keys`: Gutenberg complete-keypress-then-wait trace with
+    event-listener timing.
 
 The local environment used `nvm` default Node `v20.20.2`.
 

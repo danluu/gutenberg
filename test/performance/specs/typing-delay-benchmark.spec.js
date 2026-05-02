@@ -56,6 +56,9 @@ const tracePersistence =
 const traceData =
 	process.env.BENCHMARK_TRACE_DATA === '1' ||
 	process.env.BENCHMARK_TRACE_DATA === 'true';
+const traceEventListeners =
+	process.env.BENCHMARK_TRACE_EVENT_LISTENERS === '1' ||
+	process.env.BENCHMARK_TRACE_EVENT_LISTENERS === 'true';
 const rewriteTimeout1000Ms =
 	process.env.BENCHMARK_REWRITE_TIMEOUT_1000_MS === undefined
 		? null
@@ -99,6 +102,214 @@ const supportedDelayModes = [ 'keyboard', 'between-keys', 'after-persistence' ];
 
 function isNativeScenario() {
 	return scenario === 'native-contenteditable-timer';
+}
+
+function installEventListenerTracing() {
+	if ( window.__typingBenchmarkEventListenerTracingInstalled ) {
+		window.__typingBenchmarkEventListenerEvents =
+			window.__typingBenchmarkEventListenerEvents || [];
+		return;
+	}
+
+	const tracedEventTypes = new Set( [
+		'keydown',
+		'keypress',
+		'beforeinput',
+		'input',
+		'keyup',
+	] );
+	const originalAddEventListener = EventTarget.prototype.addEventListener;
+	const originalRemoveEventListener =
+		EventTarget.prototype.removeEventListener;
+	const wrappedListeners = new WeakMap();
+	let listenerId = 0;
+
+	function eventTargetLabel( target ) {
+		if ( target === window ) {
+			return 'window';
+		}
+
+		if ( target === document ) {
+			return 'document';
+		}
+
+		if ( target?.nodeType === Node.DOCUMENT_NODE ) {
+			return 'document';
+		}
+
+		if ( target?.nodeType !== Node.ELEMENT_NODE ) {
+			return target?.constructor?.name || String( target );
+		}
+
+		const id = target.id ? `#${ target.id }` : '';
+		const className =
+			typeof target.className === 'string' && target.className
+				? `.${ target.className
+						.trim()
+						.split( /\s+/ )
+						.slice( 0, 3 )
+						.join( '.' ) }`
+				: '';
+		const role = target.getAttribute?.( 'role' )
+			? `[role="${ target.getAttribute( 'role' ) }"]`
+			: '';
+		return `${ target.tagName.toLowerCase() }${ id }${ className }${ role }`;
+	}
+
+	function listenerSource( listener ) {
+		const callback =
+			typeof listener === 'function' ? listener : listener?.handleEvent;
+		return callback
+			? Function.prototype.toString.call( callback ).slice( 0, 300 )
+			: String( listener ).slice( 0, 300 );
+	}
+
+	function listenerName( listener ) {
+		const callback =
+			typeof listener === 'function' ? listener : listener?.handleEvent;
+		return callback?.name || listener?.constructor?.name || '';
+	}
+
+	function captureFromOptions( options ) {
+		return typeof options === 'boolean' ? options : !! options?.capture;
+	}
+
+	function getWrappedListener( listener, type, options, target ) {
+		if (
+			! listener ||
+			! tracedEventTypes.has( type ) ||
+			listener.__typingBenchmarkIgnoreListener
+		) {
+			return listener;
+		}
+
+		let wrappedByCapture = wrappedListeners.get( listener );
+		if ( ! wrappedByCapture ) {
+			wrappedByCapture = new Map();
+			wrappedListeners.set( listener, wrappedByCapture );
+		}
+
+		const capture = captureFromOptions( options );
+		const key = `${ type }:${ capture }`;
+		const existing = wrappedByCapture.get( key );
+		if ( existing ) {
+			return existing;
+		}
+
+		const id = ++listenerId;
+		const registeredAtMs = performance.now();
+		const registrationStack = new Error().stack?.slice( 0, 1200 );
+		const source = listenerSource( listener );
+		const name = listenerName( listener );
+		const targetLabel = eventTargetLabel( target );
+
+		const wrapped = function wrappedTypingBenchmarkEventListener( event ) {
+			const start = performance.now();
+			let status = 'returned';
+			let result;
+
+			try {
+				if ( typeof listener === 'function' ) {
+					result = listener.call( this, event );
+				} else {
+					result = listener.handleEvent.call( listener, event );
+				}
+			} catch ( error ) {
+				status = 'threw';
+				throw error;
+			} finally {
+				const stop = performance.now();
+				window.__typingBenchmarkEventListenerEvents.push( {
+					id,
+					type: event.type,
+					startedAtMs: start,
+					durationMs: stop - start,
+					status,
+					eventPhase: event.eventPhase,
+					capture,
+					targetLabel,
+					currentTargetLabel: eventTargetLabel( event.currentTarget ),
+					eventTargetLabel: eventTargetLabel( event.target ),
+					listenerName: name,
+					listenerSource: source,
+					registeredAtMs,
+					registrationStack,
+					key: event.key,
+					code: event.code,
+					inputType: event.inputType,
+					data: event.data,
+				} );
+			}
+
+			return result;
+		};
+
+		wrappedByCapture.set( key, wrapped );
+		return wrapped;
+	}
+
+	EventTarget.prototype.addEventListener = function addEventListener(
+		type,
+		listener,
+		options
+	) {
+		return originalAddEventListener.call(
+			this,
+			type,
+			getWrappedListener( listener, type, options, this ),
+			options
+		);
+	};
+
+	EventTarget.prototype.removeEventListener = function removeEventListener(
+		type,
+		listener,
+		options
+	) {
+		const capture = captureFromOptions( options );
+		const wrapped = wrappedListeners
+			.get( listener )
+			?.get( `${ type }:${ capture }` );
+		return originalRemoveEventListener.call(
+			this,
+			type,
+			wrapped || listener,
+			options
+		);
+	};
+
+	window.__typingBenchmarkEventListenerEvents = [];
+	window.__typingBenchmarkEventListenerTracingInstalled = true;
+
+	if ( window.__typingBenchmarkEventListenerFrameObserverInstalled ) {
+		return;
+	}
+
+	const installerSource = `(${ installEventListenerTracing.toString() })()`;
+
+	function installInChildFrames() {
+		for ( const iframe of document.querySelectorAll( 'iframe' ) ) {
+			try {
+				const childWindow = iframe.contentWindow;
+				if (
+					childWindow &&
+					! childWindow.__typingBenchmarkEventListenerTracingInstalled
+				) {
+					childWindow.eval( installerSource );
+				}
+			} catch {
+				// Cross-origin or not-yet-ready frames are irrelevant here.
+			}
+		}
+	}
+
+	installInChildFrames();
+	new MutationObserver( installInChildFrames ).observe( document, {
+		childList: true,
+		subtree: true,
+	} );
+	window.setInterval( installInChildFrames, 50 );
+	window.__typingBenchmarkEventListenerFrameObserverInstalled = true;
 }
 
 if ( delayStepMs <= 0 ) {
@@ -306,6 +517,48 @@ test.describe( 'Typing delay benchmark', () => {
 
 		fs.mkdirSync( outputDir, { recursive: true } );
 
+		async function setupEventListenerTracingInitScript() {
+			if ( ! traceEventListeners ) {
+				return;
+			}
+
+			await page.addInitScript( installEventListenerTracing );
+			await page
+				.evaluate( installEventListenerTracing )
+				.catch( () => undefined );
+		}
+
+		async function setupEventListenerTracingInCurrentContext() {
+			if ( ! traceEventListeners ) {
+				return;
+			}
+
+			await page.evaluate( installEventListenerTracing );
+		}
+
+		async function resetEventListenerTracing() {
+			if ( ! traceEventListeners ) {
+				return;
+			}
+
+			await page.evaluate( () => {
+				const windows = [ window ];
+				for ( const iframe of document.querySelectorAll( 'iframe' ) ) {
+					try {
+						if ( iframe.contentWindow ) {
+							windows.push( iframe.contentWindow );
+						}
+					} catch {
+						// Ignore inaccessible frames.
+					}
+				}
+
+				for ( const currentWindow of windows ) {
+					currentWindow.__typingBenchmarkEventListenerEvents = [];
+				}
+			} );
+		}
+
 		async function setupPersistenceTracing() {
 			if ( ! tracePersistence ) {
 				return;
@@ -354,6 +607,7 @@ test.describe( 'Typing delay benchmark', () => {
 
 		async function setupDataTracing() {
 			if ( ! traceData ) {
+				await resetEventListenerTracing();
 				return;
 			}
 
@@ -369,6 +623,7 @@ test.describe( 'Typing delay benchmark', () => {
 				window.__typingBenchmarkBrowserEvents = [];
 				window.__typingBenchmarkDataEvents = [];
 				window.__typingBenchmarkDataInstrumentation = [];
+				window.__typingBenchmarkEventListenerEvents = [];
 				window.__typingBenchmarkBrowserUnsubscribers?.forEach(
 					( unsubscribe ) => unsubscribe()
 				);
@@ -431,6 +686,7 @@ test.describe( 'Typing delay benchmark', () => {
 								...blockEditorSnapshot(),
 							} );
 						};
+						listener.__typingBenchmarkIgnoreListener = true;
 
 						document.addEventListener( eventType, listener, true );
 						window.__typingBenchmarkBrowserUnsubscribers.push( () =>
@@ -833,55 +1089,55 @@ test.describe( 'Typing delay benchmark', () => {
 								aria-label="Typing benchmark target"
 								spellcheck="false"
 							></div>
-							<script>
-								(() => {
-									const target = document.getElementById(
-										'typing-benchmark-target'
-									);
-									let timeoutId = null;
-									let isPersistent = true;
-
-									window.__typingBenchmarkPersistenceEvents = [];
-									window.__typingBenchmarkNativeState = {
-										isPersistent,
-									};
-
-									target.addEventListener('input', () => {
-										isPersistent = false;
-										window.__typingBenchmarkNativeState = {
-											isPersistent,
-										};
-										window.__typingBenchmarkPersistenceEvents.push({
-											nowMs: performance.now(),
-											isPersistent,
-											isTyping: true,
-											source: 'native-input',
-										});
-
-										if (timeoutId !== null) {
-											window.clearTimeout(timeoutId);
-										}
-
-										timeoutId = window.setTimeout(() => {
-											isPersistent = true;
-											window.__typingBenchmarkNativeState = {
-												isPersistent,
-											};
-											window.__typingBenchmarkPersistenceEvents.push({
-												nowMs: performance.now(),
-												isPersistent,
-												isTyping: false,
-												source: 'native-timeout',
-											});
-										}, 1000);
-									});
-								})();
-							</script>
 						</body>
 					</html>` );
+				await setupEventListenerTracingInCurrentContext();
 				await setupTimerTracing();
+				await page.evaluate( () => {
+					const target = document.getElementById(
+						'typing-benchmark-target'
+					);
+					let timeoutId = null;
+					let isPersistent = true;
+
+					window.__typingBenchmarkPersistenceEvents = [];
+					window.__typingBenchmarkNativeState = {
+						isPersistent,
+					};
+
+					target.addEventListener( 'input', () => {
+						isPersistent = false;
+						window.__typingBenchmarkNativeState = {
+							isPersistent,
+						};
+						window.__typingBenchmarkPersistenceEvents.push( {
+							nowMs: performance.now(),
+							isPersistent,
+							isTyping: true,
+							source: 'native-input',
+						} );
+
+						if ( timeoutId !== null ) {
+							window.clearTimeout( timeoutId );
+						}
+
+						timeoutId = window.setTimeout( () => {
+							isPersistent = true;
+							window.__typingBenchmarkNativeState = {
+								isPersistent,
+							};
+							window.__typingBenchmarkPersistenceEvents.push( {
+								nowMs: performance.now(),
+								isPersistent,
+								isTyping: false,
+								source: 'native-timeout',
+							} );
+						}, 1000 );
+					} );
+				} );
 				await setupPersistenceTracing();
 				const dataTracingSetup = await setupDataTracing();
+				await resetEventListenerTracing();
 				paragraph = page.getByRole( 'textbox', {
 					name: 'Typing benchmark target',
 				} );
@@ -925,6 +1181,7 @@ test.describe( 'Typing delay benchmark', () => {
 			await setupTimerTracing();
 			await setupPersistenceTracing();
 			const dataTracingSetup = await setupDataTracing();
+			await resetEventListenerTracing();
 
 			if ( settleAfterEditorSetupMs > 0 ) {
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
@@ -941,6 +1198,7 @@ test.describe( 'Typing delay benchmark', () => {
 		}
 
 		let editorSetup = null;
+		await setupEventListenerTracingInitScript();
 		if ( ! freshEditorPerDelay ) {
 			editorSetup = await setupEditor();
 		}
@@ -1120,6 +1378,55 @@ test.describe( 'Typing delay benchmark', () => {
 								}
 						  )
 						: undefined,
+					eventListenerEvents: traceEventListeners
+						? await page.evaluate(
+								( { startMs, stopMs } ) => {
+									const windows = [
+										{ name: 'parent', window },
+									];
+									for ( const iframe of document.querySelectorAll(
+										'iframe'
+									) ) {
+										try {
+											if ( iframe.contentWindow ) {
+												windows.push( {
+													name:
+														iframe.name ||
+														iframe.id ||
+														'iframe',
+													window: iframe.contentWindow,
+												} );
+											}
+										} catch {
+											// Ignore inaccessible frames.
+										}
+									}
+
+									return windows.flatMap(
+										( { name, window: currentWindow } ) =>
+											(
+												currentWindow.__typingBenchmarkEventListenerEvents ||
+												[]
+											)
+												.filter(
+													( event ) =>
+														event.startedAtMs >=
+															startMs - 5 &&
+														event.startedAtMs <=
+															stopMs + 5
+												)
+												.map( ( event ) => ( {
+													...event,
+													windowName: name,
+												} ) )
+									);
+								},
+								{
+									startMs: runStartedAtBrowserNowMs,
+									stopMs: runStoppedAtBrowserNowMs,
+								}
+						  )
+						: undefined,
 				} );
 
 				for (
@@ -1212,6 +1519,7 @@ test.describe( 'Typing delay benchmark', () => {
 				traceData,
 				traceTimers,
 				traceSchedulers,
+				traceEventListeners,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,

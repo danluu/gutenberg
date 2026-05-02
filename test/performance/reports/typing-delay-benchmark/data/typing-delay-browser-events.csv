@@ -3849,3 +3849,885 @@ nowMs,documentName,type,key,code,targetTagName,targetRole,isPersistent,isTyping,
 117120.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.799999952316
 117120.79999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16117.5
 117129,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16125.700000047684
+1971.8999998569489,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,28
+1973,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,29.100000143051147
+1973.3999998569489,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,29.5
+1978.7999999523163,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,34.90000009536743
+1979.3999998569489,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,35.5
+2036.3999998569489,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,92.5
+3016.7999999523163,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,1072.9000000953674
+3019.0999999046326,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,1075.2000000476837
+3020.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,1076.6000001430511
+3021.2999999523163,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,1077.4000000953674
+3021.399999856949,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,1077.5
+3025.5999999046326,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,1081.7000000476837
+3042.7000000476837,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,1098.8000001907349
+4033.7000000476837,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,2089.800000190735
+4036.0999999046326,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,2092.2000000476837
+4037.5999999046326,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,2093.7000000476837
+4038.5,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,2094.600000143051
+4038.5999999046326,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,2094.7000000476837
+4043.0999999046326,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,2099.2000000476837
+4059.7999999523163,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,2115.9000000953674
+5050.899999856949,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,3107
+5053.299999952316,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,3109.4000000953674
+5054.599999904633,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,3110.7000000476837
+5055.399999856949,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,3111.5
+5055.5,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,3111.600000143051
+5059.599999904633,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,3115.7000000476837
+5076.399999856949,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,3132.5
+6067.799999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,4123.900000095367
+6070.099999904633,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,4126.200000047684
+6071.5,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,4127.600000143051
+6072.200000047684,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,4128.300000190735
+6072.299999952316,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,4128.400000095367
+6076.399999856949,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,4132.5
+6092.599999904633,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,4148.700000047684
+7083.599999904633,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,5139.700000047684
+7085.599999904633,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,5141.700000047684
+7086.700000047684,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,5142.800000190735
+7087.299999952316,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,5143.400000095367
+7087.5,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,5143.600000143051
+7091.899999856949,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,5148
+7108.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,5164.400000095367
+8099.700000047684,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,6155.800000190735
+8103,editor-canvas,keydown,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,6159.100000143051
+8104.299999952316,parent,keydown,x,KeyX,IFRAME,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,6160.400000095367
+8104.799999952316,editor-canvas,keypress,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,6160.900000095367
+8105,editor-canvas,beforeinput,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,6161.100000143051
+8109.399999856949,editor-canvas,input,NA,NA,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,990,6165.5
+8124.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,6180.400000095367
+9115.399999856949,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,990,7171.5
+9349.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,11.800000190734863
+9350,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,12.100000143051147
+9350.099999904633,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,12.200000047683716
+9350.099999904633,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,12.200000047683716
+9350.899999856949,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,13
+9357,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,19.100000143051147
+10369.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,1031.6000001430511
+10376,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,1038.1000001430511
+10376.599999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,1038.7000000476837
+10376.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,1038.9000000953674
+10376.899999856949,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,1039
+10378.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,1040.6000001430511
+10390,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,1052.1000001430511
+11403.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,2065.300000190735
+11409.099999904633,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,2071.2000000476837
+11409.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,2071.800000190735
+11409.899999856949,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,2072
+11410,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,2072.100000143051
+11411.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,2073.600000143051
+11423.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,2085.600000143051
+12434.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,3096.800000190735
+12459.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,3121.300000190735
+12459.599999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,3121.7000000476837
+12459.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,3121.9000000953674
+12459.899999856949,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,3122
+12461.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,3123.4000000953674
+12472.099999904633,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,3134.2000000476837
+13471.899999856949,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,4134
+13484.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,4146.600000143051
+13485.099999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,4147.200000047684
+13485.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,4147.400000095367
+13485.399999856949,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,4147.5
+13487.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,4149.600000143051
+13500.399999856949,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,4162.5
+14512,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,5174.100000143051
+14526.099999904633,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,5188.200000047684
+14526.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,5188.600000143051
+14526.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,5188.800000190735
+14526.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,5188.800000190735
+14528,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,5190.100000143051
+14538.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,5200.800000190735
+15551.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,6213.900000095367
+15559,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,6221.100000143051
+15559.599999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,6221.700000047684
+15559.899999856949,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,6222
+15559.899999856949,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,6222
+15561.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1000,6223.400000095367
+15573.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,6235.400000095367
+16586.89999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1000,7249
+16806.599999904633,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,11.899999856948853
+16806.89999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,12.199999809265137
+16807,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,12.299999952316284
+16807,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,12.299999952316284
+16807.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,13
+16813.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,19.09999990463257
+17995.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,1201
+17998.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,1203.5999999046326
+17999.599999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,1204.8999998569489
+18000.599999904633,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,1205.8999998569489
+18000.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,1206.0999999046326
+18004.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,1210.0999999046326
+18019.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,1225.0999999046326
+19200,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,2405.2999999523163
+19202,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,2407.2999999523163
+19203.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,2408.5
+19203.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,2409
+19203.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,2409.0999999046326
+19208.39999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,2413.699999809265
+19222.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,2427.5
+20400.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,3605.7999999523163
+20402.39999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,3607.699999809265
+20403.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,3608.7999999523163
+20403.89999985695,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,3609.199999809265
+20404,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,3609.2999999523163
+20407.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,3613.0999999046326
+20420.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,3626.0999999046326
+21601.599999904633,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,4806.899999856949
+21602.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,4807.5
+21602.599999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,4807.899999856949
+21602.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,4808.099999904633
+21602.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,4808.099999904633
+21604.39999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,4809.699999809265
+21616.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,4821.5
+22797.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,6002.799999952316
+22800.099999904633,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,6005.399999856949
+22801.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,6006.599999904633
+22801.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,6007
+22801.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,6007.099999904633
+22803.39999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,6008.699999809265
+22817.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,6022.599999904633
+23998.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,7203.5
+24000.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,7205.599999904633
+24000.89999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,7206.199999809265
+24001.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,7206.599999904633
+24001.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,7206.699999809265
+24002.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1180,7208
+24015.89999985695,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,7221.199999809265
+25197.39999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1180,8402.699999809265
+25413.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,12.299999952316284
+25414.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,12.700000047683716
+25414.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,12.700000047683716
+25414.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,12.799999952316284
+25414.89999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,13.399999856948853
+25421,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,19.5
+26623.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,1222
+26625.599999904633,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,1224.0999999046326
+26626.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,1225.2000000476837
+26627.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,1225.7999999523163
+26627.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,1225.8999998569489
+26631.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,1230.2000000476837
+26645.599999904633,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,1244.0999999046326
+27845.599999904633,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,2444.0999999046326
+27848.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,2446.7000000476837
+27849.39999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,2447.899999856949
+27850.099999904633,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,2448.5999999046326
+27850.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,2448.899999856949
+27854.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,2453
+27868.39999985695,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,2466.899999856949
+29068.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,3667
+29070,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,3668.5
+29071.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,3669.7000000476837
+29071.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,3670.2999999523163
+29071.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,3670.399999856949
+29076.39999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,3674.899999856949
+29092.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,3690.7000000476837
+30293.599999904633,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,4892.099999904633
+30297.89999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,4896.399999856949
+30299.099999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,4897.599999904633
+30299.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,4898.299999952316
+30299.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,4898.399999856949
+30303.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,4902.200000047684
+30317.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,4915.700000047684
+31518.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,6116.700000047684
+31520.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,6118.700000047684
+31521.599999904633,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,6120.099999904633
+31522.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,6120.799999952316
+31522.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,6120.899999856949
+31526.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,6125
+31541.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,6140.299999952316
+32741.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,7340.200000047684
+32743.39999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,7341.899999856949
+32744.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,7343
+32745,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,7343.5
+32745.099999904633,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,7343.599999904633
+32749.39999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1200,7347.899999856949
+32766,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,7364.5
+33966,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1200,8564.5
+34143.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,10.799999952316284
+34144.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,11.200000047683716
+34144.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,11.299999952316284
+34144.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,11.299999952316284
+34145,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,12
+34151.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,18.200000047683716
+35453.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,1320.2000000476837
+35455.39999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,1322.3999998569489
+35456.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,1323.7000000476837
+35457.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,1324.2000000476837
+35457.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,1324.3999998569489
+35462,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,1329
+35478.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,1345.5
+36780,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,2647
+36782.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,2649.7000000476837
+36784.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,2651.2999999523163
+36784.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,2651.7000000476837
+36784.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,2651.899999856949
+36789.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,2656.2999999523163
+36804.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,2671.7999999523163
+38106.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,3973.2000000476837
+38108.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,3975.5
+38109.59999990463,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,3976.5999999046326
+38110.39999985695,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,3977.399999856949
+38110.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,3977.5
+38114.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,3981.7000000476837
+38131,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,3998
+39432.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,5299.299999952316
+39435.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,5302.200000047684
+39436.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,5303.299999952316
+39437,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,5304
+39437.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,5304.200000047684
+39441.59999990463,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,5308.599999904633
+39457.39999985695,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,5324.399999856949
+40757.89999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,6624.899999856949
+40759.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,6626.799999952316
+40761,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,6628
+40761.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,6628.700000047684
+40761.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,6628.899999856949
+40765.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,6632.299999952316
+40778.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,6645.799999952316
+42079.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,7946.799999952316
+42082.09999990463,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,7949.099999904633
+42083.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,7950.299999952316
+42083.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,7950.799999952316
+42083.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,7950.899999856949
+42087.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1300,7954.799999952316
+42103.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,7970.200000047684
+43403.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1300,9270.799999952316
+43627.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,10.700000047683716
+43628.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,11.100000143051147
+43628.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,11.200000047683716
+43628.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,11.200000047683716
+43629.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,12.100000143051147
+43636.09999990463,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,19
+45148,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,1530.9000000953674
+45149.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,1532.7000000476837
+45150.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,1533.4000000953674
+45150.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,1533.6000001430511
+45150.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,1533.7000000476837
+45152.39999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,1535.2999999523163
+45165.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,1548.4000000953674
+46676.39999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,3059.2999999523163
+46677.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,3060.4000000953674
+46678.09999990463,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,3061
+46678.39999985695,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,3061.2999999523163
+46678.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,3061.2999999523163
+46680,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,3062.9000000953674
+46692.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,3075.2000000476837
+48202.59999990463,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,4585.5
+48204.39999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,4587.299999952316
+48205.39999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,4588.299999952316
+48205.89999985695,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,4588.799999952316
+48206.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,4589.200000047684
+48208.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,4591.400000095367
+48221.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,4604.600000143051
+49731.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,6114.600000143051
+49732.39999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,6115.299999952316
+49733,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,6115.900000095367
+49733.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,6116.200000047684
+49733.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,6116.200000047684
+49734.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,6117.700000047684
+49748,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,6130.900000095367
+51257.89999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,7640.799999952316
+51259.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,7642.600000143051
+51260.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,7643.200000047684
+51260.59999990463,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,7643.5
+51260.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,7643.600000143051
+51262.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,7645.200000047684
+51275.39999985695,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,7658.299999952316
+52785.39999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,9168.299999952316
+52786,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,9168.900000095367
+52786.59999990463,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,9169.5
+52786.89999985695,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,9169.799999952316
+52786.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,9169.799999952316
+52788.59999990463,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1510,9171.5
+52801.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,9184.400000095367
+54311.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1510,10694.200000047684
+54494.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,10.900000095367432
+54495.09999990463,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,11.200000047683716
+54495.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,11.300000190734863
+54495.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,11.300000190734863
+54495.89999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,12
+54502,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,18.100000143051147
+56052.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,1568.9000000953674
+56053.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,1569.6000001430511
+56054.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,1570.3000001907349
+56054.59999990463,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,1570.7000000476837
+56054.59999990463,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,1570.7000000476837
+56056.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,1572.3000001907349
+56069.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,1585.3000001907349
+57618.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,3134.9000000953674
+57619.39999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,3135.5
+57620.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,3136.300000190735
+57620.59999990463,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,3136.7000000476837
+57620.59999990463,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,3136.7000000476837
+57621.89999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,3138
+57634.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,3150.600000143051
+59183,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,4699.100000143051
+59183.59999990463,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,4699.700000047684
+59184.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,4700.300000190735
+59184.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,4700.600000143051
+59184.59999990463,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,4700.700000047684
+59186.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,4702.300000190735
+59198.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,4714.800000190735
+60749,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,6265.100000143051
+60750.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,6266.400000095367
+60750.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,6266.900000095367
+60751,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,6267.100000143051
+60751.09999990463,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,6267.200000047684
+60752.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,6268.800000190735
+60765.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,6281.300000190735
+62315.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,7831.600000143051
+62316.09999990463,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,7832.200000047684
+62316.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,7832.800000190735
+62317,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,7833.100000143051
+62317,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,7833.100000143051
+62318.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,7834.600000143051
+62330.39999985695,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,7846.5
+63882.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,9398.400000095367
+63884.59999990463,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,9400.700000047684
+63885.39999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,9401.5
+63885.59999990463,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,9401.700000047684
+63885.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,9401.800000190735
+63887.39999985695,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1550,9403.5
+63900.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,9416.900000095367
+65451.09999990463,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1550,10967.200000047684
+65681,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,21.5
+65681.39999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,21.899999856948853
+65681.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,22
+65681.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,22
+65682.29999995232,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,22.799999952316284
+65690,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,30.5
+67271.89999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,1612.3999998569489
+67273.79999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,1614.2999999523163
+67274.89999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,1615.3999998569489
+67275.29999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,1615.7999999523163
+67275.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,1615.8999998569489
+67277,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,1617.5
+67290.09999990463,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,1630.5999999046326
+68870.39999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,3210.899999856949
+68872.39999985695,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,3212.899999856949
+68873.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,3214
+68874.09999990463,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,3214.5999999046326
+68874.20000004768,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,3214.7000000476837
+68877.79999995232,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,3218.2999999523163
+68891.79999995232,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,3232.2999999523163
+70472.29999995232,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,4812.799999952316
+70474.29999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,4814.799999952316
+70475.29999995232,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,4815.799999952316
+70475.89999985695,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,4816.399999856949
+70475.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,4816.399999856949
+70480.09999990463,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,4820.599999904633
+70493.70000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,4834.200000047684
+72075.09999990463,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,6415.599999904633
+72076.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,6417
+72077.39999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,6417.899999856949
+72077.79999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,6418.299999952316
+72077.89999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,6418.399999856949
+72081.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,6422
+72094.09999990463,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,6434.599999904633
+73675,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,8015.5
+73676.79999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,8017.299999952316
+73677.70000004768,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,8018.200000047684
+73678.20000004768,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,8018.700000047684
+73678.29999995232,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,8018.799999952316
+73682.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,8023
+73696,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,8036.5
+75275.20000004768,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,9615.700000047684
+75276.29999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,9616.799999952316
+75276.89999985695,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,9617.399999856949
+75277.29999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,9617.799999952316
+75277.29999995232,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,9617.799999952316
+75279,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,1580,9619.5
+75291.70000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,9632.200000047684
+76872.20000004768,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,1580,11212.700000047684
+77055,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12
+77055.29999995232,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12.299999952316284
+77055.39999985695,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12.399999856948853
+77055.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,12.5
+77056.09999990463,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,13.099999904632568
+77062.29999995232,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,19.299999952316284
+79062.89999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,2019.8999998569489
+79063.59999990463,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,2020.5999999046326
+79064.29999995232,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,2021.2999999523163
+79064.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,2021.5
+79064.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,2021.5
+79066.20000004768,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,2023.2000000476837
+79078.59999990463,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,2035.5999999046326
+81079.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,4036.5
+81082.59999990463,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,4039.5999999046326
+81084,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,4041
+81084.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,4041.5
+81084.70000004768,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,4041.7000000476837
+81089.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,4046.5
+81103,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,4060
+83103.70000004768,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,6060.700000047684
+83106.29999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,6063.299999952316
+83107.70000004768,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,6064.700000047684
+83108,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,6065
+83108.09999990463,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,6065.099999904633
+83109.59999990463,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,6066.599999904633
+83122.79999995232,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,6079.799999952316
+85123.59999990463,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,8080.599999904633
+85126,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,8083
+85127.29999995232,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,8084.299999952316
+85128,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,8085
+85128.09999990463,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,8085.099999904633
+85132.59999990463,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,8089.599999904633
+85146.59999990463,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,8103.599999904633
+87146.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,10103.5
+87147.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,10104.5
+87148,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,10105
+87148.20000004768,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,10105.200000047684
+87148.29999995232,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,10105.299999952316
+87149.70000004768,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,10106.700000047684
+87162,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,10119
+89163.20000004768,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12120.200000047684
+89168.29999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12125.299999952316
+89169.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12126.5
+89170.09999990463,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12127.099999904633
+89170.39999985695,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,12127.399999856949
+89174.79999995232,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,insertText,x,listener_keyhold,Listener trace: key held during delay,0,2000,12131.799999952316
+89191,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,12148
+91190.89999985695,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,3cf4967e-2407-4ab5-b4d2-97c45fba5a3c,NA,NA,listener_keyhold,Listener trace: key held during delay,0,2000,14147.899999856949
+2007.1000001430511,editor-canvas,keydown,x,KeyX,P,document,TRUE,FALSE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,27.90000009536743
+2008.1000001430511,parent,keydown,x,KeyX,IFRAME,NA,TRUE,FALSE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,28.90000009536743
+2008.2999999523163,editor-canvas,keypress,x,KeyX,P,document,TRUE,FALSE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,29.09999990463257
+2013.9000000953674,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,34.700000047683716
+2014.6000001430511,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,35.40000009536743
+2073.100000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,NA,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,93.90000009536743
+2074.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,NA,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,95.29999995231628
+3139.7000000476837,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,1160.5
+3140.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,1161.2999999523163
+3140.7000000476837,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,1161.5
+3140.7999999523163,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,1161.5999999046326
+3142.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,1163.2999999523163
+3155.100000143051,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,1175.9000000953674
+3155.100000143051,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,1175.9000000953674
+4200.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,2221
+4200.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,2221.5999999046326
+4201,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,2221.7999999523163
+4201.100000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,2221.9000000953674
+4202.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,2223.2999999523163
+4213.400000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,2234.2000000476837
+4213.600000143051,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,2234.4000000953674
+5261.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,3282
+5261.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,3282.5
+5261.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,3282.5999999046326
+5261.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,3282.7000000476837
+5262.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,3283.5999999046326
+5270.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,3291.5999999046326
+5270.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,3291.7000000476837
+6325.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,4346.099999904633
+6325.900000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,4346.700000047684
+6326.100000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,4346.900000095367
+6326.100000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,4346.900000095367
+6327.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,4348.200000047684
+6337.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,4358.599999904633
+6337.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,4358.700000047684
+7390.900000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,5411.700000047684
+7391.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,5412.200000047684
+7391.600000143051,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,5412.400000095367
+7391.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,5412.5
+7393.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,5414.099999904633
+7403.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,5424.700000047684
+7404,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,5424.799999952316
+8454.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,6475
+8454.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,6475.599999904633
+8455,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,6475.799999952316
+8455,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,6475.799999952316
+8456.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,990,6477.099999904633
+8468.100000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,6488.900000095367
+8468.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,990,6489
+8674.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,12
+8674.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,12.300000190734863
+8674.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,12.5
+8674.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,12.5
+8675.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,13.100000143051147
+8681.5,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,19.200000047683716
+8681.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,19.40000009536743
+9734.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,1071.9000000953674
+9734.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,1072.5
+9735,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,1072.7000000476837
+9735.100000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,1072.8000001907349
+9736.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,1074.2000000476837
+9747,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,1084.7000000476837
+9747.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,1084.9000000953674
+10810.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,2148
+10810.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,2148.5
+10811,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,2148.7000000476837
+10811,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,2148.7000000476837
+10812.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,2150.100000143051
+10822.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,2159.9000000953674
+10822.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,2160
+11893.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,3231.4000000953674
+11894.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,3232
+11894.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,3232.2000000476837
+11894.600000143051,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,3232.300000190735
+11895.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,3233.600000143051
+11907.100000143051,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,3244.800000190735
+11907.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,3244.9000000953674
+12971.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,4308.900000095367
+12971.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,4309.400000095367
+12971.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,4309.600000143051
+12971.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,4309.600000143051
+12973.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,4311.400000095367
+12982.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,4320.600000143051
+12983,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,4320.700000047684
+14048.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,5385.900000095367
+14048.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,5386.300000190735
+14048.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,5386.400000095367
+14048.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,5386.600000143051
+14050.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,5387.900000095367
+14059.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,5397.5
+14059.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,5397.600000143051
+15121.100000143051,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,6458.800000190735
+15121.600000143051,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,6459.300000190735
+15121.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,6459.600000143051
+15122,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,6459.700000047684
+15123.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1000,6461.100000143051
+15132.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,6470.600000143051
+15133,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1000,6470.700000047684
+15304,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,9.899999856948853
+15304.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,10.199999809265137
+15304.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,10.399999856948853
+15304.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,10.399999856948853
+15305.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,11.199999809265137
+15311.200000047684,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,17.09999990463257
+15311.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,17.199999809265137
+16542.60000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,1248.5
+16543.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,1249.2999999523163
+16543.60000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,1249.5
+16543.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,1249.5999999046326
+16545.10000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,1251
+16557.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,1263.6999998092651
+16558,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,1263.8999998569489
+17789,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,2494.899999856949
+17789.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,2495.5999999046326
+17789.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,2495.699999809265
+17789.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,2495.7999999523163
+17791.10000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,2497
+17802.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,2508.199999809265
+17802.400000095367,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,2508.2999999523163
+19036.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,3742.199999809265
+19037,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,3742.899999856949
+19037.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,3743
+19037.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,3743
+19038.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,3744.699999809265
+19049.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,3755.7999999523163
+19050,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,3755.899999856949
+20284.60000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,4990.5
+20285.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,4991.099999904633
+20285.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,4991.299999952316
+20285.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,4991.399999856949
+20286.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,4992.799999952316
+20298.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,5004.399999856949
+20298.60000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,5004.5
+21529.400000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,6235.299999952316
+21530.10000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,6236
+21530.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,6236.099999904633
+21530.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,6236.199999809265
+21531.900000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,6237.799999952316
+21543.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,6249.099999904633
+21543.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,6249.099999904633
+22776,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,7481.899999856949
+22776.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,7482.5
+22776.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,7482.799999952316
+22776.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,7482.799999952316
+22778.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1180,7484.199999809265
+22790.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,7496
+22790.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1180,7496.099999904633
+22968.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,10
+22969.10000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,10.300000190734863
+22969.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,10.5
+22969.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,10.5
+22970,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,11.200000047683716
+22975.799999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,17
+22975.900000095367,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,17.100000143051147
+24226.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,1267.3000001907349
+24226.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,1267.9000000953674
+24226.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,1268.1000001430511
+24226.900000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,1268.1000001430511
+24228.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,1269.6000001430511
+24240,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,1281.2000000476837
+24240.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,1281.3000001907349
+25493.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,2535
+25494.400000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,2535.600000143051
+25494.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,2535.9000000953674
+25494.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,2536
+25496.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,2537.5
+25507.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,2548.9000000953674
+25507.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,2549
+26763.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,3804.300000190735
+26763.900000095367,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,3805.100000143051
+26764.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,3805.300000190735
+26764.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,3805.4000000953674
+26765.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,3806.5
+26776.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,3818.100000143051
+26777,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,3818.2000000476837
+28038.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,5079.400000095367
+28039.10000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,5080.300000190735
+28039.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,5080.600000143051
+28039.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,5080.600000143051
+28040.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,5081.700000047684
+28052,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,5093.200000047684
+28052.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,5093.300000190735
+29314,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,6355.200000047684
+29314.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,6355.800000190735
+29314.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,6356
+29314.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,6356
+29316.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,6357.400000095367
+29327.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,6368.800000190735
+29327.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,6368.900000095367
+30583.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,7624.300000190735
+30583.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,7625
+30583.900000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,7625.100000143051
+30584,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,7625.200000047684
+30585.400000095367,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1200,7626.600000143051
+30596.900000095367,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,7638.100000143051
+30597.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1200,7639
+30789.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,10.800000190734863
+30789.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,11
+30789.400000095367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,11.100000143051147
+30789.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,11.100000143051147
+30790.10000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,11.800000190734863
+30796.10000014305,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,17.800000190734863
+30796.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,18
+32141.400000095367,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,1363.1000001430511
+32142.10000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,1363.8000001907349
+32142.299999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,1364
+32142.400000095367,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,1364.1000001430511
+32143.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,1365.4000000953674
+32155.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,1377.2000000476837
+32155.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,1377.5
+33510.60000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,2732.300000190735
+33511.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,2732.9000000953674
+33511.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,2733.2000000476837
+33511.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,2733.2000000476837
+33513,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,2734.7000000476837
+33525.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,2746.9000000953674
+33525.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,2747
+34888.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,4110.5
+34889.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,4111.400000095367
+34889.90000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,4111.600000143051
+34890,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,4111.700000047684
+34891.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,4113
+34902.90000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,4124.600000143051
+34903,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,4124.700000047684
+36256.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,5478.200000047684
+36257,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,5478.700000047684
+36257.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,5478.900000095367
+36257.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,5478.900000095367
+36258.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,5480.400000095367
+36270.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,5492.100000143051
+36270.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,5492.200000047684
+37636.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,6857.900000095367
+37636.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,6858.5
+37637.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,6858.800000190735
+37637.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,6858.800000190735
+37638.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,6860.300000190735
+37650.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,6872.200000047684
+37650.60000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,6872.300000190735
+39012.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,8234.400000095367
+39013.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,8235.200000047684
+39013.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,8235.5
+39013.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,8235.5
+39015,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1300,8236.700000047684
+39027.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,8248.800000190735
+39027.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1300,8248.800000190735
+39214.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,10.5
+39214.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,10.799999952316284
+39214.90000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,10.900000095367432
+39214.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,10.900000095367432
+39215.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,11.700000047683716
+39221.90000009537,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,17.90000009536743
+39222,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,18
+40785.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,1581.7999999523163
+40786.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,1582.2999999523163
+40786.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,1582.5
+40786.60000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,1582.6000001430511
+40788,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,1584
+40799.60000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,1595.6000001430511
+40799.60000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,1595.6000001430511
+42366.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,3162.100000143051
+42366.90000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,3162.9000000953674
+42367,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,3163
+42367.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,3163.100000143051
+42368.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,3164.600000143051
+42380.5,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,3176.5
+42380.700000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,3176.7000000476837
+43938.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,4734.799999952316
+43939.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,4735.299999952316
+43939.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,4735.5
+43939.60000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,4735.600000143051
+43940.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,4736.700000047684
+43951.90000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,4747.900000095367
+43952,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,4748
+45517,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,6313
+45517.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,6313.600000143051
+45517.799999952316,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,6313.799999952316
+45517.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,6313.900000095367
+45519.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,6315.5
+45530.90000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,6326.900000095367
+45531.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,6327.100000143051
+47086.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,7882.299999952316
+47086.90000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,7882.900000095367
+47087,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,7883
+47087.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,7883.100000143051
+47088.5,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,7884.5
+47099.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,7895.200000047684
+47099.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,7895.299999952316
+48664.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,9460.200000047684
+48664.700000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,9460.700000047684
+48664.90000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,9460.900000095367
+48664.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,9460.900000095367
+48666.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1510,9462.299999952316
+48677.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,9473.200000047684
+48677.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1510,9473.299999952316
+48844.5,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,10.5
+48844.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,10.799999952316284
+48844.90000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,10.900000095367432
+48845,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,11
+48845.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,11.600000143051147
+48851.299999952316,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,17.299999952316284
+48851.40000009537,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,17.40000009536743
+50444.60000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,1610.6000001430511
+50445.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,1611.2999999523163
+50445.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,1611.5
+50445.5,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,1611.5
+50447.299999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,1613.2999999523163
+50458.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,1624.2000000476837
+50458.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,1624.2999999523163
+52056.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,3222.7000000476837
+52057.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,3223.2999999523163
+52057.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,3223.5
+52057.60000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,3223.600000143051
+52059.10000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,3225.100000143051
+52070.299999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,3236.2999999523163
+52070.40000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,3236.4000000953674
+53684.200000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,4850.200000047684
+53684.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,4850.799999952316
+53685,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,4851
+53685,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,4851
+53686.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,4852.600000143051
+53697.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,4863.700000047684
+53697.90000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,4863.900000095367
+55297.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,6463.799999952316
+55298.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,6464.5
+55298.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,6464.700000047684
+55298.700000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,6464.700000047684
+55300,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,6466
+55311,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,6477
+55311.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,6477.100000143051
+56927,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,8093
+56927.5,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,8093.5
+56927.700000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,8093.700000047684
+56927.799999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,8093.799999952316
+56929.200000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,8095.200000047684
+56940.200000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,8106.200000047684
+56940.200000047684,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,8106.200000047684
+58540.40000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,9706.400000095367
+58541,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,9707
+58541.200000047684,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,9707.200000047684
+58541.299999952316,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,9707.299999952316
+58542.700000047684,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1550,9708.700000047684
+58553.700000047684,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,9719.700000047684
+58553.799999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1550,9719.799999952316
+58711.60000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,10.300000190734863
+58711.90000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,10.600000143051147
+58712,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,10.700000047683716
+58712.10000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,10.800000190734863
+58712.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,11.5
+58718.5,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,17.200000047683716
+58718.5,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,17.200000047683716
+60347.299999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,1646
+60347.90000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,1646.6000001430511
+60348.10000014305,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,1646.8000001907349
+60348.200000047684,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,1646.9000000953674
+60349.90000009537,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,1648.6000001430511
+60360.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,1659.5
+60361.299999952316,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,1660
+62000.700000047684,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,3299.4000000953674
+62001.200000047684,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,3299.9000000953674
+62001.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,3300.100000143051
+62001.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,3300.100000143051
+62002.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,3301.5
+62014,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,3312.7000000476837
+62014.10000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,3312.800000190735
+63656.799999952316,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,4955.5
+63657.299999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,4956
+63657.40000009537,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,4956.100000143051
+63657.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,4956.100000143051
+63658.799999952316,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,4957.5
+63669.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,4968.5
+63669.90000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,4968.600000143051
+65318.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,6616.800000190735
+65318.799999952316,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,6617.5
+65319,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,6617.700000047684
+65319,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,6617.700000047684
+65320.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,6619.300000190735
+65331.799999952316,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,6630.5
+65331.90000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,6630.600000143051
+66963.20000004768,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,8261.900000095367
+66963.79999995232,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,8262.5
+66964,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,8262.700000047684
+66964,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,8262.700000047684
+66965.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,8264.300000190735
+66976.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,8275.100000143051
+66976.60000014305,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,8275.300000190735
+68617.40000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,9916.100000143051
+68618,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,9916.700000047684
+68618.20000004768,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,9916.900000095367
+68618.29999995232,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,9917
+68619.70000004768,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,1580,9918.400000095367
+68630.79999995232,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,9929.5
+68630.79999995232,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,1580,9929.5
+68787.20000004768,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10.400000095367432
+68787.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10.800000190734863
+68787.70000004768,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10.900000095367432
+68787.79999995232,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,11
+68788.60000014305,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,11.800000190734863
+68794.20000004768,editor-canvas,keyup,x,KeyX,P,document,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,17.40000009536743
+68794.29999995232,editor-canvas,selectionchange,NA,NA,NA,NA,FALSE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,17.5
+70825,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,2048.2000000476837
+70825.70000004768,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,2048.9000000953674
+70825.79999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,2049
+70825.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,2049.100000143051
+70827.20000004768,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,2050.4000000953674
+70837.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,2060.300000190735
+70837.20000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,2060.4000000953674
+72896.40000009537,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,4119.600000143051
+72897.20000004768,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,4120.400000095367
+72897.29999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,4120.5
+72897.40000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,4120.600000143051
+72898.70000004768,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,4121.900000095367
+72909.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,4132.600000143051
+72909.5,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,4132.700000047684
+74977,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,6200.200000047684
+74977.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,6200.800000190735
+74977.79999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,6201
+74977.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,6201.100000143051
+74979.29999995232,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,6202.5
+74990.29999995232,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,6213.5
+74990.40000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,6213.600000143051
+77037.79999995232,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,8261
+77038.40000009537,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,8261.600000143051
+77038.5,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,8261.700000047684
+77038.60000014305,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,8261.800000190735
+77040,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,8263.200000047684
+77051.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,8274.300000190735
+77051.20000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,8274.400000095367
+79109.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10332.300000190735
+79109.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10332.800000190735
+79109.79999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10333
+79109.90000009537,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,10333.100000143051
+79111.20000004768,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,10334.400000095367
+79122.10000014305,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10345.300000190735
+79122.40000009537,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,10345.600000143051
+81165.10000014305,editor-canvas,keydown,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,12388.300000190735
+81165.60000014305,parent,keydown,x,KeyX,IFRAME,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,12388.800000190735
+81165.79999995232,editor-canvas,keypress,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,12389
+81165.79999995232,editor-canvas,beforeinput,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,12389
+81167.29999995232,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,insertText,x,listener_between_keys,Listener trace: wait after keyup,0,2000,12390.5
+81178.40000009537,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,12401.600000143051
+81178.70000004768,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,875376e4-51c5-4819-8b5a-cf0e70c47515,NA,NA,listener_between_keys,Listener trace: wait after keyup,0,2000,12401.900000095367

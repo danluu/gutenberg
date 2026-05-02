@@ -836,3 +836,25 @@ nowMs,isPersistent,isTyping,run_id,run_label,round,delayMs,eventMs,source
 115105,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14101.700000047684,native-input
 116105.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,15102.200000047684,native-timeout
 117120.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.799999952316,native-input
+1976.5999999046326,TRUE,TRUE,listener_keyhold,Listener trace: key held during delay,0,990,32.700000047683716,NA
+3036,FALSE,TRUE,listener_keyhold,Listener trace: key held during delay,0,990,1092.1000001430511,NA
+9143.5,TRUE,TRUE,listener_keyhold,Listener trace: key held during delay,0,990,7199.600000143051,NA
+2011.7000000476837,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,990,32.5,NA
+3149.2000000476837,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,990,1170,NA
+4165.900000095367,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,990,2186.7000000476837,NA
+8678.900000095367,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1000,16.600000143051147,NA
+9693.400000095367,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1000,1031.1000001430511,NA
+15308.600000143051,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1180,14.5,NA
+16325.400000095367,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1180,1031.2999999523163,NA
+22973.400000095367,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1200,14.600000143051147,NA
+23989.700000047684,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1200,1030.9000000953674,NA
+30793.400000095367,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1300,15.100000143051147,NA
+31808.900000095367,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1300,1030.6000001430511,NA
+39219.10000014305,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1510,15.100000143051147,NA
+40235.10000014305,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1510,1031.1000001430511,NA
+48848.799999952316,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1550,14.799999952316284,NA
+49865,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1550,1031,NA
+58716,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1580,14.700000047683716,NA
+59731.799999952316,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,1580,1030.5,NA
+68791.70000004768,FALSE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,2000,14.900000095367432,NA
+69807.90000009537,TRUE,TRUE,listener_between_keys,Listener trace: wait after keyup,0,2000,1031.1000001430511,NA

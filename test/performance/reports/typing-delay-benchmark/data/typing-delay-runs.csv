@@ -729,3 +729,21 @@ native_between_keys_timer,Native contenteditable: wait after keyup,native conten
 native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1550,0,0,9,9,9,9,9,1777759912361,1777759924873,12512
 native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1580,0,0,9,9,9,9,9,1777759924883,1777759937666,12783
 native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,2000,0,0,9,9,9,9,9,1777759937688,1777759953835,16147
+listener_keyhold,Listener trace: key held during delay,large post,0,990,0,953,7,7,14,7,7,1777760461776,1777760469079,7303
+listener_keyhold,Listener trace: key held during delay,large post,0,1000,0,953,7,7,14,7,7,1777760469167,1777760476538,7371
+listener_keyhold,Listener trace: key held during delay,large post,0,1180,0,953,7,7,14,7,7,1777760476622,1777760485155,8533
+listener_keyhold,Listener trace: key held during delay,large post,0,1200,0,953,7,7,14,7,7,1777760485233,1777760493883,8650
+listener_keyhold,Listener trace: key held during delay,large post,0,1300,0,953,7,7,14,7,7,1777760493964,1777760503326,9362
+listener_keyhold,Listener trace: key held during delay,large post,0,1510,0,953,7,7,14,7,7,1777760503449,1777760514242,10793
+listener_keyhold,Listener trace: key held during delay,large post,0,1550,0,953,7,7,14,7,7,1777760514316,1777760525406,11090
+listener_keyhold,Listener trace: key held during delay,large post,0,1580,0,953,7,7,14,7,7,1777760525487,1777760536802,11315
+listener_keyhold,Listener trace: key held during delay,large post,0,2000,0,953,7,7,14,7,7,1777760536874,1777760551198,14324
+listener_between_keys,Listener trace: wait after keyup,large post,0,990,0,953,7,7,14,7,7,1777760561998,1777760568608,6610
+listener_between_keys,Listener trace: wait after keyup,large post,0,1000,0,953,7,7,14,7,7,1777760568680,1777760575242,6562
+listener_between_keys,Listener trace: wait after keyup,large post,0,1180,0,953,7,7,14,7,7,1777760575313,1777760582909,7596
+listener_between_keys,Listener trace: wait after keyup,large post,0,1200,0,953,7,7,14,7,7,1777760582977,1777760590729,7752
+listener_between_keys,Listener trace: wait after keyup,large post,0,1300,0,953,7,7,14,7,7,1777760590797,1777760599154,8357
+listener_between_keys,Listener trace: wait after keyup,large post,0,1510,0,953,7,7,14,7,7,1777760599223,1777760608777,9554
+listener_between_keys,Listener trace: wait after keyup,large post,0,1550,0,953,7,7,14,7,7,1777760608852,1777760618650,9798
+listener_between_keys,Listener trace: wait after keyup,large post,0,1580,0,953,7,7,14,7,7,1777760618720,1777760628727,10007
+listener_between_keys,Listener trace: wait after keyup,large post,0,2000,0,953,7,7,14,7,7,1777760628796,1777760641299,12503
