@@ -36,7 +36,9 @@ run_specs <- tribble(
 	"timeout_500_rewrite", "1000ms timers rewritten to 500ms", "artifacts/typing-delay-benchmark-timeout-500/typing-delay-benchmark-1777757430029.json", "large post", "timer intervention: 1000ms setTimeout calls rewritten to 500ms",
 	"after_persistence_scan", "Wait for persistence, then wait", "artifacts/typing-delay-benchmark-after-persistence-scan/typing-delay-benchmark-1777758189761.json", "large post", "delay after isLastBlockChangePersistent()",
 	"keyhold_schedulers", "Key-hold scheduler trace", "artifacts/typing-delay-benchmark-keyhold-schedulers/typing-delay-benchmark-1777758386189.json", "large post", "normal Playwright delay with action/timer/scheduler tracing",
-	"between_keys", "Complete keypress, then wait", "artifacts/typing-delay-benchmark-between-keys/typing-delay-benchmark-1777758545134.json", "large post", "delay after full keydown/keypress/input/keyup sequence"
+	"between_keys", "Complete keypress, then wait", "artifacts/typing-delay-benchmark-between-keys/typing-delay-benchmark-1777758545134.json", "large post", "delay after full keydown/keypress/input/keyup sequence",
+	"mode_trace_keyhold", "Paired trace: key held during delay", "artifacts/typing-delay-benchmark-mode-trace-keyhold/typing-delay-benchmark-1777759091224.json", "large post", "paired browser/action/timer trace for normal Playwright delay",
+	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress"
 ) %>%
 	mutate(json_abs_path = file.path(repo_root, json_path))
 
@@ -678,6 +680,171 @@ if (nrow(mark_gap) > 0) {
 				color = "Delay"
 			),
 		"11-keyhold-mark-gap-vs-latency.png"
+	)
+}
+
+paired_trace_run_ids <- c("mode_trace_keyhold", "mode_trace_between_keys")
+
+component_breakdown <- records %>%
+	filter(run_id %in% paired_trace_run_ids, !is_throwaway) %>%
+	group_by(run_id, run_label, delay_ms) %>%
+	summarise(
+		keydown_ms = median(keydown_ms),
+		keypress_ms = median(keypress_ms),
+		keyup_ms = median(keyup_ms),
+		latency_ms = median(latency_ms),
+		.groups = "drop"
+	) %>%
+	mutate(
+		mode_label = recode(
+			run_id,
+			mode_trace_keyhold = "Playwright delay: key held down",
+			mode_trace_between_keys = "Complete keypress, then wait"
+		),
+		mode_label = factor(
+			mode_label,
+			levels = c(
+				"Playwright delay: key held down",
+				"Complete keypress, then wait"
+			)
+		)
+	) %>%
+	pivot_longer(
+		c(keydown_ms, keypress_ms, keyup_ms),
+		names_to = "component",
+		values_to = "component_ms"
+	) %>%
+	mutate(
+		component = recode(
+			component,
+			keydown_ms = "keydown",
+			keypress_ms = "keypress",
+			keyup_ms = "keyup"
+		),
+		component = factor(component, levels = c("keydown", "keypress", "keyup"))
+	)
+
+if (nrow(component_breakdown) > 0) {
+	save_plot(
+		ggplot(component_breakdown, aes(factor(delay_ms), component_ms, fill = component)) +
+			geom_col(width = 0.72) +
+			facet_wrap(~ mode_label, ncol = 1) +
+			scale_fill_manual(values = c(
+				keydown = "#2563eb",
+				keypress = "#f97316",
+				keyup = "#16a34a"
+			)) +
+			labs(
+				title = "The extra measured latency is almost entirely keypress dispatch",
+				subtitle = "Paired trace-heavy runs using the same delay list; only the key-hold mode returns to the high plateau",
+				x = "Configured delay",
+				y = "Median EventDispatch duration (ms)",
+				fill = "Component"
+			),
+		"12-event-component-breakdown.png",
+		width = 11,
+		height = 8
+	)
+}
+
+key_event_timing <- if (
+	nrow(derived$browser_events) > 0 &&
+	nrow(derived$action_events) > 0 &&
+	"eventMs" %in% names(derived$browser_events)
+) {
+	derived$browser_events %>%
+		filter(run_id %in% paired_trace_run_ids, type %in% c("keydown", "keypress", "input", "keyup")) %>%
+		group_by(run_id, run_label, round, delayMs) %>%
+		group_modify(~ build_key_groups(.x)) %>%
+		ungroup() %>%
+		group_by(run_id, run_label, round, delayMs) %>%
+		mutate(
+			previous_input_ms = lag(input_ms),
+			previous_keyup_ms = lag(keyup_ms)
+		) %>%
+		ungroup() %>%
+		rowwise() %>%
+		mutate(
+			mark_event_ms = {
+				current_run_id <- run_id
+				current_round <- round
+				current_delay <- delayMs
+				current_previous_input_ms <- previous_input_ms
+				current_first_keydown_ms <- first_keydown_ms
+				marks <- derived$action_events %>%
+					filter(
+						run_id == .env$current_run_id,
+						round == .env$current_round,
+						delayMs == .env$current_delay,
+						storeName == "core/block-editor",
+						actionName == "__unstableMarkLastChangeAsPersistent",
+						eventMs > .env$current_previous_input_ms,
+						eventMs < .env$current_first_keydown_ms
+					) %>%
+					arrange(desc(eventMs))
+				if (nrow(marks) == 0) NA_real_ else marks$eventMs[[1]]
+			},
+			mark_to_keydown_ms = first_keydown_ms - mark_event_ms,
+			previous_keyup_to_mark_ms = mark_event_ms - previous_keyup_ms,
+			previous_keyup_to_current_keydown_ms = first_keydown_ms - previous_keyup_ms,
+			previous_input_to_previous_keyup_ms = previous_keyup_ms - previous_input_ms,
+			mark_during_previous_key_hold = mark_event_ms < previous_keyup_ms
+		) %>%
+		ungroup() %>%
+		left_join(
+			records %>%
+				filter(run_id %in% paired_trace_run_ids) %>%
+				transmute(
+					run_id,
+					round,
+					delayMs = delay_ms,
+					key_index = sample_index,
+					is_throwaway,
+					latency_ms,
+					keydown_duration_ms = keydown_ms,
+					keypress_duration_ms = keypress_ms,
+					keyup_duration_ms = keyup_ms
+				),
+			by = c("run_id", "round", "delayMs", "key_index")
+		) %>%
+		filter(!is_throwaway, !is.na(mark_event_ms))
+} else {
+	tibble()
+}
+
+if (nrow(key_event_timing) > 0) {
+	write_csv(key_event_timing, file.path(data_dir, "typing-delay-key-event-timing.csv"))
+	timing_plot <- key_event_timing %>%
+		mutate(
+			mode_label = recode(
+				run_id,
+				mode_trace_keyhold = "Playwright delay: key held down",
+				mode_trace_between_keys = "Complete keypress, then wait"
+			),
+			mark_state = if_else(
+				mark_during_previous_key_hold,
+				"Persistence fired before previous keyup",
+				"Persistence fired after previous keyup"
+			)
+		)
+
+	save_plot(
+		ggplot(timing_plot, aes(previous_keyup_to_mark_ms, keypress_duration_ms, color = mode_label, shape = mark_state)) +
+			geom_vline(xintercept = 0, linetype = "dashed", color = "#475569") +
+			geom_point(size = 2.5, alpha = 0.82) +
+			scale_color_manual(values = c(
+				"Playwright delay: key held down" = "#b91c1c",
+				"Complete keypress, then wait" = "#0369a1"
+			)) +
+			labs(
+				title = "The slow path appears when persistence fires while the previous key is still held",
+				subtitle = "Negative x means the one-second persistence marker fired before keyup; the y-axis is the dominant latency component",
+				x = "Previous keyup to persistence marker (ms)",
+				y = "keypress EventDispatch duration (ms)",
+				color = NULL,
+				shape = NULL
+			),
+		"13-persistence-marker-vs-previous-keyup.png"
 	)
 }
 

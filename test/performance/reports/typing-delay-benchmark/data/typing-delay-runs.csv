@@ -685,3 +685,25 @@ between_keys,"Complete keypress, then wait",large post,1,1100,0,953,9,9,18,9,9,1
 between_keys,"Complete keypress, then wait",large post,1,1200,0,953,9,9,18,9,9,1777758682563,1777758692906,10343
 between_keys,"Complete keypress, then wait",large post,1,1300,0,953,9,9,18,9,9,1777758692917,1777758703999,11082
 between_keys,"Complete keypress, then wait",large post,1,2000,0,953,9,9,18,9,9,1777758704009,1777758720666,16657
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,990,0,953,9,9,18,9,9,1777759091225,1777759100525,9300
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1000,0,953,9,9,18,9,9,1777759100603,1777759110200,9597
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1010,0,953,9,9,18,9,9,1777759110272,1777759119870,9598
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1100,0,953,9,9,18,9,9,1777759119952,1777759130068,10116
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1180,0,953,9,9,18,9,9,1777759130143,1777759141062,10919
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1200,0,953,9,9,18,9,9,1777759141144,1777759152255,11111
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1300,0,953,9,9,18,9,9,1777759152327,1777759164384,12057
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1510,0,953,9,9,18,9,9,1777759164455,1777759178332,13877
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1550,0,953,9,9,18,9,9,1777759178407,1777759192620,14213
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,1580,0,953,9,9,18,9,9,1777759192697,1777759207195,14498
+mode_trace_keyhold,Paired trace: key held during delay,large post,0,2000,0,953,9,9,18,9,9,1777759207273,1777759225643,18370
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,990,0,953,9,9,18,9,9,1777759237728,1777759246513,8785
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1000,0,953,9,9,18,9,9,1777759246583,1777759255244,8661
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1010,0,953,9,9,18,9,9,1777759255307,1777759263987,8680
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1100,0,953,9,9,18,9,9,1777759264052,1777759273544,9492
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1180,0,953,9,9,18,9,9,1777759273606,1777759283793,10187
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1200,0,953,9,9,18,9,9,1777759283875,1777759294175,10300
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1300,0,953,9,9,18,9,9,1777759294239,1777759305368,11129
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1510,0,953,9,9,18,9,9,1777759305434,1777759318085,12651
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1550,0,953,9,9,18,9,9,1777759318154,1777759331246,13092
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1580,0,953,9,9,18,9,9,1777759331310,1777759344712,13402
+mode_trace_between_keys,Paired trace: wait after keyup,large post,0,2000,0,953,9,9,18,9,9,1777759344773,1777759361500,16727

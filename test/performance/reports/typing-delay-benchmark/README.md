@@ -17,6 +17,10 @@ The short version:
 -   The later high-latency plateau is mostly an artifact of how Playwright applies
     `keyboard.type(..., { delay })`: for US-keyboard characters it holds the key
     down for the delay, then sends `keyup`.
+-   In paired traces, the extra measured latency is almost entirely `keypress`
+    dispatch time. The distinguishing condition is not just "persistence already
+    fired"; it is that persistence fired while the previous synthetic key was
+    still held down.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -95,6 +99,8 @@ The R script derives:
     scheduler events;
 -   `data/typing-delay-keyhold-mark-gap.csv`: derived timing from rich-text
     persistence marker to the next keydown in the key-hold trace.
+-   `data/typing-delay-key-event-timing.csv`: paired trace timing for previous
+    keyup, persistence marker, and next keydown.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -334,6 +340,61 @@ the `1200-2000ms` plateau is not a normal "pause between characters" effect. It
 is tied to holding a synthetic key down while Gutenberg's one-second rich-text
 timer fires.
 
+### Paired Trace: Previous Key State
+
+The next trace repeated the same delay list in two modes with browser, action,
+timer, and scheduler tracing enabled:
+
+1. Playwright key-hold delay.
+2. Complete keypress, then explicit wait after `keyup`.
+
+The component split shows that the extra measured latency is not primarily
+`keydown` or `keyup`; it is almost all `keypress` `EventDispatch` duration.
+
+![Event component breakdown](figures/12-event-component-breakdown.png)
+
+Selected p50s from the paired trace:
+
+| Mode                         |    Delay | Latency p50 | `keypress` p50 |
+| ---------------------------- | -------: | ----------: | -------------: |
+| Key held during delay        | `1200ms` |    `17.4ms` |       `16.4ms` |
+| Complete keypress, then wait | `1200ms` |    `11.1ms` |       `10.9ms` |
+| Key held during delay        | `1300ms` |    `18.2ms` |       `17.2ms` |
+| Complete keypress, then wait | `1300ms` |    `10.8ms` |       `10.6ms` |
+| Key held during delay        | `2000ms` |    `16.9ms` |       `15.8ms` |
+| Complete keypress, then wait | `2000ms` |    `10.6ms` |       `10.3ms` |
+
+This paired trace also separates two timing variables that looked confounded in
+the earlier scheduler trace:
+
+-   time from the persistence marker to the next keydown;
+-   whether that marker fired before the previous keyup.
+
+![Persistence marker vs previous keyup](figures/13-persistence-marker-vs-previous-keyup.png)
+
+At `1200ms`, both modes have the persistence marker a few hundred milliseconds
+before the next keydown. But only the key-hold mode has the marker before the
+previous `keyup`.
+
+| Mode                         |    Delay | Previous keyup to marker | Marker to next keydown | `keypress` p50 |
+| ---------------------------- | -------: | -----------------------: | ---------------------: | -------------: |
+| Key held during delay        | `1200ms` |                 `-201ms` |                `203ms` |       `16.4ms` |
+| Complete keypress, then wait | `1200ms` |                 `1000ms` |                `263ms` |       `10.9ms` |
+| Key held during delay        | `1300ms` |                 `-302ms` |                `303ms` |       `17.2ms` |
+| Complete keypress, then wait | `1300ms` |                 `1000ms` |                `357ms` |       `10.6ms` |
+| Key held during delay        | `2000ms` |                `-1001ms` |               `1004ms` |       `15.8ms` |
+| Complete keypress, then wait | `2000ms` |                  `999ms` |               `1064ms` |       `10.3ms` |
+
+Negative "previous keyup to marker" means the persistence marker fired while the
+previous synthetic key was still down. That is the best current explanation for
+why a `1200ms` Playwright delay is slow while a complete keypress followed by a
+`1200ms` wait is not.
+
+This still does not fully explain the `1510-1550ms` dip. It says what condition
+is necessary for the slow plateau in these runs, and it narrows the visible cost
+to `keypress` dispatch, but there is still browser/editor phase behavior inside
+the key-hold condition.
+
 ## Scenario Sensitivity
 
 ![Scenario boundary checks](figures/08-scenario-boundary-checks.png)
@@ -360,7 +421,7 @@ Selected p50s:
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
 
 In this local Chromium environment, every retained sample had two `keydown`
-`EventDispatch` entries. Across 7164 retained samples in the committed derived
+`EventDispatch` entries. Across 7340 retained samples in the committed derived
 data, zero had a `keydown` count other than two.
 
 That means any parser that assumes exactly one `keydown` trace event per typed
@@ -418,6 +479,9 @@ Known problems:
 -   **Instrumentation perturbs behavior.** Action tracing and timer rewriting add
     overhead; they should be used to explain behavior, not to report benchmark
     scores.
+-   **The paired trace is diagnostic, not a score run.** It uses only 8 retained
+    samples per delay and heavy instrumentation. Its value is in comparing modes
+    under similar tracing overhead.
 -   **Single browser.** These results are from Chromium. They do not prove that
     Safari or Firefox will have the same timer/event behavior.
 -   **Single local setup.** More process executions and fresh browser contexts are
@@ -528,6 +592,8 @@ The key runs used in this report were:
 -   `keyhold_schedulers`: normal Playwright key-hold delay with scheduler/action
     tracing.
 -   `between_keys`: complete keypress, then wait through `2000ms`.
+-   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
+-   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
 
 The local environment used `nvm` default Node `v20.20.2`.
 

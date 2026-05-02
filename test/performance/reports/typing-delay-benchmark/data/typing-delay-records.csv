@@ -7849,3 +7849,201 @@ between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,20
 between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,6,FALSE,13,195,173,158875,10.438999999999998,11.084,2,0.136,0.781,10.254,0.049
 between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,7,FALSE,14,196,174,158875,10.196,10.727,2,0.145,0.676,10.001,0.05
 between_keys,"Complete keypress, then wait",large post,large-post-paragraph,1,2000,8,FALSE,15,197,175,158875,10.277999999999999,10.772999999999998,2,0.112,0.607,10.12,0.046
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,0,TRUE,NA,0,NA,1,54.075,55.998000000000005,2,0.293,2.216,52.575,1.207
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,1,FALSE,0,1,0,1,20.233,22.196,2,0.579,2.542,18.902,0.752
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,2,FALSE,1,2,1,1,18.017,19.413,2,0.467,1.863,16.939,0.611
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,3,FALSE,2,3,2,1,17.601999999999997,19.185999999999996,2,0.496,2.08,16.092,1.014
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,4,FALSE,3,4,3,1,19.663,21.182,2,0.558,2.077,18.845,0.26
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,5,FALSE,4,5,4,1,12.171999999999999,12.779,2,0.219,0.826,11.632,0.321
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,6,FALSE,5,6,5,1,14.029,14.761,2,0.192,0.9239999999999999,13.111,0.726
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,7,FALSE,6,7,6,1,18.656,20.041,2,0.394,1.779,17.549,0.713
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,990,8,FALSE,7,8,7,1,16.472,18.017000000000003,2,0.533,2.078,15.069,0.87
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,0,TRUE,NA,9,NA,9379,8.053,8.497000000000002,2,0.122,0.5660000000000001,7.705,0.226
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,1,FALSE,0,10,8,9379,10.282,10.898000000000001,2,0.152,0.768,9.717,0.413
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,2,FALSE,1,11,9,9379,10.005,10.641000000000002,2,0.154,0.79,9.595,0.256
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,3,FALSE,2,12,10,9379,9.647,10.109,2,0.112,0.5740000000000001,9.326,0.209
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,4,FALSE,3,13,11,9379,9.998,10.549,2,0.136,0.687,9.522,0.34
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,5,FALSE,4,14,12,9379,10.338,10.970999999999998,2,0.16,0.793,9.872,0.306
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,6,FALSE,5,15,13,9379,9.817,10.308,2,0.147,0.638,9.362,0.308
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,7,FALSE,6,16,14,9379,9.721,10.672,2,0.132,1.083,9.317,0.272
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1000,8,FALSE,7,17,15,9379,10.101,10.700000000000001,2,0.144,0.743,9.762,0.195
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,0,TRUE,NA,18,NA,19048,6.090000000000001,6.453,2,0.083,0.446,5.551,0.456
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,1,FALSE,0,19,16,19048,10.575999999999999,11.280999999999999,2,0.151,0.856,9.998,0.427
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,2,FALSE,1,20,17,19048,10.351,11.089,2,0.177,0.915,9.919,0.255
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,3,FALSE,2,21,18,19048,9.773,10.681000000000001,2,0.19,1.098,9.342,0.241
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,4,FALSE,3,22,19,19048,9.590000000000002,10.114,2,0.13,0.654,9.224,0.236
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,5,FALSE,4,23,20,19048,10.261000000000001,10.865,2,0.154,0.758,9.582,0.525
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,6,FALSE,5,24,21,19048,10.327000000000002,10.986,2,0.175,0.8340000000000001,9.926,0.226
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,7,FALSE,6,25,22,19048,10.025,10.606,2,0.137,0.718,9.602,0.286
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1010,8,FALSE,7,26,23,19048,10.985999999999999,11.505999999999998,2,0.122,0.642,9.556,1.308
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,0,TRUE,NA,27,NA,28728,7.47,7.919,2,0.112,0.561,6.952,0.406
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,1,FALSE,0,28,24,28728,10.899000000000001,11.339,2,0.131,0.571,10.438,0.33
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,2,FALSE,1,29,25,28728,11.414000000000001,12.004000000000001,2,0.173,0.7629999999999999,10.906,0.335
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,3,FALSE,2,30,26,28728,10.924999999999999,11.812,2,0.398,1.2850000000000001,10.267,0.26
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,4,FALSE,3,31,27,28728,10.893999999999998,11.572999999999999,2,0.151,0.8300000000000001,10.447,0.296
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,5,FALSE,4,32,28,28728,10.949,11.65,2,0.119,0.82,10.49,0.34
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,6,FALSE,5,33,29,28728,11.326,11.863,2,0.159,0.6960000000000001,10.658,0.509
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,7,FALSE,6,34,30,28728,10.697,11.141,2,0.126,0.5700000000000001,10.312,0.259
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1100,8,FALSE,7,35,31,28728,10.697,11.62,2,0.202,1.125,10.33,0.165
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,0,TRUE,NA,36,NA,38919,6.325,6.708,2,0.085,0.468,5.596,0.644
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,1,FALSE,0,37,32,38919,13.795000000000002,15.033000000000001,2,0.3,1.538,13.07,0.425
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,2,FALSE,1,38,33,38919,16.495,18.113,2,0.621,2.239,14.568,1.306
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,3,FALSE,2,39,34,38919,12.374000000000002,13.513000000000002,2,0.22,1.359,11.71,0.444
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,4,FALSE,3,40,35,38919,11.883,12.395999999999999,2,0.139,0.652,11.408,0.336
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,5,FALSE,4,41,36,38919,13.459,14.217999999999998,2,0.217,0.976,12.729,0.513
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,6,FALSE,5,42,37,38919,15.07,16.259999999999998,2,0.358,1.548,14.27,0.442
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,7,FALSE,6,43,38,38919,16.196,17.407,2,0.439,1.6500000000000001,15.111,0.646
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1180,8,FALSE,7,44,39,38919,17.820999999999998,19.268,2,0.519,1.9660000000000002,16.669,0.633
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,0,TRUE,NA,45,NA,49920,8.176,8.555,2,0.11,0.489,7.349,0.717
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,1,FALSE,0,46,40,49920,18.023,19.227,2,0.378,1.5819999999999999,16.886,0.759
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,2,FALSE,1,47,41,49920,16.829000000000004,18.058000000000003,2,0.396,1.625,16.013,0.42
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,3,FALSE,2,48,42,49920,16.207,17.265,2,0.321,1.379,15.233,0.653
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,4,FALSE,3,49,43,49920,18.129,19.842000000000002,2,0.436,2.149,17.183,0.51
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,5,FALSE,4,50,44,49920,18.727,20.123,2,0.427,1.823,17.907,0.393
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,6,FALSE,5,51,45,49920,20.672,22.111,2,0.448,1.887,18.499,1.725
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,7,FALSE,6,52,46,49920,14.878,16.236,2,0.453,1.8110000000000002,13.968,0.457
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1200,8,FALSE,7,53,47,49920,14.988999999999999,16.372,2,0.411,1.794,14.003,0.575
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,0,TRUE,NA,54,NA,61103,6.2059999999999995,6.551,2,0.084,0.429,5.447,0.675
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,1,FALSE,0,55,48,61103,17.898999999999997,19.371999999999996,2,0.456,1.929,16.537,0.906
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,2,FALSE,1,56,49,61103,18.953999999999997,20.365999999999996,2,0.415,1.827,17.918,0.621
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,3,FALSE,2,57,50,61103,17.456,19.267,2,0.46,2.271,16.59,0.406
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,4,FALSE,3,58,51,61103,17.081000000000003,17.969,2,0.267,1.155,15.967,0.847
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,5,FALSE,4,59,52,61103,18.413,19.891000000000002,2,0.456,1.934,17.745,0.212
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,6,FALSE,5,60,53,61103,11.943999999999999,12.428999999999998,2,0.143,0.628,11.133,0.668
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,7,FALSE,6,61,54,61103,19.950000000000003,21.674000000000003,2,0.527,2.251,18.69,0.733
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1300,8,FALSE,7,62,55,61103,19.793,21.055,2,0.441,1.703,18.679,0.673
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,0,TRUE,NA,63,NA,73231,7.935,8.306000000000001,2,0.1,0.471,7.123,0.712
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,1,FALSE,0,64,56,73231,17.772000000000002,19.343,2,0.603,2.174,16.702,0.467
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,2,FALSE,1,65,57,73231,13.904,14.624,2,0.199,0.919,13.237,0.468
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,3,FALSE,2,66,58,73231,13.554,14.323,2,0.196,0.9650000000000001,12.63,0.728
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,4,FALSE,3,67,59,73231,13.559,14.142,2,0.181,0.764,12.738,0.64
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,5,FALSE,4,68,60,73231,18.181,19.375000000000004,2,0.4,1.5939999999999999,17.138,0.643
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,6,FALSE,5,69,61,73231,17.717,19.116,2,0.444,1.843,16.677,0.596
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,7,FALSE,6,70,62,73231,13.607,14.394,2,0.225,1.012,12.715,0.667
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1510,8,FALSE,7,71,63,73231,12.874,13.565999999999999,2,0.178,0.8699999999999999,12.272,0.424
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,0,TRUE,NA,72,NA,87183,6.356,6.689,2,0.085,0.41800000000000004,5.408,0.863
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,1,FALSE,0,73,64,87183,12.422,13.037,2,0.189,0.804,11.917,0.316
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,2,FALSE,1,74,65,87183,12.926,13.594,2,0.205,0.873,12.427,0.294
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,3,FALSE,2,75,66,87183,12.663,13.349,2,0.176,0.8620000000000001,12.146,0.341
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,4,FALSE,3,76,67,87183,11.883,12.512,2,0.248,0.877,11.27,0.365
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,5,FALSE,4,77,68,87183,13.309000000000001,14.149000000000001,2,0.246,1.0859999999999999,12.669,0.394
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,6,FALSE,5,78,69,87183,12.309000000000001,12.97,2,0.191,0.8520000000000001,11.893,0.225
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,7,FALSE,6,79,70,87183,12.607,13.165999999999999,2,0.183,0.742,12.094,0.33
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1550,8,FALSE,7,80,71,87183,12.826,13.490000000000002,2,0.203,0.867,12.265,0.358
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,0,TRUE,NA,81,NA,101473,6.201,6.552999999999999,2,0.091,0.44299999999999995,5.443,0.667
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,1,FALSE,0,82,72,101473,17.429,18.679,2,0.394,1.6440000000000001,16.414,0.621
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,2,FALSE,1,83,73,101473,16.343,17.529,2,0.393,1.579,15.564,0.386
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,3,FALSE,2,84,74,101473,15.923,17.008999999999997,2,0.355,1.441,14.956,0.612
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,4,FALSE,3,85,75,101473,16.478,17.810000000000002,2,0.407,1.739,15.695,0.376
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,5,FALSE,4,86,76,101473,15.679,16.767000000000003,2,0.326,1.4140000000000001,14.721,0.632
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,6,FALSE,5,87,77,101473,15.453,16.650999999999996,2,0.378,1.576,14.498,0.577
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,7,FALSE,6,88,78,101473,17.254,18.473000000000003,2,0.395,1.614,16.234,0.625
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,1580,8,FALSE,7,89,79,101473,16.941,18.197,2,0.364,1.62,16.13,0.447
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,0,TRUE,NA,90,NA,116049,6.968,7.414,2,0.101,0.547,6.455,0.412
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,1,FALSE,0,91,80,116049,14.772,15.540000000000001,2,0.241,1.009,12.765,1.766
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,2,FALSE,1,92,81,116049,9.982000000000001,10.448,2,0.134,0.6000000000000001,9.428,0.42
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,3,FALSE,2,93,82,116049,16.776,18.011000000000003,2,0.377,1.612,15.729,0.67
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,4,FALSE,3,94,83,116049,18.846,19.941000000000003,2,0.348,1.443,17.814,0.684
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,5,FALSE,4,95,84,116049,17.22,18.686999999999998,2,0.438,1.905,16.141,0.641
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,6,FALSE,5,96,85,116049,17.122999999999998,18.299,2,0.457,1.633,15.969,0.697
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,7,FALSE,6,97,86,116049,18.238,19.641000000000002,2,0.415,1.818,17.511,0.312
+mode_trace_keyhold,Paired trace: key held during delay,large post,large-post-paragraph,0,2000,8,FALSE,7,98,87,116049,15.491000000000001,16.345,2,0.298,1.152,14.22,0.973
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,0,TRUE,NA,0,NA,0,55.376000000000005,57.349000000000004,2,0.292,2.265,54.93,0.154
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,1,FALSE,0,1,0,0,12.16,13.13,2,0.184,1.154,11.855,0.121
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,2,FALSE,1,2,1,0,11.213,11.918,2,0.169,0.874,10.966,0.078
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,3,FALSE,2,3,2,0,9.959,10.48,2,0.12,0.641,9.776,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,4,FALSE,3,4,3,0,10.334,11.036999999999999,2,0.18,0.883,9.957,0.197
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,5,FALSE,4,5,4,0,9.861,10.574,2,0.169,0.882,9.637,0.055
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,6,FALSE,5,6,5,0,9.849,10.328,2,0.117,0.596,9.673,0.059
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,7,FALSE,6,7,6,0,9.709,10.333,2,0.138,0.762,9.507,0.064
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,990,8,FALSE,7,8,7,0,9.526000000000002,10.046000000000001,2,0.159,0.679,9.313,0.054
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,0,TRUE,NA,9,NA,8855,5.66,6.021,2,0.089,0.44999999999999996,5.534,0.037
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,1,FALSE,0,10,8,8855,10.086999999999998,10.740999999999998,2,0.155,0.809,9.87,0.062
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,2,FALSE,1,11,9,8855,10.214,10.632,2,0.115,0.533,10.037,0.062
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,3,FALSE,2,12,10,8855,10.151,10.722,2,0.116,0.6869999999999999,9.982,0.053
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,4,FALSE,3,13,11,8855,9.7,10.335999999999999,2,0.125,0.761,9.494,0.081
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,5,FALSE,4,14,12,8855,9.827,10.419,2,0.149,0.741,9.627,0.051
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,6,FALSE,5,15,13,8855,9.337,9.950000000000001,2,0.126,0.739,9.144,0.067
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,7,FALSE,6,16,14,8855,9.778999999999998,10.435999999999998,2,0.136,0.793,9.472,0.171
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1000,8,FALSE,7,17,15,8855,9.919,10.569,2,0.121,0.771,9.741,0.057
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,0,TRUE,NA,18,NA,17579,5.57,5.904,2,0.08,0.41400000000000003,5.445,0.045
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,1,FALSE,0,19,16,17579,9.332,9.823,2,0.098,0.589,9.099,0.135
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,2,FALSE,1,20,17,17579,9.305,9.936,2,0.145,0.776,9.109,0.051
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,3,FALSE,2,21,18,17579,9.612000000000002,10.057000000000002,2,0.092,0.537,9.457,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,4,FALSE,3,22,19,17579,9.868,10.442,2,0.125,0.699,9.673,0.07
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,5,FALSE,4,23,20,17579,9.096,9.497,2,0.107,0.508,8.919,0.07
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,6,FALSE,5,24,21,17579,10.372,10.998,2,0.146,0.772,10.148,0.078
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,7,FALSE,6,25,22,17579,9.65,10.255,2,0.119,0.724,9.473,0.058
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1010,8,FALSE,7,26,23,17579,9.225,9.816,2,0.123,0.714,9.052,0.05
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,0,TRUE,NA,27,NA,26324,5.742,6.101999999999999,2,0.089,0.44899999999999995,5.619,0.034
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,1,FALSE,0,28,24,26324,10.331,10.856,2,0.12,0.645,10.154,0.057
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,2,FALSE,1,29,25,26324,11.433000000000002,12.097000000000001,2,0.134,0.798,10.528,0.771
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,3,FALSE,2,30,26,26324,11.612,12.273000000000001,2,0.158,0.8190000000000001,11.372,0.082
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,4,FALSE,3,31,27,26324,11.588000000000001,12.281,2,0.159,0.852,11.336,0.093
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,5,FALSE,4,32,28,26324,11.866999999999999,12.343,2,0.132,0.608,11.606,0.129
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,6,FALSE,5,33,29,26324,11.149000000000001,11.804,2,0.141,0.796,10.925,0.083
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,7,FALSE,6,34,30,26324,11.175,11.825000000000001,2,0.148,0.798,10.967,0.06
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1100,8,FALSE,7,35,31,26324,10.084,10.934999999999999,2,0.121,0.972,9.895,0.068
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,0,TRUE,NA,36,NA,35878,5.369999999999999,5.736,2,0.084,0.45,5.25,0.036
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,1,FALSE,0,37,32,35878,10.492,11.149000000000001,2,0.146,0.803,10.28,0.066
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,2,FALSE,1,38,33,35878,10.957,11.647,2,0.166,0.856,10.728,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,3,FALSE,2,39,34,35878,10.805,11.610999999999999,2,0.24,1.046,10.497,0.068
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,4,FALSE,3,40,35,35878,12.114,12.845,2,0.166,0.897,11.874,0.074
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,5,FALSE,4,41,36,35878,10.923,11.445,2,0.137,0.659,10.728,0.058
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,6,FALSE,5,42,37,35878,11.428,12.116000000000001,2,0.158,0.846,11.201,0.069
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,7,FALSE,6,43,38,35878,10.575999999999999,11.267,2,0.151,0.842,10.363,0.062
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1180,8,FALSE,7,44,39,35878,10.783999999999999,11.491999999999999,2,0.171,0.879,10.543,0.07
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,0,TRUE,NA,45,NA,46147,5.781000000000001,6.1240000000000006,2,0.077,0.42000000000000004,5.589,0.115
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,1,FALSE,0,46,40,46147,10.907,11.602,2,0.141,0.836,10.687,0.079
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,2,FALSE,1,47,41,46147,11.07,11.781,2,0.152,0.863,10.826,0.092
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,3,FALSE,2,48,42,46147,11.11,11.814,2,0.157,0.861,10.883,0.07
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,4,FALSE,3,49,43,46147,11.161,11.892000000000001,2,0.152,0.883,10.917,0.092
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,5,FALSE,4,50,44,46147,11.273,11.978,2,0.16,0.865,11.043,0.07
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,6,FALSE,5,51,45,46147,10.735999999999999,11.266,2,0.132,0.662,10.527,0.077
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,7,FALSE,6,52,46,46147,11.231000000000002,11.919,2,0.146,0.834,11.006,0.079
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1200,8,FALSE,7,53,47,46147,10.787999999999998,11.469,2,0.152,0.8330000000000001,10.574,0.062
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,0,TRUE,NA,54,NA,56511,5.658,6.07,2,0.094,0.506,5.526,0.038
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,1,FALSE,0,55,48,56511,10.868,11.57,2,0.156,0.858,10.637,0.075
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,2,FALSE,1,56,49,56511,10.375,11.427999999999999,2,0.144,1.1969999999999998,9.781,0.45
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,3,FALSE,2,57,50,56511,10.842,11.540000000000001,2,0.15,0.848,10.621,0.071
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,4,FALSE,3,58,51,56511,10.34,11.203,2,0.148,1.011,10.129,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,5,FALSE,4,59,52,56511,10.759,11.436,2,0.154,0.8310000000000001,10.531,0.074
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,6,FALSE,5,60,53,56511,11.012,11.719000000000001,2,0.157,0.864,10.791,0.064
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,7,FALSE,6,61,54,56511,10.79,11.474,2,0.152,0.8360000000000001,10.573,0.065
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1300,8,FALSE,7,62,55,56511,10.985,11.772,2,0.171,0.9580000000000001,10.718,0.096
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,0,TRUE,NA,63,NA,67706,5.6419999999999995,6.007999999999999,2,0.08,0.446,5.52,0.042
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,1,FALSE,0,64,56,67706,10.898,11.600999999999999,2,0.157,0.86,10.673,0.068
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,2,FALSE,1,65,57,67706,10.57,11.24,2,0.146,0.8160000000000001,10.359,0.065
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,3,FALSE,2,66,58,67706,10.201,11.251,2,0.146,1.196,9.98,0.075
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,4,FALSE,3,67,59,67706,10.72,11.404,2,0.14,0.8240000000000001,10.519,0.061
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,5,FALSE,4,68,60,67706,10.273,10.950000000000001,2,0.165,0.8420000000000001,10.047,0.061
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,6,FALSE,5,69,61,67706,10.485999999999999,11.144,2,0.142,0.8,10.279,0.065
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,7,FALSE,6,70,62,67706,10.178999999999998,10.658,2,0.119,0.598,9.998,0.062
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1510,8,FALSE,7,71,63,67706,10.555000000000001,11.194,2,0.146,0.785,10.284,0.125
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,0,TRUE,NA,72,NA,80426,5.576,5.901,2,0.084,0.40900000000000003,5.444,0.048
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,1,FALSE,0,73,64,80426,10.213999999999999,10.838999999999999,2,0.189,0.8140000000000001,9.934,0.091
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,2,FALSE,1,74,65,80426,10.884,11.589,2,0.157,0.862,10.589,0.138
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,3,FALSE,2,75,66,80426,10.3,10.930000000000001,2,0.148,0.778,10.066,0.086
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,4,FALSE,3,76,67,80426,10.576,11.223,2,0.156,0.803,10.365,0.055
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,5,FALSE,4,77,68,80426,10.509,11.171000000000001,2,0.141,0.803,10.069,0.299
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,6,FALSE,5,78,69,80426,9.937000000000001,10.411000000000001,2,0.128,0.602,9.746,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,7,FALSE,6,79,70,80426,10.531,11.255,2,0.158,0.882,10.31,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1550,8,FALSE,7,80,71,80426,10.263,10.916,2,0.144,0.797,10.058,0.061
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,0,TRUE,NA,81,NA,93582,5.52,5.8709999999999996,2,0.087,0.43799999999999994,5.402,0.031
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,1,FALSE,0,82,72,93582,11.2,11.897,2,0.161,0.858,10.964,0.075
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,2,FALSE,1,83,73,93582,10.691,11.447000000000001,2,0.148,0.904,10.483,0.06
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,3,FALSE,2,84,74,93582,10.993,11.757000000000001,2,0.181,0.9450000000000001,10.746,0.066
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,4,FALSE,3,85,75,93582,9.968,10.447,2,0.125,0.604,9.758,0.085
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,5,FALSE,4,86,76,93582,10.264,11.158,2,0.139,1.033,10.062,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,6,FALSE,5,87,77,93582,10.661,11.33,2,0.129,0.798,10.455,0.077
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,7,FALSE,6,88,78,93582,11.082,11.775,2,0.157,0.85,10.856,0.069
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,1580,8,FALSE,7,89,79,93582,10.428,11.226,2,0.198,0.996,10.166,0.064
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,0,TRUE,NA,90,NA,107045,5.626,6.0249999999999995,2,0.089,0.488,5.504,0.033
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,1,FALSE,0,91,80,107045,10.599,11.533999999999999,2,0.134,1.069,10.383,0.082
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,2,FALSE,1,92,81,107045,10.427,11.058,2,0.144,0.775,10.147,0.136
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,3,FALSE,2,93,82,107045,10.848,11.579,2,0.15,0.881,10.618,0.08
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,4,FALSE,3,94,83,107045,10.56,11.206000000000001,2,0.145,0.791,10.355,0.06
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,5,FALSE,4,95,84,107045,10.450000000000001,11.09,2,0.146,0.786,10.241,0.063
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,6,FALSE,5,96,85,107045,10.837,11.497,2,0.148,0.808,10.202,0.487
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,7,FALSE,6,97,86,107045,10.994,11.812999999999999,2,0.153,0.972,10.767,0.074
+mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,8,FALSE,7,98,87,107045,8.735999999999999,9.518999999999998,2,0.17,0.9530000000000001,8.507,0.059
