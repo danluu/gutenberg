@@ -63,6 +63,10 @@ const HEALTH_CHECK_INTERVAL_SEEDS = getPositiveIntegerEnv(
 	'RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS',
 	1
 );
+const HTTP_HEALTH_TIMEOUT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_HTTP_HEALTH_TIMEOUT_MS',
+	10000
+);
 const BASE_URL = process.env.RTC_FUZZ_BASE_URL ?? process.env.WP_BASE_URL ?? '';
 const DISABLE_SYNC_FAULTS =
 	process.env.RTC_FUZZ_DISABLE_SYNC_FAULTS ??
@@ -432,32 +436,94 @@ async function runFullPreflight( label ) {
 
 async function runEnvironmentHealthCheck( label ) {
 	const healthLogPath = path.join( OUTPUT_DIR, `${ label }-health.log` );
-	const requiredPluginPath =
-		'gutenberg-test-plugins/disable-animations.php';
-	const requiredTheme = 'twentytwentyone';
-	const php = [
-		`$plugin = WP_PLUGIN_DIR . '/${ requiredPluginPath }';`,
-		`if ( ! file_exists( $plugin ) ) { fwrite( STDERR, "missing plugin ${ requiredPluginPath }\\n" ); exit( 2 ); }`,
-		`if ( ! wp_get_theme( '${ requiredTheme }' )->exists() ) { fwrite( STDERR, "missing theme ${ requiredTheme }\\n" ); exit( 3 ); }`,
-		`echo "rtc-fuzz-health-ok\\n";`,
-	].join( ' ' );
+	const start = Date.now();
+	const output = [];
+	const record = ( line ) => {
+		output.push( `[${ new Date().toISOString() }] ${ line }` );
+	};
 
-	return runCombinedCommand( {
-		command: 'npm',
-		args: [
-			'run',
-			'wp-env-test',
-			'--',
-			'run',
-			'cli',
-			'wp',
-			'eval',
-			php,
-		],
-		env: getSharedEnv(),
-		logPath: healthLogPath,
-		timeoutMs: 2 * 60 * 1000,
-	} );
+	if ( ! BASE_URL ) {
+		record( 'RTC_FUZZ_BASE_URL or WP_BASE_URL is required.' );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: 1,
+			signal: null,
+			ok: false,
+			timedOut: false,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	}
+
+	let endpoint;
+	try {
+		endpoint = new URL( '/wp-json/', BASE_URL ).toString();
+	} catch ( error ) {
+		record( `Invalid base URL "${ BASE_URL }": ${ error.message }` );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: 1,
+			signal: null,
+			ok: false,
+			timedOut: false,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	}
+
+	const controller = new AbortController();
+	let timedOut = false;
+	const timeout = setTimeout( () => {
+		timedOut = true;
+		controller.abort();
+	}, HTTP_HEALTH_TIMEOUT_MS );
+	timeout.unref();
+
+	try {
+		record( `GET ${ endpoint }` );
+		const response = await fetch( endpoint, {
+			headers: {
+				Accept: 'application/json',
+				'User-Agent': 'rtc-browser-fuzz-health',
+			},
+			signal: controller.signal,
+		} );
+		const body = await response.text();
+		const bodySnippet = body.slice( 0, 1000 );
+		const ok = response.ok && body.includes( '"namespaces"' );
+		record( `status=${ response.status } ok=${ ok }` );
+		record( `body-snippet=${ JSON.stringify( bodySnippet ) }` );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: ok ? 0 : 1,
+			signal: null,
+			ok,
+			timedOut,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	} catch ( error ) {
+		record( `request failed: ${ error.stack ?? error.message }` );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: 1,
+			signal: null,
+			ok: false,
+			timedOut,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	} finally {
+		clearTimeout( timeout );
+	}
 }
 
 async function stopForInfraFailure( { seed = null, stage, result } ) {

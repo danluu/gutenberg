@@ -168,9 +168,66 @@ async function runWpEnvStatusCheck() {
 	}
 }
 
+async function runWpInstallHealthCheck() {
+	const requiredPluginPath =
+		'gutenberg-test-plugins/disable-animations.php';
+	const requiredTheme = 'twentytwentyone';
+	const php = [
+		`$plugin = WP_PLUGIN_DIR . '/${ requiredPluginPath }';`,
+		`if ( ! file_exists( $plugin ) ) { fwrite( STDERR, "missing plugin ${ requiredPluginPath }\\n" ); exit( 2 ); }`,
+		`if ( ! wp_get_theme( '${ requiredTheme }' )->exists() ) { fwrite( STDERR, "missing theme ${ requiredTheme }\\n" ); exit( 3 ); }`,
+		`echo "rtc-fuzz-health-ok\\n";`,
+	].join( ' ' );
+	const result = spawn(
+		RESOLVED_NPM_BIN,
+		[
+			'run',
+			'wp-env-test',
+			'--',
+			'run',
+			'cli',
+			'wp',
+			'eval',
+			php,
+		],
+		{
+			cwd: REPO_ROOT,
+			env: {
+				...process.env,
+				PATH: SHARED_PATH,
+			},
+			stdio: [ 'ignore', 'pipe', 'pipe' ],
+		}
+	);
+	const chunks = [];
+	const timeout = setTimeout( () => {
+		result.kill( 'SIGTERM' );
+		setTimeout( () => result.kill( 'SIGKILL' ), 5000 ).unref();
+	}, 120000 );
+
+	result.stdout.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
+	result.stderr.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
+
+	const { code } = await new Promise( ( resolve, reject ) => {
+		result.on( 'error', reject );
+		result.on( 'close', ( exitCode ) => {
+			clearTimeout( timeout );
+			resolve( { code: exitCode } );
+		} );
+	} );
+	const output = chunks.join( '' );
+
+	if ( code !== 0 || ! output.includes( 'rtc-fuzz-health-ok' ) ) {
+		throw new Error(
+			`wp-env-test install health check failed before launch.\n${ output }`
+		);
+	}
+}
+
 async function main() {
 	await ensureLocalNodeToolchain();
 	await runWpEnvStatusCheck();
+	await runWpInstallHealthCheck();
 	await fs.mkdir( OUTPUT_DIR, { recursive: true } );
 
 	const lanes = [];
@@ -230,8 +287,11 @@ async function main() {
 		inlineCodex: ( process.env.RTC_FUZZ_INLINE_CODEX ?? '0' ) !== '0',
 		skipGlobalPostCleanup:
 			( process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ?? '1' ) === '1',
+		healthProbe: 'launcher-wp-cli-install-check-runner-http-liveness',
 		healthCheckIntervalSeeds:
 			process.env.RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS ?? '1',
+		httpHealthTimeoutMs:
+			process.env.RTC_FUZZ_HTTP_HEALTH_TIMEOUT_MS ?? '10000',
 		startSeed: START_SEED,
 		stepCount: STEP_COUNT,
 		lanes,
