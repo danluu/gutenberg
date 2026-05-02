@@ -10,6 +10,18 @@ async function activateTheme(
 	this: RequestUtils,
 	themeSlug: string
 ): Promise< void > {
+	const themes = await this.rest< { stylesheet: string; status: string }[] >( {
+		path: '/wp/v2/themes',
+	} );
+	const restTheme = themes.find(
+		( { stylesheet } ) =>
+			stylesheet === themeSlug ||
+			stylesheet.endsWith( `/${ themeSlug }` )
+	);
+	if ( restTheme?.status === 'active' ) {
+		return;
+	}
+
 	let response = await this.request.get( THEMES_URL );
 	const html = await response.text();
 	const optionalFolder = '([a-z0-9-]+%2F)?';
@@ -36,6 +48,12 @@ async function activateTheme(
 		if ( html.includes( `data-slug="${ themeSlug }"` ) ) {
 			// The theme is already activated.
 			return;
+		}
+
+		if ( restTheme ) {
+			throw new Error(
+				`The theme "${ themeSlug }" is installed but could not be activated from the themes admin page`
+			);
 		}
 
 		throw new Error( `The theme "${ themeSlug }" is not installed` );
