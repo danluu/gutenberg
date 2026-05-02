@@ -59,6 +59,14 @@ const FULL_PREFLIGHT_INTERVAL_SEEDS = getPositiveIntegerEnv(
 	'RTC_FUZZ_FULL_PREFLIGHT_INTERVAL_SEEDS',
 	25
 );
+const HEALTH_CHECK_INTERVAL_SEEDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS',
+	1
+);
+const HTTP_HEALTH_TIMEOUT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_HTTP_HEALTH_TIMEOUT_MS',
+	10000
+);
 const BASE_URL = process.env.RTC_FUZZ_BASE_URL ?? process.env.WP_BASE_URL ?? '';
 const DISABLE_SYNC_FAULTS =
 	process.env.RTC_FUZZ_DISABLE_SYNC_FAULTS ??
@@ -68,7 +76,32 @@ const DISABLE_RELOAD =
 	process.env.RTC_FUZZ_DISABLE_RELOAD ??
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_RELOAD ??
 	'0';
+const DISABLE_REVISION_RESTORE =
+	process.env.RTC_FUZZ_DISABLE_REVISION_RESTORE ??
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE ??
+	'0';
+const ENABLE_REVISION_RESTORE_PROBE =
+	process.env.RTC_FUZZ_ENABLE_REVISION_RESTORE_PROBE ??
+	process.env.GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE ??
+	process.env.RTC_FUZZ_ENABLE_REST_REVISION_RESTORE_PROBE ??
+	process.env.GUTENBERG_RTC_BROWSER_ENABLE_REST_REVISION_RESTORE_PROBE ??
+	'1';
+const ACTION_PROFILE =
+	process.env.RTC_FUZZ_ACTION_PROFILE ??
+	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ??
+	'';
+const COLLABORATOR_MODE =
+	process.env.RTC_FUZZ_COLLABORATOR_MODE ??
+	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE ??
+	'';
 const LANE_LABEL = process.env.RTC_FUZZ_LANE_LABEL ?? `seed-${ START_SEED }`;
+const ASSUME_WP_ENV_RUNNING =
+	process.env.RTC_FUZZ_ASSUME_WP_ENV_RUNNING === '1';
+const INLINE_CODEX = ( process.env.RTC_FUZZ_INLINE_CODEX ?? '1' ) !== '0';
+const SKIP_GLOBAL_POST_CLEANUP =
+	process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ??
+	process.env.GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP ??
+	'0';
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 
 const state = {
@@ -149,8 +182,27 @@ function getBrowserFuzzEnv( overrides = {} ) {
 		GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS:
 			process.env.GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS ??
 			String( BOOT_TIMEOUT_MS ),
+		GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING: ASSUME_WP_ENV_RUNNING
+			? '1'
+			: '0',
 		GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: DISABLE_SYNC_FAULTS,
 		GUTENBERG_RTC_BROWSER_DISABLE_RELOAD: DISABLE_RELOAD,
+		GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE:
+			DISABLE_REVISION_RESTORE,
+		GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP:
+			SKIP_GLOBAL_POST_CLEANUP,
+		...( ENABLE_REVISION_RESTORE_PROBE
+			? {
+					GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE:
+						ENABLE_REVISION_RESTORE_PROBE,
+			  }
+			: {} ),
+		...( ACTION_PROFILE
+			? { GUTENBERG_RTC_BROWSER_ACTION_PROFILE: ACTION_PROFILE }
+			: {} ),
+		...( COLLABORATOR_MODE
+			? { GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE: COLLABORATOR_MODE }
+			: {} ),
 		...overrides,
 	};
 }
@@ -303,6 +355,13 @@ async function runCodexCommand( {
 }
 
 async function ensureWpEnvRunning() {
+	if ( ASSUME_WP_ENV_RUNNING ) {
+		await log(
+			'Assuming wp-env-test is running because the launcher already checked it.'
+		);
+		return;
+	}
+
 	const statusLogPath = path.join( OUTPUT_DIR, 'wp-env-status.log' );
 	const statusResult = await runCombinedCommand( {
 		command: 'npm',
@@ -373,6 +432,122 @@ async function runFullPreflight( label ) {
 		logPath: preflightLogPath,
 		timeoutMs: 2 * 60 * 1000,
 	} );
+}
+
+async function runEnvironmentHealthCheck( label ) {
+	const healthLogPath = path.join( OUTPUT_DIR, `${ label }-health.log` );
+	const start = Date.now();
+	const output = [];
+	const record = ( line ) => {
+		output.push( `[${ new Date().toISOString() }] ${ line }` );
+	};
+
+	if ( ! BASE_URL ) {
+		record( 'RTC_FUZZ_BASE_URL or WP_BASE_URL is required.' );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: 1,
+			signal: null,
+			ok: false,
+			timedOut: false,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	}
+
+	let endpoint;
+	try {
+		endpoint = new URL( '/wp-json/', BASE_URL ).toString();
+	} catch ( error ) {
+		record( `Invalid base URL "${ BASE_URL }": ${ error.message }` );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: 1,
+			signal: null,
+			ok: false,
+			timedOut: false,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	}
+
+	const controller = new AbortController();
+	let timedOut = false;
+	const timeout = setTimeout( () => {
+		timedOut = true;
+		controller.abort();
+	}, HTTP_HEALTH_TIMEOUT_MS );
+	timeout.unref();
+
+	try {
+		record( `GET ${ endpoint }` );
+		const response = await fetch( endpoint, {
+			headers: {
+				Accept: 'application/json',
+				'User-Agent': 'rtc-browser-fuzz-health',
+			},
+			signal: controller.signal,
+		} );
+		const body = await response.text();
+		const bodySnippet = body.slice( 0, 1000 );
+		const ok = response.ok && body.includes( '"namespaces"' );
+		record( `status=${ response.status } ok=${ ok }` );
+		record( `body-snippet=${ JSON.stringify( bodySnippet ) }` );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: ok ? 0 : 1,
+			signal: null,
+			ok,
+			timedOut,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	} catch ( error ) {
+		record( `request failed: ${ error.stack ?? error.message }` );
+		const text = output.join( '\n' ) + '\n';
+		await fs.writeFile( healthLogPath, text );
+		return {
+			code: 1,
+			signal: null,
+			ok: false,
+			timedOut,
+			durationMs: Date.now() - start,
+			output: text,
+			logPath: healthLogPath,
+		};
+	} finally {
+		clearTimeout( timeout );
+	}
+}
+
+async function stopForInfraFailure( { seed = null, stage, result } ) {
+	const failureSnippet = extractFailureSnippet( result.output );
+	await appendSummary( {
+		kind: 'infra',
+		discoveredAt: new Date().toISOString(),
+		...( seed === null ? {} : { seed } ),
+		stage,
+		failureSnippet,
+		logPath: result.logPath,
+	} );
+	await updateState( {
+		infraFailures: state.infraFailures + 1,
+		stopReason:
+			seed === null
+				? `${ stage }-failed`
+				: `seed-${ seed }-${ stage }-failed`,
+	} );
+	await log(
+		`Stopping after ${ stage } failure${
+			seed === null ? '' : ` for seed ${ seed }`
+		}. See ${ result.logPath }.`
+	);
 }
 
 function extractFailureSnippet( output ) {
@@ -519,13 +694,13 @@ function buildCodexPrompt( {
 			'- Only inspect local repository files and the listed command logs.',
 			'Tasks:',
 			'1. Determine whether this is a real collaboration bug, a test bug, or a harness/environment issue.',
-			'2. If it is not real, modify the fuzzing setup to reduce this false-positive class without suppressing legitimate editor/runtime failures.',
-			'3. If you change the harness, validate the fix by rerunning the relevant preflight or the failing seed.',
+			'2. Do not edit shared source, tests, package files, or run configuration.',
+			'3. If this looks like a false positive, describe the smallest harness change that should be made later.',
 			'4. Output only JSON that matches the provided schema.',
 			'Rules:',
 			'- Do not weaken coverage by broad string matching or skipping large classes of failures.',
 			'- Prefer preflight validation and explicit infra classification over ignoring failing logs.',
-			'- List every changed file relative to the repo root in changedFiles.',
+			'- changedFiles must be an empty array because this analysis is read-only.',
 		].join( '\n' )
 	);
 }
@@ -554,6 +729,42 @@ async function runCodexFailureAnalysis( {
 		failureSnippet,
 	} );
 	await fs.writeFile( promptPath, prompt );
+
+	if ( ! INLINE_CODEX ) {
+		const result = {
+			classification:
+				localClassification === 'harness' ||
+				localClassification === 'environment'
+					? 'not_real'
+					: 'uncertain',
+			confidence: 'low',
+			summary:
+				'Inline Codex analysis is disabled for this long-running fuzz run; the asynchronous deep-triage watcher owns detailed analysis.',
+			evidence: attempts.map(
+				( attempt ) =>
+					`${ attempt.label }: ${ attempt.logPath } (ok=${ attempt.ok }, code=${ attempt.code })`
+			),
+			recommendedRunnerAction: 'keep-running',
+			harnessChangesApplied: false,
+			changedFiles: [],
+			validationSummary:
+				'No inline validation was run; seed attempts and logs were persisted for deep triage.',
+		};
+		await fs.writeFile(
+			resultPath,
+			JSON.stringify( result, null, 2 ) + '\n'
+		);
+		await fs.writeFile( stdoutPath, '' );
+		await fs.writeFile( stderrPath, '' );
+		return {
+			ok: true,
+			durationMs: 0,
+			stdoutPath,
+			stderrPath,
+			resultPath,
+			result,
+		};
+	}
 
 	const codexResult = await runCodexCommand( {
 		command: 'codex',
@@ -635,19 +846,22 @@ async function main() {
 	await ensureFileExists( path.join( REPO_ROOT, 'package.json' ) );
 	await ensureWpEnvRunning();
 
+	const startupHealth = await runEnvironmentHealthCheck( 'startup' );
+	if ( ! startupHealth.ok ) {
+		await stopForInfraFailure( {
+			stage: 'startup-health',
+			result: startupHealth,
+		} );
+		throw new Error(
+			`Startup health check failed. See ${ startupHealth.logPath }.`
+		);
+	}
+
 	const startupPreflight = await runFullPreflight( 'startup' );
 	if ( ! startupPreflight.ok ) {
-		const failureSnippet = extractFailureSnippet( startupPreflight.output );
-		await appendSummary( {
-			kind: 'infra',
-			discoveredAt: new Date().toISOString(),
+		await stopForInfraFailure( {
 			stage: 'startup-preflight',
-			failureSnippet,
-			logPath: startupPreflight.logPath,
-		} );
-		await updateState( {
-			infraFailures: state.infraFailures + 1,
-			stopReason: 'startup-preflight-failed',
+			result: startupPreflight,
 		} );
 		throw new Error(
 			`Startup preflight failed. See ${ startupPreflight.logPath }.`
@@ -656,6 +870,7 @@ async function main() {
 
 	let seed = START_SEED;
 	let lastFullPreflightSeed = START_SEED;
+	let lastHealthCheckSeed = START_SEED - HEALTH_CHECK_INTERVAL_SEEDS;
 	let forceFullPreflight = false;
 
 	while ( Date.now() < END_AT ) {
@@ -667,30 +882,34 @@ async function main() {
 		await ensureFileExists( path.join( REPO_ROOT, SPEC_PATH ) );
 
 		if (
+			seed === START_SEED ||
+			seed - lastHealthCheckSeed >= HEALTH_CHECK_INTERVAL_SEEDS
+		) {
+			const health = await runEnvironmentHealthCheck( `seed-${ seed }` );
+			if ( ! health.ok ) {
+				await stopForInfraFailure( {
+					seed,
+					stage: 'health',
+					result: health,
+				} );
+				break;
+			}
+
+			lastHealthCheckSeed = seed;
+		}
+
+		if (
 			forceFullPreflight ||
 			seed === START_SEED ||
 			seed - lastFullPreflightSeed >= FULL_PREFLIGHT_INTERVAL_SEEDS
 		) {
 			const preflight = await runFullPreflight( `seed-${ seed }` );
 			if ( ! preflight.ok ) {
-				const failureSnippet = extractFailureSnippet(
-					preflight.output
-				);
-				await appendSummary( {
-					kind: 'infra',
-					discoveredAt: new Date().toISOString(),
+				await stopForInfraFailure( {
 					seed,
-					stage: 'seed-preflight',
-					failureSnippet,
-					logPath: preflight.logPath,
+					stage: 'preflight',
+					result: preflight,
 				} );
-				await updateState( {
-					infraFailures: state.infraFailures + 1,
-					stopReason: `seed-${ seed }-preflight-failed`,
-				} );
-				await log(
-					`Stopping after preflight failure for seed ${ seed }. See ${ preflight.logPath }.`
-				);
 				break;
 			}
 

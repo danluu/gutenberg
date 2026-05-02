@@ -1,12 +1,16 @@
 /**
  * External dependencies
  */
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * WordPress dependencies
  */
-import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
+import {
+	test as base,
+	expect,
+	type Editor,
+} from '@wordpress/e2e-test-utils-playwright';
 
 /**
  * Internal dependencies
@@ -21,6 +25,24 @@ type Fixtures = {
 	collaborationUtils: CollaborationUtils;
 	collaboratorUser: UserCredentials;
 };
+
+const ADMIN_USER: UserCredentials = {
+	username: process.env.WP_USERNAME ?? 'admin',
+	email: 'wordpress@example.com',
+	firstName: 'Admin',
+	lastName: 'User',
+	password: process.env.WP_PASSWORD ?? 'password',
+	roles: [ 'administrator' ],
+};
+
+const COLLABORATOR_MODE =
+	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE ?? 'distinct-user';
+const COLLABORATOR_ROLES = (
+	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_ROLES ?? 'editor'
+)
+	.split( ',' )
+	.map( ( role ) => role.trim() )
+	.filter( Boolean );
 
 const test = base.extend< Fixtures >( {
 	collaborationUtils: async (
@@ -44,6 +66,17 @@ const test = base.extend< Fixtures >( {
 		use,
 		testInfo
 	) => {
+		if ( COLLABORATOR_MODE === 'same-user' ) {
+			await use( ADMIN_USER );
+			return;
+		}
+
+		if ( COLLABORATOR_MODE !== 'distinct-user' ) {
+			throw new Error(
+				`Unknown GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE "${ COLLABORATOR_MODE }".`
+			);
+		}
+
 		const laneLabel = process.env.GUTENBERG_RTC_LANE_LABEL ?? 'lane0';
 		const uniqueSuffix = [
 			laneLabel,
@@ -61,7 +94,7 @@ const test = base.extend< Fixtures >( {
 			firstName: 'RTC',
 			lastName: 'Fuzz',
 			password: 'password',
-			roles: [ 'editor' ],
+			roles: COLLABORATOR_ROLES,
 		};
 		const createdUser = await requestUtils.createUser( collaboratorUser );
 
@@ -73,8 +106,48 @@ const test = base.extend< Fixtures >( {
 type Random = () => number;
 
 type PageRef = {
+	editor: Editor;
 	page: Page;
 	userIndex: number;
+};
+
+type RestRequestUtils = {
+	rest: < T = unknown >( options: {
+		data?: Record< string, unknown >;
+		method?: string;
+		params?: Record< string, unknown >;
+		path: string;
+	} ) => Promise< T >;
+};
+
+type RestRenderedField = {
+	raw?: string;
+	rendered?: string;
+};
+
+type RestPost = {
+	content?: RestRenderedField | string;
+	id: number;
+	meta?: {
+		_crdt_document?: string | null;
+	};
+	title?: RestRenderedField | string;
+};
+
+type RestRevision = {
+	content?: RestRenderedField | string;
+	date?: string;
+	id: number;
+	title?: RestRenderedField | string;
+};
+
+type SaveCheckpoint = {
+	content: string;
+	marker: string;
+	optionMarker: string;
+	revisionId: number;
+	step: number;
+	titleMarker: string;
 };
 
 type PageAction = {
@@ -91,6 +164,7 @@ type PageAction = {
 
 const SEED_START = getEnvInt( 'GUTENBERG_RTC_BROWSER_SEED_START', 701 );
 const SEED_COUNT = getEnvInt( 'GUTENBERG_RTC_BROWSER_SEED_COUNT', 3 );
+const SEEDS = getEnvIntList( 'GUTENBERG_RTC_BROWSER_SEEDS' );
 const STEP_COUNT = getEnvInt( 'GUTENBERG_RTC_BROWSER_STEPS', 10 );
 const CONVERGENCE_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS',
@@ -100,9 +174,22 @@ const DISCOVERY_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_DISCOVERY_TIMEOUT_MS',
 	15000
 );
+const SESSION_SETTLE_TIMEOUT_MS = Math.max(
+	CONVERGENCE_TIMEOUT_MS,
+	DISCOVERY_TIMEOUT_MS
+);
 const DISABLE_SYNC_FAULTS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS === '1';
 const DISABLE_RELOAD = process.env.GUTENBERG_RTC_BROWSER_DISABLE_RELOAD === '1';
+const DISABLE_REVISION_RESTORE =
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE === '1';
+const ENABLE_REVISION_RESTORE_PROBE =
+	! DISABLE_REVISION_RESTORE &&
+	( process.env.GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE ??
+		process.env.GUTENBERG_RTC_BROWSER_ENABLE_REST_REVISION_RESTORE_PROBE ??
+		'1' ) === '1';
+const ACTION_PROFILE =
+	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
 const RETRIABLE_SYNC_FAILURE_STATUSES = [ 429, 500, 503 ];
 
 function getEnvInt( name: string, fallback: number ): number {
@@ -119,6 +206,31 @@ function getEnvInt( name: string, fallback: number ): number {
 	}
 
 	return parsedValue;
+}
+
+function getEnvIntList( name: string ): number[] | null {
+	const rawValue = process.env[ name ];
+
+	if ( ! rawValue ) {
+		return null;
+	}
+
+	const values = rawValue
+		.split( ',' )
+		.map( ( value ) => value.trim() )
+		.filter( Boolean )
+		.map( ( value ) => Number.parseInt( value, 10 ) );
+
+	if (
+		values.length === 0 ||
+		values.some( ( value ) => ! Number.isFinite( value ) )
+	) {
+		throw new Error(
+			`${ name } must be a comma-separated list of numbers.`
+		);
+	}
+
+	return [ ...new Set( values ) ];
 }
 
 function createRng( seed: number ): Random {
@@ -156,6 +268,21 @@ function chooseMilestoneStep(
 	const step = pick( rng, availableSteps );
 	usedSteps.add( step );
 	return step;
+}
+
+function chooseMilestoneSteps(
+	rng: Random,
+	stepCount: number,
+	usedSteps: Set< number >,
+	count: number
+): Set< number > {
+	const steps = new Set< number >();
+
+	for ( let index = 0; index < count; index++ ) {
+		steps.add( chooseMilestoneStep( rng, stepCount, usedSteps ) );
+	}
+
+	return steps;
 }
 
 function escapeHtml( value: string ): string {
@@ -394,6 +521,13 @@ function getBaseInitialContent( seed: number ): string {
 function getInitialContent( seed: number ): string {
 	const baseContent = getBaseInitialContent( seed );
 
+	if (
+		ACTION_PROFILE === 'persistence' ||
+		ACTION_PROFILE === 'persistence-no-title'
+	) {
+		return baseContent;
+	}
+
 	switch ( seed % 6 ) {
 		case 1:
 			return [ baseContent, htmlEntityReferenceContent( seed ) ].join(
@@ -410,6 +544,176 @@ function getInitialContent( seed: number ): string {
 		default:
 			return baseContent;
 	}
+}
+
+function getRawFieldValue( field?: RestRenderedField | string ): string {
+	if ( typeof field === 'string' ) {
+		return field;
+	}
+
+	return field?.raw ?? field?.rendered ?? '';
+}
+
+function hasMarker( value: unknown, marker: string ): boolean {
+	return JSON.stringify( value )?.includes( marker ) ?? false;
+}
+
+function getCheckpointMarker( seed: number, step: number, userIndex: number ) {
+	return `rtc-save-marker-${ seed }-${ step }-${ userIndex }`;
+}
+
+async function getEditedPostContent( page: Page ): Promise< string > {
+	return page.evaluate( () =>
+		( window as any ).wp.data.select( 'core/editor' ).getEditedPostContent()
+	);
+}
+
+async function getEditedPostTitle( page: Page ): Promise< string > {
+	return page.evaluate( () =>
+		( window as any ).wp.data
+			.select( 'core/editor' )
+			.getEditedPostAttribute( 'title' )
+	);
+}
+
+async function getPersistedPost(
+	requestUtils: RestRequestUtils,
+	postId: number
+): Promise< RestPost > {
+	return requestUtils.rest< RestPost >( {
+		path: `/wp/v2/posts/${ postId }`,
+		params: {
+			context: 'edit',
+			_fields: 'id,title.raw,content.raw,meta',
+		},
+	} );
+}
+
+async function getPersistedPostContent(
+	requestUtils: RestRequestUtils,
+	postId: number
+): Promise< string > {
+	const post = await getPersistedPost( requestUtils, postId );
+	return getRawFieldValue( post.content );
+}
+
+async function getPersistedPostTitle(
+	requestUtils: RestRequestUtils,
+	postId: number
+): Promise< string > {
+	const post = await getPersistedPost( requestUtils, postId );
+	return getRawFieldValue( post.title );
+}
+
+async function getPostRevisions(
+	requestUtils: RestRequestUtils,
+	postId: number
+): Promise< RestRevision[] > {
+	return requestUtils.rest< RestRevision[] >( {
+		path: `/wp/v2/posts/${ postId }/revisions`,
+		params: {
+			context: 'edit',
+			per_page: 100,
+			_fields: 'id,date,title.raw,content.raw',
+		},
+	} );
+}
+
+async function getPostRevision(
+	requestUtils: RestRequestUtils,
+	postId: number,
+	revisionId: number
+): Promise< RestRevision > {
+	return requestUtils.rest< RestRevision >( {
+		path: `/wp/v2/posts/${ postId }/revisions/${ revisionId }`,
+		params: {
+			context: 'edit',
+			_fields: 'id,date,title.raw,content.raw',
+		},
+	} );
+}
+
+async function waitForPersistedPostContentMarker(
+	requestUtils: RestRequestUtils,
+	postId: number,
+	marker: string
+): Promise< string > {
+	const deadline = Date.now() + CONVERGENCE_TIMEOUT_MS;
+	let lastContent = '';
+
+	while ( Date.now() < deadline ) {
+		lastContent = await getPersistedPostContent( requestUtils, postId );
+
+		if ( lastContent.includes( marker ) ) {
+			return lastContent;
+		}
+
+		await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+	}
+
+	throw new Error(
+		`Persisted post content did not include marker "${ marker }". Last content: ${ lastContent }`
+	);
+}
+
+async function waitForPersistedPostTitleMarker(
+	requestUtils: RestRequestUtils,
+	postId: number,
+	marker: string
+): Promise< string > {
+	const deadline = Date.now() + CONVERGENCE_TIMEOUT_MS;
+	let lastTitle = '';
+
+	while ( Date.now() < deadline ) {
+		lastTitle = await getPersistedPostTitle( requestUtils, postId );
+
+		if ( lastTitle.includes( marker ) ) {
+			return lastTitle;
+		}
+
+		await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+	}
+
+	throw new Error(
+		`Persisted post title did not include marker "${ marker }". Last title: ${ lastTitle }`
+	);
+}
+
+async function waitForRevisionContainingMarkers(
+	requestUtils: RestRequestUtils,
+	postId: number,
+	markers: string[]
+): Promise< RestRevision > {
+	const deadline = Date.now() + CONVERGENCE_TIMEOUT_MS;
+	let lastRevisions: RestRevision[] = [];
+
+	while ( Date.now() < deadline ) {
+		lastRevisions = await getPostRevisions( requestUtils, postId );
+
+		const revision = lastRevisions.find( ( candidate ) => {
+			const revisionContent = getRawFieldValue( candidate.content );
+			return markers.every( ( marker ) =>
+				revisionContent.includes( marker )
+			);
+		} );
+
+		if ( revision ) {
+			return revision;
+		}
+
+		await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+	}
+
+	throw new Error(
+		`No post revision included markers "${ markers.join(
+			', '
+		) }". Last revisions: ${ JSON.stringify(
+			lastRevisions.map( ( revision ) => ( {
+				id: revision.id,
+				content: getRawFieldValue( revision.content ),
+			} ) )
+		) }`
+	);
 }
 
 async function getTopLevelBlocks(
@@ -456,6 +760,42 @@ async function insertParagraph(
 		},
 		{ blockIndex: index, blockContent: content }
 	);
+}
+
+async function insertCheckpointMarker( page: Page, marker: string ) {
+	await page.evaluate( ( blockContent ) => {
+		const block = ( window as any ).wp.blocks.createBlock(
+			'core/paragraph',
+			{
+				content: blockContent,
+			}
+		);
+		( window as any ).wp.data
+			.dispatch( 'core/block-editor' )
+			.insertBlock( block );
+	}, marker );
+}
+
+async function insertCheckpointOptionBlock( page: Page, marker: string ) {
+	await page.evaluate( ( optionMarker ) => {
+		const block = ( window as any ).wp.blocks.createBlock( 'core/search', {
+			buttonPosition: 'button-inside',
+			buttonText: `Find ${ optionMarker }`,
+			label: `Search label ${ optionMarker }`,
+			placeholder: `Search placeholder ${ optionMarker }`,
+		} );
+		( window as any ).wp.data
+			.dispatch( 'core/block-editor' )
+			.insertBlock( block );
+	}, marker );
+}
+
+async function setCheckpointTitle( page: Page, marker: string ) {
+	await page.evaluate( ( titleMarker ) => {
+		( window as any ).wp.data
+			.dispatch( 'core/editor' )
+			.editPost( { title: titleMarker } );
+	}, marker );
 }
 
 async function insertHeading(
@@ -789,6 +1129,106 @@ async function editFormattedParagraphAtCursor(
 	);
 }
 
+async function editTableArrayAttributes(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const variant = Math.floor( rng() * 5 );
+
+	await page.evaluate(
+		( { fuzzSeed, fuzzStep, fuzzUserIndex, tableVariant } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			let block = blocks.find(
+				( candidate: { name: string } ) =>
+					candidate.name === 'core/table'
+			);
+			const createCell = ( content: string ) => ( {
+				content,
+				tag: 'td',
+			} );
+			const createRow = ( rowLabel: string ) => ( {
+				cells: [
+					createCell(
+						`${ rowLabel } A seed ${ fuzzSeed } step ${ fuzzStep } user ${ fuzzUserIndex }`
+					),
+					createCell(
+						`${ rowLabel } B seed ${ fuzzSeed } step ${ fuzzStep } user ${ fuzzUserIndex }`
+					),
+				],
+			} );
+
+			if ( ! block ) {
+				block = ( window as any ).wp.blocks.createBlock( 'core/table', {
+					body: [
+						createRow( 'initial row 1' ),
+						createRow( 'initial row 2' ),
+					],
+				} );
+				blockEditor.insertBlock( block );
+				return;
+			}
+
+			const body = JSON.parse(
+				JSON.stringify( block.attributes.body ?? [] )
+			);
+
+			if ( body.length === 0 ) {
+				body.push( createRow( 'recreated row' ) );
+			}
+
+			const marker = `table-option-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }-${ tableVariant }`;
+
+			switch ( tableVariant ) {
+				case 0:
+					body[ 0 ].cells[ 0 ].content = marker;
+					break;
+				case 1:
+					body[ body.length - 1 ].cells[ 1 ].content = marker;
+					break;
+				case 2:
+					body.push( {
+						cells: [
+							createCell( marker ),
+							createCell( `${ marker } sibling` ),
+						],
+					} );
+					break;
+				case 3:
+					body.unshift( {
+						cells: [
+							createCell( marker ),
+							createCell( `${ marker } sibling` ),
+						],
+					} );
+					break;
+				default:
+					if ( body.length > 1 ) {
+						body.splice( 1, 1 );
+					} else {
+						body.push( createRow( marker ) );
+					}
+					break;
+			}
+
+			blockEditor.updateBlockAttributes( block.clientId, { body } );
+		},
+		{
+			fuzzSeed: seed,
+			fuzzStep: step,
+			fuzzUserIndex: userIndex,
+			tableVariant: variant,
+		}
+	);
+}
+
 async function reparseEditedContent(
 	page: Page,
 	seed: number,
@@ -835,9 +1275,368 @@ async function reloadAndWait(
 	await collaborationUtils.waitForEntityReadyAndSaveSettled( page, {
 		timeout: CONVERGENCE_TIMEOUT_MS,
 	} );
-	await collaborationUtils.waitForMutualDiscovery( {
+	await waitForCollaborationSessionSettled( collaborationUtils, {
+		timeout: SESSION_SETTLE_TIMEOUT_MS,
+	} );
+}
+
+async function waitForCollaborationSessionSettled(
+	collaborationUtils: CollaborationUtils,
+	{ timeout = DISCOVERY_TIMEOUT_MS }: { timeout?: number } = {}
+) {
+	if ( COLLABORATOR_MODE !== 'same-user' ) {
+		await collaborationUtils.waitForMutualDiscovery( { timeout } );
+		return;
+	}
+
+	await Promise.all(
+		collaborationUtils.allPages.map( ( page ) =>
+			collaborationUtils.waitForEntityReadyAndSaveSettled( page, {
+				timeout,
+			} )
+		)
+	);
+	await Promise.all(
+		collaborationUtils.allPages.map( ( page ) =>
+			collaborationUtils.waitForSyncCycle( page, 2, { timeout } )
+		)
+	);
+}
+
+async function saveCheckpointAndVerify( {
+	collaborationUtils,
+	marker,
+	postId,
+	requestUtils,
+	saver,
+	step,
+	viewer,
+}: {
+	collaborationUtils: CollaborationUtils;
+	marker: string;
+	postId: number;
+	requestUtils: RestRequestUtils;
+	saver: PageRef;
+	step: number;
+	viewer: PageRef;
+} ): Promise< SaveCheckpoint > {
+	const optionMarker = `${ marker }-search-option`;
+	const titleMarker = `${ marker }-title`;
+
+	await insertCheckpointMarker( saver.page, marker );
+	await insertCheckpointOptionBlock( saver.page, optionMarker );
+	await setCheckpointTitle( saver.page, titleMarker );
+	const convergedWithMarker = await collaborationUtils.waitForConvergence( {
 		timeout: CONVERGENCE_TIMEOUT_MS,
 	} );
+	expect( hasMarker( convergedWithMarker.blocks, marker ) ).toBe( true );
+	expect( hasMarker( convergedWithMarker.blocks, optionMarker ) ).toBe(
+		true
+	);
+	expect( convergedWithMarker.title ).toContain( titleMarker );
+
+	const contentBeforeSave = await getEditedPostContent( saver.page );
+	const titleBeforeSave = await getEditedPostTitle( saver.page );
+	expect( contentBeforeSave ).toContain( marker );
+	expect( contentBeforeSave ).toContain( optionMarker );
+	expect( titleBeforeSave ).toContain( titleMarker );
+
+	await saveDraft( saver.page );
+
+	const stateAfterSave = await collaborationUtils.waitForConvergence( {
+		includeCrdtDocument: true,
+		timeout: CONVERGENCE_TIMEOUT_MS,
+	} );
+	expect( stateAfterSave.crdtDocument ).not.toBeNull();
+	expect( hasMarker( stateAfterSave.blocks, marker ) ).toBe( true );
+	expect( hasMarker( stateAfterSave.blocks, optionMarker ) ).toBe( true );
+	expect( stateAfterSave.title ).toContain( titleMarker );
+
+	await waitForPersistedPostContentMarker( requestUtils, postId, marker );
+	await waitForPersistedPostContentMarker(
+		requestUtils,
+		postId,
+		optionMarker
+	);
+	await waitForPersistedPostTitleMarker( requestUtils, postId, titleMarker );
+	const revision = await waitForRevisionContainingMarkers(
+		requestUtils,
+		postId,
+		[ marker, optionMarker ]
+	);
+	expect( getRawFieldValue( revision.title ) ).toContain( titleMarker );
+
+	if ( ! DISABLE_RELOAD ) {
+		await reloadAndWait( viewer.page, collaborationUtils );
+		const stateAfterViewerReload =
+			await collaborationUtils.waitForConvergence( {
+				includeCrdtDocument: true,
+				timeout: CONVERGENCE_TIMEOUT_MS,
+			} );
+
+		expect( hasMarker( stateAfterViewerReload.blocks, marker ) ).toBe(
+			true
+		);
+		expect( hasMarker( stateAfterViewerReload.blocks, optionMarker ) ).toBe(
+			true
+		);
+		expect( stateAfterViewerReload.title ).toContain( titleMarker );
+		await waitForPersistedPostContentMarker( requestUtils, postId, marker );
+		await waitForPersistedPostContentMarker(
+			requestUtils,
+			postId,
+			optionMarker
+		);
+		await waitForPersistedPostTitleMarker(
+			requestUtils,
+			postId,
+			titleMarker
+		);
+	}
+
+	return {
+		content: contentBeforeSave,
+		marker,
+		optionMarker,
+		revisionId: revision.id,
+		step,
+		titleMarker,
+	};
+}
+
+async function chooseOldRevisionInBrowser( {
+	editor,
+	newerCheckpoint,
+	oldCheckpoint,
+	page,
+}: {
+	editor: Editor;
+	newerCheckpoint: SaveCheckpoint;
+	oldCheckpoint: SaveCheckpoint;
+	page: Page;
+} ) {
+	const slider = page.getByRole( 'slider', { name: 'Revision' } );
+	await slider.focus();
+
+	for ( const key of [ 'ArrowLeft', 'ArrowRight' ] ) {
+		for ( let attempt = 0; attempt < 50; attempt++ ) {
+			if (
+				await isTargetRevisionSelected( {
+					editor,
+					newerCheckpoint,
+					oldCheckpoint,
+					page,
+				} )
+			) {
+				return;
+			}
+
+			const changed = await pressRevisionSlider( page, slider, key );
+			if ( ! changed ) {
+				break;
+			}
+		}
+	}
+
+	throw new Error(
+		`Could not select old revision containing ${ oldCheckpoint.marker } without ${ newerCheckpoint.marker } through the revision UI.`
+	);
+}
+
+async function isTargetRevisionSelected( {
+	editor,
+	newerCheckpoint,
+	oldCheckpoint,
+	page,
+}: {
+	editor: Editor;
+	newerCheckpoint: SaveCheckpoint;
+	oldCheckpoint: SaveCheckpoint;
+	page: Page;
+} ) {
+	const oldTitleVisible = await page
+		.getByText( oldCheckpoint.titleMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const newerTitleVisible = await page
+		.getByText( newerCheckpoint.titleMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+
+	if ( oldTitleVisible && ! newerTitleVisible ) {
+		return true;
+	}
+
+	const oldContentVisible = await editor.canvas
+		.getByText( oldCheckpoint.marker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const oldOptionVisible = await editor.canvas
+		.getByText( oldCheckpoint.optionMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const newerContentVisible = await editor.canvas
+		.getByText( newerCheckpoint.marker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+	const newerOptionVisible = await editor.canvas
+		.getByText( newerCheckpoint.optionMarker )
+		.first()
+		.isVisible()
+		.catch( () => false );
+
+	return (
+		oldContentVisible &&
+		oldOptionVisible &&
+		! newerContentVisible &&
+		! newerOptionVisible
+	);
+}
+
+async function pressRevisionSlider(
+	page: Page,
+	slider: Locator,
+	key: 'ArrowLeft' | 'ArrowRight'
+) {
+	const previousSliderValue = await getRevisionSliderValue( slider );
+	await page.keyboard.press( key );
+
+	if ( previousSliderValue === null ) {
+		return true;
+	}
+
+	try {
+		await expect
+			.poll( () => getRevisionSliderValue( slider ), {
+				timeout: 1000,
+			} )
+			.not.toBe( previousSliderValue );
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+async function getRevisionSliderValue( slider: Locator ) {
+	return slider.evaluate( ( element ) => {
+		if ( element instanceof HTMLInputElement ) {
+			return element.value;
+		}
+
+		return (
+			element.getAttribute( 'aria-valuenow' ) ??
+			element.getAttribute( 'aria-valuetext' ) ??
+			element.getAttribute( 'value' )
+		);
+	} );
+}
+
+async function restoreRevisionViaBrowserAndVerify( {
+	checkpoints,
+	collaborationUtils,
+	postId,
+	requestUtils,
+	restorer,
+}: {
+	checkpoints: SaveCheckpoint[];
+	collaborationUtils: CollaborationUtils;
+	postId: number;
+	requestUtils: RestRequestUtils;
+	restorer: PageRef;
+} ) {
+	if ( ! ENABLE_REVISION_RESTORE_PROBE || checkpoints.length < 2 ) {
+		return;
+	}
+
+	const oldCheckpoint = checkpoints[ 0 ];
+	const newerCheckpoint = checkpoints[ checkpoints.length - 1 ];
+	const revision = await getPostRevision(
+		requestUtils,
+		postId,
+		oldCheckpoint.revisionId
+	);
+	const restoredContent = getRawFieldValue( revision.content );
+	const restoredTitle = getRawFieldValue( revision.title );
+
+	expect( restoredContent ).toContain( oldCheckpoint.marker );
+	expect( restoredContent ).toContain( oldCheckpoint.optionMarker );
+	expect( restoredTitle ).toContain( oldCheckpoint.titleMarker );
+	expect( restoredContent ).not.toContain( newerCheckpoint.marker );
+	expect( restoredContent ).not.toContain( newerCheckpoint.optionMarker );
+	expect( restoredTitle ).not.toContain( newerCheckpoint.titleMarker );
+
+	await restorer.page.bringToFront();
+	await restorer.editor.openDocumentSettingsSidebar();
+	const settingsSidebar = restorer.page.getByRole( 'region', {
+		name: 'Editor settings',
+	} );
+	await settingsSidebar.getByRole( 'tab', { name: 'Post' } ).click();
+	await settingsSidebar
+		.locator( '.editor-private-post-last-revision__button' )
+		.click();
+
+	const restoreButton = restorer.page.getByRole( 'button', {
+		name: 'Restore',
+	} );
+	await expect( restoreButton ).toBeVisible();
+	await chooseOldRevisionInBrowser( {
+		editor: restorer.editor,
+		newerCheckpoint,
+		oldCheckpoint,
+		page: restorer.page,
+	} );
+	await restoreButton.click();
+
+	await expect(
+		restorer.page
+			.getByTestId( 'snackbar' )
+			.filter( { hasText: 'Restored to revision' } )
+			.first()
+	).toBeVisible( { timeout: CONVERGENCE_TIMEOUT_MS } );
+
+	await reloadAndWait( restorer.page, collaborationUtils );
+
+	const stateAfterRestore = await collaborationUtils.waitForConvergence( {
+		includeCrdtDocument: true,
+		timeout: CONVERGENCE_TIMEOUT_MS,
+	} );
+
+	expect( hasMarker( stateAfterRestore.blocks, oldCheckpoint.marker ) ).toBe(
+		true
+	);
+	expect(
+		hasMarker( stateAfterRestore.blocks, oldCheckpoint.optionMarker )
+	).toBe( true );
+	expect( stateAfterRestore.title ).toContain( oldCheckpoint.titleMarker );
+	expect(
+		hasMarker( stateAfterRestore.blocks, newerCheckpoint.marker )
+	).toBe( false );
+	expect(
+		hasMarker( stateAfterRestore.blocks, newerCheckpoint.optionMarker )
+	).toBe( false );
+	expect( stateAfterRestore.title ).not.toContain(
+		newerCheckpoint.titleMarker
+	);
+
+	const persistedContent = await waitForPersistedPostContentMarker(
+		requestUtils,
+		postId,
+		oldCheckpoint.marker
+	);
+	const persistedTitle = await waitForPersistedPostTitleMarker(
+		requestUtils,
+		postId,
+		oldCheckpoint.titleMarker
+	);
+	expect( persistedContent ).toContain( oldCheckpoint.optionMarker );
+	expect( persistedContent ).not.toContain( newerCheckpoint.marker );
+	expect( persistedContent ).not.toContain( newerCheckpoint.optionMarker );
+	expect( persistedTitle ).not.toContain( newerCheckpoint.titleMarker );
 }
 
 const ACTIONS: PageAction[] = [
@@ -894,6 +1693,11 @@ const ACTIONS: PageAction[] = [
 			editRichTextPairBlock( page, seed, step, userIndex ),
 	},
 	{
+		label: 'edit-table-array-attributes',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			editTableArrayAttributes( page, seed, step, userIndex, rng ),
+	},
+	{
 		label: 'reparse-edited-content',
 		run: async ( page, seed, step, userIndex ) =>
 			reparseEditedContent( page, seed, step, userIndex ),
@@ -907,10 +1711,52 @@ const ACTIONS: PageAction[] = [
 	},
 ];
 
-test.describe( 'Collaboration - Seeded Fuzzing', () => {
-	for ( let offset = 0; offset < SEED_COUNT; offset++ ) {
-		const seed = SEED_START + offset;
+function getActiveActions(): PageAction[] {
+	if ( ACTION_PROFILE === 'full' ) {
+		return ACTIONS;
+	}
 
+	if (
+		ACTION_PROFILE === 'persistence' ||
+		ACTION_PROFILE === 'persistence-no-title'
+	) {
+		const persistenceActionLabels = new Set( [
+			'insert-paragraph',
+			'append-paragraph',
+			'edit-paragraph',
+			'delete-block',
+			'move-block',
+			'edit-title',
+			'concurrent-paragraphs',
+			'insert-heading',
+			'edit-table-array-attributes',
+		] );
+
+		return ACTIONS.filter(
+			( action ) =>
+				persistenceActionLabels.has( action.label ) &&
+				( ACTION_PROFILE !== 'persistence-no-title' ||
+					action.label !== 'edit-title' )
+		);
+	}
+
+	throw new Error(
+		`Unknown GUTENBERG_RTC_BROWSER_ACTION_PROFILE "${ ACTION_PROFILE }".`
+	);
+}
+
+const ACTIVE_ACTIONS = getActiveActions();
+
+test.describe( 'Collaboration - Seeded Fuzzing', () => {
+	test.describe.configure( { mode: 'parallel' } );
+
+	const seeds =
+		SEEDS ??
+		Array.from( { length: SEED_COUNT }, ( _value, offset ) => {
+			return SEED_START + offset;
+		} );
+
+	for ( const seed of seeds ) {
 		test( `seed ${ seed } converges under save, refresh, and sync faults`, async ( {
 			collaboratorUser,
 			collaborationUtils,
@@ -928,7 +1774,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 
 			await collaborationUtils.openPost( post.id );
 			await collaborationUtils.joinUser( post.id, collaboratorUser );
-			await collaborationUtils.waitForMutualDiscovery( {
+			await waitForCollaborationSessionSettled( collaborationUtils, {
 				timeout: DISCOVERY_TIMEOUT_MS,
 			} );
 			await collaborationUtils.waitForConvergence( {
@@ -937,19 +1783,22 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 
 			const pages = collaborationUtils.allPages.map(
 				( page, userIndex ) => ( {
+					editor: collaborationUtils.allEditors[ userIndex ],
 					page,
 					userIndex,
 				} )
 			);
 			const usedMilestones = new Set< number >();
-			const saveStep = chooseMilestoneStep(
+			const saveSteps = chooseMilestoneSteps(
 				rng,
 				STEP_COUNT,
-				usedMilestones
+				usedMilestones,
+				STEP_COUNT >= 3 ? 2 : 1
 			);
 			const reloadStep = DISABLE_RELOAD
 				? -1
 				: chooseMilestoneStep( rng, STEP_COUNT, usedMilestones );
+			const saveCheckpoints: SaveCheckpoint[] = [];
 
 			for ( let step = 0; step < STEP_COUNT; step++ ) {
 				const actor = pick( rng, pages );
@@ -971,7 +1820,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					);
 				}
 
-				const action = pick( rng, ACTIONS );
+				const action = pick( rng, ACTIVE_ACTIONS );
 
 				await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
 					await action.run(
@@ -989,17 +1838,31 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				} );
 				expect( state.blocks.length ).toBeGreaterThan( 0 );
 
-				let savedState = null;
-				if ( step === saveStep ) {
-					await saveDraft( pick( rng, pages ).page );
-					savedState = await collaborationUtils.waitForConvergence( {
-						includeCrdtDocument: true,
-						timeout: CONVERGENCE_TIMEOUT_MS,
+				if ( saveSteps.has( step ) ) {
+					const saver = pick( rng, pages );
+					const viewer =
+						pages.find(
+							( candidate ) =>
+								candidate.userIndex !== saver.userIndex
+						) ?? saver;
+					const marker = getCheckpointMarker(
+						seed,
+						step,
+						saver.userIndex
+					);
+
+					const checkpoint = await saveCheckpointAndVerify( {
+						collaborationUtils,
+						marker,
+						postId: post.id,
+						requestUtils,
+						saver,
+						step,
+						viewer,
 					} );
+
+					saveCheckpoints.push( checkpoint );
 				}
-				expect(
-					step === saveStep ? savedState?.crdtDocument : true
-				).not.toBeNull();
 
 				let reloadedState = null;
 				if ( step === reloadStep ) {
@@ -1027,6 +1890,14 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			expect( finalState.title ).not.toBe( '' );
 			expect( finalState.blocks.length ).toBeGreaterThan( 0 );
 			expect( finalState.crdtDocument ).not.toBeNull();
+
+			await restoreRevisionViaBrowserAndVerify( {
+				checkpoints: saveCheckpoints,
+				collaborationUtils,
+				postId: post.id,
+				requestUtils,
+				restorer: pick( rng, pages ),
+			} );
 		} );
 	}
 } );

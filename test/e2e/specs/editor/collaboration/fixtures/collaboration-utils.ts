@@ -52,10 +52,29 @@ export const SECOND_USER: UserCredentials = {
 };
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
-const RTC_BOOT_TIMEOUT_MS = Number.parseInt(
-	process.env.GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS || '10000',
-	10
-);
+const SYNC_REQUEST_ROUTE = /wp-sync/;
+
+function isSyncRequestRoute( route: Route ) {
+	const request = route.request();
+	return request.method() === 'POST' && request.url().includes( 'wp-sync' );
+}
+
+function isRouteAlreadyHandledError( error: unknown ) {
+	return (
+		error instanceof Error &&
+		error.message.includes( 'Route is already handled' )
+	);
+}
+
+async function ignoreAlreadyHandledRoute( callback: () => Promise< void > ) {
+	try {
+		await callback();
+	} catch ( error ) {
+		if ( ! isRouteAlreadyHandledError( error ) ) {
+			throw error;
+		}
+	}
+}
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -63,6 +82,10 @@ export default class CollaborationUtils {
 	private editor: Editor;
 	private requestUtils: RequestUtils;
 	private primaryPage: Page;
+	private pendingSyncRouteHandlers = new WeakMap<
+		Page,
+		( route: Route ) => Promise< void >
+	>();
 	private sessions: UserSession[] = [];
 	private trackedUserIds: number[] = [];
 
@@ -140,9 +163,7 @@ export default class CollaborationUtils {
 
 		// Dismiss welcome guide.
 		await newPage.waitForFunction(
-			() => window?.wp?.data && window?.wp?.blocks,
-			undefined,
-			{ timeout: RTC_BOOT_TIMEOUT_MS }
+			() => window?.wp?.data && window?.wp?.blocks
 		);
 		await newPage.evaluate( () => {
 			window.wp.data
@@ -179,16 +200,91 @@ export default class CollaborationUtils {
 	async waitForMutualDiscovery( { timeout }: { timeout?: number } = {} ) {
 		const pages = this.allPages;
 		const resolvedTimeout = timeout ?? 10000 + pages.length * 2500;
+		const roomName = await this.getCurrentPostRoomName( this.primaryPage );
 
 		await Promise.all(
 			pages.map( ( pg ) =>
-				pg
-					.getByRole( 'button', { name: /Collaborators list/ } )
-					.waitFor( { timeout: resolvedTimeout } )
+				this.waitForAwarenessPeerCount(
+					pg,
+					pages.length,
+					resolvedTimeout,
+					roomName
+				)
 			)
 		);
 
-		await Promise.all( pages.map( ( pg ) => this.waitForSyncCycle( pg ) ) );
+		await Promise.all(
+			pages.map( ( pg ) =>
+				this.waitForSyncCycle( pg, 3, { timeout: resolvedTimeout } )
+			)
+		);
+	}
+
+	/**
+	 * Wait until the sync transport reports the expected number of clients in
+	 * the requested room's awareness payload.
+	 *
+	 * Some repros exercise lower-level sync behavior before the rendered
+	 * collaborator presence UI has enough display metadata to show the
+	 * "Collaborators list" button. The transport-level awareness count is the
+	 * synchronization gate these repros actually need.
+	 *
+	 * @param page              The Playwright page to wait on.
+	 * @param expectedPeerCount Expected number of awareness clients.
+	 * @param timeout           Maximum wait time in ms.
+	 * @param roomName          Optional room name to require.
+	 */
+	async waitForAwarenessPeerCount(
+		page: Page,
+		expectedPeerCount: number,
+		timeout: number,
+		roomName?: string
+	) {
+		await page.waitForResponse(
+			async ( response ) => {
+				if (
+					! response.url().includes( 'wp-sync' ) ||
+					response.status() !== 200
+				) {
+					return false;
+				}
+
+				const body = await response.json().catch( () => null );
+				return (
+					body?.rooms?.some(
+						( room: {
+							room?: string;
+							awareness?: Record< string, unknown >;
+						} ) =>
+							( ! roomName || room.room === roomName ) &&
+							room.awareness &&
+							Object.keys( room.awareness ).length >=
+								expectedPeerCount
+					) ?? false
+				);
+			},
+			{ timeout }
+		);
+	}
+
+	/**
+	 * Return the collaboration room name for the current post.
+	 *
+	 * @param page The Playwright page to read from.
+	 */
+	async getCurrentPostRoomName( page: Page ): Promise< string > {
+		const postId = await page.evaluate(
+			() =>
+				( window as any ).wp?.data
+					?.select( 'core/editor' )
+					?.getCurrentPostId?.()
+		);
+
+		if ( ! postId ) {
+			throw new Error( 'Current post ID is unavailable.' );
+		}
+
+		return `postType/post:${ postId }`;
 	}
 
 	/**
@@ -336,6 +432,63 @@ export default class CollaborationUtils {
 		);
 	}
 
+	async clearPendingSyncRequestRoute( page: Page ) {
+		const existingHandler = this.pendingSyncRouteHandlers.get( page );
+
+		if ( ! existingHandler ) {
+			return;
+		}
+
+		this.pendingSyncRouteHandlers.delete( page );
+		await page.unroute( SYNC_REQUEST_ROUTE, existingHandler );
+	}
+
+	async routeNextSyncRequest(
+		page: Page,
+		onMatch: ( route: Route ) => Promise< void >
+	) {
+		await this.clearPendingSyncRequestRoute( page );
+
+		let handled = false;
+		const handler = async ( route: Route ) => {
+			if ( handled || ! isSyncRequestRoute( route ) ) {
+				await ignoreAlreadyHandledRoute( () => route.continue() );
+				return;
+			}
+
+			handled = true;
+			await this.clearPendingSyncRequestRoute( page );
+			await onMatch( route );
+		};
+
+		this.pendingSyncRouteHandlers.set( page, handler );
+		await page.route( SYNC_REQUEST_ROUTE, handler );
+	}
+
+	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		await this.routeNextSyncRequest( page, async ( route ) => {
+			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
+			await ignoreAlreadyHandledRoute( () => route.continue() );
+		} );
+	}
+
+	async failNextSyncRequest( page: Page, status: number ) {
+		await this.routeNextSyncRequest( page, async ( route ) => {
+			await ignoreAlreadyHandledRoute( () =>
+				route.fulfill( {
+					status,
+					contentType: 'application/json',
+					body: JSON.stringify( {
+						code: 'rtc_fuzz_injected_sync_failure',
+						message:
+							'Injected sync failure from RTC browser fuzzer.',
+						data: { status },
+					} ),
+				} )
+			);
+		} );
+	}
+
 	/**
 	 * Wait for sync polling cycles to complete on the given page.
 	 *
@@ -378,68 +531,31 @@ export default class CollaborationUtils {
 	): Promise< NormalizedCollaborativeState > {
 		return page.evaluate(
 			( { includePersistedDoc } ) => {
-				const normalizeHtmlString = ( value: string ) => {
-					const template = document.createElement( 'template' );
-					template.innerHTML = value;
-
-					for ( const element of Array.from(
-						template.content.querySelectorAll( '*' )
-					) ) {
-						const attributes = Array.from( element.attributes )
-							.map( ( attribute ) => ( {
-								name: attribute.name,
-								value: attribute.value,
-							} ) )
-							.sort( ( a, b ) => a.name.localeCompare( b.name ) );
-
-						for ( const attribute of attributes ) {
-							element.removeAttribute( attribute.name );
-						}
-
-						for ( const attribute of attributes ) {
-							element.setAttribute(
-								attribute.name,
-								attribute.value
-							);
-						}
-					}
-
-					return template.innerHTML;
-				};
-				const normalizeAttributeValue = ( value: unknown ): unknown => {
+				const normalizeValue = ( value: unknown ): unknown => {
 					if ( Array.isArray( value ) ) {
-						return value.map( normalizeAttributeValue );
+						return value.map( normalizeValue );
 					}
 
-					if ( value && typeof value === 'object' ) {
-						return Object.keys( value as Record< string, unknown > )
-							.sort()
-							.reduce< Record< string, unknown > >(
-								( normalizedValue, key ) => ( {
-									...normalizedValue,
-									[ key ]: normalizeAttributeValue(
-										( value as Record< string, unknown > )[
-											key
-										]
-									),
-								} ),
-								{}
-							);
-					}
-
-					if ( typeof value === 'string' ) {
-						return normalizeHtmlString( value );
+					if (
+						value &&
+						typeof value === 'object' &&
+						Object.getPrototypeOf( value ) === Object.prototype
+					) {
+						return Object.fromEntries(
+							Object.entries( value as Record< string, unknown > )
+								.sort( ( [ a ], [ b ] ) =>
+									a.localeCompare( b )
+								)
+								.map( ( [ key, item ] ) => [
+									key,
+									normalizeValue( item ),
+								] )
+						);
 					}
 
 					return value;
 				};
-				const normalizeAttributes = (
-					attributes: Record< string, unknown >
-				) =>
-					normalizeAttributeValue( attributes ) as Record<
-						string,
-						unknown
-					>;
+
 				const normalizeBlocks = (
 					blockTree: Array< {
 						attributes?: Record< string, unknown >;
@@ -449,11 +565,11 @@ export default class CollaborationUtils {
 				): NormalizedBlock[] =>
 					blockTree.map( ( block ) => ( {
 						name: block.name,
-						attributes: normalizeAttributes(
+						attributes: normalizeValue(
 							JSON.parse(
 								JSON.stringify( block.attributes ?? {} )
 							)
-						),
+						) as Record< string, unknown >,
 						innerBlocks: normalizeBlocks(
 							( block.innerBlocks ?? [] ) as Array< {
 								attributes?: Record< string, unknown >;
@@ -537,52 +653,6 @@ export default class CollaborationUtils {
 				lastStates
 			) }`
 		);
-	}
-
-	private async interceptNextSyncRequest(
-		page: Page,
-		handler: ( route: Route ) => Promise< void >
-	) {
-		const urlPattern = '**/*wp-sync*';
-		const once = async ( route: Route ) => {
-			await page.unroute( urlPattern, once );
-			await handler( route );
-		};
-
-		await page.route( urlPattern, once );
-	}
-
-	/**
-	 * Delay the next wp-sync request made by a page.
-	 *
-	 * @param page    The page whose next sync request should be delayed.
-	 * @param delayMs Delay duration in milliseconds.
-	 */
-	async delayNextSyncRequest( page: Page, delayMs: number ) {
-		await this.interceptNextSyncRequest( page, async ( route ) => {
-			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
-			await route.continue();
-		} );
-	}
-
-	/**
-	 * Fulfill the next wp-sync request with a synthetic HTTP error.
-	 *
-	 * @param page   The page whose next sync request should fail.
-	 * @param status HTTP status to return. Defaults to 500.
-	 */
-	async failNextSyncRequest( page: Page, status = 500 ) {
-		await this.interceptNextSyncRequest( page, async ( route ) => {
-			await route.fulfill( {
-				status,
-				contentType: 'application/json',
-				body: JSON.stringify( {
-					code: 'rtc_fuzz_failure',
-					message: 'Synthetic collaboration sync failure.',
-					data: { status },
-				} ),
-			} );
-		} );
 	}
 
 	/**
@@ -707,32 +777,11 @@ export async function setCollaboration(
 	requestUtils: RequestUtils,
 	enabled: boolean
 ): Promise< void > {
-	let nonce: string | null = null;
-	let lastHtml = '';
-	let lastStatus = 0;
-
-	for ( let attempt = 0; attempt < 3 && ! nonce; attempt++ ) {
-		const response = await requestUtils.request.get(
-			'/wp-admin/options-writing.php'
-		);
-		lastStatus = response.status();
-		lastHtml = await response.text();
-		nonce =
-			lastHtml.match( /name="_wpnonce" value="([^"]+)"/ )?.[ 1 ] ?? null;
-
-		if ( ! nonce ) {
-			await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
-		}
-	}
-
-	if ( ! nonce ) {
-		throw new Error(
-			`Unable to read writing settings nonce while setting collaboration. Last status: ${ lastStatus }. Body starts: ${ lastHtml.slice(
-				0,
-				300
-			) }`
-		);
-	}
+	const response = await requestUtils.request.get(
+		'/wp-admin/options-writing.php'
+	);
+	const html = await response.text();
+	const nonce = html.match( /name="_wpnonce" value="([^"]+)"/ )![ 1 ];
 
 	const optionName = 'wp_collaboration_enabled';
 	const optionValue = enabled ? 1 : 0;
