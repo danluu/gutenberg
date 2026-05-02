@@ -339,13 +339,15 @@ Checked again on 2026-05-02, the only fixes that fit the low-risk idea are the t
 
 ## Actual PR Branch Fix Coverage
 
-The created code branch is `try/test-flakes-pr` at commit `0aba5a3831f` (`Stabilize small-scope flaky e2e tests`). It changes only `test/e2e/specs/site-editor/homepage-settings.spec.js` and `test/e2e/specs/editor/various/publish-panel.spec.js`.
+The created code branch is `try/test-flakes-pr` at commit `2231852dac9` (`Tighten homepage flake row selection`). It changes only `test/e2e/specs/site-editor/homepage-settings.spec.js` and `test/e2e/specs/editor/various/publish-panel.spec.js`.
+
+Deeper PR audit note: the first version of the branch used prefix row-name regexes such as `/^Sample page\b/`. That was better than the original broad label match, but it was still not exact because it could match titles like `Sample page 2`. The latest branch fixes that by selecting a row through a title cell with `getByLabel( title, { exact: true } )`. It also makes `afterAll` cleanup reset homepage/posts-page settings before deleting pages, matching the setup order and avoiding a transient cleanup race.
 
 That branch fixes these flakes:
 
 | Fixed by branch | Flake issue(s) | Why this branch fixes it |
 | --- | --- | --- |
-| Yes | [#77385](https://github.com/WordPress/gutenberg/issues/77385), [#68892](https://github.com/WordPress/gutenberg/issues/68892) | The branch resets homepage/posts-page settings and deletes all pages before creating the three pages used by `homepage-settings.spec.js`, then replaces broad `getByLabel()` row filtering with exact, case-sensitive row locators. This directly targets the observed strict-mode failure where both `Sample Page` and `Sample page` matched the same intended row lookup. |
+| Yes | [#77385](https://github.com/WordPress/gutenberg/issues/77385), [#68892](https://github.com/WordPress/gutenberg/issues/68892) | The branch resets homepage/posts-page settings and deletes all pages before creating the three pages used by `homepage-settings.spec.js`, then replaces broad `getByLabel()` row filtering with row filtering through an exact, case-sensitive page title label. This directly targets the observed strict-mode failure where both `Sample Page` and `Sample page` matched the same intended row lookup. |
 | Yes | [#77721](https://github.com/WordPress/gutenberg/issues/77721) | The branch waits for the Publish panel toggle to report `aria-expanded="false"` after clicking `Cancel`, then keeps the original `toBeFocused()` assertion. This directly targets the observed failure where the test asserted focus while the panel was still open (`aria-expanded="true"`). |
 
 That branch does not fix [#77720](https://github.com/WordPress/gutenberg/issues/77720) (`post-content-focus-mode.spec.js`) or [#77705](https://github.com/WordPress/gutenberg/issues/77705) / [#36123](https://github.com/WordPress/gutenberg/issues/36123) (`classic.spec.js`). Those remain intentionally excluded from the small PR because they need focused review of broader editor flows.
