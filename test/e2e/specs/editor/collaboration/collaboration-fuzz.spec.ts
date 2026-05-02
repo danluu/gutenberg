@@ -37,6 +37,15 @@ const ADMIN_USER: UserCredentials = {
 
 const COLLABORATOR_MODE =
 	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE ?? 'distinct-user';
+const COLLABORATOR_ROLES = (
+	process.env.GUTENBERG_RTC_BROWSER_COLLABORATOR_ROLES ??
+	( process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE
+		? 'administrator'
+		: 'editor' )
+)
+	.split( ',' )
+	.map( ( role ) => role.trim() )
+	.filter( Boolean );
 
 const test = base.extend< Fixtures >( {
 	collaborationUtils: async (
@@ -88,7 +97,7 @@ const test = base.extend< Fixtures >( {
 			firstName: 'RTC',
 			lastName: 'Fuzz',
 			password: 'password',
-			roles: [ 'editor' ],
+			roles: COLLABORATOR_ROLES,
 		};
 		const createdUser = await requestUtils.createUser( collaboratorUser );
 
