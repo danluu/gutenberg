@@ -21,6 +21,9 @@ The short version:
     dispatch time. The distinguishing condition is not just "persistence already
     fired"; it is that persistence fired while the previous synthetic key was
     still held down.
+-   A native `contenteditable` baseline with the same one-second input timer does
+    not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
+    was held" is not sufficient by itself; Gutenberg editor work is required.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -84,6 +87,7 @@ run:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
     -   `after-persistence`: wait for `isLastBlockChangePersistent()`, then wait.
+-   a native `contenteditable` scenario with a minimal one-second input timer.
 
 The benchmark records every retained sample rather than only aggregate values.
 The R script derives:
@@ -101,6 +105,8 @@ The R script derives:
     persistence marker to the next keydown in the key-hold trace.
 -   `data/typing-delay-key-event-timing.csv`: paired trace timing for previous
     keyup, persistence marker, and next keydown.
+-   `data/typing-delay-native-key-event-timing.csv`: the same timing for the
+    native `contenteditable` comparison.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -395,6 +401,48 @@ is necessary for the slow plateau in these runs, and it narrows the visible cost
 to `keypress` dispatch, but there is still browser/editor phase behavior inside
 the key-hold condition.
 
+### Native Contenteditable Baseline
+
+The previous section shows a condition that separates slow and fast Gutenberg
+traces, but it does not prove that the condition is sufficient. To test that, the
+benchmark now has `native-contenteditable-timer`: a plain `contenteditable` node
+with an input listener that clears and reschedules a `1000ms` timer. The timer
+records the same kind of marker, but it does not touch Gutenberg, React,
+`@wordpress/data`, rich text, undo persistence, block selection, or the iframe
+editor.
+
+![Native contenteditable comparison](figures/14-native-contenteditable-comparison.png)
+
+The native baseline does not reproduce the Gutenberg key-hold plateau:
+
+| Scenario                 | Mode             |    Delay | Latency p50 | `keypress` p50 |
+| ------------------------ | ---------------- | -------: | ----------: | -------------: |
+| Gutenberg                | key held         | `1200ms` |    `17.4ms` |       `16.4ms` |
+| Gutenberg                | wait after keyup | `1200ms` |    `11.1ms` |       `10.9ms` |
+| Native `contenteditable` | key held         | `1200ms` |     `1.2ms` |        `1.0ms` |
+| Native `contenteditable` | wait after keyup | `1200ms` |     `0.8ms` |        `0.7ms` |
+| Gutenberg                | key held         | `2000ms` |    `16.9ms` |       `15.8ms` |
+| Gutenberg                | wait after keyup | `2000ms` |    `10.6ms` |       `10.3ms` |
+| Native `contenteditable` | key held         | `2000ms` |     `1.1ms` |        `0.9ms` |
+| Native `contenteditable` | wait after keyup | `2000ms` |     `1.0ms` |        `0.9ms` |
+
+The native timing data still has the marker before `keyup` in key-hold mode. For
+example, at `1200ms`, the marker fired about `201ms` before the previous `keyup`;
+at `2000ms`, it fired about `1001ms` before the previous `keyup`. Even so,
+`keypress` dispatch stayed around `1ms`.
+
+That rules out a pure Chromium/Playwright explanation for the Gutenberg plateau.
+The current best model is:
+
+1. Playwright's delay creates an unrealistic long-held key.
+2. Gutenberg's rich-text persistence timer fires while that key is still held.
+3. The next synthetic keypress then runs a slower Gutenberg editor path, visible
+   mostly as `keypress` `EventDispatch` duration.
+
+This is narrower than the previous conclusion. The timer/key-hold timing is a
+necessary diagnostic signal in the Gutenberg traces, but not sufficient without
+Gutenberg's editor stack.
+
 ## Scenario Sensitivity
 
 ![Scenario boundary checks](figures/08-scenario-boundary-checks.png)
@@ -420,9 +468,10 @@ Selected p50s:
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
 
-In this local Chromium environment, every retained sample had two `keydown`
-`EventDispatch` entries. Across 7340 retained samples in the committed derived
-data, zero had a `keydown` count other than two.
+In the Gutenberg editor traces in this local Chromium environment, every retained
+sample had two `keydown` `EventDispatch` entries. Across 7340 retained Gutenberg
+samples in the committed derived data, zero had a `keydown` count other than two.
+The native `contenteditable` baseline had one `keydown` per retained sample.
 
 That means any parser that assumes exactly one `keydown` trace event per typed
 character is fragile. This benchmark groups trace events into key sequences and
@@ -482,6 +531,8 @@ Known problems:
 -   **The paired trace is diagnostic, not a score run.** It uses only 8 retained
     samples per delay and heavy instrumentation. Its value is in comparing modes
     under similar tracing overhead.
+-   **The native baseline is intentionally too small.** It is useful as a browser
+    and Playwright control, not as a model of real editor work.
 -   **Single browser.** These results are from Chromium. They do not prove that
     Safari or Firefox will have the same timer/event behavior.
 -   **Single local setup.** More process executions and fresh browser contexts are
@@ -594,6 +645,10 @@ The key runs used in this report were:
 -   `between_keys`: complete keypress, then wait through `2000ms`.
 -   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
 -   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
+-   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer
+    and normal Playwright key-hold delay.
+-   `native_between_keys_timer`: native `contenteditable` with a `1000ms` input
+    timer and delay after a complete keypress.
 
 The local environment used `nvm` default Node `v20.20.2`.
 

@@ -707,3 +707,25 @@ mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1510,0,953,9
 mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1550,0,953,9,9,18,9,9,1777759318154,1777759331246,13092
 mode_trace_between_keys,Paired trace: wait after keyup,large post,0,1580,0,953,9,9,18,9,9,1777759331310,1777759344712,13402
 mode_trace_between_keys,Paired trace: wait after keyup,large post,0,2000,0,953,9,9,18,9,9,1777759344773,1777759361500,16727
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,990,0,0,9,9,9,9,9,1777759696881,1777759705912,9031
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1000,0,0,9,9,9,9,9,1777759705929,1777759715023,9094
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1010,0,0,9,9,9,9,9,1777759715043,1777759724237,9194
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1100,0,0,9,9,9,9,9,1777759724249,1777759734251,10002
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1180,0,0,9,9,9,9,9,1777759734264,1777759744970,10706
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1200,0,0,9,9,9,9,9,1777759744986,1777759755885,10899
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1300,0,0,9,9,9,9,9,1777759755898,1777759767694,11796
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1510,0,0,9,9,9,9,9,1777759767707,1777759781388,13681
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1550,0,0,9,9,9,9,9,1777759781401,1777759795427,14026
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,1580,0,0,9,9,9,9,9,1777759795444,1777759809753,14309
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,0,2000,0,0,9,9,9,9,9,1777759809768,1777759827858,18090
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,990,0,0,9,9,9,9,9,1777759836791,1777759844888,8097
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1000,0,0,9,9,9,9,9,1777759844908,1777759853066,8158
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1010,0,0,9,9,9,9,9,1777759853088,1777759861281,8193
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1100,0,0,9,9,9,9,9,1777759861292,1777759870250,8958
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1180,0,0,9,9,9,9,9,1777759870262,1777759879844,9582
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1200,0,0,9,9,9,9,9,1777759879856,1777759889606,9750
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1300,0,0,9,9,9,9,9,1777759889617,1777759900164,10547
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1510,0,0,9,9,9,9,9,1777759900175,1777759912351,12176
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1550,0,0,9,9,9,9,9,1777759912361,1777759924873,12512
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,1580,0,0,9,9,9,9,9,1777759924883,1777759937666,12783
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,0,2000,0,0,9,9,9,9,9,1777759937688,1777759953835,16147

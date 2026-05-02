@@ -8047,3 +8047,201 @@ mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-par
 mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,6,FALSE,5,96,85,107045,10.837,11.497,2,0.148,0.808,10.202,0.487
 mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,7,FALSE,6,97,86,107045,10.994,11.812999999999999,2,0.153,0.972,10.767,0.074
 mode_trace_between_keys,Paired trace: wait after keyup,large post,large-post-paragraph,0,2000,8,FALSE,7,98,87,107045,8.735999999999999,9.518999999999998,2,0.17,0.9530000000000001,8.507,0.059
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,0,TRUE,NA,0,NA,0,1.065,1.065,1,0.105,0.105,0.665,0.295
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,1,FALSE,0,1,0,0,2.155,2.155,1,0.165,0.165,1.426,0.564
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,2,FALSE,1,2,1,0,1.567,1.567,1,0.086,0.086,1.277,0.204
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,3,FALSE,2,3,2,0,1.274,1.274,1,0.196,0.196,0.865,0.213
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,4,FALSE,3,4,3,0,1.224,1.224,1,0.09,0.09,0.965,0.169
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,5,FALSE,4,5,4,0,1.379,1.379,1,0.113,0.113,1.046,0.22
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,6,FALSE,5,6,5,0,1.621,1.621,1,0.118,0.118,1.257,0.246
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,7,FALSE,6,7,6,0,1.295,1.295,1,0.087,0.087,0.988,0.22
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,990,8,FALSE,7,8,7,0,1.1980000000000002,1.1980000000000002,1,0.101,0.101,0.91,0.187
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,0,TRUE,NA,9,NA,9048,0.765,0.765,1,0.129,0.129,0.49,0.146
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,1,FALSE,0,10,8,9048,1.5579999999999998,1.5579999999999998,1,0.13,0.13,1.302,0.126
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,2,FALSE,1,11,9,9048,1.121,1.121,1,0.084,0.084,0.926,0.111
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,3,FALSE,2,12,10,9048,1.037,1.037,1,0.07,0.07,0.854,0.113
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,4,FALSE,3,13,11,9048,1.434,1.434,1,0.099,0.099,1.181,0.154
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,5,FALSE,4,14,12,9048,0.886,0.886,1,0.09,0.09,0.668,0.128
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,6,FALSE,5,15,13,9048,1.476,1.476,1,0.063,0.063,1.297,0.116
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,7,FALSE,6,16,14,9048,1.102,1.102,1,0.089,0.089,0.937,0.076
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1000,8,FALSE,7,17,15,9048,0.6809999999999999,0.6809999999999999,1,0.064,0.064,0.521,0.096
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,0,TRUE,NA,18,NA,18162,0.533,0.533,1,0.071,0.071,0.413,0.049
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,1,FALSE,0,19,16,18162,0.465,0.465,1,0.035,0.035,0.385,0.045
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,2,FALSE,1,20,17,18162,0.47800000000000004,0.47800000000000004,1,0.026,0.026,0.392,0.06
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,3,FALSE,2,21,18,18162,0.644,0.644,1,0.033,0.033,0.522,0.089
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,4,FALSE,3,22,19,18162,0.943,0.943,1,0.09,0.09,0.761,0.092
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,5,FALSE,4,23,20,18162,0.881,0.881,1,0.078,0.078,0.648,0.155
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,6,FALSE,5,24,21,18162,1.3369999999999997,1.3369999999999997,1,0.089,0.089,1.126,0.122
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,7,FALSE,6,25,22,18162,0.976,0.976,1,0.084,0.084,0.72,0.172
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1010,8,FALSE,7,26,23,18162,1.126,1.126,1,0.077,0.077,0.912,0.137
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,0,TRUE,NA,27,NA,27368,0.711,0.711,1,0.069,0.069,0.431,0.211
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,1,FALSE,0,28,24,27368,1.348,1.348,1,0.092,0.092,1.117,0.139
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,2,FALSE,1,29,25,27368,1.241,1.241,1,0.086,0.086,0.986,0.169
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,3,FALSE,2,30,26,27368,1.3399999999999999,1.3399999999999999,1,0.17,0.17,0.962,0.208
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,4,FALSE,3,31,27,27368,1.095,1.095,1,0.091,0.091,0.868,0.136
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,5,FALSE,4,32,28,27368,1.071,1.071,1,0.074,0.074,0.855,0.142
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,6,FALSE,5,33,29,27368,1.447,1.447,1,0.082,0.082,1.225,0.14
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,7,FALSE,6,34,30,27368,1.082,1.082,1,0.105,0.105,0.761,0.216
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1100,8,FALSE,7,35,31,27368,1.4609999999999999,1.4609999999999999,1,0.123,0.123,1.15,0.188
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,0,TRUE,NA,36,NA,37383,0.61,0.61,1,0.069,0.069,0.435,0.106
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,1,FALSE,0,37,32,37383,1.0759999999999998,1.0759999999999998,1,0.073,0.073,0.862,0.141
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,2,FALSE,1,38,33,37383,1.724,1.724,1,0.081,0.081,1.336,0.307
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,3,FALSE,2,39,34,37383,0.466,0.466,1,0.026,0.026,0.356,0.084
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,4,FALSE,3,40,35,37383,1.005,1.005,1,0.071,0.071,0.862,0.072
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,5,FALSE,4,41,36,37383,0.6659999999999999,0.6659999999999999,1,0.032,0.032,0.418,0.216
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,6,FALSE,5,42,37,37383,1.1700000000000002,1.1700000000000002,1,0.091,0.091,0.918,0.161
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,7,FALSE,6,43,38,37383,0.9179999999999999,0.9179999999999999,1,0.11,0.11,0.709,0.099
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1180,8,FALSE,7,44,39,37383,1.002,1.002,1,0.076,0.076,0.751,0.175
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,0,TRUE,NA,45,NA,48105,0.6960000000000001,0.6960000000000001,1,0.085,0.085,0.445,0.166
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,1,FALSE,0,46,40,48105,1.2979999999999998,1.2979999999999998,1,0.095,0.095,1.009,0.194
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,2,FALSE,1,47,41,48105,1.267,1.267,1,0.092,0.092,0.983,0.192
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,3,FALSE,2,48,42,48105,1.2100000000000002,1.2100000000000002,1,0.095,0.095,0.92,0.195
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,4,FALSE,3,49,43,48105,1.049,1.049,1,0.092,0.092,0.808,0.149
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,5,FALSE,4,50,44,48105,1.052,1.052,1,0.101,0.101,0.824,0.127
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,6,FALSE,5,51,45,48105,1.163,1.163,1,0.114,0.114,0.825,0.224
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,7,FALSE,6,52,46,48105,1.348,1.348,1,0.104,0.104,1.136,0.108
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1200,8,FALSE,7,53,47,48105,1.292,1.292,1,0.1,0.1,1.009,0.183
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,0,TRUE,NA,54,NA,59017,0.61,0.61,1,0.071,0.071,0.421,0.118
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,1,FALSE,0,55,48,59017,1.22,1.22,1,0.095,0.095,0.892,0.233
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,2,FALSE,1,56,49,59017,1.079,1.079,1,0.077,0.077,0.802,0.2
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,3,FALSE,2,57,50,59017,1.2790000000000001,1.2790000000000001,1,0.098,0.098,1.026,0.155
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,4,FALSE,3,58,51,59017,1.176,1.176,1,0.09,0.09,0.903,0.183
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,5,FALSE,4,59,52,59017,1.256,1.256,1,0.111,0.111,0.99,0.155
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,6,FALSE,5,60,53,59017,1.134,1.134,1,0.08,0.08,0.773,0.281
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,7,FALSE,6,61,54,59017,1.6580000000000001,1.6580000000000001,1,0.08,0.08,1.149,0.429
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1300,8,FALSE,7,62,55,59017,1.212,1.212,1,0.085,0.085,0.985,0.142
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,0,TRUE,NA,63,NA,70826,0.583,0.583,1,0.072,0.072,0.416,0.095
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,1,FALSE,0,64,56,70826,0.8559999999999999,0.8559999999999999,1,0.061,0.061,0.688,0.107
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,2,FALSE,1,65,57,70826,1.1239999999999999,1.1239999999999999,1,0.098,0.098,0.826,0.2
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,3,FALSE,2,66,58,70826,0.953,0.953,1,0.087,0.087,0.746,0.12
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,4,FALSE,3,67,59,70826,1.01,1.01,1,0.075,0.075,0.677,0.258
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,5,FALSE,4,68,60,70826,1.014,1.014,1,0.144,0.144,0.79,0.08
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,6,FALSE,5,69,61,70826,1.082,1.082,1,0.078,0.078,0.81,0.194
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,7,FALSE,6,70,62,70826,1.1789999999999998,1.1789999999999998,1,0.088,0.088,0.943,0.148
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1510,8,FALSE,7,71,63,70826,1.363,1.363,1,0.098,0.098,1.067,0.198
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,0,TRUE,NA,72,NA,84520,0.587,0.587,1,0.159,0.159,0.356,0.072
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,1,FALSE,0,73,64,84520,0.6100000000000001,0.6100000000000001,1,0.02,0.02,0.451,0.139
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,2,FALSE,1,74,65,84520,0.9420000000000001,0.9420000000000001,1,0.066,0.066,0.768,0.108
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,3,FALSE,2,75,66,84520,0.6910000000000001,0.6910000000000001,1,0.102,0.102,0.535,0.054
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,4,FALSE,3,76,67,84520,0.903,0.903,1,0.029,0.029,0.811,0.063
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,5,FALSE,4,77,68,84520,0.59,0.59,1,0.024,0.024,0.473,0.093
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,6,FALSE,5,78,69,84520,0.7350000000000001,0.7350000000000001,1,0.022,0.022,0.534,0.179
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,7,FALSE,6,79,70,84520,0.837,0.837,1,0.091,0.091,0.603,0.143
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1550,8,FALSE,7,80,71,84520,0.507,0.507,1,0.049,0.049,0.363,0.095
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,0,TRUE,NA,81,NA,98563,0.575,0.575,1,0.052,0.052,0.353,0.17
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,1,FALSE,0,82,72,98563,1.1649999999999998,1.1649999999999998,1,0.079,0.079,0.94,0.146
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,2,FALSE,1,83,73,98563,1.1809999999999998,1.1809999999999998,1,0.084,0.084,0.953,0.144
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,3,FALSE,2,84,74,98563,0.9019999999999999,0.9019999999999999,1,0.072,0.072,0.614,0.216
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,4,FALSE,3,85,75,98563,0.764,0.764,1,0.043,0.043,0.609,0.112
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,5,FALSE,4,86,76,98563,1.244,1.244,1,0.072,0.072,1.016,0.156
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,6,FALSE,5,87,77,98563,1.3419999999999999,1.3419999999999999,1,0.087,0.087,1.128,0.127
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,7,FALSE,6,88,78,98563,0.926,0.926,1,0.068,0.068,0.754,0.104
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,1580,8,FALSE,7,89,79,98563,1.097,1.097,1,0.086,0.086,0.859,0.152
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,0,TRUE,NA,90,NA,112887,0.544,0.544,1,0.051,0.051,0.306,0.187
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,1,FALSE,0,91,80,112887,1.101,1.101,1,0.089,0.089,0.904,0.108
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,2,FALSE,1,92,81,112887,1.3980000000000001,1.3980000000000001,1,0.074,0.074,1.207,0.117
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,3,FALSE,2,93,82,112887,1.099,1.099,1,0.073,0.073,0.823,0.203
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,4,FALSE,3,94,83,112887,1.457,1.457,1,0.074,0.074,1.214,0.169
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,5,FALSE,4,95,84,112887,1.0419999999999998,1.0419999999999998,1,0.084,0.084,0.822,0.136
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,6,FALSE,5,96,85,112887,1.331,1.331,1,0.072,0.072,1.075,0.184
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,7,FALSE,6,97,86,112887,1.084,1.084,1,0.182,0.182,0.697,0.205
+native_keyhold_timer,Native contenteditable: key held during delay,native contenteditable,native-contenteditable-timer,0,2000,8,FALSE,7,98,87,112887,1.015,1.015,1,0.077,0.077,0.87,0.068
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,0,TRUE,NA,0,NA,0,0.847,0.847,1,0.135,0.135,0.693,0.019
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,1,FALSE,0,1,0,0,0.853,0.853,1,0.096,0.096,0.717,0.04
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,2,FALSE,1,2,1,0,0.9229999999999999,0.9229999999999999,1,0.087,0.087,0.822,0.014
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,3,FALSE,2,3,2,0,1.1320000000000001,1.1320000000000001,1,0.102,0.102,0.897,0.133
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,4,FALSE,3,4,3,0,0.805,0.805,1,0.14,0.14,0.645,0.02
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,5,FALSE,4,5,4,0,1.028,1.028,1,0.078,0.078,0.919,0.031
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,6,FALSE,5,6,5,0,1.129,1.129,1,0.117,0.117,0.96,0.052
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,7,FALSE,6,7,6,0,0.504,0.504,1,0.075,0.075,0.419,0.01
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,990,8,FALSE,7,8,7,0,0.756,0.756,1,0.081,0.081,0.66,0.015
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,0,TRUE,NA,9,NA,8117,0.537,0.537,1,0.068,0.068,0.463,0.006
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,1,FALSE,0,10,8,8117,0.727,0.727,1,0.117,0.117,0.596,0.014
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,2,FALSE,1,11,9,8117,0.437,0.437,1,0.05,0.05,0.369,0.018
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,3,FALSE,2,12,10,8117,0.643,0.643,1,0.084,0.084,0.534,0.025
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,4,FALSE,3,13,11,8117,1.2799999999999998,1.2799999999999998,1,0.109,0.109,1.136,0.035
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,5,FALSE,4,14,12,8117,0.883,0.883,1,0.089,0.089,0.76,0.034
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,6,FALSE,5,15,13,8117,0.6619999999999999,0.6619999999999999,1,0.07,0.07,0.582,0.01
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,7,FALSE,6,16,14,8117,0.7590000000000001,0.7590000000000001,1,0.065,0.065,0.672,0.022
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1000,8,FALSE,7,17,15,8117,1.375,1.375,1,0.115,0.115,1.209,0.051
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,0,TRUE,NA,18,NA,16297,0.516,0.516,1,0.072,0.072,0.425,0.019
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,1,FALSE,0,19,16,16297,0.596,0.596,1,0.068,0.068,0.519,0.009
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,2,FALSE,1,20,17,16297,1.437,1.437,1,0.122,0.122,1.269,0.046
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,3,FALSE,2,21,18,16297,0.47000000000000003,0.47000000000000003,1,0.057,0.057,0.404,0.009
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,4,FALSE,3,22,19,16297,0.538,0.538,1,0.055,0.055,0.475,0.008
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,5,FALSE,4,23,20,16297,1.0439999999999998,1.0439999999999998,1,0.041,0.041,0.984,0.019
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,6,FALSE,5,24,21,16297,0.532,0.532,1,0.058,0.058,0.465,0.009
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,7,FALSE,6,25,22,16297,0.515,0.515,1,0.056,0.056,0.451,0.008
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1010,8,FALSE,7,26,23,16297,0.637,0.637,1,0.152,0.152,0.447,0.038
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,0,TRUE,NA,27,NA,24501,0.7779999999999999,0.7779999999999999,1,0.072,0.072,0.699,0.007
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,1,FALSE,0,28,24,24501,0.918,0.918,1,0.081,0.081,0.798,0.039
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,2,FALSE,1,29,25,24501,1.0659999999999998,1.0659999999999998,1,0.086,0.086,0.945,0.035
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,3,FALSE,2,30,26,24501,0.796,0.796,1,0.091,0.091,0.679,0.026
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,4,FALSE,3,31,27,24501,1.2249999999999999,1.2249999999999999,1,0.128,0.128,1.031,0.066
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,5,FALSE,4,32,28,24501,1.27,1.27,1,0.17,0.17,1.08,0.02
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,6,FALSE,5,33,29,24501,1.3450000000000002,1.3450000000000002,1,0.13,0.13,1.171,0.044
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,7,FALSE,6,34,30,24501,0.542,0.542,1,0.065,0.065,0.453,0.024
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1100,8,FALSE,7,35,31,24501,1.038,1.038,1,0.107,0.107,0.891,0.04
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,0,TRUE,NA,36,NA,33471,0.48,0.48,1,0.064,0.064,0.409,0.007
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,1,FALSE,0,37,32,33471,0.9800000000000001,0.9800000000000001,1,0.155,0.155,0.782,0.043
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,2,FALSE,1,38,33,33471,0.627,0.627,1,0.074,0.074,0.54,0.013
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,3,FALSE,2,39,34,33471,1.1749999999999998,1.1749999999999998,1,0.198,0.198,0.956,0.021
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,4,FALSE,3,40,35,33471,1.207,1.207,1,0.105,0.105,1.056,0.046
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,5,FALSE,4,41,36,33471,1.087,1.087,1,0.09,0.09,0.986,0.011
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,6,FALSE,5,42,37,33471,1.079,1.079,1,0.095,0.095,0.971,0.013
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,7,FALSE,6,43,38,33471,1.006,1.006,1,0.192,0.192,0.77,0.044
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1180,8,FALSE,7,44,39,33471,1.301,1.301,1,0.17,0.17,1.115,0.016
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,0,TRUE,NA,45,NA,43065,0.497,0.497,1,0.079,0.079,0.409,0.009
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,1,FALSE,0,46,40,43065,0.924,0.924,1,0.087,0.087,0.795,0.042
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,2,FALSE,1,47,41,43065,0.631,0.631,1,0.07,0.07,0.547,0.014
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,3,FALSE,2,48,42,43065,0.559,0.559,1,0.086,0.086,0.462,0.011
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,4,FALSE,3,49,43,43065,0.769,0.769,1,0.126,0.126,0.622,0.021
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,5,FALSE,4,50,44,43065,1.072,1.072,1,0.128,0.128,0.911,0.033
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,6,FALSE,5,51,45,43065,0.581,0.581,1,0.072,0.072,0.485,0.024
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,7,FALSE,6,52,46,43065,1.135,1.135,1,0.174,0.174,0.931,0.03
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1200,8,FALSE,7,53,47,43065,1.029,1.029,1,0.106,0.106,0.898,0.025
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,0,TRUE,NA,54,NA,52826,0.8089999999999999,0.8089999999999999,1,0.076,0.076,0.726,0.007
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,1,FALSE,0,55,48,52826,1.3019999999999998,1.3019999999999998,1,0.166,0.166,1.109,0.027
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,2,FALSE,1,56,49,52826,0.896,0.896,1,0.106,0.106,0.761,0.029
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,3,FALSE,2,57,50,52826,1.115,1.115,1,0.34,0.34,0.727,0.048
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,4,FALSE,3,58,51,52826,1.151,1.151,1,0.137,0.137,0.951,0.063
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,5,FALSE,4,59,52,52826,1.207,1.207,1,0.172,0.172,0.997,0.038
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,6,FALSE,5,60,53,52826,1.269,1.269,1,0.194,0.194,1.027,0.048
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,7,FALSE,6,61,54,52826,1.131,1.131,1,0.131,0.131,0.944,0.056
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1300,8,FALSE,7,62,55,52826,1.153,1.153,1,0.123,0.123,1.01,0.02
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,0,TRUE,NA,63,NA,63384,0.727,0.727,1,0.084,0.084,0.627,0.016
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,1,FALSE,0,64,56,63384,0.706,0.706,1,0.082,0.082,0.613,0.011
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,2,FALSE,1,65,57,63384,0.6170000000000001,0.6170000000000001,1,0.063,0.063,0.543,0.011
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,3,FALSE,2,66,58,63384,1.0230000000000001,1.0230000000000001,1,0.197,0.197,0.808,0.018
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,4,FALSE,3,67,59,63384,0.507,0.507,1,0.068,0.068,0.429,0.01
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,5,FALSE,4,68,60,63384,0.691,0.691,1,0.079,0.079,0.591,0.021
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,6,FALSE,5,69,61,63384,0.6040000000000001,0.6040000000000001,1,0.054,0.054,0.531,0.019
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,7,FALSE,6,70,62,63384,0.509,0.509,1,0.1,0.1,0.395,0.014
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1510,8,FALSE,7,71,63,63384,0.5700000000000001,0.5700000000000001,1,0.052,0.052,0.494,0.024
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,0,TRUE,NA,72,NA,75570,0.519,0.519,1,0.077,0.077,0.436,0.006
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,1,FALSE,0,73,64,75570,0.551,0.551,1,0.052,0.052,0.489,0.01
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,2,FALSE,1,74,65,75570,0.7839999999999999,0.7839999999999999,1,0.082,0.082,0.69,0.012
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,3,FALSE,2,75,66,75570,0.6839999999999999,0.6839999999999999,1,0.082,0.082,0.59,0.012
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,4,FALSE,3,76,67,75570,0.8670000000000001,0.8670000000000001,1,0.062,0.062,0.794,0.011
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,5,FALSE,4,77,68,75570,0.523,0.523,1,0.074,0.074,0.436,0.013
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,6,FALSE,5,78,69,75570,0.5900000000000001,0.5900000000000001,1,0.068,0.068,0.512,0.01
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,7,FALSE,6,79,70,75570,0.693,0.693,1,0.119,0.119,0.563,0.011
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1550,8,FALSE,7,80,71,75570,0.5,0.5,1,0.057,0.057,0.433,0.01
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,0,TRUE,NA,81,NA,88092,0.532,0.532,1,0.078,0.078,0.448,0.006
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,1,FALSE,0,82,72,88092,1.048,1.048,1,0.092,0.092,0.909,0.047
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,2,FALSE,1,83,73,88092,1.247,1.247,1,0.126,0.126,1.047,0.074
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,3,FALSE,2,84,74,88092,1.05,1.05,1,0.078,0.078,0.938,0.034
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,4,FALSE,3,85,75,88092,1.344,1.344,1,0.102,0.102,1.076,0.166
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,5,FALSE,4,86,76,88092,1.26,1.26,1,0.269,0.269,0.957,0.034
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,6,FALSE,5,87,77,88092,0.944,0.944,1,0.076,0.076,0.856,0.012
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,7,FALSE,6,88,78,88092,1.017,1.017,1,0.081,0.081,0.886,0.05
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,1580,8,FALSE,7,89,79,88092,1.008,1.008,1,0.116,0.116,0.878,0.014
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,0,TRUE,NA,90,NA,100897,0.514,0.514,1,0.07,0.07,0.438,0.006
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,1,FALSE,0,91,80,100897,0.547,0.547,1,0.082,0.082,0.456,0.009
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,2,FALSE,1,92,81,100897,1.4500000000000002,1.4500000000000002,1,0.119,0.119,1.217,0.114
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,3,FALSE,2,93,82,100897,1.238,1.238,1,0.095,0.095,1.063,0.08
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,4,FALSE,3,94,83,100897,1.179,1.179,1,0.152,0.152,0.997,0.03
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,5,FALSE,4,95,84,100897,0.5760000000000001,0.5760000000000001,1,0.064,0.064,0.5,0.012
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,6,FALSE,5,96,85,100897,1.067,1.067,1,0.131,0.131,0.897,0.039
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,7,FALSE,6,97,86,100897,0.965,0.965,1,0.101,0.101,0.82,0.044
+native_between_keys_timer,Native contenteditable: wait after keyup,native contenteditable,native-contenteditable-timer,0,2000,8,FALSE,7,98,87,100897,0.931,0.931,1,0.083,0.083,0.8,0.048

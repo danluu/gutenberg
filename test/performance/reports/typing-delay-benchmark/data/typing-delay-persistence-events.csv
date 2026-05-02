@@ -1,462 +1,838 @@
-nowMs,isPersistent,isTyping,run_id,run_label,round,delayMs,eventMs
-3111.399999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,39.59999990463257
-4155.899999856949,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,1084.0999999046326
-5173,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,2101.2000000476837
-2946.899999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,980,25.299999952316284
-3958.0999999046326,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,980,1036.5
-13989.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,980,11068.200000047684
-2829.9000000953674,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,990,15.900000095367432
-3841.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,990,1027.9000000953674
-13971.599999904633,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,990,11157.599999904633
-2869.300000190735,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,18.700000047683716
-3900.5,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,1049.8999998569489
-4918.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,2067.5999999046326
-2849,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,17.799999952316284
-3879.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,1048.7000000476837
-4895.900000095367,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,2064.7000000476837
-2886.7999999523163,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,17.100000143051147
-3919.899999856949,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,1050.2000000476837
-4936.099999904633,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,2066.4000000953674
-2919.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,16.600000143051147
-3951.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,1048.8000001907349
-4966.299999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,2063.4000000953674
-2864.2000000476837,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,990,16.299999952316284
-3883.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,990,1036
-14037.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,990,11189.599999904633
-2957.9000000953674,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,27.600000143051147
-4003.600000143051,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,1073.3000001907349
-5021.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,2091.5
-2874.100000143051,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,980,16.700000047683716
-3886.800000190735,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,980,1029.4000000953674
-13935.300000190735,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,980,11077.900000095367
-2902.899999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,22.59999990463257
-3938.2000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,1057.9000000953674
-4955.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,2074.9000000953674
-2930.2999999523163,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,27.5
-3964.4000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,1061.6000001430511
-4983.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,2080.4000000953674
-2940.2000000476837,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,980,26.40000009536743
-3954.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,980,1040.9000000953674
-13986.900000095367,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,980,11073.100000143051
-2913.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,16.5
-3952.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,1055.7000000476837
-4970.100000143051,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,2073.100000143051
-2940.0999999046326,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,990,27.59999990463257
-3964.2000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,990,1051.7000000476837
-14119.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,990,11207.299999952316
-3191.4000000953674,TRUE,TRUE,state_actions,Action trace near 1000ms,0,530,63.700000047683716
-3808.7000000476837,FALSE,TRUE,state_actions,Action trace near 1000ms,0,530,681
-2987,TRUE,TRUE,state_actions,Action trace near 1000ms,0,990,30.40000009536743
-4126,FALSE,TRUE,state_actions,Action trace near 1000ms,0,990,1169.4000000953674
-9207.900000095367,TRUE,TRUE,state_actions,Action trace near 1000ms,0,990,6251.300000190735
-3034.0999999046326,TRUE,TRUE,state_actions,Action trace near 1000ms,0,130,30.299999952316284
-3254.399999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,0,130,250.59999990463257
-3095.800000190735,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1010,25.800000190734863
-4183.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,0,1010,1113.6000001430511
-5201.100000143051,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1010,2131.100000143051
-3015.7000000476837,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1000,22.799999952316284
-4110.900000095367,FALSE,TRUE,state_actions,Action trace near 1000ms,0,1000,1118
-5130.299999952316,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1000,2137.399999856949
-3071.5,TRUE,TRUE,state_actions,Action trace near 1000ms,0,910,30.899999856948853
-4086,FALSE,TRUE,state_actions,Action trace near 1000ms,0,910,1045.3999998569489
-2967.5,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1010,24.5
-4056.300000190735,FALSE,TRUE,state_actions,Action trace near 1000ms,1,1010,1113.3000001907349
-5073.5,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1010,2130.5
-3016.2999999523163,TRUE,TRUE,state_actions,Action trace near 1000ms,1,990,37.799999952316284
-4122.399999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,1,990,1143.8999998569489
-9198.599999904633,TRUE,TRUE,state_actions,Action trace near 1000ms,1,990,6220.099999904633
-3015.199999809265,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1000,23.699999809265137
-4121.899999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,1,1000,1130.3999998569489
-5139.599999904633,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1000,2148.0999999046326
-3034.100000143051,TRUE,TRUE,state_actions,Action trace near 1000ms,1,910,41.30000019073486
-4101.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,1,910,1108.8000001907349
-3078.7000000476837,TRUE,TRUE,state_actions,Action trace near 1000ms,1,530,42.40000009536743
-3794.9000000953674,FALSE,TRUE,state_actions,Action trace near 1000ms,1,530,758.6000001430511
-3067.4000000953674,TRUE,TRUE,state_actions,Action trace near 1000ms,1,130,24.200000047683716
-3266.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,1,130,223.40000009536743
-3175.5,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,62.30000019073486
-3248,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,134.80000019073486
-4260.599999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,1147.4000000953674
-4385.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,1272.5
-5401.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,2288
-5523.399999856949,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,2410.2000000476837
-6537.699999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,3424.5
-6660.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,3547.5
-7676.099999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,4562.900000095367
-7797.099999904633,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,4683.900000095367
-8812.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,5699
-3003.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,59.39999985694885
-3078.5999999046326,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,134.09999990463257
-4093.2000000476837,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,1148.7000000476837
-4230.299999952316,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,1285.7999999523163
-5247.5,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,2303
-5372.5,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,2428
-6386.700000047684,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,3442.2000000476837
-6508.099999904633,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,3563.5999999046326
-7524,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,4579.5
-7647.899999856949,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,4703.399999856949
-8664.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,5720.399999856949
-3062.7999999523163,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,67.29999995231628
-3234.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,239.19999980926514
-4249.099999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,1253.5999999046326
-4379,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,1383.5
-5394.299999952316,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,2398.7999999523163
-5499.799999952316,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,2504.2999999523163
-6517.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,3521.699999809265
-6641.199999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,3645.699999809265
-7657.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,4662.399999856949
-7786,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,4790.5
-8794.799999952316,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,5799.299999952316
-2104.4000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,0,1020,37.200000047683716
-3140.300000190735,FALSE,TRUE,empty_boundary,Empty post boundary,0,1020,1073.1000001430511
-4148.900000095367,TRUE,TRUE,empty_boundary,Empty post boundary,0,1020,2081.7000000476837
-1986,TRUE,TRUE,empty_boundary,Empty post boundary,0,980,11.200000047683716
-2987.4000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,0,980,1012.6000001430511
-12969,TRUE,TRUE,empty_boundary,Empty post boundary,0,980,10994.200000047684
-1904.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,0,990,9.099999904632568
-2917.800000190735,FALSE,TRUE,empty_boundary,Empty post boundary,0,990,1022.7000000476837
-12989.100000143051,TRUE,TRUE,empty_boundary,Empty post boundary,0,990,11094
-1907.1999998092651,TRUE,TRUE,empty_boundary,Empty post boundary,0,1010,8
-2934.0999999046326,FALSE,TRUE,empty_boundary,Empty post boundary,0,1010,1034.9000000953674
-3942.2999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,0,1010,2043.1000001430511
-1906.7999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,0,1000,8.899999856948853
-2927.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,0,1000,1030
-3935.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,0,1000,2037.7999999523163
-1922.8999998569489,TRUE,TRUE,empty_boundary,Empty post boundary,1,1010,8.599999904632568
-2955.5,FALSE,TRUE,empty_boundary,Empty post boundary,1,1010,1041.2000000476837
-3964.0999999046326,TRUE,TRUE,empty_boundary,Empty post boundary,1,1010,2049.7999999523163
-1944.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,1,1000,8.700000047683716
-2966.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,1,1000,1030.9000000953674
-3974.9000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,1,1000,2038.9000000953674
-1905.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,1,990,9
-2916.2999999523163,FALSE,TRUE,empty_boundary,Empty post boundary,1,990,1020.0999999046326
-12985.5,TRUE,TRUE,empty_boundary,Empty post boundary,1,990,11089.299999952316
-1905,TRUE,TRUE,empty_boundary,Empty post boundary,1,1020,8.799999952316284
-2943.800000190735,FALSE,TRUE,empty_boundary,Empty post boundary,1,1020,1047.6000001430511
-3951.5,TRUE,TRUE,empty_boundary,Empty post boundary,1,1020,2055.2999999523163
-1932.7999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,1,980,8.600000143051147
-2934.0999999046326,FALSE,TRUE,empty_boundary,Empty post boundary,1,980,1009.9000000953674
-12917.899999856949,TRUE,TRUE,empty_boundary,Empty post boundary,1,980,10993.700000047684
-1927.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,2,1000,13.600000143051147
-2952.2000000476837,FALSE,TRUE,empty_boundary,Empty post boundary,2,1000,1038.6000001430511
-3961.399999856949,TRUE,TRUE,empty_boundary,Empty post boundary,2,1000,2047.7999999523163
-1934.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,2,1010,8.799999952316284
-2961.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,2,1010,1036
-3969.600000143051,TRUE,TRUE,empty_boundary,Empty post boundary,2,1010,2043.7000000476837
-1889.4000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,2,980,8.799999952316284
-2893,FALSE,TRUE,empty_boundary,Empty post boundary,2,980,1012.3999998569489
-12879.800000190735,TRUE,TRUE,empty_boundary,Empty post boundary,2,980,10999.200000047684
-1929.1999998092651,TRUE,TRUE,empty_boundary,Empty post boundary,2,1020,8.799999952316284
-2963.899999856949,FALSE,TRUE,empty_boundary,Empty post boundary,2,1020,1043.5
-3971.199999809265,TRUE,TRUE,empty_boundary,Empty post boundary,2,1020,2050.7999999523163
-1887.9000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,2,990,5.799999952316284
-2895.7999999523163,FALSE,TRUE,empty_boundary,Empty post boundary,2,990,1013.6999998092651
-12957,TRUE,TRUE,empty_boundary,Empty post boundary,2,990,11074.899999856949
-2517.100000143051,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,25
-3554,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,1061.8999998569489
-4564.700000047684,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,2072.5999999046326
-2366,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,19.299999952316284
-3373.9000000953674,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,1027.2000000476837
-8423.099999904633,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,6076.399999856949
-2316.7000000476837,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,10.400000095367432
-3345.4000000953674,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,1039.1000001430511
-4355.5,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,2049.2000000476837
-2304.9000000953674,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,10.200000047683716
-3320.7000000476837,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,1026
-8367.5,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,6072.799999952316
-1809.8999998569489,TRUE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,31.699999809265137
-2948.899999856949,FALSE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,1170.6999998092651
-3964.899999856949,TRUE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,2186.699999809265
-1878.2999999523163,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,33.5
-2806.2999999523163,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,961.5
-12121.799999952316,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,10277
-13200.899999856949,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,990,1030.8999998569489
-23339.89999985695,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,990,11169.899999856949
-332264.89999985695,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,990,1031.2999999523163
-342386,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,990,11152.400000095367
-343403.2000000477,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,900,945.6000001430511
-352725.7999999523,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,900,10268.200000047684
-458194.39999985695,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,900,941.5999999046326
-467498.09999990463,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,1200,0
-494603.7000000477,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,1041.7000000476837
-504721.5,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,11159.5
-1876.9000000953674,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,32.799999952316284
-2934.2999999523163,FALSE,TRUE,cliff_actions,Cliff action trace,0,990,1090.1999998092651
-8017,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,6172.899999856949
-1852.5,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,34
-2375.7999999523163,FALSE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,557.2999999523163
-6493.299999952316,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,4674.799999952316
-1866.2999999523163,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,45
-1934.7999999523163,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,113.5
-2949.7000000476837,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,1128.4000000953674
-3073.600000143051,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,1252.3000001907349
-4091.2000000476837,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,2269.9000000953674
-4213.900000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,2392.600000143051
-5229.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,3408
-5351.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,3530.5
-6366.900000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,4545.600000143051
-6638.900000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,63.700000047683716
-7654.400000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,1079.2000000476837
-7820.700000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,1245.5
-8835.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,2260.5999999046326
-9007.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,2432.0999999046326
-10022.600000143051,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,3447.4000000953674
-10215.700000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,3640.5
-11231.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,4656.5
-11426.100000143051,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,4850.900000095367
-12441.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,878.0999999046326
-12675,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,1111.5999999046326
-13689.100000143051,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,2125.7000000476837
-13940.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,2377.0999999046326
-14958,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,3394.5999999046326
-15211.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,3648.399999856949
-16228.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,4665.099999904633
-16484.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,4920.899999856949
-17499.900000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,5936.5
-17900,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,118.79999995231628
-18913.200000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,1132
-19199.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,1418.2999999523163
-20213.400000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,2432.2000000476837
-20521.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,2740.5999999046326
-21534.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,3753.4000000953674
-21818.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,4037
-22833.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,5052.099999904633
-23138.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,5356.900000095367
-24154,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,871.8999998569489
-24487.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,1205
-25502,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,2219.899999856949
-25839,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,2556.899999856949
-26847.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,3565.199999809265
-27175.400000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,3893.2999999523163
-28189.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,4907.599999904633
-28523.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,5241.199999809265
-29538.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,6256.599999904633
-30045.400000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,170.40000009536743
-31059.400000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,1184.4000000953674
-31453.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,1578.7999999523163
-32468.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,2593.2999999523163
-32857.700000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,2982.7000000476837
-33871.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,3996.5
-34285.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,4410.900000095367
-35300.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,5425.700000047684
-35692.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,5817.900000095367
-36708.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,868.0999999046326
-37160.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,1320.2000000476837
-38177,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,2336.5999999046326
-38623.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,2782.899999856949
-39638.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,3797.899999856949
-40111,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,4270.599999904633
-41126.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,5286.399999856949
-41579.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,5738.700000047684
-42596,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,6755.599999904633
-43189.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,216.19999980926514
-44206.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,1233
-44737.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,1764.7999999523163
-45754.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,2781.699999809265
-46287.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,3314.2999999523163
-47302.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,4329.699999809265
-47803.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,4830.099999904633
-48818.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,5845.199999809265
-49328.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,6355.699999809265
-50343.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,865.7000000476837
-50901.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,1423.7999999523163
-51916.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,2438.899999856949
-52496,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,3018.5999999046326
-53511.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,4034.0999999046326
-54072.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,4595
-55087.200000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,5609.799999952316
-55645.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,6167.799999952316
-56662.200000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,7184.799999952316
-57400,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,309.5
-58414.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,1324.1000001430511
-59058.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,1968.4000000953674
-60068,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,2977.5
-60746.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,3655.7999999523163
-61761.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,4671.299999952316
-62421.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,5331
-63436.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,6346.400000095367
-64090.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,7000.299999952316
-65105.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,867.6999998092651
-65888.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,1650.5
-66903.29999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,2665.699999809265
-67660.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,3423.199999809265
-68676.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,4439.299999952316
-69437.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,5200.199999809265
-70453.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,6216.099999904633
-71234.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,6997.299999952316
-72251.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,8013.599999904633
-73224.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,454.10000014305115
-74239.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,1469.4000000953674
-75216.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,2446.600000143051
-76231.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,3461.600000143051
-77195.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,4425.300000190735
-78211.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,5441.5
-79198.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,6427.800000190735
-80215,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,7444.700000047684
-81199.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,8429.300000190735
-82211.29999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,844.3999998569489
-82322.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,955.3999998569489
-83336.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,1969.5
-83451.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,2084.7000000476837
-84466.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,3099.5
-84566.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,3199.2000000476837
-85580.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,4214
-85690.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,4323.5
-86705.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,5338.299999952316
-86986.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,61
-88002.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,1077.1999998092651
-88170.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,1245.1999998092651
-89185.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,2259.5999999046326
-89356,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,2430.399999856949
-90370.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,3445.199999809265
-90571.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,3645.899999856949
-91585,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,4659.399999856949
-91765.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,4840.199999809265
-92780,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,865.5999999046326
-93030.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,1115.8999998569489
-94047.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,2133.2000000476837
-94297,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,2382.5999999046326
-95313,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,3398.5999999046326
-95567.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,3653.5
-96581.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,4667.5
-96834.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,4920.200000047684
-97851,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,5936.599999904633
-98220,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,115.70000004768372
-99235.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,1131.2000000476837
-99515.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,1411.5
-100529,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,2424.7000000476837
-100815.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,2711.5
-101831.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,3726.9000000953674
-102109.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,4005.5
-103125,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,5020.700000047684
-103408,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,5303.700000047684
-104420.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,868.1999998092651
-104756.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,1204.2999999523163
-105773.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,2220.5999999046326
-106133.20000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,2580.5999999046326
-107146.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,3594.199999809265
-107485.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,3932.7999999523163
-108497.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,4945
-108829,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,5276.399999856949
-109844.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,6291.599999904633
-110322,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,170.20000004768372
-111338.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,1187.1000001430511
-111755.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,1604.1000001430511
-112769.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,2618.100000143051
-113184.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,3033
-114198.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,4046.9000000953674
-114617.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,4465.900000095367
-115630.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,5478.300000190735
-116014.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,5863.100000143051
-117031,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,869.7000000476837
-117499.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,1338.1000001430511
-118514.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,2353.100000143051
-118979.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,2818.300000190735
-119996.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,3834.800000190735
-120471.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,4309.800000190735
-121489.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,5328.400000095367
-121959.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,5798.600000143051
-122976,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,6814.700000047684
-123564.20000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,225.5
-124581,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,1242.2999999523163
-125111.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,1773.0999999046326
-126130,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,2791.2999999523163
-126660.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,3322
-127675.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,4337.099999904633
-128183.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,4844.400000095367
-129197.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,5859.200000047684
-129695.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,6356.599999904633
-130711.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,876.5
-131294.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,1458.8000001907349
-132304,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,2468.7000000476837
-132855.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,3020.4000000953674
-133871.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,4036.4000000953674
-134432.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,4596.800000190735
-135445.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,5609.900000095367
-136012.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,6177.300000190735
-137029.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,7194.100000143051
-137800.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,306.40000009536743
-138815.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,1321.7999999523163
-139477.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,1983.7000000476837
-140486.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,2993.0999999046326
-141171.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,3678.2000000476837
-142188.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,4695.099999904633
-142881,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,5387.299999952316
-143897.29999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,6403.599999904633
-144577.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,7084.099999904633
-145592.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,854.7000000476837
-146349,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,1611
-147365,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,2627
-148145.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,3407.4000000953674
-149162.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,4424.200000047684
-149923,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,5185
-150940.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,6202.600000143051
-151722.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,6984.299999952316
-152738.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,8000.5
-153753.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,454.7000000476837
-154769.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,1470.7000000476837
-155757.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,2458.5999999046326
-156772.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,3473.5
-157765.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,4467
-158782.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,5484
-159757,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,6458.299999952316
-160771.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,7473.099999904633
-161766.20000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,8467.5
-1872.6999998092651,TRUE,TRUE,keyhold_schedulers,Key-hold scheduler trace,0,1000,33.799999952316284
-2942.899999856949,FALSE,TRUE,keyhold_schedulers,Key-hold scheduler trace,0,1000,1104
-3961.7999999523163,TRUE,TRUE,keyhold_schedulers,Key-hold scheduler trace,0,1000,2122.9000000953674
-1883.3999998569489,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,0,33.299999952316284
-1948.1999998092651,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,0,98.09999990463257
-17084.599999904633,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,990,1033.5999999046326
-24712.89999985695,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1000,18
-25728.099999904633,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1000,1033.2000000476837
-33370.89999985695,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1010,17.09999990463257
-34387.299999952316,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1010,1033.5
-42122,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1100,14.800000190734863
-43138.5,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1100,1031.3000001907349
-51531.39999985695,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1200,21.200000047683716
-52547.299999952316,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1200,1037.1000001430511
-61961.5,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1300,15.100000143051147
-62971.799999952316,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1300,1025.4000000953674
-73070.59999990463,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,2000,18.5
-74088.29999995232,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,2000,1036.2000000476837
-89714,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,0,16.5
-104796.79999995232,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,990,1033
-112419.19999980927,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1000,16.399999856948853
-113435.19999980927,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1000,1032.3999998569489
-121107.09999990463,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1010,16
-122126.29999995232,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1010,1035.2000000476837
-129864.5,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1100,15.300000190734863
-130880.69999980927,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1100,1031.5
-139295,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1200,16.90000009536743
-140311.59999990463,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1200,1033.5
-149649.29999995232,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1300,16.700000047683716
-150664.19999980927,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1300,1031.5999999046326
-160742.19999980927,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,2000,17
-161756,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,2000,1030.8000001907349
-1901.7999999523163,TRUE,TRUE,mode_trace_keyhold,Paired trace: key held during delay,0,990,32.89999985694885
-2963.7000000476837,FALSE,TRUE,mode_trace_keyhold,Paired trace: key held during delay,0,990,1094.7999999523163
-11068.5,TRUE,TRUE,mode_trace_keyhold,Paired trace: key held during delay,0,990,9199.599999904633
-1915.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,990,33.90000009536743
-3057.899999856949,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,990,1176.2999999523163
-4074.199999809265,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,990,2192.5999999046326
-10754.5,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1000,17.600000143051147
-11769.899999856949,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1000,1033
-19474.89999985695,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1010,14.799999952316284
-20488.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1010,1028.4000000953674
-28220.39999985695,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1100,15.099999904632568
-29235.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1100,1030.2000000476837
-37773.59999990463,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1180,14.799999952316284
-38788.299999952316,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1180,1029.5
-48042,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1200,14.200000047683716
-49056.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1200,1028.7000000476837
-58407.09999990463,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1300,15.299999952316284
-59423.39999985695,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1300,1031.5999999046326
-69601.19999980927,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1510,14.199999809265137
-70617.09999990463,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1510,1030.0999999046326
-82321.29999995232,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1550,14.700000047683716
-83336.79999995232,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1550,1030.2000000476837
-95478.09999990463,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1580,14.700000047683716
-96493.39999985695,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1580,1030
-108939.79999995232,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,14
-109953.29999995232,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,1027.5
+nowMs,isPersistent,isTyping,run_id,run_label,round,delayMs,eventMs,source
+3111.399999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,39.59999990463257,NA
+4155.899999856949,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,1084.0999999046326,NA
+5173,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1020,2101.2000000476837,NA
+2946.899999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,980,25.299999952316284,NA
+3958.0999999046326,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,980,1036.5,NA
+13989.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,980,11068.200000047684,NA
+2829.9000000953674,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,990,15.900000095367432,NA
+3841.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,990,1027.9000000953674,NA
+13971.599999904633,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,990,11157.599999904633,NA
+2869.300000190735,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,18.700000047683716,NA
+3900.5,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,1049.8999998569489,NA
+4918.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1010,2067.5999999046326,NA
+2849,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,17.799999952316284,NA
+3879.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,1048.7000000476837,NA
+4895.900000095367,TRUE,TRUE,fresh_boundary,Fresh editor boundary,0,1000,2064.7000000476837,NA
+2886.7999999523163,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,17.100000143051147,NA
+3919.899999856949,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,1050.2000000476837,NA
+4936.099999904633,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1010,2066.4000000953674,NA
+2919.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,16.600000143051147,NA
+3951.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,1048.8000001907349,NA
+4966.299999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1000,2063.4000000953674,NA
+2864.2000000476837,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,990,16.299999952316284,NA
+3883.9000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,990,1036,NA
+14037.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,990,11189.599999904633,NA
+2957.9000000953674,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,27.600000143051147,NA
+4003.600000143051,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,1073.3000001907349,NA
+5021.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,1020,2091.5,NA
+2874.100000143051,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,980,16.700000047683716,NA
+3886.800000190735,FALSE,TRUE,fresh_boundary,Fresh editor boundary,1,980,1029.4000000953674,NA
+13935.300000190735,TRUE,TRUE,fresh_boundary,Fresh editor boundary,1,980,11077.900000095367,NA
+2902.899999856949,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,22.59999990463257,NA
+3938.2000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,1057.9000000953674,NA
+4955.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1000,2074.9000000953674,NA
+2930.2999999523163,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,27.5,NA
+3964.4000000953674,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,1061.6000001430511,NA
+4983.200000047684,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1010,2080.4000000953674,NA
+2940.2000000476837,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,980,26.40000009536743,NA
+3954.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,980,1040.9000000953674,NA
+13986.900000095367,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,980,11073.100000143051,NA
+2913.5,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,16.5,NA
+3952.7000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,1055.7000000476837,NA
+4970.100000143051,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,1020,2073.100000143051,NA
+2940.0999999046326,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,990,27.59999990463257,NA
+3964.2000000476837,FALSE,TRUE,fresh_boundary,Fresh editor boundary,2,990,1051.7000000476837,NA
+14119.799999952316,TRUE,TRUE,fresh_boundary,Fresh editor boundary,2,990,11207.299999952316,NA
+3191.4000000953674,TRUE,TRUE,state_actions,Action trace near 1000ms,0,530,63.700000047683716,NA
+3808.7000000476837,FALSE,TRUE,state_actions,Action trace near 1000ms,0,530,681,NA
+2987,TRUE,TRUE,state_actions,Action trace near 1000ms,0,990,30.40000009536743,NA
+4126,FALSE,TRUE,state_actions,Action trace near 1000ms,0,990,1169.4000000953674,NA
+9207.900000095367,TRUE,TRUE,state_actions,Action trace near 1000ms,0,990,6251.300000190735,NA
+3034.0999999046326,TRUE,TRUE,state_actions,Action trace near 1000ms,0,130,30.299999952316284,NA
+3254.399999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,0,130,250.59999990463257,NA
+3095.800000190735,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1010,25.800000190734863,NA
+4183.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,0,1010,1113.6000001430511,NA
+5201.100000143051,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1010,2131.100000143051,NA
+3015.7000000476837,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1000,22.799999952316284,NA
+4110.900000095367,FALSE,TRUE,state_actions,Action trace near 1000ms,0,1000,1118,NA
+5130.299999952316,TRUE,TRUE,state_actions,Action trace near 1000ms,0,1000,2137.399999856949,NA
+3071.5,TRUE,TRUE,state_actions,Action trace near 1000ms,0,910,30.899999856948853,NA
+4086,FALSE,TRUE,state_actions,Action trace near 1000ms,0,910,1045.3999998569489,NA
+2967.5,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1010,24.5,NA
+4056.300000190735,FALSE,TRUE,state_actions,Action trace near 1000ms,1,1010,1113.3000001907349,NA
+5073.5,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1010,2130.5,NA
+3016.2999999523163,TRUE,TRUE,state_actions,Action trace near 1000ms,1,990,37.799999952316284,NA
+4122.399999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,1,990,1143.8999998569489,NA
+9198.599999904633,TRUE,TRUE,state_actions,Action trace near 1000ms,1,990,6220.099999904633,NA
+3015.199999809265,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1000,23.699999809265137,NA
+4121.899999856949,FALSE,TRUE,state_actions,Action trace near 1000ms,1,1000,1130.3999998569489,NA
+5139.599999904633,TRUE,TRUE,state_actions,Action trace near 1000ms,1,1000,2148.0999999046326,NA
+3034.100000143051,TRUE,TRUE,state_actions,Action trace near 1000ms,1,910,41.30000019073486,NA
+4101.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,1,910,1108.8000001907349,NA
+3078.7000000476837,TRUE,TRUE,state_actions,Action trace near 1000ms,1,530,42.40000009536743,NA
+3794.9000000953674,FALSE,TRUE,state_actions,Action trace near 1000ms,1,530,758.6000001430511,NA
+3067.4000000953674,TRUE,TRUE,state_actions,Action trace near 1000ms,1,130,24.200000047683716,NA
+3266.600000143051,FALSE,TRUE,state_actions,Action trace near 1000ms,1,130,223.40000009536743,NA
+3175.5,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,62.30000019073486,NA
+3248,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,134.80000019073486,NA
+4260.599999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,1147.4000000953674,NA
+4385.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,1272.5,NA
+5401.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,2288,NA
+5523.399999856949,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,2410.2000000476837,NA
+6537.699999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,3424.5,NA
+6660.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,3547.5,NA
+7676.099999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,4562.900000095367,NA
+7797.099999904633,FALSE,TRUE,state_wait,Explicit wait for persistence,0,0,4683.900000095367,NA
+8812.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,0,0,5699,NA
+3003.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,59.39999985694885,NA
+3078.5999999046326,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,134.09999990463257,NA
+4093.2000000476837,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,1148.7000000476837,NA
+4230.299999952316,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,1285.7999999523163,NA
+5247.5,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,2303,NA
+5372.5,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,2428,NA
+6386.700000047684,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,3442.2000000476837,NA
+6508.099999904633,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,3563.5999999046326,NA
+7524,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,4579.5,NA
+7647.899999856949,FALSE,TRUE,state_wait,Explicit wait for persistence,1,0,4703.399999856949,NA
+8664.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,1,0,5720.399999856949,NA
+3062.7999999523163,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,67.29999995231628,NA
+3234.699999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,239.19999980926514,NA
+4249.099999904633,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,1253.5999999046326,NA
+4379,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,1383.5,NA
+5394.299999952316,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,2398.7999999523163,NA
+5499.799999952316,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,2504.2999999523163,NA
+6517.199999809265,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,3521.699999809265,NA
+6641.199999809265,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,3645.699999809265,NA
+7657.899999856949,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,4662.399999856949,NA
+7786,FALSE,TRUE,state_wait,Explicit wait for persistence,2,0,4790.5,NA
+8794.799999952316,TRUE,TRUE,state_wait,Explicit wait for persistence,2,0,5799.299999952316,NA
+2104.4000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,0,1020,37.200000047683716,NA
+3140.300000190735,FALSE,TRUE,empty_boundary,Empty post boundary,0,1020,1073.1000001430511,NA
+4148.900000095367,TRUE,TRUE,empty_boundary,Empty post boundary,0,1020,2081.7000000476837,NA
+1986,TRUE,TRUE,empty_boundary,Empty post boundary,0,980,11.200000047683716,NA
+2987.4000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,0,980,1012.6000001430511,NA
+12969,TRUE,TRUE,empty_boundary,Empty post boundary,0,980,10994.200000047684,NA
+1904.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,0,990,9.099999904632568,NA
+2917.800000190735,FALSE,TRUE,empty_boundary,Empty post boundary,0,990,1022.7000000476837,NA
+12989.100000143051,TRUE,TRUE,empty_boundary,Empty post boundary,0,990,11094,NA
+1907.1999998092651,TRUE,TRUE,empty_boundary,Empty post boundary,0,1010,8,NA
+2934.0999999046326,FALSE,TRUE,empty_boundary,Empty post boundary,0,1010,1034.9000000953674,NA
+3942.2999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,0,1010,2043.1000001430511,NA
+1906.7999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,0,1000,8.899999856948853,NA
+2927.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,0,1000,1030,NA
+3935.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,0,1000,2037.7999999523163,NA
+1922.8999998569489,TRUE,TRUE,empty_boundary,Empty post boundary,1,1010,8.599999904632568,NA
+2955.5,FALSE,TRUE,empty_boundary,Empty post boundary,1,1010,1041.2000000476837,NA
+3964.0999999046326,TRUE,TRUE,empty_boundary,Empty post boundary,1,1010,2049.7999999523163,NA
+1944.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,1,1000,8.700000047683716,NA
+2966.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,1,1000,1030.9000000953674,NA
+3974.9000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,1,1000,2038.9000000953674,NA
+1905.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,1,990,9,NA
+2916.2999999523163,FALSE,TRUE,empty_boundary,Empty post boundary,1,990,1020.0999999046326,NA
+12985.5,TRUE,TRUE,empty_boundary,Empty post boundary,1,990,11089.299999952316,NA
+1905,TRUE,TRUE,empty_boundary,Empty post boundary,1,1020,8.799999952316284,NA
+2943.800000190735,FALSE,TRUE,empty_boundary,Empty post boundary,1,1020,1047.6000001430511,NA
+3951.5,TRUE,TRUE,empty_boundary,Empty post boundary,1,1020,2055.2999999523163,NA
+1932.7999999523163,TRUE,TRUE,empty_boundary,Empty post boundary,1,980,8.600000143051147,NA
+2934.0999999046326,FALSE,TRUE,empty_boundary,Empty post boundary,1,980,1009.9000000953674,NA
+12917.899999856949,TRUE,TRUE,empty_boundary,Empty post boundary,1,980,10993.700000047684,NA
+1927.2000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,2,1000,13.600000143051147,NA
+2952.2000000476837,FALSE,TRUE,empty_boundary,Empty post boundary,2,1000,1038.6000001430511,NA
+3961.399999856949,TRUE,TRUE,empty_boundary,Empty post boundary,2,1000,2047.7999999523163,NA
+1934.7000000476837,TRUE,TRUE,empty_boundary,Empty post boundary,2,1010,8.799999952316284,NA
+2961.9000000953674,FALSE,TRUE,empty_boundary,Empty post boundary,2,1010,1036,NA
+3969.600000143051,TRUE,TRUE,empty_boundary,Empty post boundary,2,1010,2043.7000000476837,NA
+1889.4000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,2,980,8.799999952316284,NA
+2893,FALSE,TRUE,empty_boundary,Empty post boundary,2,980,1012.3999998569489,NA
+12879.800000190735,TRUE,TRUE,empty_boundary,Empty post boundary,2,980,10999.200000047684,NA
+1929.1999998092651,TRUE,TRUE,empty_boundary,Empty post boundary,2,1020,8.799999952316284,NA
+2963.899999856949,FALSE,TRUE,empty_boundary,Empty post boundary,2,1020,1043.5,NA
+3971.199999809265,TRUE,TRUE,empty_boundary,Empty post boundary,2,1020,2050.7999999523163,NA
+1887.9000000953674,TRUE,TRUE,empty_boundary,Empty post boundary,2,990,5.799999952316284,NA
+2895.7999999523163,FALSE,TRUE,empty_boundary,Empty post boundary,2,990,1013.6999998092651,NA
+12957,TRUE,TRUE,empty_boundary,Empty post boundary,2,990,11074.899999856949,NA
+2517.100000143051,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,25,NA
+3554,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,1061.8999998569489,NA
+4564.700000047684,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,1010,2072.5999999046326,NA
+2366,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,19.299999952316284,NA
+3373.9000000953674,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,1027.2000000476837,NA
+8423.099999904633,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,0,990,6076.399999856949,NA
+2316.7000000476837,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,10.400000095367432,NA
+3345.4000000953674,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,1039.1000001430511,NA
+4355.5,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,1010,2049.2000000476837,NA
+2304.9000000953674,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,10.200000047683716,NA
+3320.7000000476837,FALSE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,1026,NA
+8367.5,TRUE,TRUE,thousand_boundary,1000 paragraphs boundary,1,990,6072.799999952316,NA
+1809.8999998569489,TRUE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,31.699999809265137,NA
+2948.899999856949,FALSE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,1170.6999998092651,NA
+3964.899999856949,TRUE,TRUE,dense_1110_2000,"1110-2000ms, 10ms step",0,1110,2186.699999809265,NA
+1878.2999999523163,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,33.5,NA
+2806.2999999523163,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,961.5,NA
+12121.799999952316,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,900,10277,NA
+13200.899999856949,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,990,1030.8999998569489,NA
+23339.89999985695,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,0,990,11169.899999856949,NA
+332264.89999985695,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,990,1031.2999999523163,NA
+342386,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,990,11152.400000095367,NA
+343403.2000000477,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,900,945.6000001430511,NA
+352725.7999999523,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,1,900,10268.200000047684,NA
+458194.39999985695,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,900,941.5999999046326,NA
+467498.09999990463,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,1200,0,NA
+494603.7000000477,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,1041.7000000476837,NA
+504721.5,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,11159.5,NA
+1876.9000000953674,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,32.799999952316284,NA
+2934.2999999523163,FALSE,TRUE,cliff_actions,Cliff action trace,0,990,1090.1999998092651,NA
+8017,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,6172.899999856949,NA
+1852.5,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,34,NA
+2375.7999999523163,FALSE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,557.2999999523163,NA
+6493.299999952316,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,4674.799999952316,NA
+1866.2999999523163,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,45,NA
+1934.7999999523163,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,113.5,NA
+2949.7000000476837,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,1128.4000000953674,NA
+3073.600000143051,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,1252.3000001907349,NA
+4091.2000000476837,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,2269.9000000953674,NA
+4213.900000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,2392.600000143051,NA
+5229.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,3408,NA
+5351.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,3530.5,NA
+6366.900000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,0,4545.600000143051,NA
+6638.900000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,63.700000047683716,NA
+7654.400000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,1079.2000000476837,NA
+7820.700000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,1245.5,NA
+8835.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,2260.5999999046326,NA
+9007.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,2432.0999999046326,NA
+10022.600000143051,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,3447.4000000953674,NA
+10215.700000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,3640.5,NA
+11231.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,4656.5,NA
+11426.100000143051,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,25,4850.900000095367,NA
+12441.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,878.0999999046326,NA
+12675,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,1111.5999999046326,NA
+13689.100000143051,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,2125.7000000476837,NA
+13940.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,2377.0999999046326,NA
+14958,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,3394.5999999046326,NA
+15211.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,3648.399999856949,NA
+16228.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,4665.099999904633,NA
+16484.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,4920.899999856949,NA
+17499.900000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,50,5936.5,NA
+17900,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,118.79999995231628,NA
+18913.200000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,1132,NA
+19199.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,1418.2999999523163,NA
+20213.400000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,2432.2000000476837,NA
+20521.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,2740.5999999046326,NA
+21534.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,3753.4000000953674,NA
+21818.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,4037,NA
+22833.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,5052.099999904633,NA
+23138.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,75,5356.900000095367,NA
+24154,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,871.8999998569489,NA
+24487.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,1205,NA
+25502,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,2219.899999856949,NA
+25839,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,2556.899999856949,NA
+26847.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,3565.199999809265,NA
+27175.400000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,3893.2999999523163,NA
+28189.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,4907.599999904633,NA
+28523.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,5241.199999809265,NA
+29538.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,100,6256.599999904633,NA
+30045.400000095367,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,170.40000009536743,NA
+31059.400000095367,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,1184.4000000953674,NA
+31453.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,1578.7999999523163,NA
+32468.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,2593.2999999523163,NA
+32857.700000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,2982.7000000476837,NA
+33871.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,3996.5,NA
+34285.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,4410.900000095367,NA
+35300.700000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,5425.700000047684,NA
+35692.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,125,5817.900000095367,NA
+36708.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,868.0999999046326,NA
+37160.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,1320.2000000476837,NA
+38177,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,2336.5999999046326,NA
+38623.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,2782.899999856949,NA
+39638.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,3797.899999856949,NA
+40111,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,4270.599999904633,NA
+41126.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,5286.399999856949,NA
+41579.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,5738.700000047684,NA
+42596,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,150,6755.599999904633,NA
+43189.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,216.19999980926514,NA
+44206.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,1233,NA
+44737.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,1764.7999999523163,NA
+45754.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,2781.699999809265,NA
+46287.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,3314.2999999523163,NA
+47302.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,4329.699999809265,NA
+47803.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,4830.099999904633,NA
+48818.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,5845.199999809265,NA
+49328.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,175,6355.699999809265,NA
+50343.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,865.7000000476837,NA
+50901.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,1423.7999999523163,NA
+51916.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,2438.899999856949,NA
+52496,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,3018.5999999046326,NA
+53511.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,4034.0999999046326,NA
+54072.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,4595,NA
+55087.200000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,5609.799999952316,NA
+55645.200000047684,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,6167.799999952316,NA
+56662.200000047684,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,200,7184.799999952316,NA
+57400,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,309.5,NA
+58414.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,1324.1000001430511,NA
+59058.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,1968.4000000953674,NA
+60068,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,2977.5,NA
+60746.299999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,3655.7999999523163,NA
+61761.799999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,4671.299999952316,NA
+62421.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,5331,NA
+63436.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,6346.400000095367,NA
+64090.799999952316,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,250,7000.299999952316,NA
+65105.299999952316,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,867.6999998092651,NA
+65888.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,1650.5,NA
+66903.29999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,2665.699999809265,NA
+67660.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,3423.199999809265,NA
+68676.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,4439.299999952316,NA
+69437.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,5200.199999809265,NA
+70453.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,6216.099999904633,NA
+71234.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,6997.299999952316,NA
+72251.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,300,8013.599999904633,NA
+73224.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,454.10000014305115,NA
+74239.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,1469.4000000953674,NA
+75216.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,2446.600000143051,NA
+76231.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,3461.600000143051,NA
+77195.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,4425.300000190735,NA
+78211.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,5441.5,NA
+79198.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,6427.800000190735,NA
+80215,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,7444.700000047684,NA
+81199.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",0,400,8429.300000190735,NA
+82211.29999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,844.3999998569489,NA
+82322.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,955.3999998569489,NA
+83336.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,1969.5,NA
+83451.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,2084.7000000476837,NA
+84466.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,3099.5,NA
+84566.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,3199.2000000476837,NA
+85580.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,4214,NA
+85690.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,4323.5,NA
+86705.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,0,5338.299999952316,NA
+86986.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,61,NA
+88002.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,1077.1999998092651,NA
+88170.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,1245.1999998092651,NA
+89185.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,2259.5999999046326,NA
+89356,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,2430.399999856949,NA
+90370.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,3445.199999809265,NA
+90571.5,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,3645.899999856949,NA
+91585,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,4659.399999856949,NA
+91765.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,25,4840.199999809265,NA
+92780,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,865.5999999046326,NA
+93030.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,1115.8999998569489,NA
+94047.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,2133.2000000476837,NA
+94297,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,2382.5999999046326,NA
+95313,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,3398.5999999046326,NA
+95567.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,3653.5,NA
+96581.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,4667.5,NA
+96834.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,4920.200000047684,NA
+97851,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,50,5936.599999904633,NA
+98220,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,115.70000004768372,NA
+99235.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,1131.2000000476837,NA
+99515.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,1411.5,NA
+100529,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,2424.7000000476837,NA
+100815.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,2711.5,NA
+101831.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,3726.9000000953674,NA
+102109.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,4005.5,NA
+103125,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,5020.700000047684,NA
+103408,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,75,5303.700000047684,NA
+104420.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,868.1999998092651,NA
+104756.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,1204.2999999523163,NA
+105773.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,2220.5999999046326,NA
+106133.20000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,2580.5999999046326,NA
+107146.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,3594.199999809265,NA
+107485.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,3932.7999999523163,NA
+108497.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,4945,NA
+108829,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,5276.399999856949,NA
+109844.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,100,6291.599999904633,NA
+110322,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,170.20000004768372,NA
+111338.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,1187.1000001430511,NA
+111755.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,1604.1000001430511,NA
+112769.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,2618.100000143051,NA
+113184.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,3033,NA
+114198.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,4046.9000000953674,NA
+114617.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,4465.900000095367,NA
+115630.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,5478.300000190735,NA
+116014.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,125,5863.100000143051,NA
+117031,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,869.7000000476837,NA
+117499.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,1338.1000001430511,NA
+118514.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,2353.100000143051,NA
+118979.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,2818.300000190735,NA
+119996.10000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,3834.800000190735,NA
+120471.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,4309.800000190735,NA
+121489.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,5328.400000095367,NA
+121959.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,5798.600000143051,NA
+122976,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,150,6814.700000047684,NA
+123564.20000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,225.5,NA
+124581,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,1242.2999999523163,NA
+125111.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,1773.0999999046326,NA
+126130,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,2791.2999999523163,NA
+126660.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,3322,NA
+127675.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,4337.099999904633,NA
+128183.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,4844.400000095367,NA
+129197.90000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,5859.200000047684,NA
+129695.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,175,6356.599999904633,NA
+130711.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,876.5,NA
+131294.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,1458.8000001907349,NA
+132304,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,2468.7000000476837,NA
+132855.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,3020.4000000953674,NA
+133871.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,4036.4000000953674,NA
+134432.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,4596.800000190735,NA
+135445.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,5609.900000095367,NA
+136012.60000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,6177.300000190735,NA
+137029.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,200,7194.100000143051,NA
+137800.10000014305,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,306.40000009536743,NA
+138815.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,1321.7999999523163,NA
+139477.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,1983.7000000476837,NA
+140486.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,2993.0999999046326,NA
+141171.90000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,3678.2000000476837,NA
+142188.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,4695.099999904633,NA
+142881,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,5387.299999952316,NA
+143897.29999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,6403.599999904633,NA
+144577.79999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,250,7084.099999904633,NA
+145592.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,854.7000000476837,NA
+146349,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,1611,NA
+147365,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,2627,NA
+148145.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,3407.4000000953674,NA
+149162.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,4424.200000047684,NA
+149923,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,5185,NA
+150940.60000014305,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,6202.600000143051,NA
+151722.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,6984.299999952316,NA
+152738.5,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,300,8000.5,NA
+153753.40000009537,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,454.7000000476837,NA
+154769.40000009537,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,1470.7000000476837,NA
+155757.29999995232,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,2458.5999999046326,NA
+156772.20000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,3473.5,NA
+157765.70000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,4467,NA
+158782.70000004768,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,5484,NA
+159757,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,6458.299999952316,NA
+160771.79999995232,TRUE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,7473.099999904633,NA
+161766.20000004768,FALSE,TRUE,after_persistence_scan,"Wait for persistence, then wait",1,400,8467.5,NA
+1872.6999998092651,TRUE,TRUE,keyhold_schedulers,Key-hold scheduler trace,0,1000,33.799999952316284,NA
+2942.899999856949,FALSE,TRUE,keyhold_schedulers,Key-hold scheduler trace,0,1000,1104,NA
+3961.7999999523163,TRUE,TRUE,keyhold_schedulers,Key-hold scheduler trace,0,1000,2122.9000000953674,NA
+1883.3999998569489,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,0,33.299999952316284,NA
+1948.1999998092651,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,0,98.09999990463257,NA
+17084.599999904633,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,990,1033.5999999046326,NA
+24712.89999985695,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1000,18,NA
+25728.099999904633,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1000,1033.2000000476837,NA
+33370.89999985695,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1010,17.09999990463257,NA
+34387.299999952316,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1010,1033.5,NA
+42122,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1100,14.800000190734863,NA
+43138.5,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1100,1031.3000001907349,NA
+51531.39999985695,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1200,21.200000047683716,NA
+52547.299999952316,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1200,1037.1000001430511,NA
+61961.5,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,1300,15.100000143051147,NA
+62971.799999952316,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,1300,1025.4000000953674,NA
+73070.59999990463,FALSE,TRUE,between_keys,"Complete keypress, then wait",0,2000,18.5,NA
+74088.29999995232,TRUE,TRUE,between_keys,"Complete keypress, then wait",0,2000,1036.2000000476837,NA
+89714,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,0,16.5,NA
+104796.79999995232,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,990,1033,NA
+112419.19999980927,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1000,16.399999856948853,NA
+113435.19999980927,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1000,1032.3999998569489,NA
+121107.09999990463,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1010,16,NA
+122126.29999995232,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1010,1035.2000000476837,NA
+129864.5,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1100,15.300000190734863,NA
+130880.69999980927,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1100,1031.5,NA
+139295,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1200,16.90000009536743,NA
+140311.59999990463,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1200,1033.5,NA
+149649.29999995232,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,1300,16.700000047683716,NA
+150664.19999980927,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,1300,1031.5999999046326,NA
+160742.19999980927,FALSE,TRUE,between_keys,"Complete keypress, then wait",1,2000,17,NA
+161756,TRUE,TRUE,between_keys,"Complete keypress, then wait",1,2000,1030.8000001907349,NA
+1901.7999999523163,TRUE,TRUE,mode_trace_keyhold,Paired trace: key held during delay,0,990,32.89999985694885,NA
+2963.7000000476837,FALSE,TRUE,mode_trace_keyhold,Paired trace: key held during delay,0,990,1094.7999999523163,NA
+11068.5,TRUE,TRUE,mode_trace_keyhold,Paired trace: key held during delay,0,990,9199.599999904633,NA
+1915.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,990,33.90000009536743,NA
+3057.899999856949,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,990,1176.2999999523163,NA
+4074.199999809265,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,990,2192.5999999046326,NA
+10754.5,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1000,17.600000143051147,NA
+11769.899999856949,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1000,1033,NA
+19474.89999985695,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1010,14.799999952316284,NA
+20488.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1010,1028.4000000953674,NA
+28220.39999985695,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1100,15.099999904632568,NA
+29235.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1100,1030.2000000476837,NA
+37773.59999990463,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1180,14.799999952316284,NA
+38788.299999952316,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1180,1029.5,NA
+48042,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1200,14.200000047683716,NA
+49056.5,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1200,1028.7000000476837,NA
+58407.09999990463,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1300,15.299999952316284,NA
+59423.39999985695,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1300,1031.5999999046326,NA
+69601.19999980927,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1510,14.199999809265137,NA
+70617.09999990463,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1510,1030.0999999046326,NA
+82321.29999995232,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1550,14.700000047683716,NA
+83336.79999995232,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1550,1030.2000000476837,NA
+95478.09999990463,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1580,14.700000047683716,NA
+96493.39999985695,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,1580,1030,NA
+108939.79999995232,FALSE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,14,NA
+109953.29999995232,TRUE,TRUE,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,1027.5,NA
+106,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,19.5,native-input
+1105.1999998092651,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1018.6999998092651,native-input
+2103.899999856949,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2017.3999998569489,native-input
+3101.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3015,native-input
+4098.799999952316,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4012.2999999523163,native-input
+5095.599999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5009.099999904633,native-input
+6092.099999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6005.599999904633,native-input
+7088.099999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7001.599999904633,native-input
+8085.399999856949,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7998.899999856949,native-input
+9087.199999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,9000.699999809265,native-timeout
+9137.599999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4.200000047683716,native-input
+10138.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1005.2999999523163,native-timeout
+10142.899999856949,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1009.5,native-input
+11145.899999856949,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2012.5,native-timeout
+11149.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2016.1000001430511,native-input
+12152.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3019.2999999523163,native-timeout
+12158,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3024.600000143051,native-input
+13161.299999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4027.9000000953674,native-timeout
+13164.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4031.100000143051,native-input
+14166.899999856949,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5033.5,native-timeout
+14169.399999856949,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5036,native-input
+15171.899999856949,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6038.5,native-timeout
+15175.599999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6042.200000047684,native-input
+16178.299999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7044.900000095367,native-timeout
+16181.399999856949,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7048,native-input
+17184.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8051.100000143051,native-timeout
+17186.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8053.100000143051,native-input
+18189.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,9056.299999952316,native-timeout
+18256.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7.599999904632568,native-input
+19259.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1010.2000000476837,native-timeout
+19270.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1021.5999999046326,native-input
+20273.39999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2024.0999999046326,native-timeout
+20284.599999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2035.2999999523163,native-input
+21286.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3037.5999999046326,native-timeout
+21306.699999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3057.399999856949,native-input
+22307.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4058.5999999046326,native-timeout
+22321.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4072.0999999046326,native-input
+23324.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5075.399999856949,native-timeout
+23337.299999952316,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5088,native-input
+24339.799999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6090.5,native-timeout
+24354,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6104.700000047684,native-input
+25355.799999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7106.5,native-timeout
+25371.699999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7122.399999856949,native-input
+26374.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8125.399999856949,native-timeout
+26387.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8138.599999904633,native-input
+27390.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,9141.200000047684,native-timeout
+27457.599999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3.700000047683716,native-input
+28460.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1006.7999999523163,native-timeout
+28564.099999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1110.2000000476837,native-input
+29566.799999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2112.9000000953674,native-timeout
+29669.699999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2215.7999999523163,native-input
+30672.599999904633,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3218.7000000476837,native-timeout
+30775,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3321.100000143051,native-input
+31777.599999904633,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4323.700000047684,native-timeout
+31882.599999904633,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4428.700000047684,native-input
+32885.299999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5431.400000095367,native-timeout
+32990.699999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5536.799999952316,native-input
+33991.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6537.600000143051,native-timeout
+34097.699999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6643.799999952316,native-input
+35100,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7646.100000143051,native-timeout
+35207.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7753.5,native-input
+36210.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8756.799999952316,native-timeout
+36313.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8859.700000047684,native-input
+37316.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,9862.700000047684,native-timeout
+37472.199999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3.799999952316284,native-input
+38475.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1007.1000001430511,native-timeout
+38656,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1187.6000001430511,native-input
+39658.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2190.2999999523163,native-timeout
+39842.199999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2373.7999999523163,native-input
+40843.299999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3374.9000000953674,native-timeout
+41026.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3558.2000000476837,native-input
+42029.199999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4560.799999952316,native-timeout
+42211.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4743.5,native-input
+43214.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5746.299999952316,native-timeout
+43395.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5927,native-input
+44398.39999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,6930,native-timeout
+44580.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7112.5,native-input
+45583.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8115.299999952316,native-timeout
+45767.799999952316,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8299.400000095367,native-input
+46770.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9302.200000047684,native-timeout
+46953.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9485.5,native-input
+47957.299999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,10488.900000095367,native-timeout
+48194.199999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4,native-input
+49195.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1005.4000000953674,native-timeout
+49399.199999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1209,native-input
+50402.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2212.300000190735,native-timeout
+50607.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2417.7000000476837,native-input
+51610,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3419.800000190735,native-timeout
+51815.09999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3624.9000000953674,native-input
+52818.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4628.400000095367,native-timeout
+53021.199999809265,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4831,native-input
+54023.39999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,5833.200000047684,native-timeout
+54227,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6036.800000190735,native-input
+55230.299999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7040.100000143051,native-timeout
+55433,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7242.800000190735,native-input
+56435.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8245.5,native-timeout
+56638.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8448.300000190735,native-input
+57640.39999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9450.200000047684,native-timeout
+57844.799999952316,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9654.600000143051,native-input
+58847.799999952316,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,10657.600000143051,native-timeout
+59105.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3.3000001907348633,native-input
+60108.39999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1006.2000000476837,native-timeout
+60411.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1309.3000001907349,native-input
+61414,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2311.800000190735,native-timeout
+61718.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2616.2000000476837,native-input
+62721,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3618.800000190735,native-timeout
+63024.299999952316,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3922.100000143051,native-input
+64025.699999809265,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,4923.5,native-timeout
+64330.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5228.200000047684,native-input
+65332.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6230.300000190735,native-timeout
+65636.69999980927,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6534.5,native-input
+66638.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7536.700000047684,native-timeout
+66943.09999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7840.900000095367,native-input
+67945.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,8843.400000095367,native-timeout
+68250.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9148.400000095367,native-input
+69251.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10149.400000095367,native-timeout
+69555.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10453.200000047684,native-input
+70558.19999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,11456,native-timeout
+70915,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3.4000000953674316,native-input
+71917.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1005.9000000953674,native-timeout
+72428,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1516.4000000953674,native-input
+73430.79999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,2519.2000000476837,native-timeout
+73944.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3033.2999999523163,native-input
+74947.69999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4036.0999999046326,native-timeout
+75460.29999995232,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4548.700000047684,native-input
+76462.79999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,5551.200000047684,native-timeout
+76976.79999995232,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6065.200000047684,native-input
+77980,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7068.400000095367,native-timeout
+78494.19999980927,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7582.599999904633,native-input
+79495.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,8584.299999952316,native-timeout
+80010.69999980927,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9099.099999904633,native-input
+81013.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10102.299999952316,native-timeout
+81524.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10613,native-input
+82527.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,11616,native-timeout
+83040.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12128.799999952316,native-input
+84042.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,13131.299999952316,native-timeout
+84609.29999995232,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4,native-input
+85610,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1004.7000000476837,native-timeout
+86160.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1555.2999999523163,native-input
+87162.39999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,2557.0999999046326,native-timeout
+87716,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3110.7000000476837,native-input
+88718.79999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4113.5,native-timeout
+89272,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4666.700000047684,native-input
+90273.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,5668.599999904633,native-timeout
+90825.19999980927,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6219.899999856949,native-input
+91826.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7221.200000047684,native-timeout
+92378.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7773.200000047684,native-input
+93379.5,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,8774.200000047684,native-timeout
+93931.79999995232,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9326.5,native-input
+94934.19999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10328.899999856949,native-timeout
+95486.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10881.299999952316,native-input
+96489.69999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,11884.399999856949,native-timeout
+97041.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12436.200000047684,native-input
+98042.89999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,13437.599999904633,native-timeout
+98652.09999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3.5999999046325684,native-input
+99653.79999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1005.2999999523163,native-timeout
+100237,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1588.5,native-input
+101238.69999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,2590.199999809265,native-timeout
+101823,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3174.5,native-input
+102825.19999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4176.699999809265,native-timeout
+103409.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4760.899999856949,native-input
+104412,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,5763.5,native-timeout
+104993.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6345.099999904633,native-input
+105994.69999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7346.199999809265,native-timeout
+106578.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7929.899999856949,native-input
+107581.19999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,8932.699999809265,native-timeout
+108165.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9517.099999904633,native-input
+109167.29999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,10518.799999952316,native-timeout
+109750.89999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11102.399999856949,native-input
+110754,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12105.5,native-timeout
+111336.19999980927,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12687.699999809265,native-input
+112338.69999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,13690.199999809265,native-timeout
+112975.59999990463,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3.5,native-input
+113978.19999980927,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,1006.0999999046326,native-timeout
+114982.19999980927,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2010.0999999046326,native-input
+115985.09999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3013,native-timeout
+116988.79999995232,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4016.7000000476837,native-input
+117991.79999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,5019.700000047684,native-timeout
+118995.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6023.400000095367,native-input
+119997,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,7024.900000095367,native-timeout
+121000.29999995232,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8028.200000047684,native-input
+122003.29999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,9031.200000047684,native-timeout
+123005.5,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10033.400000095367,native-input
+124008,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,11035.900000095367,native-timeout
+125011.19999980927,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12039.099999904633,native-input
+126013.59999990463,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,13041.5,native-timeout
+127017.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14045.299999952316,native-input
+128020.39999985695,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,15048.299999952316,native-timeout
+129022.39999985695,FALSE,TRUE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16050.299999952316,native-input
+130023.79999995232,TRUE,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,17051.700000047684,native-timeout
+128.19999980926514,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,20.09999990463257,native-input
+1132.1999998092651,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1024.0999999046326,native-timeout
+1144.0999999046326,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1036,native-input
+2146.0999999046326,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2038,native-timeout
+2148.399999856949,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2040.2999999523163,native-input
+3150.0999999046326,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3042,native-timeout
+3153.399999856949,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3045.2999999523163,native-input
+4154.399999856949,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4046.2999999523163,native-timeout
+4159.099999904633,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4051,native-input
+5160.299999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5052.200000047684,native-timeout
+5165.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5057.200000047684,native-input
+6166.799999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6058.700000047684,native-timeout
+6167.799999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6059.700000047684,native-input
+7164.5,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7056.400000095367,native-input
+8166.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8058.400000095367,native-timeout
+8170,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8061.900000095367,native-input
+8227.899999856949,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3.5,native-input
+9229.399999856949,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1005,native-timeout
+9242.099999904633,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1017.7000000476837,native-input
+10245,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2020.6000001430511,native-timeout
+10256.599999904633,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2032.2000000476837,native-input
+11259.099999904633,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3034.7000000476837,native-timeout
+11274.099999904633,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3049.7000000476837,native-input
+12275.799999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4051.4000000953674,native-timeout
+12286.899999856949,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4062.5,native-input
+13290.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5065.799999952316,native-timeout
+13301.199999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5076.799999952316,native-input
+14303.899999856949,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6079.5,native-timeout
+14321.599999904633,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6097.200000047684,native-input
+15324.299999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7099.900000095367,native-timeout
+15336.199999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7111.799999952316,native-input
+16337.799999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8113.400000095367,native-timeout
+16354,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8129.600000143051,native-input
+16408,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3.4000000953674316,native-input
+17410.299999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1005.7000000476837,native-timeout
+17433.5,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1028.9000000953674,native-input
+18436.099999904633,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2031.5,native-timeout
+18457.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2052.7000000476837,native-input
+19458.89999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3054.2999999523163,native-timeout
+19478.799999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3074.2000000476837,native-input
+20481.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4076.7999999523163,native-timeout
+20496.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4091.7000000476837,native-input
+21498.299999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5093.700000047684,native-timeout
+21515.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5110.799999952316,native-input
+22518.599999904633,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6114,native-timeout
+22533.199999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6128.599999904633,native-input
+23533.799999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7129.200000047684,native-timeout
+23551.799999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7147.200000047684,native-input
+24553.099999904633,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8148.5,native-timeout
+24570.799999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8166.200000047684,native-input
+24611.599999904633,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3.4000000953674316,native-input
+25613.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1005,native-timeout
+25722,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1113.8000001907349,native-input
+26724.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2116.300000190735,native-timeout
+26838.199999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2230,native-input
+27841.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3233.2000000476837,native-timeout
+27954,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3345.800000190735,native-input
+28955.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4347.300000190735,native-timeout
+29068.599999904633,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4460.400000095367,native-input
+30071.699999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5463.5,native-timeout
+30185.5,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5577.300000190735,native-input
+31188.099999904633,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6579.900000095367,native-timeout
+31300.799999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6692.600000143051,native-input
+32304,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7695.800000190735,native-timeout
+32421.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7813.100000143051,native-input
+33424.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8816,native-timeout
+33536.199999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8928,native-input
+33582.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3.4000000953674316,native-input
+34585.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1006.5,native-timeout
+34777,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1198.3000001907349,native-input
+35779,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2200.300000190735,native-timeout
+35967.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2388.4000000953674,native-input
+36970.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3391.5,native-timeout
+37159.699999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3581,native-input
+38162,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4583.300000190735,native-timeout
+38353.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4774.600000143051,native-input
+39356.09999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5777.400000095367,native-timeout
+39548.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5969.900000095367,native-input
+40552,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,6973.300000190735,native-timeout
+40740.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7161.700000047684,native-input
+41743.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8164.800000190735,native-timeout
+41937.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8358.400000095367,native-input
+42940,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9361.300000190735,native-timeout
+43132.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9553.600000143051,native-input
+43175,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3.5,native-input
+44177,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1005.5,native-timeout
+44387.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1216.0999999046326,native-input
+45390.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2218.699999809265,native-timeout
+45602.799999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2431.2999999523163,native-input
+46605.299999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3433.7999999523163,native-timeout
+46816.5,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3645,native-input
+47819.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4647.899999856949,native-timeout
+48031.89999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4860.399999856949,native-input
+49034.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,5862.899999856949,native-timeout
+49246.699999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6075.199999809265,native-input
+50247.89999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7076.399999856949,native-timeout
+50462.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7290.899999856949,native-input
+51463.89999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8292.399999856949,native-timeout
+51675.89999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8504.399999856949,native-input
+52678.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9507,native-timeout
+52892.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9720.899999856949,native-input
+52936.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3.700000047683716,native-input
+53939.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1006.2999999523163,native-timeout
+54248.799999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1315.9000000953674,native-input
+55251.699999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2318.7999999523163,native-timeout
+55562.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2629.2000000476837,native-input
+56565.299999952316,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3632.4000000953674,native-timeout
+56878.89999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3946,native-input
+57882.199999809265,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,4949.299999952316,native-timeout
+58192.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5259.700000047684,native-input
+59194.89999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6262,native-timeout
+59508.199999809265,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6575.299999952316,native-input
+60510.09999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7577.200000047684,native-timeout
+60823,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7890.100000143051,native-input
+61824.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,8891.5,native-timeout
+62138.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9205.400000095367,native-input
+63141.59999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10208.700000047684,native-timeout
+63451.299999952316,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10518.400000095367,native-input
+63495.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4.400000095367432,native-input
+64499,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1007.8000001907349,native-timeout
+65013.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1522.4000000953674,native-input
+66015.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,2524.2000000476837,native-timeout
+66533.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3042.2000000476837,native-input
+67536.79999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4045.600000143051,native-timeout
+68050.89999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4559.700000047684,native-input
+69053.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,5562.300000190735,native-timeout
+69570.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6078.900000095367,native-input
+70572.69999980927,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7081.5,native-timeout
+71088.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7597.200000047684,native-input
+72091.29999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,8600.100000143051,native-timeout
+72605.5,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9114.300000190735,native-input
+73607.59999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10116.400000095367,native-timeout
+74123.69999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.5,native-input
+75125.79999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,11634.600000143051,native-timeout
+75639.69999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12148.5,native-input
+75680.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3.5999999046325684,native-input
+76682.79999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1006,native-timeout
+77237.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1560.2999999523163,native-input
+78240.59999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,2563.7999999523163,native-timeout
+78798,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3121.2000000476837,native-input
+79801.09999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4124.299999952316,native-timeout
+80359.69999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4682.899999856949,native-input
+81362.09999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,5685.299999952316,native-timeout
+81919.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6242.799999952316,native-input
+82922.69999980927,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7245.899999856949,native-timeout
+83479.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7802.799999952316,native-input
+84482.89999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,8806.099999904633,native-timeout
+85040.5,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9363.700000047684,native-input
+86042.89999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10366.099999904633,native-timeout
+86601.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10924.299999952316,native-input
+87603.29999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,11926.5,native-timeout
+88161.79999995232,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12485,native-input
+88202.19999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3.1999998092651367,native-input
+89205.19999980927,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1006.1999998092651,native-timeout
+89792.19999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1593.1999998092651,native-input
+90794,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,2595,native-timeout
+91385.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3186.399999856949,native-input
+92387.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4188.399999856949,native-timeout
+92979.29999995232,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4780.299999952316,native-input
+93982,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,5783,native-timeout
+94572.19999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6373.199999809265,native-input
+95575.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7376.5,native-timeout
+96167.19999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7968.199999809265,native-input
+97168.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,8969.399999856949,native-timeout
+97760.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9561.599999904633,native-input
+98762.69999980927,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,10563.699999809265,native-timeout
+99354.19999980927,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11155.199999809265,native-input
+100357.79999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12158.799999952316,native-timeout
+100950,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12751,native-input
+101006.39999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,3.0999999046325684,native-input
+102008,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,1004.7000000476837,native-timeout
+103020.29999995232,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2017,native-input
+104023.29999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,3020,native-timeout
+105034.59999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4031.2999999523163,native-input
+106038.09999990463,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,5034.799999952316,native-timeout
+107051,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6047.700000047684,native-input
+108053.39999985695,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,7050.099999904633,native-timeout
+109066.89999985695,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8063.599999904633,native-input
+110070.29999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,9067,native-timeout
+111076.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10072.799999952316,native-input
+112078.69999980927,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,11075.399999856949,native-timeout
+113090.5,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12087.200000047684,native-input
+114093.29999995232,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,13090,native-timeout
+115105,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14101.700000047684,native-input
+116105.5,TRUE,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,15102.200000047684,native-timeout
+117120.09999990463,FALSE,TRUE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.799999952316,native-input

@@ -93,8 +93,13 @@ const supportedScenarios = [
 	'small-containers-paragraph',
 	'large-post-paragraph',
 	'thousand-paragraphs-paragraph',
+	'native-contenteditable-timer',
 ];
 const supportedDelayModes = [ 'keyboard', 'between-keys', 'after-persistence' ];
+
+function isNativeScenario() {
+	return scenario === 'native-contenteditable-timer';
+}
 
 if ( delayStepMs <= 0 ) {
 	throw new Error( 'BENCHMARK_DELAY_STEP_MS must be greater than 0.' );
@@ -116,6 +121,15 @@ if ( ! supportedDelayModes.includes( delayMode ) ) {
 	throw new Error(
 		`Unsupported BENCHMARK_DELAY_MODE: ${ delayMode }. ` +
 			`Supported modes: ${ supportedDelayModes.join( ', ' ) }.`
+	);
+}
+
+if (
+	isNativeScenario() &&
+	( waitForPersistenceBetweenKeys || delayMode === 'after-persistence' )
+) {
+	throw new Error(
+		'Native contenteditable scenarios do not support persistence-wait delay modes.'
 	);
 }
 
@@ -298,6 +312,14 @@ test.describe( 'Typing delay benchmark', () => {
 			}
 
 			await page.evaluate( () => {
+				if ( ! window.wp?.data?.select ) {
+					window.__typingBenchmarkPersistenceEvents =
+						window.__typingBenchmarkPersistenceEvents || [];
+					window.__typingBenchmarkPersistenceUnsubscribe?.();
+					window.__typingBenchmarkPersistenceUnsubscribe = null;
+					return;
+				}
+
 				const select = window.wp.data.select( 'core/block-editor' );
 				window.__typingBenchmarkPersistenceEvents = [];
 				window.__typingBenchmarkPersistenceUnsubscribe?.();
@@ -357,7 +379,7 @@ test.describe( 'Typing delay benchmark', () => {
 						window.wp?.data?.select?.( 'core/block-editor' );
 
 					if ( ! select ) {
-						return {};
+						return window.__typingBenchmarkNativeState || {};
 					}
 
 					const snapshot = {};
@@ -783,6 +805,102 @@ test.describe( 'Typing delay benchmark', () => {
 			editorSetupIndex++;
 
 			const setupStartedAtEpochMs = Date.now();
+			if ( isNativeScenario() ) {
+				await page.setContent( `<!doctype html>
+					<html>
+						<head>
+							<meta charset="utf-8" />
+							<title>Native contenteditable typing benchmark</title>
+							<style>
+								body {
+									font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+									margin: 32px;
+								}
+
+								#typing-benchmark-target {
+									border: 1px solid #94a3b8;
+									min-height: 240px;
+									padding: 16px;
+									white-space: pre-wrap;
+								}
+							</style>
+						</head>
+						<body>
+							<div
+								id="typing-benchmark-target"
+								contenteditable="true"
+								role="textbox"
+								aria-label="Typing benchmark target"
+								spellcheck="false"
+							></div>
+							<script>
+								(() => {
+									const target = document.getElementById(
+										'typing-benchmark-target'
+									);
+									let timeoutId = null;
+									let isPersistent = true;
+
+									window.__typingBenchmarkPersistenceEvents = [];
+									window.__typingBenchmarkNativeState = {
+										isPersistent,
+									};
+
+									target.addEventListener('input', () => {
+										isPersistent = false;
+										window.__typingBenchmarkNativeState = {
+											isPersistent,
+										};
+										window.__typingBenchmarkPersistenceEvents.push({
+											nowMs: performance.now(),
+											isPersistent,
+											isTyping: true,
+											source: 'native-input',
+										});
+
+										if (timeoutId !== null) {
+											window.clearTimeout(timeoutId);
+										}
+
+										timeoutId = window.setTimeout(() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+												isPersistent,
+												isTyping: false,
+												source: 'native-timeout',
+											});
+										}, 1000);
+									});
+								})();
+							</script>
+						</body>
+					</html>` );
+				await setupTimerTracing();
+				await setupPersistenceTracing();
+				const dataTracingSetup = await setupDataTracing();
+				paragraph = page.getByRole( 'textbox', {
+					name: 'Typing benchmark target',
+				} );
+				await paragraph.click();
+
+				if ( settleAfterEditorSetupMs > 0 ) {
+					// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+					await page.waitForTimeout( settleAfterEditorSetupMs );
+				}
+
+				return {
+					editorSetupIndex,
+					setupStartedAtEpochMs,
+					setupStoppedAtEpochMs: Date.now(),
+					setupBlockCount: 0,
+					dataTracingSetup,
+				};
+			}
+
 			await admin.createNewPost();
 			await perfUtils.disableAutosave();
 			if ( scenario === 'large-post-paragraph' ) {

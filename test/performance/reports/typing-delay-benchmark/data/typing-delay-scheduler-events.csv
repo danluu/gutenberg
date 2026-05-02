@@ -19873,3 +19873,2181 @@ id,type,scheduledAtMs,callbackSource,stack,nativeId,firedAtMs,frameTimestampMs,f
     at Jn.setThrottledLocalStateField (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/core-data/index.min.js?ver=60da14bce3936d400bef:1:12825)
     at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/core-data/index.min.js?ver=60da14bce3936d400bef:1:19663
     at wrappedTypingBenchmarkTimer (eval at evaluate (:290:30), <anonymous>:58:31)",1133,125631.59999990463,NA,125631.59999990463,NA,100,100,FALSE,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,16604.200000047684,16705.799999952316
+1,setTimeout,106,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",1,NA,NA,NA,1105.3999998569489,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,19.5,NA
+2,setTimeout,1105.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",2,NA,NA,NA,2103.899999856949,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1019,NA
+3,setTimeout,2103.899999856949,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",3,NA,NA,NA,3101.5999999046326,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2017.3999998569489,NA
+4,setTimeout,3101.5999999046326,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",4,NA,NA,NA,4098.799999952316,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3015.0999999046326,NA
+5,setTimeout,4098.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",5,NA,NA,NA,5095.699999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4012.2999999523163,NA
+6,setTimeout,5095.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",6,NA,NA,NA,6092.099999904633,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5009.199999809265,NA
+7,setTimeout,6092.099999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",7,NA,NA,NA,7088.099999904633,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6005.599999904633,NA
+8,setTimeout,7088.099999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",8,NA,NA,NA,8085.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7001.599999904633,NA
+9,setTimeout,8085.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",9,9087.199999809265,NA,9087.199999809265,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7999,9000.699999809265
+10,setTimeout,9137.599999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",10,10138.599999904633,NA,10138.699999809265,10143,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4.200000047683716,1005.2000000476837
+11,setTimeout,10143,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",11,11145.899999856949,NA,11145.899999856949,11149.599999904633,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1009.6000001430511,2012.5
+12,setTimeout,11149.599999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",12,12152.699999809265,NA,12152.699999809265,12158,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2016.2000000476837,3019.2999999523163
+13,setTimeout,12158,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",13,13161.299999952316,NA,13161.299999952316,13164.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3024.600000143051,4027.9000000953674
+14,setTimeout,13164.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",14,14166.899999856949,NA,14166.899999856949,14169.399999856949,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4031.100000143051,5033.5
+15,setTimeout,14169.399999856949,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",15,15171.899999856949,NA,15172,15175.599999904633,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5036,6038.5
+16,setTimeout,15175.599999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",16,16178.299999952316,NA,16178.299999952316,16181.399999856949,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6042.200000047684,7044.900000095367
+17,setTimeout,16181.399999856949,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",17,17184.5,NA,17184.599999904633,17186.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7048,8051.100000143051
+18,setTimeout,17186.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",18,18189.699999809265,NA,18189.699999809265,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8053.100000143051,9056.299999952316
+19,setTimeout,18256.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",19,19259.5,NA,19259.5,19270.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7.599999904632568,1010.2000000476837
+20,setTimeout,19270.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",20,20273.39999985695,NA,20273.39999985695,20284.599999904633,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1021.5999999046326,2024.0999999046326
+21,setTimeout,20284.599999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",21,21286.89999985695,NA,21286.89999985695,21306.699999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2035.2999999523163,3037.5999999046326
+22,setTimeout,21306.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",22,22307.89999985695,NA,22307.89999985695,22321.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3057.399999856949,4058.5999999046326
+23,setTimeout,22321.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",23,23324.699999809265,NA,23324.699999809265,23337.299999952316,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4072.0999999046326,5075.399999856949
+24,setTimeout,23337.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",24,24339.799999952316,NA,24339.799999952316,24354,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5088,6090.5
+25,setTimeout,24354,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",25,25355.799999952316,NA,25355.799999952316,25371.699999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6104.700000047684,7106.5
+26,setTimeout,25371.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",26,26374.699999809265,NA,26374.699999809265,26387.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7122.399999856949,8125.399999856949
+27,setTimeout,26387.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",27,27390.39999985695,NA,27390.5,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8138.599999904633,9141.099999904633
+28,setTimeout,27457.599999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",28,28460.699999809265,NA,28460.699999809265,28564.099999904633,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3.700000047683716,1006.7999999523163
+29,setTimeout,28564.099999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",29,29566.699999809265,NA,29566.799999952316,29669.699999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1110.2000000476837,2112.7999999523163
+30,setTimeout,29669.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",30,30672.599999904633,NA,30672.599999904633,30775,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2215.7999999523163,3218.7000000476837
+31,setTimeout,30775,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",31,31777.599999904633,NA,31777.599999904633,31882.599999904633,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3321.100000143051,4323.700000047684
+32,setTimeout,31882.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",32,32885.299999952316,NA,32885.299999952316,32990.699999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4428.799999952316,5431.400000095367
+33,setTimeout,32990.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",33,33991.5,NA,33991.5,34097.699999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5536.900000095367,6537.600000143051
+34,setTimeout,34097.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",34,35100,NA,35100,35207.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6643.799999952316,7646.100000143051
+35,setTimeout,35207.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",35,36210.699999809265,NA,36210.699999809265,36313.699999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7753.600000143051,8756.799999952316
+36,setTimeout,36313.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",36,37316.59999990463,NA,37316.59999990463,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8859.799999952316,9862.700000047684
+37,setTimeout,37472.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",37,38475.5,NA,38475.5,38656,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3.799999952316284,1007.1000001430511
+38,setTimeout,38656,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",38,39658.59999990463,NA,39658.699999809265,39842.199999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1187.6000001430511,2190.2000000476837
+39,setTimeout,39842.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",39,40843.299999952316,NA,40843.299999952316,41026.59999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2373.9000000953674,3374.9000000953674
+40,setTimeout,41026.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",40,42029.199999809265,NA,42029.199999809265,42211.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3558.2000000476837,4560.799999952316
+41,setTimeout,42211.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",41,43214.699999809265,NA,43214.699999809265,43395.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4743.5,5746.299999952316
+42,setTimeout,43395.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",42,44398.39999985695,NA,44398.39999985695,44580.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5927,6930
+43,setTimeout,44580.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",43,45583.59999990463,NA,45583.699999809265,45767.799999952316,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7112.5,8115.200000047684
+44,setTimeout,45767.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",44,46770.59999990463,NA,46770.59999990463,46953.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8299.400000095367,9302.200000047684
+45,setTimeout,46953.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",45,47957.199999809265,NA,47957.299999952316,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9485.5,10488.799999952316
+46,setTimeout,48194.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",46,49195.5,NA,49195.59999990463,49399.199999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4,1005.3000001907349
+47,setTimeout,49399.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",47,50402.5,NA,50402.5,50607.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1209,2212.300000190735
+48,setTimeout,50607.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",48,51610,NA,51610,51815.09999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2417.7000000476837,3419.800000190735
+49,setTimeout,51815.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",49,52818.59999990463,NA,52818.59999990463,53021.199999809265,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3624.9000000953674,4628.400000095367
+50,setTimeout,53021.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",50,54023.39999985695,NA,54023.39999985695,54227,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4831,5833.200000047684
+51,setTimeout,54227,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",51,55230.199999809265,NA,55230.299999952316,55433,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6036.800000190735,7040
+52,setTimeout,55433,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",52,56435.699999809265,NA,56435.699999809265,56638.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7242.800000190735,8245.5
+53,setTimeout,56638.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",53,57640.39999985695,NA,57640.39999985695,57844.799999952316,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8448.300000190735,9450.200000047684
+54,setTimeout,57844.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",54,58847.799999952316,NA,58847.799999952316,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9654.600000143051,10657.600000143051
+55,setTimeout,59105.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",55,60108.39999985695,NA,60108.39999985695,60411.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3.3000001907348633,1006.2000000476837
+56,setTimeout,60411.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",56,61413.89999985695,NA,61414,61718.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1309.3000001907349,2311.7000000476837
+57,setTimeout,61718.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",57,62720.89999985695,NA,62721,63024.299999952316,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2616.2000000476837,3618.7000000476837
+58,setTimeout,63024.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",58,64025.699999809265,NA,64025.699999809265,64330.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3922.100000143051,4923.5
+59,setTimeout,64330.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",59,65332.5,NA,65332.5,65636.69999980927,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5228.200000047684,6230.300000190735
+60,setTimeout,65636.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",60,66638.89999985695,NA,66638.89999985695,66943.09999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6534.5,7536.700000047684
+61,setTimeout,66943.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",61,67945.59999990463,NA,67945.59999990463,68250.59999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7840.900000095367,8843.400000095367
+62,setTimeout,68250.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",62,69251.59999990463,NA,69251.59999990463,69555.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9148.400000095367,10149.400000095367
+63,setTimeout,69555.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",63,70558.09999990463,NA,70558.19999980927,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10453.300000190735,11455.900000095367
+64,setTimeout,70915,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",64,71917.39999985695,NA,71917.5,72428,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3.4000000953674316,1005.7999999523163
+65,setTimeout,72428.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",65,73430.79999995232,NA,73430.89999985695,73944.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1516.5,2519.2000000476837
+66,setTimeout,73945,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",66,74947.69999980927,NA,74947.69999980927,75460.29999995232,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3033.4000000953674,4036.0999999046326
+67,setTimeout,75460.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",67,76462.79999995232,NA,76462.79999995232,76976.79999995232,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4548.700000047684,5551.200000047684
+68,setTimeout,76976.79999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",68,77980,NA,77980,78494.19999980927,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6065.200000047684,7068.400000095367
+69,setTimeout,78494.19999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",69,79495.89999985695,NA,79495.89999985695,80010.69999980927,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7582.599999904633,8584.299999952316
+70,setTimeout,80010.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",70,81013.89999985695,NA,81013.89999985695,81524.59999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9099.099999904633,10102.299999952316
+71,setTimeout,81524.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",71,82527.59999990463,NA,82527.59999990463,83040.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10613.099999904633,11616
+72,setTimeout,83040.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",72,84042.89999985695,NA,84042.89999985695,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12128.900000095367,13131.299999952316
+73,setTimeout,84609.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",73,85609.89999985695,NA,85610,86160.59999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4.099999904632568,1004.5999999046326
+74,setTimeout,86160.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",74,87162.39999985695,NA,87162.39999985695,87716,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1555.2999999523163,2557.0999999046326
+75,setTimeout,87716,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",75,88718.69999980927,NA,88718.79999995232,89272,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3110.7000000476837,4113.399999856949
+76,setTimeout,89272,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",76,90273.89999985695,NA,90273.89999985695,90825.19999980927,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4666.700000047684,5668.599999904633
+77,setTimeout,90825.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",77,91826.5,NA,91826.5,92378.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6220,7221.200000047684
+78,setTimeout,92378.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",78,93379.5,NA,93379.5,93931.79999995232,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7773.200000047684,8774.200000047684
+79,setTimeout,93931.79999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",79,94934.09999990463,NA,94934.19999980927,95486.59999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9326.5,10328.799999952316
+80,setTimeout,95486.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",80,96489.69999980927,NA,96489.69999980927,97041.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10881.399999856949,11884.399999856949
+81,setTimeout,97041.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",81,98042.89999985695,NA,98042.89999985695,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12436.200000047684,13437.599999904633
+82,setTimeout,98652.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",82,99653.79999995232,NA,99653.79999995232,100237,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3.5999999046325684,1005.2999999523163
+83,setTimeout,100237,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",83,101238.69999980927,NA,101238.69999980927,101823.09999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1588.5,2590.199999809265
+84,setTimeout,101823.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",84,102825.09999990463,NA,102825.19999980927,103409.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3174.5999999046326,4176.599999904633
+85,setTimeout,103409.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",85,104412,NA,104412.09999990463,104993.59999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4760.899999856949,5763.5
+86,setTimeout,104993.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",86,105994.59999990463,NA,105994.69999980927,106578.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6345.099999904633,7346.099999904633
+87,setTimeout,106578.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",87,107581.19999980927,NA,107581.19999980927,108165.59999990463,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7929.899999856949,8932.699999809265
+88,setTimeout,108165.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",88,109167.29999995232,NA,109167.29999995232,109750.89999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9517.199999809265,10518.799999952316
+89,setTimeout,109750.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",89,110754,NA,110754,111336.19999980927,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11102.399999856949,12105.5
+90,setTimeout,111336.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",90,112338.59999990463,NA,112338.69999980927,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12687.799999952316,13690.099999904633
+91,setTimeout,112975.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",91,113978.19999980927,NA,113978.19999980927,114982.29999995232,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3.5,1006.0999999046326
+92,setTimeout,114982.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",92,115985.09999990463,NA,115985.09999990463,116988.79999995232,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2010.2000000476837,3013
+93,setTimeout,116988.79999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",93,117991.69999980927,NA,117991.79999995232,118995.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4016.7000000476837,5019.599999904633
+94,setTimeout,118995.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",94,119997,NA,119997,121000.29999995232,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6023.400000095367,7024.900000095367
+95,setTimeout,121000.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",95,122003.29999995232,NA,122003.29999995232,123005.5,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8028.200000047684,9031.200000047684
+96,setTimeout,123005.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",96,124008,NA,124008,125011.19999980927,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10033.400000095367,11035.900000095367
+97,setTimeout,125011.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",97,126013.59999990463,NA,126013.59999990463,127017.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12039.200000047684,13041.5
+98,setTimeout,127017.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",98,128020.39999985695,NA,128020.39999985695,129022.39999985695,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14045.299999952316,15048.299999952316
+99,setTimeout,129022.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",99,130023.79999995232,NA,130023.89999985695,NA,1000,1000,FALSE,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16050.299999952316,17051.700000047684
+1,setTimeout,128.29999995231628,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",1,1132.0999999046326,NA,1132.1999998092651,1144.2999999523163,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,20.200000047683716,1024
+2,setTimeout,1144.2999999523163,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",2,2146.0999999046326,NA,2146.0999999046326,2148.5,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1036.2000000476837,2038
+3,setTimeout,2148.5999999046326,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",3,3150.0999999046326,NA,3150.0999999046326,3153.399999856949,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2040.5,3042
+4,setTimeout,3153.399999856949,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",4,4154.299999952316,NA,4154.399999856949,4159.099999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3045.2999999523163,4046.2000000476837
+5,setTimeout,4159.099999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",5,5160.299999952316,NA,5160.299999952316,5165.399999856949,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4051,5052.200000047684
+6,setTimeout,5165.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",6,6166.699999809265,NA,6166.799999952316,6167.799999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5057.400000095367,6058.599999904633
+7,setTimeout,6167.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",7,NA,NA,NA,7164.5,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6059.700000047684,NA
+8,setTimeout,7164.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",8,8166.5,NA,8166.5,8170.099999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7056.400000095367,8058.400000095367
+9,setTimeout,8170.099999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",9,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8062,NA
+10,setTimeout,8227.899999856949,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",10,9229.399999856949,NA,9229.399999856949,9242.099999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3.5,1005
+11,setTimeout,9242.099999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",11,10244.899999856949,NA,10245.099999904633,10256.599999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1017.7000000476837,2020.5
+12,setTimeout,10256.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",12,11259.099999904633,NA,11259.099999904633,11274.099999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2032.2999999523163,3034.7000000476837
+13,setTimeout,11274.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",13,12275.699999809265,NA,12275.799999952316,12286.899999856949,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3049.7999999523163,4051.2999999523163
+14,setTimeout,12286.899999856949,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",14,13290.199999809265,NA,13290.199999809265,13301.199999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4062.5,5065.799999952316
+15,setTimeout,13301.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",15,14303.899999856949,NA,14303.899999856949,14321.599999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5076.799999952316,6079.5
+16,setTimeout,14321.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",16,15324.299999952316,NA,15324.299999952316,15336.199999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6097.299999952316,7099.900000095367
+17,setTimeout,15336.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",17,16337.799999952316,NA,16337.799999952316,16354,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7111.799999952316,8113.400000095367
+18,setTimeout,16354,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",18,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8129.600000143051,NA
+19,setTimeout,16408,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",19,17410.299999952316,NA,17410.299999952316,17433.5,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3.4000000953674316,1005.7000000476837
+20,setTimeout,17433.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",20,18436.099999904633,NA,18436.099999904633,18457.299999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1028.9000000953674,2031.5
+21,setTimeout,18457.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",21,19458.89999985695,NA,19458.89999985695,19478.799999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2052.7000000476837,3054.2999999523163
+22,setTimeout,19478.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",22,20481.39999985695,NA,20481.5,20496.299999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3074.2000000476837,4076.7999999523163
+23,setTimeout,20496.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",23,21498.299999952316,NA,21498.299999952316,21515.39999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4091.7000000476837,5093.700000047684
+24,setTimeout,21515.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",24,22518.599999904633,NA,22518.599999904633,22533.199999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5110.799999952316,6114
+25,setTimeout,22533.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",25,23533.699999809265,NA,23533.799999952316,23551.799999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6128.599999904633,7129.099999904633
+26,setTimeout,23551.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",26,24553,NA,24553.099999904633,24570.799999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7147.200000047684,8148.400000095367
+27,setTimeout,24570.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",27,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8166.200000047684,NA
+28,setTimeout,24611.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",28,25613.199999809265,NA,25613.199999809265,25722,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3.5,1005
+29,setTimeout,25722,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",29,26724.5,NA,26724.5,26838.199999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1113.8000001907349,2116.300000190735
+30,setTimeout,26838.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",30,27841.39999985695,NA,27841.39999985695,27954,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2230.100000143051,3233.2000000476837
+31,setTimeout,27954,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",31,28955.5,NA,28955.5,29068.599999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3345.800000190735,4347.300000190735
+32,setTimeout,29068.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",32,30071.699999809265,NA,30071.699999809265,30185.599999904633,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4460.5,5463.5
+33,setTimeout,30185.599999904633,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",33,31188.099999904633,NA,31188.099999904633,31300.799999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5577.400000095367,6579.900000095367
+34,setTimeout,31300.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",34,32303.89999985695,NA,32304,32421.299999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6692.700000047684,7695.700000047684
+35,setTimeout,32421.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",35,33424.09999990463,NA,33424.199999809265,33536.199999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7813.100000143051,8815.900000095367
+36,setTimeout,33536.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",36,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8928.100000143051,NA
+37,setTimeout,33582.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",37,34585.199999809265,NA,34585.199999809265,34777,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3.4000000953674316,1006.5
+38,setTimeout,34777,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",38,35779,NA,35779.09999990463,35967.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1198.3000001907349,2200.300000190735
+39,setTimeout,35967.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",39,36970.199999809265,NA,36970.199999809265,37159.699999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2388.4000000953674,3391.5
+40,setTimeout,37159.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",40,38162,NA,38162,38353.299999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3581,4583.300000190735
+41,setTimeout,38353.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",41,39356.09999990463,NA,39356.09999990463,39548.699999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4774.600000143051,5777.400000095367
+42,setTimeout,39548.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",42,40552,NA,40552,40740.39999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5970.100000143051,6973.300000190735
+43,setTimeout,40740.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",43,41743.39999985695,NA,41743.5,41937.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7161.700000047684,8164.700000047684
+44,setTimeout,41937.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",44,42940,NA,42940,43132.299999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8358.400000095367,9361.300000190735
+45,setTimeout,43132.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",45,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9553.600000143051,NA
+46,setTimeout,43175,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",46,44177,NA,44177,44387.59999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3.5,1005.5
+47,setTimeout,44387.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",47,45390.199999809265,NA,45390.199999809265,45602.799999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1216.0999999046326,2218.699999809265
+48,setTimeout,45602.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",48,46605.299999952316,NA,46605.299999952316,46816.5,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2431.2999999523163,3433.7999999523163
+49,setTimeout,46816.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",49,47819.39999985695,NA,47819.39999985695,48031.89999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3645,4647.899999856949
+50,setTimeout,48031.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",50,49034.39999985695,NA,49034.39999985695,49246.699999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4860.399999856949,5862.899999856949
+51,setTimeout,49246.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",51,50247.89999985695,NA,50248,50462.39999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6075.199999809265,7076.399999856949
+52,setTimeout,50462.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",52,51463.89999985695,NA,51463.89999985695,51675.89999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7291,8292.399999856949
+53,setTimeout,51675.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",53,52678.5,NA,52678.59999990463,52892.39999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8504.399999856949,9507
+54,setTimeout,52892.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",54,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9720.899999856949,NA
+55,setTimeout,52936.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",55,53939.199999809265,NA,53939.199999809265,54248.799999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3.700000047683716,1006.2999999523163
+56,setTimeout,54248.799999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",56,55251.59999990463,NA,55251.699999809265,55562.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1315.9000000953674,2318.7000000476837
+57,setTimeout,55562.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",57,56565.299999952316,NA,56565.299999952316,56878.89999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2629.2000000476837,3632.4000000953674
+58,setTimeout,56878.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",58,57882,NA,57882.199999809265,58192.59999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3946,4949.100000143051
+59,setTimeout,58192.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",59,59194.799999952316,NA,59194.89999985695,59508.199999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5259.700000047684,6261.900000095367
+60,setTimeout,59508.199999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",60,60510.09999990463,NA,60510.09999990463,60823,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6575.299999952316,7577.200000047684
+61,setTimeout,60823,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",61,61824.39999985695,NA,61824.39999985695,62138.299999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7890.100000143051,8891.5
+62,setTimeout,62138.299999952316,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",62,63141.5,NA,63141.59999990463,63451.299999952316,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9205.400000095367,10208.600000143051
+63,setTimeout,63451.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",63,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10518.5,NA
+64,setTimeout,63495.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",64,64499,NA,64499,65013.699999809265,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4.400000095367432,1007.8000001907349
+65,setTimeout,65013.699999809265,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",65,66015.39999985695,NA,66015.39999985695,66533.39999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1522.5,2524.2000000476837
+66,setTimeout,66533.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",66,67536.79999995232,NA,67536.79999995232,68050.89999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3042.2000000476837,4045.600000143051
+67,setTimeout,68050.89999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",67,69053.5,NA,69053.5,69570.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4559.700000047684,5562.300000190735
+68,setTimeout,69570.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",68,70572.69999980927,NA,70572.69999980927,71088.39999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6078.900000095367,7081.5
+69,setTimeout,71088.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",69,72091.29999995232,NA,72091.29999995232,72605.59999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7597.200000047684,8600.100000143051
+70,setTimeout,72605.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",70,73607.59999990463,NA,73607.59999990463,74123.69999980927,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9114.400000095367,10116.400000095367
+71,setTimeout,74123.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",71,75125.79999995232,NA,75125.89999985695,75639.69999980927,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.5,11634.600000143051
+72,setTimeout,75639.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",72,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12148.5,NA
+73,setTimeout,75680.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",73,76682.79999995232,NA,76682.79999995232,77237.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3.5999999046325684,1006
+74,setTimeout,77237.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",74,78240.5,NA,78240.69999980927,78798,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1560.2999999523163,2563.7000000476837
+75,setTimeout,78798,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",75,79801.09999990463,NA,79801.09999990463,80359.79999995232,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3121.2000000476837,4124.299999952316
+76,setTimeout,80359.79999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",76,81362.09999990463,NA,81362.09999990463,81919.69999980927,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4683,5685.299999952316
+77,setTimeout,81919.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",77,82922.69999980927,NA,82922.69999980927,83479.59999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6242.899999856949,7245.899999856949
+78,setTimeout,83479.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",78,84482.79999995232,NA,84482.89999985695,85040.5,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7802.799999952316,8806
+79,setTimeout,85040.5,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",79,86042.89999985695,NA,86042.89999985695,86601.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9363.700000047684,10366.099999904633
+80,setTimeout,86601.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",80,87603.29999995232,NA,87603.29999995232,88161.79999995232,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10924.299999952316,11926.5
+81,setTimeout,88161.79999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",81,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12485,NA
+82,setTimeout,88202.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",82,89205.19999980927,NA,89205.19999980927,89792.19999980927,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3.299999952316284,1006.1999998092651
+83,setTimeout,89792.19999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",83,90794,NA,90794,91385.39999985695,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1593.1999998092651,2595
+84,setTimeout,91385.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",84,92387.39999985695,NA,92387.39999985695,92979.29999995232,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3186.399999856949,4188.399999856949
+85,setTimeout,92979.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",85,93981.89999985695,NA,93982,94572.19999980927,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4780.299999952316,5782.899999856949
+86,setTimeout,94572.19999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",86,95575.5,NA,95575.5,96167.19999980927,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6373.199999809265,7376.5
+87,setTimeout,96167.19999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",87,97168.39999985695,NA,97168.39999985695,97760.59999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7968.199999809265,8969.399999856949
+88,setTimeout,97760.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",88,98762.69999980927,NA,98762.69999980927,99354.19999980927,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9561.699999809265,10563.699999809265
+89,setTimeout,99354.19999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",89,100357.69999980927,NA,100357.79999995232,100950,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11155.199999809265,12158.699999809265
+90,setTimeout,100950,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",90,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12751,NA
+91,setTimeout,101006.39999985695,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",91,102008,NA,102008,103020.29999995232,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,3.0999999046325684,1004.7000000476837
+92,setTimeout,103020.29999995232,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",92,104023.29999995232,NA,104023.29999995232,105034.59999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2017,3020
+93,setTimeout,105034.69999980927,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",93,106038.09999990463,NA,106038.19999980927,107051,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4031.399999856949,5034.799999952316
+94,setTimeout,107051,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",94,108053.39999985695,NA,108053.39999985695,109067,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6047.700000047684,7050.099999904633
+95,setTimeout,109067,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",95,110070.29999995232,NA,110070.29999995232,111076.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8063.700000047684,9067
+96,setTimeout,111076.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",96,112078.69999980927,NA,112078.69999980927,113090.59999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10072.799999952316,11075.399999856949
+97,setTimeout,113090.59999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",97,114093.29999995232,NA,114093.29999995232,115105,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12087.299999952316,13090
+98,setTimeout,115105,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",98,116105.5,NA,116105.5,117120.09999990463,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14101.700000047684,15102.200000047684
+99,setTimeout,117120.09999990463,"() => {
+											isPersistent = true;
+											window.__typingBenchmarkNativeState = {
+												isPersistent,
+											};
+											window.__typingBenchmarkPersistenceEvents.push({
+												nowMs: performance.now(),
+											","Error
+    at stackTrace (eval at evaluate (:290:30), <anonymous>:36:18)
+    at window.setTimeout (eval at evaluate (:290:30), <anonymous>:49:20)
+    at HTMLDivElement.<anonymous> (<anonymous>:30:30)",99,NA,NA,NA,NA,1000,1000,FALSE,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.799999952316,NA

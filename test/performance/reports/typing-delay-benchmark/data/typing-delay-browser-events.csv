@@ -2659,3 +2659,1193 @@ nowMs,documentName,type,key,code,targetTagName,targetRole,isPersistent,isTyping,
 125516.59999990463,editor-canvas,input,NA,NA,P,document,TRUE,TRUE,953,4b1bf549-980a-4e87-a147-3021ca8cf990,insertText,x,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,16590.799999952316
 125525.69999980927,editor-canvas,keyup,x,KeyX,P,document,TRUE,TRUE,953,4b1bf549-980a-4e87-a147-3021ca8cf990,NA,NA,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,16599.89999985695
 125525.79999995232,editor-canvas,selectionchange,NA,NA,NA,NA,TRUE,TRUE,953,4b1bf549-980a-4e87-a147-3021ca8cf990,NA,NA,mode_trace_between_keys,Paired trace: wait after keyup,0,2000,16600
+85.69999980926514,parent,selectionchange,NA,NA,NA,NA,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,-0.8000001907348633
+105.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,19
+105.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,19
+105.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,19
+105.89999985694885,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,19.399999856948853
+118.79999995231628,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,32.299999952316284
+1101.0999999046326,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1014.5999999046326
+1104.1999998092651,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1017.6999998092651
+1104.2999999523163,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1017.7999999523163
+1104.3999998569489,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1017.8999998569489
+1105.0999999046326,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1018.5999999046326
+1107,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,1020.5
+2101,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2014.5
+2102.5999999046326,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2016.0999999046326
+2102.7999999523163,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2016.2999999523163
+2102.7999999523163,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2016.2999999523163
+2103.699999809265,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2017.1999998092651
+2105,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,2018.5
+3098.7999999523163,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3012.2999999523163
+3100.7999999523163,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3014.2999999523163
+3100.899999856949,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3014.399999856949
+3100.899999856949,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3014.399999856949
+3101.5,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3015
+3102.899999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,3016.399999856949
+4096.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4009.7999999523163
+4097.899999856949,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4011.399999856949
+4098,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4011.5
+4098.099999904633,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4011.5999999046326
+4098.699999809265,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4012.199999809265
+4100.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,4013.5999999046326
+5093.099999904633,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5006.599999904633
+5094.699999809265,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5008.199999809265
+5094.799999952316,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5008.299999952316
+5094.799999952316,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5008.299999952316
+5095.5,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5009
+5096.899999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,5010.399999856949
+6089.199999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6002.699999809265
+6090.899999856949,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6004.399999856949
+6091.099999904633,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6004.599999904633
+6091.099999904633,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6004.599999904633
+6092,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6005.5
+6093.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6006.599999904633
+7085.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,6998.799999952316
+7087.199999809265,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7000.699999809265
+7087.199999809265,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7000.699999809265
+7087.299999952316,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7000.799999952316
+7088,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7001.5
+7089.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7002.599999904633
+8082.399999856949,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7995.899999856949
+8084.699999809265,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7998.199999809265
+8084.699999809265,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7998.199999809265
+8084.799999952316,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7998.299999952316
+8085.299999952316,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,990,7998.799999952316
+8087,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,8000.5
+9077.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,990,8991
+9137.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3.799999952316284
+9137.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3.799999952316284
+9137.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3.9000000953674316
+9137.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4.200000047683716
+9138.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4.700000047683716
+10139.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1006.1000001430511
+10141.699999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1008.2999999523163
+10141.899999856949,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1008.5
+10141.899999856949,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1008.5
+10142.899999856949,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1009.5
+10154.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,1021.2999999523163
+11146.899999856949,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2013.5
+11148.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2015.4000000953674
+11148.799999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2015.4000000953674
+11148.899999856949,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2015.5
+11149.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2016.1000001430511
+11151.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,2017.7000000476837
+12155.599999904633,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3022.2000000476837
+12157.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3023.7999999523163
+12157.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3023.9000000953674
+12157.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3023.9000000953674
+12158,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3024.600000143051
+12165.399999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,3032
+13161.799999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4028.4000000953674
+13163.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4030.100000143051
+13163.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4030.100000143051
+13163.599999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4030.2000000476837
+13164.399999856949,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4031
+13165.899999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,4032.5
+14167.299999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5033.900000095367
+14169,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5035.600000143051
+14169,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5035.600000143051
+14169,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5035.600000143051
+14169.399999856949,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5036
+14182,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,5048.600000143051
+15172.899999856949,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6039.5
+15174.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6041.100000143051
+15174.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6041.100000143051
+15174.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6041.100000143051
+15175.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6042.200000047684
+15176.599999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,6043.200000047684
+16178.899999856949,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7045.5
+16180.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7047.100000143051
+16180.599999904633,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7047.200000047684
+16180.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7047.299999952316
+16181.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7047.900000095367
+16194.399999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,7061
+17184.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8051.5
+17186.099999904633,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8052.700000047684
+17186.099999904633,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8052.700000047684
+17186.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8052.799999952316
+17186.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8053.100000143051
+17187.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,8054
+18189.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1000,9056.5
+18256.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7.200000047683716
+18256.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7.200000047683716
+18256.599999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7.299999952316284
+18256.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7.599999904632568
+18257.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8.099999904632568
+19270.099999904633,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1020.7999999523163
+19270.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1021.2000000476837
+19270.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1021.2000000476837
+19270.599999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1021.2999999523163
+19270.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1021.5999999046326
+19274.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,1025.0999999046326
+20284,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2034.7000000476837
+20284.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2035
+20284.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2035
+20284.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2035
+20284.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2035.2999999523163
+20289.599999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,2040.2999999523163
+21305.799999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3056.5
+21306.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3056.899999856949
+21306.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3057
+21306.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3057.0999999046326
+21306.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3057.399999856949
+21319.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,3070
+22319.39999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4070.0999999046326
+22320.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4071.5
+22320.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4071.5999999046326
+22320.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4071.5999999046326
+22321.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4072.0999999046326
+22335.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,4085.7999999523163
+23334.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5085.399999856949
+23336.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5087.5
+23336.799999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5087.5
+23336.799999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5087.5
+23337.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5088
+23348.599999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,5099.299999952316
+24351.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6102.200000047684
+24352.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6103.599999904633
+24353,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6103.700000047684
+24353,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6103.700000047684
+24354,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6104.700000047684
+24365.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,6116
+25368.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7119.399999856949
+25371,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7121.700000047684
+25371,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7121.700000047684
+25371.099999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7121.799999952316
+25371.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7122.299999952316
+25382.599999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,7133.299999952316
+26384.799999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8135.5
+26387.099999904633,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8137.799999952316
+26387.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8137.899999856949
+26387.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8137.899999856949
+26387.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8138.5
+26400.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,8150.799999952316
+27402.39999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1010,9153.099999904633
+27457.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3.299999952316284
+27457.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3.299999952316284
+27457.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3.299999952316284
+27457.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3.700000047683716
+27458.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4.200000047683716
+28561.299999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1107.4000000953674
+28563.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1109.2999999523163
+28563.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1109.4000000953674
+28563.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1109.4000000953674
+28564.099999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1110.2000000476837
+28565.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,1111.6000001430511
+29667.299999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2213.4000000953674
+29668.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2215
+29668.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2215
+29669,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2215.100000143051
+29669.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2215.7999999523163
+29670.599999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,2216.7000000476837
+30772.599999904633,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3318.7000000476837
+30774.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3320.2999999523163
+30774.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3320.4000000953674
+30774.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3320.4000000953674
+30775,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3321.100000143051
+30776.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,3322.4000000953674
+31880.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4426.600000143051
+31881.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4428
+31882,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4428.100000143051
+31882,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4428.100000143051
+31882.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4428.700000047684
+31884.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,4430.200000047684
+32988.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5534.799999952316
+32990.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5536.200000047684
+32990.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5536.200000047684
+32990.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5536.200000047684
+32990.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5536.799999952316
+32992,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,5538.100000143051
+34095.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6641.200000047684
+34096.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6642.700000047684
+34096.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6642.799999952316
+34096.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6643
+34097.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6643.799999952316
+34099.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,6645.200000047684
+35205.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7751.799999952316
+35206.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7752.900000095367
+35206.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7753
+35206.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7753
+35207.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7753.5
+35208.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,7754.600000143051
+36310.799999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8856.900000095367
+36312.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8858.700000047684
+36312.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8858.799999952316
+36312.799999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8858.900000095367
+36313.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8859.700000047684
+36314.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,8861
+37419.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1100,9965.200000047684
+37471.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3.4000000953674316
+37471.799999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3.4000000953674316
+37471.799999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3.4000000953674316
+37472.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3.799999952316284
+37472.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4.299999952316284
+38654.199999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1185.7999999523163
+38655.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1186.7999999523163
+38655.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1186.9000000953674
+38655.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1186.9000000953674
+38655.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1187.5
+38657.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,1188.7000000476837
+39839.39999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2371
+39841.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2372.7999999523163
+39841.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2372.7999999523163
+39841.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2372.7999999523163
+39842.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2373.7999999523163
+39843.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,2374.9000000953674
+41025.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3557.2999999523163
+41026.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3557.9000000953674
+41026.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3557.9000000953674
+41026.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3557.9000000953674
+41026.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3558.2000000476837
+41027,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,3558.600000143051
+42210.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4741.700000047684
+42211.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4742.700000047684
+42211.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4742.799999952316
+42211.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4742.900000095367
+42211.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4743.400000095367
+42212.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,4744.5
+43394.59999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5926.200000047684
+43395.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5926.799999952316
+43395.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5926.799999952316
+43395.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5926.799999952316
+43395.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5927
+43396,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,5927.600000143051
+44578.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7110.100000143051
+44580.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7111.700000047684
+44580.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7111.799999952316
+44580.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7111.900000095367
+44580.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7112.5
+44582.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,7113.700000047684
+45765.199999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8296.799999952316
+45767.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8298.799999952316
+45767.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8298.799999952316
+45767.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8298.799999952316
+45767.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8299.400000095367
+45768.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,8300.400000095367
+46951.799999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9483.400000095367
+46953.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9484.799999952316
+46953.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9484.900000095367
+46953.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9484.900000095367
+46953.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9485.5
+46954.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,9486.299999952316
+48137.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1180,10668.700000047684
+48193.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3.700000047683716
+48193.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3.700000047683716
+48193.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3.700000047683716
+48194.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4
+48194.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4.6000001430511475
+49396.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1206.3000001907349
+49398.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1208.2000000476837
+49398.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1208.2000000476837
+49398.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1208.2000000476837
+49399.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1208.9000000953674
+49400.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,1210.6000001430511
+50605.39999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2415.2000000476837
+50607.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2416.9000000953674
+50607.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2416.9000000953674
+50607.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2417
+50607.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2417.600000143051
+50609.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,2419.100000143051
+51812.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3622.5
+51814.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3624.2000000476837
+51814.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3624.2000000476837
+51814.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3624.300000190735
+51815.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3624.9000000953674
+51816.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,3626.2000000476837
+53019,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4828.800000190735
+53020.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4830.300000190735
+53020.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4830.300000190735
+53020.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4830.400000095367
+53021.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4830.900000095367
+53022.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,4832.200000047684
+54224.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6034.5
+54226.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6036.100000143051
+54226.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6036.200000047684
+54226.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6036.200000047684
+54227,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6036.800000190735
+54228.199999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,6038
+55430.699999809265,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7240.5
+55432.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7242.100000143051
+55432.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7242.200000047684
+55432.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7242.200000047684
+55433,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7242.800000190735
+55433.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,7243.600000143051
+56635.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8445.700000047684
+56637.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8447.400000095367
+56637.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8447.5
+56637.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8447.5
+56638.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8448.300000190735
+56639.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,8449.700000047684
+57842.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9652.300000190735
+57844,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9653.800000190735
+57844,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9653.800000190735
+57844.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9653.900000095367
+57844.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9654.600000143051
+57846.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,9655.900000095367
+59048.59999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1200,10858.400000095367
+59105.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2.9000000953674316
+59105.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2.9000000953674316
+59105.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2.9000000953674316
+59105.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3.3000001907348633
+59106.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3.9000000953674316
+60409.299999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1307.1000001430511
+60410.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1308.6000001430511
+60410.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1308.7000000476837
+60410.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1308.7000000476837
+60411.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1309.3000001907349
+60412.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,1310.7000000476837
+61716,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2613.800000190735
+61717.699999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2615.5
+61717.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2615.5
+61717.799999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2615.600000143051
+61718.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2616.2000000476837
+61719.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,2617.5
+63021.799999952316,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3919.600000143051
+63023.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3921.2000000476837
+63023.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3921.300000190735
+63023.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3921.300000190735
+63024.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3922.100000143051
+63025.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,3923.5
+64328.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5225.900000095367
+64329.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5227.400000095367
+64329.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5227.400000095367
+64329.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5227.5
+64330.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5228.200000047684
+64331.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,5229.5
+65634.19999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6532
+65635.79999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6533.600000143051
+65635.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6533.700000047684
+65635.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6533.700000047684
+65636.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6534.400000095367
+65638.19999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,6536
+66941.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7838.900000095367
+66942.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7840.200000047684
+66942.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7840.400000095367
+66942.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7840.400000095367
+66943.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7840.900000095367
+66944.19999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,7842
+68247.69999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9145.5
+68249.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9147.300000190735
+68249.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9147.400000095367
+68249.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9147.5
+68250.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9148.300000190735
+68251.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,9149.400000095367
+69552.69999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10450.5
+69554.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10452.400000095367
+69554.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10452.5
+69554.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10452.5
+69555.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10453.200000047684
+69556.69999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,10454.5
+70862,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1300,11759.800000190735
+70914.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3
+70914.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3.0999999046325684
+70914.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3.0999999046325684
+70915,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3.4000000953674316
+70915.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4
+72426.69999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1515.0999999046326
+72427.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1515.9000000953674
+72427.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1515.9000000953674
+72427.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1515.9000000953674
+72428,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1516.4000000953674
+72433.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,1522.2999999523163
+73943.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3031.5
+73944.19999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3032.5999999046326
+73944.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3032.7000000476837
+73944.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3032.7999999523163
+73944.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3033.2999999523163
+73951.29999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,3039.7000000476837
+75458.29999995232,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4546.700000047684
+75459.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4548
+75459.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4548.099999904633
+75459.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4548.099999904633
+75460.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4548.700000047684
+75469.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,4558.299999952316
+76974.79999995232,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6063.200000047684
+76976.19999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6064.599999904633
+76976.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6064.700000047684
+76976.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6064.700000047684
+76976.79999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6065.200000047684
+76987.79999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,6076.200000047684
+78490.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7578.900000095367
+78493.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7581.900000095367
+78493.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7582
+78493.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7582.099999904633
+78494.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7582.5
+78505.69999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,7594.099999904633
+80008.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9097.299999952316
+80010,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9098.400000095367
+80010.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9098.5
+80010.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9098.5
+80010.69999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9099.099999904633
+80022.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,9110.799999952316
+81522,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10610.400000095367
+81523.79999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10612.200000047684
+81523.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10612.299999952316
+81523.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10612.299999952316
+81524.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10612.900000095367
+81537.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,10626
+83037.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12125.5
+83039.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12127.900000095367
+83039.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12127.900000095367
+83039.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12127.900000095367
+83040.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12128.700000047684
+83052.69999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,12141.099999904633
+84553.79999995232,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1510,13642.200000047684
+84609,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3.700000047683716
+84609,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3.700000047683716
+84609.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3.799999952316284
+84609.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4
+84609.79999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4.5
+86159.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1554.5999999046326
+86160.19999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1554.8999998569489
+86160.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1554.8999998569489
+86160.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1554.8999998569489
+86160.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1555.2999999523163
+86161.19999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,1555.8999998569489
+87714.29999995232,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3109
+87715.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3110
+87715.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3110.0999999046326
+87715.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3110.2000000476837
+87716,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3110.7000000476837
+87717.29999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,3112
+89269.69999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4664.399999856949
+89271.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4666.200000047684
+89271.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4666.200000047684
+89271.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4666.200000047684
+89272,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4666.700000047684
+89272.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,4667.299999952316
+90824.19999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6218.899999856949
+90824.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6219.200000047684
+90824.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6219.200000047684
+90824.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6219.299999952316
+90825.19999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6219.899999856949
+90825.79999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,6220.5
+92377.79999995232,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7772.5
+92378.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7772.799999952316
+92378.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7772.799999952316
+92378.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7772.799999952316
+92378.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7773.200000047684
+92379,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,7773.700000047684
+93931,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9325.700000047684
+93931.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9326
+93931.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9326.099999904633
+93931.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9326.099999904633
+93931.79999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9326.5
+93932.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,9327.099999904633
+95485.19999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10879.899999856949
+95486.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10880.799999952316
+95486.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10880.899999856949
+95486.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10880.899999856949
+95486.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10881.299999952316
+95487.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,10882.200000047684
+97039.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12434.599999904633
+97041.19999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12435.899999856949
+97041.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12435.899999856949
+97041.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12435.899999856949
+97041.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12436.099999904633
+97041.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,12436.599999904633
+98594.69999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1550,13989.399999856949
+98651.79999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3.299999952316284
+98651.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3.299999952316284
+98651.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3.299999952316284
+98652.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3.5999999046325684
+98652.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4.099999904632568
+100234.79999995232,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1586.2999999523163
+100236.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1587.7999999523163
+100236.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1587.7999999523163
+100236.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1587.7999999523163
+100237,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1588.5
+100238.29999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,1589.7999999523163
+101820.79999995232,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3172.2999999523163
+101822.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3173.7999999523163
+101822.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3173.7999999523163
+101822.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3173.7999999523163
+101823,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3174.5
+101824.19999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,3175.699999809265
+103407.59999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4759.099999904633
+103408.79999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4760.299999952316
+103408.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4760.299999952316
+103408.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4760.299999952316
+103409.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4760.799999952316
+103410.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,4761.599999904633
+104992.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6344
+104993.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6344.599999904633
+104993.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6344.699999809265
+104993.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6344.699999809265
+104993.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6345.099999904633
+104994.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,6346.099999904633
+106576.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7928
+106577.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7929.099999904633
+106577.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7929.199999809265
+106577.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7929.199999809265
+106578.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7929.899999856949
+106579.79999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,7931.299999952316
+108163.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9515
+108164.79999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9516.299999952316
+108164.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9516.299999952316
+108164.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9516.299999952316
+108165.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9517.099999904633
+108166.69999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,9518.199999809265
+109749.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11100.599999904633
+109750.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11101.799999952316
+109750.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11101.899999856949
+109750.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11101.899999856949
+109750.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11102.399999856949
+109752,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,11103.5
+111334.09999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12685.599999904633
+111335.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12687
+111335.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12687
+111335.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12687.099999904633
+111336.19999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12687.699999809265
+111337.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,12688.899999856949
+112920.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,1580,14272
+112975.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3.200000047683716
+112975.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3.200000047683716
+112975.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3.200000047683716
+112975.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3.5
+112976,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,3.9000000953674316
+114979.59999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2007.5
+114981.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2009.4000000953674
+114981.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2009.5
+114981.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2009.5
+114982.19999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2010.0999999046326
+114993.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,2021.7999999523163
+116986.5,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4014.4000000953674
+116987.69999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4015.5999999046326
+116987.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4015.7000000476837
+116987.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4015.7000000476837
+116988.69999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4016.5999999046326
+116990,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,4017.9000000953674
+118993.59999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6021.5
+118994.79999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6022.700000047684
+118994.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6022.700000047684
+118994.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6022.700000047684
+118995.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6023.400000095367
+119002.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,6030.799999952316
+120997.39999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8025.299999952316
+120999.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8027
+120999.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8027.099999904633
+120999.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8027.099999904633
+121000.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8028.200000047684
+121001.29999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,8029.200000047684
+123002.69999980927,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10030.599999904633
+123004.69999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10032.599999904633
+123004.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10032.700000047684
+123004.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10032.700000047684
+123005.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10033.299999952316
+123018.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,10046.799999952316
+125008.59999990463,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12036.5
+125010.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12038.200000047684
+125010.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12038.299999952316
+125010.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12038.400000095367
+125011.19999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12039.099999904633
+125012.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,12040.400000095367
+127014.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14042.799999952316
+127016.69999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14044.599999904633
+127016.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14044.700000047684
+127016.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14044.799999952316
+127017.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14045.200000047684
+127028.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,14056.5
+129020.39999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16048.299999952316
+129021.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16049.5
+129021.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16049.5
+129021.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16049.599999904633
+129022.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16050.299999952316
+129023.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,16051.400000095367
+131025.89999985695,parent,keyup,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_keyhold_timer,Native contenteditable: key held during delay,0,2000,18053.799999952316
+105.39999985694885,parent,selectionchange,NA,NA,NA,NA,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,-2.700000047683716
+127.59999990463257,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,19.5
+127.69999980926514,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,19.59999990463257
+127.79999995231628,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,19.700000047683716
+128.19999980926514,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,20.09999990463257
+128.59999990463257,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,20.5
+138,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,29.90000009536743
+1143.5999999046326,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1035.5
+1143.5999999046326,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1035.5
+1143.6999998092651,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1035.5999999046326
+1144.0999999046326,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1036
+1144.7999999523163,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1036.7000000476837
+1152.0999999046326,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,1044
+2147.699999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2039.5999999046326
+2147.899999856949,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2039.7999999523163
+2147.899999856949,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2039.7999999523163
+2148.399999856949,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2040.2999999523163
+2149.5999999046326,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2041.5
+2149.5999999046326,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,2041.5
+3152.5999999046326,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3044.5
+3152.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3044.5999999046326
+3152.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3044.5999999046326
+3153.399999856949,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3045.2999999523163
+3155.5999999046326,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3047.5
+3164,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,3055.9000000953674
+4158.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4050.4000000953674
+4158.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4050.4000000953674
+4158.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4050.4000000953674
+4159,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4050.9000000953674
+4160.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4052
+4160.199999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,4052.0999999046326
+5164.699999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5056.599999904633
+5164.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5056.599999904633
+5164.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5056.599999904633
+5165.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5057.099999904633
+5166,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5057.900000095367
+5172.599999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,5064.5
+6166.899999856949,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6058.799999952316
+6167,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6058.900000095367
+6167.099999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6059
+6167.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6059.599999904633
+6168.899999856949,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6060.799999952316
+6169,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,6060.900000095367
+7164.199999809265,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7056.099999904633
+7164.199999809265,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7056.099999904633
+7164.199999809265,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7056.099999904633
+7164.5,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7056.400000095367
+7165.199999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7057.099999904633
+7165.199999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,7057.099999904633
+8169.399999856949,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8061.299999952316
+8169.399999856949,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8061.299999952316
+8169.599999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8061.5
+8170,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8061.900000095367
+8170.399999856949,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8062.299999952316
+8180.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,990,8072.700000047684
+8227.5,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3.1000001430511475
+8227.5,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3.1000001430511475
+8227.5,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3.1000001430511475
+8227.799999952316,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3.4000000953674316
+8228.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4.1000001430511475
+8228.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4.1000001430511475
+9241.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1017.1000001430511
+9241.599999904633,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1017.2000000476837
+9241.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1017.2999999523163
+9242,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1017.6000001430511
+9242.599999904633,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1018.2000000476837
+9245.599999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,1021.2000000476837
+10256.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2031.9000000953674
+10256.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2031.9000000953674
+10256.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2031.9000000953674
+10256.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2032.2000000476837
+10257.099999904633,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2032.7000000476837
+10265.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,2040.7000000476837
+11273.599999904633,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3049.2000000476837
+11273.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3049.2999999523163
+11273.799999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3049.4000000953674
+11274.099999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3049.7000000476837
+11274.599999904633,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3050.2000000476837
+11279.899999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,3055.5
+12285.899999856949,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4061.5
+12286,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4061.600000143051
+12286.099999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4061.7000000476837
+12286.899999856949,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4062.5
+12287.899999856949,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4063.5
+12295.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,4071.2999999523163
+13300.599999904633,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5076.200000047684
+13300.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5076.299999952316
+13300.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5076.299999952316
+13301.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5076.799999952316
+13302.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5077.900000095367
+13305.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,5081.299999952316
+14321.099999904633,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6096.700000047684
+14321.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6096.799999952316
+14321.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6096.799999952316
+14321.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6097.200000047684
+14322.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6097.900000095367
+14322.399999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,6098
+15335.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7111.400000095367
+15335.799999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7111.400000095367
+15335.899999856949,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7111.5
+15336.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7111.799999952316
+15336.899999856949,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7112.5
+15340.399999856949,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,7116
+16352.899999856949,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8128.5
+16353,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8128.600000143051
+16353,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8128.600000143051
+16354,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8129.600000143051
+16354.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8130.100000143051
+16358.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1000,8133.900000095367
+16407.599999904633,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3
+16407.599999904633,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3
+16407.599999904633,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3
+16407.89999985695,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3.299999952316284
+16408.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3.9000000953674316
+16408.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3.9000000953674316
+17433,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1028.4000000953674
+17433.099999904633,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1028.5
+17433.099999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1028.5
+17433.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1028.9000000953674
+17433.799999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1029.2000000476837
+17435.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,1030.7999999523163
+18456.099999904633,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2051.5
+18456.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2051.5999999046326
+18456.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2051.7999999523163
+18457.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2052.7000000476837
+18458.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2053.7999999523163
+18463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,2058.4000000953674
+19478.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3073.7999999523163
+19478.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3073.9000000953674
+19478.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3073.9000000953674
+19478.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3074.2000000476837
+19479.099999904633,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3074.5
+19479.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,3075.0999999046326
+20495.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4091.2999999523163
+20495.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4091.2999999523163
+20496,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4091.4000000953674
+20496.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4091.7000000476837
+20497.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4092.5
+20497.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,4092.7000000476837
+21514.599999904633,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5110
+21514.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5110.099999904633
+21514.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5110.099999904633
+21515.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5110.799999952316
+21516,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5111.400000095367
+21516,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,5111.400000095367
+22532.699999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6128.099999904633
+22532.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6128.099999904633
+22532.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6128.099999904633
+22533.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6128.599999904633
+22533.799999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6129.200000047684
+22533.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,6129.200000047684
+23551.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7146.799999952316
+23551.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7146.799999952316
+23551.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7146.900000095367
+23551.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7147.200000047684
+23552.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7147.799999952316
+23552.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,7147.799999952316
+24570.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8165.700000047684
+24570.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8165.799999952316
+24570.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8165.799999952316
+24570.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8166.200000047684
+24571.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8166.700000047684
+24571.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1010,8166.799999952316
+24611.199999809265,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3
+24611.199999809265,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3
+24611.199999809265,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3
+24611.599999904633,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3.4000000953674316
+24612.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4.200000047683716
+24612.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4.200000047683716
+25721.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1113.1000001430511
+25721.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1113.1000001430511
+25721.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1113.2000000476837
+25722,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1113.8000001907349
+25723,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1114.8000001907349
+25723.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,1114.9000000953674
+26837.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2229.300000190735
+26837.599999904633,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2229.4000000953674
+26837.599999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2229.4000000953674
+26838.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2230
+26839.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2231.300000190735
+26839.799999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,2231.600000143051
+27953.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3345.2000000476837
+27953.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3345.300000190735
+27953.599999904633,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3345.4000000953674
+27953.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3345.7000000476837
+27955,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3346.800000190735
+27955.199999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,3347
+29067.699999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4459.5
+29067.799999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4459.600000143051
+29067.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4459.700000047684
+29068.599999904633,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4460.400000095367
+29070,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4461.800000190735
+29070.599999904633,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,4462.400000095367
+30184.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5576.300000190735
+30184.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5576.5
+30184.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5576.5
+30185.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5577.300000190735
+30187,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5578.800000190735
+30187,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,5578.800000190735
+31299.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6691.600000143051
+31299.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6691.700000047684
+31300,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6691.800000190735
+31300.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6692.600000143051
+31302.099999904633,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6693.900000095367
+31302.89999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,6694.700000047684
+32420.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7812.700000047684
+32421,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7812.800000190735
+32421,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7812.800000190735
+32421.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7813.100000143051
+32421.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7813.700000047684
+32422.599999904633,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,7814.400000095367
+33535.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8927.400000095367
+33535.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8927.5
+33535.799999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8927.600000143051
+33536.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8928
+33537.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8929.200000047684
+33537.799999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1100,8929.600000143051
+33581.799999952316,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3.1000001430511475
+33581.799999952316,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3.1000001430511475
+33581.799999952316,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3.1000001430511475
+33582.09999990463,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3.4000000953674316
+33582.699999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4
+33582.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4
+34776.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1197.6000001430511
+34776.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1197.6000001430511
+34776.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1197.6000001430511
+34776.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1198.2000000476837
+34777.89999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1199.2000000476837
+34778,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,1199.3000001907349
+35966.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2387.9000000953674
+35966.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2388
+35966.699999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2388
+35967.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2388.4000000953674
+35967.799999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2389.100000143051
+35967.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,2389.100000143051
+37158.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3580.100000143051
+37159,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3580.300000190735
+37159,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3580.300000190735
+37159.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3581
+37160.89999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3582.2000000476837
+37160.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,3582.2000000476837
+38352.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4773.600000143051
+38352.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4773.700000047684
+38352.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4773.800000190735
+38353.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4774.600000143051
+38354.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4775.700000047684
+38354.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,4775.700000047684
+39547.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5969.200000047684
+39548,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5969.300000190735
+39548,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5969.300000190735
+39548.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5969.900000095367
+39549.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5970.700000047684
+39549.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,5970.700000047684
+40739.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7161.100000143051
+40739.799999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7161.100000143051
+40739.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7161.200000047684
+40740.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7161.700000047684
+40741.59999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7162.900000095367
+40741.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,7162.900000095367
+41936.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8357.700000047684
+41936.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8357.800000190735
+41936.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8357.900000095367
+41937.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8358.400000095367
+41937.799999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8359.100000143051
+41937.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,8359.100000143051
+43131.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9552.700000047684
+43131.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9552.800000190735
+43131.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9552.900000095367
+43132.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9553.5
+43133.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9555.100000143051
+43133.89999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1180,9555.200000047684
+43174.59999990463,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3.0999999046325684
+43174.59999990463,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3.0999999046325684
+43174.699999809265,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3.1999998092651367
+43175,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3.5
+43175.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4
+43175.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4
+44387,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1215.5
+44387,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1215.5
+44387.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1215.5999999046326
+44387.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1216.0999999046326
+44389,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1217.5
+44389.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,1217.5999999046326
+45602.299999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2430.7999999523163
+45602.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2430.7999999523163
+45602.299999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2430.7999999523163
+45602.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2431.199999809265
+45603.699999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2432.199999809265
+45603.699999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,2432.199999809265
+46816.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3644.5999999046326
+46816.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3644.699999809265
+46816.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3644.699999809265
+46816.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3645
+46817.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3645.5999999046326
+46817.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,3645.5999999046326
+48031.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4859.899999856949
+48031.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4859.899999856949
+48031.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4860
+48031.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4860.399999856949
+48033.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4861.599999904633
+48033.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,4861.599999904633
+49245.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6074.299999952316
+49246,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6074.5
+49246,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6074.5
+49246.699999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6075.199999809265
+49248.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6076.599999904633
+49248.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,6076.599999904633
+50462,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7290.5
+50462,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7290.5
+50462.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7290.599999904633
+50462.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7290.899999856949
+50463.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7291.799999952316
+50463.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,7291.899999856949
+51675.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8503.599999904633
+51675.199999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8503.699999809265
+51675.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8503.699999809265
+51675.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8504.399999856949
+51677.199999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8505.699999809265
+51677.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,8506
+52891.699999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9720.199999809265
+52891.699999809265,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9720.199999809265
+52891.799999952316,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9720.299999952316
+52892.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9720.899999856949
+52893.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9722.399999856949
+52894,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1200,9722.5
+52936.09999990463,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3.200000047683716
+52936.09999990463,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3.200000047683716
+52936.09999990463,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3.200000047683716
+52936.5,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3.6000001430511475
+52937.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,4.400000095367432
+52937.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,4.400000095367432
+54247.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1314.9000000953674
+54247.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1315
+54247.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1315
+54248.799999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1315.9000000953674
+54249.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1316.5
+54249.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,1316.6000001430511
+55561.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2628.5
+55561.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2628.600000143051
+55561.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2628.600000143051
+55562.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2629.2000000476837
+55563.199999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2630.2999999523163
+55563.699999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,2630.7999999523163
+56878.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3945.2000000476837
+56878.299999952316,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3945.4000000953674
+56878.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3945.600000143051
+56878.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3946
+56879.699999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3946.7999999523163
+56879.799999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,3946.9000000953674
+58191.799999952316,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5258.900000095367
+58191.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5259
+58192,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5259.100000143051
+58192.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5259.600000143051
+58194,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5261.100000143051
+58195,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,5262.100000143051
+59507.199999809265,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6574.299999952316
+59507.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6574.5
+59507.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6574.600000143051
+59508.199999809265,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6575.299999952316
+59509.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6576.700000047684
+59509.699999809265,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,6576.799999952316
+60822,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7889.100000143051
+60822.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7889.200000047684
+60822.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7889.200000047684
+60822.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7890
+60824.199999809265,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7891.299999952316
+60826.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,7893.600000143051
+62137.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9204.600000143051
+62137.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9204.600000143051
+62137.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9204.600000143051
+62138.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9205.400000095367
+62139.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9206.400000095367
+62139.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,9206.5
+63450.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10517.600000143051
+63450.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10517.600000143051
+63450.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10517.700000047684
+63451.299999952316,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10518.400000095367
+63452.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10519.700000047684
+63452.799999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1300,10519.900000095367
+63495.09999990463,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3.9000000953674316
+63495.199999809265,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4
+63495.199999809265,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4
+63495.59999990463,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4.400000095367432
+63496.299999952316,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,5.1000001430511475
+63496.299999952316,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,5.1000001430511475
+65013.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1521.9000000953674
+65013.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1521.9000000953674
+65013.199999809265,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1522
+65013.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1522.4000000953674
+65015,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1523.8000001907349
+65015.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,1523.9000000953674
+66533,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3041.800000190735
+66533.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3041.9000000953674
+66533.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3041.9000000953674
+66533.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3042.2000000476837
+66534.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3042.9000000953674
+66534.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,3042.9000000953674
+68050,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4558.800000190735
+68050.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4559
+68050.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4559.100000143051
+68050.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4559.700000047684
+68051.19999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4560
+68051.59999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,4560.400000095367
+69569.69999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6078.5
+69569.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6078.600000143051
+69569.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6078.600000143051
+69570.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6078.900000095367
+69570.69999980927,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6079.5
+69570.69999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,6079.5
+71087.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7596.700000047684
+71087.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7596.700000047684
+71088,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7596.800000190735
+71088.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7597.200000047684
+71089.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7597.900000095367
+71089.19999980927,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,7598
+72605.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9113.900000095367
+72605.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9113.900000095367
+72605.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9114
+72605.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9114.300000190735
+72606.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9115.200000047684
+72606.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,9115.200000047684
+74123.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.100000143051
+74123.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.100000143051
+74123.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.100000143051
+74123.69999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.5
+74124.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.900000095367
+74124.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,10632.900000095367
+75639.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12148.100000143051
+75639.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12148.100000143051
+75639.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12148.100000143051
+75639.69999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12148.5
+75640.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12148.900000095367
+75641.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1510,12150.300000190735
+75679.89999985695,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3.0999999046325684
+75679.89999985695,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3.0999999046325684
+75680,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3.200000047683716
+75680.29999995232,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3.5
+75680.89999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4.099999904632568
+75680.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4.099999904632568
+77236.69999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1559.8999998569489
+77236.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1559.8999998569489
+77236.79999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1560
+77237.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1560.2999999523163
+77237.59999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1560.7999999523163
+77237.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,1560.7999999523163
+78797.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3120.7000000476837
+78797.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3120.7999999523163
+78797.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3120.899999856949
+78798,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3121.2000000476837
+78798.79999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3122
+78798.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,3122.0999999046326
+80359.19999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4682.399999856949
+80359.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4682.5
+80359.29999995232,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4682.5
+80359.69999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4682.899999856949
+80360.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4683.599999904633
+80360.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,4683.700000047684
+81919.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6242.299999952316
+81919.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6242.399999856949
+81919.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6242.399999856949
+81919.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6242.799999952316
+81920.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6243.700000047684
+81920.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,6243.700000047684
+83479.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7802.299999952316
+83479.19999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7802.399999856949
+83479.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7802.399999856949
+83479.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7802.799999952316
+83480.19999980927,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7803.399999856949
+83480.19999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,7803.399999856949
+85040,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9363.200000047684
+85040.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9363.299999952316
+85040.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9363.299999952316
+85040.39999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9363.599999904633
+85041.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9364.299999952316
+85041.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,9364.299999952316
+86600.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10923.799999952316
+86600.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10923.899999856949
+86600.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10923.899999856949
+86601.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10924.299999952316
+86601.79999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10925
+86601.79999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,10925
+88161.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12484.599999904633
+88161.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12484.700000047684
+88161.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12484.700000047684
+88161.79999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12485
+88162.29999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12485.5
+88162.29999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1550,12485.5
+88201.79999995232,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,2.799999952316284
+88201.89999985695,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,2.8999998569488525
+88201.89999985695,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,2.8999998569488525
+88202.19999980927,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3.1999998092651367
+88202.79999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3.799999952316284
+88202.79999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3.799999952316284
+89791.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1592.5
+89791.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1592.5
+89791.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1592.5
+89792.19999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1593.1999998092651
+89793.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1594.3999998569489
+89793.39999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,1594.3999998569489
+91384.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3185.399999856949
+91384.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3185.5
+91384.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3185.5999999046326
+91385.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3186.2999999523163
+91386.89999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3187.899999856949
+91386.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,3187.899999856949
+92978.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4779.5
+92978.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4779.5
+92978.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4779.599999904633
+92979.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4780.299999952316
+92980.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4781.5
+92980.59999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,4781.599999904633
+94571.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6372.299999952316
+94571.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6372.299999952316
+94571.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6372.5
+94572.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6373.099999904633
+94573.59999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6374.599999904633
+94573.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,6374.599999904633
+96166.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7967.299999952316
+96166.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7967.399999856949
+96166.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7967.5
+96167.19999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7968.199999809265
+96168.59999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7969.599999904633
+96168.69999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,7969.699999809265
+97760.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9561.099999904633
+97760.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9561.099999904633
+97760.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9561.199999809265
+97760.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9561.5
+97761.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9562.5
+97761.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,9562.5
+99353.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11154.5
+99353.5,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11154.5
+99353.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11154.599999904633
+99354.19999980927,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11155.199999809265
+99355.5,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11156.5
+99355.59999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,11156.599999904633
+100949.29999995232,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12750.299999952316
+100949.29999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12750.299999952316
+100949.39999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12750.399999856949
+100949.89999985695,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12750.899999856949
+100951.09999990463,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12752.099999904633
+100951.09999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,1580,12752.099999904633
+101006.09999990463,parent,keydown,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2.799999952316284
+101006.09999990463,parent,keypress,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2.799999952316284
+101006.19999980927,parent,beforeinput,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2.8999998569488525
+101006.39999985695,parent,input,NA,NA,DIV,textbox,FALSE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,3.0999999046325684
+101007,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,3.700000047683716
+101007,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,3.700000047683716
+103019.89999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2016.5999999046326
+103019.89999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2016.5999999046326
+103020,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2016.7000000476837
+103020.29999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2017
+103020.59999990463,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2017.2999999523163
+103024.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,2021.2000000476837
+105033.59999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4030.2999999523163
+105033.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4030.399999856949
+105033.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4030.5999999046326
+105034.59999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4031.2999999523163
+105035.79999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4032.5
+105041.89999985695,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,4038.5999999046326
+107050.09999990463,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6046.799999952316
+107050.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6046.799999952316
+107050.09999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6046.799999952316
+107051,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6047.700000047684
+107051.79999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6048.5
+107057.69999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,6054.399999856949
+109066,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8062.700000047684
+109066.09999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8062.799999952316
+109066.19999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8062.899999856949
+109066.79999995232,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8063.5
+109067.89999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8064.599999904633
+109073.79999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,8070.5
+111075.69999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10072.399999856949
+111075.69999980927,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10072.399999856949
+111075.69999980927,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10072.399999856949
+111076.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10072.799999952316
+111076.39999985695,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10073.099999904633
+111088.29999995232,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,10085
+113089.69999980927,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12086.399999856949
+113089.79999995232,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12086.5
+113089.89999985695,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12086.599999904633
+113090.5,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12087.200000047684
+113091.69999980927,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12088.399999856949
+113100.19999980927,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,12096.899999856949
+115104.39999985695,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14101.099999904633
+115104.39999985695,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14101.099999904633
+115104.5,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14101.200000047684
+115105,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14101.700000047684
+115106.29999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14103
+115114.5,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,14111.200000047684
+117119.5,parent,keydown,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.200000047684
+117119.59999990463,parent,keypress,x,KeyX,DIV,textbox,TRUE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.299999952316
+117119.59999990463,parent,beforeinput,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.299999952316
+117120.09999990463,parent,input,NA,NA,DIV,textbox,TRUE,NA,NA,NA,insertText,x,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16116.799999952316
+117120.79999995232,parent,keyup,x,KeyX,DIV,textbox,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16117.5
+117129,parent,selectionchange,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,native_between_keys_timer,Native contenteditable: wait after keyup,0,2000,16125.700000047684

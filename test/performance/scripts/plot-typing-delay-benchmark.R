@@ -38,7 +38,9 @@ run_specs <- tribble(
 	"keyhold_schedulers", "Key-hold scheduler trace", "artifacts/typing-delay-benchmark-keyhold-schedulers/typing-delay-benchmark-1777758386189.json", "large post", "normal Playwright delay with action/timer/scheduler tracing",
 	"between_keys", "Complete keypress, then wait", "artifacts/typing-delay-benchmark-between-keys/typing-delay-benchmark-1777758545134.json", "large post", "delay after full keydown/keypress/input/keyup sequence",
 	"mode_trace_keyhold", "Paired trace: key held during delay", "artifacts/typing-delay-benchmark-mode-trace-keyhold/typing-delay-benchmark-1777759091224.json", "large post", "paired browser/action/timer trace for normal Playwright delay",
-	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress"
+	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress",
+	"native_keyhold_timer", "Native contenteditable: key held during delay", "artifacts/typing-delay-benchmark-native-keyhold-timer/typing-delay-benchmark-1777759696881.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and normal Playwright delay",
+	"native_between_keys_timer", "Native contenteditable: wait after keyup", "artifacts/typing-delay-benchmark-native-between-keys-timer/typing-delay-benchmark-1777759836791.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and delay after full keypress"
 ) %>%
 	mutate(json_abs_path = file.path(repo_root, json_path))
 
@@ -52,6 +54,10 @@ run_specs <- tribble(
 
 quant <- function(x, p) {
 	as.numeric(quantile(x, p, na.rm = TRUE, names = FALSE, type = 7))
+}
+
+is_empty_events <- function(events) {
+	is.null(events) || length(events) == 0 || (is.data.frame(events) && nrow(events) == 0)
 }
 
 read_raw_runs <- function() {
@@ -97,7 +103,7 @@ read_raw_runs <- function() {
 				seq_len(nrow(run_summaries)),
 				function(row_index) {
 					events <- run_summaries$persistenceEvents[[row_index]]
-					if (is.null(events) || nrow(events) == 0) {
+					if (is_empty_events(events)) {
 						return(tibble())
 					}
 					as_tibble(events) %>%
@@ -118,7 +124,7 @@ read_raw_runs <- function() {
 				seq_len(nrow(run_summaries)),
 				function(row_index) {
 					events <- run_summaries$browserEvents[[row_index]]
-					if (is.null(events) || nrow(events) == 0) {
+					if (is_empty_events(events)) {
 						return(tibble())
 					}
 					as_tibble(events) %>%
@@ -139,7 +145,7 @@ read_raw_runs <- function() {
 				seq_len(nrow(run_summaries)),
 				function(row_index) {
 					events <- run_summaries$dataEvents[[row_index]]
-					if (is.null(events) || nrow(events) == 0) {
+					if (is_empty_events(events)) {
 						return(tibble())
 					}
 					as_tibble(events) %>%
@@ -160,7 +166,7 @@ read_raw_runs <- function() {
 				seq_len(nrow(run_summaries)),
 				function(row_index) {
 					events <- run_summaries$timerEvents[[row_index]]
-					if (is.null(events) || nrow(events) == 0) {
+					if (is_empty_events(events)) {
 						return(tibble())
 					}
 					as_tibble(events) %>%
@@ -183,7 +189,7 @@ read_raw_runs <- function() {
 				seq_len(nrow(run_summaries)),
 				function(row_index) {
 					events <- run_summaries$schedulerEvents[[row_index]]
-					if (is.null(events) || nrow(events) == 0) {
+					if (is_empty_events(events)) {
 						return(tibble())
 					}
 					as_tibble(events) %>%
@@ -846,6 +852,158 @@ if (nrow(key_event_timing) > 0) {
 			),
 		"13-persistence-marker-vs-previous-keyup.png"
 	)
+}
+
+native_comparison_run_ids <- c(
+	"mode_trace_keyhold",
+	"mode_trace_between_keys",
+	"native_keyhold_timer",
+	"native_between_keys_timer"
+)
+
+native_comparison <- records %>%
+	filter(run_id %in% native_comparison_run_ids, !is_throwaway) %>%
+	group_by(run_id, run_label, scenario_label, delay_ms) %>%
+	summarise(
+		latency_ms = median(latency_ms),
+		keypress_ms = median(keypress_ms),
+		keydown_ms = median(keydown_ms),
+		keyup_ms = median(keyup_ms),
+		.groups = "drop"
+	) %>%
+	mutate(
+		mode_label = recode(
+			run_id,
+			mode_trace_keyhold = "Gutenberg: key held down",
+			mode_trace_between_keys = "Gutenberg: wait after keyup",
+			native_keyhold_timer = "Native: key held down",
+			native_between_keys_timer = "Native: wait after keyup"
+		),
+		mode_label = factor(
+			mode_label,
+			levels = c(
+				"Gutenberg: key held down",
+				"Gutenberg: wait after keyup",
+				"Native: key held down",
+				"Native: wait after keyup"
+			)
+		)
+	) %>%
+	pivot_longer(
+		c(latency_ms, keypress_ms),
+		names_to = "metric",
+		values_to = "duration_ms"
+	) %>%
+	mutate(
+		metric = recode(
+			metric,
+			latency_ms = "keydown + keypress + keyup",
+			keypress_ms = "keypress only"
+		),
+		metric = factor(
+			metric,
+			levels = c("keydown + keypress + keyup", "keypress only")
+		)
+	)
+
+if (nrow(native_comparison) > 0) {
+	save_plot(
+		ggplot(native_comparison, aes(delay_ms, duration_ms, color = mode_label, linetype = mode_label)) +
+			geom_line(linewidth = 0.8) +
+			geom_point(size = 2.1) +
+			facet_wrap(~ metric, ncol = 1) +
+			scale_color_manual(values = c(
+				"Gutenberg: key held down" = "#b91c1c",
+				"Gutenberg: wait after keyup" = "#0369a1",
+				"Native: key held down" = "#f97316",
+				"Native: wait after keyup" = "#16a34a"
+			)) +
+			scale_linetype_manual(values = c(
+				"Gutenberg: key held down" = "solid",
+				"Gutenberg: wait after keyup" = "solid",
+				"Native: key held down" = "dashed",
+				"Native: wait after keyup" = "dashed"
+			)) +
+			labs(
+				title = "The native contenteditable baseline does not reproduce Gutenberg's key-hold plateau",
+				subtitle = "Both native modes include a 1000ms clear-and-reschedule input timer; the Gutenberg key-hold mode remains the outlier",
+				x = "Configured delay",
+				y = "Median EventDispatch duration (ms)",
+				color = NULL,
+				linetype = NULL
+			),
+		"14-native-contenteditable-comparison.png",
+		width = 11,
+		height = 8
+	)
+}
+
+native_key_event_timing <- if (
+	nrow(derived$browser_events) > 0 &&
+	nrow(derived$persistence_events) > 0 &&
+	"eventMs" %in% names(derived$browser_events)
+) {
+	derived$browser_events %>%
+		filter(run_id %in% c("native_keyhold_timer", "native_between_keys_timer"), type %in% c("keydown", "keypress", "input", "keyup")) %>%
+		group_by(run_id, run_label, round, delayMs) %>%
+		group_modify(~ build_key_groups(.x)) %>%
+		ungroup() %>%
+		group_by(run_id, run_label, round, delayMs) %>%
+		mutate(
+			previous_input_ms = lag(input_ms),
+			previous_keyup_ms = lag(keyup_ms)
+		) %>%
+		ungroup() %>%
+		rowwise() %>%
+		mutate(
+			mark_event_ms = {
+				current_run_id <- run_id
+				current_round <- round
+				current_delay <- delayMs
+				current_previous_input_ms <- previous_input_ms
+				current_first_keydown_ms <- first_keydown_ms
+				marks <- derived$persistence_events %>%
+					filter(
+						run_id == .env$current_run_id,
+						round == .env$current_round,
+						delayMs == .env$current_delay,
+						isPersistent,
+						eventMs > .env$current_previous_input_ms,
+						eventMs < .env$current_first_keydown_ms
+					) %>%
+					arrange(desc(eventMs))
+				if (nrow(marks) == 0) NA_real_ else marks$eventMs[[1]]
+			},
+			mark_to_keydown_ms = first_keydown_ms - mark_event_ms,
+			previous_keyup_to_mark_ms = mark_event_ms - previous_keyup_ms,
+			previous_keyup_to_current_keydown_ms = first_keydown_ms - previous_keyup_ms,
+			previous_input_to_previous_keyup_ms = previous_keyup_ms - previous_input_ms,
+			mark_during_previous_key_hold = mark_event_ms < previous_keyup_ms
+		) %>%
+		ungroup() %>%
+		left_join(
+			records %>%
+				filter(run_id %in% c("native_keyhold_timer", "native_between_keys_timer")) %>%
+				transmute(
+					run_id,
+					round,
+					delayMs = delay_ms,
+					key_index = sample_index,
+					is_throwaway,
+					latency_ms,
+					keydown_duration_ms = keydown_ms,
+					keypress_duration_ms = keypress_ms,
+					keyup_duration_ms = keyup_ms
+				),
+			by = c("run_id", "round", "delayMs", "key_index")
+		) %>%
+		filter(!is_throwaway, !is.na(mark_event_ms))
+} else {
+	tibble()
+}
+
+if (nrow(native_key_event_timing) > 0) {
+	write_csv(native_key_event_timing, file.path(data_dir, "typing-delay-native-key-event-timing.csv"))
 }
 
 message("Wrote plots to: ", figure_dir)
