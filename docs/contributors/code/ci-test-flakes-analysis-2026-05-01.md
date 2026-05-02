@@ -339,7 +339,7 @@ Checked again on 2026-05-02, the only fixes that fit the low-risk idea are the t
 
 ## Actual PR Branch Fix Coverage
 
-The created code branch is `try/test-flakes-pr` at commit `2231852dac9` (`Tighten homepage flake row selection`). It changes only `test/e2e/specs/site-editor/homepage-settings.spec.js` and `test/e2e/specs/editor/various/publish-panel.spec.js`.
+The created code branch is `try/test-flakes-pr` at commit `a27bc3fc016` (`Stabilize small-scope flaky e2e tests`). It changes only `test/e2e/specs/site-editor/homepage-settings.spec.js` and `test/e2e/specs/editor/various/publish-panel.spec.js`.
 
 Deeper PR audit note: the first version of the branch used prefix row-name regexes such as `/^Sample page\b/`. That was better than the original broad label match, but it was still not exact because it could match titles like `Sample page 2`. The latest branch fixes that by selecting a row through a title cell with `getByLabel( title, { exact: true } )`. It also makes `afterAll` cleanup reset homepage/posts-page settings before deleting pages, matching the setup order and avoiding a transient cleanup race.
 
