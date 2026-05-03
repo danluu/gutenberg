@@ -153,6 +153,10 @@ The R script derives:
     the listener-traced runs.
 -   `data/typing-delay-listener-source-map.csv`: source-map lookup for the
     minified RichText listener registration stack.
+-   `data/typing-delay-browser-timeline-cycles.csv`: per-cycle cross-browser
+    timer/input ordering for the Chrome, Firefox, and WebKit timeline check.
+-   `data/typing-delay-browser-timeline-summary.csv`: p50 summary of that
+    cross-browser timer/input ordering.
 -   `data/typing-delay-rich-text-span-events.csv`: source-level RichText timing
     spans from targeted instrumented runs.
 -   `data/typing-delay-rich-text-span-summary.csv`: per-delay summary of those
@@ -558,6 +562,72 @@ visible in WebKit/Safari-engine timing, but this run does not reproduce the
 large Chrome drop. The likely interpretation is that the same Gutenberg
 one-second timer boundary exists, while WebKit's dispatch/listener profile is
 already relatively low before the boundary and therefore has less room to drop.
+
+## Cross-Browser Timer Timeline
+
+The Firefox and WebKit checks rule out the strongest "Chrome trace artifact"
+interpretation. Chrome's `EventDispatch` slices are a Chrome-specific way to
+account for the work, but the ordering problem is not Chrome-specific. It is a
+Gutenberg timer race created by the benchmark's synthetic key hold.
+
+I ran a fresh-editor diagnostic trace in Chrome/Chromium, Firefox, and
+Playwright WebKit/Safari profile with in-page browser-event, listener, and timer
+instrumentation. The plot below aligns each row to the previous input event. The
+blue square is the `setTimeout( ..., 1000 )` scheduled by the block-editor
+RichText persistence path. The blue tick is when that timer becomes eligible to
+run. The green circle means the timer callback actually ran before the next
+measured input; the red x means the next measured input cleared the timer before
+the callback ran. The diamond and purple bar are the next measured input and its
+input-listener dispatch span.
+
+![Cross-browser timer ordering](figures/19-browser-timer-event-ordering.png)
+
+The mechanism is:
+
+1. A Gutenberg input schedules the rich-text persistence timer for `1000ms`
+   later.
+2. The benchmark is not doing "keypress, then wait"; it is holding the previous
+   synthetic key down during the delay.
+3. Near the one-second boundary, the browser event loop has two possible next
+   tasks: the timer callback or the next keyboard/input work.
+4. If the next input wins, Gutenberg clears and reschedules the timer before the
+   callback runs. The current input starts from the still-transient state and
+   its listener span is higher.
+5. If the timer wins, the callback marks the previous change persistent before
+   the current input begins. The current input starts from the post-timer state
+   and its measured listener span is lower.
+
+The diagnostic run shows that ordering directly:
+
+| Browser         |    Delay | Timer before input | Input span p50 |
+| --------------- | -------: | -----------------: | -------------: |
+| Chrome/Chromium |  `990ms` |              `0/7` |       `30.7ms` |
+| Chrome/Chromium | `1000ms` |              `7/7` |       `19.8ms` |
+| Chrome/Chromium | `1010ms` |              `7/7` |       `16.9ms` |
+| Firefox         |  `990ms` |              `2/7` |       `37.0ms` |
+| Firefox         | `1000ms` |              `7/7` |       `27.5ms` |
+| Firefox         | `1010ms` |              `7/7` |       `22.0ms` |
+| WebKit/Safari   |  `990ms` |              `1/7` |       `22.0ms` |
+| WebKit/Safari   | `1000ms` |              `7/7` |       `12.5ms` |
+| WebKit/Safari   | `1010ms` |              `7/7` |       `15.5ms` |
+
+The `990ms` rows are not perfectly pure because the instrumentation itself adds
+some overhead and jitter; Firefox had two of seven retained cycles where the
+timer slipped in before the next input, and WebKit had one. But the median
+ordering is still the same: below the boundary, the measured input usually
+clears the timer; at and above the boundary, the timer callback runs first in
+all retained cycles.
+
+This is why Firefox can show the same qualitative dip even though it has no
+Chromium `EventDispatch` trace. The application-level ordering is shared:
+Gutenberg's `1000ms` timer sometimes runs before the next measured input and
+sometimes gets cleared by that input. Chrome `EventDispatch` measures one
+accounting window for that state change; the Firefox/WebKit listener traces
+measure another. Both windows get shorter when the timer work has already run.
+
+This diagnostic trace is for causality, not for absolute score comparison. The
+in-page wrappers perturb timing, and the measured spans here should not replace
+the lower-overhead sweep plots.
 
 ## Deeper Pass: The Delay Is A Key Hold
 
@@ -1467,6 +1537,12 @@ The key runs used in this report were:
     orderings.
 -   `webkit_1000_narrow_listeners`: Playwright WebKit/Safari-profile
     listener-timing check at `995ms`, `1000ms`, `1005ms`, and `1010ms`.
+-   `chrome_browser_timeline`: Chrome/Chromium fresh-editor browser, timer, and
+    listener trace at `990ms`, `1000ms`, and `1010ms`.
+-   `firefox_browser_timeline`: Firefox fresh-editor browser, timer, and
+    listener trace at `990ms`, `1000ms`, and `1010ms`.
+-   `webkit_browser_timeline`: Playwright WebKit/Safari-profile fresh-editor
+    browser, timer, and listener trace at `990ms`, `1000ms`, and `1010ms`.
 -   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
 -   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer

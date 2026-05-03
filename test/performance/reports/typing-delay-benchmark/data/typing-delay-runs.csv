@@ -1399,6 +1399,15 @@ webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, 
 webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, WebKit",0,1000,0,953,21,0,41,20,21,1777786287838,1777786310188,22350
 webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, WebKit",0,1005,0,953,21,0,41,20,21,1777786310307,1777786332617,22310
 webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, WebKit",0,1010,0,953,21,0,41,20,21,1777786332740,1777786354937,22197
+chrome_browser_timeline,Chrome browser timer timeline,"large post, Chrome",0,990,0,953,9,0,17,8,9,1777786850071,1777786859448,9377
+chrome_browser_timeline,Chrome browser timer timeline,"large post, Chrome",0,1000,1,953,9,0,17,8,9,1777786861329,1777786870880,9551
+chrome_browser_timeline,Chrome browser timer timeline,"large post, Chrome",0,1010,2,953,9,0,17,8,9,1777786872850,1777786882428,9578
+firefox_browser_timeline,Firefox browser timer timeline,"large post, Firefox",0,990,0,953,9,1,16,7,9,1777786901458,1777786911067,9609
+firefox_browser_timeline,Firefox browser timer timeline,"large post, Firefox",0,1000,1,953,9,0,17,8,9,1777786914324,1777786924148,9824
+firefox_browser_timeline,Firefox browser timer timeline,"large post, Firefox",0,1010,2,953,9,0,17,8,9,1777786927177,1777786937020,9843
+webkit_browser_timeline,WebKit browser timer timeline,"large post, WebKit",0,990,0,953,9,0,15,6,7,1777786901908,1777786911379,9471
+webkit_browser_timeline,WebKit browser timer timeline,"large post, WebKit",0,1000,1,953,9,0,17,8,9,1777786913507,1777786923091,9584
+webkit_browser_timeline,WebKit browser timer timeline,"large post, WebKit",0,1010,2,953,9,0,17,8,9,1777786925166,1777786934790,9624
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,990,0,953,9,9,18,9,9,1777759091225,1777759100525,9300
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,1000,0,953,9,9,18,9,9,1777759100603,1777759110200,9597
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,1010,0,953,9,9,18,9,9,1777759110272,1777759119870,9598

@@ -1,0 +1,10 @@
+run_id,browser_label,browser_order,delayMs,delay_label,n,timer_fired_before_input_n,period_p50_ms,keyup_p50_ms,timer_scheduled_p50_ms,timer_eligible_p50_ms,timer_fired_p50_ms,timer_cleared_p50_ms,input_span_p50_ms,timer_result,timer_result_x_ms,input_span_label
+chrome_browser_timeline,Chrome/Chromium,1,990,990ms,7,0,1030.5,1023.7999999523163,30.40000009536743,1030.4000000953674,NA,1062.2999999523163,30.700000047683716,timer was cleared by measured input,1062.2999999523163,span p50 30.7ms; fired 0/7
+chrome_browser_timeline,Chrome/Chromium,1,1000,1000ms,7,7,1051.7999999523163,1043.0999999046326,20.799999952316284,1020.7999999523163,1022.5999999046326,1071.0999999046326,19.799999952316284,timer callback ran before measured input,1022.5999999046326,span p50 19.8ms; fired 7/7
+chrome_browser_timeline,Chrome/Chromium,1,1010,1010ms,7,7,1049.5,1038.6000001430511,16.90000009536743,1016.9000000953674,1018.1000001430511,1067.1000001430511,16.90000009536743,timer callback ran before measured input,1018.1000001430511,span p50 16.9ms; fired 7/7
+firefox_browser_timeline,Firefox,2,990,990ms,7,2,1040,1035,41,1041,NA,1080,37,timer was cleared by measured input,1080,span p50 37.0ms; fired 2/7
+firefox_browser_timeline,Firefox,2,1000,1000ms,7,7,1073,1037,32,1032,1036,1105,27.5,timer callback ran before measured input,1036,span p50 27.5ms; fired 7/7
+firefox_browser_timeline,Firefox,2,1010,1010ms,7,7,1058,1046,25,1025,1027,1082,22,timer callback ran before measured input,1027,span p50 22.0ms; fired 7/7
+webkit_browser_timeline,WebKit/Safari profile,3,990,990ms,7,1,1021,1015,22.00000000000091,1022.0000000000009,NA,1044,22,timer was cleared by measured input,1044,span p50 22.0ms; fired 1/7
+webkit_browser_timeline,WebKit/Safari profile,3,1000,1000ms,7,7,1044,1023,13,1013,1014,1056.9999999999982,12.500000000000455,timer callback ran before measured input,1014,span p50 12.5ms; fired 7/7
+webkit_browser_timeline,WebKit/Safari profile,3,1010,1010ms,7,7,1052,1044,15,1015,1016,1066.000000000001,15.5,timer callback ran before measured input,1016,span p50 15.5ms; fired 7/7

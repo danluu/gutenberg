@@ -47,6 +47,9 @@ run_specs <- tribble(
 	"firefox_1000_narrow_listeners", "Firefox input listener narrow boundary", "artifacts/typing-delay-benchmark-firefox-1000-narrow-listeners/typing-delay-benchmark-1777785514268.json", "large post, Firefox", "Firefox listener-timing check from 995ms to 1010ms",
 	"webkit_boundary_listeners", "WebKit input listener boundary", "artifacts/typing-delay-benchmark-webkit-boundary-listeners-confirm/typing-delay-benchmark-1777786069947.json", "large post, WebKit", "Playwright WebKit listener-timing check around 1000ms, two orderings",
 	"webkit_1000_narrow_listeners", "WebKit input listener narrow boundary", "artifacts/typing-delay-benchmark-webkit-1000-narrow-listeners/typing-delay-benchmark-1777786265704.json", "large post, WebKit", "Playwright WebKit listener-timing check from 995ms to 1010ms",
+	"chrome_browser_timeline", "Chrome browser timer timeline", "artifacts/typing-delay-benchmark-chrome-browser-timeline/typing-delay-benchmark-1777786848045.json", "large post, Chrome", "fresh-editor per-delay browser/listener/timer trace at 990ms, 1000ms, and 1010ms",
+	"firefox_browser_timeline", "Firefox browser timer timeline", "artifacts/typing-delay-benchmark-firefox-browser-timeline/typing-delay-benchmark-1777786896917.json", "large post, Firefox", "fresh-editor per-delay browser/listener/timer trace at 990ms, 1000ms, and 1010ms",
+	"webkit_browser_timeline", "WebKit browser timer timeline", "artifacts/typing-delay-benchmark-webkit-browser-timeline/typing-delay-benchmark-1777786897327.json", "large post, WebKit", "fresh-editor per-delay browser/listener/timer trace at 990ms, 1000ms, and 1010ms",
 	"mode_trace_keyhold", "Paired trace: key held during delay", "artifacts/typing-delay-benchmark-mode-trace-keyhold/typing-delay-benchmark-1777759091224.json", "large post", "paired browser/action/timer trace for normal Playwright delay",
 	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress",
 	"native_keyhold_timer", "Native contenteditable: key held during delay", "artifacts/typing-delay-benchmark-native-keyhold-timer/typing-delay-benchmark-1777759696881.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and normal Playwright delay",
@@ -1821,6 +1824,311 @@ if (nrow(webkit_input_by_delay) > 0) {
 		"18-webkit-input-listener-boundary.png",
 		width = 10,
 		height = 5.5
+	)
+}
+
+browser_timeline_run_ids <- c("chrome_browser_timeline", "firefox_browser_timeline", "webkit_browser_timeline")
+browser_timeline_labels <- tribble(
+	~run_id, ~browser_label, ~browser_order,
+	"chrome_browser_timeline", "Chrome/Chromium", 1,
+	"firefox_browser_timeline", "Firefox", 2,
+	"webkit_browser_timeline", "WebKit/Safari profile", 3
+)
+
+browser_timeline_input_points <- derived$browser_events %>%
+	filter(
+		run_id %in% browser_timeline_run_ids,
+		documentName == "editor-canvas",
+		type == "input",
+		(data == "x") | (inputType == "insertText")
+	) %>%
+	arrange(run_id, round, delayMs, eventMs) %>%
+	group_by(run_id, round, delayMs) %>%
+	mutate(
+		input_index = row_number(),
+		previous_input_ms = lag(eventMs),
+		next_input_ms = lead(eventMs)
+	) %>%
+	ungroup() %>%
+	transmute(
+		run_id,
+		round,
+		delayMs,
+		input_index,
+		input_ms = eventMs,
+		previous_input_ms,
+		next_input_ms
+	)
+
+browser_timeline_keyups <- derived$browser_events %>%
+	filter(
+		run_id %in% browser_timeline_run_ids,
+		documentName == "editor-canvas",
+		type == "keyup",
+		key == "x"
+	) %>%
+	transmute(run_id, round, delayMs, keyup_ms = eventMs)
+
+browser_timeline_timers <- derived$timer_events %>%
+	filter(
+		run_id %in% browser_timeline_run_ids,
+		requestedTimeoutMs == 1000,
+		str_detect(stack, "block-editor")
+	) %>%
+	mutate(
+		run_start_ms = scheduledAtMs - scheduledEventMs,
+		clearedEventMs = clearedAtMs - run_start_ms,
+		finishedEventMs = finishedAtMs - run_start_ms
+	)
+
+empty_browser_timeline_input_spans <- tibble(
+	run_id = character(),
+	round = integer(),
+	delayMs = numeric(),
+	input_index = integer(),
+	input_span_ms = numeric()
+)
+
+browser_timeline_input_spans <- if (nrow(browser_timeline_input_points) == 0) {
+	empty_browser_timeline_input_spans
+} else {
+	map_dfr(seq_len(nrow(browser_timeline_input_points)), function(row_index) {
+		point <- browser_timeline_input_points[row_index, ]
+		stop_ms <- if (is.na(point$next_input_ms)) Inf else point$next_input_ms - 5
+		events <- derived$event_listener_events %>%
+			filter(
+				run_id == point$run_id,
+				round == point$round,
+				delayMs == point$delayMs,
+				windowName == "editor-canvas",
+				type == "input",
+				(data == "x") | (inputType == "insertText"),
+				eventMs >= point$input_ms - 5,
+				eventMs < stop_ms
+			)
+
+		if (nrow(events) == 0) {
+			return(tibble())
+		}
+
+		tibble(
+			run_id = point$run_id,
+			round = point$round,
+			delayMs = point$delayMs,
+			input_index = point$input_index,
+			input_span_ms = max(events$eventMs + replace_na(events$durationMs, 0), na.rm = TRUE) -
+				min(events$eventMs, na.rm = TRUE)
+		)
+	})
+}
+
+empty_browser_timeline_cycles <- tibble(
+	run_id = character(),
+	round = integer(),
+	delayMs = numeric(),
+	input_index = integer(),
+	period_ms = numeric(),
+	keyup_ms = numeric(),
+	timer_scheduled_ms = numeric(),
+	timer_eligible_ms = numeric(),
+	timer_fired_ms = numeric(),
+	timer_cleared_ms = numeric(),
+	timer_finished_ms = numeric(),
+	timer_fired_before_input = logical(),
+	input_span_ms = numeric(),
+	browser_label = character(),
+	browser_order = numeric(),
+	delay_label = factor(levels = c("1010ms", "1000ms", "990ms"))
+)
+
+browser_timeline_cycles <- if (nrow(browser_timeline_input_points) == 0) {
+	empty_browser_timeline_cycles
+} else {
+	map_dfr(seq_len(nrow(browser_timeline_input_points)), function(row_index) {
+		point <- browser_timeline_input_points[row_index, ]
+		if (is.na(point$previous_input_ms) || point$input_index <= 2) {
+			return(tibble())
+		}
+
+		timer <- browser_timeline_timers %>%
+			filter(
+				run_id == point$run_id,
+				round == point$round,
+				delayMs == point$delayMs,
+				scheduledEventMs >= point$previous_input_ms - 5,
+				scheduledEventMs < point$input_ms + 5
+			) %>%
+			arrange(scheduledEventMs) %>%
+			slice(1)
+
+		if (nrow(timer) == 0) {
+			return(tibble())
+		}
+
+		keyup <- browser_timeline_keyups %>%
+			filter(
+				run_id == point$run_id,
+				round == point$round,
+				delayMs == point$delayMs,
+				keyup_ms > point$previous_input_ms,
+				keyup_ms < point$input_ms + 75
+			) %>%
+			arrange(desc(keyup_ms)) %>%
+			slice(1)
+
+		input_span <- browser_timeline_input_spans %>%
+			filter(
+				run_id == point$run_id,
+				round == point$round,
+				delayMs == point$delayMs,
+				input_index == point$input_index
+			) %>%
+			slice(1)
+
+		tibble(
+			run_id = point$run_id,
+			round = point$round,
+			delayMs = point$delayMs,
+			input_index = point$input_index,
+			period_ms = point$input_ms - point$previous_input_ms,
+			keyup_ms = if (nrow(keyup) == 0) NA_real_ else keyup$keyup_ms - point$previous_input_ms,
+			timer_scheduled_ms = timer$scheduledEventMs - point$previous_input_ms,
+			timer_eligible_ms = timer$scheduledEventMs - point$previous_input_ms + 1000,
+			timer_fired_ms = timer$firedEventMs - point$previous_input_ms,
+			timer_cleared_ms = timer$clearedEventMs - point$previous_input_ms,
+			timer_finished_ms = timer$finishedEventMs - point$previous_input_ms,
+			timer_fired_before_input = !is.na(timer$firedEventMs) && timer$firedEventMs < point$input_ms,
+			input_span_ms = if (nrow(input_span) == 0) NA_real_ else input_span$input_span_ms
+		)
+	}) %>%
+		left_join(browser_timeline_labels, by = "run_id") %>%
+		mutate(delay_label = factor(paste0(delayMs, "ms"), levels = c("1010ms", "1000ms", "990ms")))
+}
+
+browser_timeline_cycles_path <- file.path(data_dir, "typing-delay-browser-timeline-cycles.csv")
+browser_timeline_summary_path <- file.path(data_dir, "typing-delay-browser-timeline-summary.csv")
+
+if (nrow(browser_timeline_cycles) > 0) {
+	write_csv(browser_timeline_cycles, browser_timeline_cycles_path)
+}
+
+browser_timeline_summary <- browser_timeline_cycles %>%
+	group_by(run_id, browser_label, browser_order, delayMs, delay_label) %>%
+	summarise(
+		n = n(),
+		timer_fired_before_input_n = sum(timer_fired_before_input, na.rm = TRUE),
+		period_p50_ms = median(period_ms, na.rm = TRUE),
+		keyup_p50_ms = median(keyup_ms, na.rm = TRUE),
+		timer_scheduled_p50_ms = median(timer_scheduled_ms, na.rm = TRUE),
+		timer_eligible_p50_ms = median(timer_eligible_ms, na.rm = TRUE),
+		timer_fired_p50_ms = if_else(
+			timer_fired_before_input_n > n / 2,
+			median(timer_fired_ms[timer_fired_before_input], na.rm = TRUE),
+			NA_real_
+		),
+		timer_cleared_p50_ms = median(timer_cleared_ms, na.rm = TRUE),
+		input_span_p50_ms = median(input_span_ms, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	mutate(
+		timer_result = if_else(
+			timer_fired_before_input_n > n / 2,
+			"timer callback ran before measured input",
+			"timer was cleared by measured input"
+		),
+		timer_result_x_ms = if_else(
+			timer_result == "timer callback ran before measured input",
+			timer_fired_p50_ms,
+			timer_cleared_p50_ms
+		),
+		input_span_label = paste0(
+			"span p50 ",
+			number(input_span_p50_ms, accuracy = 0.1),
+			"ms; fired ",
+			timer_fired_before_input_n,
+			"/",
+			n
+		)
+	)
+
+if (nrow(browser_timeline_summary) == 0 && file.exists(browser_timeline_summary_path)) {
+	browser_timeline_summary <- read_csv(browser_timeline_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			delay_label = factor(delay_label, levels = c("1010ms", "1000ms", "990ms")),
+			browser_label = factor(browser_label, levels = browser_timeline_labels$browser_label)
+		)
+}
+
+if (nrow(browser_timeline_summary) > 0) {
+	write_csv(browser_timeline_summary, browser_timeline_summary_path)
+
+	browser_timeline_plot_data <- browser_timeline_summary %>%
+		mutate(browser_label = factor(browser_label, levels = browser_timeline_labels$browser_label))
+
+	save_plot(
+		ggplot(browser_timeline_plot_data, aes(y = delay_label)) +
+			geom_segment(
+				aes(x = 0, xend = keyup_p50_ms, yend = delay_label),
+				color = brewer_color("Greys", 5, type = "seq", n = 9),
+				linewidth = 5,
+				alpha = 0.35
+			) +
+			geom_segment(
+				aes(x = timer_scheduled_p50_ms, xend = timer_eligible_p50_ms, yend = delay_label),
+				color = brewer_color("Blues", 6, type = "seq", n = 9),
+				linewidth = 1.3,
+				alpha = 0.8
+			) +
+			geom_point(aes(x = timer_scheduled_p50_ms, shape = "timer scheduled"), color = brewer_color("Blues", 7, type = "seq", n = 9), size = 2.6) +
+			geom_point(aes(x = timer_eligible_p50_ms, shape = "timer reaches 1000ms"), color = brewer_color("Blues", 9, type = "seq", n = 9), size = 4) +
+			geom_point(aes(x = timer_result_x_ms, shape = timer_result, color = timer_result), size = 3.1) +
+			geom_point(aes(x = period_p50_ms, shape = "next measured input starts"), color = brewer_color("Dark2", 4), size = 3) +
+			geom_segment(
+				aes(x = period_p50_ms, xend = period_p50_ms + input_span_p50_ms, yend = delay_label),
+				color = brewer_color("Dark2", 4),
+				linewidth = 4,
+				alpha = 0.65
+			) +
+			geom_text(
+				aes(x = 1135, label = input_span_label),
+				hjust = 0,
+				size = 2.8,
+				color = brewer_color("Greys", 8, type = "seq", n = 9)
+			) +
+			facet_wrap(vars(browser_label), ncol = 1) +
+			scale_x_continuous(
+				limits = c(0, 1340),
+				breaks = c(0, 500, 1000, 1100, 1200, 1300),
+				labels = label_number(suffix = "ms")
+			) +
+			scale_color_manual(values = c(
+				`timer callback ran before measured input` = brewer_color("Greens", 6, type = "seq", n = 9),
+				`timer was cleared by measured input` = brewer_color("Set1", 1)
+			)) +
+			scale_shape_manual(values = c(
+				`timer scheduled` = 22,
+				`timer reaches 1000ms` = 124,
+				`timer callback ran before measured input` = 16,
+				`timer was cleared by measured input` = 4,
+				`next measured input starts` = 23
+			)) +
+			labs(
+				title = "The same 1000ms timer ordering shows up in each browser engine",
+				subtitle = "Square: timer scheduled; blue tick: timer eligible; green dot: timer fired; red x: timer cleared; diamond and purple bar: next measured input",
+				x = "Milliseconds after previous input starts",
+				y = "Configured key-hold delay",
+				color = NULL,
+				shape = NULL
+			) +
+			theme(
+				legend.position = "none",
+				strip.text = element_text(face = "bold"),
+				plot.margin = margin(5.5, 140, 5.5, 5.5)
+			) +
+			coord_cartesian(clip = "off"),
+		"19-browser-timer-event-ordering.png",
+		width = 12,
+		height = 8.2
 	)
 }
 
