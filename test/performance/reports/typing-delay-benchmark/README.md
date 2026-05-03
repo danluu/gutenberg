@@ -90,6 +90,12 @@ The short version:
     required", "worker message task is enough", and "any delayed task close to
     keydown is enough"; it points instead to recent CPU/scheduler state
     interacting with Gutenberg's input path.
+-   A no-message worker duration sweep confirms a dose response. With the worker
+    ending about `50ms` before keydown, `20ms`, `40ms`, `80ms`, and `150ms` of
+    off-main-thread CPU work produce event-only p50s of `15.5ms`, `12.8ms`,
+    `11.2ms`, and `10.3ms`. A no-message worker that merely waits `150ms`
+    stays slow at `24.5ms`. That disconfirms "worker creation/lifetime is
+    enough" and strengthens the CPU-work interpretation.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -1124,8 +1130,13 @@ event-only measurement. The new intervention modes are deliberately artificial:
     the worker completion is recorded separately.
 -   `worker-busy-wait-150-no-message`: same worker CPU spin, but the worker
     closes itself without posting a completion message back to the main thread.
+-   `worker-busy-wait-20-no-message`, `worker-busy-wait-40-no-message`, and
+    `worker-busy-wait-80-no-message`: shorter no-message worker CPU spins, each
+    scheduled to end about `50ms` before keydown.
 -   `worker-delay-150`: worker waits for `150ms` and posts a message back, but
     does no CPU spin.
+-   `worker-delay-150-no-message`: worker waits for `150ms` and closes itself
+    without CPU spin or a main-thread completion message.
 -   `delayed-noop-150`: main thread schedules a delayed no-op task near the
     following keydown without doing CPU work.
 -   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
@@ -1146,8 +1157,12 @@ Selected p50s:
 | no-op + busy wait `150ms`      |      `1100ms` |            `51.0ms` |       `11.3ms` |      `150.0ms` |           `161.0ms` |
 | worker busy wait `150ms`       |      `1000ms` |           `141.1ms` |       `14.9ms` |      `161.1ms` |           `176.1ms` |
 | worker busy wait `150ms`       |      `1100ms` |            `41.2ms` |       `10.5ms` |      `160.1ms` |           `170.4ms` |
+| worker busy wait, no message   |      `1230ms` |            `50.7ms` |       `15.5ms` |       `21.7ms` |            `37.3ms` |
+| worker busy wait, no message   |      `1210ms` |            `50.4ms` |       `12.8ms` |       `41.6ms` |            `54.3ms` |
+| worker busy wait, no message   |      `1170ms` |            `50.5ms` |       `11.2ms` |       `81.5ms` |            `92.7ms` |
 | worker busy wait, no message   |      `1100ms` |            `50.1ms` |       `10.3ms` |      `151.2ms` |           `161.6ms` |
 | worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` |      `169.1ms` |           `193.8ms` |
+| worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` |      `151.3ms` |           `175.1ms` |
 | delayed no-op                  |      `1100ms` |            `50.5ms` |       `24.4ms` |      `152.6ms` |           `176.6ms` |
 | normal marker + busy wait      |      `1100ms` |            `37.2ms` |        `8.5ms` |      `162.8ms` |           `170.9ms` |
 | stop/start typing + busy wait  |      `1100ms` |            `30.9ms` |        `8.1ms` |      `170.0ms` |           `177.7ms` |
@@ -1170,19 +1185,36 @@ The updated model is narrower and less semantic:
 5. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
    `20ms`, `40ms`, and `150ms` pure busy waits form a descending event-only
    sequence: `21.0ms`, `14.1ms`, and `11.3ms`.
-6. The effect decays with distance from the following key: no-op + `150ms` busy
+6. Off-main-thread worker CPU has the same duration response without a main
+   thread completion message: `20ms`, `40ms`, `80ms`, and `150ms` worker spins
+   produce `15.5ms`, `12.8ms`, `11.2ms`, and `10.3ms` event-only p50s.
+7. The effect decays with distance from the following key: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
    around `51ms` before keydown is in the low band. The worker control shows the
    same shape: `14.9ms` when it ends around `141ms` before keydown, and
    `10.5ms` when it ends around `41ms` before keydown.
-7. The near-key main-thread task is not the mechanism by itself. The
+8. The near-key main-thread task is not the mechanism by itself. The
    `worker-delay-150` and `delayed-noop-150` controls both create near-key tasks
    with no CPU spin, and both stay on the slow plateau.
+9. Worker creation/lifetime is not the mechanism by itself. The
+   `worker-delay-150-no-message` control keeps the same worker lifetime shape
+   without CPU spin or a completion message, and it stays slow.
 
 That points away from a purely Gutenberg-state explanation and toward
 CPU/scheduler sensitivity around Gutenberg's input path. It
 still does not mean the benchmarked character cycle got cheaper. The
 timer/worker-inclusive values for these artificial controls are `161-194ms`.
+
+The worker-duration sweep makes the CPU-work interpretation clearer:
+
+![Worker no-message duration sweep](figures/52-worker-no-message-duration.png)
+
+All points in that plot end about `50ms` before keydown. The zero-duration
+no-op and no-CPU worker are slow. Main-thread and worker CPU work both move the
+next event-only slice down as duration increases. The worker results are not
+identical to the main-thread busy waits, especially at `20ms`, but the
+monotonic shape confirms that amount of recent CPU work matters even when that
+work never posts a main-thread completion message.
 
 I also added a native `contenteditable` control with the same rewritten
 one-second timer and the same `1300ms` key hold:
@@ -3227,7 +3259,11 @@ The key runs used in this report were:
     `task_end_noop_busy_150_timeout_1100_delay_1300`,
     `task_end_worker_busy_150_timeout_1000_delay_1300`,
     `task_end_worker_busy_150_timeout_1100_delay_1300`,
+    `task_end_worker_busy_no_message_20_timeout_1230_delay_1300`,
+    `task_end_worker_busy_no_message_40_timeout_1210_delay_1300`,
+    `task_end_worker_busy_no_message_80_timeout_1170_delay_1300`,
     `task_end_worker_busy_no_message_150_timeout_1100_delay_1300`,
+    `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,
     `task_end_normal_busy_150_timeout_1100_delay_1300`, and

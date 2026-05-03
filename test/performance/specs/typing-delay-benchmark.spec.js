@@ -135,9 +135,13 @@ const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
 	'noop-then-busy-wait-150',
+	'worker-busy-wait-20-no-message',
+	'worker-busy-wait-40-no-message',
+	'worker-busy-wait-80-no-message',
 	'worker-busy-wait-150',
 	'worker-busy-wait-150-no-message',
 	'worker-delay-150',
+	'worker-delay-150-no-message',
 	'delayed-noop-150',
 	'raw-unknown-action',
 	'mark-next-not-persistent',
@@ -1331,6 +1335,32 @@ test.describe( 'Typing delay benchmark', () => {
 								);
 							}
 
+							function startWorkerDelayNoMessage( delayMs ) {
+								const startedAtMs = performance.now();
+								const source = `
+							self.onmessage = ( event ) => {
+								setTimeout( () => self.close(), event.data.delayMs );
+							};
+						`;
+								const url = URL.createObjectURL(
+									new Blob( [ source ], {
+										type: 'text/javascript',
+									} )
+								);
+								const worker = new Worker( url );
+								worker.postMessage( { delayMs } );
+								window.__typingBenchmarkMarkPersistentInterventionEvents.push(
+									{
+										nowMs: startedAtMs,
+										durationMs: delayMs,
+										mode,
+										status: 'worker-delay-no-message',
+										before,
+										after: blockEditorSnapshot(),
+									}
+								);
+							}
+
 							function startWorkerDelay( delayMs ) {
 								const startedAtMs = performance.now();
 								const source = `
@@ -1392,12 +1422,32 @@ test.describe( 'Typing delay benchmark', () => {
 									startWorkerBusyWait( 150 );
 									result = undefined;
 								} else if (
+									mode === 'worker-busy-wait-20-no-message' ||
+									mode === 'worker-busy-wait-40-no-message' ||
+									mode === 'worker-busy-wait-80-no-message'
+								) {
+									startWorkerBusyWaitNoMessage(
+										mode ===
+											'worker-busy-wait-20-no-message'
+											? 20
+											: mode ===
+											  'worker-busy-wait-40-no-message'
+											? 40
+											: 80
+									);
+									result = undefined;
+								} else if (
 									mode === 'worker-busy-wait-150-no-message'
 								) {
 									startWorkerBusyWaitNoMessage( 150 );
 									result = undefined;
 								} else if ( mode === 'worker-delay-150' ) {
 									startWorkerDelay( 150 );
+									result = undefined;
+								} else if (
+									mode === 'worker-delay-150-no-message'
+								) {
+									startWorkerDelayNoMessage( 150 );
 									result = undefined;
 								} else if ( mode === 'delayed-noop-150' ) {
 									startDelayedNoop( 150 );

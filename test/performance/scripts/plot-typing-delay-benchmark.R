@@ -3480,6 +3480,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					)
 				)
 			) %>%
+			filter(!is.na(intervention)) %>%
 			mutate(
 				intervention_label = fct_recode(
 					intervention,
@@ -3552,6 +3553,73 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			"50-task-end-proximity.png",
 			width = 13,
 			height = 8
+		)
+	}
+
+	if (file.exists(task_end_proximity_summary_path)) {
+		worker_no_message_duration <- read_csv(task_end_proximity_summary_path, show_col_types = FALSE) %>%
+			filter(
+				delay_ms == 1300,
+				rows_with_intervention_event > 0,
+				intervention_end_to_current_keydown_p50_ms >= 40,
+				intervention_end_to_current_keydown_p50_ms <= 60,
+				intervention %in% c(
+					"marker no-op",
+					"busy wait 20ms",
+					"busy wait 40ms",
+					"no-op + busy wait 150ms",
+					"worker busy wait 20ms, no message",
+					"worker busy wait 40ms, no message",
+					"worker busy wait 80ms, no message",
+					"worker busy wait 150ms, no message",
+					"worker delay 150ms, no message"
+				)
+			) %>%
+			mutate(
+				work_type = case_when(
+					intervention == "marker no-op" ~ "zero-duration no-op",
+					intervention == "worker delay 150ms, no message" ~ "worker no CPU",
+					str_detect(intervention, "^worker busy") ~ "worker CPU, no message",
+					TRUE ~ "main-thread CPU"
+				),
+				work_type = factor(
+					work_type,
+					levels = c("zero-duration no-op", "main-thread CPU", "worker CPU, no message", "worker no CPU")
+				),
+				duration_label = paste0(round(intervention_duration_p50_ms), "ms")
+			)
+
+		save_plot(
+			ggplot(
+				worker_no_message_duration,
+				aes(
+					intervention_duration_p50_ms,
+					latency_p50_ms,
+					color = work_type,
+					shape = work_type
+				)
+			) +
+				geom_point(size = 3.4, alpha = 0.95) +
+				geom_text(aes(label = duration_label), vjust = -0.85, size = 3.1, show.legend = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`zero-duration no-op` = 17,
+					`main-thread CPU` = 16,
+					`worker CPU, no message` = 15,
+					`worker no CPU` = 4
+				), drop = FALSE) +
+				scale_x_continuous(breaks = c(0, 20, 40, 80, 150)) +
+				labs(
+					title = "Off-main-thread CPU work has a duration response",
+					subtitle = "Fixed 1300ms key hold; all points end about 50ms before keydown",
+					x = "Timer-side work duration, p50 (ms)",
+					y = "Next EventDispatch duration, p50 (ms)",
+					color = "Work type",
+					shape = "Work type"
+				),
+			"52-worker-no-message-duration.png",
+			width = 9,
+			height = 6
 		)
 	}
 
