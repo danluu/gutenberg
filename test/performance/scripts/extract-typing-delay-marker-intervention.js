@@ -962,6 +962,39 @@ function spansInWindow( spans, startMs, stopMs ) {
 	);
 }
 
+function spansStartedInWindow( spans, startMs, stopMs ) {
+	return spans.filter(
+		( span ) =>
+			span.startedAtMs >= startMs && span.startedAtMs < stopMs - 0.0001
+	);
+}
+
+function firstBlockEditorActionInWindow(
+	dataEvents,
+	actionName,
+	startMs,
+	stopMs
+) {
+	return dataEvents.find(
+		( event ) =>
+			event.storeName === 'core/block-editor' &&
+			event.actionName === actionName &&
+			event.nowMs >= startMs &&
+			event.nowMs < stopMs
+	);
+}
+
+function actionStartedSpans( spans, action ) {
+	if ( ! action ) {
+		return [];
+	}
+	return spansStartedInWindow(
+		spans,
+		action.nowMs,
+		action.nowMs + ( action.durationMs || 0 )
+	);
+}
+
 const allSpanActionRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 	run.data.delayRunSummaries.flatMap( ( summary ) => {
 		const spans = summary.dataSpanEvents || [];
@@ -1205,12 +1238,29 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					span.name === 'block-editor.useBlockSync.updateParent'
 			);
 			const primaryUpdateParent = updateParentSpans[ 0 ];
-			const updateBlockAction = dataEvents.find(
-				( event ) =>
-					event.storeName === 'core/block-editor' &&
-					event.actionName === 'updateBlockAttributes' &&
-					event.nowMs >= inputEvent.nowMs - 1 &&
-					event.nowMs < inputEvent.nowMs + 80
+			const batchStartedAtMs = rootBatch?.startedAtMs ?? inputEvent.nowMs;
+			const batchStoppedAtMs = rootBatch
+				? rootBatch.startedAtMs + rootBatch.durationMs
+				: inputEvent.nowMs + 80;
+			const selectionChangeAction = firstBlockEditorActionInWindow(
+				dataEvents,
+				'selectionChange',
+				batchStartedAtMs - 1,
+				batchStoppedAtMs + 1
+			);
+			const updateBlockAction = firstBlockEditorActionInWindow(
+				dataEvents,
+				'updateBlockAttributes',
+				inputEvent.nowMs - 1,
+				batchStoppedAtMs + 1
+			);
+			const selectionChangeSpans = actionStartedSpans(
+				spans,
+				selectionChangeAction
+			);
+			const updateBlockActionSpans = actionStartedSpans(
+				spans,
+				updateBlockAction
 			);
 			const eventsBeforeContentUpdate = updateBlockAction
 				? dataEvents.filter(
@@ -1273,6 +1323,10 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					updateBlockAction?.before?.isPersistent,
 				content_update_after_persistent:
 					updateBlockAction?.after?.isPersistent,
+				selection_change_before_persistent:
+					selectionChangeAction?.before?.isPersistent,
+				selection_change_after_persistent:
+					selectionChangeAction?.after?.isPersistent,
 				update_parent: primaryUpdateParent?.metadata?.updateParent,
 				new_is_persistent:
 					primaryUpdateParent?.metadata?.newIsPersistent,
@@ -1286,6 +1340,27 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					( span ) =>
 						outerBatchChild( span, 'data.registry.batch.callback' )
 				),
+				selection_change_duration_ms: selectionChangeAction?.durationMs,
+				selection_change_root_subscribe_duration_ms: sumSpanDuration(
+					selectionChangeSpans,
+					blockEditorRootSubscribe
+				),
+				selection_change_redux_listener_duration_ms: sumSpanDuration(
+					selectionChangeSpans,
+					blockEditorReduxListener
+				),
+				update_block_attributes_duration_ms:
+					updateBlockAction?.durationMs,
+				update_block_attributes_root_subscribe_duration_ms:
+					sumSpanDuration(
+						updateBlockActionSpans,
+						blockEditorRootSubscribe
+					),
+				update_block_attributes_redux_listener_duration_ms:
+					sumSpanDuration(
+						updateBlockActionSpans,
+						blockEditorReduxListener
+					),
 				root_subscribe_count: countSpans(
 					batchSpans,
 					blockEditorRootSubscribe
@@ -1334,6 +1409,11 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					( sum, span ) => sum + ( span.durationMs || 0 ),
 					0
 				),
+				use_block_sync_registry_batch_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) =>
+						span.name === 'block-editor.useBlockSync.registryBatch'
+				),
 				on_input_duration_ms: sumSpanDuration(
 					batchSpans,
 					( span ) =>
@@ -1356,6 +1436,12 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					batchSpans,
 					( span ) =>
 						span.name === 'core-data.useEntityBlockEditor.serialize'
+				),
+				create_undo_level_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) =>
+						span.name ===
+						'core-data.useEntityBlockEditor.createUndoLevel'
 				),
 			};
 		} );
@@ -1398,6 +1484,40 @@ const allSpanInputBatchSummaryRows = Array.from(
 		),
 		batch_callback_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.batch_callback_duration_ms ),
+			0.5
+		),
+		selection_change_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.selection_change_duration_ms ),
+			0.5
+		),
+		selection_change_root_subscribe_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.selection_change_root_subscribe_duration_ms
+			),
+			0.5
+		),
+		selection_change_redux_listener_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.selection_change_redux_listener_duration_ms
+			),
+			0.5
+		),
+		update_block_attributes_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.update_block_attributes_duration_ms ),
+			0.5
+		),
+		update_block_attributes_root_subscribe_duration_p50_ms: quantile(
+			rows.map(
+				( row ) =>
+					row.update_block_attributes_root_subscribe_duration_ms
+			),
+			0.5
+		),
+		update_block_attributes_redux_listener_duration_p50_ms: quantile(
+			rows.map(
+				( row ) =>
+					row.update_block_attributes_redux_listener_duration_ms
+			),
 			0.5
 		),
 		root_subscribe_count_p50: quantile(
@@ -1446,6 +1566,12 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map( ( row ) => row.direct_update_parent_duration_ms ),
 			0.5
 		),
+		use_block_sync_registry_batch_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.use_block_sync_registry_batch_duration_ms
+			),
+			0.5
+		),
 		on_input_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.on_input_duration_ms ),
 			0.5
@@ -1460,6 +1586,10 @@ const allSpanInputBatchSummaryRows = Array.from(
 		),
 		serialize_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.serialize_duration_ms ),
+			0.5
+		),
+		create_undo_level_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.create_undo_level_duration_ms ),
 			0.5
 		),
 	};
@@ -2041,12 +2171,20 @@ writeCsv(
 		'actions_before_content_update_persistence',
 		'content_update_before_persistent',
 		'content_update_after_persistent',
+		'selection_change_before_persistent',
+		'selection_change_after_persistent',
 		'update_parent',
 		'new_is_persistent',
 		'previous_are_blocks_different',
 		'did_persistence_change',
 		'batch_duration_ms',
 		'batch_callback_duration_ms',
+		'selection_change_duration_ms',
+		'selection_change_root_subscribe_duration_ms',
+		'selection_change_redux_listener_duration_ms',
+		'update_block_attributes_duration_ms',
+		'update_block_attributes_root_subscribe_duration_ms',
+		'update_block_attributes_redux_listener_duration_ms',
 		'root_subscribe_count',
 		'root_subscribe_duration_ms',
 		'redux_listener_count',
@@ -2059,10 +2197,12 @@ writeCsv(
 		'use_select_map_select_count',
 		'use_select_update_value_count',
 		'direct_update_parent_duration_ms',
+		'use_block_sync_registry_batch_duration_ms',
 		'on_input_duration_ms',
 		'on_change_duration_ms',
 		'edit_entity_record_duration_ms',
 		'serialize_duration_ms',
+		'create_undo_level_duration_ms',
 	]
 );
 writeCsv(
@@ -2082,6 +2222,12 @@ writeCsv(
 		'latency_p50_ms',
 		'batch_duration_p50_ms',
 		'batch_callback_duration_p50_ms',
+		'selection_change_duration_p50_ms',
+		'selection_change_root_subscribe_duration_p50_ms',
+		'selection_change_redux_listener_duration_p50_ms',
+		'update_block_attributes_duration_p50_ms',
+		'update_block_attributes_root_subscribe_duration_p50_ms',
+		'update_block_attributes_redux_listener_duration_p50_ms',
 		'root_subscribe_count_p50',
 		'root_subscribe_duration_p50_ms',
 		'redux_listener_count_p50',
@@ -2093,10 +2239,12 @@ writeCsv(
 		'use_select_on_change_duration_p50_ms',
 		'use_select_map_select_count_p50',
 		'direct_update_parent_duration_p50_ms',
+		'use_block_sync_registry_batch_duration_p50_ms',
 		'on_input_duration_p50_ms',
 		'on_change_duration_p50_ms',
 		'edit_entity_record_duration_p50_ms',
 		'serialize_duration_p50_ms',
+		'create_undo_level_duration_p50_ms',
 	]
 );
 writeCsv(

@@ -3500,6 +3500,71 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		width = 12,
 		height = 7
 	)
+
+	marker_input_action_phases <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			)
+		) %>%
+		select(
+			intervention,
+			`EventDispatch latency` = latency_p50_ms,
+			`RichText registry.batch` = batch_duration_p50_ms,
+			`batch callback` = batch_callback_duration_p50_ms,
+			`selectionChange rootSubscribe` = selection_change_root_subscribe_duration_p50_ms,
+			`updateBlockAttributes rootSubscribe` = update_block_attributes_root_subscribe_duration_p50_ms,
+			`block-editor resume` = resume_block_editor_duration_p50_ms,
+			`useBlockSync registry.batch` = use_block_sync_registry_batch_duration_p50_ms,
+			`direct updateParent` = direct_update_parent_duration_p50_ms,
+			`core-data onInput` = on_input_duration_p50_ms,
+			`core-data onChange` = on_change_duration_p50_ms
+		) %>%
+		pivot_longer(
+			cols = -intervention,
+			names_to = "component",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			component = factor(
+				component,
+				levels = rev(c(
+					"EventDispatch latency",
+					"RichText registry.batch",
+					"batch callback",
+					"selectionChange rootSubscribe",
+					"updateBlockAttributes rootSubscribe",
+					"block-editor resume",
+					"useBlockSync registry.batch",
+					"direct updateParent",
+					"core-data onInput",
+					"core-data onChange"
+				))
+			)
+		)
+
+	save_plot(
+		ggplot(marker_input_action_phases, aes(duration_ms, component, color = intervention, shape = intervention)) +
+			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "The input gap is mostly callback-side subscriber fanout",
+				subtitle = "Trace-all-data-spans run at 1000ms; retained-input p50s split by input-batch phase",
+				x = "Duration, p50 (ms)",
+				y = NULL,
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			),
+		"36-marker-input-action-phase-split.png",
+		width = 12,
+		height = 8
+	)
 }
 
 marker_allspan_input_batch_samples_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-samples.csv")

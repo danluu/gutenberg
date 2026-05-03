@@ -213,7 +213,8 @@ The R script derives:
 -   `data/typing-delay-marker-allspan-*.csv`: trace-all-data-spans summaries for
     a small `1000ms` marker-intervention run.
 -   `data/typing-delay-marker-allspan-input-batch-*.csv`: retained-input
-    timelines and batch decomposition from the same trace-all-data-spans run.
+    timelines, action-phase splits, and batch decomposition from the same
+    trace-all-data-spans run.
 -   `data/typing-delay-marker-allspan-owner-*.csv`: source-map-backed owner
     summaries for `useSelect` fanout and attributed enclosing listener spans in
     the marker task and following input batch.
@@ -1009,6 +1010,35 @@ It also disconfirms two stronger theories. First, the marker did not simply
 "move the same next-input work earlier"; the whole marker-inclusive cycle is
 larger. Second, `onChange` is not intrinsically the measured win: mark-next also
 produces `onChange` paths in this run but remains slower than normal marker.
+
+I also split the following input batch by action phase. For this split, spans
+are charged to an action only if the span starts before the action's recorded
+end, so the deferred batch resume is not accidentally charged to
+`updateBlockAttributes` when it starts at the same timestamp.
+
+![Marker input action phase split](figures/36-marker-input-action-phase-split.png)
+
+Retained-input p50s from this trace-heavy microscope run:
+
+| Component                                   | normal marker | marker no-op | mark next | no-op minus normal |
+| ------------------------------------------- | ------------: | -----------: | --------: | -----------------: |
+| EventDispatch latency                       |      `26.9ms` |     `32.5ms` |  `30.0ms` |            `5.6ms` |
+| RichText `registry.batch`                   |      `22.1ms` |     `25.2ms` |  `23.4ms` |            `3.1ms` |
+| Batch callback                              |       `7.0ms` |     `10.1ms` |   `9.3ms` |            `3.2ms` |
+| `selectionChange` block-editor fanout       |       `3.2ms` |      `5.1ms` |   `4.8ms` |            `1.9ms` |
+| `updateBlockAttributes` block-editor fanout |       `3.2ms` |      `4.1ms` |   `3.7ms` |            `1.0ms` |
+| Deferred block-editor resume                |      `14.2ms` |     `15.0ms` |  `14.0ms` |            `0.7ms` |
+| `useBlockSync` nested `registry.batch`      |       `1.4ms` |      `1.6ms` |   `1.4ms` |            `0.2ms` |
+| Direct `updateParent`                       |       `0.3ms` |      `0.4ms` |   `0.3ms` |            `0.1ms` |
+
+This confirms a narrower location for the remaining input-window gap. The
+absolute cost is still dominated by deferred block-editor resume, but the
+normal-vs-no-op difference is mostly in callback-side subscriber fanout during
+`selectionChange` and `updateBlockAttributes`. It disconfirms the theory that
+the residual gap is mainly `useBlockSync`, core-data `onInput`/`onChange`, or
+the deferred resume phase. The trace still does not prove which selector
+dependency inside those thousands of subscribers accounts for the lower
+callback-side fanout duration.
 
 So the corrected causal chain is:
 
