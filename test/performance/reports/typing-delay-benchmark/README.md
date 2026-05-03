@@ -135,6 +135,12 @@ The short version:
     overbroad theory that any CPU burn anywhere is sufficient; the supported
     theory is narrower and depends on the kind of CPU/QoS state the background
     work creates.
+-   A QoS-clamp sweep sharpens that again. `taskpolicy -c utility` is fast at
+    `9.4ms`, while `taskpolicy -c background` and
+    `taskpolicy -c maintenance` are slow at `24.2ms` and `24.7ms`. So the split
+    is not "taskpolicy versus not taskpolicy"; it is closer to
+    "ordinary/utility CPU affects the benchmark, background/maintenance CPU
+    does not."
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -1208,6 +1214,12 @@ event-only measurement. The new intervention modes are deliberately artificial:
     `external-background-taskpolicy-cpu-8-noop`: keep one, four, or eight macOS
     `taskpolicy -b` child processes burning CPU continuously before typing
     starts; the rich-text timer callback itself is still a no-op.
+-   `external-background-taskpolicy-utility-cpu-noop`,
+    `external-background-taskpolicy-qos-background-cpu-noop`, and
+    `external-background-taskpolicy-maintenance-cpu-noop`: keep one child
+    process burning CPU continuously under macOS `taskpolicy -c utility`,
+    `taskpolicy -c background`, or `taskpolicy -c maintenance` before typing
+    starts; the rich-text timer callback itself is still a no-op.
 -   `external-background-idle-noop`: keep an idle child process alive before
     typing starts; the rich-text timer callback itself is still a no-op.
 -   `delayed-noop-150`: main thread schedules a delayed no-op task near the
@@ -1256,6 +1268,9 @@ Selected p50s:
 | taskpolicy -b CPU x1 + no-op   |      `1250ms` |            `52.5ms` |       `24.6ms` |   `0.0ms` |           `24.7ms` |
 | taskpolicy -b CPU x4 + no-op   |      `1250ms` |            `52.4ms` |       `24.0ms` |   `0.0ms` |           `24.1ms` |
 | taskpolicy -b CPU x8 + no-op   |      `1250ms` |            `52.3ms` |       `24.2ms` |   `0.0ms` |           `24.2ms` |
+| taskpolicy -c utility + no-op   |      `1250ms` |            `50.8ms` |        `9.4ms` |   `0.0ms` |            `9.4ms` |
+| taskpolicy -c background + no-op |     `1250ms` |            `52.9ms` |       `24.2ms` |   `0.0ms` |           `24.2ms` |
+| taskpolicy -c maintenance + no-op |    `1250ms` |            `52.4ms` |       `24.7ms` |   `0.0ms` |           `24.7ms` |
 | background idle + no-op timer  |      `1250ms` |            `53.3ms` |       `24.2ms` |   `0.0ms` |           `24.3ms` |
 | worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` | `169.1ms` |          `193.8ms` |
 | worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` | `151.3ms` |          `175.1ms` |
@@ -1304,7 +1319,10 @@ The updated model is narrower and less semantic:
    children are equivalent: a `nice +20` child stays fast at `9.3ms`, while
    `taskpolicy -b` children stay slow at `24.6ms`, `24.0ms`, and `24.2ms` for
    one, four, and eight children. That disconfirms the overbroad "any CPU burn
-   anywhere is sufficient" theory.
+   anywhere is sufficient" theory. The QoS-clamp controls split the same way:
+   `taskpolicy -c utility` is fast at `9.4ms`, while
+   `taskpolicy -c background` and `taskpolicy -c maintenance` are slow at
+   `24.2ms` and `24.7ms`.
 10. The effect decays with distance from the following key after a finite CPU
    burst stops: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
@@ -1378,6 +1396,18 @@ does not do that on this machine. Without lower-level power counters I cannot
 prove whether the boundary is P-core residency, cluster frequency, QoS, timer
 coalescing, or a related scheduler policy; the benchmark now rules out the
 broader versions of the theory.
+
+The QoS-clamp controls separate `taskpolicy` itself from the policy being set.
+The taskpolicy man page says `-b` uses Darwin background priority, while `-c`
+sets a QoS clamp. In this benchmark, `taskpolicy -c utility` behaves like the
+ordinary and `nice +20` CPU controls (`9.4ms` p50), while
+`taskpolicy -c background` and `taskpolicy -c maintenance` behave like
+`taskpolicy -b` (`24.2ms` and `24.7ms`). That disconfirms "`taskpolicy` process
+launch changes the control" and "Unix nice level decides the result." The
+stronger surviving hypothesis is that ordinary/utility-QoS CPU activity changes
+the machine state visible to the foreground browser/editor input path, while
+background/maintenance-QoS CPU activity is isolated or de-prioritized enough
+that it does not.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -3462,6 +3492,9 @@ The key runs used in this report were:
     `task_end_external_background_taskpolicy_cpu_noop_timeout_1250_delay_1300`,
     `task_end_external_background_taskpolicy_cpu_4_noop_timeout_1250_delay_1300`,
     `task_end_external_background_taskpolicy_cpu_8_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_taskpolicy_utility_cpu_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_taskpolicy_qos_background_cpu_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_taskpolicy_maintenance_cpu_noop_timeout_1250_delay_1300`,
     `task_end_external_background_idle_noop_timeout_1250_delay_1300`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,

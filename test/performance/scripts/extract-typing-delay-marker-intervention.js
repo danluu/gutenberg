@@ -565,6 +565,29 @@ const taskEndProximityRuns = [
 		dir: 'test/performance/artifacts/typing-delay-task-end-external-background-taskpolicy-cpu-8-noop-timeout-1250-delay-1300',
 	},
 	{
+		runId: 'task_end_external_background_taskpolicy_utility_cpu_noop_timeout_1250_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'external background taskpolicy utility CPU, no-op timer',
+		rewriteTimeoutMs: 1250,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-background-taskpolicy-utility-cpu-noop-timeout-1250-delay-1300',
+	},
+	{
+		runId: 'task_end_external_background_taskpolicy_qos_background_cpu_noop_timeout_1250_delay_1300',
+		traceType: 'task end proximity',
+		intervention:
+			'external background taskpolicy QoS background CPU, no-op timer',
+		rewriteTimeoutMs: 1250,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-background-taskpolicy-qos-background-cpu-noop-timeout-1250-delay-1300',
+	},
+	{
+		runId: 'task_end_external_background_taskpolicy_maintenance_cpu_noop_timeout_1250_delay_1300',
+		traceType: 'task end proximity',
+		intervention:
+			'external background taskpolicy maintenance CPU, no-op timer',
+		rewriteTimeoutMs: 1250,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-background-taskpolicy-maintenance-cpu-noop-timeout-1250-delay-1300',
+	},
+	{
 		runId: 'task_end_external_background_idle_noop_timeout_1250_delay_1300',
 		traceType: 'task end proximity',
 		intervention: 'external background idle child, no-op timer',

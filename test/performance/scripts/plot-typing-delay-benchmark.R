@@ -3706,6 +3706,9 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					"task_end_external_background_taskpolicy_cpu_noop_timeout_1250_delay_1300",
 					"task_end_external_background_taskpolicy_cpu_4_noop_timeout_1250_delay_1300",
 					"task_end_external_background_taskpolicy_cpu_8_noop_timeout_1250_delay_1300",
+					"task_end_external_background_taskpolicy_utility_cpu_noop_timeout_1250_delay_1300",
+					"task_end_external_background_taskpolicy_qos_background_cpu_noop_timeout_1250_delay_1300",
+					"task_end_external_background_taskpolicy_maintenance_cpu_noop_timeout_1250_delay_1300",
 					"task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
 					"task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
 				)
@@ -3723,6 +3726,9 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					`taskpolicy -b CPU x1 + no-op` = "task_end_external_background_taskpolicy_cpu_noop_timeout_1250_delay_1300",
 					`taskpolicy -b CPU x4 + no-op` = "task_end_external_background_taskpolicy_cpu_4_noop_timeout_1250_delay_1300",
 					`taskpolicy -b CPU x8 + no-op` = "task_end_external_background_taskpolicy_cpu_8_noop_timeout_1250_delay_1300",
+					`taskpolicy -c utility CPU + no-op` = "task_end_external_background_taskpolicy_utility_cpu_noop_timeout_1250_delay_1300",
+					`taskpolicy -c background CPU + no-op` = "task_end_external_background_taskpolicy_qos_background_cpu_noop_timeout_1250_delay_1300",
+					`taskpolicy -c maintenance CPU + no-op` = "task_end_external_background_taskpolicy_maintenance_cpu_noop_timeout_1250_delay_1300",
 					`prestarted delay` = "task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
 					`prestarted CPU burst` = "task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
 				),
@@ -3739,17 +3745,28 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						"taskpolicy -b CPU x1 + no-op",
 						"taskpolicy -b CPU x4 + no-op",
 						"taskpolicy -b CPU x8 + no-op",
+						"taskpolicy -c utility CPU + no-op",
+						"taskpolicy -c background CPU + no-op",
+						"taskpolicy -c maintenance CPU + no-op",
 						"prestarted delay",
 						"prestarted CPU burst"
 					)
 				)
 			)
 
+		background_cpu_control_levels <- levels(background_cpu_control$control)
+		background_cpu_control_colors <- setNames(
+			c(RColorBrewer::brewer.pal(8, "Set2"), RColorBrewer::brewer.pal(8, "Dark2"))[
+				seq_along(background_cpu_control_levels)
+			],
+			background_cpu_control_levels
+		)
+
 		save_plot(
 			ggplot(background_cpu_control, aes(latency_ms, control, color = control, shape = control)) +
 				geom_jitter(width = 0, height = 0.12, alpha = 0.45, size = 2.1) +
 				stat_summary(fun = median, geom = "point", size = 4.2, color = "black", show.legend = FALSE) +
-				scale_color_brewer(type = "qual", palette = "Set3", drop = FALSE) +
+				scale_color_manual(values = background_cpu_control_colors, drop = FALSE) +
 				scale_shape_manual(values = c(
 					`no-op timer` = 17,
 					`idle child + no-op` = 2,
@@ -3761,6 +3778,9 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					`taskpolicy -b CPU x1 + no-op` = 10,
 					`taskpolicy -b CPU x4 + no-op` = 11,
 					`taskpolicy -b CPU x8 + no-op` = 12,
+					`taskpolicy -c utility CPU + no-op` = 13,
+					`taskpolicy -c background CPU + no-op` = 14,
+					`taskpolicy -c maintenance CPU + no-op` = 15,
 					`prestarted delay` = 7,
 					`prestarted CPU burst` = 3
 				), drop = FALSE) +

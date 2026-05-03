@@ -161,6 +161,9 @@ const supportedMarkPersistentInterventions = [
 	'external-background-taskpolicy-cpu-noop',
 	'external-background-taskpolicy-cpu-4-noop',
 	'external-background-taskpolicy-cpu-8-noop',
+	'external-background-taskpolicy-utility-cpu-noop',
+	'external-background-taskpolicy-qos-background-cpu-noop',
+	'external-background-taskpolicy-maintenance-cpu-noop',
 	'external-background-idle-noop',
 	'delayed-noop-150',
 	'raw-unknown-action',
@@ -1209,6 +1212,15 @@ setInterval(() => {}, 2147483647);
 			} else if ( priorityMode === 'taskpolicy-background' ) {
 				command = '/usr/sbin/taskpolicy';
 				args = [ '-b', process.execPath, '-e', source ];
+			} else if ( priorityMode.startsWith( 'taskpolicy-qos-' ) ) {
+				command = '/usr/sbin/taskpolicy';
+				args = [
+					'-c',
+					priorityMode.replace( 'taskpolicy-qos-', '' ),
+					process.execPath,
+					'-e',
+					source,
+				];
 			}
 			externalBackgroundProcesses = Array.from( { length: count }, () => {
 				const child = spawn( command, args, { stdio: 'ignore' } );
@@ -1307,6 +1319,36 @@ setInterval(() => {}, 2147483647);
 					'cpu',
 					8,
 					'taskpolicy-background'
+				);
+			}
+			if (
+				markPersistentIntervention ===
+				'external-background-taskpolicy-utility-cpu-noop'
+			) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					1,
+					'taskpolicy-qos-utility'
+				);
+			}
+			if (
+				markPersistentIntervention ===
+				'external-background-taskpolicy-qos-background-cpu-noop'
+			) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					1,
+					'taskpolicy-qos-background'
+				);
+			}
+			if (
+				markPersistentIntervention ===
+				'external-background-taskpolicy-maintenance-cpu-noop'
+			) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					1,
+					'taskpolicy-qos-maintenance'
 				);
 			}
 			if (
@@ -1751,6 +1793,12 @@ setInterval(() => {}, 2147483647);
 										'external-background-taskpolicy-cpu-4-noop' ||
 									mode ===
 										'external-background-taskpolicy-cpu-8-noop' ||
+									mode ===
+										'external-background-taskpolicy-utility-cpu-noop' ||
+									mode ===
+										'external-background-taskpolicy-qos-background-cpu-noop' ||
+									mode ===
+										'external-background-taskpolicy-maintenance-cpu-noop' ||
 									mode === 'external-background-idle-noop'
 								) {
 									result = undefined;
