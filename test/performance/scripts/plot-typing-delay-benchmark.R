@@ -1605,6 +1605,79 @@ if (
 			height = 8.6
 		)
 
+		ci_start_wait_first_three <- ci_start_wait_keypress_samples %>%
+			filter(keypress_index <= 3) %>%
+			mutate(
+				keypress_name = factor(
+					case_when(
+						keypress_index == 1 ~ "keypress 1\n(discarded by CI)",
+						keypress_index == 2 ~ "keypress 2\n(first retained)",
+						keypress_index == 3 ~ "keypress 3\n(second retained)"
+					),
+					levels = c(
+						"keypress 1\n(discarded by CI)",
+						"keypress 2\n(first retained)",
+						"keypress 3\n(second retained)"
+					)
+				)
+			)
+
+		ci_start_wait_first_three_summary <- ci_start_wait_first_three %>%
+			group_by(startup_wait_ms, wait_label, keypress_index, keypress_name) %>%
+			summarize(
+				n = n(),
+				latency_p10_ms = quant(latency_ms, 0.1),
+				latency_p25_ms = quant(latency_ms, 0.25),
+				latency_p50_ms = median(latency_ms),
+				latency_p75_ms = quant(latency_ms, 0.75),
+				latency_p90_ms = quant(latency_ms, 0.9),
+				latency_mean_ms = mean(latency_ms),
+				latency_sd_ms = sd(latency_ms),
+				.groups = "drop"
+			)
+		write_csv(
+			ci_start_wait_first_three_summary,
+			file.path(data_dir, "typing-delay-ci-comparable-start-wait-first-three-keypresses.csv")
+		)
+
+		save_plot(
+			ggplot(ci_start_wait_first_three, aes(wait_label, latency_ms)) +
+				geom_point(
+					aes(color = keypress_name),
+					position = position_jitter(width = 0.12, height = 0, seed = 23),
+					size = 1.5,
+					alpha = 0.62,
+					show.legend = FALSE
+				) +
+				geom_linerange(
+					data = ci_start_wait_first_three_summary,
+					aes(x = wait_label, ymin = latency_p10_ms, ymax = latency_p90_ms),
+					color = brewer_color("Greys", 7, type = "seq", n = 9),
+					linewidth = 0.62,
+					inherit.aes = FALSE
+				) +
+				geom_point(
+					data = ci_start_wait_first_three_summary,
+					aes(wait_label, latency_p50_ms),
+					shape = 95,
+					size = 7,
+					color = brewer_color("Set1", 1),
+					inherit.aes = FALSE
+				) +
+				facet_wrap(vars(keypress_name), ncol = 1) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				labs(
+					title = "The first three keypresses explain the startup-wait caveat",
+					subtitle = "CI-comparable saved/reopened drafts; raw points are 8 runs per wait/key; red ticks are p50 and grey bars are p10-p90",
+					x = "Extra wait after editor setup before typing starts",
+					y = "Latency (ms)"
+				) +
+				theme(axis.text.x = element_text(angle = 35, hjust = 1)),
+			"78e-ci-comparable-start-wait-first-three-keypresses.png",
+			width = 10.5,
+			height = 8.4
+		)
+
 		ci_start_wait_discard_policy <- crossing(
 			discard_initial_keypresses = 0:4,
 			ci_start_wait_keypress_samples

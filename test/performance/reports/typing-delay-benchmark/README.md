@@ -913,6 +913,8 @@ cross-run p50 difference.
 
 ![CI-comparable start-wait keypress p10-p90](figures/78c-ci-comparable-start-wait-keypress-p10-p90.png)
 
+![CI-comparable first three keypresses](figures/78e-ci-comparable-start-wait-first-three-keypresses.png)
+
 ![CI-comparable start-wait discard policy](figures/78d-ci-comparable-start-wait-discard-policy.png)
 
 ![CI-comparable start-wait phases](figures/79-ci-comparable-start-wait-phases.png)
@@ -948,6 +950,22 @@ early retained sample affects means and p90s more than p50s. Changing the start
 wait does not remove that shape; it just moves idle time before the sequence.
 The raw box/point plot also shows the few large outliers: they are isolated and
 mostly on the discarded first keypress, not a monotonic startup-wait effect.
+
+Focused first-three-keypress p50s:
+
+| Extra wait after setup | Keypress 1 p50 | Keypress 2 p50 | Keypress 3 p50 |
+| ---------------------- | -------------: | -------------: | -------------: |
+| `0ms` | `27.3ms` | `26.5ms` | `16.0ms` |
+| `50ms` | `22.8ms` | `24.9ms` | `16.3ms` |
+| `100ms` | `22.2ms` | `25.1ms` | `15.9ms` |
+| `250ms` | `25.1ms` | `25.4ms` | `17.3ms` |
+| `500ms` | `25.8ms` | `25.4ms` | `17.6ms` |
+| `1s` | `25.2ms` | `25.2ms` | `16.8ms` |
+| `2s` | `26.1ms` | `25.0ms` | `16.9ms` |
+| `5s` | `28.9ms` | `25.5ms` | `18.7ms` |
+| `10s` | `27.8ms` | `25.1ms` | `16.1ms` |
+| `30s` | `29.2ms` | `24.8ms` | `16.1ms` |
+| `60s` | `28.9ms` | `25.1ms` | `15.9ms` |
 
 I then recomputed the same CI-comparable per-run metrics under alternate
 throwaway policies. The current Typing metric discards one keypress and reports
