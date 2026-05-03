@@ -66,6 +66,11 @@ The short version:
     "same state at keydown is enough" and "timer ordering alone is enough"; the
     proven condition is effective timer-side block-editor fanout close to the
     next measured input.
+-   A fixed-hold timer rewrite confirms that this is causal. With the key hold
+    fixed at `1300ms`, moving the normal marker timer from `1000ms` / `1100ms`
+    to `1200ms` / `1250ms` / `1270ms` moves the same long-held key from the slow
+    plateau back into the low band. At the same `1250ms` rewritten timer, no-op
+    remains slow and `stopTyping(); startTyping()` is fast.
 -   Splitting the measured key into `keydown`, `keypress`, and `keyup` shows
     that the intervention gap is almost entirely in the measured `keypress`
     component.
@@ -299,6 +304,9 @@ The R script derives:
     EventDispatch latency.
 -   `data/typing-delay-marker-gap-dense-paired-*.csv`: dense
     `1000..1300ms` paired traces for timer-to-next-key gap analysis.
+-   `data/typing-delay-fixed-hold-timer-rewrite-paired-*.csv`: fixed
+    `1300ms` key-hold traces where the `1000ms` timer is rewritten to different
+    values.
 -   `data/typing-delay-timeout-970-marker-paired-*.csv`: the same paired
     accounting for a targeted run that rewrites Gutenberg's `1000ms` timers to
     `970ms`.
@@ -1038,6 +1046,41 @@ that the event-only metric is sensitive to recent timer-side block-editor fanout
 not that the same work literally moved from one key event into the timer task.
 The timer-inclusive column stays high, and by `1200..1300ms` it is much worse
 than the event-only low band.
+
+I then ran a stronger causality check: keep the Playwright key hold fixed at
+`1300ms`, but rewrite Gutenberg's `1000ms` timer to fire at different times
+inside that same hold.
+
+![Fixed-hold timer rewrite](figures/49-fixed-hold-timer-rewrite.png)
+
+Selected p50s:
+
+| Timer callback    | Timer setting | Marker to keydown | Event-only p50 | Timer callback p50 | Timer-inclusive p50 |
+| ----------------- | ------------: | ----------------: | -------------: | -----------------: | ------------------: |
+| normal marker     |      `1000ms` |         `303.5ms` |       `24.5ms` |           `14.3ms` |            `39.1ms` |
+| normal marker     |      `1100ms` |         `203.4ms` |       `23.5ms` |           `14.0ms` |            `37.7ms` |
+| normal marker     |      `1200ms` |         `100.7ms` |       `12.6ms` |           `14.5ms` |            `27.5ms` |
+| normal marker     |      `1250ms` |          `50.0ms` |       `10.7ms` |           `14.6ms` |            `24.7ms` |
+| normal marker     |      `1270ms` |          `44.0ms` |       `10.1ms` |           `11.9ms` |            `24.2ms` |
+| marker no-op      |      `1250ms` |          `53.4ms` |       `24.6ms` |            `0.1ms` |            `24.6ms` |
+| stop/start typing |      `1250ms` |          `50.3ms` |        `9.6ms` |           `20.7ms` |            `30.4ms` |
+
+This confirms three things more cleanly than the gap scan alone:
+
+1. The later `1300ms` high plateau is not caused by the key being held for
+   `1300ms` by itself. The exact same requested key hold becomes fast again when
+   the real marker is moved close to the next key.
+2. The effect is not tied to the absolute `1000ms` timer value. Moving the timer
+   moves the low band inside a fixed `1300ms` hold.
+3. The close timer boundary is not sufficient by itself. The `1250ms` no-op
+   callback fired about `53ms` before keydown and stayed slow; the `1250ms`
+   stop/start callback fired about `50ms` before keydown and was fast.
+
+This supports the narrower model: the event-only trace slice drops when an
+effective block-editor subscriber pass happens shortly before the next synthetic
+input. It still does not mean the benchmarked character cycle got cheaper. The
+timer-inclusive normal-marker values are `24-39ms`, and the stop/start
+timer-inclusive value is `30.4ms`.
 
 The `stopTyping()` result has a direct code-level explanation. `ObserveTyping`
 installs different DOM listeners depending on `isTyping`: when typing is true,
@@ -3042,6 +3085,15 @@ The key runs used in this report were:
     `marker_stop_start_typing_gap_dense`: one-round diagnostic scans over
     `1000..1100ms`, `1150ms`, `1200ms`, and `1300ms`, used to compare the
     following input slice against the timer-callback-to-keydown gap.
+-   `fixed_hold_normal_timeout_1000_delay_1300`,
+    `fixed_hold_normal_timeout_1100_delay_1300`,
+    `fixed_hold_normal_timeout_1200_delay_1300`,
+    `fixed_hold_normal_timeout_1250_delay_1300`,
+    `fixed_hold_normal_timeout_1270_delay_1300`,
+    `fixed_hold_noop_timeout_1250_delay_1300`, and
+    `fixed_hold_stop_start_timeout_1250_delay_1300`: one-round fixed
+    `1300ms` key-hold traces that rewrite Gutenberg's `1000ms` timer and test
+    whether moving the timer close to the next key is causal.
 -   `redux_listener_owner_normal_1000`, `redux_listener_owner_noop_1000`,
     `redux_listener_owner_next_not_persistent_1000`: reduced `1000ms`
     owner-attribution runs with diagnostic `useSelectId` metadata propagated to

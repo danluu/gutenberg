@@ -273,6 +273,58 @@ const markerGapDenseRuns = [
 	},
 ];
 
+const fixedHoldTimerRewriteRuns = [
+	{
+		runId: 'fixed_hold_normal_timeout_1000_delay_1300',
+		traceType: 'fixed hold timer rewrite',
+		intervention: 'normal marker',
+		rewriteTimeoutMs: 1000,
+		dir: 'artifacts/typing-delay-fixed-hold-normal-timeout-1000-delay-1300',
+	},
+	{
+		runId: 'fixed_hold_normal_timeout_1100_delay_1300',
+		traceType: 'fixed hold timer rewrite',
+		intervention: 'normal marker',
+		rewriteTimeoutMs: 1100,
+		dir: 'artifacts/typing-delay-fixed-hold-normal-timeout-1100-delay-1300',
+	},
+	{
+		runId: 'fixed_hold_normal_timeout_1200_delay_1300',
+		traceType: 'fixed hold timer rewrite',
+		intervention: 'normal marker',
+		rewriteTimeoutMs: 1200,
+		dir: 'artifacts/typing-delay-fixed-hold-normal-timeout-1200-delay-1300',
+	},
+	{
+		runId: 'fixed_hold_normal_timeout_1250_delay_1300',
+		traceType: 'fixed hold timer rewrite',
+		intervention: 'normal marker',
+		rewriteTimeoutMs: 1250,
+		dir: 'artifacts/typing-delay-fixed-hold-normal-timeout-1250-delay-1300',
+	},
+	{
+		runId: 'fixed_hold_normal_timeout_1270_delay_1300',
+		traceType: 'fixed hold timer rewrite',
+		intervention: 'normal marker',
+		rewriteTimeoutMs: 1270,
+		dir: 'artifacts/typing-delay-fixed-hold-normal-timeout-1270-delay-1300',
+	},
+	{
+		runId: 'fixed_hold_noop_timeout_1250_delay_1300',
+		traceType: 'fixed hold timer rewrite',
+		intervention: 'marker no-op',
+		rewriteTimeoutMs: 1250,
+		dir: 'artifacts/typing-delay-fixed-hold-noop-timeout-1250-delay-1300',
+	},
+	{
+		runId: 'fixed_hold_stop_start_timeout_1250_delay_1300',
+		traceType: 'fixed hold timer rewrite',
+		intervention: 'stop/start typing',
+		rewriteTimeoutMs: 1250,
+		dir: 'artifacts/typing-delay-fixed-hold-stop-start-timeout-1250-delay-1300',
+	},
+];
+
 function newestJson( dir ) {
 	const absDir = path.join( repoRoot, dir );
 	if ( ! fs.existsSync( absDir ) ) {
@@ -809,6 +861,9 @@ const loadedAllDataSpanRuns = readOptionalRuns( allDataSpanRuns );
 const loadedReduxListenerOwnerRuns = readOptionalRuns( reduxListenerOwnerRuns );
 const loadedListenerProbeRuns = readOptionalRuns( listenerProbeRuns );
 const loadedMarkerGapDenseRuns = readOptionalRuns( markerGapDenseRuns );
+const loadedFixedHoldTimerRewriteRuns = readOptionalRuns(
+	fixedHoldTimerRewriteRuns
+);
 
 function summaryKey( row ) {
 	return `${ row.delayMs }\t${ row.round }\t${ row.editorSetupIndex }`;
@@ -1268,6 +1323,12 @@ const timeoutRewritePairedSummaryRows = buildPairedSummaryRows(
 const markerGapDensePairedRows = buildPairedRows( loadedMarkerGapDenseRuns );
 const markerGapDensePairedSummaryRows = buildPairedSummaryRows(
 	markerGapDensePairedRows
+);
+const fixedHoldTimerRewritePairedRows = buildPairedRows(
+	loadedFixedHoldTimerRewriteRuns
+);
+const fixedHoldTimerRewritePairedSummaryRows = buildPairedSummaryRows(
+	fixedHoldTimerRewritePairedRows
 );
 
 const actionRows = loadedRuns.flatMap( ( run ) =>
@@ -3771,6 +3832,62 @@ if ( loadedMarkerGapDenseRuns.length > 0 ) {
 			'run_id',
 			'trace_type',
 			'intervention',
+			'delay_ms',
+			'n',
+			'rows_with_marker_action',
+			'latency_p50_ms',
+			'keypress_p50_ms',
+			'previous_input_to_current_keydown_p50_ms',
+			'previous_input_to_marker_p50_ms',
+			'marker_to_current_keydown_p50_ms',
+			'marker_action_duration_p50_ms',
+			'marker_inclusive_latency_p50_ms',
+			'marker_inclusive_latency_p10_ms',
+			'marker_inclusive_latency_p90_ms',
+			'current_keydown_persistent_count',
+			'current_keydown_typing_count',
+		]
+	);
+}
+if ( loadedFixedHoldTimerRewriteRuns.length > 0 ) {
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-fixed-hold-timer-rewrite-paired-samples.csv'
+		),
+		fixedHoldTimerRewritePairedRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'rewrite_timeout_ms',
+			'delay_ms',
+			'round',
+			'sample_index',
+			'delay_sample_index',
+			'previous_input_to_current_keydown_ms',
+			'previous_input_to_marker_ms',
+			'marker_to_current_keydown_ms',
+			'marker_action_count',
+			'marker_action_duration_ms',
+			'latency_ms',
+			'keypress_ms',
+			'marker_inclusive_latency_ms',
+			'current_keydown_is_persistent',
+			'current_keydown_is_typing',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-fixed-hold-timer-rewrite-paired-summary.csv'
+		),
+		fixedHoldTimerRewritePairedSummaryRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'rewrite_timeout_ms',
 			'delay_ms',
 			'n',
 			'rows_with_marker_action',

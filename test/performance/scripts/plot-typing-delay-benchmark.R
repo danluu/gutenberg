@@ -3146,6 +3146,7 @@ marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-sum
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
 marker_gap_dense_summary_path <- file.path(data_dir, "typing-delay-marker-gap-dense-paired-summary.csv")
+fixed_hold_timer_rewrite_summary_path <- file.path(data_dir, "typing-delay-fixed-hold-timer-rewrite-paired-summary.csv")
 marker_intervention_levels <- c(
 	"normal marker",
 	"marker no-op",
@@ -3391,6 +3392,67 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					shape = "Timer callback"
 				),
 			"48-marker-gap-decay.png",
+			width = 11,
+			height = 8
+		)
+	}
+
+	if (file.exists(fixed_hold_timer_rewrite_summary_path)) {
+		fixed_hold_timer_rewrite <- read_csv(fixed_hold_timer_rewrite_summary_path, show_col_types = FALSE) %>%
+			filter(delay_ms == 1300, rows_with_marker_action > 0) %>%
+			mutate(
+				intervention = factor(
+					intervention,
+					levels = c("normal marker", "marker no-op", "stop/start typing")
+				)
+			) %>%
+			select(
+				intervention,
+				rewrite_timeout_ms,
+				marker_to_current_keydown_p50_ms,
+				`next EventDispatch only` = latency_p50_ms,
+				`timer callback + next EventDispatch` = marker_inclusive_latency_p50_ms
+			) %>%
+			pivot_longer(
+				cols = c(`next EventDispatch only`, `timer callback + next EventDispatch`),
+				names_to = "metric",
+				values_to = "duration_ms"
+			) %>%
+			mutate(
+				metric = factor(
+					metric,
+					levels = c("next EventDispatch only", "timer callback + next EventDispatch")
+				)
+			)
+
+		save_plot(
+			ggplot(
+				fixed_hold_timer_rewrite,
+				aes(
+					marker_to_current_keydown_p50_ms,
+					duration_ms,
+					color = intervention,
+					shape = intervention
+				)
+			) +
+				geom_point(size = 3.3, alpha = 0.9) +
+				facet_wrap(~metric, ncol = 1, scales = "free_y") +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`normal marker` = 16,
+					`marker no-op` = 17,
+					`stop/start typing` = 15
+				), drop = FALSE) +
+				scale_x_continuous(breaks = c(0, 50, 100, 200, 300)) +
+				labs(
+					title = "Moving the timer closer makes the same 1300ms hold fast again",
+					subtitle = "Fixed 1300ms key hold; x-axis is observed p50 gap from rewritten timer callback to keydown",
+					x = "Timer callback to following keydown, p50 (ms)",
+					y = "Duration, p50 (ms)",
+					color = "Timer callback",
+					shape = "Timer callback"
+				),
+			"49-fixed-hold-timer-rewrite.png",
 			width = 11,
 			height = 8
 		)
