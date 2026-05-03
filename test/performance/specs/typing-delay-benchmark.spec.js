@@ -107,6 +107,7 @@ const settleAfterEditorSetupMs = intEnv(
 	'BENCHMARK_SETTLE_AFTER_EDITOR_SETUP_MS',
 	0
 );
+const setupStyle = process.env.BENCHMARK_SETUP_STYLE || 'benchmark-live-editor';
 const preTypingWarmupMs = intEnv( 'BENCHMARK_PRE_TYPE_WARMUP_MS', 0 );
 const preTypingWarmupMode =
 	process.env.BENCHMARK_PRE_TYPE_WARMUP_MODE || 'none';
@@ -140,6 +141,10 @@ const supportedDelayModes = [
 	'cdp-key-hold-runtime-evaluate',
 ];
 const supportedPreTypingWarmupModes = [ 'none', 'main-thread-busy-loop' ];
+const supportedSetupStyles = [
+	'benchmark-live-editor',
+	'ci-post-editor-typing',
+];
 const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
@@ -962,6 +967,30 @@ test.describe( 'Typing delay benchmark', () => {
 					`Supported scenarios: ${ supportedScenarios.join( ', ' ) }.`
 			);
 		}
+		if ( ! supportedSetupStyles.includes( setupStyle ) ) {
+			throw new Error(
+				`Unsupported BENCHMARK_SETUP_STYLE: ${ setupStyle }. ` +
+					`Supported styles: ${ supportedSetupStyles.join( ', ' ) }.`
+			);
+		}
+		if (
+			setupStyle === 'ci-post-editor-typing' &&
+			scenario !== 'large-post-paragraph'
+		) {
+			throw new Error(
+				'BENCHMARK_SETUP_STYLE=ci-post-editor-typing only supports ' +
+					'BENCHMARK_SCENARIO=large-post-paragraph.'
+			);
+		}
+		if (
+			setupStyle === 'ci-post-editor-typing' &&
+			delayMode !== 'keyboard'
+		) {
+			throw new Error(
+				'BENCHMARK_SETUP_STYLE=ci-post-editor-typing only supports ' +
+					'BENCHMARK_DELAY_MODE=keyboard, which matches the CI typing test.'
+			);
+		}
 
 		fs.mkdirSync( outputDir, { recursive: true } );
 
@@ -1716,6 +1745,16 @@ setInterval(() => {}, 2147483647);
 								);
 							}
 
+							function durationForMode( durationsByMode ) {
+								const durationMs = durationsByMode[ mode ];
+								if ( durationMs === undefined ) {
+									throw new Error(
+										`Missing duration for mode: ${ mode }`
+									);
+								}
+								return durationMs;
+							}
+
 							try {
 								if ( mode === 'noop' ) {
 									result = undefined;
@@ -1733,13 +1772,11 @@ setInterval(() => {}, 2147483647);
 									mode === 'worker-busy-wait-80-no-message'
 								) {
 									startWorkerBusyWaitNoMessage(
-										mode ===
-											'worker-busy-wait-20-no-message'
-											? 20
-											: mode ===
-											  'worker-busy-wait-40-no-message'
-											? 40
-											: 80
+										durationForMode( {
+											'worker-busy-wait-20-no-message': 20,
+											'worker-busy-wait-40-no-message': 40,
+											'worker-busy-wait-80-no-message': 80,
+										} )
 									);
 									result = undefined;
 								} else if (
@@ -1762,15 +1799,12 @@ setInterval(() => {}, 2147483647);
 									mode === 'external-cpu-150-no-message'
 								) {
 									startExternalProcessNoMessage(
-										mode === 'external-cpu-20-no-message'
-											? 20
-											: mode ===
-											  'external-cpu-40-no-message'
-											? 40
-											: mode ===
-											  'external-cpu-80-no-message'
-											? 80
-											: 150,
+										durationForMode( {
+											'external-cpu-20-no-message': 20,
+											'external-cpu-40-no-message': 40,
+											'external-cpu-80-no-message': 80,
+											'external-cpu-150-no-message': 150,
+										} ),
 										'cpu'
 									);
 									result = undefined;
@@ -1793,16 +1827,12 @@ setInterval(() => {}, 2147483647);
 										'external-persistent-cpu-150-no-message'
 								) {
 									startExternalProcessNoMessage(
-										mode ===
-											'external-persistent-cpu-20-no-message'
-											? 20
-											: mode ===
-											  'external-persistent-cpu-40-no-message'
-											? 40
-											: mode ===
-											  'external-persistent-cpu-80-no-message'
-											? 80
-											: 150,
+										durationForMode( {
+											'external-persistent-cpu-20-no-message': 20,
+											'external-persistent-cpu-40-no-message': 40,
+											'external-persistent-cpu-80-no-message': 80,
+											'external-persistent-cpu-150-no-message': 150,
+										} ),
 										'cpu',
 										true
 									);
@@ -2526,24 +2556,39 @@ setInterval(() => {}, 2147483647);
 					setupWorkStartedAtEpochMs,
 					setupReadyAtEpochMs,
 					setupStoppedAtEpochMs: Date.now(),
+					setupStyle,
+					setupDraftId: null,
 					setupBlockCount: 0,
 					dataTracingSetup,
 				};
 			}
 
-			await admin.createNewPost();
-			await perfUtils.disableAutosave();
-			const markPersistentInterventionSetup =
-				await setupMarkPersistentIntervention();
-			if ( scenario === 'large-post-paragraph' ) {
+			let setupDraftId = null;
+			let markPersistentInterventionSetup;
+			if ( setupStyle === 'ci-post-editor-typing' ) {
+				await admin.createNewPost();
 				await perfUtils.loadBlocksForLargePost();
-			} else if ( scenario === 'small-containers-paragraph' ) {
-				await perfUtils.loadBlocksForSmallPostWithContainers();
-			} else if ( scenario === 'thousand-paragraphs-paragraph' ) {
-				await perfUtils.load1000Paragraphs();
-			}
-			if ( scenario !== 'small-containers-paragraph' ) {
 				await editor.insertBlock( { name: 'core/paragraph' } );
+				setupDraftId = await perfUtils.saveDraft();
+				await admin.editPost( setupDraftId );
+				await perfUtils.disableAutosave();
+				markPersistentInterventionSetup =
+					await setupMarkPersistentIntervention();
+			} else {
+				await admin.createNewPost();
+				await perfUtils.disableAutosave();
+				markPersistentInterventionSetup =
+					await setupMarkPersistentIntervention();
+				if ( scenario === 'large-post-paragraph' ) {
+					await perfUtils.loadBlocksForLargePost();
+				} else if ( scenario === 'small-containers-paragraph' ) {
+					await perfUtils.loadBlocksForSmallPostWithContainers();
+				} else if ( scenario === 'thousand-paragraphs-paragraph' ) {
+					await perfUtils.load1000Paragraphs();
+				}
+				if ( scenario !== 'small-containers-paragraph' ) {
+					await editor.insertBlock( { name: 'core/paragraph' } );
+				}
 			}
 
 			const setupBlockCount = await page.evaluate( () =>
@@ -2563,7 +2608,9 @@ setInterval(() => {}, 2147483647);
 				} );
 			}
 
-			await paragraph.click();
+			if ( setupStyle !== 'ci-post-editor-typing' ) {
+				await paragraph.click();
+			}
 			await setupRichTextSpanTracingInCurrentContext();
 			await setupDataSpanTracingInCurrentContext();
 			await setupTimerTracing();
@@ -2585,6 +2632,8 @@ setInterval(() => {}, 2147483647);
 				setupWorkStartedAtEpochMs,
 				setupReadyAtEpochMs,
 				setupStoppedAtEpochMs: Date.now(),
+				setupStyle,
+				setupDraftId,
 				setupBlockCount,
 				dataTracingSetup,
 				markPersistentInterventionSetup,
@@ -2761,7 +2810,11 @@ setInterval(() => {}, 2147483647);
 						await cdpSession.detach();
 					}
 				} else {
-					await page.keyboard.type( 'x'.repeat( sampleCount ), {
+					const typeTarget =
+						setupStyle === 'ci-post-editor-typing'
+							? paragraph
+							: page.keyboard;
+					await typeTarget.type( 'x'.repeat( sampleCount ), {
 						delay: delayMs,
 						timeout: Math.max( 30_000, sampleCount * delayMs * 4 ),
 					} );
@@ -2797,6 +2850,8 @@ setInterval(() => {}, 2147483647);
 					editorSetupReadyAtEpochMs: editorSetup.setupReadyAtEpochMs,
 					editorSetupStoppedAtEpochMs:
 						editorSetup.setupStoppedAtEpochMs,
+					editorSetupStyle: editorSetup.setupStyle,
+					editorSetupDraftId: editorSetup.setupDraftId,
 					editorSetupBlockCount: editorSetup.setupBlockCount,
 					dataTracingSetup: editorSetup.dataTracingSetup,
 					markPersistentInterventionSetup:
@@ -3034,6 +3089,7 @@ setInterval(() => {}, 2147483647);
 						scenario,
 						round,
 						delayMs,
+						setupStyle,
 						sampleIndex,
 						isThrowaway,
 						delaySampleIndex: isThrowaway ? null : delaySampleIndex,
@@ -3151,6 +3207,7 @@ setInterval(() => {}, 2147483647);
 				postKeyupGapMs,
 				settleBeforeEditorSetupMs,
 				settleAfterEditorSetupMs,
+				setupStyle,
 				settleBetweenDelayRunsMs,
 				preTypingWarmupMode,
 				preTypingWarmupMs,

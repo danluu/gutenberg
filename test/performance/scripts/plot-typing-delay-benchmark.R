@@ -1301,6 +1301,116 @@ if (file.exists(start_wait_timestamp_audit_summary_path) && file.exists(start_wa
 	)
 }
 
+ci_comparable_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-summary.csv")
+ci_comparable_samples_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-samples.csv")
+ci_comparable_phases_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-phases.csv")
+if (
+	file.exists(ci_comparable_summary_path) &&
+	file.exists(ci_comparable_samples_path) &&
+	file.exists(ci_comparable_phases_path)
+) {
+	ci_comparable_summary <- read_csv(ci_comparable_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(settle_after_editor_setup_ms, "ms"),
+				levels = paste0(sort(settle_after_editor_setup_ms), "ms")
+			)
+		)
+	ci_comparable_samples <- read_csv(ci_comparable_samples_path, show_col_types = FALSE) %>%
+		filter(!is_throwaway) %>%
+		mutate(
+			wait_label = factor(
+				paste0(settle_after_editor_setup_ms, "ms"),
+				levels = levels(ci_comparable_summary$wait_label)
+			)
+		)
+	ci_comparable_phases <- read_csv(ci_comparable_phases_path, show_col_types = FALSE) %>%
+		pivot_longer(
+			cols = c(
+				pre_setup_idle_p50_ms,
+				active_setup_p50_ms,
+				post_setup_idle_p50_ms,
+				setup_stop_to_run_start_p50_ms
+			),
+			names_to = "phase",
+			values_to = "duration_p50_ms"
+		) %>%
+		mutate(
+			wait_label = factor(
+				paste0(settle_after_editor_setup_ms, "ms"),
+				levels = levels(ci_comparable_summary$wait_label)
+			),
+			phase = factor(
+				recode(
+					phase,
+					pre_setup_idle_p50_ms = "pre-setup idle",
+					active_setup_p50_ms = "active CI-like setup",
+					post_setup_idle_p50_ms = "post-setup idle",
+					setup_stop_to_run_start_p50_ms = "setup-to-run gap"
+				),
+				levels = c("pre-setup idle", "active CI-like setup", "post-setup idle", "setup-to-run gap")
+			)
+		)
+
+	save_plot(
+		ggplot() +
+			geom_jitter(
+				data = ci_comparable_samples,
+				aes(settle_after_editor_setup_ms, latency_ms),
+				width = 18,
+				height = 0,
+				alpha = 0.32,
+				size = 1.6,
+				color = brewer_color("Greys", 6, type = "seq", n = 9)
+			) +
+			geom_errorbar(
+				data = ci_comparable_summary,
+				aes(
+					x = settle_after_editor_setup_ms,
+					ymin = latency_p10_ms,
+					ymax = latency_p90_ms
+				),
+				width = 45,
+				color = brewer_color("Dark2", 2)
+			) +
+			geom_point(
+				data = ci_comparable_summary,
+				aes(settle_after_editor_setup_ms, latency_p50_ms),
+				size = 3.4,
+				color = brewer_color("Dark2", 1)
+			) +
+			scale_x_continuous(
+				breaks = ci_comparable_summary$settle_after_editor_setup_ms,
+				labels = function(x) paste0(x, "ms")
+			) +
+			labs(
+				title = "CI-comparable typing setup: retained samples overlap",
+				subtitle = "Saved/reopened large-post draft; target.type() with 1000ms delay; points are retained samples, bars are p10-p90",
+				x = "Extra wait after editor setup before target.type()",
+				y = "Retained typing latency (ms)"
+			),
+		"72-ci-comparable-start-wait-latency.png",
+		width = 10.5,
+		height = 5.5
+	)
+
+	save_plot(
+		ggplot(ci_comparable_phases, aes(wait_label, duration_p50_ms, fill = phase)) +
+			geom_col(width = 0.72) +
+			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "CI-comparable setup saves and reopens the large-post draft",
+				subtitle = "Stacked p50 setup phases before the traced target.type() call",
+				x = "Configured post-setup wait",
+				y = "p50 duration before measured typing (ms)",
+				fill = "Phase"
+			),
+		"73-ci-comparable-start-wait-phases.png",
+		width = 8.5,
+		height = 5.2
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

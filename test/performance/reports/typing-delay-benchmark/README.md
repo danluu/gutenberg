@@ -443,6 +443,10 @@ The R script derives:
 -   `data/typing-delay-start-wait-timestamp-audit-*.csv`: explicit phase
     accounting for pre-setup idle, active editor setup, post-setup idle, and
     run-start timing.
+-   `data/typing-delay-ci-comparable-start-wait-*.csv`: a CI-comparable
+    post-editor typing anchor using the same large-post saved-draft setup,
+    `target.type()` entry point, `1000ms` key delay, 10 retained samples, and 1
+    throwaway sample as the Performance Tests `post-editor` Typing metric.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -751,6 +755,44 @@ before setup leaves `setupReady -> runStart` at `0ms` and returns to the hot
 first-input distribution. That closes the loophole where "time before the
 benchmark starts" might have meant total wall-clock time inside the setup helper
 rather than idle time after the editor is ready.
+
+### CI-Comparable Typing Anchor
+
+The Performance Tests CI job's post-editor Typing metric is not the same as the
+default custom benchmark setup above. In
+`test/performance/specs/post-editor.spec.js`, the Typing setup creates a new
+post, loads the large-post fixture, inserts an empty paragraph, saves a draft,
+reopens that draft, disables autosave, and then traces one
+`target.type( 'x'.repeat( 11 ), { delay: 1000 } )` call. It discards the first
+character and keeps the next 10 samples.
+
+I added an explicit `BENCHMARK_SETUP_STYLE=ci-post-editor-typing` mode for that
+shape. The `0ms` row below is the comparable anchor: same saved/reopened
+large-post draft setup, same `target.type()` path, same `1000ms` key delay, same
+10 retained plus 1 throwaway policy. I repeated it for 4 fresh drafts to get
+volatility data. The `250ms` and `1000ms` rows are variants that add an extra
+post-setup wait before `target.type()`; those variants answer the fixed-wait
+question on the same setup, but they are not exact CI Typing runs.
+
+![CI-comparable start-wait latency](figures/72-ci-comparable-start-wait-latency.png)
+
+![CI-comparable setup phases](figures/73-ci-comparable-start-wait-phases.png)
+
+CI-comparable retained typing p50s:
+
+| Extra wait after setup | Retained p50 | p10-p90 | sd | Throwaway p50 | Active setup p50 | Post-setup idle p50 |
+| ---------------------- | -----------: | ------: | -: | ------------: | ---------------: | ------------------: |
+| `0ms`                  | `12.2ms` | `10.1-19.9ms` | `5.1ms` | `22.0ms` | `3603ms` | `0ms` |
+| `250ms`                | `11.1ms` | `10.1-17.4ms` | `3.9ms` | `20.4ms` | `3538ms` | `266ms` |
+| `1000ms`               | `11.0ms` | `10.4-17.0ms` | `3.9ms` | `22.3ms` | `3600ms` | `1025ms` |
+
+This local run is comparable to the CI `post-editor` Typing test shape, not to
+the full GitHub Actions machine image and scheduler environment. Within that
+limit, the result is important: the retained CI-style typing samples are in the
+same low-latency band with or without an extra fixed post-setup wait. The first
+character is still slower, but CI intentionally discards it. That means the
+default CI Typing metric is much less sensitive to the start-wait issue than a
+first-character benchmark would be.
 
 In the original six-sample first-character run, the `0s` and `60s` p10-p90
 bands do not overlap, so the effect is large relative to the observed
@@ -3956,6 +3998,11 @@ The key runs used in this report were:
     key-hold traces that test whether recent timer-side work ending close to the
     next key can reproduce the low event-only slice without changing Gutenberg
     state.
+-   `ci_typing_start_wait_0`, `ci_typing_start_wait_250`, and
+    `ci_typing_start_wait_1000`: CI-comparable post-editor Typing setup using a
+    saved/reopened large-post draft, autosave disabled, `target.type()` with a
+    `1000ms` delay, 10 retained samples and 1 throwaway per round, 4 fresh
+    rounds per wait setting.
 -   `native_busy_0_timeout_1250_delay_1300`,
     `native_busy_20_timeout_1230_delay_1300`,
     `native_busy_40_timeout_1210_delay_1300`, and

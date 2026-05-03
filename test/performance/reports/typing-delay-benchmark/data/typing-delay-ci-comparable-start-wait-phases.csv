@@ -1,0 +1,4 @@
+run_id,setup_style,delay_mode,settle_after_editor_setup_ms,setup_rounds,pre_setup_idle_p50_ms,active_setup_p50_ms,post_setup_idle_p50_ms,setup_stop_to_run_start_p50_ms,run_duration_p50_ms
+ci_typing_start_wait_0,ci-post-editor-typing,keyboard,0,4,0,3602.5,0,0,11775.5
+ci_typing_start_wait_250,ci-post-editor-typing,keyboard,250,4,0,3537.5,266,0,11767.5
+ci_typing_start_wait_1000,ci-post-editor-typing,keyboard,1000,4,0,3599.5,1025,0,11847
