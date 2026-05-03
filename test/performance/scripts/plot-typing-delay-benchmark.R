@@ -3147,6 +3147,7 @@ marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-sam
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
 marker_gap_dense_summary_path <- file.path(data_dir, "typing-delay-marker-gap-dense-paired-summary.csv")
 fixed_hold_timer_rewrite_summary_path <- file.path(data_dir, "typing-delay-fixed-hold-timer-rewrite-paired-summary.csv")
+task_end_proximity_samples_path <- file.path(data_dir, "typing-delay-task-end-proximity-paired-samples.csv")
 task_end_proximity_summary_path <- file.path(data_dir, "typing-delay-task-end-proximity-paired-summary.csv")
 native_busy_wait_control_summary_path <- file.path(data_dir, "typing-delay-native-busy-wait-control-summary.csv")
 marker_intervention_levels <- c(
@@ -3466,10 +3467,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			mutate(
 				intervention = factor(
 					intervention,
-					levels = c(
-						"marker no-op",
-						"busy wait 20ms",
-						"busy wait 40ms",
+						levels = c(
+							"marker no-op",
+							"busy wait 20ms",
+							"busy wait 40ms",
 						"no-op + busy wait 150ms",
 						"worker busy wait 150ms",
 						"worker busy wait 150ms, no message",
@@ -3687,6 +3688,65 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				),
 			"53-worker-gap-decay.png",
 			width = 9,
+			height = 6
+			)
+		}
+
+	if (file.exists(task_end_proximity_samples_path)) {
+		background_cpu_control <- read_csv(task_end_proximity_samples_path, show_col_types = FALSE) %>%
+			filter(
+				run_id %in% c(
+					"task_end_noop_timeout_1250_delay_1300",
+					"task_end_external_background_idle_noop_timeout_1250_delay_1300",
+					"task_end_external_background_cpu_noop_timeout_1250_delay_1300",
+					"task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
+					"task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
+				)
+			) %>%
+			mutate(
+				control = fct_recode(
+					factor(run_id),
+					`no-op timer` = "task_end_noop_timeout_1250_delay_1300",
+					`idle child + no-op` = "task_end_external_background_idle_noop_timeout_1250_delay_1300",
+					`background CPU + no-op` = "task_end_external_background_cpu_noop_timeout_1250_delay_1300",
+					`prestarted delay` = "task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
+					`prestarted CPU burst` = "task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
+				),
+				control = factor(
+					control,
+					levels = c(
+						"no-op timer",
+						"idle child + no-op",
+						"background CPU + no-op",
+						"prestarted delay",
+						"prestarted CPU burst"
+					)
+				)
+			)
+
+		save_plot(
+			ggplot(background_cpu_control, aes(control, latency_ms, color = control, shape = control)) +
+				geom_jitter(width = 0.12, height = 0, alpha = 0.45, size = 2.1) +
+				stat_summary(fun = median, geom = "point", size = 4.2, color = "black", show.legend = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`no-op timer` = 17,
+					`idle child + no-op` = 2,
+					`background CPU + no-op` = 1,
+					`prestarted delay` = 7,
+					`prestarted CPU burst` = 3
+				), drop = FALSE) +
+				labs(
+					title = "Continuous external CPU makes a no-op timer fast",
+					subtitle = "Fixed 1300ms key hold; black points are medians, colored points are retained samples",
+					x = NULL,
+					y = "Next EventDispatch duration (ms)",
+					color = "Control",
+					shape = "Control"
+				) +
+				theme(axis.text.x = element_text(angle = 25, hjust = 1)),
+			"54-background-cpu-control.png",
+			width = 10,
 			height = 6
 		)
 	}

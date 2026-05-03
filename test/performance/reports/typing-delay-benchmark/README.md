@@ -116,6 +116,12 @@ The short version:
     disconfirms "IPC/process lifetime is enough" and confirms that recent
     external CPU work can modulate the effect; renderer-local browser work is not
     required.
+-   Continuous external background CPU makes an otherwise slow no-op timer case
+    fast: with the no-op timer ending about `51ms` before keydown, event-only p50
+    drops to `9.1ms`. An idle external child with the same no-op timer stays slow
+    at `24.2ms`. That disconfirms "finite timer-side work ending near the key is
+    required"; the finite-burst decay happens because the CPU activity stops, not
+    because the browser needs a particular timer callback shape.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -1175,6 +1181,10 @@ event-only measurement. The new intervention modes are deliberately artificial:
     callback. This removes child-process startup from the timer boundary.
 -   `external-persistent-delay-150-no-message`: send a prestarted child process a
     no-CPU delay command, to test whether IPC and child lifetime are enough.
+-   `external-background-cpu-noop`: keep a child process burning CPU continuously
+    before typing starts; the rich-text timer callback itself is still a no-op.
+-   `external-background-idle-noop`: keep an idle child process alive before
+    typing starts; the rich-text timer callback itself is still a no-op.
 -   `delayed-noop-150`: main thread schedules a delayed no-op task near the
     following keydown without doing CPU work.
 -   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
@@ -1213,6 +1223,8 @@ Selected p50s:
 | prestarted external CPU        |      `1170ms` |            `50.5ms` |       `12.1ms` |  `80.3ms` |           `92.3ms` |
 | prestarted external CPU        |      `1100ms` |            `50.4ms` |       `11.3ms` | `150.3ms` |          `161.6ms` |
 | prestarted external delay      |      `1100ms` |            `53.1ms` |       `23.3ms` | `150.3ms` |          `173.9ms` |
+| background CPU + no-op timer   |      `1250ms` |            `50.6ms` |        `9.1ms` |   `0.0ms` |            `9.1ms` |
+| background idle + no-op timer  |      `1250ms` |            `53.3ms` |       `24.2ms` |   `0.0ms` |           `24.3ms` |
 | worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` | `169.1ms` |          `193.8ms` |
 | worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` | `151.3ms` |          `175.1ms` |
 | delayed no-op                  |      `1100ms` |            `50.5ms` |       `24.4ms` | `152.6ms` |          `176.6ms` |
@@ -1250,20 +1262,25 @@ The updated model is narrower and less semantic:
    `80ms`, and `150ms` produce `19.0ms`, `14.0ms`, `12.1ms`, and `11.3ms`
    event-only p50s. The prestarted no-CPU delay control stays slow at `23.3ms`,
    so IPC and child lifetime are not sufficient.
-9. The effect decays with distance from the following key: no-op + `150ms` busy
+9. Continuous external background CPU is sufficient even when the timer callback
+   is a zero-duration no-op. The paired timer/no-op event itself has `0ms` p50
+   work, but the following event-only p50 is `9.1ms`. The idle-child control with
+   the same no-op timer is `24.2ms`.
+10. The effect decays with distance from the following key after a finite CPU
+   burst stops: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
    around `51ms` before keydown is in the low band. The worker control shows the
    same shape: a no-message `150ms` worker spin is `10.3ms` when it ends about
    `50ms` before keydown, `14.9ms` when it ends about `150ms` before keydown,
    and back on the slow plateau at `24.6ms` when it ends about `253ms` before
    keydown.
-10. The external child-process control shows the same decay: `8.9ms`, `12.6ms`,
+11. The external child-process control shows the same decay: `8.9ms`, `12.6ms`,
    and `22.7ms` when its expected CPU burn ends about `50ms`, `151ms`, and
    `253ms` before keydown.
-11. The near-key main-thread task is not the mechanism by itself. The
+12. The near-key main-thread task is not the mechanism by itself. The
    `worker-delay-150` and `delayed-noop-150` controls both create near-key tasks
    with no CPU spin, and both stay on the slow plateau.
-12. Worker creation/lifetime and external child-process lifetime are not the
+13. Worker creation/lifetime and external child-process lifetime are not the
    mechanism by themselves. The `worker-delay-150-no-message`,
    `external-delay-150-no-message`, and
    `external-persistent-delay-150-no-message` controls keep the lifetime shape
@@ -1285,6 +1302,19 @@ worker, and prestarted external CPU work all move the next event-only slice down
 as duration increases. The curves are not identical, especially at `20ms`, but
 the monotonic shape confirms that amount of recent CPU work matters even when
 that work never posts a main-thread completion message to the page.
+
+The background CPU control separates finite burst proximity from sustained CPU
+state:
+
+![Background CPU control](figures/54-background-cpu-control.png)
+
+The no-op timer and the idle-child no-op timer are both slow. The same no-op
+timer becomes fast when a separate child process is already burning CPU in the
+background. This means the low event-only band does not require a timer task, a
+worker message, IPC completion, or a finite burst ending just before keydown. The
+finite-burst gap-decay results still matter: after CPU activity stops, the effect
+decays within a few hundred milliseconds. But continuous CPU activity keeps the
+system in the fast regime.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -3361,6 +3391,8 @@ The key runs used in this report were:
     `task_end_external_persistent_cpu_no_message_80_timeout_1170_delay_1300`,
     `task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300`,
     `task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300`,
+    `task_end_external_background_cpu_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_idle_noop_timeout_1250_delay_1300`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,

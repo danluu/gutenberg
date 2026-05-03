@@ -509,6 +509,20 @@ const taskEndProximityRuns = [
 		dir: 'test/performance/artifacts/typing-delay-task-end-external-persistent-delay-no-message-150-timeout-1100-delay-1300',
 	},
 	{
+		runId: 'task_end_external_background_cpu_noop_timeout_1250_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'external background CPU, no-op timer',
+		rewriteTimeoutMs: 1250,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-background-cpu-noop-timeout-1250-delay-1300',
+	},
+	{
+		runId: 'task_end_external_background_idle_noop_timeout_1250_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'external background idle child, no-op timer',
+		rewriteTimeoutMs: 1250,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-background-idle-noop-timeout-1250-delay-1300',
+	},
+	{
 		runId: 'task_end_worker_delay_150_timeout_1100_delay_1300',
 		traceType: 'task end proximity',
 		intervention: 'worker delay 150ms, no CPU',

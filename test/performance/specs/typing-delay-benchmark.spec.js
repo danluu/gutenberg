@@ -153,6 +153,8 @@ const supportedMarkPersistentInterventions = [
 	'external-persistent-cpu-80-no-message',
 	'external-persistent-cpu-150-no-message',
 	'external-persistent-delay-150-no-message',
+	'external-background-cpu-noop',
+	'external-background-idle-noop',
 	'delayed-noop-150',
 	'raw-unknown-action',
 	'mark-next-not-persistent',
@@ -1153,6 +1155,7 @@ test.describe( 'Typing delay benchmark', () => {
 
 		let externalCpuBurnerExposed = false;
 		let externalPersistentProcess = null;
+		let externalBackgroundProcess = null;
 		function ensureExternalPersistentProcess() {
 			if ( externalPersistentProcess ) {
 				return externalPersistentProcess;
@@ -1178,10 +1181,32 @@ setInterval(() => {}, 2147483647);
 			return externalPersistentProcess;
 		}
 
+		function ensureExternalBackgroundProcess( processMode ) {
+			if ( externalBackgroundProcess ) {
+				return externalBackgroundProcess;
+			}
+
+			const source =
+				processMode === 'cpu'
+					? 'while (true) Math.sqrt(Math.random());'
+					: 'setInterval(() => {}, 2147483647);';
+			externalBackgroundProcess = spawn(
+				process.execPath,
+				[ '-e', source ],
+				{ stdio: 'ignore' }
+			);
+			process.once( 'exit', () => externalBackgroundProcess?.kill() );
+			return externalBackgroundProcess;
+		}
+
 		function cleanupExternalPersistentProcess() {
 			if ( externalPersistentProcess ) {
 				externalPersistentProcess.kill();
 				externalPersistentProcess = null;
+			}
+			if ( externalBackgroundProcess ) {
+				externalBackgroundProcess.kill();
+				externalBackgroundProcess = null;
 			}
 		}
 
@@ -1197,6 +1222,16 @@ setInterval(() => {}, 2147483647);
 				markPersistentIntervention.startsWith( 'external-persistent-' )
 			) {
 				ensureExternalPersistentProcess();
+			}
+			if (
+				markPersistentIntervention === 'external-background-cpu-noop'
+			) {
+				ensureExternalBackgroundProcess( 'cpu' );
+			}
+			if (
+				markPersistentIntervention === 'external-background-idle-noop'
+			) {
+				ensureExternalBackgroundProcess( 'idle' );
 			}
 
 			if (
@@ -1621,6 +1656,11 @@ setInterval(() => {}, 2147483647);
 										'delay',
 										true
 									);
+									result = undefined;
+								} else if (
+									mode === 'external-background-cpu-noop' ||
+									mode === 'external-background-idle-noop'
+								) {
 									result = undefined;
 								} else if ( mode === 'delayed-noop-150' ) {
 									startDelayedNoop( 150 );
