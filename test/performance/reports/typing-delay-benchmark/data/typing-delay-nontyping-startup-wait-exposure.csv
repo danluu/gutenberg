@@ -1,0 +1,15 @@
+spec,metric,wait_occurrences_per_branch,retained_samples,current_wait_ms,per_branch_wait_s,two_branch_wait_s,two_branch_saved_if_zero_wait_s,metric_label
+post-editor,focus / selecting blocks,11,10,1000,11,22,22,"post-editor
+focus / selecting blocks"
+post-editor,listViewOpen,11,10,1000,11,22,22,"post-editor
+listViewOpen"
+post-editor,inserterOpen,11,10,1000,11,22,22,"post-editor
+inserterOpen"
+post-editor,inserterSearch,11,10,1000,11,22,22,"post-editor
+inserterSearch"
+post-editor,inserterHover,11,20,1000,11,22,22,"post-editor
+inserterHover"
+post-editor,loadPatterns,11,10,1000,11,22,22,"post-editor
+loadPatterns"
+site-editor,loadPatterns,10,10,1000,10,20,20,"site-editor
+loadPatterns"

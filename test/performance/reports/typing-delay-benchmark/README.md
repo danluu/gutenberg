@@ -98,7 +98,12 @@ The short version:
     compared branches, but the local repeated Typing anchor does not show a
     stability gain from waiting: eight saved/reopened drafts per wait setting
     put the reported q50 in a `15.5-17.3ms` band, with run-to-run q50 sd between
-    `0.5ms` and `1.7ms`.
+    `0.5ms` and `1.7ms`. A new exact Selecting-blocks pilot, with eight runs at
+    `0ms` and eight at `1000ms`, found the `0ms` pre-measurement wait faster
+    (`19.8ms` vs. `25.2ms` q50) and less variable (`0.44ms` vs. `1.35ms`
+    run-to-run q50 sd). A broader four-run screen over all seven explicit-wait
+    non-Typing metrics splits by metric class: the interactive post-editor
+    metrics favor `0ms`, while pattern loading does not.
 -   Changing the current held-key Typing delay is a larger metric change than
     the name suggests. At `500ms`, the two-branch job saves about `55s`, but the
     CI-comparable held-key q50 is `24.5ms`, not halfway between the `0ms` and
@@ -1176,6 +1181,68 @@ wall time linearly, while the repeated-run measurements do not show a monotonic
 reliability benefit from waiting longer. This does not answer whether every
 non-Typing metric in the performance suite would be equally stable; that needs
 metric-specific repeated runs.
+
+For the non-Typing side, I first audited the current explicit
+`page.waitForTimeout( BROWSER_IDLE_WAIT )` sites. The sleep is paid by several
+post-editor measurements and by the site-editor pattern load measurement.
+
+![Non-Typing startup-wait exposure](figures/97-nontyping-startup-wait-exposure.png)
+
+| Spec | Metric | Sleeps per branch | Two-branch cost |
+| ---- | ------ | ----------------: | --------------: |
+| `post-editor` | focus / selecting blocks | `11` | `22s` |
+| `post-editor` | listViewOpen | `11` | `22s` |
+| `post-editor` | inserterOpen | `11` | `22s` |
+| `post-editor` | inserterSearch | `11` | `22s` |
+| `post-editor` | inserterHover | `11` | `22s` |
+| `post-editor` | loadPatterns | `11` | `22s` |
+| `site-editor` | loadPatterns | `10` | `20s` |
+
+I then ran one exact non-Typing pilot: `Post Editor Performance > Selecting
+blocks`, eight independent runs with `PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS=0`
+and eight independent runs with `PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS=1000`.
+
+![Non-Typing focus wait pilot](figures/98-nontyping-focus-wait-pilot.png)
+
+| `PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS` | Runs | Median per-run q50 | Run-to-run q50 sd | Median mean | Median p90 |
+| -------------------------------------: | ---: | -----------------: | ----------------: | ----------: | ---------: |
+|                                  `0ms` |  `8` |           `19.8ms` |          `0.44ms` |    `20.2ms` |   `21.9ms` |
+|                               `1000ms` |  `8` |           `25.2ms` |          `1.35ms` |    `25.8ms` |   `29.2ms` |
+
+This falsifies the narrow claim that the explicit pre-measurement wait is
+obviously stabilizing, at least for this metric on this machine. Removing it
+saved `11s` per branch for Selecting blocks and moved the per-run q50 median
+down by `5.33ms`; the run-to-run q50 sd also fell by `0.92ms`.
+
+To check whether Selecting blocks was special, I ran a broader screen over all
+seven sleep-using non-Typing measurements: four exact runs at `0ms` and four at
+`1000ms` for the six post-editor metrics, plus four exact runs at each wait for
+the site-editor pattern-load metric.
+
+![Non-Typing startup-wait q50 screen](figures/99-nontyping-wait-screen-q50.png)
+
+![Non-Typing startup-wait volatility screen](figures/100-nontyping-wait-screen-volatility.png)
+
+Negative q50 deltas mean `0ms` was faster than `1000ms`:
+
+| Metric | `0ms` q50 | `1000ms` q50 | q50 delta | `0ms` q50 sd | `1000ms` q50 sd |
+| ------ | --------: | -----------: | --------: | -----------: | --------------: |
+| post-editor focus | `20.0ms` | `27.7ms` | `-7.7ms` | `0.37ms` | `2.26ms` |
+| post-editor listViewOpen | `33.1ms` | `44.4ms` | `-11.3ms` | `0.24ms` | `4.04ms` |
+| post-editor inserterOpen | `7.8ms` | `13.0ms` | `-5.2ms` | `0.11ms` | `1.65ms` |
+| post-editor inserterSearch | `2.3ms` | `4.0ms` | `-1.6ms` | `0.10ms` | `0.70ms` |
+| post-editor inserterHover | `2.6ms` | `3.8ms` | `-1.3ms` | `0.10ms` | `0.64ms` |
+| post-editor loadPatterns | `347.5ms` | `341.1ms` | `+6.4ms` | `3.08ms` | `8.05ms` |
+| site-editor loadPatterns | `872.0ms` | `722.5ms` | `+149.4ms` | `28.50ms` | `27.63ms` |
+
+The interaction metrics are one-sided in this screen: removing the wait made all
+five faster and less volatile. Pattern loading is different. The post-editor
+pattern-load q50 was close and noisy, while the site-editor pattern-load q50 was
+substantially faster after the `1000ms` wait. That makes a global zero-wait
+change riskier than an interaction-only change. The next useful experiment is no
+longer "does any non-Typing metric care?" but "are pattern-load metrics measuring
+real readiness work that the explicit wait hides, and what failure/regression
+rate does CI see if only interaction metrics remove the wait?"
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
@@ -4219,14 +4286,19 @@ per-keypress distribution and discard-policy sensitivity plots should stay in
 the report. The current q50 can therefore look stable even though the beginning
 of the input sequence is not representative of steady repeated typing.
 
-The startup-wait result is now strong for Typing and weak for everything else.
+The startup-wait result is now strong for Typing and has a complete small
+non-Typing screen.
 The exact and CI-comparable Typing runs say that adding post-setup wait does not
 buy retained Typing stability, and reducing the current extra post-setup wait
-cannot speed up Typing because that knob is already `0ms`. But the broader
-performance suite still has non-Typing metrics with explicit sleeps. The current
-data models their wall-clock cost; it does not prove that every non-Typing metric
-is stable if those sleeps are removed. That remains a metric-specific repeated
-run question.
+cannot speed up Typing because that knob is already `0ms`. The exact Selecting
+blocks pilot says one explicit non-Typing pre-measurement sleep can be removed on
+this machine without hurting that metric: `0ms` was both faster and less
+variable than `1000ms`. The broader four-run screen says this likely generalizes
+to interactive post-editor measurements, but not to pattern loading: site-editor
+patterns were much faster after the `1000ms` wait. The remaining open question is
+therefore narrower and sharper: whether pattern-load metrics should keep a
+readiness wait, and whether the interaction metrics can remove it behind a CI
+experiment that observes real comparison failures rather than local medians only.
 
 The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,

@@ -1,0 +1,15 @@
+spec,metric,metric_label,measurement_idle_wait_ms,runs,samples,median_q50_ms,q50_sd_ms,median_mean_ms,median_p90_ms
+post-editor,focus,post-editor / focus,0,4,10,19.9565,0.37402194677139766,20.5406,22.7023
+post-editor,focus,post-editor / focus,1000,4,10,27.683749999999996,2.2644694880920784,27.9939,30.68695
+post-editor,inserterHover,post-editor / inserterHover,0,4,20,2.58175,0.10448484738627561,2.605975,2.82085
+post-editor,inserterHover,post-editor / inserterHover,1000,4,20,3.83625,0.643904560733447,3.8160499999999997,4.5566
+post-editor,inserterOpen,post-editor / inserterOpen,0,4,10,7.762,0.10905608266697733,7.992649999999999,8.741900000000001
+post-editor,inserterOpen,post-editor / inserterOpen,1000,4,10,13.000499999999999,1.6545670883950276,13.128,14.34565
+post-editor,inserterSearch,post-editor / inserterSearch,0,4,10,2.3282499999999997,0.09915686226042732,2.38295,2.6831499999999995
+post-editor,inserterSearch,post-editor / inserterSearch,1000,4,10,3.9547500000000007,0.6994267146504103,3.83005,4.4932
+post-editor,listViewOpen,post-editor / listViewOpen,0,4,10,33.074749999999995,0.24088413535695208,33.332899999999995,34.31075
+post-editor,listViewOpen,post-editor / listViewOpen,1000,4,10,44.396,4.044881580466851,45.1962,47.75955
+post-editor,loadPatterns,post-editor / loadPatterns,0,4,10,347.46573974999956,3.07674343992834,351.47754999999944,367.86910625000127
+post-editor,loadPatterns,post-editor / loadPatterns,1000,4,10,341.05483325000387,8.045357464588234,344.7864127000015,359.45652309999787
+site-editor,loadPatterns,site-editor / loadPatterns,0,4,10,871.9718750000002,28.49681119173759,894.2483209999999,1030.3658584500006
+site-editor,loadPatterns,site-editor / loadPatterns,1000,4,10,722.5305415000003,27.63365949685937,722.8430125499998,773.6588666999992

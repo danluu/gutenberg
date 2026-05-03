@@ -2473,6 +2473,194 @@ if (file.exists(ci_start_wait_curve_draft_reliability_path)) {
 	)
 }
 
+nontyping_startup_wait_exposure <- tribble(
+	~spec, ~metric, ~wait_occurrences_per_branch, ~retained_samples,
+	"post-editor", "focus / selecting blocks", 11, 10,
+	"post-editor", "listViewOpen", 11, 10,
+	"post-editor", "inserterOpen", 11, 10,
+	"post-editor", "inserterSearch", 11, 10,
+	"post-editor", "inserterHover", 11, 20,
+	"post-editor", "loadPatterns", 11, 10,
+	"site-editor", "loadPatterns", 10, 10
+) %>%
+	mutate(
+		current_wait_ms = 1000,
+		per_branch_wait_s = wait_occurrences_per_branch * current_wait_ms / 1000,
+		two_branch_wait_s = 2 * per_branch_wait_s,
+		two_branch_saved_if_zero_wait_s = two_branch_wait_s,
+		metric_label = factor(
+			paste(spec, metric, sep = "\n"),
+			levels = paste(spec, metric, sep = "\n")
+		)
+	)
+write_csv(
+	nontyping_startup_wait_exposure,
+	file.path(data_dir, "typing-delay-nontyping-startup-wait-exposure.csv")
+)
+
+save_plot(
+	ggplot(nontyping_startup_wait_exposure, aes(metric_label, two_branch_wait_s, fill = spec)) +
+		geom_col(width = 0.72) +
+		geom_text(aes(label = sprintf("%.0fs", two_branch_wait_s)), vjust = -0.35, size = 3.0) +
+		scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+		scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+		labs(
+			title = "Seven non-Typing metrics still pay explicit startup sleeps",
+			subtitle = "Current 1000ms MEASUREMENT_IDLE_WAIT_MS; normal performance CI compares two branches",
+			x = NULL,
+			y = "Two-branch explicit wait cost",
+			fill = "Spec"
+		) +
+		theme(axis.text.x = element_text(angle = 35, hjust = 1)),
+	"97-nontyping-startup-wait-exposure.png",
+	width = 10.5,
+	height = 5.8
+)
+
+nontyping_focus_wait_pilot_path <- file.path(data_dir, "typing-delay-nontyping-focus-wait-pilot-summary.csv")
+if (file.exists(nontyping_focus_wait_pilot_path)) {
+	nontyping_focus_wait_pilot <- read_csv(nontyping_focus_wait_pilot_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(measurement_idle_wait_ms, "ms"),
+				levels = c("0ms", "1000ms")
+			)
+		)
+
+	nontyping_focus_wait_pilot_plot <- nontyping_focus_wait_pilot %>%
+		select(
+			wait_label,
+			run,
+			`reported q50 (ms)` = focus_p50_ms,
+			`reported mean (ms)` = focus_mean_ms,
+			`reported p90 (ms)` = focus_p90_ms,
+			`within-run sd (ms)` = focus_sd_ms
+		) %>%
+		pivot_longer(
+			cols = -c(wait_label, run),
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"reported q50 (ms)",
+					"reported mean (ms)",
+					"reported p90 (ms)",
+					"within-run sd (ms)"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(nontyping_focus_wait_pilot_plot, aes(wait_label, value, color = wait_label)) +
+			geom_point(
+				position = position_jitter(width = 0.08, height = 0, seed = 11),
+				size = 2.2,
+				alpha = 0.8,
+				show.legend = FALSE
+			) +
+			stat_summary(fun = median, geom = "point", shape = 95, size = 7, color = brewer_color("Set1", 1), show.legend = FALSE) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_wrap(vars(metric), ncol = 2, scales = "free_y") +
+			labs(
+				title = "Pilot non-Typing metric is faster with the startup sleep removed",
+				subtitle = "Exact post-editor Selecting blocks metric; 8 runs per wait; red ticks are medians",
+				x = "MEASUREMENT_IDLE_WAIT_MS",
+				y = NULL
+			),
+		"98-nontyping-focus-wait-pilot.png",
+		width = 9.5,
+		height = 6.8
+	)
+}
+
+nontyping_wait_screen_summary_path <- file.path(data_dir, "typing-delay-nontyping-wait-screen-summary.csv")
+nontyping_wait_screen_by_metric_path <- file.path(data_dir, "typing-delay-nontyping-wait-screen-by-metric.csv")
+if (file.exists(nontyping_wait_screen_summary_path) && file.exists(nontyping_wait_screen_by_metric_path)) {
+	nontyping_metric_order <- c(
+		"post-editor / focus",
+		"post-editor / listViewOpen",
+		"post-editor / inserterOpen",
+		"post-editor / inserterSearch",
+		"post-editor / inserterHover",
+		"post-editor / loadPatterns",
+		"site-editor / loadPatterns"
+	)
+	nontyping_wait_screen <- read_csv(nontyping_wait_screen_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(measurement_idle_wait_ms, "ms"),
+				levels = c("0ms", "1000ms")
+			),
+			metric_label = factor(metric_label, levels = nontyping_metric_order)
+		)
+
+	save_plot(
+		ggplot(nontyping_wait_screen, aes(wait_label, p50_ms, color = wait_label)) +
+			geom_point(
+				position = position_jitter(width = 0.08, height = 0, seed = 17),
+				size = 2.1,
+				alpha = 0.8,
+				show.legend = FALSE
+			) +
+			stat_summary(fun = median, geom = "point", shape = 95, size = 7, color = brewer_color("Set1", 1), show.legend = FALSE) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_wrap(vars(metric_label), ncol = 2, scales = "free_y") +
+			labs(
+				title = "Non-Typing startup-wait impact is metric-dependent",
+				subtitle = "Exact sleep-using post/site metrics; 4 runs per wait; red ticks are medians",
+				x = "MEASUREMENT_IDLE_WAIT_MS",
+				y = "Reported q50"
+			),
+		"99-nontyping-wait-screen-q50.png",
+		width = 10,
+		height = 8
+	)
+
+	nontyping_wait_screen_by_metric <- read_csv(nontyping_wait_screen_by_metric_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(measurement_idle_wait_ms, "ms"),
+				levels = c("0ms", "1000ms")
+			),
+			metric_label = factor(metric_label, levels = nontyping_metric_order)
+		)
+
+	nontyping_wait_screen_deltas <- nontyping_wait_screen_by_metric %>%
+		select(spec, metric, metric_label, measurement_idle_wait_ms, median_q50_ms, q50_sd_ms) %>%
+		pivot_wider(
+			names_from = measurement_idle_wait_ms,
+			values_from = c(median_q50_ms, q50_sd_ms),
+			names_sep = "_"
+		) %>%
+		mutate(
+			median_q50_delta_0_minus_1000_ms = median_q50_ms_0 - median_q50_ms_1000,
+			q50_sd_delta_0_minus_1000_ms = q50_sd_ms_0 - q50_sd_ms_1000
+		)
+	write_csv(
+		nontyping_wait_screen_deltas,
+		file.path(data_dir, "typing-delay-nontyping-wait-screen-deltas.csv")
+	)
+
+	save_plot(
+		ggplot(nontyping_wait_screen_by_metric, aes(wait_label, q50_sd_ms, color = wait_label)) +
+			geom_point(size = 3, alpha = 0.9, show.legend = FALSE) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_wrap(vars(metric_label), ncol = 2, scales = "free_y") +
+			labs(
+				title = "Run-to-run volatility usually rises with the 1000ms wait in the screen",
+				subtitle = "Standard deviation of per-run reported q50; 4 runs per wait",
+				x = "MEASUREMENT_IDLE_WAIT_MS",
+				y = "q50 sd across runs"
+			),
+		"100-nontyping-wait-screen-volatility.png",
+		width = 10,
+		height = 8
+	)
+}
+
 if (file.exists(ci_dense_n50_summary_path)) {
 	ci_held_key_delay_runtime_reliability <- read_csv(ci_dense_n50_summary_path, show_col_types = FALSE) %>%
 		transmute(
