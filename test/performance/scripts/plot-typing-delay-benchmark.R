@@ -3631,7 +3631,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				intervention %in% c(
 					"no-op + busy wait 150ms",
 					"worker busy wait 150ms",
-					"worker busy wait 150ms, no message"
+					"worker busy wait 150ms, no message",
+					"external CPU 150ms, no message"
 				)
 			) %>%
 			mutate(
@@ -3639,7 +3640,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					intervention,
 					`main-thread CPU` = "no-op + busy wait 150ms",
 					`worker CPU, msg` = "worker busy wait 150ms",
-					`worker CPU, no msg` = "worker busy wait 150ms, no message"
+					`worker CPU, no msg` = "worker busy wait 150ms, no message",
+					`external CPU` = "external CPU 150ms, no message"
 				)
 			)
 
@@ -3658,12 +3660,13 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				scale_shape_manual(values = c(
 					`main-thread CPU` = 16,
 					`worker CPU, msg` = 15,
-					`worker CPU, no msg` = 18
+					`worker CPU, no msg` = 18,
+					`external CPU` = 17
 				), drop = FALSE) +
 				scale_x_continuous(breaks = c(50, 100, 150, 200, 250)) +
 				labs(
-					title = "Worker CPU also decays with distance from the next key",
-					subtitle = "Fixed 1300ms key hold; 150ms work moved earlier relative to keydown",
+					title = "CPU-work speedup decays with distance from the next key",
+					subtitle = "Fixed 1300ms key hold; 150ms CPU work moved earlier relative to keydown",
 					x = "Timer-side work end to following keydown, p50 (ms)",
 					y = "Next EventDispatch duration, p50 (ms)",
 					color = "Work type",

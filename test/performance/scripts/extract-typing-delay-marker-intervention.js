@@ -425,6 +425,27 @@ const taskEndProximityRuns = [
 		dir: 'test/performance/artifacts/typing-delay-task-end-worker-delay-no-message-150-timeout-1100-delay-1300',
 	},
 	{
+		runId: 'task_end_external_cpu_no_message_150_timeout_1100_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'external CPU 150ms, no message',
+		rewriteTimeoutMs: 1100,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-cpu-no-message-150-timeout-1100-delay-1300',
+	},
+	{
+		runId: 'task_end_external_cpu_no_message_150_timeout_1000_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'external CPU 150ms, no message',
+		rewriteTimeoutMs: 1000,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-cpu-no-message-150-timeout-1000-delay-1300',
+	},
+	{
+		runId: 'task_end_external_cpu_no_message_150_timeout_900_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'external CPU 150ms, no message',
+		rewriteTimeoutMs: 900,
+		dir: 'test/performance/artifacts/typing-delay-task-end-external-cpu-no-message-150-timeout-900-delay-1300',
+	},
+	{
 		runId: 'task_end_worker_delay_150_timeout_1100_delay_1300',
 		traceType: 'task end proximity',
 		intervention: 'worker delay 150ms, no CPU',

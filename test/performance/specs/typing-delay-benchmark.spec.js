@@ -5,6 +5,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
 
 /**
  * WordPress dependencies
@@ -142,6 +143,7 @@ const supportedMarkPersistentInterventions = [
 	'worker-busy-wait-150-no-message',
 	'worker-delay-150',
 	'worker-delay-150-no-message',
+	'external-cpu-150-no-message',
 	'delayed-noop-150',
 	'raw-unknown-action',
 	'mark-next-not-persistent',
@@ -1140,12 +1142,38 @@ test.describe( 'Typing delay benchmark', () => {
 			} );
 		}
 
+		let externalCpuBurnerExposed = false;
 		async function setupMarkPersistentIntervention() {
 			if (
 				markPersistentIntervention === 'normal' ||
 				isNativeScenario()
 			) {
 				return null;
+			}
+
+			if (
+				markPersistentIntervention === 'external-cpu-150-no-message' &&
+				! externalCpuBurnerExposed
+			) {
+				await page.exposeFunction(
+					'__typingBenchmarkStartExternalCpu',
+					( durationMs ) => {
+						const child = spawn(
+							process.execPath,
+							[
+								'-e',
+								'const duration=Number(process.argv[1]); const stop=Date.now()+duration; while (Date.now()<stop) Math.sqrt(Math.random());',
+								String( durationMs ),
+							],
+							{
+								stdio: 'ignore',
+								detached: true,
+							}
+						);
+						child.unref();
+					}
+				);
+				externalCpuBurnerExposed = true;
 			}
 
 			return await page.evaluate(
@@ -1410,6 +1438,23 @@ test.describe( 'Typing delay benchmark', () => {
 								}, delayMs );
 							}
 
+							function startExternalCpuNoMessage( durationMs ) {
+								const startedAtMs = performance.now();
+								window.__typingBenchmarkStartExternalCpu?.(
+									durationMs
+								);
+								window.__typingBenchmarkMarkPersistentInterventionEvents.push(
+									{
+										nowMs: startedAtMs,
+										durationMs,
+										mode,
+										status: 'external-cpu-started',
+										before,
+										after: blockEditorSnapshot(),
+									}
+								);
+							}
+
 							try {
 								if ( mode === 'noop' ) {
 									result = undefined;
@@ -1448,6 +1493,11 @@ test.describe( 'Typing delay benchmark', () => {
 									mode === 'worker-delay-150-no-message'
 								) {
 									startWorkerDelayNoMessage( 150 );
+									result = undefined;
+								} else if (
+									mode === 'external-cpu-150-no-message'
+								) {
+									startExternalCpuNoMessage( 150 );
 									result = undefined;
 								} else if ( mode === 'delayed-noop-150' ) {
 									startDelayedNoop( 150 );

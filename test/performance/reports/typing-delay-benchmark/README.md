@@ -101,6 +101,12 @@ The short version:
     event-only p50s of `10.3ms`, `14.9ms`, and `24.6ms`. That disconfirms a
     long-lived "the browser is warmed for the rest of the run" version of the
     CPU theory. The effect is recent and proximity-sensitive.
+-   A separate Node child process burning CPU for `150ms` reproduces the same
+    proximity-sensitive shape: ending about `50ms`, `151ms`, and `253ms` before
+    keydown gives event-only p50s of `8.9ms`, `12.6ms`, and `22.7ms`. That
+    disconfirms "this requires browser-renderer-local worker scheduling"; the
+    supported explanation is broader whole-machine CPU/scheduler/power-state
+    sensitivity modulating Gutenberg's heavy input path.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -345,7 +351,8 @@ The R script derives:
     values.
 -   `data/typing-delay-task-end-proximity-paired-*.csv`: fixed `1300ms`
     key-hold traces that separate timer-task start, timer-task end, and
-    following-key timing.
+    following-key timing, including main-thread, worker, and external
+    child-process CPU controls.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -1142,6 +1149,9 @@ event-only measurement. The new intervention modes are deliberately artificial:
     does no CPU spin.
 -   `worker-delay-150-no-message`: worker waits for `150ms` and closes itself
     without CPU spin or a main-thread completion message.
+-   `external-cpu-150-no-message`: ask Playwright's Node process to spawn a
+    short-lived child process that burns CPU for `150ms`; the page records the
+    expected CPU window but receives no completion message.
 -   `delayed-noop-150`: main thread schedules a delayed no-op task near the
     following keydown without doing CPU work.
 -   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
@@ -1153,26 +1163,29 @@ event-only measurement. The new intervention modes are deliberately artificial:
 
 Selected p50s:
 
-| Timer callback                 | Timer setting | Task end to keydown | Event-only p50 | Timer task p50 | Timer-inclusive p50 |
-| ------------------------------ | ------------: | ------------------: | -------------: | -------------: | ------------------: |
-| marker no-op                   |      `1250ms` |            `53.4ms` |       `24.6ms` |        `0.0ms` |            `24.6ms` |
-| no-op + busy wait `150ms`      |      `1000ms` |           `150.6ms` |       `15.1ms` |      `150.0ms` |           `164.9ms` |
-| busy wait `20ms`               |      `1230ms` |            `51.0ms` |       `21.0ms` |       `20.0ms` |            `40.1ms` |
-| busy wait `40ms`               |      `1210ms` |            `50.6ms` |       `14.1ms` |       `40.0ms` |            `53.8ms` |
-| no-op + busy wait `150ms`      |      `1100ms` |            `51.0ms` |       `11.3ms` |      `150.0ms` |           `161.0ms` |
-| worker busy wait `150ms`       |      `1000ms` |           `141.1ms` |       `14.9ms` |      `161.1ms` |           `176.1ms` |
-| worker busy wait `150ms`       |      `1100ms` |            `41.2ms` |       `10.5ms` |      `160.1ms` |           `170.4ms` |
-| worker busy wait, no message   |      `1230ms` |            `50.7ms` |       `15.5ms` |       `21.7ms` |            `37.3ms` |
-| worker busy wait, no message   |      `1210ms` |            `50.4ms` |       `12.8ms` |       `41.6ms` |            `54.3ms` |
-| worker busy wait, no message   |      `1170ms` |            `50.5ms` |       `11.2ms` |       `81.5ms` |            `92.7ms` |
-| worker busy wait, no message   |      `1100ms` |            `50.1ms` |       `10.3ms` |      `151.2ms` |           `161.6ms` |
-| worker busy wait, no message   |      `1000ms` |           `150.4ms` |       `14.9ms` |      `151.5ms` |           `166.4ms` |
-| worker busy wait, no message   |       `900ms` |           `253.3ms` |       `24.6ms` |      `151.6ms` |           `175.8ms` |
-| worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` |      `169.1ms` |           `193.8ms` |
-| worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` |      `151.3ms` |           `175.1ms` |
-| delayed no-op                  |      `1100ms` |            `50.5ms` |       `24.4ms` |      `152.6ms` |           `176.6ms` |
-| normal marker + busy wait      |      `1100ms` |            `37.2ms` |        `8.5ms` |      `162.8ms` |           `170.9ms` |
-| stop/start typing + busy wait  |      `1100ms` |            `30.9ms` |        `8.1ms` |      `170.0ms` |           `177.7ms` |
+| Timer callback                 | Timer setting | Task end to keydown | Event-only p50 | Work p50 | Work-inclusive p50 |
+| ------------------------------ | ------------: | ------------------: | -------------: | -------: | -----------------: |
+| marker no-op                   |      `1250ms` |            `53.4ms` |       `24.6ms` |  `0.0ms` |           `24.6ms` |
+| no-op + busy wait `150ms`      |      `1000ms` |           `150.6ms` |       `15.1ms` | `150.0ms` |          `164.9ms` |
+| busy wait `20ms`               |      `1230ms` |            `51.0ms` |       `21.0ms` | `20.0ms` |           `40.1ms` |
+| busy wait `40ms`               |      `1210ms` |            `50.6ms` |       `14.1ms` | `40.0ms` |           `53.8ms` |
+| no-op + busy wait `150ms`      |      `1100ms` |            `51.0ms` |       `11.3ms` | `150.0ms` |          `161.0ms` |
+| worker busy wait `150ms`       |      `1000ms` |           `141.1ms` |       `14.9ms` | `161.1ms` |          `176.1ms` |
+| worker busy wait `150ms`       |      `1100ms` |            `41.2ms` |       `10.5ms` | `160.1ms` |          `170.4ms` |
+| worker busy wait, no message   |      `1230ms` |            `50.7ms` |       `15.5ms` | `21.7ms` |           `37.3ms` |
+| worker busy wait, no message   |      `1210ms` |            `50.4ms` |       `12.8ms` | `41.6ms` |           `54.3ms` |
+| worker busy wait, no message   |      `1170ms` |            `50.5ms` |       `11.2ms` | `81.5ms` |           `92.7ms` |
+| worker busy wait, no message   |      `1100ms` |            `50.1ms` |       `10.3ms` | `151.2ms` |          `161.6ms` |
+| worker busy wait, no message   |      `1000ms` |           `150.4ms` |       `14.9ms` | `151.5ms` |          `166.4ms` |
+| worker busy wait, no message   |       `900ms` |           `253.3ms` |       `24.6ms` | `151.6ms` |          `175.8ms` |
+| external CPU, no message       |      `1100ms` |            `50.0ms` |        `8.9ms` | `150.2ms` |          `159.1ms` |
+| external CPU, no message       |      `1000ms` |           `150.5ms` |       `12.6ms` | `150.2ms` |          `162.8ms` |
+| external CPU, no message       |       `900ms` |           `252.9ms` |       `22.7ms` | `150.2ms` |          `172.6ms` |
+| worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` | `169.1ms` |          `193.8ms` |
+| worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` | `151.3ms` |          `175.1ms` |
+| delayed no-op                  |      `1100ms` |            `50.5ms` |       `24.4ms` | `152.6ms` |          `176.6ms` |
+| normal marker + busy wait      |      `1100ms` |            `37.2ms` |        `8.5ms` | `162.8ms` |          `170.9ms` |
+| stop/start typing + busy wait  |      `1100ms` |            `30.9ms` |        `8.1ms` | `170.0ms` |          `177.7ms` |
 
 The no-op busy-wait rows changed no coarse Gutenberg selector snapshot:
 `isLastBlockChangePersistent()`, `isTyping()`, block count, and selected block
@@ -1189,30 +1202,36 @@ The updated model is narrower and less semantic:
 4. A long off-main-thread worker spin is also sufficient when it finishes close
    to keydown. It remains sufficient even when the worker never posts a
    completion message back to the main thread.
-5. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
+5. A short-lived external Node child-process CPU spin is also sufficient when it
+   finishes close to keydown. That disconfirms "browser renderer-local work is
+   required" and points to a broader CPU/scheduler state effect.
+6. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
    `20ms`, `40ms`, and `150ms` pure busy waits form a descending event-only
    sequence: `21.0ms`, `14.1ms`, and `11.3ms`.
-6. Off-main-thread worker CPU has the same duration response without a main
+7. Off-main-thread worker CPU has the same duration response without a main
    thread completion message: `20ms`, `40ms`, `80ms`, and `150ms` worker spins
    produce `15.5ms`, `12.8ms`, `11.2ms`, and `10.3ms` event-only p50s.
-7. The effect decays with distance from the following key: no-op + `150ms` busy
+8. The effect decays with distance from the following key: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
    around `51ms` before keydown is in the low band. The worker control shows the
    same shape: a no-message `150ms` worker spin is `10.3ms` when it ends about
    `50ms` before keydown, `14.9ms` when it ends about `150ms` before keydown,
    and back on the slow plateau at `24.6ms` when it ends about `253ms` before
    keydown.
-8. The near-key main-thread task is not the mechanism by itself. The
+9. The external child-process control shows the same decay: `8.9ms`, `12.6ms`,
+   and `22.7ms` when its expected CPU burn ends about `50ms`, `151ms`, and
+   `253ms` before keydown.
+10. The near-key main-thread task is not the mechanism by itself. The
    `worker-delay-150` and `delayed-noop-150` controls both create near-key tasks
    with no CPU spin, and both stay on the slow plateau.
-9. Worker creation/lifetime is not the mechanism by itself. The
+11. Worker creation/lifetime is not the mechanism by itself. The
    `worker-delay-150-no-message` control keeps the same worker lifetime shape
    without CPU spin or a completion message, and it stays slow.
 
 That points away from a purely Gutenberg-state explanation and toward
-CPU/scheduler sensitivity around Gutenberg's input path. It
-still does not mean the benchmarked character cycle got cheaper. The
-timer/worker-inclusive values for these artificial controls are `161-194ms`.
+CPU/scheduler sensitivity around Gutenberg's input path. It still does not mean
+the benchmarked character cycle got cheaper. The work-inclusive values for these
+artificial controls are `159-194ms`.
 
 The worker-duration sweep makes the CPU-work interpretation clearer:
 
@@ -1225,13 +1244,15 @@ identical to the main-thread busy waits, especially at `20ms`, but the
 monotonic shape confirms that amount of recent CPU work matters even when that
 work never posts a main-thread completion message.
 
-The worker gap-decay sweep confirms the "recent" part:
+The CPU gap-decay sweep confirms the "recent" part:
 
-![Worker gap decay](figures/53-worker-gap-decay.png)
+![CPU gap decay](figures/53-worker-gap-decay.png)
 
 The same `150ms` no-message worker spin is fast only near the next key. Moving
-it earlier makes it intermediate and then slow again. This matters because it
-rules out a broad warmup explanation where one worker spin simply leaves the
+it earlier makes it intermediate and then slow again. A separate Node child
+process burning CPU shows the same proximity-sensitive shape, so the effect is
+not confined to browser renderer-local worker scheduling. This matters because
+it rules out a broad warmup explanation where one worker spin simply leaves the
 browser fast for the rest of the delay run.
 
 I also added a native `contenteditable` control with the same rewritten
@@ -2617,10 +2638,10 @@ The current model is:
 2. Gutenberg's rich-text persistence timer fires while that key is still held.
 3. The next synthetic keypress runs Gutenberg's heavier editor input path,
    visible mostly as `keypress` `EventDispatch` duration.
-4. Recent timer-side work near the next key modulates that measured path. Later
-   task-end, worker, and native busy-timer controls show this modulation is not
-   purely semantic editor state, but Gutenberg's editor stack is needed for the
-   large absolute swing.
+4. Recent CPU work near the next key modulates that measured path. Later
+   task-end, worker, external child-process, and native busy-timer controls show
+   this modulation is not purely semantic editor state, but Gutenberg's editor
+   stack is needed for the large absolute swing.
 
 This is narrower than the previous conclusion. The timer/key-hold timing is a
 necessary diagnostic signal in the Gutenberg traces, but not sufficient without
@@ -3283,6 +3304,9 @@ The key runs used in this report were:
     `task_end_worker_busy_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_busy_no_message_150_timeout_1000_delay_1300`,
     `task_end_worker_busy_no_message_150_timeout_900_delay_1300`,
+    `task_end_external_cpu_no_message_150_timeout_1100_delay_1300`,
+    `task_end_external_cpu_no_message_150_timeout_1000_delay_1300`,
+    `task_end_external_cpu_no_message_150_timeout_900_delay_1300`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,
