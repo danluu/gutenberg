@@ -1,0 +1,103 @@
+trace_type,intervention,action_name,category,n_actions,count_p50,duration_sum_p50_ms,listener_count_max
+all data spans,normal marker,updateBlockAttributes,emit:store:core/block-editor,5,4501,0.6999998092651367,4501
+all data spans,normal marker,updateBlockAttributes,reduxListener:core/block-editor,5,4501,2.299999475479126,4501
+all data spans,normal marker,updateBlockAttributes,rootSubscribe:core/block-editor,5,1,3.1000001430511475,4501
+all data spans,normal marker,updateBlockAttributes,resume:registry:,4,1,0,1
+all data spans,normal marker,updateBlockAttributes,data.registry.batch.resumeRegistry,4,1,0,
+all data spans,normal marker,updateBlockAttributes,resume:store:core/data,4,1,0,1
+all data spans,normal marker,updateBlockAttributes,data.registry.batch.resumeStore,4,9,12.149999976158142,
+all data spans,normal marker,updateBlockAttributes,resume:store:core/rich-text,4,1,0,1236
+all data spans,normal marker,updateBlockAttributes,resume:store:core/blocks,4,1,0,3617
+all data spans,normal marker,updateBlockAttributes,resume:store:core/keyboard-shortcuts,4,1,0,3
+all data spans,normal marker,updateBlockAttributes,resume:store:core/preferences,4,1,0,26
+all data spans,normal marker,updateBlockAttributes,resume:store:core/commands,4,1,0,2
+all data spans,normal marker,updateBlockAttributes,resume:store:core/notices,4,1,0,3
+all data spans,normal marker,updateBlockAttributes,resume:store:core/upload-media,4,1,0,2
+all data spans,normal marker,updateBlockAttributes,emitterListener:registry::registry subscriber,4,1,0.3999999761581421,1
+all data spans,normal marker,updateBlockAttributes,notify:registry:,4,1,0.3999999761581421,1
+all data spans,normal marker,updateBlockAttributes,emit:registry:,4,1,0.3999999761581421,1
+all data spans,normal marker,updateBlockAttributes,emitterListener:store:core/block-editor:registry global listener,4,1,0.3999999761581421,4501
+all data spans,normal marker,updateBlockAttributes,notify:store:core/block-editor,4,1,12.149999976158142,4501
+all data spans,normal marker,updateBlockAttributes,resume:store:core/block-editor,4,1,12.149999976158142,4501
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,emitterListener:registry::registry subscriber,4,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,notify:registry:,4,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,emit:registry:,4,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,reduxListener:core/block-editor,4,4501,21.90000021457672,4501
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,useSelect.mapSelect,4,670,5.150000333786011,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,useSelect.updateValue,4,670,6.2000004053115845,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,useSelect.reactListener,4,670,7.050000309944153,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,useSelect.onStoreChange,4,670,7.700000524520874,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,useSelect.onChange,4,4498,12.299999713897705,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,data.registry.batch.pauseRegistry,1,1,0,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,data.registry.batch.pauseStore,1,18,0.09999990463256836,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,core-data.useEntityBlockEditor.createUndoLevel,1,1,0.20000004768371582,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,core-data.useEntityBlockEditor.onChange.total,1,1,0.20000004768371582,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,block-editor.useBlockSync.updateParent,1,1,0.20000004768371582,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,data.registry.batch.callback,1,1,0.3000001907348633,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:registry:,1,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,data.registry.batch.resumeRegistry,1,1,0,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/data,1,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,data.registry.batch.resumeStore,1,18,0.09999990463256836,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/rich-text,1,1,0,1236
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/blocks,1,1,0,3617
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/keyboard-shortcuts,1,1,0,3
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/preferences,1,1,0,26
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/commands,1,1,0,2
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/notices,1,1,0,3
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/upload-media,1,1,0,2
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/block-editor,1,1,0,4501
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core,1,1,0,47
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/patterns,1,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/viewport,1,1,0,3
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/media-editor,1,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/interface,1,1,0,10
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/editor,1,1,0,49
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/edit-post,1,1,0,5
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/block-directory,1,1,0,3
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,resume:store:core/abilities,1,1,0,1
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,data.registry.batch.total,1,1,0.5,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,block-editor.useBlockSync.registryBatch,1,1,0.5,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,useSelect.renderQueueAdd,4,3828,1.6000005006790161,
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,rootSubscribe:core/block-editor,4,1,23.200000166893005,4501
+all data spans,marker no-op,updateBlockAttributes,emit:store:core/block-editor,5,4508,1.200000286102295,4501
+all data spans,marker no-op,updateBlockAttributes,reduxListener:core/block-editor,5,4507,3.0999999046325684,4501
+all data spans,marker no-op,updateBlockAttributes,rootSubscribe:core/block-editor,5,1,4,4501
+all data spans,marker no-op,updateBlockAttributes,data.registry.batch.resumeRegistry,5,1,0,
+all data spans,marker no-op,updateBlockAttributes,resume:registry:,3,1,0,1
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/data,3,1,0,1
+all data spans,marker no-op,updateBlockAttributes,data.registry.batch.resumeStore,3,9,15.100000143051147,
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/rich-text,3,1,0,1236
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/blocks,3,1,0,3617
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/keyboard-shortcuts,3,1,0,3
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/preferences,3,1,0,26
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/commands,3,1,0,2
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/notices,3,1,0,3
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/upload-media,3,1,0,2
+all data spans,marker no-op,updateBlockAttributes,emitterListener:registry::registry subscriber,3,1,0.5,1
+all data spans,marker no-op,updateBlockAttributes,notify:registry:,3,1,0.5,1
+all data spans,marker no-op,updateBlockAttributes,emit:registry:,3,1,0.5,1
+all data spans,marker no-op,updateBlockAttributes,emitterListener:store:core/block-editor:registry global listener,3,1,0.5,4501
+all data spans,marker no-op,updateBlockAttributes,notify:store:core/block-editor,3,1,15.100000143051147,4501
+all data spans,marker no-op,updateBlockAttributes,resume:store:core/block-editor,3,1,15.100000143051147,4501
+all data spans,mark next not persistent,updateBlockAttributes,emit:store:core/block-editor,5,4501,0.5999999046325684,4501
+all data spans,mark next not persistent,updateBlockAttributes,reduxListener:core/block-editor,5,4501,2.4999990463256836,4501
+all data spans,mark next not persistent,updateBlockAttributes,rootSubscribe:core/block-editor,5,1,3.1999998092651367,4501
+all data spans,mark next not persistent,updateBlockAttributes,resume:registry:,3,1,0,1
+all data spans,mark next not persistent,updateBlockAttributes,data.registry.batch.resumeRegistry,3,1,0,
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/data,3,1,0,1
+all data spans,mark next not persistent,updateBlockAttributes,data.registry.batch.resumeStore,3,9,12.799999952316284,
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/rich-text,3,1,0,1236
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/blocks,3,1,0,3617
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/keyboard-shortcuts,3,1,0,3
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/preferences,3,1,0,26
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/commands,3,1,0,2
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/notices,3,1,0,3
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/upload-media,3,1,0,2
+all data spans,mark next not persistent,updateBlockAttributes,emitterListener:registry::registry subscriber,3,1,0.5,1
+all data spans,mark next not persistent,updateBlockAttributes,notify:registry:,3,1,0.5,1
+all data spans,mark next not persistent,updateBlockAttributes,emit:registry:,3,1,0.5,1
+all data spans,mark next not persistent,updateBlockAttributes,emitterListener:store:core/block-editor:registry global listener,3,1,0.5,4501
+all data spans,mark next not persistent,updateBlockAttributes,notify:store:core/block-editor,3,1,12.799999952316284,4501
+all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/block-editor,3,1,12.799999952316284,4501
+all data spans,mark next not persistent,__unstableMarkNextChangeAsNotPersistent,rootSubscribe:core/block-editor,4,1,0,4501
+all data spans,mark next not persistent,__unstableMarkLastChangeAsPersistent,rootSubscribe:core/block-editor,4,1,0,4501

@@ -61,6 +61,27 @@ const timeoutRewriteRuns = [
 	},
 ];
 
+const allDataSpanRuns = [
+	{
+		runId: 'marker_normal_allspans_1000',
+		traceType: 'all data spans',
+		intervention: 'normal marker',
+		dir: 'artifacts/typing-delay-mark-normal-allspans-1000',
+	},
+	{
+		runId: 'marker_noop_allspans_1000',
+		traceType: 'all data spans',
+		intervention: 'marker no-op',
+		dir: 'artifacts/typing-delay-mark-noop-allspans-1000',
+	},
+	{
+		runId: 'marker_next_not_persistent_allspans_1000',
+		traceType: 'all data spans',
+		intervention: 'mark next not persistent',
+		dir: 'artifacts/typing-delay-mark-next-not-persistent-allspans-1000',
+	},
+];
+
 function newestJson( dir ) {
 	const absDir = path.join( repoRoot, dir );
 	if ( ! fs.existsSync( absDir ) ) {
@@ -157,25 +178,64 @@ function readRuns() {
 
 const loadedRuns = readRuns();
 
-const loadedTimeoutRewriteRuns = timeoutRewriteRuns
-	.map( ( run ) => {
-		const jsonPath = newestJson( run.dir );
-		if ( ! jsonPath ) {
-			return null;
-		}
+function readOptionalRuns( optionalRuns ) {
+	return optionalRuns
+		.map( ( run ) => {
+			const jsonPath = newestJson( run.dir );
+			if ( ! jsonPath ) {
+				return null;
+			}
 
-		// eslint-disable-next-line no-console
-		console.log( `Reading ${ path.relative( repoRoot, jsonPath ) }` );
-		return {
-			...run,
-			jsonPath,
-			data: JSON.parse( fs.readFileSync( jsonPath, 'utf8' ) ),
-		};
-	} )
-	.filter( Boolean );
+			// eslint-disable-next-line no-console
+			console.log( `Reading ${ path.relative( repoRoot, jsonPath ) }` );
+			return {
+				...run,
+				jsonPath,
+				data: JSON.parse( fs.readFileSync( jsonPath, 'utf8' ) ),
+			};
+		} )
+		.filter( Boolean );
+}
+
+const loadedTimeoutRewriteRuns = readOptionalRuns( timeoutRewriteRuns );
+const loadedAllDataSpanRuns = readOptionalRuns( allDataSpanRuns );
 
 function summaryKey( row ) {
 	return `${ row.delayMs }\t${ row.round }\t${ row.editorSetupIndex }`;
+}
+
+function spanCategory( event ) {
+	const metadata = event.metadata || {};
+	if ( event.name === 'data.reduxStore.rootSubscribe' ) {
+		return `rootSubscribe:${ metadata.storeName || '' }`;
+	}
+	if ( event.name === 'data.reduxStore.listener' ) {
+		return `reduxListener:${ metadata.storeName || '' }`;
+	}
+	if ( event.name.startsWith( 'data.useSelect.' ) ) {
+		return event.name.replace( 'data.useSelect.', 'useSelect.' );
+	}
+	if ( event.name === 'data.emitter.notifyListeners' ) {
+		return `notify:${ metadata.emitterKind || '' }:${
+			metadata.storeName || ''
+		}`;
+	}
+	if ( event.name === 'data.emitter.listener' ) {
+		return `emitterListener:${ metadata.emitterKind || '' }:${
+			metadata.storeName || ''
+		}:${ metadata.listenerType || '' }`;
+	}
+	if ( event.name === 'data.emitter.emit' ) {
+		return `emit:${ metadata.emitterKind || '' }:${
+			metadata.storeName || ''
+		}`;
+	}
+	if ( event.name === 'data.emitter.resume' ) {
+		return `resume:${ metadata.emitterKind || '' }:${
+			metadata.storeName || ''
+		}`;
+	}
+	return event.name;
 }
 
 function buildPairedRows( runsToPair ) {
@@ -454,6 +514,291 @@ const actionDurationRows = Array.from(
 	};
 } );
 
+function sumSpanDuration( spans, predicate ) {
+	return spans
+		.filter( predicate )
+		.reduce( ( sum, span ) => sum + ( span.durationMs || 0 ), 0 );
+}
+
+function countSpans( spans, predicate ) {
+	return spans.filter( predicate ).length;
+}
+
+function maxListenerCount( spans, predicate ) {
+	const listenerCounts = spans
+		.filter( predicate )
+		.map( ( span ) => span.metadata?.listenerCount )
+		.filter( ( value ) => Number.isFinite( value ) );
+	return listenerCounts.length ? Math.max( ...listenerCounts ) : null;
+}
+
+function maxFinite( values ) {
+	const finiteValues = values.filter( ( value ) => Number.isFinite( value ) );
+	return finiteValues.length ? Math.max( ...finiteValues ) : null;
+}
+
+const allSpanActionRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
+	run.data.delayRunSummaries.flatMap( ( summary ) => {
+		const spans = summary.dataSpanEvents || [];
+		return ( summary.dataEvents || [] )
+			.filter(
+				( event ) =>
+					event.storeName === 'core/block-editor' &&
+					[
+						'__unstableMarkLastChangeAsPersistent',
+						'__unstableMarkNextChangeAsNotPersistent',
+						'updateBlockAttributes',
+					].includes( event.actionName )
+			)
+			.map( ( action, actionIndex ) => {
+				const actionStart = action.nowMs;
+				const actionStop = action.nowMs + action.durationMs;
+				const actionSpans = spans.filter(
+					( span ) =>
+						span.startedAtMs >= actionStart &&
+						span.startedAtMs <= actionStop
+				);
+				const blockEditorRootSubscribe = ( span ) =>
+					span.name === 'data.reduxStore.rootSubscribe' &&
+					span.metadata?.storeName === 'core/block-editor';
+				const blockEditorReduxListener = ( span ) =>
+					span.name === 'data.reduxStore.listener' &&
+					span.metadata?.storeName === 'core/block-editor';
+
+				return {
+					run_id: run.runId,
+					trace_type: run.traceType,
+					intervention: run.intervention,
+					delay_ms: summary.delayMs,
+					round: summary.round,
+					action_name: action.actionName,
+					action_index: actionIndex,
+					action_duration_ms: action.durationMs,
+					span_count: actionSpans.length,
+					block_editor_listener_count: maxListenerCount(
+						actionSpans,
+						blockEditorRootSubscribe
+					),
+					root_subscribe_count: countSpans(
+						actionSpans,
+						blockEditorRootSubscribe
+					),
+					root_subscribe_duration_ms: sumSpanDuration(
+						actionSpans,
+						blockEditorRootSubscribe
+					),
+					redux_listener_count: countSpans(
+						actionSpans,
+						blockEditorReduxListener
+					),
+					redux_listener_duration_ms: sumSpanDuration(
+						actionSpans,
+						blockEditorReduxListener
+					),
+					use_select_on_change_count: countSpans(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.onChange'
+					),
+					use_select_on_change_duration_ms: sumSpanDuration(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.onChange'
+					),
+					use_select_map_select_count: countSpans(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.mapSelect'
+					),
+					use_select_map_select_duration_ms: sumSpanDuration(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.mapSelect'
+					),
+					use_select_render_queue_add_count: countSpans(
+						actionSpans,
+						( span ) =>
+							span.name === 'data.useSelect.renderQueueAdd'
+					),
+					use_select_render_queue_add_duration_ms: sumSpanDuration(
+						actionSpans,
+						( span ) =>
+							span.name === 'data.useSelect.renderQueueAdd'
+					),
+					registry_batch_total_duration_ms: sumSpanDuration(
+						actionSpans,
+						( span ) => span.name === 'data.registry.batch.total'
+					),
+					use_block_sync_batch_duration_ms: sumSpanDuration(
+						actionSpans,
+						( span ) =>
+							span.name ===
+							'block-editor.useBlockSync.registryBatch'
+					),
+				};
+			} );
+	} )
+);
+
+const allSpanActionSummaryRows = Array.from(
+	groupedBy(
+		allSpanActionRows,
+		( row ) => `${ row.intervention }\t${ row.action_name }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		action_name: first.action_name,
+		n: rows.length,
+		action_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.action_duration_ms ),
+			0.5
+		),
+		span_count_p50: quantile(
+			rows.map( ( row ) => row.span_count ),
+			0.5
+		),
+		block_editor_listener_count_max: maxFinite(
+			rows.map( ( row ) => row.block_editor_listener_count )
+		),
+		root_subscribe_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.root_subscribe_duration_ms ),
+			0.5
+		),
+		redux_listener_count_p50: quantile(
+			rows.map( ( row ) => row.redux_listener_count ),
+			0.5
+		),
+		use_select_on_change_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_on_change_count ),
+			0.5
+		),
+		use_select_map_select_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_map_select_count ),
+			0.5
+		),
+		registry_batch_total_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.registry_batch_total_duration_ms ),
+			0.5
+		),
+	};
+} );
+
+const allSpanCategoryRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
+	run.data.delayRunSummaries.flatMap( ( summary ) => {
+		const spans = summary.dataSpanEvents || [];
+		return ( summary.dataEvents || [] )
+			.filter(
+				( event ) =>
+					event.storeName === 'core/block-editor' &&
+					[
+						'__unstableMarkLastChangeAsPersistent',
+						'__unstableMarkNextChangeAsNotPersistent',
+						'updateBlockAttributes',
+					].includes( event.actionName )
+			)
+			.flatMap( ( action, actionIndex ) => {
+				const actionStart = action.nowMs;
+				const actionStop = action.nowMs + action.durationMs;
+				const groupedSpans = groupedBy(
+					spans.filter(
+						( span ) =>
+							span.startedAtMs >= actionStart &&
+							span.startedAtMs <= actionStop
+					),
+					spanCategory
+				);
+
+				return Array.from( groupedSpans.entries() ).map(
+					( [ category, categorySpans ] ) => ( {
+						run_id: run.runId,
+						trace_type: run.traceType,
+						intervention: run.intervention,
+						delay_ms: summary.delayMs,
+						round: summary.round,
+						action_name: action.actionName,
+						action_index: actionIndex,
+						category,
+						count: categorySpans.length,
+						duration_sum_ms: categorySpans.reduce(
+							( sum, span ) => sum + ( span.durationMs || 0 ),
+							0
+						),
+						listener_count_max: maxListenerCount(
+							categorySpans,
+							() => true
+						),
+					} )
+				);
+			} );
+	} )
+);
+
+const allSpanCategorySummaryRows = Array.from(
+	groupedBy(
+		allSpanCategoryRows,
+		( row ) =>
+			`${ row.intervention }\t${ row.action_name }\t${ row.category }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		action_name: first.action_name,
+		category: first.category,
+		n_actions: rows.length,
+		count_p50: quantile(
+			rows.map( ( row ) => row.count ),
+			0.5
+		),
+		duration_sum_p50_ms: quantile(
+			rows.map( ( row ) => row.duration_sum_ms ),
+			0.5
+		),
+		listener_count_max: maxFinite(
+			rows.map( ( row ) => row.listener_count_max )
+		),
+	};
+} );
+
+const richTextRows = loadedRuns.flatMap( ( run ) =>
+	run.traceType === 'span trace'
+		? run.data.delayRunSummaries.flatMap( ( summary ) =>
+				( summary.richTextSpanEvents || [] ).map( ( event ) => ( {
+					run_id: run.runId,
+					trace_type: run.traceType,
+					intervention: run.intervention,
+					delay_ms: summary.delayMs,
+					name: event.name,
+					duration_ms: event.durationMs,
+				} ) )
+		  )
+		: []
+);
+
+const richTextSummaryRows = Array.from(
+	groupedBy(
+		richTextRows,
+		( row ) => `${ row.intervention }\t${ row.delay_ms }\t${ row.name }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		delay_ms: first.delay_ms,
+		name: first.name,
+		n: rows.length,
+		duration_p50_ms: quantile(
+			rows.map( ( row ) => row.duration_ms ),
+			0.5
+		),
+		duration_sum_ms: rows.reduce(
+			( sum, row ) => sum + row.duration_ms,
+			0
+		),
+	};
+} );
+
 const pathRows = loadedRuns.flatMap( ( run ) =>
 	run.data.delayRunSummaries.flatMap( ( summary ) =>
 		( summary.dataSpanEvents || [] )
@@ -682,6 +1027,88 @@ writeCsv(
 		'duration_mean_ms',
 		'before_persistent_count',
 		'after_persistent_count',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-marker-allspan-action-samples.csv'
+	),
+	allSpanActionRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'round',
+		'action_name',
+		'action_index',
+		'action_duration_ms',
+		'span_count',
+		'block_editor_listener_count',
+		'root_subscribe_count',
+		'root_subscribe_duration_ms',
+		'redux_listener_count',
+		'redux_listener_duration_ms',
+		'use_select_on_change_count',
+		'use_select_on_change_duration_ms',
+		'use_select_map_select_count',
+		'use_select_map_select_duration_ms',
+		'use_select_render_queue_add_count',
+		'use_select_render_queue_add_duration_ms',
+		'registry_batch_total_duration_ms',
+		'use_block_sync_batch_duration_ms',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-marker-allspan-action-summary.csv'
+	),
+	allSpanActionSummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'action_name',
+		'n',
+		'action_duration_p50_ms',
+		'span_count_p50',
+		'block_editor_listener_count_max',
+		'root_subscribe_duration_p50_ms',
+		'redux_listener_count_p50',
+		'use_select_on_change_count_p50',
+		'use_select_map_select_count_p50',
+		'registry_batch_total_duration_p50_ms',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-marker-allspan-category-summary.csv'
+	),
+	allSpanCategorySummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'action_name',
+		'category',
+		'n_actions',
+		'count_p50',
+		'duration_sum_p50_ms',
+		'listener_count_max',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-richtext-summary.csv' ),
+	richTextSummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'name',
+		'n',
+		'duration_p50_ms',
+		'duration_sum_ms',
 	]
 );
 writeCsv(

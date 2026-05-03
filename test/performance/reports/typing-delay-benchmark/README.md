@@ -206,6 +206,10 @@ The R script derives:
 -   `data/typing-delay-timeout-970-marker-paired-*.csv`: the same paired
     accounting for a targeted run that rewrites Gutenberg's `1000ms` timers to
     `970ms`.
+-   `data/typing-delay-marker-allspan-*.csv`: trace-all-data-spans summaries for
+    a small `1000ms` marker-intervention run.
+-   `data/typing-delay-marker-richtext-summary.csv`: RichText span summaries for
+    the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
     path samples and summaries for the marker intervention runs.
 
@@ -863,13 +867,67 @@ event-only magnitude is not identical to the normal `1000ms` run, so this
 supports "the timer moves the boundary" but not a claim that every low-band value
 is determined by the timer alone.
 
-One piece remains open. The source spans show that the direct
-`useEntityBlockEditor()` `onChange` / `onInput` calls are tiny in the measured
-task, and `onChange` does not serialize post content immediately; it installs a
-content serialization function for later. The remaining measured difference is
-still downstream data/subscriber and/or React scheduling fanout. The new
-interventions prove that the timer, marker action, and accounting window matter,
-but not every subscriber or commit that makes the measured slices differ.
+I then reran a very small `1000ms` pass with
+`BENCHMARK_TRACE_ALL_DATA_SPANS=1`. This mode is intentionally heavy; the
+absolute timings are inflated by the tracing itself. The useful signal is the
+shape of the work.
+
+![All-span marker action duration](figures/30-marker-allspan-action-duration.png)
+
+The real marker task is not a cheap flag flip:
+
+| Intervention             | Action                   | p50 action | p50 spans in action | p50 listener spans | p50 `useSelect.onChange` calls |
+| ------------------------ | ------------------------ | ---------: | ------------------: | -----------------: | -----------------------------: |
+| normal marker            | mark last persistent     |   `23.4ms` |             `15511` |             `4501` |                         `4498` |
+| marker no-op             | mark last persistent     |    `0.1ms` |                 `0` |                `0` |                            `0` |
+| mark next not persistent | mark last persistent     |    `0.2ms` |                 `1` |                `0` |                            `0` |
+| mark next not persistent | mark next not persistent |    `0.1ms` |                 `1` |                `0` |                            `0` |
+| normal marker            | update block attributes  |    `3.3ms` |              `9028` |             `4501` |                            `0` |
+| marker no-op             | update block attributes  |    `4.7ms` |              `9041` |             `4507` |                            `0` |
+| mark next not persistent | update block attributes  |    `3.8ms` |              `9024` |             `4501` |                            `0` |
+
+That confirms the marker-inclusive accounting: the omitted timer work is mostly
+`core/block-editor` subscriber fanout, including thousands of `useSelect`
+callbacks. It also disconfirms another too-simple theory: the marker is not just
+changing one reducer flag and making the next key fast. In the normal-marker
+case it runs a large subscriber pass before the next key. The no-op and
+mark-next interventions do not. The mark-next marker rows do have one
+`rootSubscribe` span with listener-count metadata, but they have zero listener
+callback spans, zero `useSelect` callbacks, and `0ms` p50 root-subscribe
+duration, so they are not doing the normal marker's subscriber fanout.
+
+The remaining event-only input cost is still concentrated inside RichText's
+`registry.batch()`:
+
+![RichText marker batch breakdown](figures/31-marker-richtext-batch-breakdown.png)
+
+Selected `1000ms` p50 spans:
+
+| Intervention             | RichText total | `registry.batch` | parent callback | selection callback | apply record | serialize |
+| ------------------------ | -------------: | ---------------: | --------------: | -----------------: | -----------: | --------: |
+| normal marker            |       `18.6ms` |         `18.5ms` |         `1.9ms` |            `1.8ms` |      `0.0ms` |   `0.0ms` |
+| marker no-op             |       `24.4ms` |         `24.1ms` |         `2.8ms` |            `2.8ms` |      `0.2ms` |   `0.0ms` |
+| mark next not persistent |       `32.8ms` |         `32.4ms` |         `4.4ms` |            `3.6ms` |      `0.1ms` |   `0.0ms` |
+
+This confirms that the event-only difference is not DOM application,
+serialization, or the direct `useEntityBlockEditor()` callback. It is the
+batched data/subscriber work under RichText input handling. The all-span run
+shows the normal marker also pays a separate subscriber pass in the timer task,
+which the event-only metric excludes.
+
+One piece remains open. The traces now identify the two expensive regions:
+
+1. the normal marker timer task, which is a large `core/block-editor`
+   subscriber fanout; and
+2. the next input's RichText `registry.batch()`, whose p50 still differs across
+   interventions.
+
+They do not yet identify the exact React commit or subscriber subset that makes
+the normal marker's following `registry.batch()` shorter than the no-op and
+mark-next variants. The supported statement is therefore narrower: timer
+ordering and marker dispatch explain the false event-only low band, and the
+visible work is data/subscriber fanout; the exact downstream subscriber/commit
+that changes the next batch remains to be isolated.
 
 Reasoning audit:
 
@@ -1878,6 +1936,10 @@ The key runs used in this report were:
 -   `marker_noop_spans`: same span trace with the marker action no-opped.
 -   `marker_next_not_persistent_spans`: same span trace with the
     `mark next not persistent` intervention.
+-   `marker_normal_allspans_1000`, `marker_noop_allspans_1000`,
+    `marker_next_not_persistent_allspans_1000`: small `1000ms` runs with
+    `BENCHMARK_TRACE_ALL_DATA_SPANS=1` to expose non-batch data spans inside the
+    marker task.
 
 The local environment used `nvm` default Node `v20.20.2`.
 

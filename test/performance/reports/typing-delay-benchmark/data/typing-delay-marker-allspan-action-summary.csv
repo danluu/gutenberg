@@ -1,0 +1,8 @@
+trace_type,intervention,action_name,n,action_duration_p50_ms,span_count_p50,block_editor_listener_count_max,root_subscribe_duration_p50_ms,redux_listener_count_p50,use_select_on_change_count_p50,use_select_map_select_count_p50,registry_batch_total_duration_p50_ms
+all data spans,normal marker,updateBlockAttributes,5,3.3000001907348633,9028,4501,3.1000001430511475,4501,0,0,0
+all data spans,normal marker,__unstableMarkLastChangeAsPersistent,4,23.350000023841858,15511,4501,23.200000166893005,4501,4498,670,0
+all data spans,marker no-op,updateBlockAttributes,5,4.699999809265137,9041,4501,4,4507,0,0,0
+all data spans,marker no-op,__unstableMarkLastChangeAsPersistent,4,0.10000002384185791,0,,0,0,0,0,0
+all data spans,mark next not persistent,updateBlockAttributes,5,3.799999952316284,9024,4501,3.1999998092651367,4501,0,0,0
+all data spans,mark next not persistent,__unstableMarkNextChangeAsNotPersistent,4,0.10000002384185791,1,4501,0,0,0,0,0
+all data spans,mark next not persistent,__unstableMarkLastChangeAsPersistent,4,0.15000009536743164,1,4501,0,0,0,0,0

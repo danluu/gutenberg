@@ -3326,4 +3326,117 @@ if (file.exists(timeout_970_marker_summary_path)) {
 	)
 }
 
+marker_allspan_action_path <- file.path(data_dir, "typing-delay-marker-allspan-action-summary.csv")
+if (file.exists(marker_allspan_action_path)) {
+	marker_allspan_action <- read_csv(marker_allspan_action_path, show_col_types = FALSE) %>%
+		filter(action_name %in% c(
+			"__unstableMarkLastChangeAsPersistent",
+			"__unstableMarkNextChangeAsNotPersistent",
+			"updateBlockAttributes"
+		)) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			action_label = recode(
+				action_name,
+				`__unstableMarkLastChangeAsPersistent` = "mark last persistent",
+				`__unstableMarkNextChangeAsNotPersistent` = "mark next not persistent",
+				updateBlockAttributes = "update block attributes"
+			),
+			action_label = factor(
+				action_label,
+				levels = c("mark last persistent", "mark next not persistent", "update block attributes")
+			)
+		)
+
+	save_plot(
+		ggplot(marker_allspan_action, aes(intervention, action_duration_p50_ms, color = action_label, shape = action_label)) +
+			geom_point(size = 3.4, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`mark last persistent` = 16,
+				`mark next not persistent` = 17,
+				`update block attributes` = 15
+			), drop = FALSE) +
+			labs(
+				title = "The real marker task is not a cheap flag flip",
+				subtitle = "Trace-all-data-spans run at 1000ms; absolute durations include instrumentation overhead",
+				x = "Timer callback intervention",
+				y = "Action duration, p50 (ms)",
+				color = "Action",
+				shape = "Action"
+			),
+		"30-marker-allspan-action-duration.png",
+		width = 11,
+		height = 7
+	)
+}
+
+marker_richtext_summary_path <- file.path(data_dir, "typing-delay-marker-richtext-summary.csv")
+if (file.exists(marker_richtext_summary_path)) {
+	richtext_selected_names <- c(
+		"rich-text.onInput.total",
+		"rich-text.handleChange.registryBatch",
+		"rich-text.handleChange.onChange",
+		"rich-text.handleChange.onSelectionChange",
+		"rich-text.handleChange.applyRecord",
+		"rich-text.handleChange.serialize"
+	)
+	marker_richtext_summary <- read_csv(marker_richtext_summary_path, show_col_types = FALSE) %>%
+		filter(delay_ms == 1000, name %in% richtext_selected_names) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			span_label = recode(
+				name,
+				`rich-text.onInput.total` = "RichText input total",
+				`rich-text.handleChange.registryBatch` = "registry.batch",
+				`rich-text.handleChange.onChange` = "parent onChange/onInput",
+				`rich-text.handleChange.onSelectionChange` = "selection callback",
+				`rich-text.handleChange.applyRecord` = "apply record",
+				`rich-text.handleChange.serialize` = "serialize"
+			),
+			span_label = factor(
+				span_label,
+				levels = c(
+					"RichText input total",
+					"registry.batch",
+					"parent onChange/onInput",
+					"selection callback",
+					"apply record",
+					"serialize"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(marker_richtext_summary, aes(intervention, duration_p50_ms, color = span_label, shape = span_label)) +
+			geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.65)) +
+			scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`RichText input total` = 16,
+				`registry.batch` = 15,
+				`parent onChange/onInput` = 17,
+				`selection callback` = 3,
+				`apply record` = 8,
+				serialize = 4
+			), drop = FALSE) +
+			labs(
+				title = "The remaining input cost is inside registry.batch",
+				subtitle = "Source-level RichText spans from the trace-heavy 1000ms marker-intervention runs",
+				x = "Timer callback intervention",
+				y = "Span duration, p50 (ms)",
+				color = "RichText span",
+				shape = "RichText span"
+			),
+		"31-marker-richtext-batch-breakdown.png",
+		width = 12,
+		height = 7
+	)
+}
+
 message("Wrote plots to: ", figure_dir)
