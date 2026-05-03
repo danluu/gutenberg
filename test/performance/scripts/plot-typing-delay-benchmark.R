@@ -3467,6 +3467,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					intervention,
 					levels = c(
 						"marker no-op",
+						"busy wait 20ms",
+						"busy wait 40ms",
 						"no-op + busy wait 150ms",
 						"normal marker + busy wait 150ms",
 						"stop/start + busy wait 150ms"
@@ -3504,9 +3506,11 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			) +
 				geom_point(size = 3.3, alpha = 0.9) +
 				facet_wrap(~metric, ncol = 1, scales = "free_y") +
-				scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
 				scale_shape_manual(values = c(
 					`marker no-op` = 17,
+					`busy wait 20ms` = 3,
+					`busy wait 40ms` = 8,
 					`no-op + busy wait 150ms` = 4,
 					`normal marker + busy wait 150ms` = 16,
 					`stop/start + busy wait 150ms` = 15

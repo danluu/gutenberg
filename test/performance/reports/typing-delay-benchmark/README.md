@@ -78,8 +78,11 @@ The short version:
     keydown (`11.3ms` p50). The same no-op busy wait ending about `151ms` before
     keydown is intermediate (`15.1ms` p50), and a zero-duration no-op ending
     about `53ms` before keydown is slow (`24.6ms` p50). The current best model is
-    therefore recent main-thread activity / scheduler state plus Gutenberg
-    input work, not a purely semantic editor-state transition.
+    therefore recent main-thread activity / scheduler state plus Gutenberg input
+    work, not a purely semantic editor-state transition. A small duration sweep
+    supports that: pure `20ms`, `40ms`, and `150ms` busy waits ending about
+    `51ms` before keydown had event-only p50s of `21.0ms`, `14.1ms`, and
+    `11.3ms`.
 -   Splitting the measured key into `keydown`, `keypress`, and `keyup` shows
     that the intervention gap is almost entirely in the measured `keypress`
     component.
@@ -1098,6 +1101,8 @@ event-only measurement. The new intervention modes are deliberately artificial:
 
 -   `noop-then-busy-wait-150`: do not dispatch a meaningful Gutenberg action;
     just hold the timer task open for `150ms`.
+-   `busy-wait-20` and `busy-wait-40`: hold the timer task open for shorter
+    pure-JS intervals and schedule them to end near the same following keydown.
 -   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
     open for `150ms`.
 -   `stop-start-typing-then-busy-wait-150`: run the stop/start typing
@@ -1111,6 +1116,8 @@ Selected p50s:
 | ------------------------------ | ------------: | ------------------: | -------------: | -------------: | ------------------: |
 | marker no-op                   |      `1250ms` |            `53.4ms` |       `24.6ms` |        `0.0ms` |            `24.6ms` |
 | no-op + busy wait `150ms`      |      `1000ms` |           `150.6ms` |       `15.1ms` |      `150.0ms` |           `164.9ms` |
+| busy wait `20ms`               |      `1230ms` |            `51.0ms` |       `21.0ms` |       `20.0ms` |            `40.1ms` |
+| busy wait `40ms`               |      `1210ms` |            `50.6ms` |       `14.1ms` |       `40.0ms` |            `53.8ms` |
 | no-op + busy wait `150ms`      |      `1100ms` |            `51.0ms` |       `11.3ms` |      `150.0ms` |           `161.0ms` |
 | normal marker + busy wait      |      `1100ms` |            `37.2ms` |        `8.5ms` |      `162.8ms` |           `170.9ms` |
 | stop/start typing + busy wait  |      `1100ms` |            `30.9ms` |        `8.1ms` |      `170.0ms` |           `177.7ms` |
@@ -1127,7 +1134,10 @@ The updated model is narrower and less semantic:
 2. A short effective block-editor fanout close to keydown is sufficient.
 3. A long pure-JS timer task close to keydown is also sufficient, even with no
    Gutenberg state transition.
-4. The effect decays with distance from the following key: no-op + `150ms` busy
+4. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
+   `20ms`, `40ms`, and `150ms` pure busy waits form a descending event-only
+   sequence: `21.0ms`, `14.1ms`, and `11.3ms`.
+5. The effect decays with distance from the following key: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
    around `51ms` before keydown is in the low band.
 
@@ -3150,6 +3160,8 @@ The key runs used in this report were:
     whether moving the timer close to the next key is causal.
 -   `task_end_noop_timeout_1250_delay_1300`,
     `task_end_noop_busy_150_timeout_1000_delay_1300`,
+    `task_end_busy_20_timeout_1230_delay_1300`,
+    `task_end_busy_40_timeout_1210_delay_1300`,
     `task_end_noop_busy_150_timeout_1100_delay_1300`,
     `task_end_normal_busy_150_timeout_1100_delay_1300`, and
     `task_end_stop_start_busy_150_timeout_1100_delay_1300`: fixed `1300ms`

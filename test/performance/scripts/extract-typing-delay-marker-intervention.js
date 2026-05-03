@@ -341,6 +341,20 @@ const taskEndProximityRuns = [
 		dir: 'artifacts/typing-delay-task-end-noop-then-busy-150-timeout-1000-delay-1300',
 	},
 	{
+		runId: 'task_end_busy_20_timeout_1230_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'busy wait 20ms',
+		rewriteTimeoutMs: 1230,
+		dir: 'artifacts/typing-delay-task-end-busy-20-timeout-1230-delay-1300',
+	},
+	{
+		runId: 'task_end_busy_40_timeout_1210_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'busy wait 40ms',
+		rewriteTimeoutMs: 1210,
+		dir: 'artifacts/typing-delay-task-end-busy-40-timeout-1210-delay-1300',
+	},
+	{
 		runId: 'task_end_noop_busy_150_timeout_1100_delay_1300',
 		traceType: 'task end proximity',
 		intervention: 'no-op + busy wait 150ms',
