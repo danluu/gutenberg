@@ -667,6 +667,66 @@ save_plot(
 	height = 7
 )
 
+start_settle_summary_path <- file.path(data_dir, "typing-delay-start-settle-summary.csv")
+if (file.exists(start_settle_summary_path)) {
+	start_settle_summary <- read_csv(start_settle_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			settle_label = factor(settle_label, levels = c("0s", "10s", "60s")),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = paste0(sort(unique(delay_ms)), "ms")),
+			sample_set = factor(sample_set, levels = c("throwaway first sample", "retained samples"))
+		)
+
+	start_settle_retained <- start_settle_summary %>%
+		filter(sample_set == "retained samples")
+
+	save_plot(
+		ggplot(start_settle_retained, aes(delay_label, p50_ms, color = settle_label, shape = settle_label)) +
+			geom_errorbar(
+				aes(ymin = p10_ms, ymax = p90_ms),
+				width = 0.18,
+				position = position_dodge(width = 0.55),
+				alpha = 0.75
+			) +
+			geom_point(position = position_dodge(width = 0.55), size = 3) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Waiting before typing does not move the retained delay regimes",
+				subtitle = "Large-post key-hold run; points are retained-sample p50s and bars are p10-p90",
+				x = "Configured Playwright key-hold delay",
+				y = "Latency (ms)",
+				color = "Wait after editor setup",
+				shape = "Wait after editor setup"
+			),
+		"55-start-settle-retained-regimes.png",
+		width = 9,
+		height = 5.5
+	)
+
+	save_plot(
+		ggplot(start_settle_summary, aes(delay_label, p50_ms, color = settle_label, shape = settle_label)) +
+			geom_errorbar(
+				aes(ymin = p10_ms, ymax = p90_ms),
+				width = 0.18,
+				position = position_dodge(width = 0.55),
+				alpha = 0.75
+			) +
+			geom_point(position = position_dodge(width = 0.55), size = 3) +
+			facet_wrap(~sample_set, ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "The first sample after a delay is a different regime",
+				subtitle = "Throwaway samples are fast even where retained samples are slow; start wait does not remove that",
+				x = "Configured Playwright key-hold delay",
+				y = "Latency p50 (ms)",
+				color = "Wait after editor setup",
+				shape = "Wait after editor setup"
+			),
+		"56-start-settle-throwaway-vs-retained.png",
+		width = 9,
+		height = 7
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

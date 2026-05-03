@@ -25,6 +25,13 @@ The short version:
     `0..2000ms` shows that key-hold and wait-after-keyup are already different
     well before `990ms`; the `1000ms+` targeted traces explain the largest cliff,
     but they do not cover the whole delay-mode effect.
+-   Waiting longer after editor setup before typing starts did not materially
+    change the retained measurements in a targeted `990/1000/1010/1300ms` scan.
+    The default is already `0ms`, so there is no smaller start wait to test in
+    this benchmark. Increasing it to `10s` or `60s` preserved the same slow
+    `990/1300ms` bands and fast `1000/1010ms` band. The bigger start-of-run
+    issue is the first sample after each delay: those throwaway samples are a
+    different, often-fast regime and should stay excluded.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -292,6 +299,7 @@ run:
 -   more rounds and more retained samples per delay;
 -   mixed, ascending, descending, or shuffled delay order;
 -   fresh editor setup per delay;
+-   configurable wait time after editor setup and before typing starts;
 -   persistence-state tracing;
 -   data-action tracing;
 -   timer tracing and timer intervention.
@@ -387,6 +395,8 @@ The R script derives:
     key-hold traces that separate timer-task start, timer-task end, and
     following-key timing, including main-thread, worker, spawn-per-timer
     external child-process, and prestarted external child-process CPU controls.
+-   `data/typing-delay-start-settle-*.csv`: targeted checks for changing the
+    wait after editor setup and before typing starts.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -511,6 +521,52 @@ The full run and the landmark run both preserve per-sample order. After accounti
 for delay regimes, there was no convincing monotonic slowdown over time in these
 runs. That is not proof that long editing sessions are safe; it only says these
 short local runs did not reproduce a simple time-based degradation.
+
+## Start Wait After Editor Setup
+
+The benchmark now also tests the more direct "what if typing starts sooner or
+later after editor setup?" question. The control knob is
+`BENCHMARK_SETTLE_AFTER_EDITOR_SETUP_MS`: after Gutenberg has loaded the fixture,
+inserted/focused the paragraph, and installed any tracing hooks, the benchmark can
+wait before typing the first measured sequence.
+
+The default value is `0ms`, so there is no smaller start wait to test. I compared
+that default against `10s` and `60s` waits using the large-post key-hold path at
+the four delays that best expose the cliff: `990ms`, `1000ms`, `1010ms`, and
+`1300ms`. Each wait setting used 3 rounds, 6 retained samples per delay, and 1
+throwaway sample per delay.
+
+![Start-wait retained regimes](figures/55-start-settle-retained-regimes.png)
+
+Selected retained p50s:
+
+| Start wait |  990ms | 1000ms | 1010ms | 1300ms |
+| ---------- | -----: | -----: | -----: | -----: |
+| `0s`       | `24.2ms` |  `9.8ms` | `10.0ms` | `23.6ms` |
+| `10s`      | `23.6ms` | `10.1ms` |  `9.7ms` | `24.3ms` |
+| `60s`      | `24.6ms` | `10.0ms` | `10.3ms` | `24.0ms` |
+
+That disconfirms a simple start-of-benchmark warmup or cool-down explanation for
+the retained results. Waiting longer before the run does not move the
+`990ms -> 1000ms` cliff, does not make the `1300ms` high plateau disappear, and
+does not create a monotonic "more initial wait means slower/faster" trend. The
+differences are roughly the normal run-to-run noise for this benchmark.
+
+There is a separate first-sample issue, though:
+
+![Start-wait throwaway comparison](figures/56-start-settle-throwaway-vs-retained.png)
+
+The throwaway sample after each delay is often fast even when the retained samples
+for that same delay are slow. For example, the retained `1300ms` p50s are
+`23.6ms`, `24.3ms`, and `24.0ms`, while the throwaway p50s are roughly
+`11.0ms`, `9.6ms`, and `8.7ms`. The retained `990ms` rows show the same pattern.
+That means changing the number of discarded startup samples can bias the slow
+delay regimes much more than changing the pre-typing wait from `0s` to `60s`.
+
+The interpretation is conservative: increasing the pre-run settle time is not a
+fix for this benchmark's main artifacts. Keeping at least one throwaway sample
+per delay remains important because the first character after setup or a delay
+change is not representative of the repeated key-hold steady state.
 
 ## Where The 1000ms Cliff Comes From
 
@@ -3496,6 +3552,7 @@ The key runs used in this report were:
     `task_end_external_background_taskpolicy_qos_background_cpu_noop_timeout_1250_delay_1300`,
     `task_end_external_background_taskpolicy_maintenance_cpu_noop_timeout_1250_delay_1300`,
     `task_end_external_background_idle_noop_timeout_1250_delay_1300`,
+    `start_settle_0`, `start_settle_10000`, `start_settle_60000`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,
