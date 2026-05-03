@@ -1,0 +1,7 @@
+run_id,before_setup_ms,after_setup_ms,placement_label,delay_ms,n,latency_p10_ms,latency_p50_ms,latency_p90_ms,keypress_p50_ms,keyup_p50_ms,pre_setup_idle_p50_ms,active_setup_p50_ms,post_setup_idle_p50_ms,ready_to_run_p50_ms,setup_to_run_gap_p50_ms
+timestamp_audit_after0,0,0,0ms control,1300,6,14.496500000000001,15.652000000000001,18.388999999999996,14.84,0.6255,0,1590,0,0,0
+timestamp_audit_after50,0,50,50ms after setup,1300,6,15.09,16.82,21.1435,16.0685,0.6285000000000001,0,1702.5,62.5,62.5,0
+timestamp_audit_after100,0,100,100ms after setup,1300,6,16.283,17.416,19.8005,16.701999999999998,0.5495000000000001,0,1635,115.5,115.5,0
+timestamp_audit_after250,0,250,250ms after setup,1300,6,18.5165,19.819499999999998,20.3315,19.174,0.6074999999999999,0,1691,273,273,0
+timestamp_audit_after1000,0,1000,1000ms after setup,1300,6,18.4835,20.529,24.223,19.9615,0.609,0,1686.5,1023.5,1023.5,0
+timestamp_audit_before1000,1000,0,1000ms before setup,1300,6,15.426000000000002,16.2105,18.733000000000004,15.315999999999999,0.636,1026.5,1719,0,0,0

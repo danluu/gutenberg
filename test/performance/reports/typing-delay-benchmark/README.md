@@ -53,7 +53,10 @@ The short version:
     and editor have been idle immediately before the measured input. A denser
     `0..30s` onset scan shows that `50ms` after setup is still indistinguishable
     from `0ms`, `100ms` starts to separate, `250ms-1s` is consistently slower,
-    and `30s` reaches the long-idle plateau.
+    and `30s` reaches the long-idle plateau. A timestamp audit now records
+    `setupWorkStarted`, `setupReady`, and `setupStopped` separately; it confirms
+    that a `1000ms` wait before setup is not equivalent to a `1000ms` wait after
+    the editor is ready.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -437,6 +440,9 @@ The R script derives:
     `60s` idle interval before editor setup versus after editor setup.
 -   `data/typing-delay-start-wait-onset-*.csv`: denser first-character checks
     from `0ms` through `30s` after editor setup.
+-   `data/typing-delay-start-wait-timestamp-audit-*.csv`: explicit phase
+    accounting for pre-setup idle, active editor setup, post-setup idle, and
+    run-start timing.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -708,10 +714,43 @@ better than `1.5s`; the robust result is the regime split: `0-50ms` looks hot,
 
 This also separates the first-character start-wait effect from the rich-text
 `1000ms` persistence-timer cliff discussed later. The first-character slowdown
-starts before a one-second timer could be the direct boundary, and the measured
-setup-to-run gap is `0ms` at every point, so the extra time is not hidden between
-setup completion and the measured key. The extra latency again sits mostly in
-the `keypress` trace slice.
+starts before a one-second timer could be the direct boundary. The extra latency
+again sits mostly in the `keypress` trace slice.
+
+I then added explicit setup-phase timestamps to remove an ambiguity in the raw
+accounting. Earlier runs recorded `editorSetupStoppedAtEpochMs` after the
+configured post-setup wait, so the old `setup_to_run_gap` was `0ms` by
+construction. The new fields separate:
+
+-   `setupStarted`: entry to the setup helper;
+-   `setupWorkStarted`: after any configured pre-setup wait;
+-   `setupReady`: after the editor is loaded, focused, and tracing hooks are
+    reset;
+-   `setupStopped`: after any configured post-setup wait.
+
+![Start-wait timestamp phases](figures/70-start-wait-timestamp-phases.png)
+
+![Start-wait timestamp latency](figures/71-start-wait-timestamp-latency.png)
+
+Timestamp-audit p50s:
+
+| Placement | Latency p50 | Pre-setup idle p50 | Active setup p50 | Post-setup idle p50 |
+| --------- | ----------: | -----------------: | ---------------: | ------------------: |
+| `0ms` control | `15.7ms` | `0ms` | `1590ms` | `0ms` |
+| `50ms` after setup | `16.8ms` | `0ms` | `1703ms` | `63ms` |
+| `100ms` after setup | `17.4ms` | `0ms` | `1635ms` | `116ms` |
+| `250ms` after setup | `19.8ms` | `0ms` | `1691ms` | `273ms` |
+| `1000ms` after setup | `20.5ms` | `0ms` | `1687ms` | `1024ms` |
+| `1000ms` before setup | `16.2ms` | `1027ms` | `1719ms` | `0ms` |
+
+This is a timestamp audit, not a replacement for the larger onset scan above:
+it has 6 samples per setting, so its latency p50s are noisier. Its job is to
+prove placement. It shows that the post-setup knob really creates editor-ready
+idle time immediately before the run, and that moving the same `1000ms` idle
+before setup leaves `setupReady -> runStart` at `0ms` and returns to the hot
+first-input distribution. That closes the loophole where "time before the
+benchmark starts" might have meant total wall-clock time inside the setup helper
+rather than idle time after the editor is ready.
 
 In the original six-sample first-character run, the `0s` and `60s` p10-p90
 bands do not overlap, so the effect is large relative to the observed
@@ -3894,6 +3933,9 @@ The key runs used in this report were:
     `start_wait_onset_1500`, `start_wait_onset_2000`,
     `start_wait_onset_5000`, `start_wait_onset_10000`,
     `start_wait_onset_30000`,
+    `timestamp_audit_after0`, `timestamp_audit_after50`,
+    `timestamp_audit_after100`, `timestamp_audit_after250`,
+    `timestamp_audit_after1000`, `timestamp_audit_before1000`,
     `start_wait_sample_index_0`, `start_wait_sample_index_10000`,
     `start_wait_sample_index_60000`, `start_wait_empty_first_char_0`,
     `start_wait_empty_first_char_10000`, `start_wait_empty_first_char_60000`,

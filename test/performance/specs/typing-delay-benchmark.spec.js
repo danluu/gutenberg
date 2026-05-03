@@ -2412,6 +2412,7 @@ setInterval(() => {}, 2147483647);
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
 				await page.waitForTimeout( settleBeforeEditorSetupMs );
 			}
+			const setupWorkStartedAtEpochMs = Date.now();
 
 			if ( isNativeScenario() ) {
 				await page.setContent( `<!doctype html>
@@ -2513,6 +2514,7 @@ setInterval(() => {}, 2147483647);
 				} );
 				await paragraph.click();
 
+				const setupReadyAtEpochMs = Date.now();
 				if ( settleAfterEditorSetupMs > 0 ) {
 					// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
 					await page.waitForTimeout( settleAfterEditorSetupMs );
@@ -2521,6 +2523,8 @@ setInterval(() => {}, 2147483647);
 				return {
 					editorSetupIndex,
 					setupStartedAtEpochMs,
+					setupWorkStartedAtEpochMs,
+					setupReadyAtEpochMs,
 					setupStoppedAtEpochMs: Date.now(),
 					setupBlockCount: 0,
 					dataTracingSetup,
@@ -2569,6 +2573,7 @@ setInterval(() => {}, 2147483647);
 			await resetRichTextSpanTracing();
 			await resetDataSpanTracing();
 
+			const setupReadyAtEpochMs = Date.now();
 			if ( settleAfterEditorSetupMs > 0 ) {
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
 				await page.waitForTimeout( settleAfterEditorSetupMs );
@@ -2577,6 +2582,8 @@ setInterval(() => {}, 2147483647);
 			return {
 				editorSetupIndex,
 				setupStartedAtEpochMs,
+				setupWorkStartedAtEpochMs,
+				setupReadyAtEpochMs,
 				setupStoppedAtEpochMs: Date.now(),
 				setupBlockCount,
 				dataTracingSetup,
@@ -2785,6 +2792,9 @@ setInterval(() => {}, 2147483647);
 					editorSetupIndex: editorSetup.editorSetupIndex,
 					editorSetupStartedAtEpochMs:
 						editorSetup.setupStartedAtEpochMs,
+					editorSetupWorkStartedAtEpochMs:
+						editorSetup.setupWorkStartedAtEpochMs,
+					editorSetupReadyAtEpochMs: editorSetup.setupReadyAtEpochMs,
 					editorSetupStoppedAtEpochMs:
 						editorSetup.setupStoppedAtEpochMs,
 					editorSetupBlockCount: editorSetup.setupBlockCount,

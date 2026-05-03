@@ -1228,6 +1228,79 @@ if (file.exists(start_wait_placement_summary_path)) {
 	)
 }
 
+start_wait_timestamp_audit_summary_path <- file.path(data_dir, "typing-delay-start-wait-timestamp-audit-summary.csv")
+start_wait_timestamp_audit_phases_path <- file.path(data_dir, "typing-delay-start-wait-timestamp-audit-phases.csv")
+if (file.exists(start_wait_timestamp_audit_summary_path) && file.exists(start_wait_timestamp_audit_phases_path)) {
+	timestamp_audit <- read_csv(start_wait_timestamp_audit_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			placement_label = factor(
+				placement_label,
+				levels = c(
+					"0ms control",
+					"50ms after setup",
+					"100ms after setup",
+					"250ms after setup",
+					"1000ms after setup",
+					"1000ms before setup"
+				)
+			),
+			placement_kind = factor(
+				case_when(
+					before_setup_ms > 0 ~ "Idle before setup",
+					after_setup_ms > 0 ~ "Idle after setup",
+					TRUE ~ "No added idle"
+				),
+				levels = c("No added idle", "Idle after setup", "Idle before setup")
+			)
+		)
+	timestamp_phases <- read_csv(start_wait_timestamp_audit_phases_path, show_col_types = FALSE) %>%
+		mutate(
+			placement_label = factor(
+				placement_label,
+				levels = levels(timestamp_audit$placement_label)
+			),
+			phase = factor(
+				phase,
+				levels = c("pre-setup idle", "active editor setup", "post-setup idle", "setup-to-run gap")
+			)
+		)
+
+	save_plot(
+		ggplot(timestamp_phases, aes(placement_label, duration_p50_ms, fill = phase)) +
+			geom_col(width = 0.72) +
+			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "The configured wait is either before setup or after the editor is ready",
+				subtitle = "Timestamp-audit p50 phase durations; run starts immediately after setupStopped when there is no pre-typing warmup",
+				x = NULL,
+				y = "p50 duration before measured input (ms)",
+				fill = "Phase"
+			) +
+			theme(axis.text.x = element_text(angle = 25, hjust = 1)),
+		"70-start-wait-timestamp-phases.png",
+		width = 10.5,
+		height = 5.8
+	)
+
+	save_plot(
+		ggplot(timestamp_audit, aes(ready_to_run_p50_ms, latency_p50_ms, color = placement_kind, shape = placement_kind)) +
+			geom_errorbar(aes(ymin = latency_p10_ms, ymax = latency_p90_ms), width = 18, alpha = 0.78) +
+			geom_point(size = 3.2) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Latency follows idle after the editor is ready, not idle before setup",
+				subtitle = "Fresh large-post first character at 1300ms; x axis is measured setupReady-to-runStart time",
+				x = "Measured time from editor ready to run start (ms)",
+				y = "Latency p50 (ms)",
+				color = "Placement",
+				shape = "Placement"
+			),
+		"71-start-wait-timestamp-latency.png",
+		width = 8.5,
+		height = 5.5
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

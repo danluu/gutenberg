@@ -1,0 +1,25 @@
+run_id,placement_label,before_setup_ms,after_setup_ms,phase,duration_p50_ms
+timestamp_audit_after0,0ms control,0,0,pre-setup idle,0
+timestamp_audit_after0,0ms control,0,0,active editor setup,1590
+timestamp_audit_after0,0ms control,0,0,post-setup idle,0
+timestamp_audit_after0,0ms control,0,0,setup-to-run gap,0
+timestamp_audit_after50,50ms after setup,0,50,pre-setup idle,0
+timestamp_audit_after50,50ms after setup,0,50,active editor setup,1702.5
+timestamp_audit_after50,50ms after setup,0,50,post-setup idle,62.5
+timestamp_audit_after50,50ms after setup,0,50,setup-to-run gap,0
+timestamp_audit_after100,100ms after setup,0,100,pre-setup idle,0
+timestamp_audit_after100,100ms after setup,0,100,active editor setup,1635
+timestamp_audit_after100,100ms after setup,0,100,post-setup idle,115.5
+timestamp_audit_after100,100ms after setup,0,100,setup-to-run gap,0
+timestamp_audit_after250,250ms after setup,0,250,pre-setup idle,0
+timestamp_audit_after250,250ms after setup,0,250,active editor setup,1691
+timestamp_audit_after250,250ms after setup,0,250,post-setup idle,273
+timestamp_audit_after250,250ms after setup,0,250,setup-to-run gap,0
+timestamp_audit_after1000,1000ms after setup,0,1000,pre-setup idle,0
+timestamp_audit_after1000,1000ms after setup,0,1000,active editor setup,1686.5
+timestamp_audit_after1000,1000ms after setup,0,1000,post-setup idle,1023.5
+timestamp_audit_after1000,1000ms after setup,0,1000,setup-to-run gap,0
+timestamp_audit_before1000,1000ms before setup,1000,0,pre-setup idle,1026.5
+timestamp_audit_before1000,1000ms before setup,1000,0,active editor setup,1719
+timestamp_audit_before1000,1000ms before setup,1000,0,post-setup idle,0
+timestamp_audit_before1000,1000ms before setup,1000,0,setup-to-run gap,0
