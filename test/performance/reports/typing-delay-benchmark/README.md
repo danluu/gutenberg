@@ -37,6 +37,15 @@ The short version:
     input handling. The dominant measured callback is registered from
     `rich-text`; source-map lookup identifies it as the `onInput` path in
     `packages/rich-text/src/hook/event-listeners/input-and-selection.js`.
+-   A marker no-op intervention disconfirms "the timer callback alone causes the
+    1000ms drop". When the timer fires but
+    `__unstableMarkLastChangeAsPersistent()` does not dispatch its marker action,
+    the `1000ms` fast band mostly disappears.
+-   The more precise mechanism is action ordering: the real marker action becomes
+    the previous action seen by the block-editor reducer, so the next
+    `UPDATE_BLOCK_ATTRIBUTES` is classified as persistent and `useBlockSync()`
+    sends it through the parent `onChange` path. The no-op marker leaves the next
+    text update on the transient `onInput` path.
 -   Source-level RichText spans put nearly all of that `onInput` time inside
     `registry.batch()`, not DOM parsing, format updating, DOM apply,
     serialization, or the direct `onSelectionChange` / `onChange` callbacks.
@@ -183,6 +192,10 @@ The R script derives:
     DOM key flags explain the post-keyup gap effect.
 -   `data/typing-delay-input-path-*.csv`: raw-CDP follow-up traces separating the
     observed post-keyup gap from Playwright's higher-level keyboard helpers.
+-   `data/typing-delay-marker-intervention-*.csv`: marker no-op intervention
+    samples, summaries, and timer/action counts.
+-   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
+    path samples and summaries for the normal marker and marker no-op runs.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -666,16 +679,117 @@ The earlier stronger explanation failed this audit:
     as user latency because timer tasks, key holds, browser scheduling, and
     subscriber fanout all sit outside or around that accounting window.
 
-The next useful falsification tests are narrow:
+The next useful falsification tests after the marker no-op pass are narrower:
 
--   make the timer callback run but make `MARK_LAST_CHANGE_AS_PERSISTENT` a no-op;
 -   insert an inert action between consecutive `UPDATE_BLOCK_ATTRIBUTES` actions;
 -   force the marker to run before input at `990ms`;
--   trace `useBlockSync()` branch choice, parent `onInput`/`onChange` duration,
-    React commits, and high-fanout `useSelect` subscribers in both the timer task
-    and the following input task;
+-   trace React commits and high-fanout `useSelect` subscribers in both the
+    timer task and the following input task;
 -   compare a full cycle metric, from one input start through the timer task and
     the next input end, with the current event-only metric.
+
+## Marker No-Op Intervention
+
+I then ran the first falsification test: keep the `1000ms` timer callback, but
+make the bound `__unstableMarkLastChangeAsPersistent()` action a benchmark-only
+no-op. This keeps the timer/event-loop ordering but removes the actual
+block-editor marker action.
+
+![Marker no-op intervention](figures/26-marker-noop-intervention.png)
+
+The targeted run used the same delays, rounds, and sample counts for the normal
+marker and the marker no-op:
+
+| Timer callback |    Delay |   n | Latency p50 | `keypress` p50 |
+| -------------- | -------: | --: | ----------: | -------------: |
+| normal marker  |  `990ms` |  30 |    `25.4ms` |       `24.3ms` |
+| normal marker  | `1000ms` |  30 |    `11.3ms` |       `11.0ms` |
+| normal marker  | `1010ms` |  30 |    `10.9ms` |       `10.4ms` |
+| normal marker  | `1300ms` |  30 |    `25.5ms` |       `24.5ms` |
+| marker no-op   |  `990ms` |  30 |    `24.6ms` |       `23.7ms` |
+| marker no-op   | `1000ms` |  30 |    `22.0ms` |       `21.1ms` |
+| marker no-op   | `1010ms` |  30 |    `17.2ms` |       `16.6ms` |
+| marker no-op   | `1300ms` |  30 |    `25.1ms` |       `24.1ms` |
+
+This disconfirms the "timer callback alone" theory. In the no-op run, the
+`1000ms` timers still fired before the following input, but the following input
+did not enter the normal `~11ms` fast band. The timer/evaluation boundary may
+still contribute to the smaller `1010ms` no-op samples, but it is not sufficient
+for the large cliff.
+
+The action trace also corrects a subtler mistake. The marker action is not
+important only when it visibly flips `isLastBlockChangePersistent()`. In the
+normal targeted run, all retained `1000ms`, `1010ms`, and `1300ms` delay runs
+had marker actions before the next input, but those marker actions usually did
+not change the visible `isPersistent` / `isTyping` selector state. Their
+important effect is that they are real block-editor actions and therefore become
+the reducer's previous action.
+
+That matters because `withPersistentBlockChange()` classifies a block attribute
+update as transient only when the current action and previous action are both
+`UPDATE_BLOCK_ATTRIBUTES` actions for the same block attributes:
+
+```js
+action.type === 'UPDATE_BLOCK_ATTRIBUTES' &&
+	lastAction !== undefined &&
+	lastAction.type === 'UPDATE_BLOCK_ATTRIBUTES' &&
+	fastDeepEqual( action.clientIds, lastAction.clientIds ) &&
+	hasSameKeys( action.attributes, lastAction.attributes );
+```
+
+The normal `1000ms` sequence is therefore:
+
+```text
+UPDATE_BLOCK_ATTRIBUTES
+MARK_LAST_CHANGE_AS_PERSISTENT
+UPDATE_BLOCK_ATTRIBUTES  -> persistent, because previous action is MARK
+```
+
+The marker no-op sequence is:
+
+```text
+UPDATE_BLOCK_ATTRIBUTES
+timer callback, but no block-editor action
+UPDATE_BLOCK_ATTRIBUTES  -> transient, because previous action is UPDATE
+```
+
+Source-level path tracing confirms that classification change:
+
+![Marker path classification](figures/27-marker-path-classification.png)
+
+In the trace-heavy path run:
+
+| Timer callback |    Delay | `useBlockSync()` parent path |
+| -------------- | -------: | ---------------------------- |
+| normal marker  | `1000ms` | `7/7` `onChange`             |
+| normal marker  | `1010ms` | `7/7` `onChange`             |
+| marker no-op   | `1000ms` | `7/7` `onInput`              |
+| marker no-op   | `1010ms` | `7/7` `onInput`              |
+
+So the confirmed mechanism is narrower and more concrete than the earlier
+explanation:
+
+1. The `1000ms` timer controls whether a marker action appears between two text
+   updates.
+2. The marker action changes the reducer's previous-action history.
+3. That changes the next text update from the transient `onInput` parent path to
+   the persistent `onChange` parent path.
+4. The normal `1000ms` event-only latency drop depends on that real marker
+   action; a timer callback without the marker does not reproduce it.
+
+This also explains why "doing some work" can measure faster than "doing no
+marker work". The timer marker is not just extra work. It changes how the next
+input is classified. The following input takes a different parent update path,
+and the current metric charges only the next key event, not the whole
+timer-plus-input cycle.
+
+One piece remains open. The source spans show that the direct
+`useEntityBlockEditor()` `onChange` / `onInput` calls are tiny in the measured
+task, and `onChange` does not serialize post content immediately; it installs a
+content serialization function for later. The remaining measured difference is
+still downstream data/subscriber fanout. The new intervention proves the path
+switch, but not the exact subscriber invalidation that makes the transient
+`onInput` path more expensive in this benchmark state.
 
 ## Deeper Pass: The Delay Is A Key Hold
 
@@ -1655,6 +1769,14 @@ The key runs used in this report were:
     `1300ms` with a no-op Playwright `page.evaluate()` between characters.
 -   `cdp_runtime_evaluate_gap_0`: direct `Input.dispatchKeyEvent` key-hold trace
     at `1300ms` with a no-op CDP `Runtime.evaluate` between characters.
+-   `marker_normal_targeted`: normal marker action at `990ms`, `1000ms`,
+    `1010ms`, and `1300ms`, with timer/action tracing.
+-   `marker_noop_targeted`: same delays and counts, but the bound
+    `__unstableMarkLastChangeAsPersistent()` action is a benchmark-only no-op.
+-   `marker_normal_spans`: normal marker action at `990ms`, `1000ms`, and
+    `1010ms`, with source-level `useBlockSync()` / `useEntityBlockEditor()`
+    path tracing.
+-   `marker_noop_spans`: same span trace with the marker action no-opped.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
@@ -1688,6 +1810,12 @@ The compact input-path CSVs were extracted with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-input-path.js
+```
+
+The compact marker-intervention CSVs were extracted with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-marker-intervention.js
 ```
 
 ## References

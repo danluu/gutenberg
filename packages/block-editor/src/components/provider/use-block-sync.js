@@ -13,6 +13,16 @@ import { SelectionContext } from './selection-context';
 
 const noop = () => {};
 
+function traceTypingBenchmarkSpan( name, callback, metadata = {} ) {
+	const tracer = globalThis.__typingBenchmarkTraceDataSpan;
+
+	if ( typeof tracer !== 'function' ) {
+		return callback();
+	}
+
+	return tracer( name, callback, metadata );
+}
+
 /**
  * Clones a block and its inner blocks, building a bidirectional mapping
  * between external (original) and internal (cloned) client IDs.
@@ -406,84 +416,117 @@ export default function useBlockSync( {
 			if ( blocksChanged || selectionChanged ) {
 				// Batch block and selection updates so the entity
 				// receives both changes atomically.
-				registry.batch( () => {
-					if ( blocksChanged ) {
-						isPersistent = newIsPersistent;
+				traceTypingBenchmarkSpan(
+					'block-editor.useBlockSync.registryBatch',
+					() => {
+						registry.batch( () => {
+							if ( blocksChanged ) {
+								isPersistent = newIsPersistent;
 
-						// For inner block controllers (clientId is set), restore external IDs
-						// before passing blocks to the parent.
-						const blocksForParent = clientId
-							? restoreExternalIds( blocks, idMappingRef.current )
-							: blocks;
+								// For inner block controllers (clientId is set), restore external IDs
+								// before passing blocks to the parent.
+								const blocksForParent = clientId
+									? restoreExternalIds(
+											blocks,
+											idMappingRef.current
+									  )
+									: blocks;
 
-						// Build selection state for the undo level.
-						const selectionInfo = {
-							selectionStart: newSelectionStart,
-							selectionEnd: newSelectionEnd,
-							initialPosition:
-								getSelectedBlocksInitialCaretPosition(),
-						};
-						// Restore external IDs in selection for inner block controllers.
-						const selectionForParent = clientId
-							? restoreSelectionIds(
-									selectionInfo,
-									idMappingRef.current
-							  )
-							: selectionInfo;
-
-						pendingChangesRef.current.outgoing.push(
-							blocksForParent
-						);
-
-						const updateParent = isPersistent
-							? onChangeRef.current
-							: onInputRef.current;
-						updateParent( blocksForParent, {
-							selection: selectionForParent,
-						} );
-					}
-
-					if (
-						selectionChanged &&
-						! blocksChanged &&
-						newSelectionStart?.clientId &&
-						! isRestoringSelectionRef.current
-					) {
-						// Report selection via onChangeSelection.
-						// Each useBlockSync only reports if the selected block
-						// is within its own scope.
-						// Inner block controllers own the block if the internal
-						// ID appears in their clone mapping.
-						// The root controller owns it if the block is not inside
-						// any controlled inner block.
-						const isOurs = clientId
-							? idMappingRef.current.internalToExternal.has(
-									newSelectionStart.clientId
-							  )
-							: ! getBlockParents(
-									newSelectionStart.clientId
-							  ).some( ( parentId ) =>
-									areInnerBlocksControlled( parentId )
-							  );
-
-						if ( isOurs ) {
-							const selectionInfo = {
-								selectionStart: newSelectionStart,
-								selectionEnd: newSelectionEnd,
-								initialPosition:
-									getSelectedBlocksInitialCaretPosition(),
-							};
-							onChangeSelection(
-								clientId
+								// Build selection state for the undo level.
+								const selectionInfo = {
+									selectionStart: newSelectionStart,
+									selectionEnd: newSelectionEnd,
+									initialPosition:
+										getSelectedBlocksInitialCaretPosition(),
+								};
+								// Restore external IDs in selection for inner block controllers.
+								const selectionForParent = clientId
 									? restoreSelectionIds(
 											selectionInfo,
 											idMappingRef.current
 									  )
-									: selectionInfo
-							);
-						}
+									: selectionInfo;
+
+								pendingChangesRef.current.outgoing.push(
+									blocksForParent
+								);
+
+								const updateParent = isPersistent
+									? onChangeRef.current
+									: onInputRef.current;
+								traceTypingBenchmarkSpan(
+									'block-editor.useBlockSync.updateParent',
+									() =>
+										updateParent( blocksForParent, {
+											selection: selectionForParent,
+										} ),
+									{
+										updateParent: isPersistent
+											? 'onChange'
+											: 'onInput',
+										blocksChanged,
+										selectionChanged,
+										didPersistenceChange,
+										areBlocksDifferent,
+										previousAreBlocksDifferent,
+										newIsPersistent,
+										clientId: clientId || '',
+									}
+								);
+							}
+
+							if (
+								selectionChanged &&
+								! blocksChanged &&
+								newSelectionStart?.clientId &&
+								! isRestoringSelectionRef.current
+							) {
+								// Report selection via onChangeSelection.
+								// Each useBlockSync only reports if the selected block
+								// is within its own scope.
+								// Inner block controllers own the block if the internal
+								// ID appears in their clone mapping.
+								// The root controller owns it if the block is not inside
+								// any controlled inner block.
+								const isOurs = clientId
+									? idMappingRef.current.internalToExternal.has(
+											newSelectionStart.clientId
+									  )
+									: ! getBlockParents(
+											newSelectionStart.clientId
+									  ).some( ( parentId ) =>
+											areInnerBlocksControlled( parentId )
+									  );
+
+								if ( isOurs ) {
+									const selectionInfo = {
+										selectionStart: newSelectionStart,
+										selectionEnd: newSelectionEnd,
+										initialPosition:
+											getSelectedBlocksInitialCaretPosition(),
+									};
+									onChangeSelection(
+										clientId
+											? restoreSelectionIds(
+													selectionInfo,
+													idMappingRef.current
+											  )
+											: selectionInfo
+									);
+								}
+							}
+						} );
+					},
+					{
+						blocksChanged,
+						selectionChanged,
+						didPersistenceChange,
+						areBlocksDifferent,
+						previousAreBlocksDifferent,
+						newIsPersistent,
+						clientId: clientId || '',
 					}
-				} );
+				);
 			}
 			previousAreBlocksDifferent = areBlocksDifferent;
 		}, blockEditorStore );

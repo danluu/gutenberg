@@ -3142,4 +3142,78 @@ if (file.exists(input_path_summary_path)) {
 	)
 }
 
+marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
+marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
+if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
+	marker_summary <- read_csv(marker_summary_path, show_col_types = FALSE) %>%
+		filter(trace_type == "targeted") %>%
+		mutate(
+			intervention = factor(intervention, levels = c("normal marker", "marker no-op"))
+		)
+	marker_samples <- read_csv(marker_samples_path, show_col_types = FALSE) %>%
+		filter(trace_type == "targeted") %>%
+		mutate(
+			intervention = factor(intervention, levels = c("normal marker", "marker no-op"))
+		)
+
+	save_plot(
+		ggplot(marker_summary, aes(delay_ms, latency_p50_ms, color = intervention)) +
+			geom_point(
+				data = marker_samples,
+				aes(delay_ms, latency_ms, color = intervention),
+				position = position_jitter(width = 2.2, height = 0, seed = 51383),
+				alpha = 0.22,
+				size = 1.7,
+				inherit.aes = FALSE
+			) +
+			geom_pointrange(
+				aes(ymin = latency_p10_ms, ymax = latency_p90_ms),
+				position = position_dodge(width = 3.5),
+				size = 0.8
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
+			labs(
+				title = "No-oping the persistence marker removes the 1000ms low band",
+				subtitle = "Points are retained samples; ranges are p10-p90 with p50 markers",
+				x = "Playwright key-hold delay (ms)",
+				y = "keydown + keypress + keyup EventDispatch duration (ms)",
+				color = "Timer callback"
+			),
+		"26-marker-noop-intervention.png",
+		width = 11,
+		height = 7
+	)
+}
+
+marker_path_summary_path <- file.path(data_dir, "typing-delay-marker-path-summary.csv")
+if (file.exists(marker_path_summary_path)) {
+	marker_path_summary <- read_csv(marker_path_summary_path, show_col_types = FALSE) %>%
+		filter(trace_type == "span trace") %>%
+		mutate(
+			intervention = factor(intervention, levels = c("normal marker", "marker no-op")),
+			update_parent = factor(update_parent, levels = c("onInput", "onChange"))
+		)
+
+	save_plot(
+		ggplot(
+			marker_path_summary,
+			aes(factor(delay_ms), n, fill = update_parent)
+		) +
+			geom_col(width = 0.72) +
+			facet_wrap(~intervention, ncol = 1) +
+			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "The marker changes the next input from onInput to onChange",
+				subtitle = "Source-level trace of useBlockSync.updateParent; trace-heavy run, path counts only",
+				x = "Playwright key-hold delay (ms)",
+				y = "Observed updateParent calls",
+				fill = "Parent path"
+			),
+		"27-marker-path-classification.png",
+		width = 10,
+		height = 7
+	)
+}
+
 message("Wrote plots to: ", figure_dir)

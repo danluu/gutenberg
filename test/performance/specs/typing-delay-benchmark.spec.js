@@ -76,6 +76,8 @@ const rewriteTimeout1000Ms =
 	process.env.BENCHMARK_REWRITE_TIMEOUT_1000_MS === undefined
 		? null
 		: intEnv( 'BENCHMARK_REWRITE_TIMEOUT_1000_MS', 1000 );
+const markPersistentIntervention =
+	process.env.BENCHMARK_MARK_PERSISTENT_INTERVENTION || 'normal';
 const traceTimers =
 	process.env.BENCHMARK_TRACE_TIMERS === '1' ||
 	process.env.BENCHMARK_TRACE_TIMERS === 'true' ||
@@ -125,6 +127,7 @@ const supportedDelayModes = [
 	'cdp-key-hold-page-evaluate',
 	'cdp-key-hold-runtime-evaluate',
 ];
+const supportedMarkPersistentInterventions = [ 'normal', 'noop' ];
 
 function sleepMs( delayMs ) {
 	if ( delayMs <= 0 ) {
@@ -535,6 +538,19 @@ if ( ! supportedDelayModes.includes( delayMode ) ) {
 	throw new Error(
 		`Unsupported BENCHMARK_DELAY_MODE: ${ delayMode }. ` +
 			`Supported modes: ${ supportedDelayModes.join( ', ' ) }.`
+	);
+}
+
+if (
+	! supportedMarkPersistentInterventions.includes(
+		markPersistentIntervention
+	)
+) {
+	throw new Error(
+		`Unsupported BENCHMARK_MARK_PERSISTENT_INTERVENTION: ${ markPersistentIntervention }. ` +
+			`Supported modes: ${ supportedMarkPersistentInterventions.join(
+				', '
+			) }.`
 	);
 }
 
@@ -1093,6 +1109,112 @@ test.describe( 'Typing delay benchmark', () => {
 						previous = next;
 					}, 'core/block-editor' );
 			} );
+		}
+
+		async function setupMarkPersistentIntervention() {
+			if (
+				markPersistentIntervention === 'normal' ||
+				isNativeScenario()
+			) {
+				return null;
+			}
+
+			return await page.evaluate(
+				( { mode } ) => {
+					const actions =
+						window.wp?.data?.dispatch?.( 'core/block-editor' );
+					const select =
+						window.wp?.data?.select?.( 'core/block-editor' );
+
+					if (
+						! actions ||
+						! select ||
+						typeof actions.__unstableMarkLastChangeAsPersistent !==
+							'function'
+					) {
+						return { installed: false, reason: 'missing-actions' };
+					}
+
+					if (
+						! actions.__typingBenchmarkOriginalMarkLastChangeAsPersistent
+					) {
+						Object.defineProperty(
+							actions,
+							'__typingBenchmarkOriginalMarkLastChangeAsPersistent',
+							{
+								value: actions.__unstableMarkLastChangeAsPersistent,
+								enumerable: false,
+							}
+						);
+					}
+
+					const original =
+						actions.__typingBenchmarkOriginalMarkLastChangeAsPersistent;
+					window.__typingBenchmarkMarkPersistentInterventionEvents =
+						[];
+
+					function blockEditorSnapshot() {
+						const snapshot = {};
+						for ( const [ key, selectorName ] of [
+							[ 'isPersistent', 'isLastBlockChangePersistent' ],
+							[ 'isTyping', 'isTyping' ],
+							[ 'blockCount', 'getBlockCount' ],
+							[
+								'selectedBlockClientId',
+								'getSelectedBlockClientId',
+							],
+							[ 'selectedBlockName', 'getSelectedBlockName' ],
+						] ) {
+							try {
+								if (
+									typeof select[ selectorName ] === 'function'
+								) {
+									snapshot[ key ] = select[ selectorName ]();
+								}
+							} catch {
+								snapshot[ key ] = null;
+							}
+						}
+
+						return snapshot;
+					}
+
+					actions.__unstableMarkLastChangeAsPersistent =
+						function intervenedMarkLastChangeAsPersistent() {
+							const before = blockEditorSnapshot();
+							const start = performance.now();
+							let status = 'returned';
+							let result;
+
+							try {
+								if ( mode === 'noop' ) {
+									result = undefined;
+								} else {
+									result = original.apply( this, arguments );
+								}
+							} catch ( error ) {
+								status = 'threw';
+								throw error;
+							} finally {
+								window.__typingBenchmarkMarkPersistentInterventionEvents.push(
+									{
+										nowMs: start,
+										durationMs: performance.now() - start,
+										mode,
+										status,
+										before,
+										after: blockEditorSnapshot(),
+									}
+								);
+							}
+
+							return result;
+						};
+
+					return { installed: true, mode };
+				},
+				{ mode: markPersistentIntervention }
+			);
 		}
 
 		async function setupDataTracing() {
@@ -1670,6 +1792,8 @@ test.describe( 'Typing delay benchmark', () => {
 
 			await admin.createNewPost();
 			await perfUtils.disableAutosave();
+			const markPersistentInterventionSetup =
+				await setupMarkPersistentIntervention();
 			if ( scenario === 'large-post-paragraph' ) {
 				await perfUtils.loadBlocksForLargePost();
 			} else if ( scenario === 'small-containers-paragraph' ) {
@@ -1719,6 +1843,7 @@ test.describe( 'Typing delay benchmark', () => {
 				setupStoppedAtEpochMs: Date.now(),
 				setupBlockCount,
 				dataTracingSetup,
+				markPersistentInterventionSetup,
 			};
 		}
 
@@ -1887,6 +2012,8 @@ test.describe( 'Typing delay benchmark', () => {
 						editorSetup.setupStoppedAtEpochMs,
 					editorSetupBlockCount: editorSetup.setupBlockCount,
 					dataTracingSetup: editorSetup.dataTracingSetup,
+					markPersistentInterventionSetup:
+						editorSetup.markPersistentInterventionSetup,
 					expectedKeyGroups: sampleCount,
 					keyGroups: keyGroups.length,
 					keyDownEvents: keyboardEvents.filter(
@@ -1960,6 +2087,24 @@ test.describe( 'Typing delay benchmark', () => {
 								}
 						  )
 						: undefined,
+					markPersistentInterventionEvents:
+						markPersistentIntervention === 'normal'
+							? undefined
+							: await page.evaluate(
+									( { startMs, stopMs } ) =>
+										(
+											window.__typingBenchmarkMarkPersistentInterventionEvents ||
+											[]
+										).filter(
+											( event ) =>
+												event.nowMs >= startMs - 5 &&
+												event.nowMs <= stopMs + 5
+										),
+									{
+										startMs: runStartedAtBrowserNowMs,
+										stopMs: runStoppedAtBrowserNowMs,
+									}
+							  ),
 					schedulerEvents: traceSchedulers
 						? await page.evaluate(
 								( { startMs, stopMs } ) =>
@@ -2200,6 +2345,7 @@ test.describe( 'Typing delay benchmark', () => {
 				traceData,
 				traceTimers,
 				traceSchedulers,
+				markPersistentIntervention,
 				traceGapEvents,
 				traceEventListeners,
 				useBrowserTrace,

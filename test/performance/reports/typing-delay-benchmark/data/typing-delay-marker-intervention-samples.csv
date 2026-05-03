@@ -1,0 +1,277 @@
+run_id,trace_type,intervention,json_path,delay_ms,round,sample_index,delay_sample_index,latency_ms,keydown_ms,keypress_ms,keyup_ms
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,1,0,26.617,0.486,25.378,0.753
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,2,1,26.679,0.45,25.64,0.589
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,3,2,27.235,0.448,26.087,0.7
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,4,3,26.283,0.523,25.143,0.617
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,5,4,24.967000000000002,0.463,24.167,0.337
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,6,5,19.491,0.191,18.634,0.666
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,7,6,24.925,0.4,23.87,0.655
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,8,7,25.572,0.451,24.313,0.808
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,9,8,27.273,0.374,26.207,0.692
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,0,10,9,25.85,0.441,24.702,0.707
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,1,0,14.929,0.153,14.384,0.392
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,2,1,11.298000000000002,0.115,10.848,0.335
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,3,2,11.004,0.136,10.3,0.568
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,4,3,14.815,0.207,14.232,0.376
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,5,4,10.325,0.097,9.863,0.365
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,6,5,10.808000000000002,0.098,10.441,0.269
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,7,6,12.177,0.112,11.734,0.331
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,8,7,11.008,0.099,10.28,0.629
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,9,8,17.827,0.318,17.279,0.23
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,0,10,9,11.366999999999999,0.096,11.02,0.251
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,1,0,10.859,0.112,10.513,0.234
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,2,1,10.411000000000001,0.105,9.99,0.316
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,3,2,10.188,0.096,9.84,0.252
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,4,3,10.922999999999998,0.106,10.184,0.633
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,5,4,10.304999999999998,0.091,9.934,0.28
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,6,5,10.772,0.098,10.42,0.254
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,7,6,11.054000000000002,0.108,10.768,0.178
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,8,7,11.062,0.126,10.663,0.273
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,9,8,13.103,0.149,12.662,0.292
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,0,10,9,10.987,0.093,10.664,0.23
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,1,0,22.671,0.38,21.696,0.595
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,2,1,25.768,0.376,24.842,0.55
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,3,2,25.91,0.338,24.886,0.686
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,4,3,28.37,0.37,26.803,1.197
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,5,4,25.701999999999998,0.382,24.833,0.487
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,6,5,24.457,0.372,23.515,0.57
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,7,6,24.329,0.335,23.264,0.73
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,8,7,29.593,0.38,28.611,0.602
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,9,8,24.320999999999998,0.333,23.367,0.621
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,0,10,9,26.191,0.436,25.176,0.579
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,1,10,28.414,0.501,27.38,0.533
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,2,11,25.701999999999998,0.365,24.596,0.741
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,3,12,28.267,0.428,27.578,0.261
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,4,13,20.913,0.27,20.041,0.602
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,5,14,25.326,0.391,24.335,0.6
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,6,15,27.167,0.417,24.976,1.774
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,7,16,21.514000000000003,0.341,20.786,0.387
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,8,17,21.848,0.395,21.142,0.311
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,9,18,19.572000000000003,0.193,18.759,0.62
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,1,10,19,28.445999999999998,0.401,27.308,0.737
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,1,10,11.638,0.119,11.287,0.232
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,2,11,11.054,0.114,10.594,0.346
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,3,12,10.605999999999998,0.094,10.145,0.367
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,4,13,10.456999999999999,0.102,9.998,0.357
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,5,14,10.52,0.093,10.096,0.331
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,6,15,10.331,0.1,9.85,0.381
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,7,16,10.144,0.099,9.789,0.256
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,8,17,10.784,0.108,10.416,0.26
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,9,18,11.363,0.102,10.991,0.27
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,1,10,19,13.575,0.123,13.322,0.13
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,1,10,10.033000000000001,0.095,9.641,0.297
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,2,11,10.631,0.121,10.248,0.262
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,3,12,9.83,0.095,9.298,0.437
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,4,13,10.467,0.096,10.029,0.342
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,5,14,10.417,0.097,9.927,0.393
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,6,15,14.951,0.166,14.603,0.182
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,7,16,11.311,0.106,10.965,0.24
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,8,17,14.631,0.18,14.177,0.274
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,9,18,13.176,0.182,12.667,0.327
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,1,10,19,15.533999999999999,0.186,15.088,0.26
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,1,10,26.500000000000004,0.361,25.443,0.696
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,2,11,25.195999999999998,0.34,24.182,0.674
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,3,12,24.746,0.371,24.002,0.373
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,4,13,17.656000000000002,0.202,16.779,0.675
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,5,14,25.166000000000004,0.431,24.193,0.542
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,6,15,24.811,0.368,23.829,0.614
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,7,16,26.088,0.474,25.033,0.581
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,8,17,26.799999999999997,0.362,25.913,0.525
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,9,18,26.572,0.438,25.539,0.595
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,1,10,19,24.769,0.395,23.81,0.564
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,1,20,16.799000000000003,0.196,16.344,0.259
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,2,21,11.623000000000001,0.112,11.195,0.316
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,3,22,11.250000000000002,0.098,10.832,0.32
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,4,23,10.661,0.097,10.319,0.245
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,5,24,12.588,0.114,12.325,0.149
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,6,25,13.499,0.171,13.111,0.217
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,7,26,12.011000000000001,0.111,11.583,0.317
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,8,27,9.795,0.096,9.45,0.249
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,9,28,15.417,0.134,15.083,0.2
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1000,2,10,29,10.753,0.101,10.343,0.309
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,1,20,10.992999999999999,0.125,10.594,0.274
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,2,21,10.474,0.115,10.113,0.246
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,3,22,12.773,0.174,12.26,0.339
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,4,23,10.957,0.111,10.488,0.358
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,5,24,9.893,0.09,9.49,0.313
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,6,25,11.201,0.1,9.794,1.307
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,7,26,10.552999999999999,0.096,10.107,0.35
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,8,27,10.554000000000002,0.101,10.201,0.252
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,9,28,11.808,0.122,11.322,0.364
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1010,2,10,29,14.326,0.134,13.922,0.27
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,1,20,21.669,0.349,20.671,0.649
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,2,21,22.614,0.41,21.556,0.648
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,3,22,21.894000000000002,0.404,20.908,0.582
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,4,23,28.647000000000002,0.384,27.643,0.62
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,5,24,25.464000000000002,0.44,24.306,0.718
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,6,25,29.787999999999997,0.432,28.118,1.238
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,7,26,23.913,0.358,22.979,0.576
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,8,27,28.052,0.4,27.078,0.574
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,9,28,23.79,0.333,22.88,0.577
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,1300,2,10,29,25.634999999999998,0.331,24.839,0.465
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,1,20,25.501000000000005,0.475,24.606,0.42
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,2,21,24.762,0.296,23.942,0.524
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,3,22,24.897,0.333,24.024,0.54
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,4,23,25.239,0.424,24.256,0.559
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,5,24,21.481,0.376,20.469,0.636
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,6,25,26.715999999999998,0.4,25.627,0.689
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,7,26,22.919999999999998,0.398,21.923,0.599
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,8,27,26.137,0.35,25.166,0.621
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,9,28,27.657,0.407,26.942,0.308
+marker_normal_targeted,targeted,normal marker,artifacts/typing-delay-mark-normal-targeted/typing-delay-benchmark-1777789456702.json,990,2,10,29,18.476999999999997,0.237,17.084,1.156
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,1,0,26.368,0.508,25.148,0.712
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,2,1,25.599999999999998,0.473,24.427,0.7
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,3,2,24.752000000000002,0.417,23.718,0.617
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,4,3,25.073999999999998,0.419,24.307,0.348
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,5,4,20.546,0.359,19.976,0.211
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,6,5,13.943999999999999,0.137,13.043,0.764
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,7,6,25.124000000000002,0.422,24.186,0.516
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,8,7,24.575,0.362,23.722,0.491
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,9,8,22.923000000000002,0.317,22.012,0.594
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,0,10,9,28.102,0.41,27.066,0.626
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,1,0,22.298000000000002,0.367,21.258,0.673
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,2,1,21.681,0.357,20.681,0.643
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,3,2,22.358,0.429,21.326,0.603
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,4,3,21.133999999999997,0.392,20.266,0.476
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,5,4,22.008,0.368,21.145,0.495
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,6,5,22.599999999999998,0.313,21.956,0.331
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,7,6,20.023,0.281,19.286,0.456
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,8,7,22.127,0.39,21.226,0.511
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,9,8,21.394,0.403,20.486,0.505
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,0,10,9,18.519000000000002,0.263,17.829,0.427
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,1,0,16.262,0.268,15.461,0.533
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,2,1,21.595,0.377,20.786,0.432
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,3,2,19.881,0.288,19.129,0.464
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,4,3,15.573,0.198,14.908,0.467
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,5,4,23.966,0.38,22.943,0.643
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,6,5,11.898,0.101,11.559,0.238
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,7,6,17.027,0.162,16.48,0.385
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,8,7,17.758,0.263,16.993,0.502
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,9,8,20.389,0.403,19.593,0.393
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,0,10,9,22.332,0.316,21.503,0.513
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,1,0,28.037,0.384,26.951,0.702
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,2,1,28.513,0.417,27.45,0.646
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,3,2,27.153999999999996,0.371,26.115,0.668
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,4,3,27.209,0.41,26.2,0.599
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,5,4,26.456,0.426,25.451,0.579
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,6,5,27.407,0.427,26.379,0.601
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,7,6,25.028000000000002,0.379,24.011,0.638
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,8,7,19.473,0.248,18.668,0.557
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,9,8,25.674,0.32,24.68,0.674
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,0,10,9,23.209999999999997,0.392,22.133,0.685
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,1,10,25.886,0.459,24.86,0.567
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,2,11,27.026000000000003,0.413,26.103,0.51
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,3,12,25.339,0.362,24.324,0.653
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,4,13,23.665999999999997,0.423,22.628,0.615
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,5,14,25.841,0.438,24.725,0.678
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,6,15,26.212,0.35,24.589,1.273
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,7,16,22.086,0.313,21.232,0.541
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,8,17,22.727,0.355,22.044,0.328
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,9,18,14.649,0.203,13.777,0.669
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,1,10,19,22.570000000000004,0.405,21.513,0.652
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,1,10,18.52,0.358,17.605,0.557
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,2,11,21.073999999999998,0.412,20.169,0.493
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,3,12,18.142,0.182,17.436,0.524
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,4,13,19.956,0.215,19.264,0.477
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,5,14,24.979,0.331,24.215,0.433
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,6,15,22.394000000000002,0.292,21.55,0.552
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,7,16,15.193999999999999,0.212,14.564,0.418
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,8,17,17.325000000000003,0.216,16.658,0.451
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,9,18,16.166,0.206,15.787,0.173
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,1,10,19,11.916999999999998,0.113,11.562,0.242
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,1,10,22.679000000000002,0.367,21.817,0.495
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,2,11,22.747999999999998,0.49,21.794,0.464
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,3,12,22.42,0.353,21.602,0.465
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,4,13,22.489,0.32,21.781,0.388
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,5,14,22.441000000000003,0.379,21.332,0.73
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,6,15,21.931,0.366,21.058,0.507
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,7,16,23.310000000000002,0.504,22.36,0.446
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,8,17,26.535,0.391,25.895,0.249
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,9,18,16.115000000000002,0.215,15.255,0.645
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,1,10,19,21.979,0.463,21.054,0.462
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,1,10,26.584,0.362,24.564,1.658
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,2,11,24.469,0.322,23.751,0.396
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,3,12,20.113,0.345,19.566,0.202
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,4,13,15.925,0.181,15.066,0.678
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,5,14,22.732000000000003,0.396,21.748,0.588
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,6,15,22.963,0.416,21.859,0.688
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,7,16,24.366999999999997,0.377,23.7,0.29
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,8,17,20.894,0.22,19.972,0.702
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,9,18,24.912,0.403,23.845,0.664
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,1,10,19,25.607,0.387,24.672,0.548
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,1,20,20.356,0.389,19.457,0.51
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,2,21,19.911,0.316,18.949,0.646
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,3,22,22.253,0.404,21.329,0.52
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,4,23,22.638,0.363,21.824,0.451
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,5,24,21.985999999999997,0.4,21.055,0.531
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,6,25,20.684,0.451,19.728,0.505
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,7,26,19.968000000000004,0.388,19.163,0.417
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,8,27,19.771000000000004,0.414,18.882,0.475
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,9,28,21.636999999999997,0.423,20.776,0.438
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1000,2,10,29,28.058,0.369,27.376,0.313
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,1,20,14.912999999999998,0.222,14.401,0.29
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,2,21,19.015,0.386,18.167,0.462
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,3,22,20.127,0.16,19.616,0.351
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,4,23,16.034000000000002,0.208,15.422,0.404
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,5,24,16.75,0.284,16.128,0.338
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,6,25,16.63,0.243,15.872,0.515
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,7,26,16.883,0.226,16.245,0.412
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,8,27,16.552999999999997,0.196,15.729,0.628
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,9,28,15.643999999999998,0.196,15.296,0.152
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1010,2,10,29,10.317,0.091,9.945,0.281
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,1,20,25.11,0.418,23.985,0.707
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,2,21,23.973,0.373,22.961,0.639
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,3,22,20.971999999999998,0.4,20.215,0.357
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,4,23,18.127,0.174,17.474,0.479
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,5,24,22.767,0.335,21.904,0.528
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,6,25,24.674999999999997,0.336,23.642,0.697
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,7,26,25.56,0.416,24.491,0.653
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,8,27,26.4,0.352,25.735,0.313
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,9,28,21.238,0.279,20.254,0.705
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,1300,2,10,29,25.099,0.393,24.116,0.59
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,1,20,25.445999999999998,0.374,24.493,0.579
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,2,21,21.768,0.388,20.662,0.718
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,3,22,25.536,0.37,24.564,0.602
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,4,23,24.524,0.527,23.248,0.749
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,5,24,24.587,0.349,23.584,0.654
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,6,25,24.808999999999997,0.346,23.947,0.516
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,7,26,24.189999999999998,0.397,23.125,0.668
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,8,27,24.951,0.416,24.061,0.474
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,9,28,22.558,0.409,21.603,0.546
+marker_noop_targeted,targeted,marker no-op,artifacts/typing-delay-mark-noop-targeted/typing-delay-benchmark-1777789615308.json,990,2,10,29,25.832,0.343,24.855,0.634
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,1,0,34.175000000000004,0.531,33.136,0.508
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,2,1,31.653,0.466,30.485,0.702
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,3,2,33.684,0.532,32.56,0.592
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,4,3,35.211,0.48,34.375,0.356
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,5,4,26.589,0.251,25.612,0.726
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,6,5,33.045,0.427,31.858,0.76
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1000,0,1,0,25.174,0.238,24.688,0.248
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1000,0,2,1,21.767,0.168,21.413,0.186
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1000,0,3,2,22.505,0.173,22.078,0.254
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1000,0,4,3,23.581,0.171,23.153,0.257
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1000,0,5,4,24.84,0.173,24.452,0.215
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1000,0,6,5,22.875999999999998,0.157,22.514,0.205
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1010,0,1,0,26.926000000000002,0.23,26.521,0.175
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1010,0,2,1,22.073,0.152,21.747,0.174
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1010,0,3,2,24.851000000000003,0.163,23.271,1.417
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1010,0,4,3,23.269000000000002,0.155,22.937,0.177
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1010,0,5,4,22.035,0.155,21.657,0.223
+marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,1010,0,6,5,23.01,0.179,22.6,0.231
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,990,0,1,0,34.072,0.587,32.508,0.977
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,990,0,2,1,33.067,0.625,31.821,0.621
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,990,0,3,2,32.971,0.482,32.082,0.407
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,990,0,4,3,25.381000000000004,0.239,24.379,0.763
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,990,0,5,4,30.746,0.575,29.546,0.625
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,990,0,6,5,34.511,0.404,33.522,0.585
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1000,0,1,0,31.535000000000004,0.614,30.373,0.548
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1000,0,2,1,27.846000000000004,0.46,26.812,0.574
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1000,0,3,2,33.06700000000001,0.469,32.011,0.587
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1000,0,4,3,33.122,0.59,31.939,0.593
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1000,0,5,4,32.552,0.286,31.741,0.525
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1000,0,6,5,32.623000000000005,0.405,31.85,0.368
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1010,0,1,0,32.973,0.595,31.956,0.422
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1010,0,2,1,28.502000000000002,0.181,27.968,0.353
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1010,0,3,2,29.012,0.287,27.609,1.116
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1010,0,4,3,27.787,0.204,27.24,0.343
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1010,0,5,4,27.575000000000003,0.263,26.98,0.332
+marker_noop_spans,span trace,marker no-op,artifacts/typing-delay-mark-noop-spans/typing-delay-benchmark-1777790108884.json,1010,0,6,5,27.916999999999998,0.23,27.089,0.598

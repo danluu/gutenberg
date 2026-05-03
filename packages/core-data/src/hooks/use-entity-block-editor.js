@@ -15,6 +15,16 @@ import { updateFootnotesFromMeta } from '../footnotes';
 const EMPTY_ARRAY = [];
 const parsedBlocksCache = new Map();
 
+function traceTypingBenchmarkSpan( name, callback, metadata = {} ) {
+	const tracer = globalThis.__typingBenchmarkTraceDataSpan;
+
+	if ( typeof tracer !== 'function' ) {
+		return callback();
+	}
+
+	return tracer( name, callback, metadata );
+}
+
 /**
  * Hook that returns block content getters and setters for
  * the nearest provided entity of the specified type.
@@ -85,26 +95,53 @@ export default function useEntityBlockEditor( kind, name, { id: _id } = {} ) {
 
 	const onChange = useCallback(
 		( newBlocks, options ) => {
-			const noChange = blocks === newBlocks;
-			if ( noChange ) {
-				return __unstableCreateUndoLevel( kind, name, id );
-			}
-			const { selection, ...rest } = options;
+			return traceTypingBenchmarkSpan(
+				'core-data.useEntityBlockEditor.onChange.total',
+				() => {
+					const noChange = blocks === newBlocks;
+					if ( noChange ) {
+						return traceTypingBenchmarkSpan(
+							'core-data.useEntityBlockEditor.createUndoLevel',
+							() => __unstableCreateUndoLevel( kind, name, id ),
+							{ kind, name, hasId: !! id }
+						);
+					}
+					const { selection, ...rest } = options;
 
-			// We create a new function here on every persistent edit
-			// to make sure the edit makes the post dirty and creates
-			// a new undo level.
-			const edits = {
-				selection,
-				content: ( { blocks: blocksForSerialization = [] } ) =>
-					__unstableSerializeAndClean( blocksForSerialization ),
-				...updateFootnotesFromMeta( newBlocks, meta ),
-			};
+					// We create a new function here on every persistent edit
+					// to make sure the edit makes the post dirty and creates
+					// a new undo level.
+					const edits = {
+						selection,
+						content: ( { blocks: blocksForSerialization = [] } ) =>
+							traceTypingBenchmarkSpan(
+								'core-data.useEntityBlockEditor.serialize',
+								() =>
+									__unstableSerializeAndClean(
+										blocksForSerialization
+									),
+								{ kind, name, hasId: !! id }
+							),
+						...updateFootnotesFromMeta( newBlocks, meta ),
+					};
 
-			editEntityRecord( kind, name, id, edits, {
-				isCached: false,
-				...rest,
-			} );
+					return traceTypingBenchmarkSpan(
+						'core-data.useEntityBlockEditor.editEntityRecord',
+						() =>
+							editEntityRecord( kind, name, id, edits, {
+								isCached: false,
+								...rest,
+							} ),
+						{ kind, name, hasId: !! id, path: 'onChange' }
+					);
+				},
+				{
+					kind,
+					name,
+					hasId: !! id,
+					noChange: blocks === newBlocks,
+				}
+			);
 		},
 		[
 			kind,
@@ -119,16 +156,27 @@ export default function useEntityBlockEditor( kind, name, { id: _id } = {} ) {
 
 	const onInput = useCallback(
 		( newBlocks, options ) => {
-			const { selection, ...rest } = options;
-			const edits = {
-				selection,
-				...updateFootnotesFromMeta( newBlocks, meta ),
-			};
+			return traceTypingBenchmarkSpan(
+				'core-data.useEntityBlockEditor.onInput.total',
+				() => {
+					const { selection, ...rest } = options;
+					const edits = {
+						selection,
+						...updateFootnotesFromMeta( newBlocks, meta ),
+					};
 
-			editEntityRecord( kind, name, id, edits, {
-				isCached: true,
-				...rest,
-			} );
+					return traceTypingBenchmarkSpan(
+						'core-data.useEntityBlockEditor.editEntityRecord',
+						() =>
+							editEntityRecord( kind, name, id, edits, {
+								isCached: true,
+								...rest,
+							} ),
+						{ kind, name, hasId: !! id, path: 'onInput' }
+					);
+				},
+				{ kind, name, hasId: !! id }
+			);
 		},
 		[ kind, name, id, meta, editEntityRecord ]
 	);
