@@ -252,6 +252,27 @@ const listenerProbeRuns = [
 	},
 ];
 
+const markerGapDenseRuns = [
+	{
+		runId: 'marker_normal_gap_dense',
+		traceType: 'gap dense',
+		intervention: 'normal marker',
+		dir: 'artifacts/typing-delay-mark-normal-gap-dense',
+	},
+	{
+		runId: 'marker_noop_gap_dense',
+		traceType: 'gap dense',
+		intervention: 'marker no-op',
+		dir: 'artifacts/typing-delay-mark-noop-gap-dense',
+	},
+	{
+		runId: 'marker_stop_start_typing_gap_dense',
+		traceType: 'gap dense',
+		intervention: 'stop/start typing',
+		dir: 'artifacts/typing-delay-mark-stop-start-typing-gap-dense',
+	},
+];
+
 function newestJson( dir ) {
 	const absDir = path.join( repoRoot, dir );
 	if ( ! fs.existsSync( absDir ) ) {
@@ -787,6 +808,7 @@ const loadedTimeoutRewriteRuns = readOptionalRuns( timeoutRewriteRuns );
 const loadedAllDataSpanRuns = readOptionalRuns( allDataSpanRuns );
 const loadedReduxListenerOwnerRuns = readOptionalRuns( reduxListenerOwnerRuns );
 const loadedListenerProbeRuns = readOptionalRuns( listenerProbeRuns );
+const loadedMarkerGapDenseRuns = readOptionalRuns( markerGapDenseRuns );
 
 function summaryKey( row ) {
 	return `${ row.delayMs }\t${ row.round }\t${ row.editorSetupIndex }`;
@@ -899,6 +921,8 @@ function buildPairedRows( runsToPair ) {
 					keypress_ms: record.keypressMs,
 					marker_inclusive_latency_ms:
 						record.latencyMs + markerActionDurationMs,
+					current_keydown_is_persistent: currentKeydown.isPersistent,
+					current_keydown_is_typing: currentKeydown.isTyping,
 				};
 			} );
 		} );
@@ -920,6 +944,7 @@ function buildPairedSummaryRows( rows ) {
 		const markerInclusiveLatencies = groupRows.map(
 			( row ) => row.marker_inclusive_latency_ms
 		);
+		const keypresses = groupRows.map( ( row ) => row.keypress_ms );
 		return {
 			run_id: first.run_id,
 			trace_type: first.trace_type,
@@ -931,6 +956,21 @@ function buildPairedSummaryRows( rows ) {
 				( row ) => row.marker_action_count > 0
 			).length,
 			latency_p50_ms: quantile( latencies, 0.5 ),
+			keypress_p50_ms: quantile( keypresses, 0.5 ),
+			previous_input_to_current_keydown_p50_ms: quantile(
+				groupRows.map(
+					( row ) => row.previous_input_to_current_keydown_ms
+				),
+				0.5
+			),
+			previous_input_to_marker_p50_ms: quantile(
+				groupRows.map( ( row ) => row.previous_input_to_marker_ms ),
+				0.5
+			),
+			marker_to_current_keydown_p50_ms: quantile(
+				groupRows.map( ( row ) => row.marker_to_current_keydown_ms ),
+				0.5
+			),
 			marker_action_duration_p50_ms: quantile(
 				markerActionDurations,
 				0.5
@@ -947,6 +987,12 @@ function buildPairedSummaryRows( rows ) {
 				markerInclusiveLatencies,
 				0.9
 			),
+			current_keydown_persistent_count: groupRows.filter(
+				( row ) => row.current_keydown_is_persistent
+			).length,
+			current_keydown_typing_count: groupRows.filter(
+				( row ) => row.current_keydown_is_typing
+			).length,
 		};
 	} );
 }
@@ -1218,6 +1264,10 @@ const pairedSummaryRows = buildPairedSummaryRows( pairedRows );
 const timeoutRewritePairedRows = buildPairedRows( loadedTimeoutRewriteRuns );
 const timeoutRewritePairedSummaryRows = buildPairedSummaryRows(
 	timeoutRewritePairedRows
+);
+const markerGapDensePairedRows = buildPairedRows( loadedMarkerGapDenseRuns );
+const markerGapDensePairedSummaryRows = buildPairedSummaryRows(
+	markerGapDensePairedRows
 );
 
 const actionRows = loadedRuns.flatMap( ( run ) =>
@@ -3684,6 +3734,60 @@ writeCsv(
 		'marker_inclusive_latency_p90_ms',
 	]
 );
+if ( loadedMarkerGapDenseRuns.length > 0 ) {
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-marker-gap-dense-paired-samples.csv'
+		),
+		markerGapDensePairedRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'delay_ms',
+			'round',
+			'sample_index',
+			'delay_sample_index',
+			'previous_input_to_current_keydown_ms',
+			'previous_input_to_marker_ms',
+			'marker_to_current_keydown_ms',
+			'marker_action_count',
+			'marker_action_duration_ms',
+			'latency_ms',
+			'keypress_ms',
+			'marker_inclusive_latency_ms',
+			'current_keydown_is_persistent',
+			'current_keydown_is_typing',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-marker-gap-dense-paired-summary.csv'
+		),
+		markerGapDensePairedSummaryRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'delay_ms',
+			'n',
+			'rows_with_marker_action',
+			'latency_p50_ms',
+			'keypress_p50_ms',
+			'previous_input_to_current_keydown_p50_ms',
+			'previous_input_to_marker_p50_ms',
+			'marker_to_current_keydown_p50_ms',
+			'marker_action_duration_p50_ms',
+			'marker_inclusive_latency_p50_ms',
+			'marker_inclusive_latency_p10_ms',
+			'marker_inclusive_latency_p90_ms',
+			'current_keydown_persistent_count',
+			'current_keydown_typing_count',
+		]
+	);
+}
 writeCsv(
 	path.join( reportDataDir, 'typing-delay-marker-action-samples.csv' ),
 	actionSampleRows,

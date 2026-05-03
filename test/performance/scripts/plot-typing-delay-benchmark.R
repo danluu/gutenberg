@@ -3145,6 +3145,7 @@ if (file.exists(input_path_summary_path)) {
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
+marker_gap_dense_summary_path <- file.path(data_dir, "typing-delay-marker-gap-dense-paired-summary.csv")
 marker_intervention_levels <- c(
 	"normal marker",
 	"marker no-op",
@@ -3331,6 +3332,67 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			"28-marker-action-cost.png",
 			width = 11,
 			height = 7
+		)
+	}
+
+	if (file.exists(marker_gap_dense_summary_path)) {
+		marker_gap_dense <- read_csv(marker_gap_dense_summary_path, show_col_types = FALSE) %>%
+			filter(rows_with_marker_action > 0) %>%
+			mutate(
+				intervention = factor(
+					intervention,
+					levels = c("normal marker", "marker no-op", "stop/start typing")
+				)
+			) %>%
+			select(
+				intervention,
+				delay_ms,
+				marker_to_current_keydown_p50_ms,
+				`next EventDispatch only` = latency_p50_ms,
+				`timer callback + next EventDispatch` = marker_inclusive_latency_p50_ms
+			) %>%
+			pivot_longer(
+				cols = c(`next EventDispatch only`, `timer callback + next EventDispatch`),
+				names_to = "metric",
+				values_to = "duration_ms"
+			) %>%
+			mutate(
+				metric = factor(
+					metric,
+					levels = c("next EventDispatch only", "timer callback + next EventDispatch")
+				)
+			)
+
+		save_plot(
+			ggplot(
+				marker_gap_dense,
+				aes(
+					marker_to_current_keydown_p50_ms,
+					duration_ms,
+					color = intervention,
+					shape = intervention
+				)
+			) +
+				geom_point(size = 3.1, alpha = 0.9) +
+				facet_wrap(~metric, ncol = 1, scales = "free_y") +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`normal marker` = 16,
+					`marker no-op` = 17,
+					`stop/start typing` = 15
+				), drop = FALSE) +
+				scale_x_continuous(breaks = c(0, 50, 100, 150, 200, 300)) +
+				labs(
+					title = "The low event-only band depends on timer-to-key proximity",
+					subtitle = "Dense 1000..1300ms paired trace; points are p50s by requested key-hold delay",
+					x = "Timer callback to following keydown, p50 (ms)",
+					y = "Duration, p50 (ms)",
+					color = "Timer callback",
+					shape = "Timer callback"
+				),
+			"48-marker-gap-decay.png",
+			width = 11,
+			height = 8
 		)
 	}
 }

@@ -57,6 +57,15 @@ The short version:
     `31.3ms` `keypress` p50). A raw dispatch/timer tick is therefore not
     sufficient; the fast cases require an effective root-state change that wakes
     the subscriber path before the measured input.
+-   A dense timer-to-key gap scan adds another constraint. In the normal-marker
+    and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
+    low when the timer callback is roughly `40-100ms` before the next keydown,
+    starts rising around `150ms`, and is back on the slow plateau around
+    `200-300ms`. The no-op timer can fire only `3-30ms` before the next keydown
+    and still does not reach the normal `~10-11ms` band. This disconfirms both
+    "same state at keydown is enough" and "timer ordering alone is enough"; the
+    proven condition is effective timer-side block-editor fanout close to the
+    next measured input.
 -   Splitting the measured key into `keydown`, `keypress`, and `keyup` shows
     that the intervention gap is almost entirely in the measured `keypress`
     component.
@@ -288,6 +297,8 @@ The R script derives:
 -   `data/typing-delay-marker-paired-*.csv`: per-sample marker-inclusive
     summaries that add the marker action before each retained key to that key's
     EventDispatch latency.
+-   `data/typing-delay-marker-gap-dense-paired-*.csv`: dense
+    `1000..1300ms` paired traces for timer-to-next-key gap analysis.
 -   `data/typing-delay-timeout-970-marker-paired-*.csv`: the same paired
     accounting for a targeted run that rewrites Gutenberg's `1000ms` timers to
     `970ms`.
@@ -982,6 +993,51 @@ fanout is not enough if it leaves the next input to repair the state. In the
 stop/start run, the timer callback changes `isTyping` from true to false and
 then back to true before the next key, with no persistent-marker state change,
 and that is the non-marker probe that matches the full low band.
+
+The dense timer-to-key gap probe makes that statement narrower. This run used
+one diagnostic round with six retained samples per delay, delays
+`1000..1100ms` in `10ms` steps plus `1150ms`, `1200ms`, and `1300ms`, and the
+same timer/data tracing used by the paired action analysis.
+
+![Marker-to-key gap decay](figures/48-marker-gap-decay.png)
+
+Selected p50s:
+
+| Timer callback        |    Delay | Marker to keydown | Event-only p50 | Timer callback p50 | Timer-inclusive p50 | Keydown state       |
+| --------------------- | -------: | ----------------: | -------------: | -----------------: | ------------------: | ------------------- |
+| normal marker         | `1010ms` |          `35.2ms` |       `10.5ms` |           `14.6ms` |            `25.3ms` | persistent, typing  |
+| normal marker         | `1100ms` |         `100.8ms` |       `12.3ms` |           `16.3ms` |            `28.8ms` | persistent, typing  |
+| normal marker         | `1200ms` |         `202.5ms` |       `23.0ms` |           `14.6ms` |            `38.0ms` | persistent, typing  |
+| normal marker         | `1300ms` |         `303.8ms` |       `23.0ms` |           `15.0ms` |            `37.1ms` | persistent, typing  |
+| marker no-op          | `1000ms` |           `3.3ms` |       `22.4ms` |            `0.0ms` |            `22.6ms` | mostly transient    |
+| marker no-op          | `1030ms` |          `30.2ms` |       `14.6ms` |            `0.0ms` |            `14.6ms` | transient, typing   |
+| stop/start typing     | `1010ms` |          `43.8ms` |        `9.3ms` |           `20.8ms` |            `33.0ms` | transient, typing   |
+| stop/start typing     | `1200ms` |         `200.5ms` |       `19.2ms` |           `22.7ms` |            `42.7ms` | transient, typing   |
+| stop/start typing     | `1300ms` |         `303.1ms` |       `22.7ms` |           `20.4ms` |            `43.0ms` | transient, typing   |
+
+This disconfirms two tempting explanations. First, the normal marker run is in
+the same coarse selector state at keydown (`isLastBlockChangePersistent() ===
+true` and `isTyping() === true`) at `1010ms`, `1200ms`, and `1300ms`, but the
+next input is low only when the timer callback is close to that keydown. Coarse
+state at keydown is therefore not sufficient. Second, persistence is not
+necessary: `stopTyping(); startTyping()` has `isLastBlockChangePersistent() ===
+false` at the following keydown for nearly all retained rows and still matches
+the low band while the marker-to-key gap is short.
+
+It also limits the timer-ordering theory. The no-op callback can run just a few
+milliseconds before the next keydown and still does not reproduce the
+normal-marker or stop/start `~10-11ms` band. There is some partial movement in
+the no-op scan around `1010..1030ms`, which is consistent with the busy-wait
+results: scheduling and nearby browser-task boundaries contribute. But the full
+low band still requires an effective block-editor state change and subscriber
+pass before the key, and the effect fades as that pass gets farther away in
+wall-clock time.
+
+This does not prove the lower-level reason for the decay. The honest statement is
+that the event-only metric is sensitive to recent timer-side block-editor fanout,
+not that the same work literally moved from one key event into the timer task.
+The timer-inclusive column stays high, and by `1200..1300ms` it is much worse
+than the event-only low band.
 
 The `stopTyping()` result has a direct code-level explanation. `ObserveTyping`
 installs different DOM listeners depending on `isTyping`: when typing is true,
@@ -2982,6 +3038,10 @@ The key runs used in this report were:
     `marker_stop_start_typing_listener_1000`: same-configuration `1000ms`
     event-listener probes used to distinguish the browser-trace `keypress`
     slice from actual DOM `keypress` and `input` listener callbacks.
+-   `marker_normal_gap_dense`, `marker_noop_gap_dense`, and
+    `marker_stop_start_typing_gap_dense`: one-round diagnostic scans over
+    `1000..1100ms`, `1150ms`, `1200ms`, and `1300ms`, used to compare the
+    following input slice against the timer-callback-to-keydown gap.
 -   `redux_listener_owner_normal_1000`, `redux_listener_owner_noop_1000`,
     `redux_listener_owner_next_not_persistent_1000`: reduced `1000ms`
     owner-attribution runs with diagnostic `useSelectId` metadata propagated to
