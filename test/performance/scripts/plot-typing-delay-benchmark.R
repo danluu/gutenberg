@@ -3472,13 +3472,28 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						"busy wait 40ms",
 						"no-op + busy wait 150ms",
 						"worker busy wait 150ms",
+						"worker busy wait 150ms, no message",
+						"worker delay 150ms, no CPU",
+						"delayed no-op 150ms",
 						"normal marker + busy wait 150ms",
 						"stop/start + busy wait 150ms"
 					)
 				)
 			) %>%
+			mutate(
+				intervention_label = fct_recode(
+					intervention,
+					`busy wait 150ms` = "no-op + busy wait 150ms",
+					`worker CPU, msg` = "worker busy wait 150ms",
+					`worker CPU, no msg` = "worker busy wait 150ms, no message",
+					`worker delay, no CPU` = "worker delay 150ms, no CPU",
+					`delayed no-op` = "delayed no-op 150ms",
+					`normal + busy wait` = "normal marker + busy wait 150ms",
+					`stop/start + busy wait` = "stop/start + busy wait 150ms"
+				)
+			) %>%
 			select(
-				intervention,
+				intervention_label,
 				rewrite_timeout_ms,
 				intervention_end_to_current_keydown_p50_ms,
 				`next EventDispatch only` = latency_p50_ms,
@@ -3502,33 +3517,40 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				aes(
 					intervention_end_to_current_keydown_p50_ms,
 					duration_ms,
-					color = intervention,
-					shape = intervention
+					color = intervention_label,
+					shape = intervention_label
 				)
 			) +
 				geom_point(size = 3.3, alpha = 0.9) +
 				facet_wrap(~metric, ncol = 1, scales = "free_y") +
-				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Paired", drop = FALSE) +
 				scale_shape_manual(values = c(
 					`marker no-op` = 17,
 					`busy wait 20ms` = 3,
 					`busy wait 40ms` = 8,
-					`no-op + busy wait 150ms` = 4,
-					`worker busy wait 150ms` = 7,
-					`normal marker + busy wait 150ms` = 16,
-					`stop/start + busy wait 150ms` = 15
+					`busy wait 150ms` = 4,
+					`worker CPU, msg` = 7,
+					`worker CPU, no msg` = 9,
+					`worker delay, no CPU` = 10,
+					`delayed no-op` = 11,
+					`normal + busy wait` = 16,
+					`stop/start + busy wait` = 15
 				), drop = FALSE) +
 				scale_x_continuous(breaks = c(0, 50, 100, 150, 200)) +
 				labs(
 					title = "Recent timer-side work can make the next event slice fast",
-					subtitle = "Fixed 1300ms key hold; worker and no-op busy-wait variants change no Gutenberg selector snapshot",
+					subtitle = "Fixed 1300ms key hold; worker CPU without a message is fast, delayed no-op/message-only controls are slow",
 					x = "Timer-side work end to following keydown, p50 (ms)",
 					y = "Duration, p50 (ms)",
-					color = "Timer callback",
-					shape = "Timer callback"
+					color = "Timer-side work",
+					shape = "Timer-side work"
+				) +
+				guides(
+					color = guide_legend(nrow = 2, byrow = TRUE),
+					shape = guide_legend(nrow = 2, byrow = TRUE)
 				),
 			"50-task-end-proximity.png",
-			width = 11,
+			width = 13,
 			height = 8
 		)
 	}

@@ -376,6 +376,27 @@ const taskEndProximityRuns = [
 		dir: 'test/performance/artifacts/typing-delay-task-end-worker-busy-150-timeout-1100-delay-1300',
 	},
 	{
+		runId: 'task_end_worker_busy_no_message_150_timeout_1100_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'worker busy wait 150ms, no message',
+		rewriteTimeoutMs: 1100,
+		dir: 'test/performance/artifacts/typing-delay-task-end-worker-busy-no-message-150-timeout-1100-delay-1300',
+	},
+	{
+		runId: 'task_end_worker_delay_150_timeout_1100_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'worker delay 150ms, no CPU',
+		rewriteTimeoutMs: 1100,
+		dir: 'test/performance/artifacts/typing-delay-task-end-worker-delay-150-timeout-1100-delay-1300',
+	},
+	{
+		runId: 'task_end_delayed_noop_150_timeout_1100_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'delayed no-op 150ms',
+		rewriteTimeoutMs: 1100,
+		dir: 'test/performance/artifacts/typing-delay-task-end-delayed-noop-150-timeout-1100-delay-1300',
+	},
+	{
 		runId: 'task_end_normal_busy_150_timeout_1100_delay_1300',
 		traceType: 'task end proximity',
 		intervention: 'normal marker + busy wait 150ms',
@@ -970,6 +991,18 @@ function spanCategory( event ) {
 	return event.name;
 }
 
+function eventWithLatestEnd( events ) {
+	return events.reduce(
+		( latest, event ) =>
+			! latest ||
+			event.nowMs + ( event.durationMs || 0 ) >
+				latest.nowMs + ( latest.durationMs || 0 )
+				? event
+				: latest,
+		null
+	);
+}
+
 function buildPairedRows( runsToPair ) {
 	return runsToPair.flatMap( ( run ) => {
 		const recordsBySummary = groupedBy( run.data.records, summaryKey );
@@ -1026,10 +1059,13 @@ function buildPairedRows( runsToPair ) {
 						event.nowMs > previousInput.nowMs &&
 						event.nowMs < currentKeydown.nowMs
 				);
-				const lastInterventionEvent =
+				const lastInterventionStartEvent =
 					priorInterventionEvents[
 						priorInterventionEvents.length - 1
 					];
+				const lastInterventionEndEvent = eventWithLatestEnd(
+					priorInterventionEvents
+				);
 				const interventionDurationMs = priorInterventionEvents.reduce(
 					( sum, event ) => sum + ( event.durationMs || 0 ),
 					0
@@ -1056,14 +1092,17 @@ function buildPairedRows( runsToPair ) {
 					marker_action_duration_ms: markerActionDurationMs,
 					intervention_event_count: priorInterventionEvents.length,
 					intervention_duration_ms: interventionDurationMs,
-					intervention_to_current_keydown_ms: lastInterventionEvent
-						? currentKeydown.nowMs - lastInterventionEvent.nowMs
-						: null,
-					intervention_end_to_current_keydown_ms:
-						lastInterventionEvent
+					intervention_to_current_keydown_ms:
+						lastInterventionStartEvent
 							? currentKeydown.nowMs -
-							  ( lastInterventionEvent.nowMs +
-									( lastInterventionEvent.durationMs || 0 ) )
+							  lastInterventionStartEvent.nowMs
+							: null,
+					intervention_end_to_current_keydown_ms:
+						lastInterventionEndEvent
+							? currentKeydown.nowMs -
+							  ( lastInterventionEndEvent.nowMs +
+									( lastInterventionEndEvent.durationMs ||
+										0 ) )
 							: null,
 					latency_ms: record.latencyMs,
 					keypress_ms: record.keypressMs,

@@ -81,12 +81,14 @@ The short version:
     supports a duration/proximity effect: pure `20ms`, `40ms`, and `150ms`
     busy waits ending about `51ms` before keydown had event-only p50s of
     `21.0ms`, `14.1ms`, and `11.3ms`.
--   A Web Worker version pushes that further. The timer callback itself is only
-    about `1.4ms` p50, then a worker spins for about `159ms` and returns roughly
-    `41ms` before keydown; the following Gutenberg EventDispatch p50 is still
-    low (`10.5ms`). When the same worker finishes about `141ms` before keydown,
-    the p50 is intermediate (`14.9ms`). That disconfirms "long main-thread timer
-    task is required" and points instead to recent browser/CPU/scheduler state
+-   Web Worker controls push that further. A worker can spin for `150ms` and
+    never post a completion message back to the main thread; when its expected
+    finish is about `50ms` before keydown, the following Gutenberg EventDispatch
+    is still low (`10.3ms` p50). A worker that only waits `150ms` and posts a
+    message, with no CPU spin, stays slow (`24.7ms`), as does a main-thread
+    delayed no-op (`24.4ms`). That disconfirms "long main-thread timer task is
+    required", "worker message task is enough", and "any delayed task close to
+    keydown is enough"; it points instead to recent CPU/scheduler state
     interacting with Gutenberg's input path.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
@@ -1120,6 +1122,12 @@ event-only measurement. The new intervention modes are deliberately artificial:
 -   `worker-busy-wait-150`: start a Web Worker from the timer callback and have
     the worker spin for `150ms`; the timer callback itself returns quickly and
     the worker completion is recorded separately.
+-   `worker-busy-wait-150-no-message`: same worker CPU spin, but the worker
+    closes itself without posting a completion message back to the main thread.
+-   `worker-delay-150`: worker waits for `150ms` and posts a message back, but
+    does no CPU spin.
+-   `delayed-noop-150`: main thread schedules a delayed no-op task near the
+    following keydown without doing CPU work.
 -   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
     open for `150ms`.
 -   `stop-start-typing-then-busy-wait-150`: run the stop/start typing
@@ -1138,6 +1146,9 @@ Selected p50s:
 | no-op + busy wait `150ms`      |      `1100ms` |            `51.0ms` |       `11.3ms` |      `150.0ms` |           `161.0ms` |
 | worker busy wait `150ms`       |      `1000ms` |           `141.1ms` |       `14.9ms` |      `161.1ms` |           `176.1ms` |
 | worker busy wait `150ms`       |      `1100ms` |            `41.2ms` |       `10.5ms` |      `160.1ms` |           `170.4ms` |
+| worker busy wait, no message   |      `1100ms` |            `50.1ms` |       `10.3ms` |      `151.2ms` |           `161.6ms` |
+| worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` |      `169.1ms` |           `193.8ms` |
+| delayed no-op                  |      `1100ms` |            `50.5ms` |       `24.4ms` |      `152.6ms` |           `176.6ms` |
 | normal marker + busy wait      |      `1100ms` |            `37.2ms` |        `8.5ms` |      `162.8ms` |           `170.9ms` |
 | stop/start typing + busy wait  |      `1100ms` |            `30.9ms` |        `8.1ms` |      `170.0ms` |           `177.7ms` |
 
@@ -1154,8 +1165,8 @@ The updated model is narrower and less semantic:
 3. A long pure-JS timer task close to keydown is also sufficient, even with no
    Gutenberg state transition.
 4. A long off-main-thread worker spin is also sufficient when it finishes close
-   to keydown. The timer callback that starts the worker is only `~1.4ms` p50,
-   so the long work does not have to be a long blocking timer callback.
+   to keydown. It remains sufficient even when the worker never posts a
+   completion message back to the main thread.
 5. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
    `20ms`, `40ms`, and `150ms` pure busy waits form a descending event-only
    sequence: `21.0ms`, `14.1ms`, and `11.3ms`.
@@ -1164,11 +1175,14 @@ The updated model is narrower and less semantic:
    around `51ms` before keydown is in the low band. The worker control shows the
    same shape: `14.9ms` when it ends around `141ms` before keydown, and
    `10.5ms` when it ends around `41ms` before keydown.
+7. The near-key main-thread task is not the mechanism by itself. The
+   `worker-delay-150` and `delayed-noop-150` controls both create near-key tasks
+   with no CPU spin, and both stay on the slow plateau.
 
 That points away from a purely Gutenberg-state explanation and toward
-browser scheduler / CPU-state sensitivity around Gutenberg's input path. It
+CPU/scheduler sensitivity around Gutenberg's input path. It
 still does not mean the benchmarked character cycle got cheaper. The
-timer/worker-inclusive values for the artificial busy-wait rows are `161-178ms`.
+timer/worker-inclusive values for these artificial controls are `161-194ms`.
 
 I also added a native `contenteditable` control with the same rewritten
 one-second timer and the same `1300ms` key hold:
@@ -3213,6 +3227,9 @@ The key runs used in this report were:
     `task_end_noop_busy_150_timeout_1100_delay_1300`,
     `task_end_worker_busy_150_timeout_1000_delay_1300`,
     `task_end_worker_busy_150_timeout_1100_delay_1300`,
+    `task_end_worker_busy_no_message_150_timeout_1100_delay_1300`,
+    `task_end_worker_delay_150_timeout_1100_delay_1300`,
+    `task_end_delayed_noop_150_timeout_1100_delay_1300`,
     `task_end_normal_busy_150_timeout_1100_delay_1300`, and
     `task_end_stop_start_busy_150_timeout_1100_delay_1300`: fixed `1300ms`
     key-hold traces that test whether recent timer-side work ending close to the

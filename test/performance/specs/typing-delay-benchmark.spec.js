@@ -136,6 +136,9 @@ const supportedMarkPersistentInterventions = [
 	'noop',
 	'noop-then-busy-wait-150',
 	'worker-busy-wait-150',
+	'worker-busy-wait-150-no-message',
+	'worker-delay-150',
+	'delayed-noop-150',
 	'raw-unknown-action',
 	'mark-next-not-persistent',
 	'mark-last-then-mark-next-not-persistent',
@@ -1298,6 +1301,85 @@ test.describe( 'Typing delay benchmark', () => {
 								worker.postMessage( { durationMs } );
 							}
 
+							function startWorkerBusyWaitNoMessage(
+								durationMs
+							) {
+								const startedAtMs = performance.now();
+								const source = `
+							self.onmessage = ( event ) => {
+								const stopAt = performance.now() + event.data.durationMs;
+								while ( performance.now() < stopAt ) {}
+								self.close();
+							};
+						`;
+								const url = URL.createObjectURL(
+									new Blob( [ source ], {
+										type: 'text/javascript',
+									} )
+								);
+								const worker = new Worker( url );
+								worker.postMessage( { durationMs } );
+								window.__typingBenchmarkMarkPersistentInterventionEvents.push(
+									{
+										nowMs: startedAtMs,
+										durationMs,
+										mode,
+										status: 'worker-started-no-message',
+										before,
+										after: blockEditorSnapshot(),
+									}
+								);
+							}
+
+							function startWorkerDelay( delayMs ) {
+								const startedAtMs = performance.now();
+								const source = `
+							self.onmessage = ( event ) => {
+								setTimeout( () => self.postMessage( {} ), event.data.delayMs );
+							};
+						`;
+								const url = URL.createObjectURL(
+									new Blob( [ source ], {
+										type: 'text/javascript',
+									} )
+								);
+								const worker = new Worker( url );
+								worker.onmessage = () => {
+									const finishedAtMs = performance.now();
+									worker.terminate();
+									URL.revokeObjectURL( url );
+									window.__typingBenchmarkMarkPersistentInterventionEvents.push(
+										{
+											nowMs: startedAtMs,
+											durationMs:
+												finishedAtMs - startedAtMs,
+											mode,
+											status: 'worker-delay-returned',
+											before,
+											after: blockEditorSnapshot(),
+										}
+									);
+								};
+								worker.postMessage( { delayMs } );
+							}
+
+							function startDelayedNoop( delayMs ) {
+								const startedAtMs = performance.now();
+								window.setTimeout( () => {
+									window.__typingBenchmarkMarkPersistentInterventionEvents.push(
+										{
+											nowMs: startedAtMs,
+											durationMs:
+												performance.now() - startedAtMs,
+											mode,
+											status: 'delayed-noop-returned',
+											before,
+											after: blockEditorSnapshot(),
+										}
+									);
+								}, delayMs );
+							}
+
 							try {
 								if ( mode === 'noop' ) {
 									result = undefined;
@@ -1308,6 +1390,17 @@ test.describe( 'Typing delay benchmark', () => {
 									result = undefined;
 								} else if ( mode === 'worker-busy-wait-150' ) {
 									startWorkerBusyWait( 150 );
+									result = undefined;
+								} else if (
+									mode === 'worker-busy-wait-150-no-message'
+								) {
+									startWorkerBusyWaitNoMessage( 150 );
+									result = undefined;
+								} else if ( mode === 'worker-delay-150' ) {
+									startWorkerDelay( 150 );
+									result = undefined;
+								} else if ( mode === 'delayed-noop-150' ) {
+									startDelayedNoop( 150 );
 									result = undefined;
 								} else if ( mode === 'raw-unknown-action' ) {
 									result = rawDispatch( 'core/block-editor', {
