@@ -984,11 +984,11 @@ test.describe( 'Typing delay benchmark', () => {
 		}
 		if (
 			setupStyle === 'ci-post-editor-typing' &&
-			delayMode !== 'keyboard'
+			! [ 'keyboard', 'between-keys' ].includes( delayMode )
 		) {
 			throw new Error(
 				'BENCHMARK_SETUP_STYLE=ci-post-editor-typing only supports ' +
-					'BENCHMARK_DELAY_MODE=keyboard, which matches the CI typing test.'
+					'BENCHMARK_DELAY_MODE=keyboard or between-keys.'
 			);
 		}
 
@@ -2743,6 +2743,9 @@ setInterval(() => {}, 2147483647);
 						await page.keyboard.type( 'x' );
 					}
 				} else if ( delayMode === 'between-keys' ) {
+					if ( setupStyle === 'ci-post-editor-typing' ) {
+						await paragraph.click();
+					}
 					for ( let i = 0; i < sampleCount; i++ ) {
 						await page.keyboard.type( 'x' );
 						if ( delayMs > 0 && i < sampleCount - 1 ) {

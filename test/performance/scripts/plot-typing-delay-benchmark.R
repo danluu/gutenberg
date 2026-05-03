@@ -2159,6 +2159,370 @@ if (file.exists(ci_dense_n50_summary_path)) {
 	)
 }
 
+ci_start_wait_curve_draft_reliability_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-draft-summary.csv")
+ci_startup_wait_run_reliability_out_path <- file.path(data_dir, "typing-delay-ci-startup-wait-run-reliability.csv")
+ci_startup_runtime_model_path <- file.path(data_dir, "typing-delay-ci-startup-wait-runtime-model.csv")
+if (file.exists(ci_start_wait_curve_draft_reliability_path)) {
+	ci_startup_wait_run_reliability <- read_csv(ci_start_wait_curve_draft_reliability_path, show_col_types = FALSE) %>%
+		group_by(startup_wait_ms = settle_after_editor_setup_ms) %>%
+		summarize(
+			run_count = n(),
+			reported_q50_median_ms = median(retained_latency_p50_ms),
+			reported_q50_mean_ms = mean(retained_latency_p50_ms),
+			reported_q50_sd_ms = sd(retained_latency_p50_ms),
+			reported_q50_min_ms = min(retained_latency_p50_ms),
+			reported_q50_max_ms = max(retained_latency_p50_ms),
+			reported_q50_range_ms = reported_q50_max_ms - reported_q50_min_ms,
+			reported_q50_cv = reported_q50_sd_ms / reported_q50_mean_ms,
+			reported_mean_median_ms = median(retained_latency_mean_ms),
+			run_duration_median_ms = median(run_duration_ms),
+			active_setup_median_ms = median(active_setup_ms),
+			.groups = "drop"
+		)
+
+	if (file.exists(ci_startup_runtime_model_path)) {
+		ci_startup_wait_run_reliability <- ci_startup_wait_run_reliability %>%
+			left_join(
+				read_csv(ci_startup_runtime_model_path, show_col_types = FALSE) %>%
+					select(startup_wait_ms, two_branch_ci_change_vs_current_s, two_branch_ci_saved_vs_current_s),
+				by = "startup_wait_ms"
+			)
+	}
+
+	write_csv(ci_startup_wait_run_reliability, ci_startup_wait_run_reliability_out_path)
+
+	ci_startup_reliability_plot <- ci_startup_wait_run_reliability %>%
+		filter(startup_wait_ms <= 5000) %>%
+		mutate(
+			startup_wait_label = factor(paste0(startup_wait_ms, "ms"), levels = paste0(startup_wait_ms, "ms"))
+		) %>%
+		select(
+			startup_wait_label,
+			`two-branch runtime delta vs current (s)` = two_branch_ci_change_vs_current_s,
+			`median reported Typing q50 (ms)` = reported_q50_median_ms,
+			`run-to-run reported q50 sd (ms)` = reported_q50_sd_ms,
+			`run-to-run reported q50 range (ms)` = reported_q50_range_ms
+		) %>%
+		pivot_longer(
+			cols = -startup_wait_label,
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"two-branch runtime delta vs current (s)",
+					"median reported Typing q50 (ms)",
+					"run-to-run reported q50 sd (ms)",
+					"run-to-run reported q50 range (ms)"
+				)
+			),
+			value_label = case_when(
+				str_detect(as.character(metric), "runtime") ~ sprintf("%+.0fs", value),
+				TRUE ~ sprintf("%.1f", value)
+			)
+		)
+
+	save_plot(
+		ggplot(ci_startup_reliability_plot, aes(startup_wait_label, value, color = metric)) +
+			geom_hline(
+				data = ci_startup_reliability_plot %>%
+					filter(metric == "two-branch runtime delta vs current (s)") %>%
+					distinct(metric) %>%
+					mutate(value = 0),
+				aes(yintercept = value),
+				color = brewer_color("Greys", 7, type = "seq", n = 9),
+				linewidth = 0.35
+			) +
+			geom_point(size = 2.8, alpha = 0.9) +
+			geom_text(aes(label = value_label), vjust = -0.7, size = 2.7, show.legend = FALSE) +
+			scale_color_brewer(type = "qual", palette = "Dark2", guide = "none") +
+			scale_y_continuous(expand = expansion(mult = c(0.12, 0.2))) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "CI-comparable startup wait: runtime changes, q50 stability mostly does not",
+				subtitle = "Eight fresh saved/reopened large-post drafts per wait; current Typing already has 0ms extra post-setup wait",
+				x = "Extra wait after editor setup",
+				y = NULL
+			) +
+			theme(axis.text.x = element_text(angle = 35, hjust = 1)),
+		"93-ci-startup-wait-run-reliability.png",
+		width = 10,
+		height = 8.6
+	)
+}
+
+if (file.exists(ci_dense_n50_summary_path)) {
+	ci_held_key_delay_runtime_reliability <- read_csv(ci_dense_n50_summary_path, show_col_types = FALSE) %>%
+		transmute(
+			input_mode = "current CI held key",
+			delay_ms,
+			retained_n,
+			reported_q50_ms = latency_p50_ms,
+			reported_mean_ms = latency_mean_ms,
+			reported_sd_ms = latency_sd_ms,
+			reported_cv = latency_cv,
+			reported_p10_ms = latency_p10_ms,
+			reported_p90_ms = latency_p90_ms,
+			typing_metrics_per_branch = 5,
+			compared_branches = 2,
+			delay_intervals_per_metric = 11,
+			two_branch_intentional_typing_wait_s =
+				compared_branches * typing_metrics_per_branch * delay_intervals_per_metric * delay_ms / 1000,
+			two_branch_change_vs_current_s = two_branch_intentional_typing_wait_s - 110,
+			two_branch_saved_vs_current_s = 110 - two_branch_intentional_typing_wait_s
+		)
+	write_csv(
+		ci_held_key_delay_runtime_reliability,
+		file.path(data_dir, "typing-delay-ci-held-key-delay-runtime-reliability.csv")
+	)
+
+	ci_held_key_delay_plot <- ci_held_key_delay_runtime_reliability %>%
+		filter(delay_ms <= 1400) %>%
+		select(
+			delay_ms,
+			`two-branch runtime delta vs current (s)` = two_branch_change_vs_current_s,
+			`reported q50 (ms)` = reported_q50_ms,
+			`within-run CV (%)` = reported_cv
+		) %>%
+		mutate(`within-run CV (%)` = 100 * `within-run CV (%)`) %>%
+		pivot_longer(
+			cols = -delay_ms,
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"two-branch runtime delta vs current (s)",
+					"reported q50 (ms)",
+					"within-run CV (%)"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(ci_held_key_delay_plot, aes(delay_ms, value, color = metric)) +
+			geom_hline(
+				data = ci_held_key_delay_plot %>%
+					filter(metric == "two-branch runtime delta vs current (s)") %>%
+					distinct(metric) %>%
+					mutate(value = 0),
+				aes(yintercept = value),
+				color = brewer_color("Greys", 7, type = "seq", n = 9),
+				linewidth = 0.35
+			) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+			geom_point(size = 1.15, alpha = 0.85) +
+			scale_x_continuous(breaks = seq(0, 1400, 100)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", guide = "none") +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "Reducing the current held-key delay saves time but changes the measured regime",
+				subtitle = "CI-comparable saved/reopened large-post setup; n=50 retained samples per delay",
+				x = "Current Playwright held-key delay",
+				y = NULL
+			),
+		"94-ci-held-key-delay-runtime-reliability.png",
+		width = 10.5,
+		height = 8.6
+	)
+}
+
+ci_key_mode_sample_path <- file.path(data_dir, "typing-delay-ci-key-mode-reliability-samples.csv")
+ci_key_mode_run_path <- file.path(data_dir, "typing-delay-ci-key-mode-reliability-runs.csv")
+ci_key_mode_summary_path <- file.path(data_dir, "typing-delay-ci-key-mode-reliability-summary.csv")
+ci_key_mode_runtime_path <- file.path(data_dir, "typing-delay-ci-key-mode-runtime-reliability.csv")
+ci_key_mode_artifact_dirs <- c(
+	keyboard = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard"),
+	`between-keys` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys")
+)
+ci_key_mode_json_paths <- map_chr(ci_key_mode_artifact_dirs, function(artifact_dir) {
+	paths <- Sys.glob(file.path(artifact_dir, "typing-delay-benchmark-*.json"))
+	if (length(paths) == 0) {
+		return(NA_character_)
+	}
+	paths[[which.max(file.info(paths)$mtime)]]
+})
+ci_key_mode_labels <- c(
+	keyboard = "current CI held key",
+	`between-keys` = "tap then wait"
+)
+
+if (all(!is.na(ci_key_mode_json_paths))) {
+	ci_key_mode_samples <- map_dfr(ci_key_mode_json_paths, function(json_path) {
+		raw <- fromJSON(json_path, flatten = TRUE)
+		as_tibble(raw$records) %>%
+			transmute(
+				input_mode = ci_key_mode_labels[[raw$metadata$delayMode]],
+				delay_mode = raw$metadata$delayMode,
+				json_path = sub(paste0(repo_root, "/"), "", json_path, fixed = TRUE),
+				delay_ms = delayMs,
+				round,
+				editor_setup_index = editorSetupIndex,
+				sample_index = sampleIndex,
+				is_throwaway = isThrowaway,
+				latency_ms = latencyMs,
+				keydown_ms = keydownMs,
+				keypress_ms = keypressMs,
+				keyup_ms = keyupMs,
+				run_duration_ms = runStoppedAtEpochMs - runStartedAtEpochMs
+			)
+	})
+	write_csv(ci_key_mode_samples, ci_key_mode_sample_path)
+} else if (file.exists(ci_key_mode_sample_path)) {
+	ci_key_mode_samples <- read_csv(ci_key_mode_sample_path, show_col_types = FALSE)
+} else {
+	ci_key_mode_samples <- tibble()
+}
+
+if (nrow(ci_key_mode_samples) > 0) {
+	ci_key_mode_retained <- ci_key_mode_samples %>% filter(!is_throwaway)
+	ci_key_mode_runs <- ci_key_mode_retained %>%
+		group_by(input_mode, delay_mode, json_path, delay_ms, round, editor_setup_index) %>%
+		summarize(
+			retained_n = n(),
+			reported_q50_ms = median(latency_ms),
+			reported_mean_ms = mean(latency_ms),
+			reported_sd_ms = sd(latency_ms),
+			reported_cv = reported_sd_ms / reported_mean_ms,
+			reported_p10_ms = quant(latency_ms, 0.1),
+			reported_p90_ms = quant(latency_ms, 0.9),
+			run_duration_ms = first(run_duration_ms),
+			.groups = "drop"
+		)
+	write_csv(ci_key_mode_runs, ci_key_mode_run_path)
+
+	ci_key_mode_summary <- ci_key_mode_retained %>%
+		group_by(input_mode, delay_mode, delay_ms) %>%
+		summarize(
+			retained_n = n(),
+			latency_p10_ms = quant(latency_ms, 0.1),
+			latency_p50_ms = median(latency_ms),
+			latency_p90_ms = quant(latency_ms, 0.9),
+			latency_mean_ms = mean(latency_ms),
+			latency_sd_ms = sd(latency_ms),
+			latency_cv = latency_sd_ms / latency_mean_ms,
+			latency_min_ms = min(latency_ms),
+			latency_max_ms = max(latency_ms),
+			keydown_p50_ms = median(keydown_ms),
+			keypress_p50_ms = median(keypress_ms),
+			keyup_p50_ms = median(keyup_ms),
+			.groups = "drop"
+		) %>%
+		left_join(
+			ci_key_mode_runs %>%
+				group_by(input_mode, delay_mode, delay_ms) %>%
+				summarize(
+					run_count = n(),
+					run_reported_q50_median_ms = median(reported_q50_ms),
+					run_reported_q50_sd_ms = sd(reported_q50_ms),
+					run_reported_q50_min_ms = min(reported_q50_ms),
+					run_reported_q50_max_ms = max(reported_q50_ms),
+					run_reported_q50_range_ms = run_reported_q50_max_ms - run_reported_q50_min_ms,
+					run_duration_median_ms = median(run_duration_ms),
+					.groups = "drop"
+				),
+			by = c("input_mode", "delay_mode", "delay_ms")
+		)
+	write_csv(ci_key_mode_summary, ci_key_mode_summary_path)
+
+	ci_key_mode_runtime <- ci_key_mode_summary %>%
+		mutate(
+			input_mode = factor(input_mode, levels = c("current CI held key", "tap then wait")),
+			typing_metrics_per_branch = 5,
+			compared_branches = 2,
+			delay_intervals_per_metric = if_else(delay_mode == "between-keys", 10, 11),
+			two_branch_intentional_typing_wait_s =
+				compared_branches * typing_metrics_per_branch * delay_intervals_per_metric * delay_ms / 1000,
+			two_branch_change_vs_current_held_key_s = two_branch_intentional_typing_wait_s - 110,
+			two_branch_saved_vs_current_held_key_s = 110 - two_branch_intentional_typing_wait_s
+		)
+	write_csv(ci_key_mode_runtime, ci_key_mode_runtime_path)
+
+	ci_key_mode_summary_plot <- ci_key_mode_summary %>%
+		mutate(input_mode = factor(input_mode, levels = c("current CI held key", "tap then wait")))
+	key_mode_dodge <- position_dodge(width = 28)
+
+	save_plot(
+		ggplot(ci_key_mode_summary_plot, aes(delay_ms, latency_p50_ms, color = input_mode)) +
+			geom_linerange(
+				aes(ymin = latency_p10_ms, ymax = latency_p90_ms),
+				position = key_mode_dodge,
+				alpha = 0.7,
+				linewidth = 0.8
+			) +
+			geom_point(position = key_mode_dodge, size = 2.7, alpha = 0.95) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+			scale_x_continuous(breaks = sort(unique(ci_key_mode_summary_plot$delay_ms))) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Input mode") +
+			labs(
+				title = "Tap-then-wait is a different and more stable CI typing metric",
+				subtitle = "Same saved/reopened large-post setup; points are p50, vertical bars are p10-p90; 40 retained samples per delay and mode",
+				x = "Configured delay",
+				y = "Latency, keydown + keypress + keyup (ms)"
+			),
+		"95-ci-key-mode-p50-comparison.png",
+		width = 9.8,
+		height = 5.6
+	)
+
+	ci_key_mode_reliability_plot <- ci_key_mode_runtime %>%
+		select(
+			input_mode,
+			delay_ms,
+			`two-branch runtime delta vs current held-key 1000ms (s)` = two_branch_change_vs_current_held_key_s,
+			`run-to-run reported q50 sd (ms)` = run_reported_q50_sd_ms,
+			`within-run CV (%)` = latency_cv
+		) %>%
+		mutate(`within-run CV (%)` = 100 * `within-run CV (%)`) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_ms),
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			input_mode = factor(input_mode, levels = c("current CI held key", "tap then wait")),
+			metric = factor(
+				metric,
+				levels = c(
+					"two-branch runtime delta vs current held-key 1000ms (s)",
+					"run-to-run reported q50 sd (ms)",
+					"within-run CV (%)"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(ci_key_mode_reliability_plot, aes(delay_ms, value, color = input_mode)) +
+			geom_hline(
+				data = ci_key_mode_reliability_plot %>%
+					filter(metric == "two-branch runtime delta vs current held-key 1000ms (s)") %>%
+					distinct(metric) %>%
+					mutate(value = 0),
+				aes(yintercept = value),
+				color = brewer_color("Greys", 7, type = "seq", n = 9),
+				linewidth = 0.35
+			) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+			geom_point(position = key_mode_dodge, size = 2.5, alpha = 0.95) +
+			scale_x_continuous(breaks = sort(unique(ci_key_mode_reliability_plot$delay_ms))) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Input mode") +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "Tap mode removes most of the held-key delay volatility",
+				subtitle = "Current CI holds each key during Playwright's delay; tap mode waits after keyup instead",
+				x = "Configured delay",
+				y = NULL
+			),
+		"96-ci-key-mode-runtime-reliability.png",
+		width = 10,
+		height = 8.2
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

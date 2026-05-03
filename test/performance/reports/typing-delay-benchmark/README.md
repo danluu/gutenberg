@@ -87,6 +87,22 @@ The short version:
     `200ms`, `400ms`, `600ms`, and `1000ms`, crossed with startup waits from
     `0ms` through `5000ms`. Typing delay dominates; startup wait has no single
     direction once typing delay is held fixed.
+-   The deeper CI-runtime/reliability pass keeps those knobs separate. Current
+    Typing has `0ms` extra post-setup start wait, so reducing that knob cannot
+    speed up today's Typing metric. The broader post/site performance comparison
+    still pays about `152s` of explicit pre-measurement sleeps across two
+    compared branches, but the local repeated Typing anchor does not show a
+    stability gain from waiting: eight saved/reopened drafts per wait setting
+    put the reported q50 in a `15.5-17.3ms` band, with run-to-run q50 sd between
+    `0.5ms` and `1.7ms`.
+-   Changing the current held-key Typing delay is a larger metric change than
+    the name suggests. At `500ms`, the two-branch job saves about `55s`, but the
+    CI-comparable held-key q50 is `24.5ms`, not halfway between the `0ms` and
+    `1000ms` cases. A tap-then-wait implementation is a different metric again:
+    in the same saved/reopened large-post setup, `1000ms` tap-then-wait costs
+    `100s` instead of `110s` over two branches and reports `11.0ms` q50 with
+    `0.42ms` run-to-run q50 sd, versus `17.3ms` q50 and `3.01ms` run-to-run q50
+    sd for the held-key run in this paired check.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -501,6 +517,9 @@ The R script derives:
 -   `data/typing-delay-ci-startup-wait-runtime-reliability.csv`: the same
     runtime model joined to exact Typing q50/mean/CV data, plus the repeated
     exact-run variance estimates available at `0ms`, `1000ms`, and `60000ms`.
+-   `data/typing-delay-ci-startup-wait-run-reliability.csv`: the
+    CI-comparable start-wait curve summarized as the CI-reported per-run Typing
+    q50, with run-to-run q50 variance and two-branch runtime deltas.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -509,6 +528,14 @@ The R script derives:
     CI-comparable dense delay sweep, but with 50 retained samples plus 1
     throwaway sample per delay to estimate volatility with less sensitivity to
     individual outliers.
+-   `data/typing-delay-ci-held-key-delay-runtime-reliability.csv`: deterministic
+    two-branch Typing-delay runtime deltas joined to the n=50 CI-comparable
+    held-key delay sweep.
+-   `data/typing-delay-ci-key-mode-reliability-*.csv` and
+    `data/typing-delay-ci-key-mode-runtime-reliability.csv`: paired
+    CI-comparable held-key versus tap-then-wait runs at `0ms`, `100ms`,
+    `250ms`, `500ms`, and `1000ms`, with reported-q50 run-to-run variance and
+    runtime deltas.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -1180,6 +1207,98 @@ means the n=10 graph was good enough to show that volatility depends on delay,
 but not good enough to rank individual delay buckets by volatility.
 
 ![CI-comparable coefficient of variation, n=50](figures/76-ci-comparable-coefficient-of-variation-0-1400-n50.png)
+
+#### CI Reliability If Waits Are Reduced
+
+For the CI job as it works today, there are two separate fixed-time buckets in
+the post/site editor performance comparison:
+
+-   explicit pre-measurement sleeps in non-Typing tests:
+    `76s` per branch, `152s` for the normal two-branch comparison;
+-   held-key Typing delay: 5 Typing metrics per branch, 11 typed characters per
+    metric, `1000ms` held-key delay, so `55s` per branch and `110s` for the
+    normal two-branch comparison.
+
+The current Typing test does not have an extra post-setup start wait by default:
+`POST_EDITOR_TYPING_START_WAIT_MS` is `0`. The deeper CI-comparable start-wait
+curve therefore asks a narrower question: if we add or remove extra post-setup
+wait around the Typing setup, does the CI-reported retained Typing median become
+more reliable? With eight fresh saved/reopened large-post drafts per wait, the
+answer is no in this local run. `0ms` extra wait had `16.46ms` median reported
+q50 and `0.53ms` run-to-run q50 sd. The current `1000ms` comparison point had
+`16.14ms` median reported q50 and `0.80ms` sd. `5000ms` was worse on both
+runtime and variance: `17.31ms` median reported q50 and `1.72ms` sd.
+
+![CI startup-wait repeated-run reliability](figures/93-ci-startup-wait-run-reliability.png)
+
+Selected CI-comparable startup-wait rows:
+
+| Extra post-setup wait | Two-branch explicit-wait delta | Median reported q50 | Run-to-run q50 sd | Run-to-run q50 range |
+| --------------------: | -----------------------------: | ------------------: | ----------------: | -------------------: |
+|                 `0ms` |        `-152s` / `-2.5m` |            `16.46ms` |          `0.53ms` |             `1.41ms` |
+|               `500ms` |         `-76s` / `-1.3m` |            `16.49ms` |          `1.19ms` |             `2.90ms` |
+|              `1000ms` |            `0s` / `0.0m` |            `16.14ms` |          `0.80ms` |             `2.64ms` |
+|              `2000ms` |        `+152s` / `+2.5m` |            `16.05ms` |          `1.02ms` |             `2.93ms` |
+|              `5000ms` |       `+608s` / `+10.1m` |            `17.31ms` |          `1.72ms` |             `4.72ms` |
+|             `60000ms` |     `+8968s` / `+149.5m` |            `15.79ms` |          `1.02ms` |             `3.09ms` |
+
+This is strong evidence for Typing, but it should not be overgeneralized to the
+non-Typing metrics that also use `PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS`. The
+runtime math for those explicit sleeps is exact from the spec counts; their
+metric reliability still needs metric-specific repeated runs before changing the
+shared default.
+
+For the held-key Typing delay itself, reducing the delay saves wall time
+linearly but does not move the measurement monotonically. The graph below joins
+the deterministic runtime model to the n=50 CI-comparable held-key sweep.
+
+![CI held-key delay runtime/reliability](figures/94-ci-held-key-delay-runtime-reliability.png)
+
+Selected held-key delay rows:
+
+| Held-key delay | Two-branch Typing wait | CI job change vs current | Reported q50 | Within-run CV |
+| -------------: | ---------------------: | -----------------------: | -----------: | ------------: |
+|          `0ms` |                   `0s` |       `-110s` / `-1.8m` |      `9.21ms` |          `5%` |
+|        `100ms` |                  `11s` |        `-99s` / `-1.7m` |     `11.27ms` |          `8%` |
+|        `200ms` |                  `22s` |        `-88s` / `-1.5m` |     `22.26ms` |         `16%` |
+|        `500ms` |                  `55s` |        `-55s` / `-0.9m` |     `24.48ms` |         `14%` |
+|       `1000ms` |                 `110s` |           `0s` / `0.0m` |     `11.47ms` |         `19%` |
+
+The `500ms` row is the important trap: it would save `55s` in a two-branch job,
+but it measures the slow held-key/timer regime, not a smaller version of the
+current `1000ms` metric. The current setting is fast because it sits on the
+one-second Gutenberg timer boundary that this report analyzes elsewhere.
+
+I also added a CI-comparable tap mode to the benchmark harness. In this mode the
+large-post saved draft setup is the same, but the input sequence is complete
+keypress, keyup, wait, next complete keypress. That is different from current CI,
+where Playwright holds each key down for the configured delay before keyup.
+
+![CI held-key versus tap p50](figures/95-ci-key-mode-p50-comparison.png)
+
+![CI held-key versus tap runtime/reliability](figures/96-ci-key-mode-runtime-reliability.png)
+
+Selected held-key versus tap rows from the paired run:
+
+| Input mode | Delay | Two-branch Typing wait | Reported q50 | Run-to-run q50 sd | Within-run CV |
+| ---------- | ----: | ---------------------: | -----------: | ----------------: | ------------: |
+| held key |   `0ms` |                   `0s` |      `8.72ms` |          `0.10ms` |         `19%` |
+| tap then wait |   `0ms` |                   `0s` |      `8.87ms` |          `0.57ms` |         `10%` |
+| held key | `250ms` |                  `28s` |     `32.99ms` |          `1.71ms` |         `27%` |
+| tap then wait | `250ms` |                  `25s` |     `12.68ms` |          `0.19ms` |         `17%` |
+| held key | `500ms` |                  `55s` |     `36.94ms` |          `0.68ms` |         `17%` |
+| tap then wait | `500ms` |                  `50s` |     `12.10ms` |          `0.46ms` |         `11%` |
+| held key | `1000ms` |                 `110s` |     `17.31ms` |          `3.01ms` |        `242%` |
+| tap then wait | `1000ms` |                 `100s` |     `10.98ms` |          `0.42ms` |          `9%` |
+
+The giant held-key `1000ms` CV comes from one retained `512ms` outlier in this
+40-sample paired run. That outlier is exactly why the CI metric should be judged
+by the reported q50 and repeated-run q50 variance, not only by the sample mean
+or CV. Even by the reported-q50 view, tap mode is a material metric change: it
+removes most of the held-key/timer interaction and would need a baseline reset.
+It is probably the better implementation if the intended benchmark is "pause
+between human keypresses", but it should not be presented as a drop-in speedup
+of the current held-key Typing metric.
 
 In the original six-sample first-character run, the `0s` and `60s` p10-p90
 bands do not overlap, so the effect is large relative to the observed

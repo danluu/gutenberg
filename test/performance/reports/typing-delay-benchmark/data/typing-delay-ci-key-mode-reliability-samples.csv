@@ -1,0 +1,441 @@
+input_mode,delay_mode,json_path,delay_ms,round,editor_setup_index,sample_index,is_throwaway,latency_ms,keydown_ms,keypress_ms,keyup_ms,run_duration_ms
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,0,TRUE,25.406,0.288,25.043,0.075,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,1,FALSE,8.76,0.089,8.632,0.039,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,2,FALSE,8.862000000000002,0.085,8.72,0.057,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,3,FALSE,8.583,0.071,8.47,0.042,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,4,FALSE,12.777000000000001,0.085,12.653,0.039,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,5,FALSE,8.617,0.096,8.483,0.038,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,6,FALSE,8.405,0.063,8.315,0.027,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,7,FALSE,7.551,0.055,7.447,0.049,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,8,FALSE,8.879999999999999,0.084,8.76,0.036,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,9,FALSE,8.348999999999998,0.068,8.251,0.03,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,0,0,10,FALSE,7.715999999999999,0.074,7.616,0.026,679
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,0,TRUE,25.473,0.145,25.209,0.119,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,1,FALSE,8.698,0.073,8.551,0.074,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,2,FALSE,14.089000000000002,0.069,13.909,0.111,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,3,FALSE,10.948,0.108,10.715,0.125,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,4,FALSE,10.699,0.087,10.475,0.137,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,5,FALSE,14.462,0.099,14.155,0.208,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,6,FALSE,15.006,0.123,14.666,0.217,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,7,FALSE,13.971,0.09,13.75,0.131,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,8,FALSE,14.009,0.097,13.782,0.13,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,9,FALSE,14.213000000000001,0.089,13.935,0.189,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,0,1,10,FALSE,15.391,0.121,15.055,0.215,1561
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,0,TRUE,27.198,0.143,26.976,0.079,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,1,FALSE,10.498999999999999,0.077,9.777,0.645,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,2,FALSE,23.557,0.287,22.576,0.694,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,3,FALSE,33.806000000000004,0.609,32.597,0.6,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,4,FALSE,34.868,0.654,33.604,0.61,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,5,FALSE,33.16499999999999,0.37,32.132,0.663,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,6,FALSE,35.113,0.556,33.451,1.106,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,7,FALSE,37.468999999999994,0.582,36.227,0.66,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,8,FALSE,36.51500000000001,0.404,35.712,0.399,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,9,FALSE,40.111999999999995,0.376,38.86,0.876,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,0,2,10,FALSE,37.113,0.455,36.215,0.443,3403
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,0,TRUE,22.179,0.131,21.778,0.27,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,1,FALSE,21.587,0.165,20.846,0.576,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,2,FALSE,37.997,0.447,36.8,0.75,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,3,FALSE,37.13799999999999,0.492,36.114,0.532,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,4,FALSE,36.684000000000005,0.432,35.293,0.959,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,5,FALSE,35.85,0.322,35.012,0.516,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,6,FALSE,37.763000000000005,0.514,36.823,0.426,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,7,FALSE,33.696000000000005,0.362,32.902,0.432,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,8,FALSE,37.504999999999995,0.369,36.595,0.541,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,9,FALSE,35.996,0.431,34.843,0.722,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,0,3,10,FALSE,38.393,0.446,37.265,0.682,6176
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,0,TRUE,26.806,0.131,26.126,0.549,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,1,FALSE,36.733000000000004,0.398,36.095,0.24,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,2,FALSE,15.413,0.156,14.962,0.295,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,3,FALSE,15.82,0.118,15.382,0.32,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,4,FALSE,15.556,0.137,15.033,0.386,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,5,FALSE,25.417,0.363,24.649,0.405,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,6,FALSE,15.315,0.113,14.862,0.34,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,7,FALSE,25.681,0.254,24.937,0.49,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,8,FALSE,18.085,0.123,17.659,0.303,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,9,FALSE,17.387999999999998,0.098,16.906,0.384,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,0,4,10,FALSE,24.744,0.26,24.08,0.404,12020
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,0,TRUE,25.16,0.133,24.396,0.631,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,1,FALSE,34.998999999999995,0.355,34.247,0.397,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,2,FALSE,14.802,0.102,14.269,0.431,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,3,FALSE,15.106,0.212,14.459,0.435,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,4,FALSE,15.45,0.118,14.558,0.774,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,5,FALSE,16.304000000000002,0.126,15.893,0.285,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,6,FALSE,15.193999999999999,0.1,14.93,0.164,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,7,FALSE,13.796,0.116,13.323,0.357,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,8,FALSE,15.875,0.122,15.208,0.545,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,9,FALSE,14.717999999999998,0.104,14.149,0.465,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,1,5,10,FALSE,17.233,0.12,16.637,0.476,12040
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,0,TRUE,24.873,0.129,24.361,0.383,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,1,FALSE,20.152,0.131,19.459,0.562,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,2,FALSE,25.692,0.339,24.623,0.73,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,3,FALSE,37.796,0.48,36.649,0.667,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,4,FALSE,36.372,0.475,35.362,0.535,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,5,FALSE,35.411,0.453,33.915,1.043,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,6,FALSE,36.497,0.565,35.24,0.692,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,7,FALSE,38.64,0.406,37.624,0.61,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,8,FALSE,38.291000000000004,0.461,37.243,0.587,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,9,FALSE,34.03099999999999,0.425,32.937,0.669,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,1,6,10,FALSE,34.905,0.463,33.957,0.485,6148
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,0,TRUE,26.491,0.141,26.274,0.076,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,1,FALSE,10.232000000000001,0.07,9.829,0.333,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,2,FALSE,20.044000000000004,0.161,19.449,0.434,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,3,FALSE,29.757,0.355,28.629,0.773,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,4,FALSE,28.885,0.274,27.959,0.652,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,5,FALSE,38.230999999999995,0.535,37.016,0.68,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,6,FALSE,33.519,0.427,32.431,0.661,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,7,FALSE,36.532000000000004,0.509,35.343,0.68,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,8,FALSE,35.001,0.433,34.064,0.504,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,9,FALSE,37.586999999999996,0.392,36.657,0.538,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,1,7,10,FALSE,33.257,0.41,32.348,0.499,3370
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,0,TRUE,29.986,0.136,29.762,0.088,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,1,FALSE,10.976999999999999,0.087,10.809,0.081,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,2,FALSE,10.61,0.083,10.462,0.065,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,3,FALSE,14.918000000000001,0.076,14.718,0.124,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,4,FALSE,11.874,0.092,11.557,0.225,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,5,FALSE,14.003,0.119,13.76,0.124,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,6,FALSE,13.469,0.102,13.197,0.17,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,7,FALSE,13.669,0.11,13.419,0.14,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,8,FALSE,16.756999999999998,0.154,16.459,0.144,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,9,FALSE,13.142,0.112,12.908,0.122,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,1,8,10,FALSE,13.571,0.104,13.307,0.16,1520
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,0,TRUE,27.708000000000002,0.131,27.521,0.056,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,1,FALSE,9.265,0.07,9.164,0.031,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,2,FALSE,8.431,0.061,8.341,0.029,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,3,FALSE,8.610999999999999,0.058,8.523,0.03,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,4,FALSE,8.633000000000001,0.057,8.49,0.086,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,5,FALSE,15.637,0.066,15.532,0.039,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,6,FALSE,8.857000000000001,0.073,8.752,0.032,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,7,FALSE,8.025,0.068,7.928,0.029,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,8,FALSE,9.889999999999999,0.076,9.774,0.04,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,9,FALSE,8.78,0.062,8.683,0.035,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,1,9,10,FALSE,8.104,0.059,8.015,0.03,730
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,0,TRUE,21.858999999999998,0.142,21.644,0.073,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,1,FALSE,10.286,0.128,9.862,0.296,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,2,FALSE,20.999000000000002,0.184,20.263,0.552,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,3,FALSE,31.012,0.31,29.89,0.812,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,4,FALSE,33.888000000000005,0.328,32.837,0.723,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,5,FALSE,29.075,0.422,28.06,0.593,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,6,FALSE,29.363,0.284,28.383,0.696,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,7,FALSE,35.595,0.43,34.769,0.396,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,8,FALSE,32.845000000000006,0.238,31.949,0.658,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,9,FALSE,34.28999999999999,0.486,33.26,0.544,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,2,10,10,FALSE,39.147,0.585,37.903,0.659,3395
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,0,TRUE,22.973,0.141,22.608,0.224,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,1,FALSE,21.769,0.157,21.101,0.511,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,2,FALSE,34.19499999999999,0.355,33.272,0.568,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,3,FALSE,40.388999999999996,0.525,39.366,0.498,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,4,FALSE,37.733000000000004,0.325,36.865,0.543,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,5,FALSE,37.953,0.405,37.092,0.456,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,6,FALSE,30.192999999999998,0.365,29.325,0.503,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,7,FALSE,37.751,0.403,36.609,0.739,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,8,FALSE,36.958999999999996,0.525,35.733,0.701,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,9,FALSE,38.009,0.45,36.803,0.756,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,2,11,10,FALSE,37.12799999999999,0.446,35.943,0.739,6182
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,0,TRUE,27.389,0.145,27.186,0.058,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,1,FALSE,9.802,0.08,9.684,0.038,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,2,FALSE,8.674000000000001,0.069,8.574,0.031,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,3,FALSE,8.952,0.062,8.855,0.035,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,4,FALSE,8.738,0.063,8.616,0.059,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,5,FALSE,8.772,0.067,8.671,0.034,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,6,FALSE,14.636000000000001,0.063,14.538,0.035,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,7,FALSE,8.832,0.077,8.724,0.031,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,8,FALSE,10.287999999999998,0.075,10.177,0.036,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,9,FALSE,8.719,0.059,8.629,0.031,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,2,12,10,FALSE,8.728,0.061,8.639,0.028,717
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,0,TRUE,29.05,0.144,28.167,0.739,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,1,FALSE,35.193999999999996,0.342,34.378,0.474,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,2,FALSE,16.717,0.155,16.313,0.249,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,3,FALSE,13.15,0.106,12.582,0.462,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,4,FALSE,16.805999999999997,0.15,16.244,0.412,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,5,FALSE,26.473,0.321,25.729,0.423,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,6,FALSE,16.854,0.147,16.268,0.439,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,7,FALSE,24.872,0.306,24.377,0.189,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,8,FALSE,20.25,0.157,19.402,0.691,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,9,FALSE,26.532,0.331,25.844,0.357,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,2,13,10,FALSE,27.453,0.299,26.858,0.296,11926
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,0,TRUE,22.936,0.142,22.727,0.067,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,1,FALSE,13.8,0.144,13.571,0.085,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,2,FALSE,9.983,0.082,9.842,0.059,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,3,FALSE,10.001,0.078,9.839,0.084,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,4,FALSE,10.254999999999999,0.078,10.043,0.134,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,5,FALSE,15.966999999999999,0.12,15.66,0.187,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,6,FALSE,16.307000000000002,0.132,16,0.175,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,7,FALSE,16.914,0.173,16.452,0.289,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,8,FALSE,16.543000000000003,0.096,16.254,0.193,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,9,FALSE,16.173,0.149,15.849,0.175,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,2,14,10,FALSE,15.829,0.129,15.473,0.227,1518
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,0,TRUE,27.19,0.138,26.995,0.057,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,1,FALSE,9.137,0.076,9.025,0.036,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,2,FALSE,8.563,0.069,8.461,0.033,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,3,FALSE,8.571,0.067,8.475,0.029,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,4,FALSE,8.411,0.059,8.303,0.049,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,5,FALSE,13.700000000000001,0.054,13.601,0.045,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,6,FALSE,8.629000000000001,0.076,8.519,0.034,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,7,FALSE,8.587,0.071,8.484,0.032,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,8,FALSE,7.563999999999999,0.06,7.478,0.026,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,9,FALSE,9.272,0.077,9.159,0.036,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,0,3,15,10,FALSE,8.565,0.065,8.472,0.028,704
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,0,TRUE,31.435,0.203,31.142,0.09,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,1,FALSE,11.749999999999998,0.087,11.604,0.059,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,2,FALSE,10.486,0.083,10.34,0.063,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,3,FALSE,11.472,0.082,11.318,0.072,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,4,FALSE,9.872,0.074,9.694,0.104,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,5,FALSE,11.582,0.096,11.279,0.207,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,6,FALSE,18.251,0.138,17.995,0.118,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,7,FALSE,17.212,0.111,16.869,0.232,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,8,FALSE,15.261999999999999,0.12,14.958,0.184,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,9,FALSE,17.429000000000002,0.201,17.077,0.151,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,100,3,16,10,FALSE,14.490000000000002,0.111,14.239,0.14,1558
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,0,TRUE,26.501,0.146,26.28,0.075,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,1,FALSE,10.268,0.069,9.701,0.498,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,2,FALSE,24.102,0.384,23.033,0.685,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,3,FALSE,29.029999999999998,0.322,28.162,0.546,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,4,FALSE,30.121,0.431,29.298,0.392,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,5,FALSE,32.268,0.38,31.201,0.687,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,6,FALSE,33.141999999999996,0.403,32.044,0.695,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,7,FALSE,26.406000000000002,0.353,25.535,0.518,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,8,FALSE,32.11,0.276,31.164,0.67,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,9,FALSE,32.068,0.337,31.138,0.593,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,250,3,17,10,FALSE,35.391,0.635,34.028,0.728,3379
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,0,TRUE,23.048,0.154,22.583,0.311,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,1,FALSE,19.799,0.152,19.029,0.618,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,2,FALSE,37.452999999999996,0.452,36.375,0.626,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,3,FALSE,38.007999999999996,0.303,37.369,0.336,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,4,FALSE,37.872,0.427,36.797,0.648,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,5,FALSE,36.087,0.619,34.883,0.585,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,6,FALSE,20.959000000000003,0.452,20.094,0.413,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,7,FALSE,36.92,0.397,35.767,0.756,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,8,FALSE,37.824999999999996,0.428,36.851,0.546,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,9,FALSE,38.035000000000004,0.466,36.822,0.747,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,500,3,18,10,FALSE,34.237,0.304,33.153,0.78,6162
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,0,TRUE,21.66,0.142,21.169,0.349,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,1,FALSE,18.646,0.142,18.216,0.288,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,2,FALSE,15.44,0.12,15.103,0.217,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,3,FALSE,16.135,0.111,15.57,0.454,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,4,FALSE,15.967,0.107,15.374,0.486,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,5,FALSE,20.744,0.171,19.904,0.669,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,6,FALSE,17.715,0.185,17.088,0.442,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,7,FALSE,18.375999999999998,0.127,17.701,0.548,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,8,FALSE,19.110999999999997,0.134,18.516,0.461,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,9,FALSE,511.709,0.156,510.853,0.7,12417
+current CI held key,keyboard,test/performance/artifacts/typing-delay-ci-mode-reliability-keyboard/typing-delay-benchmark-1777847315914.json,1000,3,19,10,FALSE,27.427999999999997,0.299,26.607,0.522,12417
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,0,TRUE,24.236,0.296,23.89,0.05,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,1,FALSE,8.899,0.099,8.758,0.042,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,2,FALSE,9.203,0.09,9.043,0.07,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,3,FALSE,8.943000000000001,0.086,8.82,0.037,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,4,FALSE,7.959,0.092,7.825,0.042,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,5,FALSE,8.112,0.083,8,0.029,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,6,FALSE,8.397999999999998,0.075,8.29,0.033,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,7,FALSE,8.064,0.068,7.965,0.031,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,8,FALSE,8.370000000000001,0.084,8.252,0.034,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,9,FALSE,7.94,0.075,7.836,0.029,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,0,0,10,FALSE,8.164,0.073,8.062,0.029,1017
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,0,TRUE,26.876999999999995,0.144,26.685,0.048,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,1,FALSE,9.388,0.109,9.239,0.04,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,2,FALSE,10.527999999999999,0.081,10.391,0.056,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,3,FALSE,10.883000000000001,0.085,10.76,0.038,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,4,FALSE,11.344999999999999,0.086,11.216,0.043,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,5,FALSE,10.187999999999999,0.077,10.075,0.036,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,6,FALSE,12.465,0.09,12.331,0.044,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,7,FALSE,11.317,0.08,11.201,0.036,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,8,FALSE,10.084,0.081,9.968,0.035,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,9,FALSE,10.662,0.082,10.538,0.042,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,0,1,10,FALSE,11.241,0.084,11.107,0.05,2200
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,0,TRUE,20.42,0.14,20.231,0.049,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,1,FALSE,10.042,0.068,9.932,0.042,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,2,FALSE,12.429,0.1,12.276,0.053,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,3,FALSE,12.748000000000001,0.105,12.598,0.045,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,4,FALSE,12.485000000000001,0.108,12.333,0.044,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,5,FALSE,14.529,0.112,14.372,0.045,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,6,FALSE,12.39,0.101,12.246,0.043,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,7,FALSE,14.254,0.105,14.103,0.046,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,8,FALSE,12.495000000000001,0.1,12.348,0.047,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,9,FALSE,12.55,0.102,12.404,0.044,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,0,2,10,FALSE,19.088,0.148,18.885,0.055,3759
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,0,TRUE,27.479000000000003,0.146,27.28,0.053,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,1,FALSE,12.249,0.1,12.105,0.044,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,2,FALSE,11.831000000000001,0.101,11.68,0.05,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,3,FALSE,11.962,0.094,11.829,0.039,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,4,FALSE,13.177999999999999,0.129,13.001,0.048,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,5,FALSE,11.691,0.096,11.55,0.045,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,6,FALSE,11.876999999999999,0.1,11.737,0.04,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,7,FALSE,13.131,0.108,12.972,0.051,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,8,FALSE,11.879,0.1,11.736,0.043,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,9,FALSE,11.701,0.098,11.557,0.046,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,0,3,10,FALSE,11.661,0.102,11.513,0.046,6204
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,0,TRUE,26.415000000000003,0.161,26.195,0.059,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,1,FALSE,12.402,0.103,12.248,0.051,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,2,FALSE,10.892,0.091,10.756,0.045,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,3,FALSE,11.229000000000001,0.102,11.09,0.037,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,4,FALSE,10.756,0.084,10.638,0.034,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,5,FALSE,9.806000000000001,0.096,9.675,0.035,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,6,FALSE,10.566,0.083,10.433,0.05,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,7,FALSE,10.797,0.092,10.668,0.037,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,8,FALSE,10.681000000000001,0.089,10.553,0.039,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,9,FALSE,10.897,0.089,10.769,0.039,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,0,4,10,FALSE,10.75,0.088,10.624,0.038,11178
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,0,TRUE,27.129,0.148,26.936,0.045,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,1,FALSE,13.577,0.107,13.419,0.051,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,2,FALSE,10.754000000000001,0.096,10.614,0.044,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,3,FALSE,12.433,0.106,12.268,0.059,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,4,FALSE,10.774000000000001,0.096,10.646,0.032,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,5,FALSE,10.540000000000001,0.085,10.42,0.035,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,6,FALSE,10.354,0.09,10.231,0.033,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,7,FALSE,11.027000000000001,0.089,10.903,0.035,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,8,FALSE,10.718000000000002,0.092,10.592,0.034,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,9,FALSE,10.998999999999999,0.091,10.872,0.036,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,1,5,10,FALSE,10.969999999999999,0.097,10.837,0.036,11183
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,0,TRUE,24.803,0.15,24.6,0.053,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,1,FALSE,12.649000000000001,0.124,12.481,0.044,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,2,FALSE,12.06,0.098,11.908,0.054,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,3,FALSE,11.828,0.092,11.696,0.04,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,4,FALSE,15.193,0.116,15.03,0.047,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,5,FALSE,12.039,0.098,11.899,0.042,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,6,FALSE,11.883000000000001,0.095,11.747,0.041,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,7,FALSE,12.138,0.097,11.997,0.044,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,8,FALSE,12.216,0.097,12.075,0.044,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,9,FALSE,15.056,0.139,14.843,0.074,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,1,6,10,FALSE,12.435,0.099,12.297,0.039,6265
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,0,TRUE,20.656,0.147,20.468,0.041,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,1,FALSE,11.940999999999999,0.079,11.822,0.04,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,2,FALSE,12.738999999999999,0.122,12.568,0.049,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,3,FALSE,12.768999999999998,0.104,12.62,0.045,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,4,FALSE,12.731,0.1,12.589,0.042,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,5,FALSE,13.232000000000001,0.095,13.092,0.045,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,6,FALSE,12.633000000000001,0.102,12.48,0.051,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,7,FALSE,19.279,0.131,19.056,0.092,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,8,FALSE,17.121,0.125,16.93,0.066,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,9,FALSE,20.473,0.14,20.218,0.115,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,1,7,10,FALSE,12.674,0.108,12.517,0.049,3866
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,0,TRUE,28.497999999999998,0.212,28.235,0.051,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,1,FALSE,9.241,0.078,9.126,0.037,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,2,FALSE,9.427000000000001,0.083,9.303,0.041,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,3,FALSE,10.21,0.085,10.09,0.035,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,4,FALSE,11.516,0.092,11.389,0.035,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,5,FALSE,11.493,0.096,11.359,0.038,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,6,FALSE,16.746,0.139,16.543,0.064,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,7,FALSE,12.055,0.106,11.905,0.044,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,8,FALSE,11.781,0.095,11.629,0.057,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,9,FALSE,10.359,0.088,10.237,0.034,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,1,8,10,FALSE,10.415999999999999,0.088,10.288,0.04,2150
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,0,TRUE,19.745,0.155,19.539,0.051,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,1,FALSE,9.578000000000001,0.074,9.47,0.034,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,2,FALSE,8.437999999999999,0.072,8.328,0.038,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,3,FALSE,8.491,0.072,8.387,0.032,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,4,FALSE,12.983,0.076,12.866,0.041,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,5,FALSE,8.791,0.076,8.684,0.031,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,6,FALSE,9.126,0.078,9.014,0.034,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,7,FALSE,8.962,0.073,8.854,0.035,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,8,FALSE,9.251,0.08,9.133,0.038,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,9,FALSE,8.618999999999998,0.078,8.508,0.033,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,1,9,10,FALSE,8.276,0.079,8.164,0.033,1030
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,0,TRUE,27.921,0.147,27.719,0.055,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,1,FALSE,10.475,0.081,10.353,0.041,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,2,FALSE,12.36,0.103,12.205,0.052,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,3,FALSE,12.683,0.096,12.544,0.043,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,4,FALSE,12.845,0.127,12.674,0.044,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,5,FALSE,12.464,0.105,12.315,0.044,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,6,FALSE,12.027000000000001,0.099,11.884,0.044,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,7,FALSE,14.274000000000001,0.111,14.116,0.047,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,8,FALSE,12.063,0.099,11.923,0.041,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,9,FALSE,12.610000000000001,0.105,12.461,0.044,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,2,10,10,FALSE,14.013,0.108,13.857,0.048,3756
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,0,TRUE,21.628,0.151,21.436,0.041,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,1,FALSE,13.588,0.104,13.412,0.072,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,2,FALSE,12.027,0.104,11.872,0.051,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,3,FALSE,12.578000000000001,0.102,12.425,0.051,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,4,FALSE,13.239999999999998,0.11,13.088,0.042,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,5,FALSE,12.918999999999999,0.097,12.78,0.042,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,6,FALSE,12.662999999999998,0.104,12.519,0.04,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,7,FALSE,11.943999999999999,0.096,11.805,0.043,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,8,FALSE,12.559,0.099,12.424,0.036,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,9,FALSE,13.401,0.106,13.239,0.056,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,2,11,10,FALSE,17.054,0.115,16.89,0.049,6242
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,0,TRUE,25.421000000000003,0.146,25.23,0.045,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,1,FALSE,8.99,0.066,8.886,0.038,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,2,FALSE,8.653,0.071,8.522,0.06,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,3,FALSE,8.757000000000001,0.064,8.659,0.034,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,4,FALSE,8.835,0.064,8.736,0.035,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,5,FALSE,8.433,0.062,8.337,0.034,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,6,FALSE,8.246,0.067,8.147,0.032,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,7,FALSE,8.297,0.069,8.197,0.031,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,8,FALSE,9.039000000000001,0.066,8.942,0.031,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,9,FALSE,8.415,0.063,8.322,0.03,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,2,12,10,FALSE,8.238999999999999,0.062,8.148,0.029,1054
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,0,TRUE,21.127,0.166,20.895,0.066,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,1,FALSE,12.445,0.103,12.294,0.048,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,2,FALSE,11.3,0.093,11.153,0.054,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,3,FALSE,15.503,0.128,15.329,0.046,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,4,FALSE,10.830000000000002,0.085,10.708,0.037,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,5,FALSE,9.771999999999998,0.078,9.654,0.04,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,6,FALSE,10.591999999999999,0.084,10.469,0.039,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,7,FALSE,12.223999999999998,0.106,12.075,0.043,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,8,FALSE,10.721,0.084,10.602,0.035,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,9,FALSE,11.165,0.09,11.039,0.036,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,2,13,10,FALSE,10.432000000000002,0.085,10.31,0.037,11198
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,0,TRUE,22.436999999999998,0.168,22.211,0.058,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,1,FALSE,9.922,0.077,9.808,0.037,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,2,FALSE,12.032,0.093,11.889,0.05,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,3,FALSE,12.17,0.097,12.029,0.044,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,4,FALSE,9.942,0.075,9.836,0.031,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,5,FALSE,15.206,0.116,15.04,0.05,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,6,FALSE,11.267000000000001,0.086,11.147,0.034,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,7,FALSE,10.864999999999998,0.088,10.741,0.036,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,8,FALSE,15.239,0.115,15.082,0.042,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,9,FALSE,11.473,0.09,11.348,0.035,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,2,14,10,FALSE,11.319,0.085,11.194,0.04,2270
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,0,TRUE,20.434,0.152,20.233,0.049,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,1,FALSE,10.033,0.081,9.91,0.042,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,2,FALSE,9.543,0.083,9.415,0.045,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,3,FALSE,10.333,0.087,10.204,0.042,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,4,FALSE,10.458,0.09,10.335,0.033,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,5,FALSE,10.202,0.082,10.09,0.03,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,6,FALSE,9.613,0.084,9.495,0.034,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,7,FALSE,9.169,0.079,9.056,0.034,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,8,FALSE,9.33,0.081,9.215,0.034,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,9,FALSE,9.274,0.081,9.16,0.033,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,0,3,15,10,FALSE,9.24,0.079,9.131,0.03,1045
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,0,TRUE,29.822999999999997,0.154,29.618,0.051,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,1,FALSE,16.75,0.07,16.634,0.046,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,2,FALSE,11.613000000000001,0.089,11.474,0.05,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,3,FALSE,12.159999999999998,0.094,12.023,0.043,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,4,FALSE,11.925,0.09,11.791,0.044,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,5,FALSE,12.099,0.099,11.958,0.042,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,6,FALSE,11.524,0.087,11.394,0.043,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,7,FALSE,13.632,0.105,13.488,0.039,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,8,FALSE,12.28,0.089,12.152,0.039,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,9,FALSE,12.004000000000001,0.092,11.875,0.037,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,100,3,16,10,FALSE,13.252,0.094,13.117,0.041,2249
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,0,TRUE,20.878999999999998,0.152,20.679,0.048,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,1,FALSE,9.995,0.075,9.885,0.035,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,2,FALSE,13.93,0.118,13.757,0.055,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,3,FALSE,12.107,0.1,11.963,0.044,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,4,FALSE,11.812999999999999,0.093,11.681,0.039,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,5,FALSE,13.716,0.125,13.546,0.045,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,6,FALSE,11.999,0.108,11.849,0.042,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,7,FALSE,15.268999999999998,0.12,15.074,0.075,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,8,FALSE,14.167,0.119,13.996,0.052,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,9,FALSE,11.828,0.102,11.686,0.04,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,250,3,17,10,FALSE,14.449000000000002,0.117,14.279,0.053,3738
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,0,TRUE,19.612000000000002,0.143,19.428,0.041,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,1,FALSE,11.635,0.096,11.494,0.045,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,2,FALSE,11.897,0.099,11.747,0.051,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,3,FALSE,11.871,0.095,11.734,0.042,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,4,FALSE,11.035999999999998,0.081,10.915,0.04,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,5,FALSE,12.462,0.099,12.321,0.042,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,6,FALSE,11.29,0.09,11.158,0.042,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,7,FALSE,10.895,0.087,10.763,0.045,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,8,FALSE,16.933,0.122,16.767,0.044,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,9,FALSE,11.097,0.094,10.962,0.041,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,500,3,18,10,FALSE,13.315,0.1,13.168,0.047,6168
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,0,TRUE,22.299,0.166,22.089,0.044,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,1,FALSE,12.545,0.096,12.405,0.044,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,2,FALSE,11.641,0.084,11.509,0.048,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,3,FALSE,12.122,0.094,11.981,0.047,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,4,FALSE,10.235,0.079,10.12,0.036,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,5,FALSE,11.805,0.093,11.677,0.035,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,6,FALSE,11.513,0.083,11.399,0.031,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,7,FALSE,11.659,0.09,11.534,0.035,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,8,FALSE,11.71,0.083,11.593,0.034,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,9,FALSE,11.693999999999999,0.088,11.57,0.036,11244
+tap then wait,between-keys,test/performance/artifacts/typing-delay-ci-mode-reliability-between-keys/typing-delay-benchmark-1777847715384.json,1000,3,19,10,FALSE,11.901000000000002,0.085,11.781,0.035,11244
