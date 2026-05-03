@@ -48,6 +48,7 @@ const settleBetweenDelayRunsMs = intEnv(
 );
 const orderMode = process.env.BENCHMARK_ORDER_MODE || 'mixed';
 const delayMode = process.env.BENCHMARK_DELAY_MODE || 'keyboard';
+const postKeyupGapMs = intEnv( 'BENCHMARK_POST_KEYUP_GAP_MS', 0 );
 const scenario = process.env.BENCHMARK_SCENARIO || 'large-post-paragraph';
 const seed = intEnv( 'BENCHMARK_SEED', 51383 );
 const tracePersistence =
@@ -107,7 +108,12 @@ const supportedScenarios = [
 	'thousand-paragraphs-paragraph',
 	'native-contenteditable-timer',
 ];
-const supportedDelayModes = [ 'keyboard', 'between-keys', 'after-persistence' ];
+const supportedDelayModes = [
+	'keyboard',
+	'between-keys',
+	'after-persistence',
+	'hold-then-keyup-gap',
+];
 
 function isNativeScenario() {
 	return scenario === 'native-contenteditable-timer';
@@ -658,7 +664,13 @@ function benchmarkTimeoutMs() {
 	const intentionalDelayMs =
 		rounds *
 		sampleCount *
-		delays.reduce( ( sum, delay ) => sum + delay, 0 );
+		delays.reduce(
+			( sum, delay ) =>
+				sum +
+				delay +
+				( delayMode === 'hold-then-keyup-gap' ? postKeyupGapMs : 0 ),
+			0
+		);
 	const settleMs = rounds * delays.length * settleBetweenDelayRunsMs;
 	const setupCount = freshEditorPerDelay ? rounds * delays.length : 1;
 	const stateWaitMs =
@@ -1554,6 +1566,14 @@ test.describe( 'Typing delay benchmark', () => {
 							await page.waitForTimeout( delayMs );
 						}
 					}
+				} else if ( delayMode === 'hold-then-keyup-gap' ) {
+					for ( let i = 0; i < sampleCount; i++ ) {
+						await page.keyboard.press( 'x', { delay: delayMs } );
+						if ( postKeyupGapMs > 0 && i < sampleCount - 1 ) {
+							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+							await page.waitForTimeout( postKeyupGapMs );
+						}
+					}
 				} else {
 					await page.keyboard.type( 'x'.repeat( sampleCount ), {
 						delay: delayMs,
@@ -1945,6 +1965,7 @@ test.describe( 'Typing delay benchmark', () => {
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,
+				postKeyupGapMs,
 				settleAfterEditorSetupMs,
 				settleBetweenDelayRunsMs,
 				orderMode,

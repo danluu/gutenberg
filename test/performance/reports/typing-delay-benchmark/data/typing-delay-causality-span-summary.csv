@@ -1,0 +1,51 @@
+run_id,case_label,delay_mode,delay_ms,post_keyup_gap_ms,component,n,median_ms,p90_ms
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,rich-text.onInput.total,8,34.449999928474426,37.110000014305115
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,rich-text.handleChange.registryBatch,8,34.050000071525574,36.71000015735626
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,rich-text.handleChange.onSelectionChange,8,4.149999976158142,4.520000052452088
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,rich-text.handleChange.onChange,8,4.5,5.280000114440917
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,data.registry.batch.callback,8,8.799999952316284,10.009999918937682
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,data.useSelect.mapSelect,8,5.799999713897705,6.490000033378601
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,data.useSelect.onChange,8,12.949999690055847,14.649999451637267
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,data.emitter.listener core/block-editor subscribers,8,21.40000009536743,22.689999556541444
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,data.registry.batch.resumeStore core/block-editor,8,25.699999928474426,27.520000100135803
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,data.registry.batch.total,8,36.75000011920929,39.980000138282776
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,rich-text.onInput.total,8,17.700000166893005,20.76000006198883
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,rich-text.handleChange.registryBatch,8,17.450000047683716,20.560000014305114
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,rich-text.handleChange.onSelectionChange,8,2.0000001192092896,2.4900000810623166
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,rich-text.handleChange.onChange,8,2.299999952316284,2.6199999570846555
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,data.registry.batch.callback,8,4.5,5.350000214576721
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,data.useSelect.mapSelect,8,3.150000214576721,3.3999996185302734
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,data.useSelect.onChange,8,7.250000357627869,7.51999979019165
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,data.emitter.listener core/block-editor subscribers,8,11.200000166893005,12.790000653266906
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,data.registry.batch.resumeStore core/block-editor,8,12.899999976158142,15.239999985694885
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,data.registry.batch.total,8,18.65000009536743,21.830000162124634
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,rich-text.onInput.total,8,16.549999952316284,17.380000019073485
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,rich-text.handleChange.registryBatch,8,16.450000047683716,17.17999997138977
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,rich-text.handleChange.onSelectionChange,8,1.850000023841858,2.0299999713897705
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,rich-text.handleChange.onChange,8,2,2.0999999761581423
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,data.registry.batch.callback,8,4.100000023841858,4.329999828338623
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,data.useSelect.mapSelect,8,2.800000786781311,3.1300004959106444
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,data.useSelect.onChange,8,6.800000071525574,7.190000104904175
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,data.emitter.listener core/block-editor subscribers,8,10.600000262260437,11.619999861717224
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,data.registry.batch.resumeStore core/block-editor,8,12.600000023841858,13.139999914169312
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,data.registry.batch.total,8,17.5,18.310000085830687
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,rich-text.onInput.total,8,17.25,20.249999952316283
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,rich-text.handleChange.registryBatch,8,17.200000047683716,19.97999997138977
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,rich-text.handleChange.onSelectionChange,8,2.1500000953674316,2.3600001335144043
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,rich-text.handleChange.onChange,8,2.200000047683716,2.6599999189376833
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,data.registry.batch.callback,8,4.5,5.220000100135803
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,data.useSelect.mapSelect,8,2.75,3.050000548362732
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,data.useSelect.onChange,8,7.050000190734863,8.120000648498534
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,data.emitter.listener core/block-editor subscribers,8,10.90000057220459,12.180000019073486
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,data.registry.batch.resumeStore core/block-editor,8,12.850000143051147,14.959999918937683
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,data.registry.batch.total,8,18.399999976158142,21.239999961853027
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,rich-text.onInput.total,8,17.899999976158142,19.77000002861023
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,rich-text.handleChange.registryBatch,8,17.799999833106995,19.61000003814697
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,rich-text.handleChange.onSelectionChange,8,2.200000047683716,2.3299999237060547
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,rich-text.handleChange.onChange,8,2.3000000715255737,2.4500001192092893
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,data.registry.batch.callback,8,4.700000047683716,5.020000052452088
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,data.useSelect.mapSelect,8,3.0000001192092896,3.229999470710754
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,data.useSelect.onChange,8,7.400000095367432,8.230000448226928
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,data.emitter.listener core/block-editor subscribers,8,11.399999856948853,12.840000033378601
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,data.registry.batch.resumeStore core/block-editor,8,13.25,14.71999990940094
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,data.registry.batch.total,8,18.899999856948853,21.07999982833862

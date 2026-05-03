@@ -1986,4 +1986,126 @@ if (file.exists(use_select_owner_summary_path)) {
 	)
 }
 
+causality_samples_path <- file.path(data_dir, "typing-delay-causality-samples.csv")
+causality_span_summary_path <- file.path(data_dir, "typing-delay-causality-span-summary.csv")
+if (file.exists(causality_samples_path) && file.exists(causality_span_summary_path)) {
+	causality_case_levels <- c(
+		"Playwright key-hold burst",
+		"Held 1300ms, natural keyup gap",
+		"Held 1300ms, 1000ms keyup gap",
+		"Held 990ms, 310ms keyup gap",
+		"Complete keypress, then wait"
+	)
+	causality_case_short_levels <- c(
+		"key-hold burst",
+		"held 1300 + 40ms keyup gap",
+		"held 1300 + 1000ms keyup gap",
+		"held 990 + 310ms keyup gap",
+		"complete keypress + wait"
+	)
+
+	causality_samples <- read_csv(causality_samples_path, show_col_types = FALSE) %>%
+		filter(!is.na(mark_during_previous_key_hold)) %>%
+		mutate(
+			case_label = factor(case_label, levels = causality_case_levels),
+			case_short = factor(
+				recode(
+					as.character(case_label),
+					`Playwright key-hold burst` = "key-hold burst",
+					`Held 1300ms, natural keyup gap` = "held 1300 + 40ms keyup gap",
+					`Held 1300ms, 1000ms keyup gap` = "held 1300 + 1000ms keyup gap",
+					`Held 990ms, 310ms keyup gap` = "held 990 + 310ms keyup gap",
+					`Complete keypress, then wait` = "complete keypress + wait"
+				),
+				levels = causality_case_short_levels
+			),
+			mark_state = if_else(
+				mark_during_previous_key_hold,
+				"Persistence fired before previous keyup",
+				"Persistence fired after previous keyup"
+			)
+		)
+
+	save_plot(
+		ggplot(
+			causality_samples,
+			aes(
+				previous_keyup_to_current_keydown_ms,
+				keypress_ms,
+				color = case_short,
+				shape = mark_state
+			)
+		) +
+			geom_point(size = 2.7, alpha = 0.86) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_shape_manual(values = c(16, 17)) +
+			scale_x_continuous(breaks = c(0, 40, 300, 1000, 1400)) +
+			labs(
+				title = "The slow burst needs the next key almost immediately after keyup",
+				subtitle = "Diagnostic 1300ms-ish traces; natural manual Playwright calls add about 40ms after keyup and lose the slow path",
+				x = "Previous keyup to current keydown (ms)",
+				y = "keypress EventDispatch duration (ms)",
+				color = "Case",
+				shape = NULL
+			) +
+			theme(legend.position = "right"),
+		"23-keyup-gap-causality.png",
+		width = 13,
+		height = 7
+	)
+
+	causality_span_summary <- read_csv(causality_span_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			case_label = factor(case_label, levels = causality_case_levels),
+			case_short = factor(
+				recode(
+					as.character(case_label),
+					`Playwright key-hold burst` = "key-hold burst",
+					`Held 1300ms, natural keyup gap` = "held 1300 + 40ms keyup gap",
+					`Held 1300ms, 1000ms keyup gap` = "held 1300 + 1000ms keyup gap",
+					`Held 990ms, 310ms keyup gap` = "held 990 + 310ms keyup gap",
+					`Complete keypress, then wait` = "complete keypress + wait"
+				),
+				levels = causality_case_short_levels
+			),
+			component_label = recode(
+				component,
+				`rich-text.handleChange.registryBatch` = "RichText registry.batch",
+				`data.registry.batch.total` = "Data registry.batch total",
+				`data.registry.batch.resumeStore core/block-editor` = "Resume core/block-editor",
+				`data.useSelect.onChange` = "useSelect onChange",
+				.default = component
+			),
+			component_label = factor(
+				component_label,
+				levels = c(
+					"RichText registry.batch",
+					"Data registry.batch total",
+					"Resume core/block-editor",
+					"useSelect onChange"
+				)
+			)
+		) %>%
+		filter(!is.na(component_label))
+
+	save_plot(
+		ggplot(
+			causality_span_summary,
+			aes(component_label, median_ms, fill = case_short)
+		) +
+			geom_col(position = position_dodge(width = 0.76), width = 0.68) +
+			scale_fill_brewer(type = "qual", palette = "Dark2") +
+			labs(
+				title = "The extra burst cost is the same RichText/data fanout path",
+				subtitle = "Trace-heavy medians; data spans are nested attribution aids and are not additive",
+				x = NULL,
+				y = "Median duration (ms)",
+				fill = "Case"
+			),
+		"24-keyup-gap-data-path.png",
+		width = 12,
+		height = 7
+	)
+}
+
 message("Wrote plots to: ", figure_dir)

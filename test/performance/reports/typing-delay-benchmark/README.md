@@ -156,6 +156,9 @@ The R script derives:
     for input-matched data batches.
 -   `data/typing-delay-use-select-owner-summary.csv`: source-mapped owner
     summary for the targeted `useSelect` attribution traces.
+-   `data/typing-delay-causality-*.csv`: targeted traces that separate
+    key-hold duration, persistence-marker timing, and the post-keyup gap before
+    the next key.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -490,15 +493,95 @@ is necessary for the slow plateau in these runs, and it narrows the visible cost
 to `keypress` dispatch, but there is still browser/editor phase behavior inside
 the key-hold condition.
 
+### Causality Check: Keyup Gap
+
+The paired trace still left two theories entangled:
+
+1. the persistence timer fired while the previous synthetic key was held; and
+2. the next synthetic key arrived almost immediately after the previous `keyup`.
+
+I added a diagnostic delay mode, `hold-then-keyup-gap`, which performs one
+`keyboard.press( 'x', { delay } )` per character and can add an explicit wait
+after `keyup`. This is not a normal score mode. It is a causality probe for the
+event ordering.
+
+The useful surprise is that even with no explicit post-keyup gap, separate
+manual `keyboard.press()` calls naturally leave about `40ms` between one `keyup`
+and the next `keydown`. Normal Playwright `keyboard.type( 'xxxxx', { delay } )`
+leaves only about `2.5ms` in the same trace-heavy setup.
+
+![Keyup gap causality](figures/23-keyup-gap-causality.png)
+
+Selected medians from the large-post diagnostic runs:
+
+| Case | Previous keyup to marker | Marker to next keydown | Previous keyup to next keydown | `keypress` p50 |
+| ---- | -----------------------: | ---------------------: | -----------------------------: | -------------: |
+| Playwright key-hold burst, `1300ms` | `-302ms` | `304ms` | `2.5ms` | `34.6ms` |
+| Manual hold `1300ms`, natural keyup gap | `-302ms` | `344ms` | `41ms` | `12.8ms` |
+| Manual hold `1300ms`, `1000ms` keyup gap | `-301ms` | `1359ms` | `1057ms` | `12.0ms` |
+| Manual hold `990ms`, `310ms` keyup gap | `19ms` | `355ms` | `373ms` | `14.8ms` |
+| Complete keypress, then wait `1300ms` | `999ms` | `372ms` | `1373ms` | `14.1ms` |
+
+This disconfirms the strongest version of the earlier theory. "Persistence fired
+while the previous key was held" is not sufficient by itself. Both manual
+`1300ms` hold cases have the marker before the previous `keyup`, but neither
+reproduces the slow burst once there is even a modest post-keyup gap before the
+next key.
+
+It also disconfirms "time from marker to next keydown" as the sole explanation.
+The manual `990ms + 310ms` case and complete-keypress `1300ms` case have
+marker-to-next-keydown gaps similar to the normal key-hold burst, but they are
+not in the same slow distribution. In all five diagnostic cases, the current
+`keydown` sees the block editor in the same broad state: persistent and typing.
+The discriminating variable in these runs is the previous `keyup` to current
+`keydown` gap.
+
+The refined statement is:
+
+-   the normal slow burst needs the persistence marker to fire before the
+    previous `keyup`;
+-   it also needs the next key to arrive almost immediately after that `keyup`,
+    as happens inside one Playwright `keyboard.type()` burst;
+-   giving the browser/editor even about `40ms` after `keyup` moves the measured
+    keypress back near the complete-keypress-then-wait cases.
+
+![Keyup gap data path](figures/24-keyup-gap-data-path.png)
+
+The cost path is the same as in the broader data-span investigation, only larger
+in the normal burst:
+
+| Case | RichText `registry.batch` | Data batch | Resume `core/block-editor` | `useSelect.onChange` |
+| ---- | ------------------------: | ---------: | -------------------------: | -------------------: |
+| Playwright key-hold burst, `1300ms` | `34.1ms` | `36.8ms` | `25.7ms` | `13.0ms` |
+| Manual hold `1300ms`, natural keyup gap | `16.5ms` | `17.5ms` | `12.6ms` | `6.8ms` |
+| Manual hold `1300ms`, `1000ms` keyup gap | `17.8ms` | `18.9ms` | `13.3ms` | `7.4ms` |
+| Manual hold `990ms`, `310ms` keyup gap | `17.2ms` | `18.4ms` | `12.9ms` | `7.1ms` |
+| Complete keypress, then wait `1300ms` | `17.5ms` | `18.7ms` | `12.9ms` | `7.3ms` |
+
+That confirms the attribution but narrows the cause. The extra latency is still
+inside the RichText `registry.batch()` -> `core/block-editor` resume ->
+`useSelect` fanout path. What changed is the trigger condition: the large burst
+does not follow merely from persistent state, typing state, or a timer firing
+while the key is held. It follows from the timer/key-hold condition combined
+with an almost immediate next key after `keyup`.
+
+The remaining unproven piece is the lower-level scheduling reason that a `2-3ms`
+post-keyup gap is bad while a roughly `40ms` gap is enough to lose the slow path.
+The most likely explanation is that the browser/editor gets an extra turn to
+drain post-keyup rendering, selection, React, or data-store work before the next
+input. The current traces prove where the extra synchronous time is measured;
+they do not yet prove which queued browser or React phase disappears during that
+small gap.
+
 ### Native Contenteditable Baseline
 
-The previous section shows a condition that separates slow and fast Gutenberg
-traces, but it does not prove that the condition is sufficient. To test that, the
-benchmark now has `native-contenteditable-timer`: a plain `contenteditable` node
-with an input listener that clears and reschedules a `1000ms` timer. The timer
-records the same kind of marker, but it does not touch Gutenberg, React,
-`@wordpress/data`, rich text, undo persistence, block selection, or the iframe
-editor.
+The key-state traces show conditions that separate slow and fast Gutenberg
+traces, but they do not prove that the condition is a browser/Playwright effect
+by itself. To test that, the benchmark now has `native-contenteditable-timer`: a
+plain `contenteditable` node with an input listener that clears and reschedules a
+`1000ms` timer. The timer records the same kind of marker, but it does not touch
+Gutenberg, React, `@wordpress/data`, rich text, undo persistence, block
+selection, or the iframe editor.
 
 ![Native contenteditable comparison](figures/14-native-contenteditable-comparison.png)
 
@@ -865,6 +948,11 @@ Known problems:
 -   **The paired trace is diagnostic, not a score run.** It uses only 8 retained
     samples per delay and heavy instrumentation. Its value is in comparing modes
     under similar tracing overhead.
+-   **The keyup-gap causality traces are also diagnostic.** The manual
+    `hold-then-keyup-gap` mode uses separate Playwright `keyboard.press()` calls,
+    which naturally add about `40ms` between `keyup` and the next `keydown` even
+    when no explicit gap is requested. That is useful for causality, but it is not
+    a replacement score mode.
 -   **The native baseline is intentionally too small.** It is useful as a browser
     and Playwright control, not as a model of real editor work.
 -   **Single browser.** These results are from Chromium. They do not prove that
@@ -954,6 +1042,10 @@ For investigation:
     fanout are identifiable.
 -   For the block-list owner groups identified here, separate necessary
     text-input invalidations from broad block-tree invalidations.
+-   Add instrumentation around the post-keyup interval: queued tasks, animation
+    frames, React commits, selection updates, and paint. The keyup-gap trace shows
+    that a roughly `40ms` turn changes the next input path, but not exactly which
+    phase drains during that turn.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Add a textarea/native baseline to estimate browser/editor overhead.
@@ -1021,6 +1113,16 @@ The key runs used in this report were:
     `useSelect` owner metadata.
 -   `use_select_owners_large_between_keys`: large-post complete-keypress-then-wait
     trace with `useSelect` owner metadata.
+-   `causality_keyboard_1300`: large-post normal Playwright key-hold burst at
+    `1300ms`, with timeline and span traces.
+-   `causality_between_1300`: large-post complete-keypress-then-wait at
+    `1300ms`, with timeline and span traces.
+-   `causality_hold_1300_gap_0`: large-post manual hold for `1300ms`, with no
+    explicit post-keyup gap.
+-   `causality_hold_990_gap_310`: large-post manual hold for `990ms`, then
+    `310ms` after keyup.
+-   `causality_hold_1300_gap_1000`: large-post manual hold for `1300ms`, then
+    `1000ms` after keyup.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
@@ -1036,6 +1138,12 @@ with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-use-select-owners.js
+```
+
+The compact keyup-gap causality CSVs were extracted with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-causality.js
 ```
 
 ## References

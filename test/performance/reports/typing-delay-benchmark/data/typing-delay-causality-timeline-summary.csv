@@ -1,0 +1,6 @@
+run_id,case_label,delay_mode,delay_ms,post_keyup_gap_ms,n,latency_median_ms,keypress_median_ms,previous_keyup_to_mark_median_ms,mark_to_current_keydown_median_ms,previous_keyup_to_current_keydown_median_ms,mark_during_previous_key_hold_count,mark_action_median_ms
+causality_keyboard_1300,Playwright key-hold burst,keyboard,1300,0,8,35.822500000000005,34.5845,-301.7999999523163,304.2000000476837,2.5,7,18.799999952316284
+causality_between_1300,"Complete keypress, then wait",between-keys,1300,0,8,14.401,14.149000000000001,999.3999998569489,372,1373.4999998807907,0,16.199999809265137
+causality_hold_1300_gap_0,"Held 1300ms, natural keyup gap",hold-then-keyup-gap,1300,0,8,13.533999999999999,12.829,-301.5,343.7999999523163,41.14999997615814,7,18.200000047683716
+causality_hold_990_gap_310,"Held 990ms, 310ms keyup gap",hold-then-keyup-gap,990,310,8,15.520499999999998,14.837499999999999,19.100000143051147,355.2000000476837,373.14999997615814,0,7.5
+causality_hold_1300_gap_1000,"Held 1300ms, 1000ms keyup gap",hold-then-keyup-gap,1300,1000,8,12.7495,11.986,-301,1359.0999999046326,1056.8999999761581,7,15.099999904632568
