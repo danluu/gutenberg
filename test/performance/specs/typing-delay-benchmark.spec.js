@@ -1563,16 +1563,26 @@ test.describe( 'Typing delay benchmark', () => {
 			} else if ( scenario === 'thousand-paragraphs-paragraph' ) {
 				await perfUtils.load1000Paragraphs();
 			}
-			await editor.insertBlock( { name: 'core/paragraph' } );
+			if ( scenario !== 'small-containers-paragraph' ) {
+				await editor.insertBlock( { name: 'core/paragraph' } );
+			}
 
 			const setupBlockCount = await page.evaluate( () =>
 				window.wp.data.select( 'core/block-editor' ).getBlockCount()
 			);
 
 			const canvas = await perfUtils.getCanvas();
-			paragraph = canvas.getByRole( 'document', {
-				name: /Empty block/i,
-			} );
+			if ( scenario === 'small-containers-paragraph' ) {
+				paragraph = canvas
+					.getByRole( 'document', {
+						name: /Paragraph block|Block: Paragraph/,
+					} )
+					.first();
+			} else {
+				paragraph = canvas.getByRole( 'document', {
+					name: /Empty block/i,
+				} );
+			}
 
 			await paragraph.click();
 			await setupRichTextSpanTracingInCurrentContext();

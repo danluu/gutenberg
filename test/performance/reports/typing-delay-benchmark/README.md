@@ -246,9 +246,18 @@ from `990ms` and `1200ms`. Some delays have low medians but high volatility.
 
 ![Coefficient of variation by delay](figures/04-coefficient-of-variation-by-delay.png)
 
+![Container-block coefficient of variation by delay](figures/04b-container-coefficient-of-variation-by-delay.png)
+
 The "stable between 500 and 900ms" interpretation from the original exploration
 does not survive a dense scan. Some delay values inside large ranges are stable,
 but the adjacent values can be in different regimes.
+
+The container-block rerun above measures typing into the first paragraph inside
+the Columns fixture used by the original "Typing within containers" test. This
+is not a Docker-vs-host comparison; the WordPress test environment was already
+wp-env/Docker-backed. The container-block volatility curve is still delay- and
+mode-dependent, so the variance problem is not an artifact of the large-post
+non-container fixture.
 
 ## Time Order And Warmup
 
@@ -499,10 +508,20 @@ for one second.
 
 ![Delay mode comparison](figures/10-delay-mode-comparison.png)
 
+![Container-block delay mode comparison](figures/10b-container-delay-mode-comparison.png)
+
 The first version of this comparison used landmark delays, mostly near and above
 the `1000ms` timer boundary. I added dense complete-keypress-then-wait runs for
 the full `0..2000ms` range, in `10ms` steps, and compare them with the existing
 dense key-hold scan.
+
+The container-block rerun repeats the full `0..2000ms`, `10ms`-step sweep in the
+Columns fixture. Absolute latencies are lower because the fixture is smaller
+than the large-post case, but the qualitative conclusion is stronger rather than
+weaker: holding the key down is much slower than completing the keypress and then
+waiting. The wait-after-keyup container run is mostly around `5..7ms`; the
+key-hold container run is mostly around `14..16ms`, with a later high band near
+`1800..2000ms`.
 
 Two modes are compared:
 
@@ -532,6 +551,21 @@ Selected p50s:
 | `1300ms` | `18.9ms` |         `11.4ms` |
 | `1550ms` | `12.8ms` |         `11.3ms` |
 | `2000ms` | `18.2ms` |         `12.2ms` |
+
+Selected container-block p50s:
+
+|    Delay | Key held | Wait after keyup |
+| -------: | -------: | ---------------: |
+|    `0ms` |  `2.5ms` |          `3.3ms` |
+|  `100ms` | `12.6ms` |          `6.6ms` |
+|  `500ms` | `13.6ms` |          `7.1ms` |
+|  `900ms` | `13.4ms` |          `6.2ms` |
+| `1000ms` | `13.5ms` |          `5.2ms` |
+| `1030ms` |  `9.1ms` |          `5.3ms` |
+| `1200ms` | `14.9ms` |          `6.7ms` |
+| `1600ms` | `15.0ms` |          `3.8ms` |
+| `1800ms` | `18.0ms` |          `6.5ms` |
+| `2000ms` | `17.3ms` |          `5.3ms` |
 
 This falsifies the simple "more idle time after persistence makes typing slow"
 explanation. Waiting after the key has completed does not reproduce the slow
@@ -1349,6 +1383,10 @@ The key runs used in this report were:
     `10ms` step.
 -   `between_keys_1110_2000_dense`: complete keypress, then wait `1110..2000ms`
     with a `10ms` step.
+-   `container_keyhold_0_2000_dense`: typing inside the Columns container
+    fixture, normal Playwright key-hold delay, `0..2000ms` with a `10ms` step.
+-   `container_between_keys_0_2000_dense`: typing inside the Columns container
+    fixture, complete keypress then wait, `0..2000ms` with a `10ms` step.
 -   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
 -   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer

@@ -41,6 +41,8 @@ run_specs <- tribble(
 	"between_keys", "Complete keypress, then wait", "artifacts/typing-delay-benchmark-between-keys/typing-delay-benchmark-1777758545134.json", "large post", "delay after full keydown/keypress/input/keyup sequence",
 	"between_keys_0_1100_dense", "Complete keypress, then wait: 0-1100ms, 10ms step", "artifacts/typing-delay-benchmark-between-keys-0-1100-dense/typing-delay-benchmark-1777764334188.json", "large post", "delay after full keydown/keypress/input/keyup sequence, dense 0-1100ms scan",
 	"between_keys_1110_2000_dense", "Complete keypress, then wait: 1110-2000ms, 10ms step", "artifacts/typing-delay-benchmark-between-keys-1110-2000-dense/typing-delay-benchmark-1777764764748.json", "large post", "delay after full keydown/keypress/input/keyup sequence, dense 1110-2000ms extension",
+	"container_keyhold_0_2000_dense", "Container block: key held during delay", "artifacts/typing-delay-benchmark-container-keyhold-0-2000-dense/typing-delay-benchmark-1777781875940.json", "small post with containers", "typing inside the Columns container fixture, normal Playwright delay, dense 0-2000ms scan",
+	"container_between_keys_0_2000_dense", "Container block: complete keypress, then wait", "artifacts/typing-delay-benchmark-container-between-keys-0-2000-dense/typing-delay-benchmark-1777783331811.json", "small post with containers", "typing inside the Columns container fixture, delay after full keydown/keypress/input/keyup sequence, dense 0-2000ms scan",
 	"mode_trace_keyhold", "Paired trace: key held during delay", "artifacts/typing-delay-benchmark-mode-trace-keyhold/typing-delay-benchmark-1777759091224.json", "large post", "paired browser/action/timer trace for normal Playwright delay",
 	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress",
 	"native_keyhold_timer", "Native contenteditable: key held during delay", "artifacts/typing-delay-benchmark-native-keyhold-timer/typing-delay-benchmark-1777759696881.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and normal Playwright delay",
@@ -586,6 +588,39 @@ save_plot(
 			color = NULL
 		),
 	"04-coefficient-of-variation-by-delay.png"
+)
+
+container_variance_curve <- by_delay %>%
+	filter(run_id %in% c("container_keyhold_0_2000_dense", "container_between_keys_0_2000_dense")) %>%
+	filter(!is.na(cv), is.finite(cv)) %>%
+	mutate(
+		mode_label = case_when(
+			run_id == "container_keyhold_0_2000_dense" ~ "Playwright delay: key held down",
+			run_id == "container_between_keys_0_2000_dense" ~ "Complete keypress, then wait",
+			TRUE ~ run_label
+		),
+		mode_label = factor(
+			mode_label,
+			levels = c(
+				"Playwright delay: key held down",
+				"Complete keypress, then wait"
+			)
+		)
+	)
+
+save_plot(
+	ggplot(container_variance_curve, aes(delay_ms, cv, color = mode_label)) +
+		geom_point(size = 1.1, alpha = 0.85) +
+		scale_color_brewer(type = "qual", palette = "Dark2") +
+		scale_y_continuous(labels = percent_format(accuracy = 1)) +
+		labs(
+			title = "Container-block volatility also depends on delay and mode",
+			subtitle = "Typing inside the Columns fixture; six retained samples per delay",
+			x = "Delay",
+			y = "Coefficient of variation",
+			color = NULL
+		),
+	"04b-container-coefficient-of-variation-by-delay.png"
 )
 
 time_order <- records %>%
@@ -1182,6 +1217,39 @@ save_plot(
 			color = NULL
 		),
 	"10-delay-mode-comparison.png"
+)
+
+container_dense_mode_comparison <- by_delay %>%
+	filter(run_id %in% c("container_keyhold_0_2000_dense", "container_between_keys_0_2000_dense")) %>%
+	mutate(
+		mode_label = case_when(
+			run_id == "container_keyhold_0_2000_dense" ~ "Playwright delay: key held down",
+			run_id == "container_between_keys_0_2000_dense" ~ "Complete keypress, then wait",
+			TRUE ~ run_label
+		),
+		mode_label = factor(
+			mode_label,
+			levels = c(
+				"Playwright delay: key held down",
+				"Complete keypress, then wait"
+			)
+		)
+	)
+
+save_plot(
+	ggplot(container_dense_mode_comparison, aes(delay_ms, median_ms, color = mode_label)) +
+		geom_point(size = 1.45, alpha = 0.88) +
+		geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+		scale_color_brewer(type = "qual", palette = "Set1") +
+		scale_x_continuous(breaks = c(seq(0, 2000, 250), 1000)) +
+		labs(
+			title = "Container-block delay-mode comparison",
+			subtitle = "Typing inside the Columns fixture; both modes use the same 0-2000ms, 10ms-step sweep",
+			x = "Configured delay",
+			y = "p50 latency (ms)",
+			color = NULL
+		),
+	"10b-container-delay-mode-comparison.png"
 )
 
 build_key_groups <- function(events) {
