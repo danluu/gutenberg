@@ -32,7 +32,7 @@ run_specs <- tribble(
 	"thousand_boundary", "1000 paragraphs boundary", "artifacts/typing-delay-benchmark-thousand-boundary/typing-delay-benchmark-1777754996281.json", "1000 paragraph post", "scenario sensitivity near 1000ms",
 	"dense_1110_2000", "1110-2000ms, 10ms step", "artifacts/typing-delay-benchmark-1110-2000-dense/typing-delay-benchmark-1777755635782.json", "large post", "1 round, dense extension",
 	"landmarks_0_2000", "0-2000ms landmarks", "artifacts/typing-delay-benchmark-0-2000-landmarks/typing-delay-benchmark-1777756530004.json", "large post", "3 rounds, selected delays",
-	"cliff_actions", "Cliff action trace", "artifacts/typing-delay-benchmark-cliff-actions/typing-delay-benchmark-1777757272784.json", "large post", "action instrumentation from 990 to 1300ms",
+	"cliff_actions", "Cliff action trace", "artifacts/typing-delay-benchmark-cliff-actions-970/typing-delay-benchmark-1777778178028.json", "large post", "action instrumentation from 970 to 1300ms",
 	"timeout_500_rewrite", "1000ms timers rewritten to 500ms", "artifacts/typing-delay-benchmark-timeout-500/typing-delay-benchmark-1777757430029.json", "large post", "timer intervention: 1000ms setTimeout calls rewritten to 500ms",
 	"after_persistence_scan", "Wait for persistence, then wait", "artifacts/typing-delay-benchmark-after-persistence-scan/typing-delay-benchmark-1777758189761.json", "large post", "delay after isLastBlockChangePersistent()",
 	"keyhold_schedulers", "Key-hold scheduler trace", "artifacts/typing-delay-benchmark-keyhold-schedulers/typing-delay-benchmark-1777758386189.json", "large post", "normal Playwright delay with action/timer/scheduler tracing",
@@ -608,37 +608,217 @@ save_plot(
 	height = 7
 )
 
-action_events <- derived$action_events %>%
+cliff_delay_levels <- derived$runs %>%
+	filter(run_id == "cliff_actions") %>%
+	pull(delay_ms) %>%
+	unique() %>%
+	sort()
+
+cliff_keydowns <- derived$browser_events %>%
 	filter(
 		run_id == "cliff_actions",
-		storeName == "core/block-editor",
-		actionName %in% c("updateBlockAttributes", "__unstableMarkLastChangeAsPersistent")
+		documentName == "editor-canvas",
+		type == "keydown"
 	) %>%
+	arrange(delayMs, eventMs) %>%
+	group_by(delayMs) %>%
+	mutate(key_index = row_number()) %>%
+	ungroup() %>%
+	transmute(
+		delayMs,
+		key_index,
+		keydown_ms = eventMs,
+		next_keydown_ms = lead(eventMs),
+		delay_label = factor(paste0(delayMs, "ms"), levels = paste0(cliff_delay_levels, "ms"))
+	)
+
+cliff_keyups <- derived$browser_events %>%
+	filter(
+		run_id == "cliff_actions",
+		documentName == "editor-canvas",
+		type == "keyup"
+	) %>%
+	arrange(delayMs, eventMs) %>%
+	group_by(delayMs) %>%
+	mutate(key_index = row_number()) %>%
+	ungroup() %>%
+	transmute(delayMs, key_index, keyup_ms = eventMs)
+
+cliff_key_cycles <- cliff_keydowns %>%
+	left_join(cliff_keyups, by = c("delayMs", "key_index")) %>%
+	filter(!is.na(next_keydown_ms), key_index > 1) %>%
 	mutate(
-		action_label = recode(
-			actionName,
-			updateBlockAttributes = "updateBlockAttributes",
-			`__unstableMarkLastChangeAsPersistent` = "mark persistent"
-		),
-		persistent_after = factor(`after.isPersistent`, levels = c(FALSE, TRUE), labels = c("transient after", "persistent after")),
-		delay_label = factor(paste0(delayMs, "ms"), levels = paste0(sort(unique(delayMs)), "ms"))
+		keyup_after_keydown_ms = keyup_ms - keydown_ms,
+		next_keydown_after_keydown_ms = next_keydown_ms - keydown_ms
+	)
+
+cliff_cycle_summary <- cliff_key_cycles %>%
+	group_by(delayMs, delay_label) %>%
+	summarise(
+		keyup_p50_ms = median(keyup_after_keydown_ms, na.rm = TRUE),
+		next_keydown_p50_ms = median(next_keydown_after_keydown_ms, na.rm = TRUE),
+		.groups = "drop"
+	)
+
+cliff_cycle_action_events <- map_dfr(seq_len(nrow(cliff_key_cycles)), function(row_index) {
+	cycle <- cliff_key_cycles[row_index, ]
+	derived$action_events %>%
+		filter(
+			run_id == "cliff_actions",
+			delayMs == cycle$delayMs,
+			storeName == "core/block-editor",
+			actionName %in% c("updateBlockAttributes", "__unstableMarkLastChangeAsPersistent"),
+			eventMs >= cycle$keydown_ms,
+			eventMs < cycle$next_keydown_ms
+		) %>%
+		mutate(
+			key_index = cycle$key_index,
+			ms_after_keydown = eventMs - cycle$keydown_ms,
+			delay_label = cycle$delay_label
+		)
+})
+
+cliff_action_summary <- cliff_cycle_action_events %>%
+	mutate(
+		event_label = case_when(
+			actionName == "__unstableMarkLastChangeAsPersistent" ~ "1s timer marks persistent",
+			actionName == "updateBlockAttributes" & `after.isPersistent` == FALSE ~ "text update leaves transient",
+			actionName == "updateBlockAttributes" ~ "text update after timer"
+		)
+	) %>%
+	group_by(delayMs, delay_label, event_label) %>%
+	summarise(ms_after_keydown = median(ms_after_keydown, na.rm = TRUE), .groups = "drop")
+
+cliff_latency_labels <- by_delay %>%
+	filter(run_id == "cliff_actions") %>%
+	mutate(
+		delay_label = factor(paste0(delay_ms, "ms"), levels = paste0(cliff_delay_levels, "ms")),
+		label = paste0("p50 ", number(median_ms, accuracy = 0.1), "ms")
 	)
 
 save_plot(
-	ggplot(action_events, aes(eventMs / 1000, delay_label)) +
-		geom_point(aes(shape = action_label, color = persistent_after), size = 2.6, alpha = 0.9) +
-		scale_color_brewer(type = "qual", palette = "Set1", na.value = brewer_color("Greys", 7, type = "seq", n = 9)) +
+	ggplot() +
+		geom_segment(
+			data = cliff_cycle_summary,
+			aes(x = 0, xend = keyup_p50_ms, y = delay_label, yend = delay_label),
+			color = brewer_color("Greys", 6, type = "seq", n = 9),
+			linewidth = 4,
+			alpha = 0.28
+		) +
+		geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+		geom_point(
+			data = cliff_cycle_summary,
+			aes(next_keydown_p50_ms, delay_label, shape = "next keydown"),
+			color = brewer_color("Dark2", 3),
+			size = 2.8
+		) +
+		geom_point(
+			data = cliff_action_summary,
+			aes(ms_after_keydown, delay_label, color = event_label, shape = event_label),
+			size = 3.1,
+			alpha = 0.95
+		) +
+		geom_text(
+			data = cliff_latency_labels,
+			aes(1375, delay_label, label = label),
+			color = brewer_color("Greys", 8, type = "seq", n = 9),
+			size = 3.1,
+			hjust = 0
+		) +
+		annotate(
+			"text",
+			x = 1000,
+			y = length(cliff_delay_levels) + 0.55,
+			label = "RichText 1000ms timer",
+			size = 3.2,
+			vjust = 0,
+			color = brewer_color("Greys", 8, type = "seq", n = 9)
+		) +
+		annotate(
+			"text",
+			x = 520,
+			y = 0.5,
+			label = "gray bar: previous synthetic key is still held down",
+			size = 3.1,
+			color = brewer_color("Greys", 7, type = "seq", n = 9)
+		) +
+		annotate(
+			"label",
+			x = 690,
+			y = 2.6,
+			label = "970-990ms: the old timer is cleared\nbefore it can run between keys",
+			size = 3,
+			alpha = 0.85,
+			color = brewer_color("Set1", 1)
+		) +
+		annotate(
+			"label",
+			x = 1165,
+			y = 8.2,
+			label = "1000ms+: the timer callback runs\nwhile the synthetic key is still down",
+			size = 3,
+			alpha = 0.85,
+			color = brewer_color("Set1", 2)
+		) +
+		annotate(
+			"text",
+			x = 35,
+			y = 12.55,
+			label = "triangle: text update\nred=transient, orange=after timer",
+			size = 3,
+			hjust = 0,
+			color = brewer_color("Dark2", 2)
+		) +
+		annotate(
+			"text",
+			x = 1065,
+			y = 11.55,
+			label = "circle: persistence timer",
+			size = 3,
+			hjust = 0,
+			color = brewer_color("Set1", 2)
+		) +
+		annotate(
+			"text",
+			x = 1085,
+			y = 0.45,
+			label = "diamond: next keydown, where the measured keypress starts",
+			size = 3,
+			hjust = 0,
+			color = brewer_color("Dark2", 3)
+		) +
+		scale_x_continuous(
+			limits = c(-15, 1500),
+			breaks = c(0, 500, 1000, 1100, 1300),
+			labels = label_number(suffix = "ms")
+		) +
+		scale_color_manual(values = c(
+			`text update leaves transient` = brewer_color("Set1", 1),
+			`text update after timer` = brewer_color("Dark2", 2),
+			`1s timer marks persistent` = brewer_color("Set1", 2)
+		)) +
+		scale_shape_manual(values = c(
+			`text update leaves transient` = 17,
+			`text update after timer` = 17,
+			`1s timer marks persistent` = 16,
+			`next keydown` = 23
+		)) +
+		coord_cartesian(clip = "off") +
 		labs(
-			title = "At 1000ms and above, the persistent marker fires between keys",
-			subtitle = "Data-action instrumentation around the cliff",
-			x = "Seconds since trace start",
-			y = "Delay",
-			shape = NULL,
-			color = NULL
+			title = "At 1000ms, the timer fits inside the synthetic key hold",
+			subtitle = "Gray bar is the artificial key hold; complete-keypress-then-wait mode does not have this long held-key interval",
+			x = "Milliseconds after previous keydown",
+			y = "Configured Playwright key-hold delay",
+			color = NULL,
+			shape = NULL
+		) +
+		theme(
+			legend.position = "none",
+			plot.margin = margin(5.5, 90, 5.5, 5.5)
 		),
 	"06-persistence-action-timeline.png",
-	width = 9,
-	height = 6
+	width = 12,
+	height = 7
 )
 
 timer_rewrite <- by_delay %>%

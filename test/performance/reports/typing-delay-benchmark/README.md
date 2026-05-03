@@ -319,24 +319,58 @@ key-held run, RichText `registry.batch()` median time drops from about `10.5ms`
 at `990ms` to `6.5ms` at `1000ms`, and the input-matched data batch drops from
 about `23.4ms` to `14.2ms`.
 
-The action trace shows the boundary directly:
+The action trace shows the boundary directly. This version of the graph is a
+per-delay timing diagram, not an absolute wall-clock timeline:
+
+-   the gray bar is the artificial Playwright key hold, from the previous
+    `keydown` to its `keyup`;
+-   the dashed vertical line is the `1000ms` RichText persistence timer;
+-   the diamond is the next `keydown`, where the benchmark's next measured
+    keypress dispatch begins;
+-   the circle is the persistence timer callback;
+-   the triangle is the text update action for the next input.
 
 ![Persistence action timeline](figures/06-persistence-action-timeline.png)
 
 In the focused action run:
 
-|    Delay |        p50 | What happened                                                              |
-| -------: | ---------: | -------------------------------------------------------------------------- |
-|  `990ms` | `19.878ms` | the persistent timer was repeatedly cancelled and only fired after the run |
-| `1000ms` | `10.384ms` | the persistent marker fired between keys                                   |
-| `1010ms` | `10.182ms` | the persistent marker fired between keys                                   |
-| `1100ms` | `10.967ms` | the persistent marker fired between keys                                   |
-| `1110ms` | `10.871ms` | the persistent marker fired between keys                                   |
-| `1150ms` | `12.541ms` | persistent between keys, but latency begins climbing                       |
-| `1180ms` | `14.355ms` | persistent between keys, transitional                                      |
-| `1190ms` | `16.985ms` | persistent between keys, near high plateau                                 |
-| `1200ms` | `15.621ms` | persistent between keys, high/transition                                   |
-| `1300ms` | `18.524ms` | persistent between keys, high plateau                                      |
+|    Delay |        p50 | What happened                                                          |
+| -------: | ---------: | ---------------------------------------------------------------------- |
+|  `970ms` | `26.252ms` | no between-key persistence marker; the next input clears the old timer |
+|  `980ms` | `25.068ms` | no between-key persistence marker; the next input clears the old timer |
+|  `990ms` | `25.829ms` | no between-key persistence marker; the next input clears the old timer |
+| `1000ms` | `10.374ms` | the persistent marker fires during the held-key interval               |
+| `1010ms` | `12.019ms` | the persistent marker fires during the held-key interval               |
+| `1100ms` | `12.667ms` | persistent between keys                                                |
+| `1110ms` | `12.660ms` | persistent between keys                                                |
+| `1150ms` | `14.172ms` | persistent between keys, but latency begins climbing                   |
+| `1180ms` | `19.570ms` | persistent between keys, high/transition                               |
+| `1190ms` | `21.147ms` | persistent between keys, near high plateau                             |
+| `1200ms` | `20.959ms` | persistent between keys, high/transition                               |
+| `1300ms` | `22.628ms` | persistent between keys, high plateau                                  |
+
+The important visual comparison is `990ms` versus `1000ms`. At `970-990ms`, the
+next keydown arrives at about the timer boundary, but the next input clears the
+previous timer before the callback has run between keys. The triangle is red:
+the text update makes the last change transient again. The expensive block
+editor synchronization for that input is still part of the measured next
+keypress dispatch.
+
+At `1000ms` and `1010ms`, the circle appears before the diamond. That means the
+timer callback ran while Playwright was still holding the previous synthetic key,
+before the next measured keypress began. The previous input has already been
+marked persistent, and some of the `core/block-editor` / `@wordpress/data`
+subscriber work associated with that transition has happened outside the next
+keypress dispatch slice. The next triangle is orange: the following text update
+starts from the post-timer persistent state. That is why the measured latency
+drops even though total editor work has not disappeared.
+
+This only happens in the key-held benchmark because the gray bar is long. In the
+complete-keypress-then-wait mode, `keyup` happens immediately and the wait occurs
+after the key is no longer down. The same one-second timer can still fire, but it
+fires after a completed keypress and ordinary idle wait, not inside a long
+synthetic key hold immediately before the next keydown. That different event
+ordering does not move the same work out of the next keypress dispatch slice.
 
 This establishes two separate facts:
 
@@ -1228,7 +1262,7 @@ The key runs used in this report were:
 -   `thousand_boundary`: synthetic 1000-paragraph scenario around the boundary.
 -   `dense_1110_2000`: dense extension to `2000ms`.
 -   `landmarks_0_2000`: repeated landmark run through `2000ms`.
--   `cliff_actions`: action trace from `990ms` through `1300ms`.
+-   `cliff_actions`: action trace from `970ms` through `1300ms`.
 -   `timeout_500_rewrite`: timer intervention rewriting `1000ms` timers to
     `500ms`.
 -   `after_persistence_scan`: wait for persistence, then wait `0..400ms`.

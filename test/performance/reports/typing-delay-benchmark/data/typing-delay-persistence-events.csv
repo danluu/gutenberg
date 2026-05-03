@@ -180,9 +180,13 @@ nowMs,isPersistent,isTyping,run_id,run_label,round,delayMs,eventMs,source
 467498.09999990463,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,1200,0,NA
 494603.7000000477,FALSE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,1041.7000000476837,NA
 504721.5,TRUE,TRUE,landmarks_0_2000,0-2000ms landmarks,2,990,11159.5,NA
-1876.9000000953674,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,32.799999952316284,NA
-2934.2999999523163,FALSE,TRUE,cliff_actions,Cliff action trace,0,990,1090.1999998092651,NA
-8017,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,6172.899999856949,NA
+1898,TRUE,TRUE,cliff_actions,Cliff action trace,0,970,35.799999952316284,NA
+2951.2999999523163,FALSE,TRUE,cliff_actions,Cliff action trace,0,970,1089.0999999046326,NA
+7972,TRUE,TRUE,cliff_actions,Cliff action trace,0,970,6109.799999952316,NA
+9102,FALSE,TRUE,cliff_actions,Cliff action trace,0,980,1028.1000001430511,NA
+14151.099999904633,TRUE,TRUE,cliff_actions,Cliff action trace,0,980,6077.200000047684,NA
+15299.5,FALSE,TRUE,cliff_actions,Cliff action trace,0,990,1036.1000001430511,NA
+20399.799999952316,TRUE,TRUE,cliff_actions,Cliff action trace,0,990,6136.400000095367,NA
 1852.5,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,34,NA
 2375.7999999523163,FALSE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,557.2999999523163,NA
 6493.299999952316,TRUE,TRUE,timeout_500_rewrite,1000ms timers rewritten to 500ms,0,490,4674.799999952316,NA
