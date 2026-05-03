@@ -309,27 +309,28 @@ flows through:
     persistent changes through `onChange` and non-persistent changes through
     `onInput`.
 
-The `1000ms` point drops because the timer changes when expensive work falls
-relative to the benchmark's measured keypress window. Below the boundary, for
-example at `990ms`, each next character arrives before the persistence timeout
-fires. The RichText effect cleanup cancels the old timeout, so the next measured
-keypress still runs as another continuous, non-persistent text input update.
+The `1000ms` point is controlled by the timer, but the current traces do not
+prove the full internal reason that the following input event becomes shorter.
+Below the boundary, for example at `990ms`, each next character usually arrives
+before the persistence timeout fires. The RichText effect cleanup cancels the
+old timeout, so the action sequence stays as consecutive transient text input
+updates.
 
 At `1000ms`, Playwright's normal `keyboard.type( ..., { delay } )` has held the
 previous key down for roughly one second before sending `keyup`, and the next
 `keydown` follows almost immediately. That gives the RichText timeout just enough
 room to fire between synthetic characters. The timeout dispatches
-`MARK_LAST_CHANGE_AS_PERSISTENT`, `useBlockSync()` can push the previous text
-update through the persistent `onChange` path, and part of the block-editor/data
-subscriber work for the previous character has already happened before the next
-keypress starts being measured.
+`MARK_LAST_CHANGE_AS_PERSISTENT`, so the action sequence becomes
+`UPDATE_BLOCK_ATTRIBUTES -> MARK_LAST_CHANGE_AS_PERSISTENT -> UPDATE_BLOCK_ATTRIBUTES`
+instead of `UPDATE_BLOCK_ATTRIBUTES -> UPDATE_BLOCK_ATTRIBUTES`.
 
 So the drop is not evidence that the persistence timer makes Gutenberg
-intrinsically faster. It is an accounting effect in an event-only metric. The
-benchmark's latency value is the sum of Chromium `EventDispatch` durations for
-the key's `keydown`, `keypress`, and `keyup` events. A timer callback is a
-different browser task, so timer work is not included in that key-event number
-even if the timer was scheduled by the previous character.
+intrinsically faster. It is at least partly an accounting problem in an
+event-only metric. The benchmark's latency value is the sum of Chromium
+`EventDispatch` durations for the key's `keydown`, `keypress`, and `keyup`
+events. A timer callback is a different browser task, so timer work is not
+included in that key-event number even if the timer was scheduled by the
+previous character.
 
 That means the trace timestamps are not wrong. The measured key event really is
 shorter at `1000ms`; the problem is interpreting that event-only slice as the
@@ -341,14 +342,15 @@ event-only p50s at `970ms` (`26.252ms`) and `990ms` (`25.829ms`).
 
 The timer callback does real work because it dispatches
 `MARK_LAST_CHANGE_AS_PERSISTENT`. That wakes the block-editor data store and
-subscribers. In particular, `useBlockSync()` observes the persistent-state
-transition and can commit the previous block change through the persistent
-`onChange` path. Since that happens before the next `keydown`, it is outside the
-next key's `EventDispatch` slices. The later source-level traces are consistent
-with this state split: in the large-post key-held run, RichText
-`registry.batch()` median time drops from about `10.5ms` at `990ms` to `6.5ms`
-at `1000ms`, and the input-matched data batch drops from about `23.4ms` to
-`14.2ms`.
+subscribers, and `useBlockSync()` has explicit code for the case where the blocks
+did not change in the current action but the previous block change has become
+persistent. Since that timer task happens before the next `keydown`, its own
+work is outside the next key's `EventDispatch` slices. The later source-level
+traces are consistent with a state/order split, but they do not prove the
+lower-level cause of the smaller following input slice: in the large-post
+key-held run, RichText `registry.batch()` median time drops from about `10.5ms`
+at `990ms` to `6.5ms` at `1000ms`, and the input-matched data batch drops from
+about `23.4ms` to `14.2ms`.
 
 The action trace shows the boundary directly. This version of the graph is a
 per-delay timing diagram, not an absolute wall-clock timeline:
@@ -383,25 +385,24 @@ In the focused action run:
 The important visual comparison is `990ms` versus `1000ms`. At `970-990ms`, the
 next keydown arrives at about the timer boundary, but the next input clears the
 previous timer before the callback has run between keys. The triangle is red:
-the text update makes the last change transient again. The expensive block
-editor synchronization for that input is still part of the measured next
-keypress dispatch.
+the action trace observed the next text update before the persistence marker.
 
 At `1000ms` and `1010ms`, the circle appears before the diamond. That means the
 timer callback ran while Playwright was still holding the previous synthetic key,
-before the next measured keypress began. The previous input has already been
-marked persistent, and the `core/block-editor` / `@wordpress/data` subscriber
-work associated with that timer-side transition has happened outside the next
-keypress `EventDispatch` slices. The next triangle is orange: the following text
-update starts from the post-timer persistent state. That is why the measured
-event-only latency drops even though total editor work has not disappeared.
+before the next measured keypress began. The previous input has been marked
+persistent before the next input starts. The next triangle is orange: the
+following text update was observed after the timer marker. In these traces, that
+ordering correlates with a much smaller measured event-only latency. The data
+does not yet prove whether the following input is shorter because of persistent
+classification itself, because the inserted marker changes subscriber state, or
+because of some lower-level React/data scheduling consequence.
 
 This only happens in the key-held benchmark because the gray bar is long. In the
 complete-keypress-then-wait mode, `keyup` happens immediately and the wait occurs
 after the key is no longer down. The same one-second timer can still fire, but it
 fires after a completed keypress and ordinary idle wait, not inside a long
 synthetic key hold immediately before the next keydown. That different event
-ordering does not move the same work out of the next keypress dispatch slice.
+ordering does not create the same measured cliff.
 
 The same data can be reduced to three repeated p50 timelines:
 
@@ -422,19 +423,23 @@ The three regimes are:
 -   **At the drop (`1000ms`).** The timer runs while the synthetic key is still
     held and before the next measured keydown. The key-event p50 is only
     `10.4ms`, but the timer task immediately before it is another `15.9ms` p50
-    outside the event metric. The work moved tasks; it did not vanish.
+    outside the event metric. This shows that the event-only number is not the
+    whole character-cycle cost; it does not prove that identical work moved from
+    one task to another.
 -   **Above the drop (`1300ms`).** The timer still runs outside the measured key
     event, but the later key-held path is slow again: `22.6ms` event-only p50,
     plus a `15.7ms` timer task outside the metric. This is why the later plateau
     is a separate phenomenon from the first `990 -> 1000ms` accounting drop.
 
-This establishes two separate facts:
+This establishes two separate facts and leaves one important mechanism open:
 
-1. The sharp `990 -> 1000ms` drop is caused by the one-second rich-text
-   persistence timer.
+1. The one-second rich-text persistence timer controls the transition between
+   `990ms` and `1000ms`: moving the timer moves the transition.
 2. The later return to the high plateau is not caused by that same state
    transition, because the editor is already on the persistent path at `1150ms`,
    `1180ms`, `1190ms`, `1200ms`, and `1300ms`.
+3. The current traces do not prove why the next input listener/dispatch span is
+   smaller once the marker has run first.
 
 ## Timer Intervention
 
@@ -483,11 +488,10 @@ window.
 
 The exact transition is not a step function at the rewritten millisecond. The
 timer callback has to fire, run the rich-text persistence work, and yield back
-to the browser before the next measured keydown can benefit from that work
-having already happened. That is why the `230ms` rewrite has mixed/partial
-points at `230..250ms` and its cleanest low points at `260..330ms`, and why the
-`710ms` rewrite has a mixed point at `710ms` followed by a clear low point at
-`720ms`.
+to the browser before the next measured keydown can start in the post-marker
+ordering. That is why the `230ms` rewrite has mixed/partial points at
+`230..250ms` and its cleanest low points at `260..330ms`, and why the `710ms`
+rewrite has a mixed point at `710ms` followed by a clear low point at `720ms`.
 
 The intervention runs should not be treated as production benchmarks. Wrapping
 `setTimeout` can perturb scheduling. Their purpose is causal attribution.
@@ -582,7 +586,7 @@ input-listener dispatch span.
 
 ![Cross-browser timer ordering](figures/19-browser-timer-event-ordering.png)
 
-The mechanism is:
+What the diagnostic trace proves:
 
 1. A Gutenberg input schedules the rich-text persistence timer for `1000ms`
    later.
@@ -591,11 +595,16 @@ The mechanism is:
 3. Near the one-second boundary, the browser event loop has two possible next
    tasks: the timer callback or the next keyboard/input work.
 4. If the next input wins, Gutenberg clears and reschedules the timer before the
-   callback runs. The current input starts from the still-transient state and
-   its listener span is higher.
-5. If the timer wins, the callback marks the previous change persistent before
-   the current input begins. The current input starts from the post-timer state
-   and its measured listener span is lower.
+   callback runs.
+5. If the timer wins, the callback dispatches
+   `MARK_LAST_CHANGE_AS_PERSISTENT` before the current input begins.
+6. In these traces, the timer-first rows have lower measured next-input listener
+   spans.
+
+What the diagnostic trace does not prove is just as important: it does not prove
+that identical work moved from the input task into the timer task, and it does
+not identify the exact lower-level callback, selector, React commit, or
+subscriber state change that makes the following input span smaller.
 
 The diagnostic run shows that ordering directly:
 
@@ -618,20 +627,59 @@ ordering is still the same: below the boundary, the measured input usually
 clears the timer; at and above the boundary, the timer callback runs first in
 all retained cycles.
 
-This is why Firefox can show the same qualitative dip even though it has no
+This explains how Firefox can show the same qualitative dip even though it has no
 Chromium `EventDispatch` trace. The application-level ordering is shared:
 Gutenberg's `1000ms` timer sometimes runs before the next measured input and
 sometimes gets cleared by that input. Chrome `EventDispatch` measures one
-accounting window for that state change; the Firefox/WebKit listener traces
-measure another. Both windows get shorter when the timer work has already run.
+accounting window around that ordering change; the Firefox/WebKit listener
+traces measure another. Both metrics show a smaller next-input span when the
+timer ran first, but that is still an observation, not a complete mechanism.
 
 This diagnostic trace is for causality, not for absolute score comparison. The
 in-page wrappers perturb timing, and the measured spans here should not replace
 the lower-overhead sweep plots.
 
+## Reasoning Audit
+
+The conservative explanation is:
+
+1. The code creates a `1000ms` RichText persistence timer after text input.
+2. Playwright's delayed typing holds a key down during the delay instead of
+   completing a keypress and then sleeping.
+3. Around `1000ms`, the timer callback and the next input can race.
+4. The traces show two orderings: input-first, where the input clears the timer,
+   and timer-first, where `MARK_LAST_CHANGE_AS_PERSISTENT` runs before the next
+   input.
+5. The measured next-input/event span is smaller in timer-first rows.
+6. Rewriting the timer to `230ms`, `500ms`, and `710ms` moves the low-latency
+   band, so the timer controls the boundary.
+
+The earlier stronger explanation failed this audit:
+
+-   A Linus Torvalds-style code review would reject "the same work moved
+    earlier" because the traces show separate tasks and action ordering, not
+    identity of work.
+-   A Kyle Kingsbury-style measurement review would reject "persistent state
+    makes the next input faster" because that is a causal claim without an
+    isolating intervention.
+-   A Dan Luu-style benchmark review would reject treating the event-only value
+    as user latency because timer tasks, key holds, browser scheduling, and
+    subscriber fanout all sit outside or around that accounting window.
+
+The next useful falsification tests are narrow:
+
+-   make the timer callback run but make `MARK_LAST_CHANGE_AS_PERSISTENT` a no-op;
+-   insert an inert action between consecutive `UPDATE_BLOCK_ATTRIBUTES` actions;
+-   force the marker to run before input at `990ms`;
+-   trace `useBlockSync()` branch choice, parent `onInput`/`onChange` duration,
+    React commits, and high-fanout `useSelect` subscribers in both the timer task
+    and the following input task;
+-   compare a full cycle metric, from one input start through the timer task and
+    the next input end, with the current event-only metric.
+
 ## Deeper Pass: The Delay Is A Key Hold
 
-The first report explained the `~1000ms` cliff but left the later `1200-2000ms`
+The first report identified the `~1000ms` cliff but left the later `1200-2000ms`
 plateau partly open. The deeper pass found a more fundamental benchmark issue:
 Playwright's `keyboard.type( text, { delay } )` is not equivalent to "type a
 complete character, wait, type the next complete character."
