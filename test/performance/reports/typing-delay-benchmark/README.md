@@ -33,7 +33,11 @@ The short version:
     focused `1300ms` first-character run, p50 rose from `15.9ms` at `0s` wait to
     `23.1ms` after `60s`, mostly in the `keypress` trace slice. Throwaway policy
     matters more than pre-run settling for the retained repeated-key
-    measurements.
+    measurements. A follow-up sample-index run confirms this: the first
+    character moves from `16.3ms` to `22.0ms` when the start wait grows from
+    `0s` to `60s`, while the next three `1300ms` held-key characters stay in the
+    normal `24-27ms` slow band. Native `contenteditable` moves by only `0.27ms`,
+    so the effect is not just browser/Playwright timing overhead.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -401,6 +405,12 @@ The R script derives:
     wait after editor setup and before typing starts.
 -   `data/typing-delay-start-wait-first-char-*.csv`: focused first-character
     checks for changing the wait after a fresh editor setup.
+-   `data/typing-delay-start-wait-sample-index-*.csv`: first-vs-next-character
+    checks after changing the fresh-editor start wait.
+-   `data/typing-delay-start-wait-empty-first-char-*.csv`,
+    `data/typing-delay-start-wait-native-first-char-*.csv`, and
+    `data/typing-delay-start-wait-scenario-first-char-summary.csv`: scenario
+    controls for the first-character start-wait effect.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -654,6 +664,54 @@ in the `keypress` slice: p50 goes from `15.1ms` at `0s` to roughly
 around `1.9ms` in the `30s` and `60s` rows. So the start-wait effect is not a
 measurement bookkeeping artifact from waiting before the first `keydown`; it is
 showing up inside the measured browser event work for the first input.
+
+The stronger check is to type several characters after the same start wait and
+summarize by character position. This run used a fresh large-post editor,
+`BENCHMARK_DELAYS_MS=1300`, 8 rounds, 4 measured characters per fresh editor, no
+throwaway sample, and start waits of `0s`, `10s`, and `60s`.
+
+![Start-wait sample-index comparison](figures/61-start-wait-sample-index.png)
+
+Large-post p50s by character position:
+
+| Start wait | Sample 1 | Sample 2 | Sample 3 | Sample 4 |
+| ---------- | -------: | -------: | -------: | -------: |
+| `0s`       | `16.3ms` | `26.7ms` | `25.2ms` | `26.2ms` |
+| `10s`      | `19.4ms` | `26.5ms` | `26.0ms` | `24.5ms` |
+| `60s`      | `22.0ms` | `26.0ms` | `23.7ms` | `25.2ms` |
+
+This rules out a broad "longer start wait changes the whole benchmark" story.
+The first character is start-wait-sensitive. The next three characters are
+already in the ordinary `1300ms` held-key slow regime regardless of whether the
+run started immediately or after a minute. In other words, adding a long
+pre-typing wait mainly changes what happens before the first measured input; it
+does not change the repeated-key artifact that the main benchmark is measuring
+after throwaways.
+
+I also ran first-character controls for an empty Gutenberg editor and for the
+native `contenteditable` timer page. These used the same `1300ms` held-key first
+character, 8 fresh setups per setting, no throwaway, and start waits of `0s`,
+`10s`, and `60s`.
+
+![Start-wait scenario controls](figures/62-start-wait-scenario-controls.png)
+
+First-character p50s by scenario:
+
+| Scenario | `0s` wait | `10s` wait | `60s` wait | `0s -> 60s` |
+| -------- | --------: | ---------: | ---------: | ----------: |
+| Native `contenteditable` | `0.31ms` | `0.57ms` | `0.58ms` | `+0.27ms` |
+| Gutenberg empty post | `6.3ms` | `9.1ms` | `10.9ms` | `+4.6ms` |
+| Gutenberg large post | `16.3ms` | `19.4ms` | `22.0ms` | `+5.7ms` |
+
+That disconfirms a pure browser, Playwright, or trace-accounting explanation.
+The trivial native page has a detectable but tiny idle-start effect. Gutenberg's
+editor path amplifies it, and the large-post fixture starts from a much higher
+absolute latency than the empty editor. The benchmark still does not isolate the
+hardware/browser mechanism behind the idle slowdown; plausible contributors
+include colder CPU state, browser scheduling state, JIT/cache state, or a mix of
+those. The important benchmark conclusion is narrower and better supported: a
+long pre-start wait changes first-input coldness in Gutenberg, while retained
+repeated-key samples remain controlled mostly by the key-hold/timer interaction.
 
 The interpretation is conservative: increasing the pre-run settle time is not a
 fix for this benchmark's main artifacts. It mainly changes the first character
@@ -3650,7 +3708,12 @@ The key runs used in this report were:
     `start_settle_fresh_60000`, `start_wait_first_char_0`,
     `start_wait_first_char_1000`, `start_wait_first_char_5000`,
     `start_wait_first_char_10000`, `start_wait_first_char_30000`,
-    `start_wait_first_char_60000`,
+    `start_wait_first_char_60000`, `start_wait_sample_index_0`,
+    `start_wait_sample_index_10000`, `start_wait_sample_index_60000`,
+    `start_wait_empty_first_char_0`, `start_wait_empty_first_char_10000`,
+    `start_wait_empty_first_char_60000`, `start_wait_native_first_char_0`,
+    `start_wait_native_first_char_10000`,
+    `start_wait_native_first_char_60000`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,

@@ -845,6 +845,70 @@ if (file.exists(start_wait_first_char_summary_path)) {
 	)
 }
 
+start_wait_sample_index_summary_path <- file.path(data_dir, "typing-delay-start-wait-sample-index-summary.csv")
+if (file.exists(start_wait_sample_index_summary_path)) {
+	start_wait_sample_index_summary <- read_csv(start_wait_sample_index_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			settle_label = factor(settle_label, levels = c("0s", "10s", "60s")),
+			sample_label = factor(
+				paste0("sample ", sample_index + 1),
+				levels = paste0("sample ", sort(unique(sample_index)) + 1)
+			)
+		)
+
+	save_plot(
+		ggplot(start_wait_sample_index_summary, aes(sample_label, p50_ms, color = settle_label, shape = settle_label)) +
+			geom_errorbar(
+				aes(ymin = p10_ms, ymax = p90_ms),
+				width = 0.18,
+				position = position_dodge(width = 0.55),
+				alpha = 0.78
+			) +
+			geom_point(position = position_dodge(width = 0.55), size = 3) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Start wait mostly changes the first character",
+				subtitle = "Fresh large-post editor; four consecutive 1300ms key-hold characters; bars are p10-p90",
+				x = "Character within the measured burst",
+				y = "Latency p50 (ms)",
+				color = "Wait after editor setup",
+				shape = "Wait after editor setup"
+			),
+		"61-start-wait-sample-index.png",
+		width = 9,
+		height = 5.5
+	)
+}
+
+start_wait_scenario_summary_path <- file.path(data_dir, "typing-delay-start-wait-scenario-first-char-summary.csv")
+if (file.exists(start_wait_scenario_summary_path)) {
+	start_wait_scenario_summary <- read_csv(start_wait_scenario_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			settle_label = factor(settle_label, levels = c("0s", "10s", "60s")),
+			scenario_label = factor(
+				scenario_label,
+				levels = c("Native contenteditable", "Gutenberg empty post", "Gutenberg large post")
+			)
+		)
+
+	save_plot(
+		ggplot(start_wait_scenario_summary, aes(settle_label, p50_ms, color = scenario_label)) +
+			geom_errorbar(aes(ymin = p10_ms, ymax = p90_ms), width = 0.18, alpha = 0.78) +
+			geom_point(size = 3.1) +
+			facet_wrap(~scenario_label, ncol = 1, scales = "free_y") +
+			scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE, guide = "none") +
+			labs(
+				title = "Gutenberg workload amplifies first-input start-wait sensitivity",
+				subtitle = "First 1300ms key-hold character after fresh setup; facets use separate y scales; bars are p10-p90",
+				x = "Wait after setup",
+				y = "Latency p50 (ms)"
+			),
+		"62-start-wait-scenario-controls.png",
+		width = 8,
+		height = 8
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%
