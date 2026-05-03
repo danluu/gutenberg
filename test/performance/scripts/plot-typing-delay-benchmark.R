@@ -3702,6 +3702,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					"task_end_external_background_cpu_2_noop_timeout_1250_delay_1300",
 					"task_end_external_background_cpu_4_noop_timeout_1250_delay_1300",
 					"task_end_external_background_cpu_8_noop_timeout_1250_delay_1300",
+					"task_end_external_background_nice_cpu_noop_timeout_1250_delay_1300",
+					"task_end_external_background_taskpolicy_cpu_noop_timeout_1250_delay_1300",
+					"task_end_external_background_taskpolicy_cpu_4_noop_timeout_1250_delay_1300",
+					"task_end_external_background_taskpolicy_cpu_8_noop_timeout_1250_delay_1300",
 					"task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
 					"task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
 				)
@@ -3715,6 +3719,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					`background CPU x2 + no-op` = "task_end_external_background_cpu_2_noop_timeout_1250_delay_1300",
 					`background CPU x4 + no-op` = "task_end_external_background_cpu_4_noop_timeout_1250_delay_1300",
 					`background CPU x8 + no-op` = "task_end_external_background_cpu_8_noop_timeout_1250_delay_1300",
+					`nice +20 CPU x1 + no-op` = "task_end_external_background_nice_cpu_noop_timeout_1250_delay_1300",
+					`taskpolicy -b CPU x1 + no-op` = "task_end_external_background_taskpolicy_cpu_noop_timeout_1250_delay_1300",
+					`taskpolicy -b CPU x4 + no-op` = "task_end_external_background_taskpolicy_cpu_4_noop_timeout_1250_delay_1300",
+					`taskpolicy -b CPU x8 + no-op` = "task_end_external_background_taskpolicy_cpu_8_noop_timeout_1250_delay_1300",
 					`prestarted delay` = "task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
 					`prestarted CPU burst` = "task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
 				),
@@ -3727,6 +3735,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						"background CPU x2 + no-op",
 						"background CPU x4 + no-op",
 						"background CPU x8 + no-op",
+						"nice +20 CPU x1 + no-op",
+						"taskpolicy -b CPU x1 + no-op",
+						"taskpolicy -b CPU x4 + no-op",
+						"taskpolicy -b CPU x8 + no-op",
 						"prestarted delay",
 						"prestarted CPU burst"
 					)
@@ -3734,10 +3746,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			)
 
 		save_plot(
-			ggplot(background_cpu_control, aes(control, latency_ms, color = control, shape = control)) +
-				geom_jitter(width = 0.12, height = 0, alpha = 0.45, size = 2.1) +
+			ggplot(background_cpu_control, aes(latency_ms, control, color = control, shape = control)) +
+				geom_jitter(width = 0, height = 0.12, alpha = 0.45, size = 2.1) +
 				stat_summary(fun = median, geom = "point", size = 4.2, color = "black", show.legend = FALSE) +
-				scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Set3", drop = FALSE) +
 				scale_shape_manual(values = c(
 					`no-op timer` = 17,
 					`idle child + no-op` = 2,
@@ -3745,21 +3757,24 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					`background CPU x2 + no-op` = 5,
 					`background CPU x4 + no-op` = 6,
 					`background CPU x8 + no-op` = 8,
+					`nice +20 CPU x1 + no-op` = 9,
+					`taskpolicy -b CPU x1 + no-op` = 10,
+					`taskpolicy -b CPU x4 + no-op` = 11,
+					`taskpolicy -b CPU x8 + no-op` = 12,
 					`prestarted delay` = 7,
 					`prestarted CPU burst` = 3
 				), drop = FALSE) +
 				labs(
-					title = "One background CPU thread is enough to keep the no-op timer fast",
-					subtitle = "Fixed 1300ms key hold; more background CPU stays fast with mild contention",
-					x = NULL,
-					y = "Next EventDispatch duration (ms)",
+					title = "Low-priority background CPU still keeps the no-op timer fast",
+					subtitle = "Fixed 1300ms key hold; count and priority controls distinguish CPU active state from timer work",
+					x = "Next EventDispatch duration (ms)",
+					y = NULL,
 					color = "Control",
 					shape = "Control"
-				) +
-				theme(axis.text.x = element_text(angle = 25, hjust = 1)),
+				),
 			"54-background-cpu-control.png",
-			width = 12,
-			height = 6
+			width = 11,
+			height = 7
 		)
 	}
 

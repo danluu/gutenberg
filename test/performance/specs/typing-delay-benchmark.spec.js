@@ -157,6 +157,10 @@ const supportedMarkPersistentInterventions = [
 	'external-background-cpu-2-noop',
 	'external-background-cpu-4-noop',
 	'external-background-cpu-8-noop',
+	'external-background-nice-cpu-noop',
+	'external-background-taskpolicy-cpu-noop',
+	'external-background-taskpolicy-cpu-4-noop',
+	'external-background-taskpolicy-cpu-8-noop',
 	'external-background-idle-noop',
 	'delayed-noop-150',
 	'raw-unknown-action',
@@ -1184,7 +1188,11 @@ setInterval(() => {}, 2147483647);
 			return externalPersistentProcess;
 		}
 
-		function ensureExternalBackgroundProcesses( processMode, count ) {
+		function ensureExternalBackgroundProcesses(
+			processMode,
+			count,
+			priorityMode = 'normal'
+		) {
 			if ( externalBackgroundProcesses.length > 0 ) {
 				return externalBackgroundProcesses;
 			}
@@ -1193,11 +1201,24 @@ setInterval(() => {}, 2147483647);
 				processMode === 'cpu'
 					? 'while (true) Math.sqrt(Math.random());'
 					: 'setInterval(() => {}, 2147483647);';
-			externalBackgroundProcesses = Array.from( { length: count }, () =>
-				spawn( process.execPath, [ '-e', source ], {
-					stdio: 'ignore',
-				} )
-			);
+			let command = process.execPath;
+			let args = [ '-e', source ];
+			if ( priorityMode === 'nice' ) {
+				command = '/usr/bin/nice';
+				args = [ '-n', '20', process.execPath, '-e', source ];
+			} else if ( priorityMode === 'taskpolicy-background' ) {
+				command = '/usr/sbin/taskpolicy';
+				args = [ '-b', process.execPath, '-e', source ];
+			}
+			externalBackgroundProcesses = Array.from( { length: count }, () => {
+				const child = spawn( command, args, { stdio: 'ignore' } );
+				child.on( 'error', ( error ) => {
+					// Surface setup failures in the Playwright process instead of
+					// silently running the intended CPU-control case without CPU work.
+					throw error;
+				} );
+				return child;
+			} );
 			process.once( 'exit', () => {
 				for ( const child of externalBackgroundProcesses ) {
 					child.kill();
@@ -1251,6 +1272,42 @@ setInterval(() => {}, 2147483647);
 				markPersistentIntervention === 'external-background-cpu-8-noop'
 			) {
 				ensureExternalBackgroundProcesses( 'cpu', 8 );
+			}
+			if (
+				markPersistentIntervention ===
+				'external-background-nice-cpu-noop'
+			) {
+				ensureExternalBackgroundProcesses( 'cpu', 1, 'nice' );
+			}
+			if (
+				markPersistentIntervention ===
+				'external-background-taskpolicy-cpu-noop'
+			) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					1,
+					'taskpolicy-background'
+				);
+			}
+			if (
+				markPersistentIntervention ===
+				'external-background-taskpolicy-cpu-4-noop'
+			) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					4,
+					'taskpolicy-background'
+				);
+			}
+			if (
+				markPersistentIntervention ===
+				'external-background-taskpolicy-cpu-8-noop'
+			) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					8,
+					'taskpolicy-background'
+				);
 			}
 			if (
 				markPersistentIntervention === 'external-background-idle-noop'
@@ -1686,6 +1743,14 @@ setInterval(() => {}, 2147483647);
 									mode === 'external-background-cpu-2-noop' ||
 									mode === 'external-background-cpu-4-noop' ||
 									mode === 'external-background-cpu-8-noop' ||
+									mode ===
+										'external-background-nice-cpu-noop' ||
+									mode ===
+										'external-background-taskpolicy-cpu-noop' ||
+									mode ===
+										'external-background-taskpolicy-cpu-4-noop' ||
+									mode ===
+										'external-background-taskpolicy-cpu-8-noop' ||
 									mode === 'external-background-idle-noop'
 								) {
 									result = undefined;

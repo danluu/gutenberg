@@ -127,6 +127,14 @@ The short version:
     `9.1ms`, `10.0ms`, `10.3ms`, and `10.4ms`. One busy child is enough; more
     load adds mild contention rather than making the benchmark faster. That
     supports a CPU active-state explanation, not a need for many busy cores.
+-   A priority-policy sweep narrows that explanation: a `nice +20` busy child
+    still makes the no-op timer fast at `9.3ms`, but macOS `taskpolicy -b` busy
+    children stay slow at `24.6ms`, `24.0ms`, and `24.2ms` for one, four, and
+    eight children. I verified outside the benchmark that both `nice +20` and
+    `taskpolicy -b` children really consume about one CPU. This disconfirms the
+    overbroad theory that any CPU burn anywhere is sufficient; the supported
+    theory is narrower and depends on the kind of CPU/QoS state the background
+    work creates.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -1192,6 +1200,14 @@ event-only measurement. The new intervention modes are deliberately artificial:
     `external-background-cpu-8-noop`: keep two, four, or eight child processes
     burning CPU continuously before typing starts; the rich-text timer callback
     itself is still a no-op.
+-   `external-background-nice-cpu-noop`: keep one `nice +20` child process
+    burning CPU continuously before typing starts; the rich-text timer callback
+    itself is still a no-op.
+-   `external-background-taskpolicy-cpu-noop`,
+    `external-background-taskpolicy-cpu-4-noop`, and
+    `external-background-taskpolicy-cpu-8-noop`: keep one, four, or eight macOS
+    `taskpolicy -b` child processes burning CPU continuously before typing
+    starts; the rich-text timer callback itself is still a no-op.
 -   `external-background-idle-noop`: keep an idle child process alive before
     typing starts; the rich-text timer callback itself is still a no-op.
 -   `delayed-noop-150`: main thread schedules a delayed no-op task near the
@@ -1236,6 +1252,10 @@ Selected p50s:
 | background CPU x2 + no-op      |      `1250ms` |            `50.4ms` |       `10.0ms` |   `0.0ms` |           `10.0ms` |
 | background CPU x4 + no-op      |      `1250ms` |            `51.1ms` |       `10.3ms` |   `0.0ms` |           `10.3ms` |
 | background CPU x8 + no-op      |      `1250ms` |            `51.4ms` |       `10.4ms` |   `0.0ms` |           `10.4ms` |
+| nice +20 CPU x1 + no-op        |      `1250ms` |            `50.6ms` |        `9.3ms` |   `0.0ms` |            `9.3ms` |
+| taskpolicy -b CPU x1 + no-op   |      `1250ms` |            `52.5ms` |       `24.6ms` |   `0.0ms` |           `24.7ms` |
+| taskpolicy -b CPU x4 + no-op   |      `1250ms` |            `52.4ms` |       `24.0ms` |   `0.0ms` |           `24.1ms` |
+| taskpolicy -b CPU x8 + no-op   |      `1250ms` |            `52.3ms` |       `24.2ms` |   `0.0ms` |           `24.2ms` |
 | background idle + no-op timer  |      `1250ms` |            `53.3ms` |       `24.2ms` |   `0.0ms` |           `24.3ms` |
 | worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` | `169.1ms` |          `193.8ms` |
 | worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` | `151.3ms` |          `175.1ms` |
@@ -1280,7 +1300,11 @@ The updated model is narrower and less semantic:
    the same no-op timer is `24.2ms`. One busy child is enough: two, four, and
    eight busy children stay low at `10.0ms`, `10.3ms`, and `10.4ms`, slightly
    slower than one child and consistent with mild contention rather than
-   background CPU monotonically improving latency.
+   background CPU monotonically improving latency. But not all CPU-burning
+   children are equivalent: a `nice +20` child stays fast at `9.3ms`, while
+   `taskpolicy -b` children stay slow at `24.6ms`, `24.0ms`, and `24.2ms` for
+   one, four, and eight children. That disconfirms the overbroad "any CPU burn
+   anywhere is sufficient" theory.
 10. The effect decays with distance from the following key after a finite CPU
    burst stops: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
@@ -1339,6 +1363,21 @@ four, and eight busy children stayed in the same fast band at `10.0ms`,
 the next input cheaper", because the timer still does no work. It also does not
 look like a many-core saturation effect, because adding more busy children made
 the result slightly slower, not faster.
+
+The priority-policy controls make the CPU-state statement narrower. A
+`nice +20` child process still reproduces the fast band (`9.3ms` p50), so the
+effect does not require normal Unix priority. But macOS `taskpolicy -b` children
+do not reproduce it: one, four, and eight busy children stay on the slow plateau
+at `24.6ms`, `24.0ms`, and `24.2ms`. A standalone sanity check showed these were
+not failed controls: `nice +20 node -e 'while (...)'` consumed about `97%` CPU,
+and `taskpolicy -b node -e 'while (...)'` consumed about `94%` CPU. So the
+supported claim is not "any external CPU activity makes Gutenberg fast." It is
+that recent foreground/ordinary-policy CPU activity can put the browser/editor
+path into a faster measured regime, while macOS background-policy CPU activity
+does not do that on this machine. Without lower-level power counters I cannot
+prove whether the boundary is P-core residency, cluster frequency, QoS, timer
+coalescing, or a related scheduler policy; the benchmark now rules out the
+broader versions of the theory.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -3419,6 +3458,10 @@ The key runs used in this report were:
     `task_end_external_background_cpu_2_noop_timeout_1250_delay_1300`,
     `task_end_external_background_cpu_4_noop_timeout_1250_delay_1300`,
     `task_end_external_background_cpu_8_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_nice_cpu_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_taskpolicy_cpu_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_taskpolicy_cpu_4_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_taskpolicy_cpu_8_noop_timeout_1250_delay_1300`,
     `task_end_external_background_idle_noop_timeout_1250_delay_1300`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
