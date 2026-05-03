@@ -49,6 +49,14 @@ The short version:
     has near-zero callback cost and stays slow. Pure timer-task duration is also
     not enough: `20ms` and `40ms` busy-wait callbacks only partly lower the
     `1000ms` event-only p50, to `17.7ms` and `16.1ms`.
+-   A raw-dispatch control makes that sharper. The benchmark exposed the
+    registry's raw `store.dispatch()` in-page and dispatched an unknown
+    `core/block-editor` action from the timer callback. That action left the
+    block-editor snapshot unchanged, produced no listener fanout, and stayed in
+    the no-op slow band in the all-data-span trace (`32.4ms` latency p50,
+    `31.3ms` `keypress` p50). A raw dispatch/timer tick is therefore not
+    sufficient; the fast cases require an effective root-state change that wakes
+    the subscriber path before the measured input.
 -   Splitting the measured key into `keydown`, `keypress`, and `keyup` shows
     that the intervention gap is almost entirely in the measured `keypress`
     component.
@@ -103,11 +111,14 @@ The short version:
     RichText callbacks.
 -   The next-input gap is not explained by different subscriber counts,
     selector-cache misses, or render-queue counts. In the all-data-span probe,
-    the compared interventions all have two `core/block-editor` root
+    the compared input batches all have two `core/block-editor` root
     subscriptions, about nine thousand Redux listener wrappers, `4544`
     `useSelect.onChange` callbacks, `716` `useSelect.updateValue` calls, `716`
     invalidated cached selector results, and `3828` render-queue adds. The
-    movement is duration through the same fanout shape.
+    movement is duration through the same fanout shape. The raw-unknown-action
+    timer callback itself is the useful exception: it returns the same root
+    state, so the marker callback has `0ms` listener fanout and the following
+    input remains slow.
 -   A deeper owner-attribution trace shows that both the direct `useSelect`
     callback cost and the enclosing listener-span cost are broad fanout, not one
     pathological selector. The largest source-mapped groups have hundreds or
@@ -798,7 +809,8 @@ The useful falsification tests are narrower, and the later sections now include
 several of them:
 
 -   replace the timer callback with no-op, cheap action, pure busy-wait, one-sided
-    typing-state changes, and non-marker subscriber-fanout interventions;
+    typing-state changes, a raw unknown store action, and non-marker
+    subscriber-fanout interventions;
 -   trace high-fanout `useSelect` subscribers in both the timer task and the
     following input task;
 -   compute a broader full-cycle wall-time metric, from one input start through
@@ -815,18 +827,21 @@ kept the `1000ms` callback but replaced the bound
 
 1. run the real marker, then immediately dispatch
    `__unstableMarkNextChangeAsNotPersistent()`;
-2. replace the marker with `20ms` and `40ms` busy waits, to test whether merely
+2. replace the marker with a raw unknown `core/block-editor` action dispatched
+   through the registry's underlying store, to test whether a dispatch with no
+   state change and no semantic Gutenberg effect is enough;
+3. replace the marker with `20ms` and `40ms` busy waits, to test whether merely
    occupying the timer task is enough;
-3. replace the marker with restored non-typing state toggles:
+4. replace the marker with restored non-typing state toggles:
    `toggleSelection( false ); toggleSelection( true )`,
    `setTemplateValidity( false ); setTemplateValidity( true )`, and
    `toggleBlockHighlight( clientId, true ); toggleBlockHighlight( clientId,
    false )`;
-4. replace the marker with `startTyping()` alone, which is effectively a no-op
+5. replace the marker with `startTyping()` alone, which is effectively a no-op
    if the editor is already typing;
-5. replace the marker with `stopTyping()` alone, which creates a real
+6. replace the marker with `stopTyping()` alone, which creates a real
    `core/block-editor` state change but leaves the next input to restart typing;
-6. replace the marker with `stopTyping(); startTyping()`, which creates real
+7. replace the marker with `stopTyping(); startTyping()`, which creates real
    block-editor subscriber fanout and restores `isTyping()` to its original
    value before the next key.
 
@@ -923,6 +938,12 @@ This disconfirms several simple theories:
     `__unstableMarkNextChangeAsNotPersistent()` still ran a real action from
     the timer callback, but the action was near-zero-cost and the following
     input stayed slow.
+-   "Any raw store dispatch is enough" is false. The `raw unknown action`
+    diagnostic dispatches an unknown action directly to the `core/block-editor`
+    Redux store from the timer callback. The reducer returns the same root state,
+    `rootSubscribe` sees no effective state change, the callback records no
+    listener fanout, and the following input stays with the no-op slow band in
+    the trace-heavy run.
 -   "Timer-task duration is enough" is false. A `20ms` busy wait drops the
     `1000ms` p50 from the no-op's `22.0ms` to `17.7ms`, and a `40ms` busy wait
     drops it to `16.1ms`, but neither reaches the normal marker or stop/start
@@ -1616,6 +1637,14 @@ number of subscriptions reached by that invalidation. The later stop/start
 intervention makes this broader: the persistence marker is one effective way to
 create this timer-side fanout, but it is not the only one.
 
+The raw-unknown-action probe confirms the "effective state change" part. It
+uses the same timer slot and does call the underlying `core/block-editor`
+`store.dispatch()`, but because the reducer returns the identical root state,
+the store wrapper's `hasChanged` check does not call the subscriber set. Its
+timer callback therefore has `0ms` `rootSubscribe` / Redux-listener fanout, and
+the next input behaves like no-op rather than like normal marker or restored
+state toggles.
+
 What this disconfirms: the current evidence does not support a browser-only
 timing explanation, a single pathological selector, or unusually slow callback
 bodies. It also does not support "the marker makes the whole cycle cheaper";
@@ -1629,20 +1658,20 @@ input-side gap is mostly selector recomputation.
 
 For the following input only:
 
-| Metric                       | normal marker | marker no-op | mark next |
-| ---------------------------- | ------------: | -----------: | --------: |
-| block-editor `rootSubscribe` |       `6.4ms` |      `9.3ms` |   `8.4ms` |
-| Redux listener wrappers      |       `4.6ms` |      `7.3ms` |   `6.2ms` |
-| `useSelect.onChange`         |       `7.0ms` |      `8.0ms` |   `7.5ms` |
-| `useSelect.mapSelect`        |       `3.3ms` |      `3.5ms` |   `2.8ms` |
-| `useSelect.onChange` calls   |       `4,544` |      `4,544` |   `4,544` |
-| `useSelect.mapSelect` calls  |         `716` |        `716` |     `716` |
+| Metric                       | normal marker | marker no-op | raw unknown | mark next |
+| ---------------------------- | ------------: | -----------: | ----------: | --------: |
+| block-editor `rootSubscribe` |       `6.4ms` |      `9.3ms` |     `9.4ms` |   `8.4ms` |
+| Redux listener wrappers      |       `4.6ms` |      `7.3ms` |     `7.6ms` |   `6.2ms` |
+| `useSelect.onChange`         |       `7.0ms` |      `8.0ms` |     `6.9ms` |   `7.5ms` |
+| `useSelect.mapSelect`        |       `3.3ms` |      `3.5ms` |     `2.8ms` |   `2.8ms` |
+| `useSelect.onChange` calls   |       `4,544` |      `4,544` |     `4,544` |   `4,544` |
+| `useSelect.mapSelect` calls  |         `716` |        `716` |       `716` |     `716` |
 
 This disconfirms two more theories:
 
 -   The slower input-side path is not caused by running many more `useSelect`
     callbacks. The `onChange` and `mapSelect` counts are identical across the
-    three interventions in this trace-heavy run.
+    compared interventions in this trace-heavy run.
 -   The slower input-side path is not mostly selector-body recomputation. The
     no-op run's `mapSelect` p50 is only `0.2ms` higher than normal, and
     mark-next's is lower than normal. The larger movement is in
@@ -1668,20 +1697,20 @@ scheduling.
 
 Next-input p50 deltas versus the normal-marker run:
 
-| Metric                       | marker no-op | mark next |
-| ---------------------------- | -----------: | --------: |
-| block-editor `rootSubscribe` |      `+2.9ms` |   `+2.0ms` |
-| Redux listener wrappers      |      `+2.7ms` |   `+1.6ms` |
-| `useSelect.onChange`         |      `+1.0ms` |   `+0.5ms` |
-| `useSelect.renderQueueAdd`   |      `+0.2ms` |   `-0.1ms` |
-| `useSelect.onStoreChange`    |      `-0.1ms` |   `-0.7ms` |
-| `useSelect.reactListener`    |      `+0.1ms` |   `-0.4ms` |
-| `useSelect.updateValue`      |      `+0.1ms` |   `-0.5ms` |
-| `useSelect.mapSelect`        |      `+0.2ms` |   `-0.5ms` |
+| Metric                       | marker no-op | raw unknown | mark next |
+| ---------------------------- | -----------: | ----------: | --------: |
+| block-editor `rootSubscribe` |      `+2.9ms` |     `+3.1ms` |   `+2.0ms` |
+| Redux listener wrappers      |      `+2.7ms` |     `+3.0ms` |   `+1.6ms` |
+| `useSelect.onChange`         |      `+1.0ms` |     `-0.1ms` |   `+0.5ms` |
+| `useSelect.renderQueueAdd`   |      `+0.2ms` |     `-0.1ms` |   `-0.1ms` |
+| `useSelect.onStoreChange`    |      `-0.1ms` |     `-1.0ms` |   `-0.7ms` |
+| `useSelect.reactListener`    |      `+0.1ms` |     `-1.0ms` |   `-0.4ms` |
+| `useSelect.updateValue`      |      `+0.1ms` |     `-0.8ms` |   `-0.5ms` |
+| `useSelect.mapSelect`        |      `+0.2ms` |     `-0.5ms` |   `-0.5ms` |
 
 The callback counts are also identical in this run: `4,544`
 `useSelect.onChange` callbacks, `3,828` render-queue adds, and `716` each of
-`onStoreChange`, `reactListener`, `updateValue`, and `mapSelect` for all three
+`onStoreChange`, `reactListener`, `updateValue`, and `mapSelect` for all four
 interventions.
 
 This disconfirms the remaining tempting single-layer explanations. The no-op
@@ -1714,36 +1743,39 @@ paused wrapper fanout, not React listener execution or selector work.
 
 Next-input p50 deltas versus the normal-marker run:
 
-| Metric                                  | marker no-op | mark next |
-| --------------------------------------- | -----------: | --------: |
-| block-editor `rootSubscribe`            |      `+2.9ms` |   `+2.0ms` |
-| `rootSubscribe` outside listener wraps  |      `+0.1ms` |   `+0.3ms` |
-| Redux listener wrappers                 |      `+2.7ms` |   `+1.6ms` |
-| Redux wrapper outside `emitter.emit()`  |      `+1.3ms` |   `+0.9ms` |
-| paused `emitter.emit()`                 |      `+1.1ms` |   `+0.6ms` |
-| `emitter.notifyListeners()`             |      `+0.7ms` |   `-0.3ms` |
-| `emitter.listener` callbacks            |      `+0.5ms` |   `-0.6ms` |
-| `useSelect.reactListener`               |      `+0.1ms` |   `-0.4ms` |
-| `useSelect.mapSelect`                   |      `+0.2ms` |   `-0.5ms` |
+| Metric                                  | marker no-op | raw unknown | mark next |
+| --------------------------------------- | -----------: | ----------: | --------: |
+| block-editor `rootSubscribe`            |      `+2.9ms` |     `+3.1ms` |   `+2.0ms` |
+| `rootSubscribe` outside listener wraps  |      `+0.1ms` |     `-0.2ms` |   `+0.3ms` |
+| Redux listener wrappers                 |      `+2.7ms` |     `+3.0ms` |   `+1.6ms` |
+| Redux wrapper outside `emitter.emit()`  |      `+1.3ms` |     `+2.2ms` |   `+0.9ms` |
+| paused `emitter.emit()`                 |      `+1.1ms` |     `+0.6ms` |   `+0.6ms` |
+| `emitter.notifyListeners()`             |      `+0.7ms` |     `-0.5ms` |   `-0.3ms` |
+| `emitter.listener` callbacks            |      `+0.5ms` |     `-0.6ms` |   `-0.6ms` |
+| `useSelect.reactListener`               |      `+0.1ms` |     `-1.0ms` |   `-0.4ms` |
+| `useSelect.mapSelect`                   |      `+0.2ms` |     `-0.5ms` |   `-0.5ms` |
 
-Counts are unchanged: `2` `rootSubscribe` spans, `9002` Redux listener wrappers,
-`9002` paused `emitter.emit()` spans, and `4501` emitter listener callbacks for
-all three interventions.
+The next-input counts are effectively unchanged: `2` `rootSubscribe` spans,
+about `9000` Redux listener wrappers, the same number of paused
+`emitter.emit()` spans, and about `4500` emitter listener callbacks. The raw
+unknown-action run has `9000` wrappers instead of `9002` because it had one fewer
+store subscriber in that small diagnostic run, not because it avoided the next
+input fanout.
 
 I then paired every `data.reduxStore.listener` wrapper span with its immediate
 paused `data.emitter.emit` child. The coverage is complete:
 
-| Metric                               | normal marker | marker no-op | mark next |
-| ------------------------------------ | ------------: | -----------: | --------: |
-| Redux listener wrappers              |       `9,002` |      `9,002` |   `9,002` |
-| wrappers with paused `emitter.emit`  |       `9,002` |      `9,002` |   `9,002` |
-| child coverage                       |      `100.0%` |     `100.0%` |  `100.0%` |
-| wrapper duration                     |       `4.6ms` |      `7.3ms` |   `6.3ms` |
-| paused `emitter.emit` child duration |       `1.3ms` |      `2.4ms` |   `1.8ms` |
-| wrapper outside child duration       |       `3.6ms` |      `4.8ms` |   `4.4ms` |
-| nonzero wrapper spans                |          `46` |         `73` |  `62.5` |
-| nonzero paused child spans           |        `12.5` |       `23.5` |    `18` |
-| nonzero wrapper-outside-child spans  |        `35.5` |       `47.5` |    `44` |
+| Metric                               | normal marker | marker no-op | raw unknown | mark next |
+| ------------------------------------ | ------------: | -----------: | ----------: | --------: |
+| Redux listener wrappers              |       `9,002` |      `9,002` |     `9,000` |   `9,002` |
+| wrappers with paused `emitter.emit`  |       `9,002` |      `9,002` |     `9,000` |   `9,002` |
+| child coverage                       |      `100.0%` |     `100.0%` |    `100.0%` |  `100.0%` |
+| wrapper duration                     |       `4.6ms` |      `7.3ms` |     `7.6ms` |   `6.3ms` |
+| paused `emitter.emit` child duration |       `1.3ms` |      `2.4ms` |     `1.9ms` |   `1.8ms` |
+| wrapper outside child duration       |       `3.6ms` |      `4.8ms` |     `5.7ms` |   `4.4ms` |
+| nonzero wrapper spans                |          `46` |         `73` |        `75` |  `62.5` |
+| nonzero paused child spans           |        `12.5` |       `23.5` |        `19` |    `18` |
+| nonzero wrapper-outside-child spans  |        `35.5` |       `47.5` |        `56` |    `44` |
 
 This pairing disconfirms another possible theory: the wrapper delta is not
 coming from hidden real subscriber bodies inside `data.reduxStore.listener`.
@@ -1790,17 +1822,17 @@ non-marker timer callbacks.
 
 Selected p50s:
 
-| Metric                     | normal marker | marker no-op | mark next |
-| -------------------------- | ------------: | -----------: | --------: |
-| next input EventDispatch   |      `26.9ms` |     `32.5ms` |  `30.0ms` |
-| marker before that input   |      `19.0ms` |      `0.1ms` |   `0.3ms` |
-| marker plus next input     |      `40.7ms` |     `32.8ms` |  `30.4ms` |
-| next input `rootSubscribe` |       `6.4ms` |      `9.3ms` |   `8.4ms` |
-| marker `rootSubscribe`     |      `18.9ms` |      `0.0ms` |   `0.0ms` |
-| cycle `rootSubscribe`      |      `24.4ms` |      `9.3ms` |   `8.4ms` |
-| next input `useSelect`     |       `7.0ms` |      `8.0ms` |   `7.5ms` |
-| marker `useSelect`         |      `10.5ms` |      `0.0ms` |   `0.0ms` |
-| cycle `useSelect`          |      `16.8ms` |      `8.0ms` |   `7.5ms` |
+| Metric                     | normal marker | marker no-op | raw unknown | mark next |
+| -------------------------- | ------------: | -----------: | ----------: | --------: |
+| next input EventDispatch   |      `26.9ms` |     `32.5ms` |    `32.4ms` |  `30.0ms` |
+| marker before that input   |      `19.0ms` |      `0.1ms` |     `0.0ms` |   `0.3ms` |
+| marker plus next input     |      `40.7ms` |     `32.8ms` |    `33.2ms` |  `30.4ms` |
+| next input `rootSubscribe` |       `6.4ms` |      `9.3ms` |     `9.4ms` |   `8.4ms` |
+| marker `rootSubscribe`     |      `18.9ms` |      `0.0ms` |     `0.0ms` |   `0.0ms` |
+| cycle `rootSubscribe`      |      `24.4ms` |      `9.3ms` |     `9.4ms` |   `8.4ms` |
+| next input `useSelect`     |       `7.0ms` |      `8.0ms` |     `6.9ms` |   `7.5ms` |
+| marker `useSelect`         |      `10.5ms` |      `0.0ms` |     `0.0ms` |   `0.0ms` |
+| cycle `useSelect`          |      `16.8ms` |      `8.0ms` |     `6.9ms` |   `7.5ms` |
 
 I then repeated the trace-all-data-spans microscope for `stopTyping();
 startTyping()` and the restored `toggleSelection( false ); toggleSelection(
@@ -1813,12 +1845,16 @@ the comparison is useful because it uses the same instrumentation:
 | -------------------------- | ----------------------- | -----------------: | -------------: | -------------------: | -------------------------: | -------------------------: | ---------------------: |
 | normal marker              | `onChange:3; onInput:1` |           `19.0ms` |       `26.9ms` |             `40.7ms` |                    `6.4ms` |                    `4.6ms` |                `7.0ms` |
 | marker no-op               | `onInput:4`             |            `0.1ms` |       `32.5ms` |             `32.8ms` |                    `9.3ms` |                    `7.3ms` |                `8.0ms` |
+| raw unknown action         | `onInput:2; onChange:1` |            `0.0ms` |       `32.4ms` |             `33.2ms` |                    `9.4ms` |                    `7.6ms` |                `6.9ms` |
 | mark next not persistent   | `onChange:3; onInput:1` |            `0.3ms` |       `30.0ms` |             `30.4ms` |                    `8.4ms` |                    `6.2ms` |                `7.5ms` |
 | stop/start typing          | `onInput:6`             |           `30.3ms` |       `24.3ms` |             `54.6ms` |                    `5.2ms` |                    `3.9ms` |                `6.4ms` |
 | toggle selection           | `onInput:6`             |           `34.5ms` |       `24.9ms` |             `59.3ms` |                    `5.4ms` |                    `3.2ms` |                `5.9ms` |
 
-This is the best current correction to the typing-state theory. In the
-low-overhead targeted run, `toggleSelection()` lands at about `14-15ms` while
+The raw-unknown-action row is a small `n=3` diagnostic, not a score run. Its
+important result is not the exact p50; it is that a raw dispatch with no root
+state change has no timer-side subscriber fanout and stays with the no-op
+next-input band. This is the best current correction to the typing-state theory.
+In the low-overhead targeted run, `toggleSelection()` lands at about `14-15ms` while
 `stopTyping(); startTyping()` lands at about `11ms`. Under the heavier
 all-data-span microscope, however, the restored selection toggle and stop/start
 typing have very similar shape: both stay on `onInput`, both do a large
@@ -1837,21 +1873,21 @@ cache-state counts:
 
 Selected p50 counts and durations:
 
-| Metric                               | normal marker | marker no-op | stop/start | toggle selection |
-| ------------------------------------ | ------------: | -----------: | ---------: | ---------------: |
-| `rootSubscribe` count                |           `2` |          `2` |        `2` |              `2` |
-| Redux listener wrappers              |        `9002` |       `9002` |     `9000` |           `9000` |
-| `useSelect.onChange` callbacks       |        `4544` |       `4544` |     `4544` |           `4544` |
-| `useSelect.updateValue` calls        |         `716` |        `716` |      `716` |            `716` |
-| invalidated cached selector results  |         `716` |        `716` |      `716` |            `716` |
-| cached `mapSelect` functions         |         `716` |        `716` |      `716` |            `716` |
-| `renderQueue.add` calls              |        `3828` |       `3828` |     `3828` |           `3828` |
-| `rootSubscribe` duration             |       `6.4ms` |      `9.3ms` |    `5.2ms` |          `5.4ms` |
-| Redux listener-wrapper duration      |       `4.6ms` |      `7.3ms` |    `3.9ms` |          `3.2ms` |
-| `useSelect.onChange` duration        |       `7.0ms` |      `8.0ms` |    `6.4ms` |          `5.9ms` |
-| `useSelect.updateValue` duration     |       `4.2ms` |      `4.2ms` |    `3.2ms` |          `3.3ms` |
-| `useSelect.mapSelect` duration       |       `3.3ms` |      `3.6ms` |    `2.9ms` |          `2.9ms` |
-| `renderQueue.add` duration           |       `0.9ms` |      `1.1ms` |    `0.9ms` |          `0.7ms` |
+| Metric                               | normal marker | marker no-op | raw unknown | stop/start | toggle selection |
+| ------------------------------------ | ------------: | -----------: | ----------: | ---------: | ---------------: |
+| `rootSubscribe` count                |           `2` |          `2` |         `2` |        `2` |              `2` |
+| Redux listener wrappers              |        `9002` |       `9002` |      `9000` |     `9000` |           `9000` |
+| `useSelect.onChange` callbacks       |        `4544` |       `4544` |      `4544` |     `4544` |           `4544` |
+| `useSelect.updateValue` calls        |         `716` |        `716` |       `716` |      `716` |            `716` |
+| invalidated cached selector results  |         `716` |        `716` |       `716` |      `716` |            `716` |
+| cached `mapSelect` functions         |         `716` |        `716` |       `716` |      `716` |            `716` |
+| `renderQueue.add` calls              |        `3828` |       `3828` |      `3828` |     `3828` |           `3828` |
+| `rootSubscribe` duration             |       `6.4ms` |      `9.3ms` |     `9.4ms` |    `5.2ms` |          `5.4ms` |
+| Redux listener-wrapper duration      |       `4.6ms` |      `7.3ms` |     `7.6ms` |    `3.9ms` |          `3.2ms` |
+| `useSelect.onChange` duration        |       `7.0ms` |      `8.0ms` |     `6.9ms` |    `6.4ms` |          `5.9ms` |
+| `useSelect.updateValue` duration     |       `4.2ms` |      `4.2ms` |     `3.4ms` |    `3.2ms` |          `3.3ms` |
+| `useSelect.mapSelect` duration       |       `3.3ms` |      `3.6ms` |     `2.8ms` |    `2.9ms` |          `2.9ms` |
+| `renderQueue.add` duration           |       `0.9ms` |      `1.1ms` |     `0.7ms` |    `0.9ms` |          `0.7ms` |
 
 This disconfirms several narrower theories. The no-op path is not slower
 because it has more subscribers, more selector recomputes, more selector-cache
@@ -2933,6 +2969,7 @@ The key runs used in this report were:
 -   `marker_stop_start_typing_spans`: span trace for the stop/start typing
     intervention.
 -   `marker_normal_allspans_1000`, `marker_noop_allspans_1000`,
+    `marker_raw_unknown_action_allspans_1000`, and
     `marker_next_not_persistent_allspans_1000`: small `1000ms` runs with
     `BENCHMARK_TRACE_ALL_DATA_SPANS=1` to expose non-batch data spans inside the
     marker task.

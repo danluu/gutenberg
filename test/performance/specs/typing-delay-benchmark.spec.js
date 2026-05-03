@@ -130,6 +130,7 @@ const supportedDelayModes = [
 const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
+	'raw-unknown-action',
 	'mark-next-not-persistent',
 	'mark-last-then-mark-next-not-persistent',
 	'busy-wait-20',
@@ -1138,6 +1139,33 @@ test.describe( 'Typing delay benchmark', () => {
 						window.wp?.data?.dispatch?.( 'core/block-editor' );
 					const select =
 						window.wp?.data?.select?.( 'core/block-editor' );
+					let rawDispatch = null;
+					if ( mode === 'raw-unknown-action' ) {
+						rawDispatch =
+							window.__typingBenchmarkRawStoreDispatch || null;
+						if (
+							! rawDispatch &&
+							typeof window.wp?.data?.use === 'function'
+						) {
+							const registry = window.wp.data.use(
+								( dataRegistry ) => ( {
+									__typingBenchmarkRawStoreDispatch(
+										storeName,
+										action
+									) {
+										return dataRegistry.stores?.[
+											storeName
+										]?.store?.dispatch?.( action );
+									},
+								} )
+							);
+							rawDispatch =
+								registry?.__typingBenchmarkRawStoreDispatch ||
+								null;
+							window.__typingBenchmarkRawStoreDispatch =
+								rawDispatch;
+						}
+					}
 
 					if (
 						! actions ||
@@ -1163,7 +1191,10 @@ test.describe( 'Typing delay benchmark', () => {
 							typeof actions.setTemplateValidity !==
 								'function' ) ||
 						( mode === 'toggle-block-highlight' &&
-							typeof actions.toggleBlockHighlight !== 'function' )
+							typeof actions.toggleBlockHighlight !==
+								'function' ) ||
+						( mode === 'raw-unknown-action' &&
+							typeof rawDispatch !== 'function' )
 					) {
 						return { installed: false, reason: 'missing-actions' };
 					}
@@ -1222,6 +1253,11 @@ test.describe( 'Typing delay benchmark', () => {
 							try {
 								if ( mode === 'noop' ) {
 									result = undefined;
+								} else if ( mode === 'raw-unknown-action' ) {
+									result = rawDispatch( 'core/block-editor', {
+										type: 'TYPING_BENCHMARK_UNKNOWN_ACTION',
+										nowMs: start,
+									} );
 								} else if (
 									mode === 'mark-next-not-persistent'
 								) {

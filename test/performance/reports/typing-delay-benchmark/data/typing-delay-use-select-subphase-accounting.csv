@@ -15,6 +15,14 @@ marker no-op,next input only,useSelect.onStoreChange,5.049999952316284
 marker no-op,next input only,useSelect.reactListener,4.850000023841858
 marker no-op,next input only,useSelect.updateValue,4.200000286102295
 marker no-op,next input only,useSelect.mapSelect,3.549999952316284
+raw unknown action,next input only,rootSubscribe total,9.400000095367432
+raw unknown action,next input only,Redux listener wrappers,7.600000381469727
+raw unknown action,next input only,useSelect.onChange,6.900001525878906
+raw unknown action,next input only,renderQueue.add,0.700000524520874
+raw unknown action,next input only,useSelect.onStoreChange,4.100000858306885
+raw unknown action,next input only,useSelect.reactListener,3.700001001358032
+raw unknown action,next input only,useSelect.updateValue,3.3999998569488525
+raw unknown action,next input only,useSelect.mapSelect,2.8000011444091797
 mark next not persistent,next input only,rootSubscribe total,8.399999737739563
 mark next not persistent,next input only,Redux listener wrappers,6.2499998807907104
 mark next not persistent,next input only,useSelect.onChange,7.5000001192092896
@@ -39,6 +47,14 @@ marker no-op,timer marker before input,useSelect.onStoreChange,0
 marker no-op,timer marker before input,useSelect.reactListener,0
 marker no-op,timer marker before input,useSelect.updateValue,0
 marker no-op,timer marker before input,useSelect.mapSelect,0
+raw unknown action,timer marker before input,rootSubscribe total,0
+raw unknown action,timer marker before input,Redux listener wrappers,0
+raw unknown action,timer marker before input,useSelect.onChange,0
+raw unknown action,timer marker before input,renderQueue.add,0
+raw unknown action,timer marker before input,useSelect.onStoreChange,0
+raw unknown action,timer marker before input,useSelect.reactListener,0
+raw unknown action,timer marker before input,useSelect.updateValue,0
+raw unknown action,timer marker before input,useSelect.mapSelect,0
 mark next not persistent,timer marker before input,rootSubscribe total,0
 mark next not persistent,timer marker before input,Redux listener wrappers,0
 mark next not persistent,timer marker before input,useSelect.onChange,0
@@ -63,6 +79,14 @@ marker no-op,timer + next input,useSelect.onStoreChange,5.049999952316284
 marker no-op,timer + next input,useSelect.reactListener,4.850000023841858
 marker no-op,timer + next input,useSelect.updateValue,4.200000286102295
 marker no-op,timer + next input,useSelect.mapSelect,3.549999952316284
+raw unknown action,timer + next input,rootSubscribe total,9.400000095367432
+raw unknown action,timer + next input,Redux listener wrappers,7.600000381469727
+raw unknown action,timer + next input,useSelect.onChange,6.900001525878906
+raw unknown action,timer + next input,renderQueue.add,0.700000524520874
+raw unknown action,timer + next input,useSelect.onStoreChange,4.100000858306885
+raw unknown action,timer + next input,useSelect.reactListener,3.700001001358032
+raw unknown action,timer + next input,useSelect.updateValue,3.3999998569488525
+raw unknown action,timer + next input,useSelect.mapSelect,2.8000011444091797
 mark next not persistent,timer + next input,rootSubscribe total,8.399999737739563
 mark next not persistent,timer + next input,Redux listener wrappers,6.2499998807907104
 mark next not persistent,timer + next input,useSelect.onChange,7.5000001192092896

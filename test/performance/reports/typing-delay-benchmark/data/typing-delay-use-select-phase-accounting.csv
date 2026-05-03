@@ -7,6 +7,10 @@ marker no-op,next input only,rootSubscribe total,9.25000011920929
 marker no-op,next input only,Redux listener wrappers,7.300000429153442
 marker no-op,next input only,useSelect.onChange,8.049999237060547
 marker no-op,next input only,useSelect.mapSelect,3.549999952316284
+raw unknown action,next input only,rootSubscribe total,9.400000095367432
+raw unknown action,next input only,Redux listener wrappers,7.600000381469727
+raw unknown action,next input only,useSelect.onChange,6.900001525878906
+raw unknown action,next input only,useSelect.mapSelect,2.8000011444091797
 mark next not persistent,next input only,rootSubscribe total,8.399999737739563
 mark next not persistent,next input only,Redux listener wrappers,6.2499998807907104
 mark next not persistent,next input only,useSelect.onChange,7.5000001192092896
@@ -19,6 +23,10 @@ marker no-op,timer marker before input,rootSubscribe total,0
 marker no-op,timer marker before input,Redux listener wrappers,0
 marker no-op,timer marker before input,useSelect.onChange,0
 marker no-op,timer marker before input,useSelect.mapSelect,0
+raw unknown action,timer marker before input,rootSubscribe total,0
+raw unknown action,timer marker before input,Redux listener wrappers,0
+raw unknown action,timer marker before input,useSelect.onChange,0
+raw unknown action,timer marker before input,useSelect.mapSelect,0
 mark next not persistent,timer marker before input,rootSubscribe total,0
 mark next not persistent,timer marker before input,Redux listener wrappers,0
 mark next not persistent,timer marker before input,useSelect.onChange,0
@@ -31,6 +39,10 @@ marker no-op,timer + next input,rootSubscribe total,9.25000011920929
 marker no-op,timer + next input,Redux listener wrappers,7.300000429153442
 marker no-op,timer + next input,useSelect.onChange,8.049999237060547
 marker no-op,timer + next input,useSelect.mapSelect,3.549999952316284
+raw unknown action,timer + next input,rootSubscribe total,9.400000095367432
+raw unknown action,timer + next input,Redux listener wrappers,7.600000381469727
+raw unknown action,timer + next input,useSelect.onChange,6.900001525878906
+raw unknown action,timer + next input,useSelect.mapSelect,2.8000011444091797
 mark next not persistent,timer + next input,rootSubscribe total,8.399999737739563
 mark next not persistent,timer + next input,Redux listener wrappers,6.2499998807907104
 mark next not persistent,timer + next input,useSelect.onChange,7.5000001192092896

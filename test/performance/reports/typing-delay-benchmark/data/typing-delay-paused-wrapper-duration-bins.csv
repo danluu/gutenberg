@@ -13,6 +13,14 @@ all data spans,marker no-op,wrapper outside emitter.emit,0.1,4,47,194
 all data spans,marker no-op,paused emitter.emit child,0.1,4,23.5,99
 all data spans,marker no-op,Redux listener wrapper,0.2,1,1,1
 all data spans,marker no-op,wrapper outside emitter.emit,0.2,1,1,1
+all data spans,raw unknown action,Redux listener wrapper,0,3,8925,26811
+all data spans,raw unknown action,paused emitter.emit child,0,3,8981,26945
+all data spans,raw unknown action,wrapper outside emitter.emit,0,3,8944,26862
+all data spans,raw unknown action,Redux listener wrapper,0.1,3,74,184
+all data spans,raw unknown action,paused emitter.emit child,0.1,3,19,51
+all data spans,raw unknown action,wrapper outside emitter.emit,0.1,3,55,133
+all data spans,raw unknown action,Redux listener wrapper,0.2,1,1,1
+all data spans,raw unknown action,wrapper outside emitter.emit,0.2,1,1,1
 all data spans,mark next not persistent,Redux listener wrapper,0,4,8939.5,35763
 all data spans,mark next not persistent,paused emitter.emit child,0,4,8984,35937
 all data spans,mark next not persistent,wrapper outside emitter.emit,0,4,8958,35834

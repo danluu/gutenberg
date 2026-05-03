@@ -17,6 +17,15 @@ marker no-op,emitter.notifyListeners,14.950000166893004
 marker no-op,emitter.listener callbacks,12.950000405311584
 marker no-op,useSelect.reactListener,4.850000023841858
 marker no-op,useSelect.mapSelect,3.549999952316284
+raw unknown action,rootSubscribe total,9.400000095367432
+raw unknown action,rootSubscribe outside listener wrappers,1.5999996662139893
+raw unknown action,Redux listener wrappers,7.600000381469727
+raw unknown action,Redux wrapper outside emitter.emit,5.700000286102295
+raw unknown action,paused emitter.emit,1.9000000953674316
+raw unknown action,emitter.notifyListeners,13.700000047683716
+raw unknown action,emitter.listener callbacks,11.800000429153442
+raw unknown action,useSelect.reactListener,3.700001001358032
+raw unknown action,useSelect.mapSelect,2.8000011444091797
 mark next not persistent,rootSubscribe total,8.399999737739563
 mark next not persistent,rootSubscribe outside listener wrappers,2.0500000715255737
 mark next not persistent,Redux listener wrappers,6.2499998807907104

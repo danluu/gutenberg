@@ -3504,15 +3504,31 @@ marker_allspan_action_path <- file.path(data_dir, "typing-delay-marker-allspan-a
 marker_allspan_core_interventions <- c(
 	"normal marker",
 	"marker no-op",
+	"raw unknown action",
 	"mark next not persistent"
 )
 marker_allspan_extended_interventions <- c(
 	"normal marker",
 	"marker no-op",
+	"raw unknown action",
 	"mark next not persistent",
 	"stop/start typing",
 	"toggle selection"
 )
+marker_allspan_core_shapes <- c(
+	`normal marker` = 16,
+	`marker no-op` = 17,
+	`raw unknown action` = 4,
+	`mark next not persistent` = 15
+)
+marker_allspan_extended_shapes <- c(
+	marker_allspan_core_shapes,
+	`stop/start typing` = 18,
+	`toggle selection` = 8
+)
+marker_allspan_delta_shapes <- marker_allspan_core_shapes[
+	names(marker_allspan_core_shapes) != "normal marker"
+]
 if (file.exists(marker_allspan_action_path)) {
 	marker_allspan_action <- read_csv(marker_allspan_action_path, show_col_types = FALSE) %>%
 		filter(intervention %in% marker_allspan_core_interventions) %>%
@@ -3673,11 +3689,7 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		ggplot(marker_allspan_input_batch, aes(component, duration_ms, color = intervention, shape = intervention)) +
 			geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.55)) +
 			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 			labs(
 				title = "The input-side difference is fanout timing, not the direct callback",
 				subtitle = "Trace-all-data-spans run at 1000ms; retained inputs only",
@@ -3740,11 +3752,7 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		ggplot(marker_input_action_phases, aes(duration_ms, component, color = intervention, shape = intervention)) +
 			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.55)) +
 			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 			labs(
 				title = "The input gap is mostly callback-side subscriber fanout",
 				subtitle = "Trace-all-data-spans run at 1000ms; retained-input p50s split by input-batch phase",
@@ -3810,11 +3818,7 @@ if (file.exists(marker_allspan_input_batch_path)) {
 			geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.55)) +
 			facet_wrap(vars(action), ncol = 1) +
 			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 			labs(
 				title = "The callback-side gap is not one heavy Redux listener",
 				subtitle = "Per-action listener aggregation at 1000ms; top listeners stay tiny while the all-listener total moves",
@@ -3884,11 +3888,7 @@ if (file.exists(marker_allspan_input_batch_path)) {
 			geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.55)) +
 			facet_wrap(vars(metric), ncol = 1, scales = "free_x") +
 			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 			labs(
 				title = "The normal marker lowers the next input slice, not the whole cycle",
 				subtitle = "Trace-all-data-spans run at 1000ms; per-input p50s include the marker action before the same retained input",
@@ -3932,13 +3932,7 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		ggplot(marker_cycle_cost_extended, aes(duration_ms, window, color = intervention, shape = intervention)) +
 			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.55)) +
 			scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15,
-				`stop/start typing` = 18,
-				`toggle selection` = 8
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_extended_shapes, drop = FALSE) +
 			labs(
 				title = "Restored state fanout reduces the next input slice, not total cycle cost",
 				subtitle = "Trace-all-data-spans runs at 1000ms; timer and input p50s are paired by retained input",
@@ -3996,13 +3990,7 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		ggplot(marker_use_select_extended, aes(duration_ms, component, color = intervention, shape = intervention)) +
 			geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.55)) +
 			scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15,
-				`stop/start typing` = 18,
-				`toggle selection` = 8
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_extended_shapes, drop = FALSE) +
 			labs(
 				title = "The input-side gap is wrapper and useSelect fanout timing",
 				subtitle = "Trace-all-data-spans runs at 1000ms; counts are effectively unchanged across interventions",
@@ -4069,11 +4057,7 @@ if (file.exists(marker_allspan_input_batch_samples_path)) {
 			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.45)) +
 			facet_wrap(vars(metric), ncol = 1) +
 			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 			labs(
 				title = "State transitions explain the path split, not the full cost",
 				subtitle = "Retained inputs from the trace-all-data-spans run at 1000ms; points are p50 within each observed state path",
@@ -4131,11 +4115,7 @@ if (file.exists(marker_allspan_owner_path)) {
 			geom_point(size = 2.9, alpha = 0.9, position = position_dodge(width = 0.45)) +
 			facet_wrap(vars(window_label), scales = "free_y", ncol = 1) +
 			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 			labs(
 				title = "No single useSelect owner explains the input-side delta",
 				subtitle = "Top owner groups by p50 useSelect.onChange duration in trace-all-data-spans runs",
@@ -4173,11 +4153,7 @@ if (file.exists(marker_allspan_owner_path)) {
 				geom_point(size = 2.9, alpha = 0.9, position = position_dodge(width = 0.45)) +
 				facet_wrap(vars(window_label), scales = "free_y", ncol = 1) +
 				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-				scale_shape_manual(values = c(
-					`normal marker` = 16,
-					`marker no-op` = 17,
-					`mark next not persistent` = 15
-				), drop = FALSE) +
+				scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 				labs(
 					title = "Outer listener attribution also shows distributed fanout",
 					subtitle = "Listener spans attributed to the first nested useSelect.onChange owner in trace-all-data-spans runs",
@@ -4579,11 +4555,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.5)) +
 			facet_wrap(vars(accounting_window), ncol = 1, scales = "free_x") +
 			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-			scale_shape_manual(values = c(
-				`normal marker` = 16,
-				`marker no-op` = 17,
-				`mark next not persistent` = 15
-			), drop = FALSE) +
+			scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 			labs(
 				title = "The input-side gap is not mostly selector recomputation",
 				subtitle = "Trace-all-data-spans run at 1000ms; mapSelect moves little while listener/rootSubscribe accounting moves more",
@@ -4693,7 +4665,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 			select(intervention, metric, duration_p50_ms) %>%
 			pivot_wider(names_from = intervention, values_from = duration_p50_ms) %>%
 			pivot_longer(
-				cols = c(`marker no-op`, `mark next not persistent`),
+				cols = c(`marker no-op`, `raw unknown action`, `mark next not persistent`),
 				names_to = "intervention",
 				values_to = "duration_p50_ms"
 			) %>%
@@ -4701,7 +4673,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 				delta_vs_normal_ms = duration_p50_ms - `normal marker`,
 				intervention = factor(
 					intervention,
-					levels = c("marker no-op", "mark next not persistent")
+					levels = c("marker no-op", "raw unknown action", "mark next not persistent")
 				)
 			)
 
@@ -4712,10 +4684,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 				geom_vline(xintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey50") +
 				geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.45)) +
 				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-				scale_shape_manual(values = c(
-					`marker no-op` = 17,
-					`mark next not persistent` = 15
-				), drop = FALSE) +
+				scale_shape_manual(values = marker_allspan_delta_shapes, drop = FALSE) +
 				labs(
 					title = "The remaining input-side gap is above useSelect inner work",
 					subtitle = "Next-input p50 deltas versus the normal marker run; inner React listener and selector spans do not grow with the slow paths",
@@ -4774,7 +4743,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 			listener_wrapper_deltas <- listener_wrapper_accounting %>%
 				pivot_wider(names_from = intervention, values_from = duration_p50_ms) %>%
 				pivot_longer(
-					cols = c(`marker no-op`, `mark next not persistent`),
+					cols = c(`marker no-op`, `raw unknown action`, `mark next not persistent`),
 					names_to = "intervention",
 					values_to = "duration_p50_ms"
 				) %>%
@@ -4782,7 +4751,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 					delta_vs_normal_ms = duration_p50_ms - `normal marker`,
 					intervention = factor(
 						intervention,
-						levels = c("marker no-op", "mark next not persistent")
+						levels = c("marker no-op", "raw unknown action", "mark next not persistent")
 					)
 				)
 
@@ -4794,10 +4763,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 					geom_vline(xintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey50") +
 					geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.45)) +
 					scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-					scale_shape_manual(values = c(
-						`marker no-op` = 17,
-						`mark next not persistent` = 15
-					), drop = FALSE) +
+					scale_shape_manual(values = marker_allspan_delta_shapes, drop = FALSE) +
 					labs(
 						title = "The shared slow-path movement is in paused listener wrappers",
 						subtitle = "Next-input p50 deltas versus normal marker; counts are unchanged, so this is per-wrapper timing, not more listeners",
@@ -4838,11 +4804,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 					scale_y_log10(labels = label_number()) +
 					scale_x_continuous(breaks = c(0, 0.1, 0.2), labels = number_format(accuracy = 0.1)) +
 					scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
-					scale_shape_manual(values = c(
-						`normal marker` = 16,
-						`marker no-op` = 17,
-						`mark next not persistent` = 15
-					), drop = FALSE) +
+					scale_shape_manual(values = marker_allspan_core_shapes, drop = FALSE) +
 					labs(
 						title = "Paused wrapper timing is mostly zero with small 0.1ms quanta",
 						subtitle = "P50 count of spans per rounded duration bin; every Redux listener wrapper contains a paused emitter.emit child",

@@ -79,6 +79,27 @@ all data spans,marker no-op,updateBlockAttributes,emit:registry:,3,1,0.5,1
 all data spans,marker no-op,updateBlockAttributes,emitterListener:store:core/block-editor:registry global listener,3,1,0.5,4501
 all data spans,marker no-op,updateBlockAttributes,notify:store:core/block-editor,3,1,15.100000143051147,4501
 all data spans,marker no-op,updateBlockAttributes,resume:store:core/block-editor,3,1,15.100000143051147,4501
+all data spans,raw unknown action,updateBlockAttributes,emit:store:core/block-editor,3,4500,0.7999997138977051,4500
+all data spans,raw unknown action,updateBlockAttributes,reduxListener:core/block-editor,3,4500,3.1000001430511475,4500
+all data spans,raw unknown action,updateBlockAttributes,rootSubscribe:core/block-editor,3,1,4,4500
+all data spans,raw unknown action,updateBlockAttributes,resume:registry:,3,1,0,1
+all data spans,raw unknown action,updateBlockAttributes,data.registry.batch.resumeRegistry,3,1,0,
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/data,3,1,0,1
+all data spans,raw unknown action,updateBlockAttributes,data.registry.batch.resumeStore,3,9,13.700000047683716,
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/rich-text,3,1,0,1236
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/blocks,3,1,0,3617
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/keyboard-shortcuts,3,1,0,3
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/preferences,3,1,0,26
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/commands,3,1,0,2
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/notices,3,1,0,3
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/upload-media,3,1,0,2
+all data spans,raw unknown action,updateBlockAttributes,emitterListener:registry::registry subscriber,2,1,0.09999990463256836,1
+all data spans,raw unknown action,updateBlockAttributes,notify:registry:,2,1,0.09999990463256836,1
+all data spans,raw unknown action,updateBlockAttributes,emit:registry:,2,1,0.09999990463256836,1
+all data spans,raw unknown action,updateBlockAttributes,emitterListener:store:core/block-editor:registry global listener,2,1,0.09999990463256836,4500
+all data spans,raw unknown action,updateBlockAttributes,notify:store:core/block-editor,3,1,13.700000047683716,4500
+all data spans,raw unknown action,updateBlockAttributes,resume:store:core/block-editor,3,1,13.700000047683716,4500
+all data spans,raw unknown action,__unstableMarkLastChangeAsPersistent,rootSubscribe:core/block-editor,2,1,0,4500
 all data spans,mark next not persistent,updateBlockAttributes,emit:store:core/block-editor,5,4501,0.5999999046325684,4501
 all data spans,mark next not persistent,updateBlockAttributes,reduxListener:core/block-editor,5,4501,2.4999990463256836,4501
 all data spans,mark next not persistent,updateBlockAttributes,rootSubscribe:core/block-editor,5,1,3.1999998092651367,4501

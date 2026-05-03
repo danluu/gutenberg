@@ -179,6 +179,12 @@ const allDataSpanRuns = [
 		dir: 'artifacts/typing-delay-mark-noop-allspans-1000',
 	},
 	{
+		runId: 'marker_raw_unknown_action_allspans_1000',
+		traceType: 'all data spans',
+		intervention: 'raw unknown action',
+		dir: 'test/performance/artifacts/typing-delay-mark-raw-unknown-action-allspans-trace-1000',
+	},
+	{
 		runId: 'marker_next_not_persistent_allspans_1000',
 		traceType: 'all data spans',
 		intervention: 'mark next not persistent',
