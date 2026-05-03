@@ -51,6 +51,16 @@ const runs = [
 	},
 ];
 
+const timeoutRewriteRuns = [
+	{
+		runId: 'timeout_970_marker_targeted',
+		traceType: 'timeout rewrite',
+		intervention: 'normal marker',
+		rewriteTimeoutMs: 970,
+		dir: 'artifacts/typing-delay-timeout-970-marker-targeted',
+	},
+];
+
 function newestJson( dir ) {
 	const absDir = path.join( repoRoot, dir );
 	if ( ! fs.existsSync( absDir ) ) {
@@ -147,6 +157,152 @@ function readRuns() {
 
 const loadedRuns = readRuns();
 
+const loadedTimeoutRewriteRuns = timeoutRewriteRuns
+	.map( ( run ) => {
+		const jsonPath = newestJson( run.dir );
+		if ( ! jsonPath ) {
+			return null;
+		}
+
+		// eslint-disable-next-line no-console
+		console.log( `Reading ${ path.relative( repoRoot, jsonPath ) }` );
+		return {
+			...run,
+			jsonPath,
+			data: JSON.parse( fs.readFileSync( jsonPath, 'utf8' ) ),
+		};
+	} )
+	.filter( Boolean );
+
+function summaryKey( row ) {
+	return `${ row.delayMs }\t${ row.round }\t${ row.editorSetupIndex }`;
+}
+
+function buildPairedRows( runsToPair ) {
+	return runsToPair.flatMap( ( run ) => {
+		const recordsBySummary = groupedBy( run.data.records, summaryKey );
+
+		return run.data.delayRunSummaries.flatMap( ( summary ) => {
+			const records = (
+				recordsBySummary.get( summaryKey( summary ) ) || []
+			)
+				.slice()
+				.sort(
+					( left, right ) => left.sampleIndex - right.sampleIndex
+				);
+			const editorEvents = ( summary.browserEvents || [] ).filter(
+				( event ) => event.documentName === 'editor-canvas'
+			);
+			const keydowns = editorEvents.filter(
+				( event ) => event.type === 'keydown'
+			);
+			const inputs = editorEvents.filter(
+				( event ) => event.type === 'input'
+			);
+			const markerActions = ( summary.dataEvents || [] ).filter(
+				( event ) =>
+					event.storeName === 'core/block-editor' &&
+					event.actionName === '__unstableMarkLastChangeAsPersistent'
+			);
+
+			return records.flatMap( ( record, recordIndex ) => {
+				if ( record.isThrowaway ) {
+					return [];
+				}
+
+				const currentKeydown = keydowns[ recordIndex ];
+				const previousInput = inputs[ recordIndex - 1 ];
+				if ( ! currentKeydown || ! previousInput ) {
+					return [];
+				}
+
+				const priorMarkerActions = markerActions.filter(
+					( event ) =>
+						event.nowMs > previousInput.nowMs &&
+						event.nowMs < currentKeydown.nowMs
+				);
+				const lastMarkerAction =
+					priorMarkerActions[ priorMarkerActions.length - 1 ];
+				const markerActionDurationMs = priorMarkerActions.reduce(
+					( sum, event ) => sum + ( event.durationMs || 0 ),
+					0
+				);
+
+				return {
+					run_id: run.runId,
+					trace_type: run.traceType,
+					intervention: run.intervention,
+					rewrite_timeout_ms: run.rewriteTimeoutMs,
+					delay_ms: record.delayMs,
+					round: record.round,
+					sample_index: record.sampleIndex,
+					delay_sample_index: record.delaySampleIndex,
+					previous_input_to_current_keydown_ms:
+						currentKeydown.nowMs - previousInput.nowMs,
+					previous_input_to_marker_ms: lastMarkerAction
+						? lastMarkerAction.nowMs - previousInput.nowMs
+						: null,
+					marker_to_current_keydown_ms: lastMarkerAction
+						? currentKeydown.nowMs - lastMarkerAction.nowMs
+						: null,
+					marker_action_count: priorMarkerActions.length,
+					marker_action_duration_ms: markerActionDurationMs,
+					latency_ms: record.latencyMs,
+					keypress_ms: record.keypressMs,
+					marker_inclusive_latency_ms:
+						record.latencyMs + markerActionDurationMs,
+				};
+			} );
+		} );
+	} );
+}
+
+function buildPairedSummaryRows( rows ) {
+	return Array.from(
+		groupedBy(
+			rows,
+			( row ) => `${ row.run_id }\t${ row.delay_ms }`
+		).entries()
+	).map( ( [ , groupRows ] ) => {
+		const first = groupRows[ 0 ];
+		const latencies = groupRows.map( ( row ) => row.latency_ms );
+		const markerActionDurations = groupRows.map(
+			( row ) => row.marker_action_duration_ms
+		);
+		const markerInclusiveLatencies = groupRows.map(
+			( row ) => row.marker_inclusive_latency_ms
+		);
+		return {
+			run_id: first.run_id,
+			trace_type: first.trace_type,
+			intervention: first.intervention,
+			rewrite_timeout_ms: first.rewrite_timeout_ms,
+			delay_ms: first.delay_ms,
+			n: groupRows.length,
+			rows_with_marker_action: groupRows.filter(
+				( row ) => row.marker_action_count > 0
+			).length,
+			latency_p50_ms: quantile( latencies, 0.5 ),
+			marker_action_duration_p50_ms: quantile(
+				markerActionDurations,
+				0.5
+			),
+			marker_inclusive_latency_p50_ms: quantile(
+				markerInclusiveLatencies,
+				0.5
+			),
+			marker_inclusive_latency_p10_ms: quantile(
+				markerInclusiveLatencies,
+				0.1
+			),
+			marker_inclusive_latency_p90_ms: quantile(
+				markerInclusiveLatencies,
+				0.9
+			),
+		};
+	} );
+}
+
 const sampleRows = loadedRuns.flatMap( ( run ) =>
 	run.data.records
 		.filter( ( record ) => ! record.isThrowaway )
@@ -190,6 +346,13 @@ const summaryRows = Array.from(
 		keypress_p50_ms: quantile( keypresses, 0.5 ),
 	};
 } );
+
+const pairedRows = buildPairedRows( loadedRuns );
+const pairedSummaryRows = buildPairedSummaryRows( pairedRows );
+const timeoutRewritePairedRows = buildPairedRows( loadedTimeoutRewriteRuns );
+const timeoutRewritePairedSummaryRows = buildPairedSummaryRows(
+	timeoutRewritePairedRows
+);
 
 const actionRows = loadedRuns.flatMap( ( run ) =>
 	run.data.delayRunSummaries.map( ( summary ) => {
@@ -399,6 +562,90 @@ writeCsv(
 		'timers_scheduled',
 		'timers_fired',
 		'timers_cleared_before_fire',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-paired-samples.csv' ),
+	pairedRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'round',
+		'sample_index',
+		'delay_sample_index',
+		'previous_input_to_current_keydown_ms',
+		'previous_input_to_marker_ms',
+		'marker_to_current_keydown_ms',
+		'marker_action_count',
+		'marker_action_duration_ms',
+		'latency_ms',
+		'keypress_ms',
+		'marker_inclusive_latency_ms',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-paired-summary.csv' ),
+	pairedSummaryRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'n',
+		'rows_with_marker_action',
+		'latency_p50_ms',
+		'marker_action_duration_p50_ms',
+		'marker_inclusive_latency_p50_ms',
+		'marker_inclusive_latency_p10_ms',
+		'marker_inclusive_latency_p90_ms',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-timeout-970-marker-paired-samples.csv'
+	),
+	timeoutRewritePairedRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'rewrite_timeout_ms',
+		'delay_ms',
+		'round',
+		'sample_index',
+		'delay_sample_index',
+		'previous_input_to_current_keydown_ms',
+		'previous_input_to_marker_ms',
+		'marker_to_current_keydown_ms',
+		'marker_action_count',
+		'marker_action_duration_ms',
+		'latency_ms',
+		'keypress_ms',
+		'marker_inclusive_latency_ms',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-timeout-970-marker-paired-summary.csv'
+	),
+	timeoutRewritePairedSummaryRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'rewrite_timeout_ms',
+		'delay_ms',
+		'n',
+		'rows_with_marker_action',
+		'latency_p50_ms',
+		'marker_action_duration_p50_ms',
+		'marker_inclusive_latency_p50_ms',
+		'marker_inclusive_latency_p10_ms',
+		'marker_inclusive_latency_p90_ms',
 	]
 );
 writeCsv(

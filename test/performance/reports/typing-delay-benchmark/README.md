@@ -42,7 +42,9 @@ The short version:
     depends on the real `__unstableMarkLastChangeAsPersistent()` action.
 -   The normal marker action also does about `16ms` of timer-side work at
     `1000ms` in the targeted run. That work is outside the next EventDispatch
-    measurement, so the low band is partly an accounting artifact.
+    measurement. Adding that marker action to the same retained key changes the
+    normal `1000ms` p50 from `11.3ms` to `27.4ms`, so the low band is an
+    accounting artifact for this metric.
 -   The marker/no-op difference does change action ordering and the
     `useBlockSync()` parent path: normal marker goes through `onChange`, no-op
     stays on `onInput`. But `onChange` alone is not sufficient; replacing the
@@ -198,6 +200,12 @@ The R script derives:
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
     samples and summaries.
+-   `data/typing-delay-marker-paired-*.csv`: per-sample marker-inclusive
+    summaries that add the marker action before each retained key to that key's
+    EventDispatch latency.
+-   `data/typing-delay-timeout-970-marker-paired-*.csv`: the same paired
+    accounting for a targeted run that rewrites Gutenberg's `1000ms` timers to
+    `970ms`.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
     path samples and summaries for the marker intervention runs.
 
@@ -685,11 +693,12 @@ The earlier stronger explanation failed this audit:
 
 The remaining useful falsification tests are narrower:
 
--   force the marker to run before input at `990ms`;
 -   trace React commits and high-fanout `useSelect` subscribers in both the
     timer task and the following input task;
--   compute a paired full-cycle metric, from one input start through the timer
-    task and the next input end, instead of the current p50-plus-p50 proxy.
+-   compute a broader full-cycle wall-time metric, from one input start through
+    the timer task and the next input end. The paired metric below already adds
+    marker dispatch cost to each retained key, but it intentionally does not
+    count idle waiting time.
 
 ## Marker Interventions
 
@@ -797,11 +806,20 @@ The next plot shows the accounting problem directly:
 
 ![Marker action cost](figures/28-marker-action-cost.png)
 
-At `1000ms`, the normal marker's measured next-input p50 is only `11.3ms`, but
-the p50 marker action that ran in the timer callback is `15.8ms`. The approximate
-p50-plus-p50 total is therefore `27.1ms`, not `11.3ms`. At `1010ms`, the same
-calculation is `10.9ms + 15.9ms = 26.8ms`. Those marker-action durations are
-outside the benchmark's next-input EventDispatch window.
+At `1000ms`, the normal marker's measured next-input p50 is only `11.3ms`.
+Adding the marker action that ran before each same retained key gives a paired
+marker-inclusive p50 of `27.4ms`, not `11.3ms`. At `1010ms`, the paired
+marker-inclusive p50 is `26.7ms`. Those marker-action durations are outside the
+benchmark's next-input EventDispatch window.
+
+| Timer callback           |    Delay | Rows with marker | Event-only p50 | Marker action p50 | Marker-inclusive p50 |
+| ------------------------ | -------: | ---------------: | -------------: | ----------------: | -------------------: |
+| normal marker            |  `990ms` |              `0` |       `25.4ms` |           `0.0ms` |             `25.4ms` |
+| normal marker            | `1000ms` |             `30` |       `11.3ms` |          `15.8ms` |             `27.4ms` |
+| normal marker            | `1010ms` |             `30` |       `10.9ms` |          `15.9ms` |             `26.7ms` |
+| normal marker            | `1300ms` |             `30` |       `25.5ms` |          `16.1ms` |             `41.3ms` |
+| marker no-op             | `1000ms` |             `30` |       `22.0ms` |           `0.0ms` |             `22.0ms` |
+| mark next not persistent | `1000ms` |             `30` |       `33.6ms` |           `0.2ms` |             `33.8ms` |
 
 So the confirmed mechanism is narrower and more concrete than the earlier
 explanation:
@@ -812,7 +830,8 @@ explanation:
    timer callback without that action does not reproduce it.
 3. The normal marker also performs about `16ms` of timer-side dispatch and
    subscriber work in these targeted runs. The benchmark's reported input
-   latency omits that work.
+   latency omits that work; the paired marker-inclusive metric removes the
+   apparent `1000ms` low band.
 4. The no-op and `mark next not persistent` interventions disprove the claim
    that the low band follows from either "a timer fired" or "a timer-side action
    happened".
@@ -822,6 +841,27 @@ total work got smaller. The normal marker can make the next EventDispatch slice
 look faster because the measurement starts at the next input event and excludes
 the marker task that just ran. Counting marker-plus-next-input makes the normal
 `1000ms` case slower than the event-only graph suggests.
+
+I also forced the boundary down by rewriting `1000ms` timers to `970ms` and
+reran a targeted `960..1000ms` scan:
+
+![970ms timer rewrite](figures/29-timeout-970-marker-boundary.png)
+
+| Effective timer |    Delay | Rows with marker | Event-only p50 | Marker action p50 | Marker-inclusive p50 |
+| --------------: | -------: | ---------------: | -------------: | ----------------: | -------------------: |
+|         `970ms` |  `960ms` |              `0` |       `24.8ms` |           `0.0ms` |             `24.8ms` |
+|         `970ms` |  `970ms` |             `30` |       `16.2ms` |          `15.5ms` |             `31.6ms` |
+|         `970ms` |  `980ms` |             `30` |       `15.9ms` |          `15.3ms` |             `31.6ms` |
+|         `970ms` |  `990ms` |             `30` |       `16.6ms` |          `15.6ms` |             `32.5ms` |
+|         `970ms` | `1000ms` |             `30` |       `15.8ms` |          `15.8ms` |             `31.6ms` |
+
+This confirms the timer-boundary part of the theory: when the effective timer is
+`970ms`, the event-only low band starts at `970ms`, and all retained rows from
+`970ms` upward have a marker before the next key. It also confirms the accounting
+critique: the marker-inclusive p50s are around `32ms`, not `16ms`. The exact
+event-only magnitude is not identical to the normal `1000ms` run, so this
+supports "the timer moves the boundary" but not a claim that every low-band value
+is determined by the timer alone.
 
 One piece remains open. The source spans show that the direct
 `useEntityBlockEditor()` `onChange` / `onInput` calls are tiny in the measured
@@ -1829,6 +1869,9 @@ The key runs used in this report were:
 -   `marker_next_not_persistent_targeted`: same delays and counts, but the bound
     marker action dispatches `__unstableMarkNextChangeAsNotPersistent()`
     instead.
+-   `timeout_970_marker_targeted`: normal marker action with `1000ms` timers
+    rewritten to `970ms`, scanning `960ms`, `970ms`, `980ms`, `990ms`, and
+    `1000ms`.
 -   `marker_normal_spans`: normal marker action at `990ms`, `1000ms`, and
     `1010ms`, with source-level `useBlockSync()` / `useEntityBlockEditor()`
     path tracing.

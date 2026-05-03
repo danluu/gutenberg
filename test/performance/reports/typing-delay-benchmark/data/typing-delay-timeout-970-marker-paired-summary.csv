@@ -1,0 +1,6 @@
+run_id,trace_type,intervention,rewrite_timeout_ms,delay_ms,n,rows_with_marker_action,latency_p50_ms,marker_action_duration_p50_ms,marker_inclusive_latency_p50_ms,marker_inclusive_latency_p10_ms,marker_inclusive_latency_p90_ms
+timeout_970_marker_targeted,timeout rewrite,normal marker,970,960,30,0,24.819000000000003,0,24.819000000000003,23.4813,26.1373
+timeout_970_marker_targeted,timeout rewrite,normal marker,970,970,30,30,16.1525,15.450000047683716,31.563000047683715,27.66049987602234,33.2112999666214
+timeout_970_marker_targeted,timeout rewrite,normal marker,970,980,30,30,15.878,15.25,31.622500000000002,25.940800109672548,33.31229996185303
+timeout_970_marker_targeted,timeout rewrite,normal marker,970,990,30,30,16.585500000000003,15.600000143051147,32.458000071525575,30.29380018596649,33.36700000476837
+timeout_970_marker_targeted,timeout rewrite,normal marker,970,1000,30,30,15.828,15.75,31.578499952316285,29.407700009536743,32.948700057220464

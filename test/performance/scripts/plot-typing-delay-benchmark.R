@@ -3144,7 +3144,7 @@ if (file.exists(input_path_summary_path)) {
 
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
-marker_action_duration_path <- file.path(data_dir, "typing-delay-marker-action-duration-summary.csv")
+marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
 if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 	marker_summary <- read_csv(marker_summary_path, show_col_types = FALSE) %>%
 		filter(trace_type == "targeted") %>%
@@ -3192,23 +3192,18 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 		height = 7
 	)
 
-	if (file.exists(marker_action_duration_path)) {
-		marker_action_summary <- read_csv(marker_action_duration_path, show_col_types = FALSE) %>%
-			filter(
-				trace_type == "targeted",
-				action_name == "__unstableMarkLastChangeAsPersistent"
-			) %>%
-			select(intervention, delay_ms, marker_action_p50_ms = duration_p50_ms)
-
-		marker_cost <- marker_summary %>%
-			left_join(marker_action_summary, by = c("intervention", "delay_ms")) %>%
+	if (file.exists(marker_paired_summary_path)) {
+		marker_cost <- read_csv(marker_paired_summary_path, show_col_types = FALSE) %>%
+			filter(trace_type == "targeted") %>%
 			mutate(
-				marker_action_p50_ms = coalesce(marker_action_p50_ms, 0),
-				timer_plus_next_input_p50_ms = latency_p50_ms + marker_action_p50_ms
+				intervention = factor(
+					intervention,
+					levels = c("normal marker", "marker no-op", "mark next not persistent")
+				)
 			) %>%
-			select(intervention, delay_ms, latency_p50_ms, marker_action_p50_ms, timer_plus_next_input_p50_ms) %>%
+			select(intervention, delay_ms, latency_p50_ms, marker_action_duration_p50_ms, marker_inclusive_latency_p50_ms) %>%
 			pivot_longer(
-				cols = c(latency_p50_ms, marker_action_p50_ms, timer_plus_next_input_p50_ms),
+				cols = c(latency_p50_ms, marker_action_duration_p50_ms, marker_inclusive_latency_p50_ms),
 				names_to = "metric",
 				values_to = "duration_ms"
 			) %>%
@@ -3216,12 +3211,12 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				metric = recode(
 					metric,
 					latency_p50_ms = "measured next input",
-					marker_action_p50_ms = "timer marker action",
-					timer_plus_next_input_p50_ms = "marker + next input"
+					marker_action_duration_p50_ms = "paired marker action",
+					marker_inclusive_latency_p50_ms = "marker-inclusive input"
 				),
 				metric = factor(
 					metric,
-					levels = c("measured next input", "timer marker action", "marker + next input")
+					levels = c("measured next input", "paired marker action", "marker-inclusive input")
 				)
 			)
 
@@ -3235,13 +3230,13 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				scale_color_brewer(type = "qual", palette = "Dark2") +
 				scale_shape_manual(values = c(
 					`measured next input` = 16,
-					`timer marker action` = 17,
-					`marker + next input` = 15
+					`paired marker action` = 17,
+					`marker-inclusive input` = 15
 				)) +
 				scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
 				labs(
 					title = "The low band omits timer-side marker work",
-					subtitle = "P50 action duration is outside the next EventDispatch measurement; sums are p50 + p50",
+					subtitle = "Paired per-sample metric: next EventDispatch plus marker action before that keydown",
 					x = "Playwright key-hold delay (ms)",
 					y = "Duration (ms)",
 					color = "Timer callback",
@@ -3284,6 +3279,50 @@ if (file.exists(marker_path_summary_path)) {
 		"27-marker-path-classification.png",
 		width = 10,
 		height = 8
+	)
+}
+
+timeout_970_marker_summary_path <- file.path(data_dir, "typing-delay-timeout-970-marker-paired-summary.csv")
+if (file.exists(timeout_970_marker_summary_path)) {
+	timeout_970_marker_summary <- read_csv(timeout_970_marker_summary_path, show_col_types = FALSE) %>%
+		pivot_longer(
+			cols = c(latency_p50_ms, marker_inclusive_latency_p50_ms),
+			names_to = "metric",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			metric = recode(
+				metric,
+				latency_p50_ms = "next EventDispatch only",
+				marker_inclusive_latency_p50_ms = "EventDispatch + paired marker"
+			),
+			metric = factor(
+				metric,
+				levels = c("next EventDispatch only", "EventDispatch + paired marker")
+			)
+		)
+
+	save_plot(
+		ggplot(timeout_970_marker_summary, aes(delay_ms, duration_ms, color = metric, shape = metric)) +
+			geom_vline(xintercept = 970, color = "grey55", linewidth = 0.5, linetype = "dashed") +
+			geom_point(size = 3.4, alpha = 0.9, position = position_dodge(width = 2.5)) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_shape_manual(values = c(
+				`next EventDispatch only` = 16,
+				`EventDispatch + paired marker` = 15
+			)) +
+			scale_x_continuous(breaks = c(960, 970, 980, 990, 1000)) +
+			labs(
+				title = "Rewriting the timer to 970ms moves the event-only low band",
+				subtitle = "The marker fires before every retained key at 970ms and above; marker-inclusive cost stays high",
+				x = "Playwright key-hold delay (ms)",
+				y = "Duration p50 (ms)",
+				color = "Metric",
+				shape = "Metric"
+			),
+		"29-timeout-970-marker-boundary.png",
+		width = 11,
+		height = 7
 	)
 }
 
