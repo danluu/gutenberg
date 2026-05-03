@@ -973,7 +973,7 @@ the q50 of the remaining 10. If it also discarded keypress 2, the median q50
 across startup waits would move by only `-0.16ms`; the median run-to-run q50 sd
 would move by only `-0.04ms`. The mean and p90 are more sensitive: the same
 extra discard lowers the median mean by `0.85ms` and the median p90 by `1.51ms`.
-So the slow first retained key is mostly hidden from the q50 pass/fail statistic
+So the slow first retained key is mostly hidden from the reported q50 comparison
 but still visible in tail/mean views. That answers the CI-statistic question; it
 does not make the first input after idle unimportant for user experience.
 
@@ -1088,7 +1088,37 @@ files across rounds, and the CodeVitals logger uploads `q50`. For Typing with
 the default one round, the main CI number is therefore the median of the 10
 retained event-latency samples, not their arithmetic mean. I still compute the
 mean below because it is useful for outlier sensitivity, but it is not the
-metric CI compares.
+metric CI displays/uploads. The workflow does not use either q50 or mean as an
+automatic regression threshold.
+
+### What CI Passes Or Fails On
+
+The Performance Tests workflow does not currently have a metric-regression gate
+in this repo. The job passes if setup, build, `wp-env`, and the Playwright
+performance command succeed and the workflow reaches the end. It fails on normal
+command failures: dependency/build failure, `wp-env` failure, Playwright test
+failure or timeout, missing/empty performance-result attachments, or the
+workflow's 60-minute job timeout.
+
+The metric comparison is reporting, not gating:
+
+-   `.github/workflows/performance.yml` runs `./bin/plugin/cli.js perf ...`.
+-   `bin/plugin/commands/performance.js` runs each performance spec on each
+    compared branch, reads `*.performance-results.raw.json`, recomputes `q25`,
+    `q50`, `q75`, and `cnt`, and writes `*.performance-results.json`.
+-   For two-branch comparisons it computes `% Change` as
+    `(branch1.q50 - branch2.q50) / branch2.q50 * 100` and writes that into
+    `summary.md`.
+-   There is no threshold check that throws or sets a nonzero exit status from
+    that `% Change`.
+-   `bin/log-performance-results.js` uploads q50 values to CodeVitals on trunk
+    pushes, but that runs after the comparison step succeeds and is not the PR
+    pass/fail gate.
+
+So, when this report says "CI reports q50", read that literally: q50 is the
+displayed/uploaded comparison metric. It is not currently an automatic
+pass/fail threshold. The automatic pass/fail mechanism is command success or
+failure and the 60-minute job timeout.
 
 To measure the independent variables, I split the default-off controls:
 
