@@ -80,6 +80,9 @@ const traceTimers =
 const traceSchedulers =
 	process.env.BENCHMARK_TRACE_SCHEDULERS === '1' ||
 	process.env.BENCHMARK_TRACE_SCHEDULERS === 'true';
+const traceGapEvents =
+	process.env.BENCHMARK_TRACE_GAP_EVENTS === '1' ||
+	process.env.BENCHMARK_TRACE_GAP_EVENTS === 'true';
 const freshEditorPerDelay =
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === '1' ||
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === 'true';
@@ -113,7 +116,15 @@ const supportedDelayModes = [
 	'between-keys',
 	'after-persistence',
 	'hold-then-keyup-gap',
+	'cdp-key-hold',
 ];
+
+function sleepMs( delayMs ) {
+	if ( delayMs <= 0 ) {
+		return Promise.resolve();
+	}
+	return new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
+}
 
 function isNativeScenario() {
 	return scenario === 'native-contenteditable-timer';
@@ -659,6 +670,71 @@ function groupedKeyboardEvents( trace ) {
 	return groups;
 }
 
+async function dispatchCdpKeyPress( cdpSession, delayMs ) {
+	const keyEvent = {
+		modifiers: 0,
+		windowsVirtualKeyCode: 88,
+		key: 'x',
+		code: 'KeyX',
+		autoRepeat: false,
+		location: 0,
+		isKeypad: false,
+	};
+
+	await cdpSession.send( 'Input.dispatchKeyEvent', {
+		...keyEvent,
+		type: 'keyDown',
+		commands: [],
+		text: 'x',
+		unmodifiedText: 'x',
+	} );
+	await sleepMs( delayMs );
+	await cdpSession.send( 'Input.dispatchKeyEvent', {
+		...keyEvent,
+		type: 'keyUp',
+	} );
+}
+
+function traceEventsForKeyGaps( trace ) {
+	const keyGroups = groupedKeyboardEvents( trace );
+	const events = [];
+
+	for ( let keyIndex = 1; keyIndex < keyGroups.length; keyIndex++ ) {
+		const previousKeyup = keyGroups[ keyIndex - 1 ].keyup;
+		const currentFirstKeydown = keyGroups[ keyIndex ].keydownEvents[ 0 ];
+		const gapStartMs = previousKeyup.timestampMs + previousKeyup.durationMs;
+		const gapStopMs = currentFirstKeydown.timestampMs;
+
+		for ( const event of trace.traceEvents ) {
+			const timestampMs = event.ts / 1000;
+			const durationMs = ( event.dur || 0 ) / 1000;
+			const eventStopMs = timestampMs + durationMs;
+
+			if ( eventStopMs < gapStartMs || timestampMs > gapStopMs ) {
+				continue;
+			}
+
+			events.push( {
+				keyIndex,
+				gapStartMs,
+				gapStopMs,
+				gapDurationMs: gapStopMs - gapStartMs,
+				name: event.name,
+				category: event.cat,
+				phase: event.ph,
+				timestampMs,
+				durationMs,
+				relativeStartMs: timestampMs - gapStartMs,
+				argsType: event.args?.data?.type,
+				argsFrame: event.args?.data?.frame,
+				argsUrl: event.args?.data?.url,
+			} );
+		}
+	}
+
+	return events;
+}
+
 function benchmarkTimeoutMs() {
 	const sampleCount = samplesPerDelay + throwawayPerDelay;
 	const intentionalDelayMs =
@@ -971,6 +1047,8 @@ test.describe( 'Typing delay benchmark', () => {
 								type: event.type,
 								key: event.key,
 								code: event.code,
+								repeat: event.repeat,
+								isComposing: event.isComposing,
 								inputType: event.inputType,
 								data: event.data,
 								targetTagName: event.target?.tagName,
@@ -1574,6 +1652,20 @@ test.describe( 'Typing delay benchmark', () => {
 							await page.waitForTimeout( postKeyupGapMs );
 						}
 					}
+				} else if ( delayMode === 'cdp-key-hold' ) {
+					const cdpSession = await page
+						.context()
+						.newCDPSession( page );
+					try {
+						for ( let i = 0; i < sampleCount; i++ ) {
+							await dispatchCdpKeyPress( cdpSession, delayMs );
+							if ( postKeyupGapMs > 0 && i < sampleCount - 1 ) {
+								await sleepMs( postKeyupGapMs );
+							}
+						}
+					} finally {
+						await cdpSession.detach();
+					}
 				} else {
 					await page.keyboard.type( 'x'.repeat( sampleCount ), {
 						delay: delayMs,
@@ -1688,6 +1780,9 @@ test.describe( 'Typing delay benchmark', () => {
 									stopMs: runStoppedAtBrowserNowMs,
 								}
 						  )
+						: undefined,
+					gapTraceEvents: traceGapEvents
+						? traceEventsForKeyGaps( metrics.trace )
 						: undefined,
 					eventListenerEvents: traceEventListeners
 						? await page.evaluate(
@@ -1958,6 +2053,7 @@ test.describe( 'Typing delay benchmark', () => {
 				traceData,
 				traceTimers,
 				traceSchedulers,
+				traceGapEvents,
 				traceEventListeners,
 				traceRichTextSpans,
 				traceDataSpans,

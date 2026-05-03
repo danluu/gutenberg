@@ -159,6 +159,11 @@ The R script derives:
 -   `data/typing-delay-causality-*.csv`: targeted traces that separate
     key-hold duration, persistence-marker timing, and the post-keyup gap before
     the next key.
+-   `data/typing-delay-post-keyup-gap-*.csv`: follow-up traces checking whether
+    timers, RAF, idle callbacks, data actions, raw DevTools timeline slices, or
+    DOM key flags explain the post-keyup gap effect.
+-   `data/typing-delay-input-path-*.csv`: raw-CDP follow-up traces separating the
+    observed post-keyup gap from Playwright's higher-level keyboard helpers.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -514,13 +519,13 @@ leaves only about `2.5ms` in the same trace-heavy setup.
 
 Selected medians from the large-post diagnostic runs:
 
-| Case | Previous keyup to marker | Marker to next keydown | Previous keyup to next keydown | `keypress` p50 |
-| ---- | -----------------------: | ---------------------: | -----------------------------: | -------------: |
-| Playwright key-hold burst, `1300ms` | `-302ms` | `304ms` | `2.5ms` | `34.6ms` |
-| Manual hold `1300ms`, natural keyup gap | `-302ms` | `344ms` | `41ms` | `12.8ms` |
-| Manual hold `1300ms`, `1000ms` keyup gap | `-301ms` | `1359ms` | `1057ms` | `12.0ms` |
-| Manual hold `990ms`, `310ms` keyup gap | `19ms` | `355ms` | `373ms` | `14.8ms` |
-| Complete keypress, then wait `1300ms` | `999ms` | `372ms` | `1373ms` | `14.1ms` |
+| Case                                     | Previous keyup to marker | Marker to next keydown | Previous keyup to next keydown | `keypress` p50 |
+| ---------------------------------------- | -----------------------: | ---------------------: | -----------------------------: | -------------: |
+| Playwright key-hold burst, `1300ms`      |                 `-302ms` |                `304ms` |                        `2.5ms` |       `34.6ms` |
+| Manual hold `1300ms`, natural keyup gap  |                 `-302ms` |                `344ms` |                         `41ms` |       `12.8ms` |
+| Manual hold `1300ms`, `1000ms` keyup gap |                 `-301ms` |               `1359ms` |                       `1057ms` |       `12.0ms` |
+| Manual hold `990ms`, `310ms` keyup gap   |                   `19ms` |                `355ms` |                        `373ms` |       `14.8ms` |
+| Complete keypress, then wait `1300ms`    |                  `999ms` |                `372ms` |                       `1373ms` |       `14.1ms` |
 
 This disconfirms the strongest version of the earlier theory. "Persistence fired
 while the previous key was held" is not sufficient by itself. Both manual
@@ -550,13 +555,13 @@ The refined statement is:
 The cost path is the same as in the broader data-span investigation, only larger
 in the normal burst:
 
-| Case | RichText `registry.batch` | Data batch | Resume `core/block-editor` | `useSelect.onChange` |
-| ---- | ------------------------: | ---------: | -------------------------: | -------------------: |
-| Playwright key-hold burst, `1300ms` | `34.1ms` | `36.8ms` | `25.7ms` | `13.0ms` |
-| Manual hold `1300ms`, natural keyup gap | `16.5ms` | `17.5ms` | `12.6ms` | `6.8ms` |
-| Manual hold `1300ms`, `1000ms` keyup gap | `17.8ms` | `18.9ms` | `13.3ms` | `7.4ms` |
-| Manual hold `990ms`, `310ms` keyup gap | `17.2ms` | `18.4ms` | `12.9ms` | `7.1ms` |
-| Complete keypress, then wait `1300ms` | `17.5ms` | `18.7ms` | `12.9ms` | `7.3ms` |
+| Case                                     | RichText `registry.batch` | Data batch | Resume `core/block-editor` | `useSelect.onChange` |
+| ---------------------------------------- | ------------------------: | ---------: | -------------------------: | -------------------: |
+| Playwright key-hold burst, `1300ms`      |                  `34.1ms` |   `36.8ms` |                   `25.7ms` |             `13.0ms` |
+| Manual hold `1300ms`, natural keyup gap  |                  `16.5ms` |   `17.5ms` |                   `12.6ms` |              `6.8ms` |
+| Manual hold `1300ms`, `1000ms` keyup gap |                  `17.8ms` |   `18.9ms` |                   `13.3ms` |              `7.4ms` |
+| Manual hold `990ms`, `310ms` keyup gap   |                  `17.2ms` |   `18.4ms` |                   `12.9ms` |              `7.1ms` |
+| Complete keypress, then wait `1300ms`    |                  `17.5ms` |   `18.7ms` |                   `12.9ms` |              `7.3ms` |
 
 That confirms the attribution but narrows the cause. The extra latency is still
 inside the RichText `registry.batch()` -> `core/block-editor` resume ->
@@ -566,12 +571,96 @@ while the key is held. It follows from the timer/key-hold condition combined
 with an almost immediate next key after `keyup`.
 
 The remaining unproven piece is the lower-level scheduling reason that a `2-3ms`
-post-keyup gap is bad while a roughly `40ms` gap is enough to lose the slow path.
-The most likely explanation is that the browser/editor gets an extra turn to
-drain post-keyup rendering, selection, React, or data-store work before the next
-input. The current traces prove where the extra synchronous time is measured;
-they do not yet prove which queued browser or React phase disappears during that
-small gap.
+post-keyup gap is bad while a roughly `30-40ms` gap is enough to lose the slow
+path.
+
+### Post-Keyup Gap Follow-Up
+
+I then tested the strongest concrete versions of "the gap lets queued work
+drain." I reran the normal Playwright burst and the manual `1300ms` hold with:
+
+-   browser/data event tracing;
+-   timer, `requestAnimationFrame`, and `requestIdleCallback` tracing;
+-   a raw DevTools-timeline gap extractor that records only trace slices between
+    the end of the previous `keyup` dispatch and the next `keydown`;
+-   DOM key flags: `repeat` and `isComposing`.
+
+The result mostly disconfirms the "queued JS/rendering drains in the gap"
+version of the theory.
+
+| Case                                    | Previous keyup to next keydown | `keypress` p50 | Scheduler callbacks in gap | Data actions in gap | Non-key DevTools gap slices | Repeat/composing keys |
+| --------------------------------------- | -----------------------------: | -------------: | -------------------------: | ------------------: | --------------------------: | --------------------: |
+| Playwright key-hold burst, `1300ms`     |                        `1.7ms` |       `23.1ms` |                        `0` |                 `0` |               `1`, `0.06ms` |               `0 / 8` |
+| Manual hold `1300ms`, natural keyup gap |                       `29.3ms` |       `11.7ms` |                        `0` |                 `0` |               `1`, `0.06ms` |               `0 / 8` |
+
+The single median non-key DevTools slice is a tiny
+`Responsiveness.Renderer.UserInteraction` bookkeeping event, not layout, paint,
+script execution, a timer callback, a RAF callback, or an idle callback. The
+manual-gap run had a few samples with small `TimerFire` / `FunctionCall` slices
+in the gap, but the median case did not, and those slices are not present in the
+normal burst. They do not explain why the manual-gap run is faster.
+
+The DOM event flags also do not explain the difference. In both modes, retained
+samples had:
+
+-   `keydown.repeat === false`, `keypress.repeat === false`, and
+    `keyup.repeat === false`;
+-   `isComposing === false` on keydown, keypress, beforeinput, and input;
+-   the same coarse block-editor state at keydown, keypress, beforeinput, and
+    input: `isLastBlockChangePersistent() === true` and `isTyping() === true`.
+
+This narrows the theory again. The visible extra cost still appears in the next
+`keypress` / RichText / data fanout path, but it is not explained by observable
+work draining during the post-keyup gap.
+
+### Raw CDP Gap Sweep
+
+The next concrete theory was that the elapsed gap itself was decisive. To test
+that, I added `BENCHMARK_DELAY_MODE=cdp-key-hold`, which bypasses Playwright's
+high-level keyboard helpers and dispatches Chromium `Input.dispatchKeyEvent`
+calls directly. The CDP event shape matches Playwright's Chromium keyboard path
+for a printable `x`: `keyDown` with `text` / `unmodifiedText`, then `keyUp`.
+The mode holds the key for `1300ms` and uses a Node-side timer for the
+post-keyup gap.
+
+![Input path post-keyup gap check](figures/25-input-path-post-keyup-gap.png)
+
+This disconfirms the "gap alone" theory. Raw CDP remains on the slow path even
+with much longer observed post-keyup gaps than the fast `keyboard.press()` case.
+
+| Input path                            | Requested post-keyup gap | Observed post-keyup gap p50 | `keypress` p50 |
+| ------------------------------------- | -----------------------: | --------------------------: | -------------: |
+| Playwright `keyboard.type`, key held  |                    `0ms` |                     `2.3ms` |       `23.4ms` |
+| Playwright `keyboard.press`, key held |                    `0ms` |                    `30.3ms` |       `11.7ms` |
+| Raw CDP key hold                      |                    `0ms` |                     `3.3ms` |       `22.2ms` |
+| Raw CDP key hold                      |                   `33ms` |                    `38.8ms` |       `22.5ms` |
+| Raw CDP key hold                      |                  `310ms` |                   `317.8ms` |       `22.1ms` |
+| Raw CDP key hold                      |                 `1000ms` |                  `1007.3ms` |       `23.6ms` |
+
+The full raw-CDP sweep also includes requested `5ms`, `10ms`, `16ms`, and
+`100ms` gaps; all stayed in the same slow `~22-25ms` `keypress` range. These
+runs had the same DOM-level flags as the Playwright traces: no key repeat, no
+composition, and `isLastBlockChangePersistent() === true` / `isTyping() === true`
+at the input events.
+
+The refined conclusion is:
+
+1. The slow path does not require the Playwright `keyboard.type()` helper. Raw
+   CDP long-held key events reproduce it.
+2. The fast `keyboard.press()` result is not explained by its natural `30ms`
+   post-keyup gap. Raw CDP is still slow at `39ms`, `318ms`, and `1007ms`
+   observed gaps.
+3. The difference is below the DOM/browser-event level currently traced. The
+   remaining suspect is the Playwright command path itself: `keyboard.press()`
+   appears to use a delivery/session/progress boundary that changes Gutenberg's
+   next-input path even though the DOM event sequence and coarse editor state
+   look the same.
+
+That means the safe benchmark fix is unchanged: do not use a synthetic key-hold
+delay as a proxy for typing pauses. Use a complete keypress and then wait, or
+replay recorded human typing. For root cause, the next useful probe is to log and
+compare Playwright's protocol/session path for `keyboard.press()` against direct
+CDP dispatch and `keyboard.type()`.
 
 ### Native Contenteditable Baseline
 
@@ -820,12 +909,12 @@ key in the wait-after-keyup trace.
 The next high-fanout groups are also block-tree/editor-wide subscriptions, not a
 single isolated callback:
 
-| Source | Instances | Events | Key-held `onChange` ms/key | Wait-after-keyup `onChange` ms/key |
-| ------ | --------: | -----: | -------------------------: | ---------------------------------: |
-| `packages/block-editor/src/components/block-list/index.js:196` | `580` | `2900` | `2.68` | `2.30` |
-| `packages/block-editor/src/components/block-list/block.js:563` | `1437` | `7185` | `1.22` | `1.00` |
-| `packages/editor/src/hooks/pattern-overrides.js:40` | `1437` | `7185` | `0.74` | `0.98` |
-| `packages/block-editor/src/components/inner-blocks/index.js:195` | `580` | `2900` | `0.40` | `0.24` |
+| Source                                                           | Instances | Events | Key-held `onChange` ms/key | Wait-after-keyup `onChange` ms/key |
+| ---------------------------------------------------------------- | --------: | -----: | -------------------------: | ---------------------------------: |
+| `packages/block-editor/src/components/block-list/index.js:196`   |     `580` | `2900` |                     `2.68` |                             `2.30` |
+| `packages/block-editor/src/components/block-list/block.js:563`   |    `1437` | `7185` |                     `1.22` |                             `1.00` |
+| `packages/editor/src/hooks/pattern-overrides.js:40`              |    `1437` | `7185` |                     `0.74` |                             `0.98` |
+| `packages/block-editor/src/components/inner-blocks/index.js:195` |     `580` | `2900` |                     `0.40` |                             `0.24` |
 
 The same ranking appears if we look specifically at `mapSelect` time, though
 the per-instance medians are mostly below the timer resolution. The meaningful
@@ -1042,10 +1131,14 @@ For investigation:
     fanout are identifiable.
 -   For the block-list owner groups identified here, separate necessary
     text-input invalidations from broad block-tree invalidations.
--   Add instrumentation around the post-keyup interval: queued tasks, animation
-    frames, React commits, selection updates, and paint. The keyup-gap trace shows
-    that a roughly `40ms` turn changes the next input path, but not exactly which
-    phase drains during that turn.
+-   Keep instrumenting around the post-keyup interval, but focus below ordinary
+    JS callbacks. Timer, RAF, idle, data-action, key-flag, and DevTools timeline
+    checks did not explain why a roughly `30-40ms` gap changes the next input
+    path.
+-   Compare Playwright's protocol/session path for `keyboard.press()` against
+    `keyboard.type()` and direct `Input.dispatchKeyEvent`. Direct raw CDP stays
+    slow even with long post-keyup gaps, so the remaining boundary is the
+    Playwright input-delivery path rather than the DOM event sequence.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Add a textarea/native baseline to estimate browser/editor overhead.
@@ -1123,6 +1216,19 @@ The key runs used in this report were:
     `310ms` after keyup.
 -   `causality_hold_1300_gap_1000`: large-post manual hold for `1300ms`, then
     `1000ms` after keyup.
+-   `post_keyup_keyboard_1300`: normal Playwright key-hold burst at `1300ms`,
+    with scheduler, raw-gap, and DOM key-flag follow-up traces.
+-   `post_keyup_hold_1300_gap_0`: manual hold for `1300ms`, with no explicit
+    post-keyup gap, with scheduler, raw-gap, and DOM key-flag follow-up traces.
+-   `current_keyboard_1300`: same-session normal Playwright key-hold burst at
+    `1300ms`, with raw-gap and DOM key-flag traces.
+-   `current_hold_press_1300_gap_0`: same-session Playwright
+    `keyboard.press()` key hold at `1300ms`, with raw-gap and DOM key-flag
+    traces.
+-   `cdp_gap_0`, `cdp_gap_5`, `cdp_gap_10`, `cdp_gap_16`, `cdp_gap_33`,
+    `cdp_gap_100`, `cdp_gap_310`, `cdp_gap_1000`: direct
+    `Input.dispatchKeyEvent` key-hold traces at `1300ms` with controlled
+    post-keyup gaps.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
@@ -1144,6 +1250,18 @@ The compact keyup-gap causality CSVs were extracted with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-causality.js
+```
+
+The compact post-keyup follow-up CSVs were extracted with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-post-keyup-gap.js
+```
+
+The compact input-path CSVs were extracted with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-input-path.js
 ```
 
 ## References

@@ -2108,4 +2108,61 @@ if (file.exists(causality_samples_path) && file.exists(causality_span_summary_pa
 	)
 }
 
+input_path_summary_path <- file.path(data_dir, "typing-delay-input-path-summary.csv")
+if (file.exists(input_path_summary_path)) {
+	input_path_summary <- read_csv(input_path_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			input_path = factor(
+				input_path,
+				levels = c(
+					"Playwright keyboard.type key-hold burst",
+					"Playwright keyboard.press per key",
+					"Raw CDP Input.dispatchKeyEvent"
+				)
+			),
+			point_label = if_else(
+				input_path == "Raw CDP Input.dispatchKeyEvent",
+				paste0("CDP +", requested_post_keyup_gap_ms, "ms"),
+				recode(
+					as.character(input_path),
+					`Playwright keyboard.type key-hold burst` = "keyboard.type",
+					`Playwright keyboard.press per key` = "keyboard.press"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(
+			input_path_summary,
+			aes(
+				actual_post_keyup_gap_p50_ms,
+				keypress_p50_ms,
+				color = input_path,
+				shape = input_path
+			)
+		) +
+			geom_point(size = 3.1, alpha = 0.9) +
+			geom_text(
+				aes(label = point_label),
+				check_overlap = TRUE,
+				nudge_y = 0.8,
+				size = 3.2,
+				show.legend = FALSE
+			) +
+			scale_x_log10(breaks = c(2, 3, 10, 30, 100, 300, 1000)) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			labs(
+				title = "The post-keyup gap alone does not explain the fast hold case",
+				subtitle = "1300ms key hold traces; raw CDP stays on the slow path even with long gaps, while Playwright keyboard.press is fast",
+				x = "Observed previous keyup to next keydown, p50 (ms, log scale)",
+				y = "keypress EventDispatch duration, p50 (ms)",
+				color = "Input path",
+				shape = "Input path"
+			),
+		"25-input-path-post-keyup-gap.png",
+		width = 12,
+		height = 7
+	)
+}
+
 message("Wrote plots to: ", figure_dir)
