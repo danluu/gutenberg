@@ -1889,6 +1889,91 @@ if (file.exists(typing_delay_startup_summary_path)) {
 		width = 9.8,
 		height = 5.8
 	)
+
+	save_plot(
+		ggplot(typing_delay_startup_summary, aes(startup_wait_label, typing_delay_label, fill = latency_mean_ms)) +
+			geom_tile(color = "white", linewidth = 0.35) +
+			geom_text(aes(label = sprintf("%.1f", latency_mean_ms)), size = 3.1) +
+			scale_fill_distiller(type = "seq", palette = "PuBu", direction = 1) +
+			labs(
+				title = "Mean latency is diagnostic, but CI reports q50",
+				subtitle = "Exact post-editor.spec.js Typing metric; one run per cell, 10 retained samples per run",
+				x = "Startup wait before tracing and typing",
+				y = "Delay between typed characters",
+				fill = "Retained mean (ms)"
+			),
+		"89-post-editor-typing-delay-startup-grid-mean.png",
+		width = 9.8,
+		height = 5.8
+	)
+
+	save_plot(
+		ggplot(typing_delay_startup_summary, aes(startup_wait_label, typing_delay_label, fill = latency_cv)) +
+			geom_tile(color = "white", linewidth = 0.35) +
+			geom_text(aes(label = percent(latency_cv, accuracy = 1)), size = 3.1) +
+			scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, labels = percent_format(accuracy = 1)) +
+			labs(
+				title = "Startup wait does not remove within-cell volatility",
+				subtitle = "Coefficient of variation for each exact Typing run; lower is more repeatable",
+				x = "Startup wait before tracing and typing",
+				y = "Delay between typed characters",
+				fill = "CV"
+			),
+		"90-post-editor-typing-delay-startup-grid-volatility.png",
+		width = 9.8,
+		height = 5.8
+	)
+
+	startup_wait_runtime_model <- tibble(
+		startup_wait_ms = c(0, 50, 100, 250, 500, 750, 1000, 1500, 2000, 5000, 60000),
+		explicit_wait_occurrences_per_branch = 76,
+		normal_ci_compared_branches = 2
+	) %>%
+		mutate(
+			per_branch_explicit_wait_s = explicit_wait_occurrences_per_branch * startup_wait_ms / 1000,
+			per_branch_change_vs_current_s = per_branch_explicit_wait_s - explicit_wait_occurrences_per_branch,
+			per_branch_saved_vs_current_s = explicit_wait_occurrences_per_branch - per_branch_explicit_wait_s,
+			two_branch_ci_explicit_wait_s = normal_ci_compared_branches * per_branch_explicit_wait_s,
+			two_branch_ci_change_vs_current_s = normal_ci_compared_branches * per_branch_change_vs_current_s,
+			two_branch_ci_saved_vs_current_s = normal_ci_compared_branches * per_branch_saved_vs_current_s,
+			two_branch_ci_change_vs_current_min = two_branch_ci_change_vs_current_s / 60,
+			two_branch_ci_saved_vs_current_min = two_branch_ci_saved_vs_current_s / 60
+		)
+	write_csv(startup_wait_runtime_model, file.path(data_dir, "typing-delay-ci-startup-wait-runtime-model.csv"))
+
+	startup_wait_runtime_plot <- startup_wait_runtime_model %>%
+		filter(startup_wait_ms <= 5000) %>%
+		mutate(
+			startup_wait_label = factor(paste0(startup_wait_ms, "ms"), levels = paste0(startup_wait_ms, "ms")),
+			label_vjust = if_else(two_branch_ci_change_vs_current_s > 0, -0.35, 1.15)
+		)
+
+	save_plot(
+		ggplot(
+			startup_wait_runtime_plot,
+			aes(
+				x = startup_wait_label,
+				y = two_branch_ci_change_vs_current_s,
+				fill = two_branch_ci_change_vs_current_s > 0
+			)
+		) +
+			geom_hline(yintercept = 0, color = brewer_color("Greys", 7, type = "seq", n = 9), linewidth = 0.35) +
+			geom_col(width = 0.72) +
+			geom_text(
+				aes(label = sprintf("%+.0fs", two_branch_ci_change_vs_current_s), vjust = label_vjust),
+				size = 3.2
+			) +
+			scale_fill_brewer(type = "qual", palette = "Set1", guide = "none") +
+			labs(
+				title = "Explicit CI startup sleeps have a linear job-level cost",
+				subtitle = "Normal PR/push comparisons run two branches; post/site editor specs contain 76 explicit waits per branch",
+				x = "Explicit pre-measurement startup wait",
+				y = "Two-branch CI job change vs current 1000ms setting (s)"
+			),
+		"91-ci-startup-wait-runtime-model.png",
+		width = 9.4,
+		height = 5.2
+	)
 }
 
 ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")

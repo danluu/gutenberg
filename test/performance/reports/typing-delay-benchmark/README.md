@@ -494,6 +494,10 @@ The R script derives:
 -   `data/typing-delay-post-editor-typing-delay-startup-grid-*.csv`: exact
     `post-editor.spec.js` Typing runs with independent inter-key typing delay
     and pre-typing startup wait controls.
+-   `data/typing-delay-ci-startup-wait-runtime-model.csv`: deterministic
+    wall-clock model for changing the explicit post/site editor
+    pre-measurement startup wait, including the normal two-branch CI comparison
+    multiplier.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -986,13 +990,27 @@ specs it is not one thing:
     `page.waitForTimeout( BROWSER_IDLE_WAIT )` before tracing/measurement.
 
 Those are independent variables. By static count in the current post/site editor
-performance specs, the fixed `1000ms` constant accounts for about `76s` of
-explicit pre-measurement sleeps (`66s` in `post-editor.spec.js`, `10s` in
-`site-editor.spec.js`) plus about `55s` of inter-key Typing delay (`44s` in
-post-editor Typing variants, `11s` in site-editor Typing). So the current
-post/site editor performance specs contain roughly `131s` of fixed time from
-this one constant. Removing only startup/pre-measurement waits is not the same
-as reducing the Typing delay.
+performance specs, one branch/environment run at the fixed `1000ms` constant
+accounts for about `76s` of explicit pre-measurement sleeps (`66s` in
+`post-editor.spec.js`, `10s` in `site-editor.spec.js`) plus about `55s` of
+inter-key Typing delay (`44s` in post-editor Typing variants, `11s` in
+site-editor Typing). So one post/site editor performance pass contains roughly
+`131s` of fixed time from this one constant. A normal pull-request or trunk CI
+comparison runs two branches, so the job-level total is roughly `152s` of
+explicit pre-measurement sleeps and `110s` of Typing delay, or about `262s` in
+this fixed-wait bucket. Workflow-dispatch and release comparisons multiply by
+the number of compared branches. Removing only startup/pre-measurement waits is
+not the same as reducing the Typing delay.
+
+The CI result is not an average. The Playwright reporter writes raw sample
+arrays and curated quartiles; `stats()` computes `q25`, `q50`, `q75`, and
+`cnt`. The local table prints `q50` with `+q75/-q25` percentage deltas, the
+plugin performance command recomputes the same quartiles from the raw result
+files across rounds, and the CodeVitals logger uploads `q50`. For Typing with
+the default one round, the main CI number is therefore the median of the 10
+retained event-latency samples, not their arithmetic mean. I still compute the
+mean below because it is useful for outlier sensitivity, but it is not the
+metric CI compares.
 
 To measure the independent variables, I split the default-off controls:
 
@@ -1015,6 +1033,12 @@ one discarded first character.
 
 ![Independent typing-delay/startup-wait elapsed time](figures/88-post-editor-typing-delay-startup-grid-elapsed.png)
 
+![Independent typing-delay/startup-wait mean](figures/89-post-editor-typing-delay-startup-grid-mean.png)
+
+![Independent typing-delay/startup-wait volatility](figures/90-post-editor-typing-delay-startup-grid-volatility.png)
+
+![CI startup-wait runtime model](figures/91-ci-startup-wait-runtime-model.png)
+
 Summary by typing delay:
 
 | Typing delay | Startup waits | Median p50 | p50 range | `0ms` startup | `1000ms` startup | `2000ms` startup |
@@ -1025,21 +1049,47 @@ Summary by typing delay:
 |      `600ms` |          `10` |   `29.1ms` | `21.4-36.0ms` |      `35.3ms` |          `22.4ms` |          `34.4ms` |
 |     `1000ms` |          `10` |   `12.2ms` | `10.9-14.6ms` |      `12.4ms` |          `11.4ms` |          `12.5ms` |
 
-The grid disconfirms a simple "wait `1000ms` before Typing or the metric gets
-worse" story. At `100ms` typing delay, changing startup wait from `0ms` to
-`1000ms` moves p50 by only `+0.6ms`. At the current `1000ms` typing delay,
-`0ms`, `1000ms`, and `2000ms` startup waits are all in the same low band
-(`12.4ms`, `11.4ms`, and `12.5ms`). The large differences come from typing
-delay itself: `400ms` and `600ms` typing delays can be around `20-36ms`, while
-`100ms` and `1000ms` are around `10-14ms` in this run. The `1000ms` typing delay
-is not a neutral "longer sleep"; it is the previously analyzed one-second
-timer-boundary regime.
+The heatmap's p50 is the same statistic CI reports. The grid disconfirms a
+simple "wait `1000ms` before Typing or the metric gets worse" story. At `100ms`
+typing delay, changing startup wait from `0ms` to `1000ms` moves p50 by only
+`+0.6ms`. At the current `1000ms` typing delay, `0ms`, `1000ms`, and `2000ms`
+startup waits are all in the same low band (`12.4ms`, `11.4ms`, and `12.5ms`).
+The corresponding means are `15.5ms`, `12.6ms`, and `14.5ms`; the mean moves
+more because it charges isolated slow samples more heavily than q50. The large
+differences come from typing delay itself: `400ms` and `600ms` typing delays can
+be around `20-36ms`, while `100ms` and `1000ms` are around `10-14ms` in this
+run. The `1000ms` typing delay is not a neutral "longer sleep"; it is the
+previously analyzed one-second timer-boundary regime.
 
-This does not prove every individual startup-wait cell is stable. There is one
-exact run per cell, so some within-band movement is ordinary run volatility.
-But it does show the thing needed for CI-speed reasoning: reducing startup wait
-to `0ms` is not the same as changing typing delay, and with typing delay held
-fixed there is no broad penalty from starting Typing as soon as possible.
+The runtime plot is deterministic, not a statistical estimate. If the explicit
+pre-measurement startup wait changed for the post/site editor performance specs
+and nothing else changed, the normal two-branch CI job would move like this:
+
+| Explicit wait | Two-branch explicit wait total | CI job change vs current |
+| ------------: | -----------------------------: | -----------------------: |
+|         `0ms` |                           `0s` |       `-152s` / `-2.5m` |
+|       `250ms` |                          `38s` |       `-114s` / `-1.9m` |
+|       `500ms` |                          `76s` |        `-76s` / `-1.3m` |
+|      `1000ms` |                         `152s` |           `0s` / `0.0m` |
+|      `1500ms` |                         `228s` |        `+76s` / `+1.3m` |
+|      `2000ms` |                         `304s` |       `+152s` / `+2.5m` |
+|      `5000ms` |                         `760s` |      `+608s` / `+10.1m` |
+
+That table is only the explicit startup/pre-measurement part. The `55s` per
+branch of Typing delay remains unless `PERFORMANCE_TYPING_DELAY_MS` changes, and
+changing that knob changes the benchmark's behavior.
+
+The volatility heatmap gives the within-run reliability view: the coefficient of
+variation is not monotonic in startup wait. For the current `1000ms` typing
+delay, the startup-wait q50 range is `10.9-14.6ms` and CV ranges from `20.5%` to
+`49.6%`; the worst CV cells are `0ms` and `5000ms`, not a clean "less wait is
+less stable" pattern. Grouping all typing delays together is confounded, but it
+shows the same shape: median CV by startup wait ranges from `18.1%` to `28.5%`
+with no monotonic trend. The randomized exact runs above are the run-to-run
+view: four runs each at `0ms`, `1000ms`, and `60000ms` had per-run p50 standard
+deviations of `2.15ms`, `1.11ms`, and `1.98ms`. That small sample does not prove
+that `1000ms` is intrinsically more reliable; it only says that the measured
+latency/stability gain from waiting is smaller than normal run volatility.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
