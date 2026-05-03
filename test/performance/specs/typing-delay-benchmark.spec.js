@@ -50,6 +50,10 @@ const orderMode = process.env.BENCHMARK_ORDER_MODE || 'mixed';
 const delayMode = process.env.BENCHMARK_DELAY_MODE || 'keyboard';
 const postKeyupGapMs = intEnv( 'BENCHMARK_POST_KEYUP_GAP_MS', 0 );
 const scenario = process.env.BENCHMARK_SCENARIO || 'large-post-paragraph';
+const nativeTimerBusyWaitMs = intEnv(
+	'BENCHMARK_NATIVE_TIMER_BUSY_WAIT_MS',
+	0
+);
 const seed = intEnv( 'BENCHMARK_SEED', 51383 );
 const tracePersistence =
 	process.env.BENCHMARK_TRACE_PERSISTENCE === '1' ||
@@ -131,6 +135,7 @@ const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
 	'noop-then-busy-wait-150',
+	'worker-busy-wait-150',
 	'raw-unknown-action',
 	'mark-next-not-persistent',
 	'mark-last-then-mark-next-not-persistent',
@@ -1259,6 +1264,40 @@ test.describe( 'Typing delay benchmark', () => {
 								while ( performance.now() < stopAt ) {}
 							}
 
+							function startWorkerBusyWait( durationMs ) {
+								const startedAtMs = performance.now();
+								const source = `
+							self.onmessage = ( event ) => {
+								const stopAt = performance.now() + event.data.durationMs;
+								while ( performance.now() < stopAt ) {}
+								self.postMessage( {} );
+							};
+						`;
+								const url = URL.createObjectURL(
+									new Blob( [ source ], {
+										type: 'text/javascript',
+									} )
+								);
+								const worker = new Worker( url );
+								worker.onmessage = () => {
+									const finishedAtMs = performance.now();
+									worker.terminate();
+									URL.revokeObjectURL( url );
+									window.__typingBenchmarkMarkPersistentInterventionEvents.push(
+										{
+											nowMs: startedAtMs,
+											durationMs:
+												finishedAtMs - startedAtMs,
+											mode,
+											status: 'worker-returned',
+											before,
+											after: blockEditorSnapshot(),
+										}
+									);
+								};
+								worker.postMessage( { durationMs } );
+							}
+
 							try {
 								if ( mode === 'noop' ) {
 									result = undefined;
@@ -1266,6 +1305,9 @@ test.describe( 'Typing delay benchmark', () => {
 									mode === 'noop-then-busy-wait-150'
 								) {
 									busyWait( 150 );
+									result = undefined;
+								} else if ( mode === 'worker-busy-wait-150' ) {
+									startWorkerBusyWait( 150 );
 									result = undefined;
 								} else if ( mode === 'raw-unknown-action' ) {
 									result = rawDispatch( 'core/block-editor', {
@@ -1867,48 +1909,62 @@ test.describe( 'Typing delay benchmark', () => {
 				await setupRichTextSpanTracingInCurrentContext();
 				await setupDataSpanTracingInCurrentContext();
 				await setupTimerTracing();
-				await page.evaluate( () => {
-					const target = document.getElementById(
-						'typing-benchmark-target'
-					);
-					let timeoutId = null;
-					let isPersistent = true;
+				await page.evaluate(
+					( { busyWaitMs } ) => {
+						const target = document.getElementById(
+							'typing-benchmark-target'
+						);
+						let timeoutId = null;
+						let isPersistent = true;
 
-					window.__typingBenchmarkPersistenceEvents = [];
-					window.__typingBenchmarkNativeState = {
-						isPersistent,
-					};
-
-					target.addEventListener( 'input', () => {
-						isPersistent = false;
+						window.__typingBenchmarkPersistenceEvents = [];
 						window.__typingBenchmarkNativeState = {
 							isPersistent,
 						};
-						window.__typingBenchmarkPersistenceEvents.push( {
-							nowMs: performance.now(),
-							isPersistent,
-							isTyping: true,
-							source: 'native-input',
-						} );
 
-						if ( timeoutId !== null ) {
-							window.clearTimeout( timeoutId );
-						}
-
-						timeoutId = window.setTimeout( () => {
-							isPersistent = true;
+						target.addEventListener( 'input', () => {
+							isPersistent = false;
 							window.__typingBenchmarkNativeState = {
 								isPersistent,
 							};
 							window.__typingBenchmarkPersistenceEvents.push( {
 								nowMs: performance.now(),
 								isPersistent,
-								isTyping: false,
-								source: 'native-timeout',
+								isTyping: true,
+								source: 'native-input',
 							} );
-						}, 1000 );
-					} );
-				} );
+
+							if ( timeoutId !== null ) {
+								window.clearTimeout( timeoutId );
+							}
+
+							timeoutId = window.setTimeout( () => {
+								const startedAtMs = performance.now();
+								isPersistent = true;
+								window.__typingBenchmarkNativeState = {
+									isPersistent,
+								};
+								if ( busyWaitMs > 0 ) {
+									const stopAt =
+										performance.now() + busyWaitMs;
+									while ( performance.now() < stopAt ) {}
+								}
+								window.__typingBenchmarkPersistenceEvents.push(
+									{
+										nowMs: startedAtMs,
+										durationMs:
+											performance.now() - startedAtMs,
+										busyWaitMs,
+										isPersistent,
+										isTyping: false,
+										source: 'native-timeout',
+									}
+								);
+							}, 1000 );
+						} );
+					},
+					{ busyWaitMs: nativeTimerBusyWaitMs }
+				);
 				await setupPersistenceTracing();
 				const dataTracingSetup = await setupDataTracing();
 				await resetEventListenerTracing();

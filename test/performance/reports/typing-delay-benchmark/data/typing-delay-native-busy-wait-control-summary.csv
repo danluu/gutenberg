@@ -1,0 +1,5 @@
+run_id,label,busy_wait_ms,rewrite_timeout_ms,delay_ms,n,rows_with_timer_event,timer_to_current_keydown_p50_ms,timer_end_to_current_keydown_p50_ms,timer_duration_p50_ms,latency_p50_ms,keydown_p50_ms,keypress_p50_ms,keyup_p50_ms
+native_busy_0_timeout_1250_delay_1300,native busy wait 0ms,0,1250,1300,32,32,52.40000009536743,52.40000009536743,0,1.1975,0.0865,0.9524999999999999,0.1535
+native_busy_20_timeout_1230_delay_1300,native busy wait 20ms,20,1230,1300,32,32,71.44999992847443,51.34999990463257,20,0.889,0.056499999999999995,0.7275,0.1435
+native_busy_40_timeout_1210_delay_1300,native busy wait 40ms,40,1210,1300,32,32,90.24999988079071,50.199999928474426,40,0.5700000000000001,0.022,0.4805,0.0595
+native_busy_150_timeout_1100_delay_1300,native busy wait 150ms,150,1100,1300,32,32,199.75,49.75,150,0.48550000000000004,0.0155,0.4195,0.0545

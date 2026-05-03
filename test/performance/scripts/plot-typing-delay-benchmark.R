@@ -3148,6 +3148,7 @@ marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-su
 marker_gap_dense_summary_path <- file.path(data_dir, "typing-delay-marker-gap-dense-paired-summary.csv")
 fixed_hold_timer_rewrite_summary_path <- file.path(data_dir, "typing-delay-fixed-hold-timer-rewrite-paired-summary.csv")
 task_end_proximity_summary_path <- file.path(data_dir, "typing-delay-task-end-proximity-paired-summary.csv")
+native_busy_wait_control_summary_path <- file.path(data_dir, "typing-delay-native-busy-wait-control-summary.csv")
 marker_intervention_levels <- c(
 	"normal marker",
 	"marker no-op",
@@ -3470,6 +3471,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						"busy wait 20ms",
 						"busy wait 40ms",
 						"no-op + busy wait 150ms",
+						"worker busy wait 150ms",
 						"normal marker + busy wait 150ms",
 						"stop/start + busy wait 150ms"
 					)
@@ -3480,17 +3482,17 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				rewrite_timeout_ms,
 				intervention_end_to_current_keydown_p50_ms,
 				`next EventDispatch only` = latency_p50_ms,
-				`timer callback + next EventDispatch` = intervention_inclusive_latency_p50_ms
+				`timer/worker work + next EventDispatch` = intervention_inclusive_latency_p50_ms
 			) %>%
 			pivot_longer(
-				cols = c(`next EventDispatch only`, `timer callback + next EventDispatch`),
+				cols = c(`next EventDispatch only`, `timer/worker work + next EventDispatch`),
 				names_to = "metric",
 				values_to = "duration_ms"
 			) %>%
 			mutate(
 				metric = factor(
 					metric,
-					levels = c("next EventDispatch only", "timer callback + next EventDispatch")
+					levels = c("next EventDispatch only", "timer/worker work + next EventDispatch")
 				)
 			)
 
@@ -3512,14 +3514,15 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					`busy wait 20ms` = 3,
 					`busy wait 40ms` = 8,
 					`no-op + busy wait 150ms` = 4,
+					`worker busy wait 150ms` = 7,
 					`normal marker + busy wait 150ms` = 16,
 					`stop/start + busy wait 150ms` = 15
 				), drop = FALSE) +
 				scale_x_continuous(breaks = c(0, 50, 100, 150, 200)) +
 				labs(
-					title = "A long timer task can also make the next event slice fast",
-					subtitle = "Fixed 1300ms key hold; no-op busy wait changes no Gutenberg selector snapshot",
-					x = "Timer task end to following keydown, p50 (ms)",
+					title = "Recent timer-side work can make the next event slice fast",
+					subtitle = "Fixed 1300ms key hold; worker and no-op busy-wait variants change no Gutenberg selector snapshot",
+					x = "Timer-side work end to following keydown, p50 (ms)",
 					y = "Duration, p50 (ms)",
 					color = "Timer callback",
 					shape = "Timer callback"
@@ -3527,6 +3530,43 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			"50-task-end-proximity.png",
 			width = 11,
 			height = 8
+		)
+	}
+
+	if (file.exists(native_busy_wait_control_summary_path)) {
+		native_busy_wait_control <- read_csv(native_busy_wait_control_summary_path, show_col_types = FALSE) %>%
+			mutate(
+				busy_wait_label = factor(
+					paste0(busy_wait_ms, "ms"),
+					levels = paste0(sort(unique(busy_wait_ms)), "ms")
+				)
+			)
+
+		save_plot(
+			ggplot(
+				native_busy_wait_control,
+				aes(
+					busy_wait_ms,
+					latency_p50_ms,
+					color = busy_wait_label,
+					shape = busy_wait_label
+				)
+			) +
+				geom_point(size = 3.6, alpha = 0.95) +
+				scale_color_brewer(type = "seq", palette = "Blues", direction = 1, drop = FALSE) +
+				scale_shape_manual(values = c(`0ms` = 16, `20ms` = 17, `40ms` = 15, `150ms` = 18), drop = FALSE) +
+				scale_x_continuous(breaks = c(0, 20, 40, 150)) +
+				labs(
+					title = "A native contenteditable shows only a tiny busy-timer effect",
+					subtitle = "Fixed 1300ms key hold; timer rewritten so each busy wait ends about 50ms before keydown",
+					x = "Native timer busy wait duration (ms)",
+					y = "Next key event-only duration, p50 (ms)",
+					color = "Busy wait",
+					shape = "Busy wait"
+				),
+			"51-native-busy-wait-control.png",
+			width = 9,
+			height = 5.5
 		)
 	}
 }

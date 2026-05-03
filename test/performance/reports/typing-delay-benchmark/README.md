@@ -42,13 +42,13 @@ The short version:
     They also disconfirm the stronger old claim that the real persistence marker
     is uniquely necessary. A timer callback that does `stopTyping(); startTyping()`
     also produces the low EventDispatch band at `1000ms` / `1010ms`.
--   The common feature of the fast intervention cases is timer-side
-    `core/block-editor` subscriber fanout before the next key, not specifically
-    `MARK_LAST_CHANGE_AS_PERSISTENT`, and not just any action. The
-    `__unstableMarkNextChangeAsNotPersistent()` replacement is a real action but
-    has near-zero callback cost and stays slow. Pure timer-task duration is also
-    not enough: `20ms` and `40ms` busy-wait callbacks only partly lower the
-    `1000ms` event-only p50, to `17.7ms` and `16.1ms`.
+-   Among the short synchronous action interventions, the common fast-case
+    feature is timer-side `core/block-editor` subscriber fanout before the next
+    key, not specifically `MARK_LAST_CHANGE_AS_PERSISTENT`, and not just any
+    action. The `__unstableMarkNextChangeAsNotPersistent()` replacement is a
+    real action but has near-zero callback cost and stays slow. Short pure timer
+    work only partly lowers the `1000ms` event-only p50: `20ms` and `40ms`
+    busy-wait callbacks land at `17.7ms` and `16.1ms`.
 -   A raw-dispatch control makes that sharper. The benchmark exposed the
     registry's raw `store.dispatch()` in-page and dispatched an unknown
     `core/block-editor` action from the timer callback. That action left the
@@ -77,12 +77,23 @@ The short version:
     EventDispatch slice fast if the long timer task ends about `51ms` before
     keydown (`11.3ms` p50). The same no-op busy wait ending about `151ms` before
     keydown is intermediate (`15.1ms` p50), and a zero-duration no-op ending
-    about `53ms` before keydown is slow (`24.6ms` p50). The current best model is
-    therefore recent main-thread activity / scheduler state plus Gutenberg input
-    work, not a purely semantic editor-state transition. A small duration sweep
-    supports that: pure `20ms`, `40ms`, and `150ms` busy waits ending about
-    `51ms` before keydown had event-only p50s of `21.0ms`, `14.1ms`, and
-    `11.3ms`.
+    about `53ms` before keydown is slow (`24.6ms` p50). A small duration sweep
+    supports a duration/proximity effect: pure `20ms`, `40ms`, and `150ms`
+    busy waits ending about `51ms` before keydown had event-only p50s of
+    `21.0ms`, `14.1ms`, and `11.3ms`.
+-   A Web Worker version pushes that further. The timer callback itself is only
+    about `1.4ms` p50, then a worker spins for about `159ms` and returns roughly
+    `41ms` before keydown; the following Gutenberg EventDispatch p50 is still
+    low (`10.5ms`). When the same worker finishes about `141ms` before keydown,
+    the p50 is intermediate (`14.9ms`). That disconfirms "long main-thread timer
+    task is required" and points instead to recent browser/CPU/scheduler state
+    interacting with Gutenberg's input path.
+-   A native `contenteditable` busy-timer control shows the browser-level effect
+    exists but is tiny in absolute terms. With native timer work ending about
+    `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
+    wait to `0.49ms` with a `150ms` busy wait. That is the same direction, but
+    it does not explain the Gutenberg-sized `~10-25ms` differences without
+    Gutenberg's heavier editor input path.
 -   Splitting the measured key into `keydown`, `keypress`, and `keyup` shows
     that the intervention gap is almost entirely in the measured `keypress`
     component.
@@ -322,6 +333,9 @@ The R script derives:
 -   `data/typing-delay-task-end-proximity-paired-*.csv`: fixed `1300ms`
     key-hold traces that separate timer-task start, timer-task end, and
     following-key timing.
+-   `data/typing-delay-native-busy-wait-control-*.csv`: native
+    `contenteditable` controls with the same timer-end proximity but different
+    timer busy-wait durations.
 -   `data/typing-delay-timeout-970-marker-paired-*.csv`: the same paired
     accounting for a targeted run that rewrites Gutenberg's `1000ms` timers to
     `970ms`.
@@ -1103,6 +1117,9 @@ event-only measurement. The new intervention modes are deliberately artificial:
     just hold the timer task open for `150ms`.
 -   `busy-wait-20` and `busy-wait-40`: hold the timer task open for shorter
     pure-JS intervals and schedule them to end near the same following keydown.
+-   `worker-busy-wait-150`: start a Web Worker from the timer callback and have
+    the worker spin for `150ms`; the timer callback itself returns quickly and
+    the worker completion is recorded separately.
 -   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
     open for `150ms`.
 -   `stop-start-typing-then-busy-wait-150`: run the stop/start typing
@@ -1119,6 +1136,8 @@ Selected p50s:
 | busy wait `20ms`               |      `1230ms` |            `51.0ms` |       `21.0ms` |       `20.0ms` |            `40.1ms` |
 | busy wait `40ms`               |      `1210ms` |            `50.6ms` |       `14.1ms` |       `40.0ms` |            `53.8ms` |
 | no-op + busy wait `150ms`      |      `1100ms` |            `51.0ms` |       `11.3ms` |      `150.0ms` |           `161.0ms` |
+| worker busy wait `150ms`       |      `1000ms` |           `141.1ms` |       `14.9ms` |      `161.1ms` |           `176.1ms` |
+| worker busy wait `150ms`       |      `1100ms` |            `41.2ms` |       `10.5ms` |      `160.1ms` |           `170.4ms` |
 | normal marker + busy wait      |      `1100ms` |            `37.2ms` |        `8.5ms` |      `162.8ms` |           `170.9ms` |
 | stop/start typing + busy wait  |      `1100ms` |            `30.9ms` |        `8.1ms` |      `170.0ms` |           `177.7ms` |
 
@@ -1134,17 +1153,40 @@ The updated model is narrower and less semantic:
 2. A short effective block-editor fanout close to keydown is sufficient.
 3. A long pure-JS timer task close to keydown is also sufficient, even with no
    Gutenberg state transition.
-4. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
+4. A long off-main-thread worker spin is also sufficient when it finishes close
+   to keydown. The timer callback that starts the worker is only `~1.4ms` p50,
+   so the long work does not have to be a long blocking timer callback.
+5. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
    `20ms`, `40ms`, and `150ms` pure busy waits form a descending event-only
    sequence: `21.0ms`, `14.1ms`, and `11.3ms`.
-5. The effect decays with distance from the following key: no-op + `150ms` busy
+6. The effect decays with distance from the following key: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
-   around `51ms` before keydown is in the low band.
+   around `51ms` before keydown is in the low band. The worker control shows the
+   same shape: `14.9ms` when it ends around `141ms` before keydown, and
+   `10.5ms` when it ends around `41ms` before keydown.
 
 That points away from a purely Gutenberg-state explanation and toward
-main-thread / browser scheduler / CPU-state sensitivity around Gutenberg's input
-path. It still does not mean the benchmarked character cycle got cheaper. The
-timer-inclusive values for the artificial busy-wait rows are `161-178ms`.
+browser scheduler / CPU-state sensitivity around Gutenberg's input path. It
+still does not mean the benchmarked character cycle got cheaper. The
+timer/worker-inclusive values for the artificial busy-wait rows are `161-178ms`.
+
+I also added a native `contenteditable` control with the same rewritten
+one-second timer and the same `1300ms` key hold:
+
+![Native busy-wait control](figures/51-native-busy-wait-control.png)
+
+| Native timer work | Timer end to keydown | Event-only p50 |
+| ----------------: | -------------------: | -------------: |
+|              `0ms` |             `52.4ms` |        `1.20ms` |
+|             `20ms` |             `51.3ms` |        `0.89ms` |
+|             `40ms` |             `50.2ms` |        `0.57ms` |
+|            `150ms` |             `49.8ms` |        `0.49ms` |
+
+The native control moves in the same direction, but the absolute scale is tiny:
+less than `1ms` separates the zero-work and `150ms` cases. This disconfirms a
+purely native-browser explanation for the Gutenberg cliff. The browser/CPU
+state appears to modulate the cost, but the large visible swing needs
+Gutenberg's much heavier input path to amplify it.
 
 The `stopTyping()` result has a direct code-level explanation. `ObserveTyping`
 installs different DOM listeners depending on `isTyping`: when typing is true,
@@ -1276,17 +1318,19 @@ benchmark's next-input EventDispatch window.
 | stop typing                          | `1000ms` |               `30` |       `26.8ms` |           `14.9ms` |            `41.6ms` |
 | stop/start typing                    | `1000ms` |               `30` |       `11.0ms` |           `22.7ms` |            `34.1ms` |
 
-So the confirmed mechanism is narrower and more concrete than the earlier
+This targeted `1000ms` table adds several constraints to the earlier
 explanation:
 
 1. The `1000ms` timer controls whether a callback can run between two text
    updates.
-2. The callback must do more than exist and more than burn CPU time to reproduce
-   the large low band. A no-op callback does not; the cheap
-   `mark-next-not-persistent` replacement does not; the busy-wait callbacks only
-   partially reduce the next EventDispatch slice.
+2. A zero-duration callback is not enough, and a cheap real action is not
+   enough. The cheap `mark-next-not-persistent` replacement does not reproduce
+   the low band; the `20ms` and `40ms` busy-wait callbacks only partially reduce
+   the next EventDispatch slice. The later task-end and worker controls refine
+   this: longer recent work can reproduce the low event-only band without a
+   Gutenberg state transition.
 3. A completed timer-side block-editor state transition with restored final
-   state explains most of the drop. Generic restored state toggles lower the
+   state is sufficient, not necessary. Generic restored state toggles lower the
    `1000ms` event-only p50 to about `14-15ms` while staying on the `onInput`
    path.
 4. Restoring the normal pre-key typing state explains the `stopTyping()` probe
@@ -2503,12 +2547,16 @@ at `2000ms`, it fired about `1001ms` before the previous `keyup`. Even so,
 `keypress` dispatch stayed around `1ms`.
 
 That rules out a pure Chromium/Playwright explanation for the Gutenberg plateau.
-The current best model is:
+The current model is:
 
 1. Playwright's delay creates an unrealistic long-held key.
 2. Gutenberg's rich-text persistence timer fires while that key is still held.
-3. The next synthetic keypress then runs a slower Gutenberg editor path, visible
-   mostly as `keypress` `EventDispatch` duration.
+3. The next synthetic keypress runs Gutenberg's heavier editor input path,
+   visible mostly as `keypress` `EventDispatch` duration.
+4. Recent timer-side work near the next key modulates that measured path. Later
+   task-end, worker, and native busy-timer controls show this modulation is not
+   purely semantic editor state, but Gutenberg's editor stack is needed for the
+   large absolute swing.
 
 This is narrower than the previous conclusion. The timer/key-hold timing is a
 necessary diagnostic signal in the Gutenberg traces, but not sufficient without
@@ -3163,10 +3211,18 @@ The key runs used in this report were:
     `task_end_busy_20_timeout_1230_delay_1300`,
     `task_end_busy_40_timeout_1210_delay_1300`,
     `task_end_noop_busy_150_timeout_1100_delay_1300`,
+    `task_end_worker_busy_150_timeout_1000_delay_1300`,
+    `task_end_worker_busy_150_timeout_1100_delay_1300`,
     `task_end_normal_busy_150_timeout_1100_delay_1300`, and
     `task_end_stop_start_busy_150_timeout_1100_delay_1300`: fixed `1300ms`
-    key-hold traces that test whether a long timer task ending close to the next
-    key can reproduce the low event-only slice without changing Gutenberg state.
+    key-hold traces that test whether recent timer-side work ending close to the
+    next key can reproduce the low event-only slice without changing Gutenberg
+    state.
+-   `native_busy_0_timeout_1250_delay_1300`,
+    `native_busy_20_timeout_1230_delay_1300`,
+    `native_busy_40_timeout_1210_delay_1300`, and
+    `native_busy_150_timeout_1100_delay_1300`: native `contenteditable`
+    controls with a rewritten one-second timer and fixed `1300ms` key hold.
 -   `redux_listener_owner_normal_1000`, `redux_listener_owner_noop_1000`,
     `redux_listener_owner_next_not_persistent_1000`: reduced `1000ms`
     owner-attribution runs with diagnostic `useSelectId` metadata propagated to
