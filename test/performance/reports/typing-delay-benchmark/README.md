@@ -1130,31 +1130,30 @@ delay, the startup-wait q50 range is `10.9-14.6ms` and CV ranges from `20.5%` to
 `49.6%`; the worst CV cells are `0ms` and `5000ms`, not a clean "less wait is
 less stable" pattern. Grouping all typing delays together is confounded, but it
 shows the same shape: median CV by startup wait ranges from `18.1%` to `28.5%`
-with no monotonic trend. The randomized exact runs above are the run-to-run
-view: four runs each at `0ms`, `1000ms`, and `60000ms` had per-run p50 standard
-deviations of `2.15ms`, `1.11ms`, and `1.98ms`. That small sample does not prove
-that `1000ms` is intrinsically more reliable; it only says that the measured
-latency/stability gain from waiting is smaller than normal run volatility.
+with no monotonic trend. The randomized exact runs above are one run-to-run view:
+four runs each at `0ms`, `1000ms`, and `60000ms` had per-run p50 standard
+deviations of `2.15ms`, `1.11ms`, and `1.98ms`. The selected rows below use the
+newer CI-comparable saved/reopened draft startup-wait curve instead, because that
+run has eight repeated drafts at every listed startup wait.
 
 Selected tradeoff rows:
 
-| Explicit wait | Two-branch runtime delta | q50 at current `1000ms` typing delay | CV at current `1000ms` typing delay | Median CV across tested typing delays | Repeated-run q50 sd |
-| ------------: | -----------------------: | -----------------------------------: | ----------------------------------: | ------------------------------------: | -----------------: |
-|         `0ms` |       `-152s` / `-2.5m` |                             `12.4ms` |                               `49%` |                                 `27%` |            `2.15ms` |
-|       `500ms` |        `-76s` / `-1.3m` |                             `13.0ms` |                               `26%` |                                 `25%` |                `NA` |
-|      `1000ms` |           `0s` / `0.0m` |                             `11.4ms` |                               `24%` |                                 `24%` |            `1.11ms` |
-|      `2000ms` |       `+152s` / `+2.5m` |                             `12.5ms` |                               `26%` |                                 `18%` |                `NA` |
-|      `5000ms` |      `+608s` / `+10.1m` |                             `12.4ms` |                               `50%` |                                 `23%` |                `NA` |
-|     `60000ms` |    `+8968s` / `+149.5m` |                                 `NA` |                                `NA` |                                  `NA` |            `1.98ms` |
+| Explicit wait | Two-branch runtime delta | CI-comparable reported q50 | Run-to-run q50 sd | Run-to-run q50 range | Repeated runs |
+| ------------: | -----------------------: | -------------------------: | ----------------: | -------------------: | ------------: |
+|         `0ms` |       `-152s` / `-2.5m` |                  `16.46ms` |          `0.53ms` |             `1.41ms` |           `8` |
+|       `500ms` |        `-76s` / `-1.3m` |                  `16.49ms` |          `1.19ms` |             `2.90ms` |           `8` |
+|      `1000ms` |           `0s` / `0.0m` |                  `16.14ms` |          `0.80ms` |             `2.64ms` |           `8` |
+|      `2000ms` |       `+152s` / `+2.5m` |                  `16.05ms` |          `1.02ms` |             `2.93ms` |           `8` |
+|      `5000ms` |      `+608s` / `+10.1m` |                  `17.31ms` |          `1.72ms` |             `4.72ms` |           `8` |
+|     `60000ms` |    `+8968s` / `+149.5m` |                  `15.79ms` |          `1.02ms` |             `3.09ms` |           `8` |
 
-The `NA` values are intentional. The dense startup-wait grid measured every
-listed wait through `5000ms` once per typing delay, which gives within-run
-sample volatility but not repeated-job variance. The randomized repeated exact
-run measured only `0ms`, `1000ms`, and `60000ms`, which is why only those rows
-have repeated-run q50 standard deviations. The data therefore supports a
-runtime conclusion more strongly than a reliability ranking: lowering the
-explicit startup wait saves wall time linearly, while the available variance
-measurements do not show a monotonic reliability benefit from waiting longer.
+No new benchmark run was necessary for these cells; they were already present in
+the repeated CI-comparable startup-wait curve. The runtime conclusion is still
+stronger than the reliability ranking: lowering the explicit startup wait saves
+wall time linearly, while the repeated-run measurements do not show a monotonic
+reliability benefit from waiting longer. This does not answer whether every
+non-Typing metric in the performance suite would be equally stable; that needs
+metric-specific repeated runs.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark

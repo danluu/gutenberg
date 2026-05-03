@@ -1925,7 +1925,7 @@ if (file.exists(typing_delay_startup_summary_path)) {
 	)
 
 	startup_wait_runtime_model <- tibble(
-		startup_wait_ms = c(0, 50, 100, 250, 500, 750, 1000, 1500, 2000, 5000, 60000),
+		startup_wait_ms = c(0, 50, 100, 250, 500, 750, 1000, 1500, 2000, 5000, 10000, 30000, 60000),
 		explicit_wait_occurrences_per_branch = 76,
 		normal_ci_compared_branches = 2
 	) %>%
@@ -2016,11 +2016,48 @@ if (file.exists(typing_delay_startup_summary_path)) {
 			run_to_run_suite_elapsed_median_s = numeric()
 		)
 	}
+	startup_wait_run_to_run_ci_comparable_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-draft-summary.csv")
+	startup_wait_run_to_run_ci_comparable <- if (file.exists(startup_wait_run_to_run_ci_comparable_path)) {
+		read_csv(startup_wait_run_to_run_ci_comparable_path, show_col_types = FALSE) %>%
+			group_by(startup_wait_ms = settle_after_editor_setup_ms) %>%
+			summarize(
+				ci_comparable_runs = n(),
+				ci_comparable_q50_median_ms = median(retained_latency_p50_ms),
+				ci_comparable_q50_mean_ms = mean(retained_latency_p50_ms),
+				ci_comparable_q50_sd_ms = sd(retained_latency_p50_ms),
+				ci_comparable_q50_range_ms = max(retained_latency_p50_ms) - min(retained_latency_p50_ms),
+				ci_comparable_mean_median_ms = median(retained_latency_mean_ms),
+				ci_comparable_run_duration_median_s = median(run_duration_ms) / 1000,
+				.groups = "drop"
+			)
+	} else {
+		tibble(
+			startup_wait_ms = numeric(),
+			ci_comparable_runs = numeric(),
+			ci_comparable_q50_median_ms = numeric(),
+			ci_comparable_q50_mean_ms = numeric(),
+			ci_comparable_q50_sd_ms = numeric(),
+			ci_comparable_q50_range_ms = numeric(),
+			ci_comparable_mean_median_ms = numeric(),
+			ci_comparable_run_duration_median_s = numeric()
+		)
+	}
 
 	startup_wait_tradeoff <- startup_wait_runtime_model %>%
 		left_join(startup_wait_reliability_current_delay, by = "startup_wait_ms") %>%
 		left_join(startup_wait_reliability_all_delays, by = "startup_wait_ms") %>%
-		left_join(startup_wait_run_to_run, by = "startup_wait_ms")
+		left_join(startup_wait_run_to_run, by = "startup_wait_ms") %>%
+		left_join(startup_wait_run_to_run_ci_comparable, by = "startup_wait_ms") %>%
+		mutate(
+			filled_run_to_run_runs = coalesce(ci_comparable_runs, run_to_run_exact_runs),
+			filled_run_to_run_q50_sd_ms = coalesce(ci_comparable_q50_sd_ms, run_to_run_ci_q50_sd_ms),
+			filled_run_to_run_q50_range_ms = coalesce(ci_comparable_q50_range_ms, run_to_run_ci_q50_range_ms),
+			filled_run_to_run_source = case_when(
+				!is.na(ci_comparable_q50_sd_ms) ~ "CI-comparable saved/reopened draft curve",
+				!is.na(run_to_run_ci_q50_sd_ms) ~ "exact post-editor randomized run",
+				TRUE ~ NA_character_
+			)
+		)
 	write_csv(startup_wait_tradeoff, file.path(data_dir, "typing-delay-ci-startup-wait-runtime-reliability.csv"))
 
 	startup_wait_tradeoff_plot <- startup_wait_tradeoff %>%
