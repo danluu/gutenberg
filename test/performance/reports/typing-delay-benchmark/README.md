@@ -65,7 +65,11 @@ The short version:
     discarded first character and the first retained character are slow, while
     retained characters 2-10 are already in the ordinary low band. A blocked
     `60s`, `0ms`, `60s`, `0ms` order-control run confirms this is not just
-    monotonic run-order drift.
+    monotonic run-order drift. Recomputing the CI-comparable metric after
+    discarding `0..4` initial keypresses shows that the current q50 is robust to
+    the slow first retained key: dropping that key too changes the median q50 by
+    only `-0.16ms` across startup waits, while the median mean and p90 move by
+    `-0.85ms` and `-1.51ms`.
 -   I also ran the actual `post-editor.spec.js` Typing setup/run tests with a
     default-off env-controlled start wait. The exact CI test shape agrees with
     the custom CI-comparable benchmark: blocked `60s`, `0ms`, `60s`, `0ms`
@@ -901,6 +905,8 @@ cross-run p50 difference.
 
 ![CI-comparable start-wait keypress p10-p90](figures/78c-ci-comparable-start-wait-keypress-p10-p90.png)
 
+![CI-comparable start-wait discard policy](figures/78d-ci-comparable-start-wait-discard-policy.png)
+
 ![CI-comparable start-wait phases](figures/79-ci-comparable-start-wait-phases.png)
 
 ![CI-comparable start-wait per draft](figures/80-ci-comparable-start-wait-per-draft.png)
@@ -934,6 +940,16 @@ early retained sample affects means and p90s more than p50s. Changing the start
 wait does not remove that shape; it just moves idle time before the sequence.
 The raw box/point plot also shows the few large outliers: they are isolated and
 mostly on the discarded first keypress, not a monotonic startup-wait effect.
+
+I then recomputed the same CI-comparable per-run metrics under alternate
+throwaway policies. The current Typing metric discards one keypress and reports
+the q50 of the remaining 10. If it also discarded keypress 2, the median q50
+across startup waits would move by only `-0.16ms`; the median run-to-run q50 sd
+would move by only `-0.04ms`. The mean and p90 are more sensitive: the same
+extra discard lowers the median mean by `0.85ms` and the median p90 by `1.51ms`.
+So the slow first retained key is mostly hidden from the q50 pass/fail statistic
+but still visible in tail/mean views. That answers the CI-statistic question; it
+does not make the first input after idle unimportant for user experience.
 
 Per-draft summaries also show no monotonic start-wait effect hiding under the
 aggregate p50. Fitting per-draft retained p50 against `log10(wait + 100ms)` gives
@@ -4193,6 +4209,39 @@ failure-oriented ways to read the data.
 -   Do not assume representativeness. Vanilla Core, a large fixture, a synthetic
     thousand-paragraph post, and plugin-heavy editors can all expose different
     behavior.
+
+## Open Questions Status
+
+The latest pass closes one small but important CI question: the slow first
+retained keypress does not materially drive the reported q50 in the
+CI-comparable Typing curve. It does affect tail/mean views, which is why the
+per-keypress distribution and discard-policy sensitivity plots should stay in
+the report. The current q50 can therefore look stable even though the beginning
+of the input sequence is not representative of steady repeated typing.
+
+The startup-wait result is now strong for Typing and weak for everything else.
+The exact and CI-comparable Typing runs say that adding post-setup wait does not
+buy retained Typing stability, and reducing the current extra post-setup wait
+cannot speed up Typing because that knob is already `0ms`. But the broader
+performance suite still has non-Typing metrics with explicit sleeps. The current
+data models their wall-clock cost; it does not prove that every non-Typing metric
+is stable if those sleeps are removed. That remains a metric-specific repeated
+run question.
+
+The key-hold `1000ms` / `1300ms` explanation is narrower than the original
+Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,
+but recent ordinary/utility CPU activity can move that measured path between
+slow and fast bands without changing the DOM event payload or Gutenberg's coarse
+state at keydown. The remaining mechanism is below this benchmark's normal JS
+instrumentation: likely CPU/QoS/power-state interaction with a broad Gutenberg
+input path, not one bad selector or one browser trace accounting quirk. Proving
+that final layer would need hardware/browser-level instrumentation, not another
+small variation of the JS benchmark.
+
+The most user-facing open question is still input-to-paint. This report mostly
+measures trace/listener/event slices. That is good for attribution, but it does
+not say how much of the measured difference reaches the screen, especially after
+layout/paint/compositing and React rendering.
 
 ## Recommendations
 

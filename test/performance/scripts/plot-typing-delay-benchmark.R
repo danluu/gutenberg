@@ -1604,6 +1604,94 @@ if (
 			width = 11.5,
 			height = 8.6
 		)
+
+		ci_start_wait_discard_policy <- crossing(
+			discard_initial_keypresses = 0:4,
+			ci_start_wait_keypress_samples
+		) %>%
+			filter(sample_index >= discard_initial_keypresses) %>%
+			group_by(
+				startup_wait_ms,
+				wait_label,
+				discard_initial_keypresses,
+				run_id,
+				round,
+				editor_setup_index
+			) %>%
+			summarize(
+				retained_keypresses = n(),
+				run_latency_p50_ms = median(latency_ms),
+				run_latency_mean_ms = mean(latency_ms),
+				run_latency_p90_ms = quant(latency_ms, 0.9),
+				.groups = "drop"
+			) %>%
+			group_by(startup_wait_ms, wait_label, discard_initial_keypresses) %>%
+			summarize(
+				run_count = n(),
+				retained_keypresses = median(retained_keypresses),
+				reported_q50_median_ms = median(run_latency_p50_ms),
+				reported_q50_sd_ms = sd(run_latency_p50_ms),
+				reported_mean_median_ms = median(run_latency_mean_ms),
+				reported_p90_median_ms = median(run_latency_p90_ms),
+				.groups = "drop"
+			)
+		write_csv(
+			ci_start_wait_discard_policy,
+			file.path(data_dir, "typing-delay-ci-comparable-start-wait-discard-policy-summary.csv")
+		)
+
+		ci_start_wait_discard_policy_plot <- ci_start_wait_discard_policy %>%
+			filter(startup_wait_ms %in% c(0, 500, 1000, 2000, 5000, 60000)) %>%
+			mutate(
+				wait_label = fct_drop(wait_label),
+				discard_label = factor(
+					discard_initial_keypresses,
+					levels = 0:4,
+					labels = c("0", "1\ncurrent", "2", "3", "4")
+				)
+			) %>%
+			select(
+				wait_label,
+				discard_label,
+				`reported q50 median (ms)` = reported_q50_median_ms,
+				`reported mean median (ms)` = reported_mean_median_ms,
+				`reported p90 median (ms)` = reported_p90_median_ms,
+				`run-to-run q50 sd (ms)` = reported_q50_sd_ms
+			) %>%
+			pivot_longer(
+				cols = -c(wait_label, discard_label),
+				names_to = "metric",
+				values_to = "value"
+			) %>%
+			mutate(
+				metric = factor(
+					metric,
+					levels = c(
+						"reported q50 median (ms)",
+						"reported mean median (ms)",
+						"reported p90 median (ms)",
+						"run-to-run q50 sd (ms)"
+					)
+				)
+			)
+
+		save_plot(
+			ggplot(ci_start_wait_discard_policy_plot, aes(discard_label, value, color = wait_label, shape = wait_label)) +
+				geom_point(size = 2.4, alpha = 0.9) +
+				facet_wrap(vars(metric), ncol = 2, scales = "free_y") +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				labs(
+					title = "Discard policy changes tails more than the reported q50",
+					subtitle = "CI-comparable start-wait curve; each point summarizes 8 saved/reopened drafts per wait",
+					x = "Initial keypresses discarded before computing the run metric",
+					y = NULL,
+					color = "Start wait",
+					shape = "Start wait"
+				),
+			"78d-ci-comparable-start-wait-discard-policy.png",
+			width = 10.8,
+			height = 7
+		)
 	}
 
 	ci_start_wait_phases <- read_csv(ci_start_wait_curve_phases_path, show_col_types = FALSE) %>%
