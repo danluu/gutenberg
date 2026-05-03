@@ -4208,4 +4208,84 @@ if (file.exists(redux_listener_owner_summary_path)) {
 	)
 }
 
+if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
+	use_select_phase_accounting <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			)
+		)
+
+	use_select_phase_accounting <- bind_rows(
+		use_select_phase_accounting %>%
+			transmute(
+				intervention,
+				accounting_window = "next input only",
+				`rootSubscribe total` = root_subscribe_duration_p50_ms,
+				`Redux listener wrappers` = redux_listener_duration_p50_ms,
+				`useSelect.onChange` = use_select_on_change_duration_p50_ms,
+				`useSelect.mapSelect` = use_select_map_select_duration_p50_ms
+			),
+		use_select_phase_accounting %>%
+			transmute(
+				intervention,
+				accounting_window = "timer marker before input",
+				`rootSubscribe total` = marker_root_subscribe_duration_p50_ms,
+				`Redux listener wrappers` = marker_redux_listener_duration_p50_ms,
+				`useSelect.onChange` = marker_use_select_on_change_duration_p50_ms,
+				`useSelect.mapSelect` = marker_use_select_map_select_duration_p50_ms
+			),
+		use_select_phase_accounting %>%
+			transmute(
+				intervention,
+				accounting_window = "timer + next input",
+				`rootSubscribe total` = cycle_root_subscribe_duration_p50_ms,
+				`Redux listener wrappers` = cycle_redux_listener_duration_p50_ms,
+				`useSelect.onChange` = cycle_use_select_on_change_duration_p50_ms,
+				`useSelect.mapSelect` = cycle_use_select_map_select_duration_p50_ms
+			)
+	) %>%
+		pivot_longer(
+			cols = -c(intervention, accounting_window),
+			names_to = "metric",
+			values_to = "duration_p50_ms"
+		) %>%
+		mutate(
+			accounting_window = factor(
+				accounting_window,
+				levels = c("next input only", "timer marker before input", "timer + next input")
+			),
+			metric = factor(
+				metric,
+				levels = rev(c("rootSubscribe total", "Redux listener wrappers", "useSelect.onChange", "useSelect.mapSelect"))
+			)
+		)
+
+	write_csv(use_select_phase_accounting, file.path(data_dir, "typing-delay-use-select-phase-accounting.csv"))
+
+	save_plot(
+		ggplot(use_select_phase_accounting, aes(duration_p50_ms, metric, color = intervention, shape = intervention)) +
+			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.5)) +
+			facet_wrap(vars(accounting_window), ncol = 1, scales = "free_x") +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "The input-side gap is not mostly selector recomputation",
+				subtitle = "Trace-all-data-spans run at 1000ms; mapSelect moves little while listener/rootSubscribe accounting moves more",
+				x = "Duration, p50 (ms)",
+				y = NULL,
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			),
+		"44-use-select-phase-accounting.png",
+		width = 11,
+		height = 8
+	)
+}
+
 message("Wrote plots to: ", figure_dir)

@@ -238,6 +238,9 @@ The R script derives:
     from the low-level Redux listener owner samples.
 -   `data/typing-delay-redux-listener-owner-family-summary.csv`: owner-family
     grouping for the same low-level Redux listener owner data.
+-   `data/typing-delay-use-select-phase-accounting.csv`: trace-all-data-spans
+    comparison of rootSubscribe, Redux listener wrappers, `useSelect.onChange`,
+    and `useSelect.mapSelect`.
 -   `data/typing-delay-marker-richtext-summary.csv`: RichText span summaries for
     the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
@@ -1346,6 +1349,40 @@ timing explanation, a single pathological selector, or unusually slow callback
 bodies. It also does not support "the marker makes the whole cycle cheaper";
 the marker task itself is expensive and is outside the next input's event-only
 metric.
+
+I then split the all-data-span trace by data-layer phase to test whether the
+input-side gap is mostly selector recomputation.
+
+![useSelect phase accounting](figures/44-use-select-phase-accounting.png)
+
+For the following input only:
+
+| Metric                       | normal marker | marker no-op | mark next |
+| ---------------------------- | ------------: | -----------: | --------: |
+| block-editor `rootSubscribe` |       `6.4ms` |      `9.3ms` |   `8.4ms` |
+| Redux listener wrappers      |       `4.6ms` |      `7.3ms` |   `6.2ms` |
+| `useSelect.onChange`         |       `7.0ms` |      `8.0ms` |   `7.5ms` |
+| `useSelect.mapSelect`        |       `3.3ms` |      `3.5ms` |   `2.8ms` |
+| `useSelect.onChange` calls   |       `4,544` |      `4,544` |   `4,544` |
+| `useSelect.mapSelect` calls  |         `716` |        `716` |     `716` |
+
+This disconfirms two more theories:
+
+-   The slower input-side path is not caused by running many more `useSelect`
+    callbacks. The `onChange` and `mapSelect` counts are identical across the
+    three interventions in this trace-heavy run.
+-   The slower input-side path is not mostly selector-body recomputation. The
+    no-op run's `mapSelect` p50 is only `0.2ms` higher than normal, and
+    mark-next's is lower than normal. The larger movement is in
+    `rootSubscribe` and Redux listener-wrapper accounting.
+
+The more precise statement is: the same broad listener set is reached, but the
+slower paths have more measurable work around the listener invalidation /
+notification layer, while selector recomputation itself is a smaller and less
+consistent contributor. That fits the owner-family results above: the problem is
+not one slow selector body, and not a different number of hook instances, but the
+cost of pushing a `core/block-editor` state transition through thousands of
+subscribers on a path where more of that listener work becomes nonzero.
 
 Finally, I paired the marker task before each retained input with that same
 input in the trace-heavy run. This tests the most important accounting theory
