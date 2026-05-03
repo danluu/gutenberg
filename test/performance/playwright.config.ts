@@ -13,6 +13,20 @@ import baseConfig from '@wordpress/scripts/config/playwright.config.js';
 process.env.ASSETS_PATH = path.join( __dirname, 'assets' );
 
 const benchmarkBrowser = process.env.BENCHMARK_BROWSER;
+const benchmarkBrowserProjects = {
+	firefox: [
+		{
+			name: 'firefox',
+			use: { ...devices[ 'Desktop Firefox' ] },
+		},
+	],
+	webkit: [
+		{
+			name: 'webkit',
+			use: { ...devices[ 'Desktop Safari' ] },
+		},
+	],
+};
 
 const config = defineConfig( {
 	...baseConfig,
@@ -35,13 +49,8 @@ const config = defineConfig( {
 		video: 'off',
 	},
 	projects:
-		benchmarkBrowser === 'firefox'
-			? [
-					{
-						name: 'firefox',
-						use: { ...devices[ 'Desktop Firefox' ] },
-					},
-			  ]
+		benchmarkBrowser && benchmarkBrowser in benchmarkBrowserProjects
+			? benchmarkBrowserProjects[ benchmarkBrowser ]
 			: baseConfig.projects,
 } );
 

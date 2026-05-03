@@ -1377,6 +1377,28 @@ firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post
 firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post, Firefox",0,1000,0,953,21,0,41,20,21,1777785536780,1777785559505,22725
 firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post, Firefox",0,1005,0,953,21,0,41,20,21,1777785559595,1777785582573,22978
 firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post, Firefox",0,1010,0,953,21,0,41,20,21,1777785582685,1777785605826,23141
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,950,0,953,9,0,17,8,9,1777786069947,1777786078964,9017
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,970,0,953,9,0,17,8,9,1777786079031,1777786088209,9178
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,980,0,953,9,0,17,8,9,1777786088272,1777786097500,9228
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,990,0,953,9,0,17,8,9,1777786097572,1777786107043,9471
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,1000,0,953,9,0,17,8,9,1777786107092,1777786116668,9576
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,1010,0,953,9,0,17,8,9,1777786116723,1777786126322,9599
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,1020,0,953,9,0,17,8,9,1777786126377,1777786136029,9652
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,1030,0,953,9,0,17,8,9,1777786136105,1777786145757,9652
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",0,1050,0,953,9,0,17,8,9,1777786145812,1777786155527,9715
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,1050,0,953,9,0,17,8,9,1777786155578,1777786165287,9709
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,1030,0,953,9,0,17,8,9,1777786165344,1777786174939,9595
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,1020,0,953,9,0,17,8,9,1777786174987,1777786184557,9570
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,1010,0,953,9,0,17,8,9,1777786184608,1777786194147,9539
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,1000,0,953,9,0,17,8,9,1777786194198,1777786203708,9510
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,990,0,953,9,0,17,8,9,1777786203761,1777786213118,9357
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,980,0,953,9,0,17,8,9,1777786213166,1777786222451,9285
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,970,0,953,9,0,17,8,9,1777786222504,1777786231745,9241
+webkit_boundary_listeners,WebKit input listener boundary,"large post, WebKit",1,950,0,953,9,0,17,8,9,1777786231803,1777786240826,9023
+webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, WebKit",0,995,0,953,21,0,41,20,21,1777786265704,1777786287707,22003
+webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, WebKit",0,1000,0,953,21,0,41,20,21,1777786287838,1777786310188,22350
+webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, WebKit",0,1005,0,953,21,0,41,20,21,1777786310307,1777786332617,22310
+webkit_1000_narrow_listeners,WebKit input listener narrow boundary,"large post, WebKit",0,1010,0,953,21,0,41,20,21,1777786332740,1777786354937,22197
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,990,0,953,9,9,18,9,9,1777759091225,1777759100525,9300
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,1000,0,953,9,9,18,9,9,1777759100603,1777759110200,9597
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,1010,0,953,9,9,18,9,9,1777759110272,1777759119870,9598

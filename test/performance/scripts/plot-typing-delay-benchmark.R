@@ -45,6 +45,8 @@ run_specs <- tribble(
 	"container_between_keys_0_2000_dense", "Container block: complete keypress, then wait", "artifacts/typing-delay-benchmark-container-between-keys-0-2000-dense/typing-delay-benchmark-1777783331811.json", "small post with containers", "typing inside the Columns container fixture, delay after full keydown/keypress/input/keyup sequence, dense 0-2000ms scan",
 	"firefox_boundary_listeners", "Firefox input listener boundary", "artifacts/typing-delay-benchmark-firefox-boundary-listeners-confirm/typing-delay-benchmark-1777785299877.json", "large post, Firefox", "Firefox listener-timing check around 1000ms, two orderings",
 	"firefox_1000_narrow_listeners", "Firefox input listener narrow boundary", "artifacts/typing-delay-benchmark-firefox-1000-narrow-listeners/typing-delay-benchmark-1777785514268.json", "large post, Firefox", "Firefox listener-timing check from 995ms to 1010ms",
+	"webkit_boundary_listeners", "WebKit input listener boundary", "artifacts/typing-delay-benchmark-webkit-boundary-listeners-confirm/typing-delay-benchmark-1777786069947.json", "large post, WebKit", "Playwright WebKit listener-timing check around 1000ms, two orderings",
+	"webkit_1000_narrow_listeners", "WebKit input listener narrow boundary", "artifacts/typing-delay-benchmark-webkit-1000-narrow-listeners/typing-delay-benchmark-1777786265704.json", "large post, WebKit", "Playwright WebKit listener-timing check from 995ms to 1010ms",
 	"mode_trace_keyhold", "Paired trace: key held during delay", "artifacts/typing-delay-benchmark-mode-trace-keyhold/typing-delay-benchmark-1777759091224.json", "large post", "paired browser/action/timer trace for normal Playwright delay",
 	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress",
 	"native_keyhold_timer", "Native contenteditable: key held during delay", "artifacts/typing-delay-benchmark-native-keyhold-timer/typing-delay-benchmark-1777759696881.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and normal Playwright delay",
@@ -359,10 +361,25 @@ write_derived_data <- function(data, existing = NULL) {
 			run_started_epoch_ms = runStartedAtEpochMs,
 			run_stopped_epoch_ms = runStoppedAtEpochMs,
 			run_duration_ms = runStoppedAtEpochMs - runStartedAtEpochMs
-		)
+	)
 
 	if (!is.null(existing)) {
-		replace_run_ids <- unique(records$run_id)
+		replace_run_ids <- list(
+			records,
+			by_delay,
+			runs,
+			data$persistence_events,
+			data$browser_events,
+			data$action_events,
+			data$timer_events,
+			data$scheduler_events,
+			data$event_listener_events,
+			data$rich_text_span_events,
+			data$data_span_events
+		) %>%
+			map(~ if ("run_id" %in% names(.x)) .x$run_id else character()) %>%
+			unlist(use.names = FALSE) %>%
+			unique()
 		replace_by_run <- function(old_table, new_table) {
 			if (is.null(old_table) || nrow(old_table) == 0) {
 				return(new_table)
@@ -1697,40 +1714,47 @@ listener_events <- derived$event_listener_events %>%
 		)
 	)
 
+summarize_input_dispatches <- function(input_events, run_ids) {
+	input_events %>%
+		filter(run_id %in% run_ids, type == "input", (data == "x") | (inputType == "insertText")) %>%
+		group_by(run_id, run_label, round, delayMs) %>%
+		arrange(eventMs, .by_group = TRUE) %>%
+		mutate(
+			stopMs = eventMs + replace_na(durationMs, 0),
+			previousStopMs = lag(cummax(stopMs), default = -Inf),
+			dispatchIndex = cumsum(row_number() == 1 | eventMs > previousStopMs + 2)
+		) %>%
+		group_by(run_id, run_label, round, delayMs, dispatchIndex) %>%
+		summarise(
+			startMs = min(eventMs, na.rm = TRUE),
+			stopMs = max(stopMs, na.rm = TRUE),
+			duration_ms = stopMs - startMs,
+			listener_count = n(),
+			.groups = "drop_last"
+		) %>%
+		arrange(startMs, .by_group = TRUE) %>%
+		mutate(sample_index = row_number(), is_throwaway = sample_index == 1) %>%
+		ungroup()
+}
+
+summarize_dispatch_by_delay <- function(dispatches) {
+	dispatches %>%
+		filter(!is_throwaway) %>%
+		group_by(delayMs) %>%
+		summarise(
+			n = n(),
+			mean_ms = mean(duration_ms, na.rm = TRUE),
+			median_ms = median(duration_ms, na.rm = TRUE),
+			p10_ms = quant(duration_ms, 0.1),
+			p90_ms = quant(duration_ms, 0.9),
+			.groups = "drop"
+		)
+}
+
 firefox_listener_run_ids <- c("firefox_boundary_listeners", "firefox_1000_narrow_listeners")
 
-firefox_input_dispatches <- listener_events %>%
-	filter(run_id %in% firefox_listener_run_ids, type == "input", data == "x" | inputType == "insertText") %>%
-	group_by(run_id, run_label, round, delayMs) %>%
-	arrange(eventMs, .by_group = TRUE) %>%
-	mutate(
-		stopMs = eventMs + replace_na(durationMs, 0),
-		previousStopMs = lag(cummax(stopMs), default = -Inf),
-		dispatchIndex = cumsum(row_number() == 1 | eventMs > previousStopMs + 2)
-	) %>%
-	group_by(run_id, run_label, round, delayMs, dispatchIndex) %>%
-	summarise(
-		startMs = min(eventMs, na.rm = TRUE),
-		stopMs = max(stopMs, na.rm = TRUE),
-		duration_ms = stopMs - startMs,
-		listener_count = n(),
-		.groups = "drop_last"
-	) %>%
-	arrange(startMs, .by_group = TRUE) %>%
-	mutate(sample_index = row_number(), is_throwaway = sample_index == 1) %>%
-	ungroup()
-
-firefox_input_by_delay <- firefox_input_dispatches %>%
-	filter(!is_throwaway) %>%
-	group_by(delayMs) %>%
-	summarise(
-		n = n(),
-		mean_ms = mean(duration_ms, na.rm = TRUE),
-		median_ms = median(duration_ms, na.rm = TRUE),
-		p10_ms = quant(duration_ms, 0.1),
-		p90_ms = quant(duration_ms, 0.9),
-		.groups = "drop"
-	)
+firefox_input_dispatches <- summarize_input_dispatches(listener_events, firefox_listener_run_ids)
+firefox_input_by_delay <- summarize_dispatch_by_delay(firefox_input_dispatches)
 
 firefox_input_by_delay_path <- file.path(data_dir, "typing-delay-firefox-input-by-delay.csv")
 firefox_input_dispatches_path <- file.path(data_dir, "typing-delay-firefox-input-dispatches.csv")
@@ -1759,6 +1783,42 @@ if (nrow(firefox_input_by_delay) > 0) {
 				y = "Input-event listener dispatch span (ms)"
 			),
 		"17-firefox-input-listener-boundary.png",
+		width = 10,
+		height = 5.5
+	)
+}
+
+webkit_listener_run_ids <- c("webkit_boundary_listeners", "webkit_1000_narrow_listeners")
+
+webkit_input_dispatches <- summarize_input_dispatches(listener_events, webkit_listener_run_ids)
+webkit_input_by_delay <- summarize_dispatch_by_delay(webkit_input_dispatches)
+webkit_input_by_delay_path <- file.path(data_dir, "typing-delay-webkit-input-by-delay.csv")
+webkit_input_dispatches_path <- file.path(data_dir, "typing-delay-webkit-input-dispatches.csv")
+
+if (nrow(webkit_input_dispatches) > 0) {
+	write_csv(webkit_input_dispatches, webkit_input_dispatches_path)
+}
+
+if (nrow(webkit_input_by_delay) == 0 && file.exists(webkit_input_by_delay_path)) {
+	webkit_input_by_delay <- read_csv(webkit_input_by_delay_path, show_col_types = FALSE)
+}
+
+if (nrow(webkit_input_by_delay) > 0) {
+	write_csv(webkit_input_by_delay, webkit_input_by_delay_path)
+
+	save_plot(
+		ggplot(webkit_input_by_delay, aes(delayMs, median_ms)) +
+			geom_linerange(aes(ymin = p10_ms, ymax = p90_ms), color = brewer_color("Greens", 5, type = "seq", n = 9), alpha = 0.75) +
+			geom_point(color = brewer_color("Dark2", 4), size = 2.4) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+			scale_x_continuous(breaks = sort(unique(webkit_input_by_delay$delayMs))) +
+			labs(
+				title = "WebKit shows a smaller one-second boundary drop",
+				subtitle = "Playwright WebKit/Safari-profile run; metric is input-event listener dispatch span\nBars show p10-p90",
+				x = "Configured Playwright key-hold delay",
+				y = "Input-event listener dispatch span (ms)"
+			),
+		"18-webkit-input-listener-boundary.png",
 		width = 10,
 		height = 5.5
 	)

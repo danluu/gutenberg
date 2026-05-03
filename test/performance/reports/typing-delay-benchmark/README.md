@@ -503,24 +503,61 @@ mixed. The high regime is clear through `990ms`; `1000ms` contains both high and
 low samples; `1005ms` is mostly low; `1010ms` and later are consistently low in
 these runs.
 
-|    Delay |   n |        p50 |        p10 |        p90 |       mean |
-| -------: | --: | ---------: | ---------: | ---------: | ---------: |
-|  `950ms` |  14 | `51.0ms`  | `46.3ms`  | `54.4ms`  | `49.9ms`  |
-|  `970ms` |  14 | `53.5ms`  | `51.0ms`  | `56.7ms`  | `52.9ms`  |
-|  `980ms` |  14 | `53.0ms`  | `51.0ms`  | `54.4ms`  | `52.6ms`  |
-|  `990ms` |  14 | `52.5ms`  | `50.3ms`  | `55.7ms`  | `52.7ms`  |
-|  `995ms` |  19 | `52.0ms`  | `29.0ms`  | `55.0ms`  | `45.8ms`  |
-| `1000ms` |  33 | `48.0ms`  | `20.2ms`  | `54.8ms`  | `39.9ms`  |
-| `1005ms` |  19 | `29.0ms`  | `20.8ms`  | `47.4ms`  | `30.5ms`  |
-| `1010ms` |  33 | `21.0ms`  | `20.0ms`  | `28.0ms`  | `22.7ms`  |
-| `1020ms` |  14 | `20.0ms`  | `19.3ms`  | `26.7ms`  | `21.8ms`  |
-| `1030ms` |  14 | `22.0ms`  | `20.0ms`  | `30.4ms`  | `24.2ms`  |
-| `1050ms` |  14 | `21.0ms`  | `20.0ms`  | `24.1ms`  | `21.6ms`  |
+|    Delay |   n |      p50 |      p10 |      p90 |     mean |
+| -------: | --: | -------: | -------: | -------: | -------: |
+|  `950ms` |  14 | `51.0ms` | `46.3ms` | `54.4ms` | `49.9ms` |
+|  `970ms` |  14 | `53.5ms` | `51.0ms` | `56.7ms` | `52.9ms` |
+|  `980ms` |  14 | `53.0ms` | `51.0ms` | `54.4ms` | `52.6ms` |
+|  `990ms` |  14 | `52.5ms` | `50.3ms` | `55.7ms` | `52.7ms` |
+|  `995ms` |  19 | `52.0ms` | `29.0ms` | `55.0ms` | `45.8ms` |
+| `1000ms` |  33 | `48.0ms` | `20.2ms` | `54.8ms` | `39.9ms` |
+| `1005ms` |  19 | `29.0ms` | `20.8ms` | `47.4ms` | `30.5ms` |
+| `1010ms` |  33 | `21.0ms` | `20.0ms` | `28.0ms` | `22.7ms` |
+| `1020ms` |  14 | `20.0ms` | `19.3ms` | `26.7ms` | `21.8ms` |
+| `1030ms` |  14 | `22.0ms` | `20.0ms` | `30.4ms` | `24.2ms` |
+| `1050ms` |  14 | `21.0ms` | `20.0ms` | `24.1ms` | `21.6ms` |
 
 So the answer is "yes, with a caveat": Firefox has the same one-second boundary
 effect, but with this listener-based metric the clean low band starts just after
 the one-second mark rather than being cleanly centered on the exact `1000ms`
 sample.
+
+## Safari/WebKit Check
+
+This uses Playwright WebKit with the Desktop Safari device profile and Safari
+user agent. It is a Safari-engine check, not a manually-driven run in the
+system Safari.app. Like Firefox, it cannot use Chromium `EventDispatch` trace
+slices, so the metric below is the same input-event listener dispatch span used
+for the Firefox check.
+
+![WebKit input listener boundary](figures/18-webkit-input-listener-boundary.png)
+
+WebKit does show a drop at the one-second boundary, but it is much smaller than
+Chrome's cliff and smaller than Firefox's transition. In these runs, the median
+listener dispatch span is mostly `18..24ms` below `1000ms`, then mostly
+`14..16ms` at and above `1000ms`. The WebKit listener timestamps also have more
+near-zero dispatch spans than the Firefox run, so the p10 band is less
+informative than the median.
+
+|    Delay |   n |      p50 |     p10 |      p90 |     mean |
+| -------: | --: | -------: | ------: | -------: | -------: |
+|  `950ms` |  22 | `24.0ms` | `0.0ms` | `31.9ms` | `17.5ms` |
+|  `970ms` |  25 | `20.0ms` | `0.0ms` | `30.0ms` | `14.8ms` |
+|  `980ms` |  23 | `18.0ms` | `0.0ms` | `28.8ms` | `13.9ms` |
+|  `990ms` |  21 | `18.0ms` | `0.0ms` | `28.0ms` | `15.4ms` |
+|  `995ms` |  28 | `17.5ms` | `0.0ms` | `28.3ms` | `15.4ms` |
+| `1000ms` |  47 | `14.0ms` | `0.0ms` | `18.4ms` | `11.3ms` |
+| `1005ms` |  24 | `15.0ms` | `1.0ms` | `17.7ms` | `13.0ms` |
+| `1010ms` |  39 | `16.0ms` | `0.0ms` | `19.0ms` | `13.7ms` |
+| `1020ms` |  19 | `14.0ms` | `0.0ms` | `18.4ms` | `11.4ms` |
+| `1030ms` |  17 | `15.0ms` | `0.0ms` | `16.0ms` | `12.2ms` |
+| `1050ms` |  21 | `15.0ms` | `0.0ms` | `16.0ms` | `10.6ms` |
+
+So the answer is "yes, but weakly": the one-second persistence boundary is
+visible in WebKit/Safari-engine timing, but this run does not reproduce the
+large Chrome drop. The likely interpretation is that the same Gutenberg
+one-second timer boundary exists, while WebKit's dispatch/listener profile is
+already relatively low before the boundary and therefore has less room to drop.
 
 ## Deeper Pass: The Delay Is A Key Hold
 
@@ -1425,6 +1462,11 @@ The key runs used in this report were:
     `1000ms`, with ascending and descending orderings.
 -   `firefox_1000_narrow_listeners`: Firefox listener-timing check at
     `995ms`, `1000ms`, `1005ms`, and `1010ms`.
+-   `webkit_boundary_listeners`: Playwright WebKit/Safari-profile
+    listener-timing check around `1000ms`, with ascending and descending
+    orderings.
+-   `webkit_1000_narrow_listeners`: Playwright WebKit/Safari-profile
+    listener-timing check at `995ms`, `1000ms`, `1005ms`, and `1010ms`.
 -   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
 -   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer
