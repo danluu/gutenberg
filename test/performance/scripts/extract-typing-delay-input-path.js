@@ -37,6 +37,18 @@ const runs = [
 		requestedPostKeyupGapMs: 0,
 		dir: 'artifacts/typing-delay-current-down-up1300',
 	},
+	{
+		runId: 'cdp_page_evaluate_gap_0',
+		inputPath: 'Raw CDP plus page.evaluate per key',
+		requestedPostKeyupGapMs: 0,
+		dir: 'artifacts/typing-delay-cdp-page-evaluate-gap0',
+	},
+	{
+		runId: 'cdp_runtime_evaluate_gap_0',
+		inputPath: 'Raw CDP plus Runtime.evaluate per key',
+		requestedPostKeyupGapMs: 0,
+		dir: 'artifacts/typing-delay-cdp-runtime-evaluate-gap0',
+	},
 	...[ 0, 5, 10, 16, 33, 100, 310, 1000 ].map( ( gapMs ) => ( {
 		runId: `cdp_gap_${ gapMs }`,
 		inputPath: 'Raw CDP Input.dispatchKeyEvent',
@@ -189,6 +201,27 @@ function nonKeyGapTraceEvents( events ) {
 	);
 }
 
+function eventSignature( event ) {
+	if ( ! event ) {
+		return '';
+	}
+	return [
+		`type=${ event.type }`,
+		`trusted=${ event.isTrusted }`,
+		`key=${ event.key }`,
+		`code=${ event.code }`,
+		`location=${ event.location }`,
+		`keyCode=${ event.keyCode }`,
+		`charCode=${ event.charCode }`,
+		`which=${ event.which }`,
+		`repeat=${ event.repeat }`,
+		`composing=${ event.isComposing }`,
+		`mods=${ event.altKey }/${ event.ctrlKey }/${ event.metaKey }/${ event.shiftKey }`,
+		`cancelable=${ event.cancelable }`,
+		`defaultPrevented=${ event.defaultPrevented }`,
+	].join( '|' );
+}
+
 function rowsForRun( run ) {
 	const jsonPath = newestJson( run.dir );
 	if ( ! jsonPath ) {
@@ -235,6 +268,13 @@ function rowsForRun( run ) {
 				keypress_state: `${ currentGroup?.keypress?.isPersistent }/${ currentGroup?.keypress?.isTyping }`,
 				beforeinput_state: `${ currentGroup?.beforeinput?.isPersistent }/${ currentGroup?.beforeinput?.isTyping }`,
 				input_state: `${ currentGroup?.input?.isPersistent }/${ currentGroup?.input?.isTyping }`,
+				keydown_signature: eventSignature( keydown ),
+				keypress_signature: eventSignature( currentGroup?.keypress ),
+				beforeinput_signature: eventSignature(
+					currentGroup?.beforeinput
+				),
+				input_signature: eventSignature( currentGroup?.input ),
+				keyup_signature: eventSignature( currentGroup?.keyup ),
 				non_key_gap_trace_event_count: gapTraceEvents.length,
 				non_key_gap_trace_duration_ms: gapTraceEvents.reduce(
 					( sum, event ) => sum + ( event.durationMs || 0 ),
@@ -322,6 +362,14 @@ const summaryRows = runs.map( ( run ) => {
 				)
 			)
 		).join( '; ' ),
+		distinct_event_signatures: Array.from(
+			new Set(
+				rows.map(
+					( row ) =>
+						`${ row.keydown_signature }/${ row.keypress_signature }/${ row.beforeinput_signature }/${ row.input_signature }/${ row.keyup_signature }`
+				)
+			)
+		).join( '; ' ),
 		json_path: rows[ 0 ]?.json_path,
 	};
 } );
@@ -349,6 +397,11 @@ writeCsv(
 		'keypress_state',
 		'beforeinput_state',
 		'input_state',
+		'keydown_signature',
+		'keypress_signature',
+		'beforeinput_signature',
+		'input_signature',
+		'keyup_signature',
 		'non_key_gap_trace_event_count',
 		'non_key_gap_trace_duration_ms',
 		'top_gap_trace_events',
@@ -376,6 +429,7 @@ writeCsv(
 		'keypress_repeat_count',
 		'any_composing_count',
 		'distinct_key_states',
+		'distinct_event_signatures',
 		'json_path',
 	]
 );

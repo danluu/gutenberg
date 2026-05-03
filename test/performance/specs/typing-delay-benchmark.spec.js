@@ -119,6 +119,8 @@ const supportedDelayModes = [
 	'type-one-char-hold',
 	'down-up-key-hold',
 	'cdp-key-hold',
+	'cdp-key-hold-page-evaluate',
+	'cdp-key-hold-runtime-evaluate',
 ];
 
 function sleepMs( delayMs ) {
@@ -673,27 +675,34 @@ function groupedKeyboardEvents( trace ) {
 }
 
 async function dispatchCdpKeyPress( cdpSession, delayMs ) {
-	const keyEvent = {
+	const keyDownEvent = {
 		modifiers: 0,
 		windowsVirtualKeyCode: 88,
-		key: 'x',
 		code: 'KeyX',
+		commands: [],
+		key: 'x',
+		text: 'x',
+		unmodifiedText: 'x',
 		autoRepeat: false,
 		location: 0,
 		isKeypad: false,
 	};
+	const keyUpEvent = {
+		modifiers: 0,
+		key: 'x',
+		windowsVirtualKeyCode: 88,
+		code: 'KeyX',
+		location: 0,
+	};
 
 	await cdpSession.send( 'Input.dispatchKeyEvent', {
-		...keyEvent,
 		type: 'keyDown',
-		commands: [],
-		text: 'x',
-		unmodifiedText: 'x',
+		...keyDownEvent,
 	} );
 	await sleepMs( delayMs );
 	await cdpSession.send( 'Input.dispatchKeyEvent', {
-		...keyEvent,
 		type: 'keyUp',
+		...keyUpEvent,
 	} );
 }
 
@@ -1051,6 +1060,17 @@ test.describe( 'Typing delay benchmark', () => {
 								code: event.code,
 								repeat: event.repeat,
 								isComposing: event.isComposing,
+								isTrusted: event.isTrusted,
+								location: event.location,
+								keyCode: event.keyCode,
+								charCode: event.charCode,
+								which: event.which,
+								altKey: event.altKey,
+								ctrlKey: event.ctrlKey,
+								metaKey: event.metaKey,
+								shiftKey: event.shiftKey,
+								cancelable: event.cancelable,
+								defaultPrevented: event.defaultPrevented,
 								inputType: event.inputType,
 								data: event.data,
 								targetTagName: event.target?.tagName,
@@ -1673,13 +1693,31 @@ test.describe( 'Typing delay benchmark', () => {
 							await sleepMs( postKeyupGapMs );
 						}
 					}
-				} else if ( delayMode === 'cdp-key-hold' ) {
+				} else if (
+					delayMode === 'cdp-key-hold' ||
+					delayMode === 'cdp-key-hold-page-evaluate' ||
+					delayMode === 'cdp-key-hold-runtime-evaluate'
+				) {
 					const cdpSession = await page
 						.context()
 						.newCDPSession( page );
 					try {
 						for ( let i = 0; i < sampleCount; i++ ) {
 							await dispatchCdpKeyPress( cdpSession, delayMs );
+							if (
+								delayMode === 'cdp-key-hold-page-evaluate' &&
+								i < sampleCount - 1
+							) {
+								await page.evaluate( () => undefined );
+							}
+							if (
+								delayMode === 'cdp-key-hold-runtime-evaluate' &&
+								i < sampleCount - 1
+							) {
+								await cdpSession.send( 'Runtime.evaluate', {
+									expression: 'undefined',
+								} );
+							}
 							if ( postKeyupGapMs > 0 && i < sampleCount - 1 ) {
 								await sleepMs( postKeyupGapMs );
 							}

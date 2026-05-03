@@ -2119,6 +2119,8 @@ if (file.exists(input_path_summary_path)) {
 					"Playwright keyboard.press per key",
 					"Playwright keyboard.type one char per call",
 					"Playwright keyboard.down/up per key",
+					"Raw CDP plus page.evaluate per key",
+					"Raw CDP plus Runtime.evaluate per key",
 					"Raw CDP Input.dispatchKeyEvent"
 				)
 			),
@@ -2130,8 +2132,24 @@ if (file.exists(input_path_summary_path)) {
 					`Playwright keyboard.type key-hold burst` = "keyboard.type",
 					`Playwright keyboard.press per key` = "keyboard.press",
 					`Playwright keyboard.type one char per call` = "type one char",
-					`Playwright keyboard.down/up per key` = "down/up"
+					`Playwright keyboard.down/up per key` = "down/up",
+					`Raw CDP plus page.evaluate per key` = "CDP + page.evaluate",
+					`Raw CDP plus Runtime.evaluate per key` = "CDP + Runtime.evaluate"
 				)
+			),
+			label_x = case_when(
+				point_label == "CDP + page.evaluate" ~ actual_post_keyup_gap_p50_ms * 0.72,
+				point_label == "type one char" ~ actual_post_keyup_gap_p50_ms * 1.22,
+				point_label == "down/up" ~ actual_post_keyup_gap_p50_ms * 0.82,
+				point_label == "CDP +10ms" ~ actual_post_keyup_gap_p50_ms * 0.9,
+				point_label == "CDP +16ms" ~ actual_post_keyup_gap_p50_ms * 1.12,
+				TRUE ~ actual_post_keyup_gap_p50_ms
+			),
+			label_y = case_when(
+				point_label == "CDP + page.evaluate" ~ keypress_p50_ms + 1.35,
+				point_label == "type one char" ~ keypress_p50_ms + 0.95,
+				point_label == "down/up" ~ keypress_p50_ms + 0.55,
+				TRUE ~ keypress_p50_ms + 0.8
 			)
 		)
 
@@ -2147,17 +2165,25 @@ if (file.exists(input_path_summary_path)) {
 		) +
 			geom_point(size = 3.1, alpha = 0.9) +
 			geom_text(
-				aes(label = point_label),
-				check_overlap = TRUE,
-				nudge_y = 0.8,
+				aes(label_x, label_y, label = point_label),
+				check_overlap = FALSE,
 				size = 3.2,
 				show.legend = FALSE
 			) +
 			scale_x_log10(breaks = c(2, 3, 10, 30, 100, 300, 1000)) +
 			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_shape_manual(values = c(
+				`Playwright keyboard.type key-hold burst` = 16,
+				`Playwright keyboard.press per key` = 17,
+				`Playwright keyboard.type one char per call` = 15,
+				`Playwright keyboard.down/up per key` = 3,
+				`Raw CDP plus page.evaluate per key` = 8,
+				`Raw CDP plus Runtime.evaluate per key` = 4,
+				`Raw CDP Input.dispatchKeyEvent` = 7
+			)) +
 			labs(
 				title = "Per-key Playwright calls avoid the slow hold path",
-				subtitle = "1300ms key hold traces; raw CDP stays slow even with long gaps, so the gap alone is not causal",
+				subtitle = "1300ms key hold traces; DOM event payload and elapsed post-keyup gap do not explain the split",
 				x = "Observed previous keyup to next keydown, p50 (ms, log scale)",
 				y = "keypress EventDispatch duration, p50 (ms)",
 				color = "Input path",
