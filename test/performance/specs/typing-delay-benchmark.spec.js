@@ -154,6 +154,9 @@ const supportedMarkPersistentInterventions = [
 	'external-persistent-cpu-150-no-message',
 	'external-persistent-delay-150-no-message',
 	'external-background-cpu-noop',
+	'external-background-cpu-2-noop',
+	'external-background-cpu-4-noop',
+	'external-background-cpu-8-noop',
 	'external-background-idle-noop',
 	'delayed-noop-150',
 	'raw-unknown-action',
@@ -1155,7 +1158,7 @@ test.describe( 'Typing delay benchmark', () => {
 
 		let externalCpuBurnerExposed = false;
 		let externalPersistentProcess = null;
-		let externalBackgroundProcess = null;
+		let externalBackgroundProcesses = [];
 		function ensureExternalPersistentProcess() {
 			if ( externalPersistentProcess ) {
 				return externalPersistentProcess;
@@ -1181,22 +1184,26 @@ setInterval(() => {}, 2147483647);
 			return externalPersistentProcess;
 		}
 
-		function ensureExternalBackgroundProcess( processMode ) {
-			if ( externalBackgroundProcess ) {
-				return externalBackgroundProcess;
+		function ensureExternalBackgroundProcesses( processMode, count ) {
+			if ( externalBackgroundProcesses.length > 0 ) {
+				return externalBackgroundProcesses;
 			}
 
 			const source =
 				processMode === 'cpu'
 					? 'while (true) Math.sqrt(Math.random());'
 					: 'setInterval(() => {}, 2147483647);';
-			externalBackgroundProcess = spawn(
-				process.execPath,
-				[ '-e', source ],
-				{ stdio: 'ignore' }
+			externalBackgroundProcesses = Array.from( { length: count }, () =>
+				spawn( process.execPath, [ '-e', source ], {
+					stdio: 'ignore',
+				} )
 			);
-			process.once( 'exit', () => externalBackgroundProcess?.kill() );
-			return externalBackgroundProcess;
+			process.once( 'exit', () => {
+				for ( const child of externalBackgroundProcesses ) {
+					child.kill();
+				}
+			} );
+			return externalBackgroundProcesses;
 		}
 
 		function cleanupExternalPersistentProcess() {
@@ -1204,9 +1211,11 @@ setInterval(() => {}, 2147483647);
 				externalPersistentProcess.kill();
 				externalPersistentProcess = null;
 			}
-			if ( externalBackgroundProcess ) {
-				externalBackgroundProcess.kill();
-				externalBackgroundProcess = null;
+			if ( externalBackgroundProcesses.length > 0 ) {
+				for ( const child of externalBackgroundProcesses ) {
+					child.kill();
+				}
+				externalBackgroundProcesses = [];
 			}
 		}
 
@@ -1226,12 +1235,27 @@ setInterval(() => {}, 2147483647);
 			if (
 				markPersistentIntervention === 'external-background-cpu-noop'
 			) {
-				ensureExternalBackgroundProcess( 'cpu' );
+				ensureExternalBackgroundProcesses( 'cpu', 1 );
+			}
+			if (
+				markPersistentIntervention === 'external-background-cpu-2-noop'
+			) {
+				ensureExternalBackgroundProcesses( 'cpu', 2 );
+			}
+			if (
+				markPersistentIntervention === 'external-background-cpu-4-noop'
+			) {
+				ensureExternalBackgroundProcesses( 'cpu', 4 );
+			}
+			if (
+				markPersistentIntervention === 'external-background-cpu-8-noop'
+			) {
+				ensureExternalBackgroundProcesses( 'cpu', 8 );
 			}
 			if (
 				markPersistentIntervention === 'external-background-idle-noop'
 			) {
-				ensureExternalBackgroundProcess( 'idle' );
+				ensureExternalBackgroundProcesses( 'idle', 1 );
 			}
 
 			if (
@@ -1659,6 +1683,9 @@ setInterval(() => {}, 2147483647);
 									result = undefined;
 								} else if (
 									mode === 'external-background-cpu-noop' ||
+									mode === 'external-background-cpu-2-noop' ||
+									mode === 'external-background-cpu-4-noop' ||
+									mode === 'external-background-cpu-8-noop' ||
 									mode === 'external-background-idle-noop'
 								) {
 									result = undefined;

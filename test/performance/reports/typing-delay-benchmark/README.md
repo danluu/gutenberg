@@ -122,6 +122,11 @@ The short version:
     at `24.2ms`. That disconfirms "finite timer-side work ending near the key is
     required"; the finite-burst decay happens because the CPU activity stops, not
     because the browser needs a particular timer callback shape.
+-   A background CPU count sweep keeps that result in the same band: one, two,
+    four, and eight busy child processes give no-op timer event-only p50s of
+    `9.1ms`, `10.0ms`, `10.3ms`, and `10.4ms`. One busy child is enough; more
+    load adds mild contention rather than making the benchmark faster. That
+    supports a CPU active-state explanation, not a need for many busy cores.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -1183,6 +1188,10 @@ event-only measurement. The new intervention modes are deliberately artificial:
     no-CPU delay command, to test whether IPC and child lifetime are enough.
 -   `external-background-cpu-noop`: keep a child process burning CPU continuously
     before typing starts; the rich-text timer callback itself is still a no-op.
+-   `external-background-cpu-2-noop`, `external-background-cpu-4-noop`, and
+    `external-background-cpu-8-noop`: keep two, four, or eight child processes
+    burning CPU continuously before typing starts; the rich-text timer callback
+    itself is still a no-op.
 -   `external-background-idle-noop`: keep an idle child process alive before
     typing starts; the rich-text timer callback itself is still a no-op.
 -   `delayed-noop-150`: main thread schedules a delayed no-op task near the
@@ -1223,7 +1232,10 @@ Selected p50s:
 | prestarted external CPU        |      `1170ms` |            `50.5ms` |       `12.1ms` |  `80.3ms` |           `92.3ms` |
 | prestarted external CPU        |      `1100ms` |            `50.4ms` |       `11.3ms` | `150.3ms` |          `161.6ms` |
 | prestarted external delay      |      `1100ms` |            `53.1ms` |       `23.3ms` | `150.3ms` |          `173.9ms` |
-| background CPU + no-op timer   |      `1250ms` |            `50.6ms` |        `9.1ms` |   `0.0ms` |            `9.1ms` |
+| background CPU x1 + no-op      |      `1250ms` |            `50.6ms` |        `9.1ms` |   `0.0ms` |            `9.1ms` |
+| background CPU x2 + no-op      |      `1250ms` |            `50.4ms` |       `10.0ms` |   `0.0ms` |           `10.0ms` |
+| background CPU x4 + no-op      |      `1250ms` |            `51.1ms` |       `10.3ms` |   `0.0ms` |           `10.3ms` |
+| background CPU x8 + no-op      |      `1250ms` |            `51.4ms` |       `10.4ms` |   `0.0ms` |           `10.4ms` |
 | background idle + no-op timer  |      `1250ms` |            `53.3ms` |       `24.2ms` |   `0.0ms` |           `24.3ms` |
 | worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` | `169.1ms` |          `193.8ms` |
 | worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` | `151.3ms` |          `175.1ms` |
@@ -1265,7 +1277,10 @@ The updated model is narrower and less semantic:
 9. Continuous external background CPU is sufficient even when the timer callback
    is a zero-duration no-op. The paired timer/no-op event itself has `0ms` p50
    work, but the following event-only p50 is `9.1ms`. The idle-child control with
-   the same no-op timer is `24.2ms`.
+   the same no-op timer is `24.2ms`. One busy child is enough: two, four, and
+   eight busy children stay low at `10.0ms`, `10.3ms`, and `10.4ms`, slightly
+   slower than one child and consistent with mild contention rather than
+   background CPU monotonically improving latency.
 10. The effect decays with distance from the following key after a finite CPU
    burst stops: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
@@ -1315,6 +1330,15 @@ worker message, IPC completion, or a finite burst ending just before keydown. Th
 finite-burst gap-decay results still matter: after CPU activity stops, the effect
 decays within a few hundred milliseconds. But continuous CPU activity keeps the
 system in the fast regime.
+
+The count sweep makes the system-level interpretation harder to dismiss as an
+artifact of one strange child process. On this Apple M3 Max run, one background
+CPU child was enough to move the no-op timer case from `24.6ms` to `9.1ms`; two,
+four, and eight busy children stayed in the same fast band at `10.0ms`,
+`10.3ms`, and `10.4ms`. That does not look like "more work in the timer makes
+the next input cheaper", because the timer still does no work. It also does not
+look like a many-core saturation effect, because adding more busy children made
+the result slightly slower, not faster.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -3392,6 +3416,9 @@ The key runs used in this report were:
     `task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300`,
     `task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_external_background_cpu_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_cpu_2_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_cpu_4_noop_timeout_1250_delay_1300`,
+    `task_end_external_background_cpu_8_noop_timeout_1250_delay_1300`,
     `task_end_external_background_idle_noop_timeout_1250_delay_1300`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,

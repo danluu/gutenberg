@@ -3699,6 +3699,9 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					"task_end_noop_timeout_1250_delay_1300",
 					"task_end_external_background_idle_noop_timeout_1250_delay_1300",
 					"task_end_external_background_cpu_noop_timeout_1250_delay_1300",
+					"task_end_external_background_cpu_2_noop_timeout_1250_delay_1300",
+					"task_end_external_background_cpu_4_noop_timeout_1250_delay_1300",
+					"task_end_external_background_cpu_8_noop_timeout_1250_delay_1300",
 					"task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
 					"task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
 				)
@@ -3708,7 +3711,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					factor(run_id),
 					`no-op timer` = "task_end_noop_timeout_1250_delay_1300",
 					`idle child + no-op` = "task_end_external_background_idle_noop_timeout_1250_delay_1300",
-					`background CPU + no-op` = "task_end_external_background_cpu_noop_timeout_1250_delay_1300",
+					`background CPU x1 + no-op` = "task_end_external_background_cpu_noop_timeout_1250_delay_1300",
+					`background CPU x2 + no-op` = "task_end_external_background_cpu_2_noop_timeout_1250_delay_1300",
+					`background CPU x4 + no-op` = "task_end_external_background_cpu_4_noop_timeout_1250_delay_1300",
+					`background CPU x8 + no-op` = "task_end_external_background_cpu_8_noop_timeout_1250_delay_1300",
 					`prestarted delay` = "task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300",
 					`prestarted CPU burst` = "task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300"
 				),
@@ -3717,7 +3723,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					levels = c(
 						"no-op timer",
 						"idle child + no-op",
-						"background CPU + no-op",
+						"background CPU x1 + no-op",
+						"background CPU x2 + no-op",
+						"background CPU x4 + no-op",
+						"background CPU x8 + no-op",
 						"prestarted delay",
 						"prestarted CPU burst"
 					)
@@ -3732,13 +3741,16 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				scale_shape_manual(values = c(
 					`no-op timer` = 17,
 					`idle child + no-op` = 2,
-					`background CPU + no-op` = 1,
+					`background CPU x1 + no-op` = 1,
+					`background CPU x2 + no-op` = 5,
+					`background CPU x4 + no-op` = 6,
+					`background CPU x8 + no-op` = 8,
 					`prestarted delay` = 7,
 					`prestarted CPU burst` = 3
 				), drop = FALSE) +
 				labs(
-					title = "Continuous external CPU makes a no-op timer fast",
-					subtitle = "Fixed 1300ms key hold; black points are medians, colored points are retained samples",
+					title = "One background CPU thread is enough to keep the no-op timer fast",
+					subtitle = "Fixed 1300ms key hold; more background CPU stays fast with mild contention",
 					x = NULL,
 					y = "Next EventDispatch duration (ms)",
 					color = "Control",
@@ -3746,7 +3758,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				) +
 				theme(axis.text.x = element_text(angle = 25, hjust = 1)),
 			"54-background-cpu-control.png",
-			width = 10,
+			width = 12,
 			height = 6
 		)
 	}
@@ -5119,7 +5131,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 			select(intervention, metric, duration_p50_ms) %>%
 			pivot_wider(names_from = intervention, values_from = duration_p50_ms) %>%
 			pivot_longer(
-				cols = c(`marker no-op`, `raw unknown action`, `mark next not persistent`),
+				cols = any_of(c("marker no-op", "raw unknown action", "mark next not persistent")),
 				names_to = "intervention",
 				values_to = "duration_p50_ms"
 			) %>%
@@ -5197,7 +5209,7 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 			listener_wrapper_deltas <- listener_wrapper_accounting %>%
 				pivot_wider(names_from = intervention, values_from = duration_p50_ms) %>%
 				pivot_longer(
-					cols = c(`marker no-op`, `raw unknown action`, `mark next not persistent`),
+					cols = any_of(c("marker no-op", "raw unknown action", "mark next not persistent")),
 					names_to = "intervention",
 					values_to = "duration_p50_ms"
 				) %>%
