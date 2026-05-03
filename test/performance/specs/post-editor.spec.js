@@ -1,6 +1,12 @@
 /* eslint-disable playwright/expect-expect */
 
 /**
+ * Node dependencies
+ */
+import fs from 'fs';
+import path from 'path';
+
+/**
  * WordPress dependencies
  */
 import { test, Metrics } from '@wordpress/e2e-test-utils-playwright';
@@ -13,6 +19,25 @@ import { sum } from '../utils.js';
 
 // See https://github.com/WordPress/gutenberg/issues/51383#issuecomment-1613460429
 const BROWSER_IDLE_WAIT = 1000;
+const TYPING_START_WAIT_MS = Number.parseInt(
+	process.env.POST_EDITOR_TYPING_START_WAIT_MS || '0',
+	10
+);
+const TYPING_START_WAIT_PHASE =
+	process.env.POST_EDITOR_TYPING_START_WAIT_PHASE || 'before-trace';
+const RESULTS_OUTPUT_DIR = process.env.POST_EDITOR_RESULTS_OUTPUT_DIR;
+
+if ( ! Number.isFinite( TYPING_START_WAIT_MS ) || TYPING_START_WAIT_MS < 0 ) {
+	throw new Error(
+		'POST_EDITOR_TYPING_START_WAIT_MS must be a non-negative integer.'
+	);
+}
+
+if ( ! [ 'before-trace', 'after-trace' ].includes( TYPING_START_WAIT_PHASE ) ) {
+	throw new Error(
+		'POST_EDITOR_TYPING_START_WAIT_PHASE must be "before-trace" or "after-trace".'
+	);
+}
 
 const results = {
 	serverResponse: [],
@@ -48,6 +73,28 @@ test.describe( 'Post Editor Performance', () => {
 			body: JSON.stringify( results, null, 2 ),
 			contentType: 'application/json',
 		} );
+
+		if ( RESULTS_OUTPUT_DIR ) {
+			fs.mkdirSync( RESULTS_OUTPUT_DIR, { recursive: true } );
+			fs.writeFileSync(
+				path.join(
+					RESULTS_OUTPUT_DIR,
+					`post-editor-results-${ Date.now() }.json`
+				),
+				JSON.stringify(
+					{
+						metadata: {
+							typingStartWaitMs: TYPING_START_WAIT_MS,
+							typingStartWaitPhase: TYPING_START_WAIT_PHASE,
+							browserIdleWait: BROWSER_IDLE_WAIT,
+						},
+						results,
+					},
+					null,
+					2
+				)
+			);
+		}
 	} );
 
 	test.describe( 'Loading', () => {
@@ -103,7 +150,7 @@ test.describe( 'Post Editor Performance', () => {
 		}
 	} );
 
-	async function type( target, metrics, key ) {
+	async function type( target, metrics, key, page ) {
 		// The first character typed triggers a longer time (isTyping change).
 		// It can impact the stability of the metric, so we exclude it. It
 		// probably deserves a dedicated metric itself, though.
@@ -111,8 +158,24 @@ test.describe( 'Post Editor Performance', () => {
 		const throwaway = 1;
 		const iterations = samples + throwaway;
 
+		if (
+			TYPING_START_WAIT_MS > 0 &&
+			TYPING_START_WAIT_PHASE === 'before-trace'
+		) {
+			// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+			await page.waitForTimeout( TYPING_START_WAIT_MS );
+		}
+
 		// Start tracing.
 		await metrics.startTracing();
+
+		if (
+			TYPING_START_WAIT_MS > 0 &&
+			TYPING_START_WAIT_PHASE === 'after-trace'
+		) {
+			// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+			await page.waitForTimeout( TYPING_START_WAIT_MS );
+		}
 
 		// Type the testing sequence into the empty paragraph.
 		await target.type( 'x'.repeat( iterations ), {
@@ -147,7 +210,7 @@ test.describe( 'Post Editor Performance', () => {
 			draftId = await perfUtils.saveDraft();
 		} );
 
-		test( 'Run the test', async ( { admin, perfUtils, metrics } ) => {
+		test( 'Run the test', async ( { admin, perfUtils, metrics, page } ) => {
 			await admin.editPost( draftId );
 			await perfUtils.disableAutosave();
 			const canvas = await perfUtils.getCanvas();
@@ -156,7 +219,7 @@ test.describe( 'Post Editor Performance', () => {
 				name: /Empty block/i,
 			} );
 
-			await type( paragraph, metrics, 'type' );
+			await type( paragraph, metrics, 'type', page );
 		} );
 	} );
 
@@ -189,7 +252,7 @@ test.describe( 'Post Editor Performance', () => {
 				name: /Empty block/i,
 			} );
 
-			await type( paragraph, metrics, 'typeWithoutInspector' );
+			await type( paragraph, metrics, 'typeWithoutInspector', page );
 
 			// Open the inspector again.
 			await editor.openDocumentSettingsSidebar();
@@ -211,6 +274,7 @@ test.describe( 'Post Editor Performance', () => {
 			perfUtils,
 			metrics,
 			editor,
+			page,
 		} ) => {
 			await admin.editPost( draftId );
 			await perfUtils.disableAutosave();
@@ -222,7 +286,7 @@ test.describe( 'Post Editor Performance', () => {
 				name: /Empty block/i,
 			} );
 
-			await type( paragraph, metrics, 'typeWithTopToolbar' );
+			await type( paragraph, metrics, 'typeWithTopToolbar', page );
 
 			// Disabled fixed toolbar. Default state.
 			await editor.setIsFixedToolbar( false );
@@ -238,7 +302,7 @@ test.describe( 'Post Editor Performance', () => {
 			draftId = await perfUtils.saveDraft();
 		} );
 
-		test( 'Run the test', async ( { admin, perfUtils, metrics } ) => {
+		test( 'Run the test', async ( { admin, perfUtils, metrics, page } ) => {
 			await admin.editPost( draftId );
 			await perfUtils.disableAutosave();
 			const canvas = await perfUtils.getCanvas();
@@ -251,7 +315,7 @@ test.describe( 'Post Editor Performance', () => {
 				.first();
 			await firstParagraph.click();
 
-			await type( firstParagraph, metrics, 'typeContainer' );
+			await type( firstParagraph, metrics, 'typeContainer', page );
 		} );
 	} );
 

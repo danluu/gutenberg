@@ -66,6 +66,13 @@ The short version:
     retained characters 2-10 are already in the ordinary low band. A blocked
     `60s`, `0ms`, `60s`, `0ms` order-control run confirms this is not just
     monotonic run-order drift.
+-   I also ran the actual `post-editor.spec.js` Typing setup/run tests with a
+    default-off env-controlled start wait. The exact CI test shape agrees with
+    the custom CI-comparable benchmark: blocked `60s`, `0ms`, `60s`, `0ms`
+    before-trace runs landed at `11.60ms`, `11.61ms`, `10.82ms`, and `11.57ms`
+    p50. Starting the trace before a `60s` wait also stayed in-band at
+    `10.21ms`, so the EventDispatch-derived Typing metric is not sensitive to
+    whether the trace starts before or after the idle interval.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -464,6 +471,9 @@ The R script derives:
 -   `data/typing-delay-ci-comparable-start-wait-blocked-*.csv`: an order-control
     rerun of the CI-comparable start-wait extremes in `60s`, `0ms`, `60s`,
     `0ms` order, with 4 fresh saved/reopened drafts per block.
+-   `data/typing-delay-post-editor-ci-start-wait-exact-*.csv`: actual
+    `post-editor.spec.js` Typing setup/run tests with a default-off
+    env-controlled start wait before or after `metrics.startTracing()`.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -884,6 +894,36 @@ That order-control run supports the same conclusion as the full curve. Starting
 later is a wall-clock cost, not a retained Typing-latency improvement. Starting
 earlier, down to the current `0ms` post-setup wait, does not hurt the retained
 CI Typing metric in these local runs.
+
+I then moved the check into the actual `post-editor.spec.js` Typing test. I
+added default-off env controls:
+`POST_EDITOR_TYPING_START_WAIT_MS`,
+`POST_EDITOR_TYPING_START_WAIT_PHASE=before-trace|after-trace`, and
+`POST_EDITOR_RESULTS_OUTPUT_DIR`. With all env vars unset, the spec's behavior
+is unchanged. For the exact check I ran only the plain
+`Post Editor Performance > Typing` setup/run tests, not the custom
+`typing-delay-benchmark.spec.js` harness.
+
+![Exact post-editor CI start-wait check](figures/83-post-editor-ci-start-wait-exact.png)
+
+Exact `post-editor.spec.js` Typing rows:
+
+| Run | Wait placement | Retained p50 | p10-p90 | Mean | Reporter summary |
+| --- | -------------- | -----------: | ------: | ---: | ---------------- |
+| `block 0` | `60s before trace` | `11.60ms` | `10.4-16.1ms` | `12.90ms` | `11.6 ms +15.86% -8.53%` |
+| `block 1` | `0ms before trace` | `11.61ms` | `10.9-15.8ms` | `12.81ms` | `11.61 ms +14.38% -2.15%` |
+| `block 2` | `60s before trace` | `10.82ms` | `10.0-13.6ms` | `11.95ms` | `10.82 ms +15.99% -5.45%` |
+| `block 3` | `0ms before trace` | `11.57ms` | `10.9-16.0ms` | `13.04ms` | `11.57 ms +11.15% -2.42%` |
+| `trace before wait` | `60s after trace starts` | `10.21ms` | `9.1-13.3ms` | `10.83ms` | `10.21 ms +4.6% -10.28%` |
+
+This exact-spec check is the strongest local evidence for the CI-comparable
+question. It avoids the custom benchmark's extra instrumentation and uses the
+real `post-editor.spec.js` `type()` helper, the real retained-results array, and
+the same reporter summary that the performance test prints. It still shows no
+penalty from starting typing later, and no penalty from starting tracing before
+the idle interval. The absolute values are lower than the custom
+CI-comparable-harness values because the exact spec does less benchmark-side
+instrumentation, but the conclusion is the same.
 
 One naming trap: in `post-editor.spec.js`, `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before the Typing benchmark
@@ -4152,6 +4192,10 @@ The key runs used in this report were:
 -   `ci_typing_start_wait_blocked_*`: CI-comparable start-wait order-control
     check in `60s`, `0ms`, `60s`, `0ms` order, with 4 fresh saved/reopened
     drafts per block, 10 retained samples and 1 throwaway sample per draft.
+-   `post_editor_ci_start_wait_exact_*`: actual `post-editor.spec.js` Typing
+    setup/run tests with `POST_EDITOR_TYPING_START_WAIT_MS` set to `0ms` or
+    `60s`, in blocked `60s`, `0ms`, `60s`, `0ms` order, plus one
+    `POST_EDITOR_TYPING_START_WAIT_PHASE=after-trace` `60s` run.
 -   `ci_typing_0_1400_dense`: CI-comparable post-editor Typing dense sweep from
     `0ms` to `1400ms` in `10ms` steps, one fresh saved/reopened large-post
     draft per delay, 10 retained samples and 1 throwaway sample per delay.

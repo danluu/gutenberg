@@ -1654,6 +1654,80 @@ if (
 	}
 }
 
+post_editor_exact_summary_path <- file.path(data_dir, "typing-delay-post-editor-ci-start-wait-exact-summary.csv")
+post_editor_exact_samples_path <- file.path(data_dir, "typing-delay-post-editor-ci-start-wait-exact-samples.csv")
+if (file.exists(post_editor_exact_summary_path) && file.exists(post_editor_exact_samples_path)) {
+	post_editor_exact_summary <- read_csv(post_editor_exact_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			run_label = case_when(
+				typing_start_wait_phase == "after-trace" ~ "trace starts\nbefore 60s wait",
+				typing_start_wait_ms == 0 ~ paste0("block ", block_index, "\n0ms"),
+				TRUE ~ paste0("block ", block_index, "\n60s")
+			),
+			run_label = factor(run_label, levels = run_label),
+			wait_label = factor(
+				case_when(
+					typing_start_wait_phase == "after-trace" ~ "60s after trace starts",
+					typing_start_wait_ms == 0 ~ "0ms before trace",
+					TRUE ~ "60s before trace"
+				),
+				levels = c("0ms before trace", "60s before trace", "60s after trace starts")
+			)
+		)
+	post_editor_exact_samples <- read_csv(post_editor_exact_samples_path, show_col_types = FALSE) %>%
+		mutate(
+			run_label = case_when(
+				typing_start_wait_phase == "after-trace" ~ "trace starts\nbefore 60s wait",
+				typing_start_wait_ms == 0 ~ paste0("block ", block_index, "\n0ms"),
+				TRUE ~ paste0("block ", block_index, "\n60s")
+			),
+			run_label = factor(run_label, levels = levels(post_editor_exact_summary$run_label)),
+			wait_label = factor(
+				case_when(
+					typing_start_wait_phase == "after-trace" ~ "60s after trace starts",
+					typing_start_wait_ms == 0 ~ "0ms before trace",
+					TRUE ~ "60s before trace"
+				),
+				levels = levels(post_editor_exact_summary$wait_label)
+			)
+		)
+
+	save_plot(
+		ggplot() +
+			geom_jitter(
+				data = post_editor_exact_samples,
+				aes(run_label, latency_ms, color = wait_label),
+				width = 0.08,
+				height = 0,
+				alpha = 0.38,
+				size = 1.9
+			) +
+			geom_errorbar(
+				data = post_editor_exact_summary,
+				aes(run_label, ymin = latency_p10_ms, ymax = latency_p90_ms, color = wait_label),
+				width = 0.16,
+				linewidth = 0.7
+			) +
+			geom_point(
+				data = post_editor_exact_summary,
+				aes(run_label, latency_p50_ms, color = wait_label, shape = wait_label),
+				size = 3.4
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "The exact post-editor Typing test also does not depend on start wait",
+				subtitle = "Actual post-editor.spec.js Typing setup/run tests; points are retained samples, bars are p10-p90",
+				x = "Run order and wait placement",
+				y = "Retained typing latency (ms)",
+				color = "Start wait",
+				shape = "Start wait"
+			),
+		"83-post-editor-ci-start-wait-exact.png",
+		width = 9.5,
+		height = 5.4
+	)
+}
+
 ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")
 if (file.exists(ci_dense_summary_path)) {
 	ci_dense_summary <- read_csv(ci_dense_summary_path, show_col_types = FALSE)
