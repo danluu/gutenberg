@@ -1232,6 +1232,10 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				( span ) =>
 					span.name === 'block-editor.useBlockSync.updateParent'
 			);
+			const markerBeforeInputDurationMs = markerActionsBeforeInput.reduce(
+				( sum, event ) => sum + ( event.durationMs || 0 ),
+				0
+			);
 			const rootBatch = firstRootBatchAfterInput( spans, inputEvent );
 			const batchSpans = rootBatch
 				? spansInWindow(
@@ -1311,6 +1315,38 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 							`${ event.actionName }:${ event.after?.isPersistent }`
 					)
 					.join( '; ' );
+			const markerRootSubscribeDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				blockEditorRootSubscribe
+			);
+			const markerReduxListenerDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				blockEditorReduxListener
+			);
+			const markerUseSelectOnChangeDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				( span ) => span.name === 'data.useSelect.onChange'
+			);
+			const markerUseSelectMapSelectDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				( span ) => span.name === 'data.useSelect.mapSelect'
+			);
+			const rootSubscribeDurationMs = sumSpanDuration(
+				batchSpans,
+				blockEditorRootSubscribe
+			);
+			const reduxListenerDurationMs = sumSpanDuration(
+				batchSpans,
+				blockEditorReduxListener
+			);
+			const useSelectOnChangeDurationMs = sumSpanDuration(
+				batchSpans,
+				( span ) => span.name === 'data.useSelect.onChange'
+			);
+			const useSelectMapSelectDurationMs = sumSpanDuration(
+				batchSpans,
+				( span ) => span.name === 'data.useSelect.mapSelect'
+			);
 
 			return {
 				run_id: run.runId,
@@ -1327,11 +1363,15 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				marker_before_input_actions: markerActionsBeforeInput
 					.map( ( event ) => event.actionName )
 					.join( '; ' ),
-				marker_before_input_duration_ms:
-					markerActionsBeforeInput.reduce(
-						( sum, event ) => sum + ( event.durationMs || 0 ),
-						0
-					),
+				marker_before_input_duration_ms: markerBeforeInputDurationMs,
+				marker_root_subscribe_duration_ms:
+					markerRootSubscribeDurationMs,
+				marker_redux_listener_duration_ms:
+					markerReduxListenerDurationMs,
+				marker_use_select_on_change_duration_ms:
+					markerUseSelectOnChangeDurationMs,
+				marker_use_select_map_select_duration_ms:
+					markerUseSelectMapSelectDurationMs,
 				marker_update_parent_count: markerUpdateParentSpans.length,
 				marker_update_parent_duration_ms:
 					markerUpdateParentSpans.reduce(
@@ -1412,18 +1452,12 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					batchSpans,
 					blockEditorRootSubscribe
 				),
-				root_subscribe_duration_ms: sumSpanDuration(
-					batchSpans,
-					blockEditorRootSubscribe
-				),
+				root_subscribe_duration_ms: rootSubscribeDurationMs,
 				redux_listener_count: countSpans(
 					batchSpans,
 					blockEditorReduxListener
 				),
-				redux_listener_duration_ms: sumSpanDuration(
-					batchSpans,
-					blockEditorReduxListener
-				),
+				redux_listener_duration_ms: reduxListenerDurationMs,
 				resume_block_editor_duration_ms: sumSpanDuration(
 					batchSpans,
 					blockEditorResumeStore
@@ -1440,18 +1474,28 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					batchSpans,
 					( span ) => span.name === 'data.useSelect.onChange'
 				),
-				use_select_on_change_duration_ms: sumSpanDuration(
-					batchSpans,
-					( span ) => span.name === 'data.useSelect.onChange'
-				),
+				use_select_on_change_duration_ms: useSelectOnChangeDurationMs,
 				use_select_map_select_count: countSpans(
 					batchSpans,
 					( span ) => span.name === 'data.useSelect.mapSelect'
 				),
+				use_select_map_select_duration_ms: useSelectMapSelectDurationMs,
 				use_select_update_value_count: countSpans(
 					batchSpans,
 					( span ) => span.name === 'data.useSelect.updateValue'
 				),
+				cycle_latency_ms:
+					( record?.latencyMs || 0 ) + markerBeforeInputDurationMs,
+				cycle_root_subscribe_duration_ms:
+					rootSubscribeDurationMs + markerRootSubscribeDurationMs,
+				cycle_redux_listener_duration_ms:
+					reduxListenerDurationMs + markerReduxListenerDurationMs,
+				cycle_use_select_on_change_duration_ms:
+					useSelectOnChangeDurationMs +
+					markerUseSelectOnChangeDurationMs,
+				cycle_use_select_map_select_duration_ms:
+					useSelectMapSelectDurationMs +
+					markerUseSelectMapSelectDurationMs,
 				direct_update_parent_duration_ms: updateParentSpans.reduce(
 					( sum, span ) => sum + ( span.durationMs || 0 ),
 					0
@@ -1517,12 +1561,36 @@ const allSpanInputBatchSummaryRows = Array.from(
 			( sum, row ) => sum + row.marker_did_persistence_change_count,
 			0
 		),
+		marker_before_input_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.marker_before_input_duration_ms ),
+			0.5
+		),
+		marker_root_subscribe_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.marker_root_subscribe_duration_ms ),
+			0.5
+		),
+		marker_redux_listener_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.marker_redux_listener_duration_ms ),
+			0.5
+		),
+		marker_use_select_on_change_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.marker_use_select_on_change_duration_ms ),
+			0.5
+		),
+		marker_use_select_map_select_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.marker_use_select_map_select_duration_ms ),
+			0.5
+		),
 		keypress_p50_ms: quantile(
 			rows.map( ( row ) => row.keypress_ms ),
 			0.5
 		),
 		latency_p50_ms: quantile(
 			rows.map( ( row ) => row.latency_ms ),
+			0.5
+		),
+		cycle_latency_p50_ms: quantile(
+			rows.map( ( row ) => row.cycle_latency_ms ),
 			0.5
 		),
 		batch_duration_p50_ms: quantile(
@@ -1628,12 +1696,20 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map( ( row ) => row.root_subscribe_duration_ms ),
 			0.5
 		),
+		cycle_root_subscribe_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.cycle_root_subscribe_duration_ms ),
+			0.5
+		),
 		redux_listener_count_p50: quantile(
 			rows.map( ( row ) => row.redux_listener_count ),
 			0.5
 		),
 		redux_listener_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.redux_listener_duration_ms ),
+			0.5
+		),
+		cycle_redux_listener_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.cycle_redux_listener_duration_ms ),
 			0.5
 		),
 		resume_block_editor_duration_p50_ms: quantile(
@@ -1658,8 +1734,20 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map( ( row ) => row.use_select_on_change_duration_ms ),
 			0.5
 		),
+		cycle_use_select_on_change_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.cycle_use_select_on_change_duration_ms ),
+			0.5
+		),
 		use_select_map_select_count_p50: quantile(
 			rows.map( ( row ) => row.use_select_map_select_count ),
+			0.5
+		),
+		use_select_map_select_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_map_select_duration_ms ),
+			0.5
+		),
+		cycle_use_select_map_select_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.cycle_use_select_map_select_duration_ms ),
 			0.5
 		),
 		direct_update_parent_duration_p50_ms: quantile(
@@ -2263,6 +2351,10 @@ writeCsv(
 		'marker_before_input_count',
 		'marker_before_input_actions',
 		'marker_before_input_duration_ms',
+		'marker_root_subscribe_duration_ms',
+		'marker_redux_listener_duration_ms',
+		'marker_use_select_on_change_duration_ms',
+		'marker_use_select_map_select_duration_ms',
 		'marker_update_parent_count',
 		'marker_update_parent_duration_ms',
 		'marker_did_persistence_change_count',
@@ -2303,7 +2395,13 @@ writeCsv(
 		'use_select_on_change_count',
 		'use_select_on_change_duration_ms',
 		'use_select_map_select_count',
+		'use_select_map_select_duration_ms',
 		'use_select_update_value_count',
+		'cycle_latency_ms',
+		'cycle_root_subscribe_duration_ms',
+		'cycle_redux_listener_duration_ms',
+		'cycle_use_select_on_change_duration_ms',
+		'cycle_use_select_map_select_duration_ms',
 		'direct_update_parent_duration_ms',
 		'use_block_sync_registry_batch_duration_ms',
 		'on_input_duration_ms',
@@ -2326,8 +2424,14 @@ writeCsv(
 		'update_parent_modes',
 		'marker_before_input_count_sum',
 		'marker_did_persistence_change_count_sum',
+		'marker_before_input_duration_p50_ms',
+		'marker_root_subscribe_duration_p50_ms',
+		'marker_redux_listener_duration_p50_ms',
+		'marker_use_select_on_change_duration_p50_ms',
+		'marker_use_select_map_select_duration_p50_ms',
 		'keypress_p50_ms',
 		'latency_p50_ms',
+		'cycle_latency_p50_ms',
 		'batch_duration_p50_ms',
 		'batch_callback_duration_p50_ms',
 		'selection_change_duration_p50_ms',
@@ -2346,14 +2450,19 @@ writeCsv(
 		'update_block_attributes_redux_listener_top100_duration_p50_ms',
 		'root_subscribe_count_p50',
 		'root_subscribe_duration_p50_ms',
+		'cycle_root_subscribe_duration_p50_ms',
 		'redux_listener_count_p50',
 		'redux_listener_duration_p50_ms',
+		'cycle_redux_listener_duration_p50_ms',
 		'resume_block_editor_duration_p50_ms',
 		'emitter_listener_block_editor_count_p50',
 		'emitter_listener_block_editor_duration_p50_ms',
 		'use_select_on_change_count_p50',
 		'use_select_on_change_duration_p50_ms',
+		'cycle_use_select_on_change_duration_p50_ms',
 		'use_select_map_select_count_p50',
+		'use_select_map_select_duration_p50_ms',
+		'cycle_use_select_map_select_duration_p50_ms',
 		'direct_update_parent_duration_p50_ms',
 		'use_block_sync_registry_batch_duration_p50_ms',
 		'on_input_duration_p50_ms',

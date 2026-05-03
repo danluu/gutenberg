@@ -69,6 +69,9 @@ The short version:
     heavy subscriber explanation. The top one and top ten listener-wrapper
     durations barely move; the difference appears as more tiny measured listener
     spans and larger aggregate `rootSubscribe` time.
+-   A marker-plus-input cycle check in the trace-heavy run confirms the same
+    accounting story: the normal marker has a lower next-input slice than no-op,
+    but a higher marker-plus-input cycle cost.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -1169,6 +1172,36 @@ difference to broad low-level subscriber-wrapper fanout, but not to one named
 selector or React component. Proving a selector-level cause would require new
 metadata at `data.reduxStore.listener` subscription time, for example recording
 the subscriber stack or propagating `useSelectId` into the lower wrapper.
+
+Finally, I paired the marker task before each retained input with that same
+input in the trace-heavy run. This tests the most important accounting theory
+directly: if the normal marker truly made the editor do less work overall, the
+marker-plus-input cycle should be lower than the no-op cycle. It is not.
+
+![Marker cycle versus input-only cost](figures/38-marker-cycle-vs-input-only.png)
+
+Selected p50s:
+
+| Metric                     | normal marker | marker no-op | mark next |
+| -------------------------- | ------------: | -----------: | --------: |
+| next input EventDispatch   |      `26.9ms` |     `32.5ms` |  `30.0ms` |
+| marker before that input   |      `19.0ms` |      `0.1ms` |   `0.3ms` |
+| marker plus next input     |      `40.7ms` |     `32.8ms` |  `30.4ms` |
+| next input `rootSubscribe` |       `6.4ms` |      `9.3ms` |   `8.4ms` |
+| marker `rootSubscribe`     |      `18.9ms` |      `0.0ms` |   `0.0ms` |
+| cycle `rootSubscribe`      |      `24.4ms` |      `9.3ms` |   `8.4ms` |
+| next input `useSelect`     |       `7.0ms` |      `8.0ms` |   `7.5ms` |
+| marker `useSelect`         |      `10.5ms` |      `0.0ms` |   `0.0ms` |
+| cycle `useSelect`          |      `16.8ms` |      `8.0ms` |   `7.5ms` |
+
+This confirms the weak version of "work moves out of the next input slice" and
+disconfirms the strong version. The weak version is: a real marker task runs in
+a separate timer task before the measured input, updates block-editor state, and
+does subscriber fanout that the next input measurement does not include. The
+strong version would be: the normal marker makes the total marker-plus-input
+cycle cheaper than no marker work. The data says the opposite. The normal
+marker's next-input slice is lower than no-op by about `5.6ms`, but the
+marker-plus-input cycle is higher by about `7.9ms` in this trace-heavy run.
 
 One piece remains open, but it is now narrower. The traces identify the marker
 timer fanout and the following input's block-editor fanout, and the owner

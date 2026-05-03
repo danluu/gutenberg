@@ -3634,6 +3634,79 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		width = 11,
 		height = 7
 	)
+
+	marker_cycle_cost <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			)
+		)
+
+	marker_cycle_cost <- bind_rows(
+		marker_cycle_cost %>%
+			transmute(
+				intervention,
+				metric = "Event/accounting window",
+				`next input only` = latency_p50_ms,
+				`timer marker before input` = marker_before_input_duration_p50_ms,
+				`timer + next input` = cycle_latency_p50_ms
+			),
+		marker_cycle_cost %>%
+			transmute(
+				intervention,
+				metric = "block-editor rootSubscribe",
+				`next input only` = root_subscribe_duration_p50_ms,
+				`timer marker before input` = marker_root_subscribe_duration_p50_ms,
+				`timer + next input` = cycle_root_subscribe_duration_p50_ms
+			),
+		marker_cycle_cost %>%
+			transmute(
+				intervention,
+				metric = "useSelect.onChange",
+				`next input only` = use_select_on_change_duration_p50_ms,
+				`timer marker before input` = marker_use_select_on_change_duration_p50_ms,
+				`timer + next input` = cycle_use_select_on_change_duration_p50_ms
+			)
+	) %>%
+		pivot_longer(
+			cols = -c(intervention, metric),
+			names_to = "window",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c("Event/accounting window", "block-editor rootSubscribe", "useSelect.onChange")
+			),
+			window = factor(
+				window,
+				levels = rev(c("next input only", "timer marker before input", "timer + next input"))
+			)
+		)
+
+	save_plot(
+		ggplot(marker_cycle_cost, aes(duration_ms, window, color = intervention, shape = intervention)) +
+			geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_x") +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "The normal marker lowers the next input slice, not the whole cycle",
+				subtitle = "Trace-all-data-spans run at 1000ms; per-input p50s include the marker action before the same retained input",
+				x = "Duration, p50 (ms)",
+				y = NULL,
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			),
+		"38-marker-cycle-vs-input-only.png",
+		width = 11,
+		height = 8
+	)
 }
 
 marker_allspan_input_batch_samples_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-samples.csv")
