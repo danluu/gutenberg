@@ -3886,6 +3886,7 @@ if (file.exists(marker_allspan_owner_path)) {
 
 redux_listener_owner_summary_path <- file.path(data_dir, "typing-delay-redux-listener-owner-summary.csv")
 redux_listener_owner_diff_path <- file.path(data_dir, "typing-delay-redux-listener-owner-diff.csv")
+redux_listener_owner_samples_path <- file.path(data_dir, "typing-delay-redux-listener-owner-samples.csv")
 
 if (file.exists(redux_listener_owner_summary_path)) {
 	redux_listener_owner_summary <- read_csv(redux_listener_owner_summary_path, show_col_types = FALSE) %>%
@@ -3974,6 +3975,173 @@ if (file.exists(redux_listener_owner_diff_path)) {
 			height = 8
 		)
 	}
+}
+
+if (file.exists(redux_listener_owner_samples_path)) {
+	redux_listener_owner_samples <- read_csv(redux_listener_owner_samples_path, show_col_types = FALSE)
+
+	redux_listener_owner_accounting <- redux_listener_owner_samples %>%
+		group_by(intervention, window_kind, sample_id) %>%
+		summarise(
+			total_duration_ms = sum(listener_duration_ms, na.rm = TRUE),
+			total_count = sum(listener_count, na.rm = TRUE),
+			owner_count = n(),
+			.groups = "drop"
+		) %>%
+		group_by(intervention, window_kind) %>%
+		summarise(
+			n = n(),
+			total_duration_p50_ms = median(total_duration_ms, na.rm = TRUE),
+			total_duration_min_ms = min(total_duration_ms, na.rm = TRUE),
+			total_duration_max_ms = max(total_duration_ms, na.rm = TRUE),
+			total_count_p50 = median(total_count, na.rm = TRUE),
+			owner_count_p50 = median(owner_count, na.rm = TRUE),
+			.groups = "drop"
+		)
+
+	write_csv(redux_listener_owner_accounting, file.path(data_dir, "typing-delay-redux-listener-owner-accounting.csv"))
+
+	redux_listener_owner_concentration <- redux_listener_owner_samples %>%
+		filter(has_use_select_owner) %>%
+		arrange(intervention, window_kind, sample_id, desc(listener_duration_ms)) %>%
+		group_by(intervention, window_kind, sample_id) %>%
+		mutate(
+			rank = row_number(),
+			total_duration_ms = sum(listener_duration_ms, na.rm = TRUE),
+			share = if_else(total_duration_ms > 0, listener_duration_ms / total_duration_ms, NA_real_)
+		) %>%
+		summarise(
+			top1_share = sum(share[rank <= 1], na.rm = TRUE),
+			top3_share = sum(share[rank <= 3], na.rm = TRUE),
+			top5_share = sum(share[rank <= 5], na.rm = TRUE),
+			top10_share = sum(share[rank <= 10], na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		group_by(intervention, window_kind) %>%
+		summarise(
+			n = n(),
+			top1_share_p50 = median(top1_share, na.rm = TRUE),
+			top3_share_p50 = median(top3_share, na.rm = TRUE),
+			top5_share_p50 = median(top5_share, na.rm = TRUE),
+			top10_share_p50 = median(top10_share, na.rm = TRUE),
+			.groups = "drop"
+		)
+
+	write_csv(redux_listener_owner_concentration, file.path(data_dir, "typing-delay-redux-listener-owner-concentration.csv"))
+
+	redux_listener_owner_concentration_plot <- redux_listener_owner_concentration %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			window_label = recode(
+				window_kind,
+				`marker before input` = "Timer marker before input",
+				`next input selectionChange` = "Next input: selectionChange",
+				`next input updateBlockAttributes` = "Next input: updateBlockAttributes"
+			)
+		) %>%
+		pivot_longer(
+			cols = ends_with("_share_p50"),
+			names_to = "top_group",
+			values_to = "duration_share"
+		) %>%
+		mutate(
+			top_group = recode(
+				top_group,
+				top1_share_p50 = "top 1 owner",
+				top3_share_p50 = "top 3 owners",
+				top5_share_p50 = "top 5 owners",
+				top10_share_p50 = "top 10 owners"
+			),
+			top_group = factor(top_group, levels = rev(c("top 1 owner", "top 3 owners", "top 5 owners", "top 10 owners")))
+		)
+
+	save_plot(
+		ggplot(redux_listener_owner_concentration_plot, aes(duration_share, top_group, color = intervention, shape = intervention)) +
+			geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.5)) +
+			facet_wrap(vars(window_label), ncol = 1) +
+			scale_x_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "Listener cost is concentrated in a few owner families, not one owner",
+				subtitle = "Cumulative share of low-level Redux listener duration by top source-mapped useSelect owners",
+				x = "Share of p50 listener-wrapper duration",
+				y = NULL,
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			),
+		"41-redux-listener-owner-concentration.png",
+		width = 11,
+		height = 8
+	)
+}
+
+if (file.exists(redux_listener_owner_summary_path)) {
+	redux_listener_owner_count_duration <- read_csv(redux_listener_owner_summary_path, show_col_types = FALSE) %>%
+		filter(
+			!is.na(source_path),
+			source_path != "",
+			source_path != "(non-useSelect)",
+			listener_duration_p50_ms > 0,
+			listener_count_p50 > 0,
+			window_kind %in% c("marker before input", "next input selectionChange", "next input updateBlockAttributes")
+		) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			window_label = recode(
+				window_kind,
+				`marker before input` = "Timer marker before input",
+				`next input selectionChange` = "Next input: selectionChange",
+				`next input updateBlockAttributes` = "Next input: updateBlockAttributes"
+			),
+			owner_family = case_when(
+				str_detect(source_path, "block-list/block.js|block-list/index.js") ~ "block-list",
+				str_detect(source_path, "pattern-overrides") ~ "pattern-overrides",
+				str_detect(source_path, "inner-blocks") ~ "inner-blocks",
+				str_detect(source_path, "heading/edit") ~ "heading",
+				TRUE ~ "other"
+			),
+			per_listener_us = 1000 * listener_duration_p50_ms / listener_count_p50
+		) %>%
+		group_by(window_kind, intervention) %>%
+		slice_max(listener_duration_p50_ms, n = 10, with_ties = FALSE) %>%
+		ungroup()
+
+	write_csv(redux_listener_owner_count_duration, file.path(data_dir, "typing-delay-redux-listener-owner-count-duration.csv"))
+
+	save_plot(
+		ggplot(redux_listener_owner_count_duration, aes(listener_count_p50, listener_duration_p50_ms, color = owner_family, shape = intervention)) +
+			geom_point(size = 3.1, alpha = 0.88) +
+			facet_wrap(vars(window_label), scales = "free", ncol = 1) +
+			scale_x_log10(labels = label_number()) +
+			scale_color_brewer(type = "qual", palette = "Set2") +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "The largest owner costs come from high invocation counts",
+				subtitle = "Top source-mapped owners by p50 duration; the dominant groups have hundreds to thousands of listener calls",
+				x = "p50 listener calls in owner group (log scale)",
+				y = "Redux listener duration, p50 (ms)",
+				color = "Owner family",
+				shape = "Timer intervention"
+			),
+		"42-redux-listener-count-vs-duration.png",
+		width = 11,
+		height = 8
+	)
 }
 
 message("Wrote plots to: ", figure_dir)

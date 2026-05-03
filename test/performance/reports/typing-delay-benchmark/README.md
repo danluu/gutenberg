@@ -231,6 +231,11 @@ The R script derives:
 -   `data/typing-delay-redux-listener-owner-*.csv`: source-map-backed owner
     summaries for low-level `data.reduxStore.listener` spans after propagating
     diagnostic `useSelectId` metadata through the registry subscription wrapper.
+-   `data/typing-delay-redux-listener-owner-accounting.csv`,
+    `data/typing-delay-redux-listener-owner-concentration.csv`, and
+    `data/typing-delay-redux-listener-owner-count-duration.csv`: aggregate
+    accounting, owner concentration, and count-vs-duration summaries derived
+    from the low-level Redux listener owner samples.
 -   `data/typing-delay-marker-richtext-summary.csv`: RichText span summaries for
     the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
@@ -1229,6 +1234,59 @@ persistence/action path, and that changes callback-side block-editor store
 fanout by a few milliseconds. The changed fanout is spread across thousands of
 cheap subscribers, dominated by block-list, pattern-overrides, and inner-blocks
 owner families.
+
+I then checked whether the owner-attribution rows close the accounting at the
+window level. Summing the per-owner listener-wrapper rows per retained window
+gives:
+
+| Window                       | Intervention             | p50 listener-wrapper total | p50 listener calls | p50 owner groups |
+| ---------------------------- | ------------------------ | -------------------------: | -----------------: | ---------------: |
+| marker before input          | normal marker            |                   `14.7ms` |            `4,498` |             `66` |
+| next `selectionChange`       | normal marker            |                    `2.3ms` |            `4,460` |           `44.5` |
+| next `selectionChange`       | marker no-op             |                    `4.4ms` |          `4,485.5` |           `56.5` |
+| next `selectionChange`       | mark next not persistent |                    `4.3ms` |            `4,472` |             `47` |
+| next `updateBlockAttributes` | normal marker            |                    `1.8ms` |          `4,463.5` |           `68.5` |
+| next `updateBlockAttributes` | marker no-op             |                    `2.6ms` |          `4,479.5` |             `58` |
+| next `updateBlockAttributes` | mark next not persistent |                    `2.3ms` |            `4,471` |             `66` |
+
+This independently confirms the aggregate version of the input-side story: in
+the following input, no-op and mark-next have about `2ms` more low-level
+listener-wrapper time in `selectionChange`, plus less than `1ms` more in
+`updateBlockAttributes`. The normal marker also has a much larger separate
+marker-before-input listener-wrapper window. The numbers are not identical to
+the earlier all-span run because this was a separate reduced run, but the shape
+is the same.
+
+![Redux listener owner concentration](figures/41-redux-listener-owner-concentration.png)
+
+The concentration check refines the "distributed fanout" wording. A single owner
+does not dominate: the largest source-mapped owner is only about `30..42%` of
+the measured listener-wrapper time, depending on the window. But the work is
+also not uniformly spread over thousands of unrelated sources. The top three
+owner groups are typically about `74..90%` of the measured listener-wrapper
+time, and the top five are about `90%+`. The right model is "a few high-instance
+owner families", not "one pathological selector" and not "thousands of equal
+anonymous callbacks."
+
+![Redux listener count versus duration](figures/42-redux-listener-count-vs-duration.png)
+
+The count-vs-duration plot checks another plausible theory: maybe those owner
+families are slow per listener. For the marker task's top source-mapped groups:
+
+| Owner                                                            | p50 duration | p50 listener calls | p50 per listener |
+| ---------------------------------------------------------------- | -----------: | -----------------: | ---------------: |
+| `packages/block-editor/src/components/block-list/index.js:196`   |      `5.3ms` |              `580` |          `9.1us` |
+| `packages/editor/src/hooks/pattern-overrides.js:40`              |      `3.6ms` |            `1,437` |          `2.5us` |
+| `packages/block-editor/src/components/block-list/block.js:563`   |      `3.5ms` |            `1,437` |          `2.4us` |
+| `packages/block-editor/src/components/inner-blocks/index.js:195` |      `1.1ms` |              `580` |          `1.9us` |
+| `packages/block-library/src/heading/edit.js:35`                  |      `0.5ms` |              `202` |          `2.5us` |
+
+This disconfirms the theory that the dominant source-mapped groups are
+individually slow callbacks. The measurable cost is mostly multiplication:
+hundreds or thousands of very cheap listener calls in block-tree-wide
+subscriptions. The remaining open question is not "which one callback is slow?"
+but "which invalidation boundaries make thousands of block-list and
+pattern-override subscribers run on this input path?"
 
 Finally, I paired the marker task before each retained input with that same
 input in the trace-heavy run. This tests the most important accounting theory

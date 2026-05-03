@@ -1,0 +1,8 @@
+intervention,window_kind,n,total_duration_p50_ms,total_duration_min_ms,total_duration_max_ms,total_count_p50,owner_count_p50
+mark next not persistent,next input selectionChange,4,4.300000071525574,3.700000047683716,4.599999904632568,4472,47
+mark next not persistent,next input updateBlockAttributes,4,2.299999713897705,1.6999995708465576,2.6000008583068848,4471,66
+marker no-op,next input selectionChange,4,4.399999976158142,3.299999952316284,4.700000286102295,4485.5,56.5
+marker no-op,next input updateBlockAttributes,4,2.6000001430511475,2.200000047683716,3.1999995708465576,4479.5,58
+normal marker,marker before input,3,14.699999809265137,13.500000476837158,17.699999570846558,4498,66
+normal marker,next input selectionChange,4,2.349999785423279,2.0999999046325684,3.599998950958252,4460.5,44.5
+normal marker,next input updateBlockAttributes,4,1.8499999046325684,1.5999999046325684,2.1999998092651367,4463.5,68.5
