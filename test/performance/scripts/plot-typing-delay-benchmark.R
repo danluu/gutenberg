@@ -2117,6 +2117,8 @@ if (file.exists(input_path_summary_path)) {
 				levels = c(
 					"Playwright keyboard.type key-hold burst",
 					"Playwright keyboard.press per key",
+					"Playwright keyboard.type one char per call",
+					"Playwright keyboard.down/up per key",
 					"Raw CDP Input.dispatchKeyEvent"
 				)
 			),
@@ -2126,7 +2128,9 @@ if (file.exists(input_path_summary_path)) {
 				recode(
 					as.character(input_path),
 					`Playwright keyboard.type key-hold burst` = "keyboard.type",
-					`Playwright keyboard.press per key` = "keyboard.press"
+					`Playwright keyboard.press per key` = "keyboard.press",
+					`Playwright keyboard.type one char per call` = "type one char",
+					`Playwright keyboard.down/up per key` = "down/up"
 				)
 			)
 		)
@@ -2152,13 +2156,14 @@ if (file.exists(input_path_summary_path)) {
 			scale_x_log10(breaks = c(2, 3, 10, 30, 100, 300, 1000)) +
 			scale_color_brewer(type = "qual", palette = "Dark2") +
 			labs(
-				title = "The post-keyup gap alone does not explain the fast hold case",
-				subtitle = "1300ms key hold traces; raw CDP stays on the slow path even with long gaps, while Playwright keyboard.press is fast",
+				title = "Per-key Playwright calls avoid the slow hold path",
+				subtitle = "1300ms key hold traces; raw CDP stays slow even with long gaps, so the gap alone is not causal",
 				x = "Observed previous keyup to next keydown, p50 (ms, log scale)",
 				y = "keypress EventDispatch duration, p50 (ms)",
 				color = "Input path",
 				shape = "Input path"
-			),
+			) +
+			theme(legend.position = "none"),
 		"25-input-path-post-keyup-gap.png",
 		width = 12,
 		height = 7

@@ -613,54 +613,79 @@ This narrows the theory again. The visible extra cost still appears in the next
 `keypress` / RichText / data fanout path, but it is not explained by observable
 work draining during the post-keyup gap.
 
-### Raw CDP Gap Sweep
+### Input-Path and Raw-CDP Gap Sweep
 
-The next concrete theory was that the elapsed gap itself was decisive. To test
-that, I added `BENCHMARK_DELAY_MODE=cdp-key-hold`, which bypasses Playwright's
-high-level keyboard helpers and dispatches Chromium `Input.dispatchKeyEvent`
-calls directly. The CDP event shape matches Playwright's Chromium keyboard path
-for a printable `x`: `keyDown` with `text` / `unmodifiedText`, then `keyUp`.
-The mode holds the key for `1300ms` and uses a Node-side timer for the
-post-keyup gap.
+The next concrete theory was that either the elapsed gap itself or the
+Playwright `keyboard.press()` wrapper was decisive. I tested both by adding
+three more input paths:
+
+-   `BENCHMARK_DELAY_MODE=cdp-key-hold`, which bypasses Playwright's high-level
+    keyboard helpers and dispatches Chromium `Input.dispatchKeyEvent` calls
+    directly. The CDP event shape matches Playwright's Chromium keyboard path for
+    a printable `x`: `keyDown` with `text` / `unmodifiedText`, then `keyUp`.
+-   `BENCHMARK_DELAY_MODE=type-one-char-hold`, which calls
+    `page.keyboard.type( 'x', { delay: 1300 } )` once per character instead of
+    one multi-character `keyboard.type()` call.
+-   `BENCHMARK_DELAY_MODE=down-up-key-hold`, which calls
+    `page.keyboard.down( 'x' )`, waits `1300ms`, then calls
+    `page.keyboard.up( 'x' )` once per character.
 
 ![Input path post-keyup gap check](figures/25-input-path-post-keyup-gap.png)
 
-This disconfirms the "gap alone" theory. Raw CDP remains on the slow path even
-with much longer observed post-keyup gaps than the fast `keyboard.press()` case.
+This disconfirms both the "gap alone" theory and the narrower "`keyboard.press()`
+wrapper" theory. With 20 retained samples in the main comparison cases:
 
-| Input path                            | Requested post-keyup gap | Observed post-keyup gap p50 | `keypress` p50 |
-| ------------------------------------- | -----------------------: | --------------------------: | -------------: |
-| Playwright `keyboard.type`, key held  |                    `0ms` |                     `2.3ms` |       `23.4ms` |
-| Playwright `keyboard.press`, key held |                    `0ms` |                    `30.3ms` |       `11.7ms` |
-| Raw CDP key hold                      |                    `0ms` |                     `3.3ms` |       `22.2ms` |
-| Raw CDP key hold                      |                   `33ms` |                    `38.8ms` |       `22.5ms` |
-| Raw CDP key hold                      |                  `310ms` |                   `317.8ms` |       `22.1ms` |
-| Raw CDP key hold                      |                 `1000ms` |                  `1007.3ms` |       `23.6ms` |
+| Input path                                    | Retained samples | Requested post-keyup gap | Observed post-keyup gap p50 | `keypress` p50 |
+| --------------------------------------------- | ---------------: | -----------------------: | --------------------------: | -------------: |
+| Playwright `keyboard.type( 'x'.repeat( n ) )` |             `20` |                    `0ms` |                     `2.2ms` |       `23.3ms` |
+| Playwright `keyboard.press( 'x' )` per key    |             `20` |                    `0ms` |                    `32.2ms` |       `15.9ms` |
+| Playwright `keyboard.type( 'x' )` per key     |             `20` |                    `0ms` |                    `31.9ms` |       `15.9ms` |
+| Playwright `keyboard.down/up( 'x' )` per key  |             `20` |                    `0ms` |                    `18.3ms` |       `15.6ms` |
+| Raw CDP `Input.dispatchKeyEvent`              |             `20` |                    `0ms` |                     `4.0ms` |       `21.0ms` |
+| Raw CDP `Input.dispatchKeyEvent`              |             `20` |                 `1000ms` |                  `1008.6ms` |       `22.6ms` |
+| Raw CDP `Input.dispatchKeyEvent`              |              `8` |                   `16ms` |                    `20.8ms` |       `24.7ms` |
+| Raw CDP `Input.dispatchKeyEvent`              |              `8` |                   `33ms` |                    `38.8ms` |       `22.5ms` |
+| Raw CDP `Input.dispatchKeyEvent`              |              `8` |                  `310ms` |                   `317.8ms` |       `22.1ms` |
 
 The full raw-CDP sweep also includes requested `5ms`, `10ms`, `16ms`, and
-`100ms` gaps; all stayed in the same slow `~22-25ms` `keypress` range. These
+`100ms` gaps; all stayed in the same slow `~21-25ms` `keypress` range. These
 runs had the same DOM-level flags as the Playwright traces: no key repeat, no
 composition, and `isLastBlockChangePersistent() === true` / `isTyping() === true`
 at the input events.
 
+The most direct matched-gap comparison is `down/up` versus raw CDP `+16ms`:
+Playwright `down/up` is fast at an observed `18.3ms` gap, while raw CDP is slow
+at an observed `20.8ms` gap. That makes elapsed post-keyup time an unlikely
+primary cause.
+
+The local Playwright implementation also matters here. For printable characters,
+Playwright's `keyboard.type()` loops over the same server-side `Keyboard.press()`
+implementation that `keyboard.press()` uses. The difference between the slow and
+faster Playwright cases is not the key event payload. It is whether all
+characters are typed inside one Playwright `keyboard.type()` action/progress
+scope or each character is delivered through its own Playwright keyboard action.
+
 The refined conclusion is:
 
-1. The slow path does not require the Playwright `keyboard.type()` helper. Raw
-   CDP long-held key events reproduce it.
-2. The fast `keyboard.press()` result is not explained by its natural `30ms`
-   post-keyup gap. Raw CDP is still slow at `39ms`, `318ms`, and `1007ms`
-   observed gaps.
-3. The difference is below the DOM/browser-event level currently traced. The
-   remaining suspect is the Playwright command path itself: `keyboard.press()`
-   appears to use a delivery/session/progress boundary that changes Gutenberg's
-   next-input path even though the DOM event sequence and coarse editor state
-   look the same.
+1. The slow path does not require the multi-character Playwright
+   `keyboard.type()` helper. Raw CDP long-held key events reproduce most of it.
+2. The fast path does not require the `keyboard.press()` wrapper specifically.
+   One-character `keyboard.type()` calls and explicit `keyboard.down()` /
+   `keyboard.up()` calls are also faster.
+3. The fast path is not explained by the natural post-keyup gap. Raw CDP is
+   still slow at `39ms`, `318ms`, and `1009ms` observed gaps.
+4. The difference is below the DOM/browser-event level currently traced. The
+   remaining suspect is a per-character Playwright keyboard action/progress
+   boundary. That boundary changes Gutenberg's next-input path even though the
+   DOM event sequence and coarse editor state look the same.
 
 That means the safe benchmark fix is unchanged: do not use a synthetic key-hold
 delay as a proxy for typing pauses. Use a complete keypress and then wait, or
-replay recorded human typing. For root cause, the next useful probe is to log and
-compare Playwright's protocol/session path for `keyboard.press()` against direct
-CDP dispatch and `keyboard.type()`.
+replay recorded human typing. For root cause, the next useful probe is to patch
+or wrap Playwright's server-side keyboard loop so one multi-character
+`keyboard.type()` call either creates a fresh progress/action boundary per
+character or explicitly yields at the same boundary used by separate Playwright
+keyboard calls.
 
 ### Native Contenteditable Baseline
 
@@ -1136,9 +1161,11 @@ For investigation:
     checks did not explain why a roughly `30-40ms` gap changes the next input
     path.
 -   Compare Playwright's protocol/session path for `keyboard.press()` against
-    `keyboard.type()` and direct `Input.dispatchKeyEvent`. Direct raw CDP stays
-    slow even with long post-keyup gaps, so the remaining boundary is the
-    Playwright input-delivery path rather than the DOM event sequence.
+    multi-character `keyboard.type()` and direct `Input.dispatchKeyEvent`.
+    Separate per-character Playwright keyboard actions are faster, while direct
+    raw CDP stays slow even with long post-keyup gaps, so the remaining boundary
+    is the per-character Playwright action/progress path rather than the DOM
+    event sequence.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Add a textarea/native baseline to estimate browser/editor overhead.
@@ -1225,6 +1252,10 @@ The key runs used in this report were:
 -   `current_hold_press_1300_gap_0`: same-session Playwright
     `keyboard.press()` key hold at `1300ms`, with raw-gap and DOM key-flag
     traces.
+-   `current_type_one_char_1300`: same-session Playwright
+    `keyboard.type( 'x' )` per character, with raw-gap and DOM key-flag traces.
+-   `current_down_up_1300`: same-session Playwright `keyboard.down()` /
+    `keyboard.up()` per character, with raw-gap and DOM key-flag traces.
 -   `cdp_gap_0`, `cdp_gap_5`, `cdp_gap_10`, `cdp_gap_16`, `cdp_gap_33`,
     `cdp_gap_100`, `cdp_gap_310`, `cdp_gap_1000`: direct
     `Input.dispatchKeyEvent` key-hold traces at `1300ms` with controlled

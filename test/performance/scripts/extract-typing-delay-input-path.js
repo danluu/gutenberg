@@ -25,6 +25,18 @@ const runs = [
 		requestedPostKeyupGapMs: 0,
 		dir: 'artifacts/typing-delay-current-hold1300-gap0',
 	},
+	{
+		runId: 'current_type_one_char_1300',
+		inputPath: 'Playwright keyboard.type one char per call',
+		requestedPostKeyupGapMs: 0,
+		dir: 'artifacts/typing-delay-current-type-one-char1300',
+	},
+	{
+		runId: 'current_down_up_1300',
+		inputPath: 'Playwright keyboard.down/up per key',
+		requestedPostKeyupGapMs: 0,
+		dir: 'artifacts/typing-delay-current-down-up1300',
+	},
 	...[ 0, 5, 10, 16, 33, 100, 310, 1000 ].map( ( gapMs ) => ( {
 		runId: `cdp_gap_${ gapMs }`,
 		inputPath: 'Raw CDP Input.dispatchKeyEvent',

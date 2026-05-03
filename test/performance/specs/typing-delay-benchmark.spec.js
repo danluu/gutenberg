@@ -116,6 +116,8 @@ const supportedDelayModes = [
 	'between-keys',
 	'after-persistence',
 	'hold-then-keyup-gap',
+	'type-one-char-hold',
+	'down-up-key-hold',
 	'cdp-key-hold',
 ];
 
@@ -1650,6 +1652,25 @@ test.describe( 'Typing delay benchmark', () => {
 						if ( postKeyupGapMs > 0 && i < sampleCount - 1 ) {
 							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
 							await page.waitForTimeout( postKeyupGapMs );
+						}
+					}
+				} else if ( delayMode === 'type-one-char-hold' ) {
+					for ( let i = 0; i < sampleCount; i++ ) {
+						await page.keyboard.type( 'x', {
+							delay: delayMs,
+							timeout: Math.max( 30_000, delayMs * 4 ),
+						} );
+						if ( postKeyupGapMs > 0 && i < sampleCount - 1 ) {
+							await sleepMs( postKeyupGapMs );
+						}
+					}
+				} else if ( delayMode === 'down-up-key-hold' ) {
+					for ( let i = 0; i < sampleCount; i++ ) {
+						await page.keyboard.down( 'x' );
+						await sleepMs( delayMs );
+						await page.keyboard.up( 'x' );
+						if ( postKeyupGapMs > 0 && i < sampleCount - 1 ) {
+							await sleepMs( postKeyupGapMs );
 						}
 					}
 				} else if ( delayMode === 'cdp-key-hold' ) {
