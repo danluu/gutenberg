@@ -208,6 +208,8 @@ The R script derives:
     `970ms`.
 -   `data/typing-delay-marker-allspan-*.csv`: trace-all-data-spans summaries for
     a small `1000ms` marker-intervention run.
+-   `data/typing-delay-marker-allspan-input-batch-*.csv`: retained-input
+    timelines and batch decomposition from the same trace-all-data-spans run.
 -   `data/typing-delay-marker-richtext-summary.csv`: RichText span summaries for
     the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
@@ -915,19 +917,74 @@ batched data/subscriber work under RichText input handling. The all-span run
 shows the normal marker also pays a separate subscriber pass in the timer task,
 which the event-only metric excludes.
 
-One piece remains open. The traces now identify the two expensive regions:
+The trace-all-data-spans run gives a more precise answer to the previous
+"how can doing extra work be faster than doing no work?" objection. It is not
+faster when the whole cycle is counted. The timer changes what state the next
+input starts from, and the event-only metric excludes the timer task.
 
-1. the normal marker timer task, which is a large `core/block-editor`
-   subscriber fanout; and
-2. the next input's RichText `registry.batch()`, whose p50 still differs across
-   interventions.
+![Marker input batch components](figures/32-marker-input-batch-components.png)
 
-They do not yet identify the exact React commit or subscriber subset that makes
-the normal marker's following `registry.batch()` shorter than the no-op and
-mark-next variants. The supported statement is therefore narrower: timer
-ordering and marker dispatch explain the false event-only low band, and the
-visible work is data/subscriber fanout; the exact downstream subscriber/commit
-that changes the next batch remains to be isolated.
+Retained-input p50s from the all-span run:
+
+| Intervention             | Next input path         | Marker actions before retained inputs | Marker `didPersistenceChange` callbacks | Event-only latency | Input `registry.batch` | Batch callback | Block-editor `rootSubscribe` | Block-editor resume | `useSelect.onChange` | Direct `updateParent` |
+| ------------------------ | ----------------------- | ------------------------------------: | --------------------------------------: | -----------------: | ---------------------: | -------------: | ---------------------------: | ------------------: | -------------------: | --------------------: |
+| normal marker            | `onChange:3; onInput:1` |                                   `3` |                                     `1` |           `26.9ms` |               `22.1ms` |        `7.0ms` |                      `6.4ms` |            `14.2ms` |              `7.0ms` |               `0.3ms` |
+| marker no-op             | `onInput:4`             |                                   `3` |                                     `0` |           `32.5ms` |               `25.2ms` |       `10.1ms` |                      `9.3ms` |            `15.0ms` |              `8.0ms` |               `0.4ms` |
+| mark next not persistent | `onChange:3; onInput:1` |                                   `6` |                                     `0` |           `30.0ms` |               `23.4ms` |        `9.3ms` |                      `8.4ms` |            `14.0ms` |              `7.5ms` |               `0.3ms` |
+
+This table confirms two things and rejects one tempting shortcut:
+
+-   The normal marker's timer task can run a real `useBlockSync.updateParent`
+    callback with `didPersistenceChange: true`. In the trace, this happens once:
+    the marker action changes persistence from false to true, `useBlockSync`
+    sees that the previous content change is now persistent even though the
+    blocks did not change in the marker action itself, and it calls the parent
+    `onChange` path for the previous blocks. That is the concrete work that
+    happens in the timer callback.
+-   The next input is still expensive. It has the same p50 listener counts as
+    the no-op case: two block-editor root subscriptions, `9002` block-editor
+    Redux listener spans, `4501` block-editor emitter listeners, and `4544`
+    `useSelect.onChange` spans. The difference is a few milliseconds of fanout
+    duration, not a missing class of listeners.
+-   "The direct `onChange` callback is fast, so the cliff is because `onChange`
+    is faster than `onInput`" is not supported. The direct `updateParent`,
+    `onInput`, `onChange`, `editEntityRecord`, and serialization spans are all
+    sub-millisecond at p50 in this run. The measured difference is around the
+    block-editor data/subscriber fanout around those callbacks.
+
+The `mark next not persistent` intervention is also not a clean substitute for
+the normal marker. The reducer's `markNextChangeAsNotPersistent` flag applies to
+the next state-changing block-editor action, not specifically to the next text
+content update. In this benchmark, a `selectionChange` commonly runs before
+`updateBlockAttributes`. The all-span samples show that `selectionChange` can
+consume the mark-next flag and leave the following content update persistent
+again. That is why the mark-next run has `onChange:3; onInput:1` rather than
+`onInput:4`, and why it cannot be used as evidence that "any timer-side action"
+reproduces the normal marker.
+
+So the corrected causal chain is:
+
+1. Below the timer boundary, the next input usually runs while the previous text
+   edit is still transient.
+2. At or above the boundary, the normal marker can run in a separate timer task
+   before the next input. That task dispatches
+   `MARK_LAST_CHANGE_AS_PERSISTENT`, fans out through block-editor subscribers,
+   and can make `useBlockSync` finalize the previous edit through `onChange`
+   with `didPersistenceChange: true`.
+3. The benchmark's event-only latency starts at the next input and does not
+   include that timer task.
+4. The next input then starts from a different persistence/previous-action
+   state. Its direct callback is not the explanation; the remaining measured
+   difference is in block-editor subscriber fanout inside the input's
+   `registry.batch()`.
+
+One piece remains open, but it is now narrower. The traces identify the marker
+timer fanout and the following input's block-editor fanout. They do not isolate
+a single React commit or a single subscriber owner responsible for the few
+milliseconds of input-side fanout difference. The supported statement is that
+timer ordering and marker dispatch explain the false event-only low band, and
+the visible work is data/subscriber fanout; the exact owner-level distribution
+inside that fanout remains a smaller unresolved question.
 
 Reasoning audit:
 

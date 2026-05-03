@@ -3439,4 +3439,67 @@ if (file.exists(marker_richtext_summary_path)) {
 	)
 }
 
+marker_allspan_input_batch_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-summary.csv")
+if (file.exists(marker_allspan_input_batch_path)) {
+	marker_allspan_input_batch <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			)
+		) %>%
+		select(
+			intervention,
+			`EventDispatch latency` = latency_p50_ms,
+			`RichText registry.batch` = batch_duration_p50_ms,
+			`batch callback` = batch_callback_duration_p50_ms,
+			`block-editor rootSubscribe` = root_subscribe_duration_p50_ms,
+			`block-editor resume` = resume_block_editor_duration_p50_ms,
+			`useSelect.onChange` = use_select_on_change_duration_p50_ms,
+			`direct updateParent` = direct_update_parent_duration_p50_ms
+		) %>%
+		pivot_longer(
+			cols = -intervention,
+			names_to = "component",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			component = factor(
+				component,
+				levels = c(
+					"EventDispatch latency",
+					"RichText registry.batch",
+					"batch callback",
+					"block-editor rootSubscribe",
+					"block-editor resume",
+					"useSelect.onChange",
+					"direct updateParent"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(marker_allspan_input_batch, aes(component, duration_ms, color = intervention, shape = intervention)) +
+			geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "The input-side difference is fanout timing, not the direct callback",
+				subtitle = "Trace-all-data-spans run at 1000ms; retained inputs only",
+				x = "Measured component",
+				y = "Duration, p50 (ms)",
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			) +
+			theme(axis.text.x = element_text(angle = 30, hjust = 1)),
+		"32-marker-input-batch-components.png",
+		width = 12,
+		height = 7
+	)
+}
+
 message("Wrote plots to: ", figure_dir)

@@ -537,6 +537,53 @@ function maxFinite( values ) {
 	return finiteValues.length ? Math.max( ...finiteValues ) : null;
 }
 
+function modeCountsText( values ) {
+	const counts = new Map();
+	for ( const value of values ) {
+		const key = value || '(missing)';
+		counts.set( key, ( counts.get( key ) || 0 ) + 1 );
+	}
+	return Array.from( counts.entries() )
+		.sort( ( left, right ) => right[ 1 ] - left[ 1 ] )
+		.map( ( [ value, count ] ) => `${ value }:${ count }` )
+		.join( '; ' );
+}
+
+function inputEventsForSummary( summary ) {
+	return ( summary.browserEvents || [] ).filter(
+		( event ) =>
+			event.documentName === 'editor-canvas' && event.type === 'input'
+	);
+}
+
+function recordForInputSample( run, summary, sampleIndex ) {
+	return ( run.data.records || [] ).find(
+		( record ) =>
+			record.round === summary.round &&
+			record.delayMs === summary.delayMs &&
+			record.editorSetupIndex === summary.editorSetupIndex &&
+			record.sampleIndex === sampleIndex
+	);
+}
+
+function firstRootBatchAfterInput( spans, inputEvent ) {
+	return spans
+		.filter(
+			( span ) =>
+				span.name === 'data.registry.batch.total' &&
+				span.depth === 0 &&
+				span.startedAtMs >= inputEvent.nowMs - 1 &&
+				span.startedAtMs < inputEvent.nowMs + 10
+		)
+		.sort( ( left, right ) => left.startedAtMs - right.startedAtMs )[ 0 ];
+}
+
+function spansInWindow( spans, startMs, stopMs ) {
+	return spans.filter(
+		( span ) => span.startedAtMs >= startMs && span.startedAtMs <= stopMs
+	);
+}
+
 const allSpanActionRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 	run.data.delayRunSummaries.flatMap( ( summary ) => {
 		const spans = summary.dataSpanEvents || [];
@@ -564,6 +611,11 @@ const allSpanActionRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				const blockEditorReduxListener = ( span ) =>
 					span.name === 'data.reduxStore.listener' &&
 					span.metadata?.storeName === 'core/block-editor';
+				const useBlockSyncUpdateParent = ( span ) =>
+					span.name === 'block-editor.useBlockSync.updateParent';
+				const updateParentSpans = actionSpans.filter(
+					useBlockSyncUpdateParent
+				);
 
 				return {
 					run_id: run.runId,
@@ -631,6 +683,24 @@ const allSpanActionRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 							span.name ===
 							'block-editor.useBlockSync.registryBatch'
 					),
+					use_block_sync_update_parent_count:
+						updateParentSpans.length,
+					use_block_sync_update_parent_duration_ms:
+						updateParentSpans.reduce(
+							( sum, span ) => sum + ( span.durationMs || 0 ),
+							0
+						),
+					use_block_sync_did_persistence_change_count:
+						updateParentSpans.filter(
+							( span ) =>
+								span.metadata?.didPersistenceChange === true
+						).length,
+					use_block_sync_on_change_count: updateParentSpans.filter(
+						( span ) => span.metadata?.updateParent === 'onChange'
+					).length,
+					use_block_sync_on_input_count: updateParentSpans.filter(
+						( span ) => span.metadata?.updateParent === 'onInput'
+					).length,
 				};
 			} );
 	} )
@@ -677,6 +747,341 @@ const allSpanActionSummaryRows = Array.from(
 		),
 		registry_batch_total_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.registry_batch_total_duration_ms ),
+			0.5
+		),
+		use_block_sync_update_parent_count_p50: quantile(
+			rows.map( ( row ) => row.use_block_sync_update_parent_count ),
+			0.5
+		),
+		use_block_sync_update_parent_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_block_sync_update_parent_duration_ms ),
+			0.5
+		),
+		use_block_sync_did_persistence_change_count_sum: rows.reduce(
+			( sum, row ) =>
+				sum + row.use_block_sync_did_persistence_change_count,
+			0
+		),
+	};
+} );
+
+const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
+	run.data.delayRunSummaries.flatMap( ( summary ) => {
+		const spans = summary.dataSpanEvents || [];
+		const dataEvents = summary.dataEvents || [];
+		const inputs = inputEventsForSummary( summary );
+
+		return inputs.map( ( inputEvent, sampleIndex ) => {
+			const record = recordForInputSample( run, summary, sampleIndex );
+			const previousInputEvent = inputs[ sampleIndex - 1 ];
+			const previousInputMs =
+				previousInputEvent?.nowMs ?? summary.runStartedAtBrowserNowMs;
+			const markerActionsBeforeInput = dataEvents.filter(
+				( event ) =>
+					event.storeName === 'core/block-editor' &&
+					[
+						'__unstableMarkLastChangeAsPersistent',
+						'__unstableMarkNextChangeAsNotPersistent',
+					].includes( event.actionName ) &&
+					event.nowMs >= previousInputMs &&
+					event.nowMs < inputEvent.nowMs
+			);
+			const markerSpansBeforeInput = markerActionsBeforeInput.flatMap(
+				( action ) =>
+					spansInWindow(
+						spans,
+						action.nowMs,
+						action.nowMs + action.durationMs
+					)
+			);
+			const markerUpdateParentSpans = markerSpansBeforeInput.filter(
+				( span ) =>
+					span.name === 'block-editor.useBlockSync.updateParent'
+			);
+			const rootBatch = firstRootBatchAfterInput( spans, inputEvent );
+			const batchSpans = rootBatch
+				? spansInWindow(
+						spans,
+						rootBatch.startedAtMs,
+						rootBatch.startedAtMs + rootBatch.durationMs
+				  )
+				: [];
+			const outerBatchChild = ( span, name ) =>
+				rootBatch &&
+				span.name === name &&
+				span.depth === rootBatch.depth + 1;
+			const blockEditorRootSubscribe = ( span ) =>
+				span.name === 'data.reduxStore.rootSubscribe' &&
+				span.metadata?.storeName === 'core/block-editor';
+			const blockEditorReduxListener = ( span ) =>
+				span.name === 'data.reduxStore.listener' &&
+				span.metadata?.storeName === 'core/block-editor';
+			const blockEditorEmitterListener = ( span ) =>
+				span.name === 'data.emitter.listener' &&
+				span.metadata?.storeName === 'core/block-editor';
+			const blockEditorResumeStore = ( span ) =>
+				outerBatchChild( span, 'data.registry.batch.resumeStore' ) &&
+				span.metadata?.storeName === 'core/block-editor';
+			const updateParentSpans = batchSpans.filter(
+				( span ) =>
+					span.name === 'block-editor.useBlockSync.updateParent'
+			);
+			const primaryUpdateParent = updateParentSpans[ 0 ];
+			const updateBlockAction = dataEvents.find(
+				( event ) =>
+					event.storeName === 'core/block-editor' &&
+					event.actionName === 'updateBlockAttributes' &&
+					event.nowMs >= inputEvent.nowMs - 1 &&
+					event.nowMs < inputEvent.nowMs + 80
+			);
+			const eventsBeforeContentUpdate = updateBlockAction
+				? dataEvents.filter(
+						( event ) =>
+							event.storeName === 'core/block-editor' &&
+							event.nowMs >= inputEvent.nowMs - 5 &&
+							event.nowMs < updateBlockAction.nowMs
+				  )
+				: [];
+			const actionsBeforeContentUpdate = eventsBeforeContentUpdate
+				.map( ( event ) => event.actionName )
+				.join( '; ' );
+			const actionsBeforeContentUpdatePersistence =
+				eventsBeforeContentUpdate
+					.map(
+						( event ) =>
+							`${ event.actionName }:${ event.after?.isPersistent }`
+					)
+					.join( '; ' );
+
+			return {
+				run_id: run.runId,
+				trace_type: run.traceType,
+				intervention: run.intervention,
+				delay_ms: summary.delayMs,
+				round: summary.round,
+				sample_index: sampleIndex,
+				is_throwaway: !! record?.isThrowaway,
+				keypress_ms: record?.keypressMs,
+				latency_ms: record?.latencyMs,
+				input_now_ms: inputEvent.nowMs,
+				marker_before_input_count: markerActionsBeforeInput.length,
+				marker_before_input_actions: markerActionsBeforeInput
+					.map( ( event ) => event.actionName )
+					.join( '; ' ),
+				marker_before_input_duration_ms:
+					markerActionsBeforeInput.reduce(
+						( sum, event ) => sum + ( event.durationMs || 0 ),
+						0
+					),
+				marker_update_parent_count: markerUpdateParentSpans.length,
+				marker_update_parent_duration_ms:
+					markerUpdateParentSpans.reduce(
+						( sum, span ) => sum + ( span.durationMs || 0 ),
+						0
+					),
+				marker_did_persistence_change_count:
+					markerUpdateParentSpans.filter(
+						( span ) => span.metadata?.didPersistenceChange === true
+					).length,
+				marker_update_parent_modes: modeCountsText(
+					markerUpdateParentSpans.map(
+						( span ) => span.metadata?.updateParent
+					)
+				),
+				actions_before_content_update: actionsBeforeContentUpdate,
+				actions_before_content_update_persistence:
+					actionsBeforeContentUpdatePersistence,
+				content_update_before_persistent:
+					updateBlockAction?.before?.isPersistent,
+				content_update_after_persistent:
+					updateBlockAction?.after?.isPersistent,
+				update_parent: primaryUpdateParent?.metadata?.updateParent,
+				new_is_persistent:
+					primaryUpdateParent?.metadata?.newIsPersistent,
+				previous_are_blocks_different:
+					primaryUpdateParent?.metadata?.previousAreBlocksDifferent,
+				did_persistence_change:
+					primaryUpdateParent?.metadata?.didPersistenceChange,
+				batch_duration_ms: rootBatch?.durationMs,
+				batch_callback_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) =>
+						outerBatchChild( span, 'data.registry.batch.callback' )
+				),
+				root_subscribe_count: countSpans(
+					batchSpans,
+					blockEditorRootSubscribe
+				),
+				root_subscribe_duration_ms: sumSpanDuration(
+					batchSpans,
+					blockEditorRootSubscribe
+				),
+				redux_listener_count: countSpans(
+					batchSpans,
+					blockEditorReduxListener
+				),
+				redux_listener_duration_ms: sumSpanDuration(
+					batchSpans,
+					blockEditorReduxListener
+				),
+				resume_block_editor_duration_ms: sumSpanDuration(
+					batchSpans,
+					blockEditorResumeStore
+				),
+				emitter_listener_block_editor_count: countSpans(
+					batchSpans,
+					blockEditorEmitterListener
+				),
+				emitter_listener_block_editor_duration_ms: sumSpanDuration(
+					batchSpans,
+					blockEditorEmitterListener
+				),
+				use_select_on_change_count: countSpans(
+					batchSpans,
+					( span ) => span.name === 'data.useSelect.onChange'
+				),
+				use_select_on_change_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) => span.name === 'data.useSelect.onChange'
+				),
+				use_select_map_select_count: countSpans(
+					batchSpans,
+					( span ) => span.name === 'data.useSelect.mapSelect'
+				),
+				use_select_update_value_count: countSpans(
+					batchSpans,
+					( span ) => span.name === 'data.useSelect.updateValue'
+				),
+				direct_update_parent_duration_ms: updateParentSpans.reduce(
+					( sum, span ) => sum + ( span.durationMs || 0 ),
+					0
+				),
+				on_input_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) =>
+						span.name ===
+						'core-data.useEntityBlockEditor.onInput.total'
+				),
+				on_change_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) =>
+						span.name ===
+						'core-data.useEntityBlockEditor.onChange.total'
+				),
+				edit_entity_record_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) =>
+						span.name ===
+						'core-data.useEntityBlockEditor.editEntityRecord'
+				),
+				serialize_duration_ms: sumSpanDuration(
+					batchSpans,
+					( span ) =>
+						span.name === 'core-data.useEntityBlockEditor.serialize'
+				),
+			};
+		} );
+	} )
+);
+
+const allSpanInputBatchSummaryRows = Array.from(
+	groupedBy(
+		allSpanInputBatchRows.filter( ( row ) => ! row.is_throwaway ),
+		( row ) => row.intervention
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		n_inputs: rows.length,
+		update_parent_modes: modeCountsText(
+			rows.map( ( row ) => row.update_parent )
+		),
+		marker_before_input_count_sum: rows.reduce(
+			( sum, row ) => sum + row.marker_before_input_count,
+			0
+		),
+		marker_did_persistence_change_count_sum: rows.reduce(
+			( sum, row ) => sum + row.marker_did_persistence_change_count,
+			0
+		),
+		keypress_p50_ms: quantile(
+			rows.map( ( row ) => row.keypress_ms ),
+			0.5
+		),
+		latency_p50_ms: quantile(
+			rows.map( ( row ) => row.latency_ms ),
+			0.5
+		),
+		batch_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.batch_duration_ms ),
+			0.5
+		),
+		batch_callback_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.batch_callback_duration_ms ),
+			0.5
+		),
+		root_subscribe_count_p50: quantile(
+			rows.map( ( row ) => row.root_subscribe_count ),
+			0.5
+		),
+		root_subscribe_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.root_subscribe_duration_ms ),
+			0.5
+		),
+		redux_listener_count_p50: quantile(
+			rows.map( ( row ) => row.redux_listener_count ),
+			0.5
+		),
+		redux_listener_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.redux_listener_duration_ms ),
+			0.5
+		),
+		resume_block_editor_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.resume_block_editor_duration_ms ),
+			0.5
+		),
+		emitter_listener_block_editor_count_p50: quantile(
+			rows.map( ( row ) => row.emitter_listener_block_editor_count ),
+			0.5
+		),
+		emitter_listener_block_editor_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.emitter_listener_block_editor_duration_ms
+			),
+			0.5
+		),
+		use_select_on_change_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_on_change_count ),
+			0.5
+		),
+		use_select_on_change_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_on_change_duration_ms ),
+			0.5
+		),
+		use_select_map_select_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_map_select_count ),
+			0.5
+		),
+		direct_update_parent_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.direct_update_parent_duration_ms ),
+			0.5
+		),
+		on_input_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.on_input_duration_ms ),
+			0.5
+		),
+		on_change_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.on_change_duration_ms ),
+			0.5
+		),
+		edit_entity_record_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.edit_entity_record_duration_ms ),
+			0.5
+		),
+		serialize_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.serialize_duration_ms ),
 			0.5
 		),
 	};
@@ -1058,6 +1463,11 @@ writeCsv(
 		'use_select_render_queue_add_duration_ms',
 		'registry_batch_total_duration_ms',
 		'use_block_sync_batch_duration_ms',
+		'use_block_sync_update_parent_count',
+		'use_block_sync_update_parent_duration_ms',
+		'use_block_sync_did_persistence_change_count',
+		'use_block_sync_on_change_count',
+		'use_block_sync_on_input_count',
 	]
 );
 writeCsv(
@@ -1079,6 +1489,95 @@ writeCsv(
 		'use_select_on_change_count_p50',
 		'use_select_map_select_count_p50',
 		'registry_batch_total_duration_p50_ms',
+		'use_block_sync_update_parent_count_p50',
+		'use_block_sync_update_parent_duration_p50_ms',
+		'use_block_sync_did_persistence_change_count_sum',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-marker-allspan-input-batch-samples.csv'
+	),
+	allSpanInputBatchRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'round',
+		'sample_index',
+		'is_throwaway',
+		'keypress_ms',
+		'latency_ms',
+		'input_now_ms',
+		'marker_before_input_count',
+		'marker_before_input_actions',
+		'marker_before_input_duration_ms',
+		'marker_update_parent_count',
+		'marker_update_parent_duration_ms',
+		'marker_did_persistence_change_count',
+		'marker_update_parent_modes',
+		'actions_before_content_update',
+		'actions_before_content_update_persistence',
+		'content_update_before_persistent',
+		'content_update_after_persistent',
+		'update_parent',
+		'new_is_persistent',
+		'previous_are_blocks_different',
+		'did_persistence_change',
+		'batch_duration_ms',
+		'batch_callback_duration_ms',
+		'root_subscribe_count',
+		'root_subscribe_duration_ms',
+		'redux_listener_count',
+		'redux_listener_duration_ms',
+		'resume_block_editor_duration_ms',
+		'emitter_listener_block_editor_count',
+		'emitter_listener_block_editor_duration_ms',
+		'use_select_on_change_count',
+		'use_select_on_change_duration_ms',
+		'use_select_map_select_count',
+		'use_select_update_value_count',
+		'direct_update_parent_duration_ms',
+		'on_input_duration_ms',
+		'on_change_duration_ms',
+		'edit_entity_record_duration_ms',
+		'serialize_duration_ms',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-marker-allspan-input-batch-summary.csv'
+	),
+	allSpanInputBatchSummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'n_inputs',
+		'update_parent_modes',
+		'marker_before_input_count_sum',
+		'marker_did_persistence_change_count_sum',
+		'keypress_p50_ms',
+		'latency_p50_ms',
+		'batch_duration_p50_ms',
+		'batch_callback_duration_p50_ms',
+		'root_subscribe_count_p50',
+		'root_subscribe_duration_p50_ms',
+		'redux_listener_count_p50',
+		'redux_listener_duration_p50_ms',
+		'resume_block_editor_duration_p50_ms',
+		'emitter_listener_block_editor_count_p50',
+		'emitter_listener_block_editor_duration_p50_ms',
+		'use_select_on_change_count_p50',
+		'use_select_on_change_duration_p50_ms',
+		'use_select_map_select_count_p50',
+		'direct_update_parent_duration_p50_ms',
+		'on_input_duration_p50_ms',
+		'on_change_duration_p50_ms',
+		'edit_entity_record_duration_p50_ms',
+		'serialize_duration_p50_ms',
 	]
 );
 writeCsv(

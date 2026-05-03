@@ -1,32 +1,32 @@
-run_id,trace_type,intervention,delay_ms,round,action_name,action_index,action_duration_ms,span_count,block_editor_listener_count,root_subscribe_count,root_subscribe_duration_ms,redux_listener_count,redux_listener_duration_ms,use_select_on_change_count,use_select_on_change_duration_ms,use_select_map_select_count,use_select_map_select_duration_ms,use_select_render_queue_add_count,use_select_render_queue_add_duration_ms,registry_batch_total_duration_ms,use_block_sync_batch_duration_ms
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,0,2.200000047683716,9024,4499,1,1.8999998569488525,4499,1.5999994277954102,0,0,0,0,0,0,0,0
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,1,5.3999998569488525,9003,4501,1,4.5,4501,2.8000006675720215,0,0,0,0,0,0,0,0
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,2,24.59999990463257,15574,4501,1,24.299999952316284,4501,22.799999475479126,4498,12.699999332427979,670,4.700000047683716,3828,1.5000004768371582,0.5,0.5
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,3,3.5999999046325684,9028,4501,1,3.1999998092651367,4501,2.299999475479126,0,0,0,0,0,0,0,0
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,4,22.700000047683716,15511,4501,1,22.600000143051147,4501,21.399999856948853,4498,11.900000095367432,670,5.80000114440918,3828,1.9999992847442627,0,0
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,5,2.799999952316284,9193,4501,1,2.5,4583,2.1999998092651367,0,0,0,0,0,0,0,0
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,6,15.300000190734863,15511,4501,1,15.200000047683716,4501,13.700000286102295,4498,9,670,3.200000524520874,3828,1.2000000476837158,0,0
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,7,3.3000001907348633,9028,4501,1,3.1000001430511475,4501,2.500000476837158,0,0,0,0,0,0,0,0
-marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,8,24,15511,4501,1,23.800000190734863,4501,22.40000057220459,4498,13.399999618530273,670,5.600000619888306,3828,1.700000524520874,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,0,2.299999952316284,9111,4499,1,2.0999999046325684,4554,1.499999761581421,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,1,6.099999904632568,9028,4501,1,4.900000095367432,4501,4.099999904632568,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,2,0.40000009536743164,0,,0,0,0,0,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,3,4.699999809265137,9041,4501,1,4,4507,3.0999999046325684,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,4,0.09999990463256836,0,,0,0,0,0,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,5,3.9000000953674316,9069,4501,1,3.5,4521,2.5,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,6,0.10000014305114746,0,,0,0,0,0,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,7,4.799999952316284,9004,4501,1,4.200000047683716,4501,3.200000286102295,0,0,0,0,0,0,0,0
-marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,8,0,0,,0,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,0,2.200000047683716,9024,4499,1,2,4499,1.7999999523162842,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,1,4.799999952316284,9003,4501,1,4.099999904632568,4501,3.500000238418579,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,2,0.09999990463256836,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,3,0.5,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,4,4.700000047683716,9028,4501,1,4.200000047683716,4501,2.700000762939453,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,5,0.09999990463256836,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,6,0.09999990463256836,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,7,3.700000047683716,9063,4501,1,3.1999998092651367,4518,2.299999713897705,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,8,0.10000014305114746,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,9,0.20000004768371582,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,10,3.799999952316284,9003,4501,1,3.0999999046325684,4501,2.4999990463256836,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,11,0.10000014305114746,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
-marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,12,0.10000014305114746,1,4501,1,0,0,0,0,0,0,0,0,0,0,0
+run_id,trace_type,intervention,delay_ms,round,action_name,action_index,action_duration_ms,span_count,block_editor_listener_count,root_subscribe_count,root_subscribe_duration_ms,redux_listener_count,redux_listener_duration_ms,use_select_on_change_count,use_select_on_change_duration_ms,use_select_map_select_count,use_select_map_select_duration_ms,use_select_render_queue_add_count,use_select_render_queue_add_duration_ms,registry_batch_total_duration_ms,use_block_sync_batch_duration_ms,use_block_sync_update_parent_count,use_block_sync_update_parent_duration_ms,use_block_sync_did_persistence_change_count,use_block_sync_on_change_count,use_block_sync_on_input_count
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,0,2.200000047683716,9024,4499,1,1.8999998569488525,4499,1.5999994277954102,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,1,5.3999998569488525,9003,4501,1,4.5,4501,2.8000006675720215,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,2,24.59999990463257,15574,4501,1,24.299999952316284,4501,22.799999475479126,4498,12.699999332427979,670,4.700000047683716,3828,1.5000004768371582,0.5,0.5,1,0.20000004768371582,1,1,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,3,3.5999999046325684,9028,4501,1,3.1999998092651367,4501,2.299999475479126,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,4,22.700000047683716,15511,4501,1,22.600000143051147,4501,21.399999856948853,4498,11.900000095367432,670,5.80000114440918,3828,1.9999992847442627,0,0,0,0,0,0,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,5,2.799999952316284,9193,4501,1,2.5,4583,2.1999998092651367,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,6,15.300000190734863,15511,4501,1,15.200000047683716,4501,13.700000286102295,4498,9,670,3.200000524520874,3828,1.2000000476837158,0,0,0,0,0,0,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,updateBlockAttributes,7,3.3000001907348633,9028,4501,1,3.1000001430511475,4501,2.500000476837158,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_normal_allspans_1000,all data spans,normal marker,1000,0,__unstableMarkLastChangeAsPersistent,8,24,15511,4501,1,23.800000190734863,4501,22.40000057220459,4498,13.399999618530273,670,5.600000619888306,3828,1.700000524520874,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,0,2.299999952316284,9111,4499,1,2.0999999046325684,4554,1.499999761581421,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,1,6.099999904632568,9028,4501,1,4.900000095367432,4501,4.099999904632568,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,2,0.40000009536743164,0,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,3,4.699999809265137,9041,4501,1,4,4507,3.0999999046325684,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,4,0.09999990463256836,0,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,5,3.9000000953674316,9069,4501,1,3.5,4521,2.5,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,6,0.10000014305114746,0,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,updateBlockAttributes,7,4.799999952316284,9004,4501,1,4.200000047683716,4501,3.200000286102295,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_noop_allspans_1000,all data spans,marker no-op,1000,0,__unstableMarkLastChangeAsPersistent,8,0,0,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,0,2.200000047683716,9024,4499,1,2,4499,1.7999999523162842,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,1,4.799999952316284,9003,4501,1,4.099999904632568,4501,3.500000238418579,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,2,0.09999990463256836,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,3,0.5,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,4,4.700000047683716,9028,4501,1,4.200000047683716,4501,2.700000762939453,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,5,0.09999990463256836,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,6,0.09999990463256836,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,7,3.700000047683716,9063,4501,1,3.1999998092651367,4518,2.299999713897705,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,8,0.10000014305114746,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,9,0.20000004768371582,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,updateBlockAttributes,10,3.799999952316284,9003,4501,1,3.0999999046325684,4501,2.4999990463256836,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkNextChangeAsNotPersistent,11,0.10000014305114746,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+marker_next_not_persistent_allspans_1000,all data spans,mark next not persistent,1000,0,__unstableMarkLastChangeAsPersistent,12,0.10000014305114746,1,4501,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
