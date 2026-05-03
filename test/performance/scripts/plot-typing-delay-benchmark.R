@@ -4417,6 +4417,89 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 			width = 11,
 			height = 6.5
 		)
+
+		if (all(c(
+			"root_subscribe_outside_redux_listener_duration_p50_ms",
+			"redux_listener_outside_emitter_emit_duration_p50_ms",
+			"paused_emitter_emit_block_editor_duration_p50_ms",
+			"emitter_notify_block_editor_duration_p50_ms",
+			"emitter_listener_block_editor_duration_p50_ms"
+		) %in% names(use_select_subphase_source))) {
+			listener_wrapper_accounting <- use_select_subphase_source %>%
+				transmute(
+					intervention,
+					`rootSubscribe total` = root_subscribe_duration_p50_ms,
+					`rootSubscribe outside listener wrappers` = root_subscribe_outside_redux_listener_duration_p50_ms,
+					`Redux listener wrappers` = redux_listener_duration_p50_ms,
+					`Redux wrapper outside emitter.emit` = redux_listener_outside_emitter_emit_duration_p50_ms,
+					`paused emitter.emit` = paused_emitter_emit_block_editor_duration_p50_ms,
+					`emitter.notifyListeners` = emitter_notify_block_editor_duration_p50_ms,
+					`emitter.listener callbacks` = emitter_listener_block_editor_duration_p50_ms,
+					`useSelect.reactListener` = use_select_react_listener_duration_p50_ms,
+					`useSelect.mapSelect` = use_select_map_select_duration_p50_ms
+				) %>%
+				pivot_longer(
+					cols = -intervention,
+					names_to = "metric",
+					values_to = "duration_p50_ms"
+				) %>%
+				mutate(
+					metric = factor(
+						metric,
+						levels = rev(c(
+							"rootSubscribe total",
+							"rootSubscribe outside listener wrappers",
+							"Redux listener wrappers",
+							"Redux wrapper outside emitter.emit",
+							"paused emitter.emit",
+							"emitter.notifyListeners",
+							"emitter.listener callbacks",
+							"useSelect.reactListener",
+							"useSelect.mapSelect"
+						))
+					)
+				)
+
+			listener_wrapper_deltas <- listener_wrapper_accounting %>%
+				pivot_wider(names_from = intervention, values_from = duration_p50_ms) %>%
+				pivot_longer(
+					cols = c(`marker no-op`, `mark next not persistent`),
+					names_to = "intervention",
+					values_to = "duration_p50_ms"
+				) %>%
+				mutate(
+					delta_vs_normal_ms = duration_p50_ms - `normal marker`,
+					intervention = factor(
+						intervention,
+						levels = c("marker no-op", "mark next not persistent")
+					)
+				)
+
+			write_csv(listener_wrapper_accounting, file.path(data_dir, "typing-delay-listener-wrapper-accounting.csv"))
+			write_csv(listener_wrapper_deltas, file.path(data_dir, "typing-delay-listener-wrapper-deltas.csv"))
+
+			save_plot(
+				ggplot(listener_wrapper_deltas, aes(delta_vs_normal_ms, metric, color = intervention, shape = intervention)) +
+					geom_vline(xintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey50") +
+					geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.45)) +
+					scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+					scale_shape_manual(values = c(
+						`marker no-op` = 17,
+						`mark next not persistent` = 15
+					), drop = FALSE) +
+					labs(
+						title = "The shared slow-path movement is in paused listener wrappers",
+						subtitle = "Next-input p50 deltas versus normal marker; counts are unchanged, so this is per-wrapper timing, not more listeners",
+						x = "Delta versus normal marker, p50 (ms)",
+						y = NULL,
+						color = "Timer intervention",
+						shape = "Timer intervention"
+					),
+				"46-listener-wrapper-deltas.png",
+				width = 11,
+				height = 7
+			)
+		}
 	}
 }
 

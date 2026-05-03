@@ -1,0 +1,28 @@
+intervention,metric,duration_p50_ms
+normal marker,rootSubscribe total,6.350000023841858
+normal marker,rootSubscribe outside listener wrappers,1.749999761581421
+normal marker,Redux listener wrappers,4.600000262260437
+normal marker,Redux wrapper outside emitter.emit,3.5500000715255737
+normal marker,paused emitter.emit,1.2500001192092896
+normal marker,emitter.notifyListeners,14.24999988079071
+normal marker,emitter.listener callbacks,12.450000166893004
+normal marker,useSelect.reactListener,4.7500001192092896
+normal marker,useSelect.mapSelect,3.300000309944153
+marker no-op,rootSubscribe total,9.25000011920929
+marker no-op,rootSubscribe outside listener wrappers,1.850000023841858
+marker no-op,Redux listener wrappers,7.300000429153442
+marker no-op,Redux wrapper outside emitter.emit,4.799999952316284
+marker no-op,paused emitter.emit,2.3500001430511475
+marker no-op,emitter.notifyListeners,14.950000166893004
+marker no-op,emitter.listener callbacks,12.950000405311584
+marker no-op,useSelect.reactListener,4.850000023841858
+marker no-op,useSelect.mapSelect,3.549999952316284
+mark next not persistent,rootSubscribe total,8.399999737739563
+mark next not persistent,rootSubscribe outside listener wrappers,2.0500000715255737
+mark next not persistent,Redux listener wrappers,6.2499998807907104
+mark next not persistent,Redux wrapper outside emitter.emit,4.4000004529953
+mark next not persistent,paused emitter.emit,1.799999713897705
+mark next not persistent,emitter.notifyListeners,14
+mark next not persistent,emitter.listener callbacks,11.850000262260435
+mark next not persistent,useSelect.reactListener,4.3499995470047
+mark next not persistent,useSelect.mapSelect,2.8499995470046997

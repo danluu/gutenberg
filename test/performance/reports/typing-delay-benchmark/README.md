@@ -79,6 +79,12 @@ The short version:
     movement is in `rootSubscribe` and Redux listener-wrapper accounting; the
     nested `useSelect` child spans are near zero or lower in the slow
     interventions.
+-   Splitting the wrapper layer shows the shared residual movement is in the
+    paused store-listener path: `rootSubscribe` runs `9002` Redux listener
+    wrappers, each wrapper calls paused `emitter.emit()`, and the real
+    `useSelect` callbacks run later during one emitter resume. The remaining
+    wrapper-only movement is trace-heavy, mostly `~0.1ms` timing quanta, and
+    should not be interpreted as a newly found expensive app callback.
 -   A marker-plus-input cycle check in the trace-heavy run confirms the same
     accounting story: the normal marker has a lower next-input slice than no-op,
     but a higher marker-plus-input cycle cost.
@@ -1428,14 +1434,69 @@ materially more expensive. In the mark-next run, all of the nested child phases
 below `useSelect.onChange` are lower than normal even though `rootSubscribe` and
 Redux listener-wrapper time are higher.
 
-What remains is narrower and less satisfying: the extra next-input time is
-visible in the `rootSubscribe` / Redux listener-wrapper layer and only weakly in
-the parent `useSelect.onChange` span. These traces do not split that remainder
-into callback invocation overhead, wrapper bookkeeping, tracing overhead, small
-non-`useSelect` subscribers, and gaps between nested spans. The low-level owner
-coverage above says the listener wrappers are overwhelmingly `useSelect`-owned,
-but the nested-span split says the extra time is not in React listener execution
-or selector recomputation.
+I then split the wrapper layer itself. The relevant code path is:
+
+1. `registry.batch()` pauses store emitters.
+2. Dispatch still reaches the Redux store's `rootSubscribe` callback.
+3. `rootSubscribe` loops every store listener and records a
+   `data.reduxStore.listener` wrapper.
+4. In `packages/data/src/registry.ts:260-266`, the wrapped listener sees
+   `store.emitter.isPaused`, calls `store.emitter.emit()`, and returns without
+   running the real listener body.
+5. `emitter.emit()` just sets `isPending = true` while paused
+   (`packages/data/src/utils/emitter.ts:98-103`).
+6. The real callbacks run later, once, during `emitter.resume()` /
+   `notifyListeners()`.
+
+That means a `rootSubscribe` / Redux-listener delta during the input batch can be
+paused wrapper fanout, not React listener execution or selector work.
+
+![Listener wrapper deltas](figures/46-listener-wrapper-deltas.png)
+
+Next-input p50 deltas versus the normal-marker run:
+
+| Metric                                  | marker no-op | mark next |
+| --------------------------------------- | -----------: | --------: |
+| block-editor `rootSubscribe`            |      `+2.9ms` |   `+2.0ms` |
+| `rootSubscribe` outside listener wraps  |      `+0.1ms` |   `+0.3ms` |
+| Redux listener wrappers                 |      `+2.7ms` |   `+1.6ms` |
+| Redux wrapper outside `emitter.emit()`  |      `+1.3ms` |   `+0.9ms` |
+| paused `emitter.emit()`                 |      `+1.1ms` |   `+0.6ms` |
+| `emitter.notifyListeners()`             |      `+0.7ms` |   `-0.3ms` |
+| `emitter.listener` callbacks            |      `+0.5ms` |   `-0.6ms` |
+| `useSelect.reactListener`               |      `+0.1ms` |   `-0.4ms` |
+| `useSelect.mapSelect`                   |      `+0.2ms` |   `-0.5ms` |
+
+Counts are unchanged: `2` `rootSubscribe` spans, `9002` Redux listener wrappers,
+`9002` paused `emitter.emit()` spans, and `4501` emitter listener callbacks for
+all three interventions.
+
+This confirms that the shared part of the residual gap is in the paused
+dispatch-wrapper path. It disconfirms "the slow path is the resume callback" as
+the common explanation: `emitter.notifyListeners()`, `emitter.listener`,
+`reactListener`, and `mapSelect` all move down in the mark-next run while
+`rootSubscribe` and Redux listener-wrapper time move up.
+
+The remaining wrapper-only delta should be treated carefully. The action-level
+listener distributions show that the wrapper totals are mostly a small number of
+`~0.1ms` nonzero spans among thousands of otherwise zero-duration wrappers. For
+example, in the two action slices that make up the next input:
+
+| Action                  | Metric                | normal marker | marker no-op | mark next |
+| ----------------------- | --------------------- | ------------: | -----------: | --------: |
+| `selectionChange`       | nonzero wrappers      |          `22` |       `41.5` |    `35.5` |
+| `selectionChange`       | top 1 wrapper         |       `0.1ms` |      `0.1ms` |   `0.1ms` |
+| `selectionChange`       | top 10 wrappers       |       `1.0ms` |      `1.0ms` |   `1.0ms` |
+| `updateBlockAttributes` | nonzero wrappers      |          `24` |       `31.5` |      `26` |
+| `updateBlockAttributes` | top 1 wrapper         |       `0.1ms` |      `0.1ms` |   `0.1ms` |
+| `updateBlockAttributes` | top 10 wrappers       |       `1.0ms` |      `1.0ms` |   `1.0ms` |
+
+So the deeper result is not "there is a hidden expensive subscriber." It is:
+when these trace-heavy probes are enabled, the slow interventions spend more
+time in thousands of paused listener-wrapper invocations, and that difference is
+largely expressed as more `performance.now()` timing quanta across the wrapper
+fanout. That is a useful diagnostic for where the accounting sits, but it is not
+evidence of one additional expensive Gutenberg callback.
 
 Finally, I paired the marker task before each retained input with that same
 input in the trace-heavy run. This tests the most important accounting theory
@@ -1471,12 +1532,12 @@ One piece remains open, but it is now narrower. The traces identify the marker
 timer fanout and the following input's block-editor fanout, the owner summary
 disconfirms a single-owner explanation, and the nested-span split disconfirms
 React-listener, selector-recompute, and render-queue explanations for the
-residual input-side delta. What remains is lower-level fanout overhead across
-thousands of subscriber callbacks. The supported statement is that timer
-ordering and marker dispatch explain the false event-only low band, and the
-visible work is data/subscriber fanout; attributing the last few milliseconds to
-a single React commit, selector, render queue, or component is not supported by
-the current traces.
+residual input-side delta. The newest wrapper split puts the shared remainder in
+the paused store-listener wrapper path, not in the resumed listener bodies. The
+supported statement is that timer ordering and marker dispatch explain the false
+event-only low band, and the visible work is data/subscriber fanout; attributing
+the last few milliseconds to a single React commit, selector, render queue,
+component, or resumed callback body is not supported by the current traces.
 
 Reasoning audit:
 

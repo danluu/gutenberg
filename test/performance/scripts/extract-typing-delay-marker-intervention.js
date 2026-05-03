@@ -1510,6 +1510,15 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 			const blockEditorEmitterListener = ( span ) =>
 				span.name === 'data.emitter.listener' &&
 				span.metadata?.storeName === 'core/block-editor';
+			const blockEditorEmitterEmit = ( span ) =>
+				span.name === 'data.emitter.emit' &&
+				span.metadata?.storeName === 'core/block-editor';
+			const pausedBlockEditorEmitterEmit = ( span ) =>
+				blockEditorEmitterEmit( span ) &&
+				span.metadata?.isPaused === true;
+			const blockEditorEmitterNotify = ( span ) =>
+				span.name === 'data.emitter.notifyListeners' &&
+				span.metadata?.storeName === 'core/block-editor';
 			const blockEditorResumeStore = ( span ) =>
 				outerBatchChild( span, 'data.registry.batch.resumeStore' ) &&
 				span.metadata?.storeName === 'core/block-editor';
@@ -1607,6 +1616,18 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 			const reduxListenerDurationMs = sumSpanDuration(
 				batchSpans,
 				blockEditorReduxListener
+			);
+			const emitterEmitBlockEditorDurationMs = sumSpanDuration(
+				batchSpans,
+				blockEditorEmitterEmit
+			);
+			const pausedEmitterEmitBlockEditorDurationMs = sumSpanDuration(
+				batchSpans,
+				pausedBlockEditorEmitterEmit
+			);
+			const emitterNotifyBlockEditorDurationMs = sumSpanDuration(
+				batchSpans,
+				blockEditorEmitterNotify
 			);
 			const useSelectOnChangeDurationMs = sumSpanDuration(
 				batchSpans,
@@ -1746,11 +1767,19 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					blockEditorRootSubscribe
 				),
 				root_subscribe_duration_ms: rootSubscribeDurationMs,
+				root_subscribe_outside_redux_listener_duration_ms: Math.max(
+					0,
+					rootSubscribeDurationMs - reduxListenerDurationMs
+				),
 				redux_listener_count: countSpans(
 					batchSpans,
 					blockEditorReduxListener
 				),
 				redux_listener_duration_ms: reduxListenerDurationMs,
+				redux_listener_outside_emitter_emit_duration_ms: Math.max(
+					0,
+					reduxListenerDurationMs - emitterEmitBlockEditorDurationMs
+				),
 				resume_block_editor_duration_ms: sumSpanDuration(
 					batchSpans,
 					blockEditorResumeStore
@@ -1763,6 +1792,24 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					batchSpans,
 					blockEditorEmitterListener
 				),
+				emitter_emit_block_editor_count: countSpans(
+					batchSpans,
+					blockEditorEmitterEmit
+				),
+				emitter_emit_block_editor_duration_ms:
+					emitterEmitBlockEditorDurationMs,
+				paused_emitter_emit_block_editor_count: countSpans(
+					batchSpans,
+					pausedBlockEditorEmitterEmit
+				),
+				paused_emitter_emit_block_editor_duration_ms:
+					pausedEmitterEmitBlockEditorDurationMs,
+				emitter_notify_block_editor_count: countSpans(
+					batchSpans,
+					blockEditorEmitterNotify
+				),
+				emitter_notify_block_editor_duration_ms:
+					emitterNotifyBlockEditorDurationMs,
 				use_select_on_change_count: countSpans(
 					batchSpans,
 					( span ) => span.name === 'data.useSelect.onChange'
@@ -2045,6 +2092,12 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map( ( row ) => row.root_subscribe_duration_ms ),
 			0.5
 		),
+		root_subscribe_outside_redux_listener_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.root_subscribe_outside_redux_listener_duration_ms
+			),
+			0.5
+		),
 		cycle_root_subscribe_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.cycle_root_subscribe_duration_ms ),
 			0.5
@@ -2055,6 +2108,12 @@ const allSpanInputBatchSummaryRows = Array.from(
 		),
 		redux_listener_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.redux_listener_duration_ms ),
+			0.5
+		),
+		redux_listener_outside_emitter_emit_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.redux_listener_outside_emitter_emit_duration_ms
+			),
 			0.5
 		),
 		cycle_redux_listener_duration_p50_ms: quantile(
@@ -2073,6 +2132,32 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map(
 				( row ) => row.emitter_listener_block_editor_duration_ms
 			),
+			0.5
+		),
+		emitter_emit_block_editor_count_p50: quantile(
+			rows.map( ( row ) => row.emitter_emit_block_editor_count ),
+			0.5
+		),
+		emitter_emit_block_editor_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.emitter_emit_block_editor_duration_ms ),
+			0.5
+		),
+		paused_emitter_emit_block_editor_count_p50: quantile(
+			rows.map( ( row ) => row.paused_emitter_emit_block_editor_count ),
+			0.5
+		),
+		paused_emitter_emit_block_editor_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.paused_emitter_emit_block_editor_duration_ms
+			),
+			0.5
+		),
+		emitter_notify_block_editor_count_p50: quantile(
+			rows.map( ( row ) => row.emitter_notify_block_editor_count ),
+			0.5
+		),
+		emitter_notify_block_editor_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.emitter_notify_block_editor_duration_ms ),
 			0.5
 		),
 		use_select_on_change_count_p50: quantile(
@@ -2936,11 +3021,19 @@ writeCsv(
 		'update_block_attributes_redux_listener_top100_duration_ms',
 		'root_subscribe_count',
 		'root_subscribe_duration_ms',
+		'root_subscribe_outside_redux_listener_duration_ms',
 		'redux_listener_count',
 		'redux_listener_duration_ms',
+		'redux_listener_outside_emitter_emit_duration_ms',
 		'resume_block_editor_duration_ms',
 		'emitter_listener_block_editor_count',
 		'emitter_listener_block_editor_duration_ms',
+		'emitter_emit_block_editor_count',
+		'emitter_emit_block_editor_duration_ms',
+		'paused_emitter_emit_block_editor_count',
+		'paused_emitter_emit_block_editor_duration_ms',
+		'emitter_notify_block_editor_count',
+		'emitter_notify_block_editor_duration_ms',
 		'use_select_on_change_count',
 		'use_select_on_change_duration_ms',
 		'use_select_on_store_change_count',
@@ -3014,13 +3107,21 @@ writeCsv(
 		'update_block_attributes_redux_listener_top100_duration_p50_ms',
 		'root_subscribe_count_p50',
 		'root_subscribe_duration_p50_ms',
+		'root_subscribe_outside_redux_listener_duration_p50_ms',
 		'cycle_root_subscribe_duration_p50_ms',
 		'redux_listener_count_p50',
 		'redux_listener_duration_p50_ms',
+		'redux_listener_outside_emitter_emit_duration_p50_ms',
 		'cycle_redux_listener_duration_p50_ms',
 		'resume_block_editor_duration_p50_ms',
 		'emitter_listener_block_editor_count_p50',
 		'emitter_listener_block_editor_duration_p50_ms',
+		'emitter_emit_block_editor_count_p50',
+		'emitter_emit_block_editor_duration_p50_ms',
+		'paused_emitter_emit_block_editor_count_p50',
+		'paused_emitter_emit_block_editor_duration_p50_ms',
+		'emitter_notify_block_editor_count_p50',
+		'emitter_notify_block_editor_duration_p50_ms',
 		'use_select_on_change_count_p50',
 		'use_select_on_change_duration_p50_ms',
 		'cycle_use_select_on_change_duration_p50_ms',
