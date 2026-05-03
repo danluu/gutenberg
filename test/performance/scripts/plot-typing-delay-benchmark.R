@@ -787,6 +787,64 @@ if (file.exists(start_settle_fresh_summary_path)) {
 	)
 }
 
+start_wait_first_char_summary_path <- file.path(data_dir, "typing-delay-start-wait-first-char-summary.csv")
+if (file.exists(start_wait_first_char_summary_path)) {
+	start_wait_first_char_summary <- read_csv(start_wait_first_char_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			settle_label = factor(settle_label, levels = c("0s", "1s", "5s", "10s", "30s", "60s"))
+		)
+
+	save_plot(
+		ggplot(start_wait_first_char_summary, aes(settle_label, p50_ms, color = settle_label)) +
+			geom_errorbar(aes(ymin = p10_ms, ymax = p90_ms), width = 0.18, alpha = 0.78) +
+			geom_point(size = 3.2) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE, guide = "none") +
+			labs(
+				title = "First character after setup slows as the start wait grows",
+				subtitle = "Fresh editor per sample; first typed 1300ms key-hold character only; bars are p10-p90",
+				x = "Wait after editor setup",
+				y = "Latency p50 (ms)"
+			),
+		"59-start-wait-first-character-curve.png",
+		width = 8,
+		height = 5
+	)
+
+	start_wait_first_char_components <- start_wait_first_char_summary %>%
+		select(settle_label, keydown_p50_ms, keypress_p50_ms, keyup_p50_ms) %>%
+		pivot_longer(
+			ends_with("_p50_ms"),
+			names_to = "component",
+			values_to = "p50_ms"
+		) %>%
+		mutate(
+			component = recode(
+				component,
+				keydown_p50_ms = "keydown",
+				keypress_p50_ms = "keypress",
+				keyup_p50_ms = "keyup"
+			),
+			component = factor(component, levels = c("keydown", "keypress", "keyup"))
+		)
+
+	save_plot(
+		ggplot(start_wait_first_char_components, aes(settle_label, p50_ms, color = component, shape = component)) +
+			geom_point(size = 3.1, position = position_dodge(width = 0.45)) +
+			facet_wrap(~component, ncol = 1, scales = "free_y") +
+			scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE, guide = "none") +
+			labs(
+				title = "Start wait changes the first keypress trace slice",
+				subtitle = "Component p50s from six fresh-editor first-character samples at 1300ms",
+				x = "Wait after editor setup",
+				y = "Component p50 (ms)",
+				shape = "Trace slice"
+			),
+		"60-start-wait-first-character-components.png",
+		width = 8,
+		height = 7
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

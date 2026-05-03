@@ -29,10 +29,11 @@ The short version:
     retained delay regimes. The default is already `0ms`, so there is no smaller
     start wait to test. A corrected fresh-editor-per-delay scan shows `990ms`
     and `1300ms` stay slow, while `1010ms` stays in the low band. The main
-    start-wait sensitivity is the first character after a fresh setup: its p50
-    rises from roughly `14-16ms` at `0s` wait to `21-23ms` after `60s`, so
-    throwaway policy matters more than pre-run settling for the retained
-    repeated-key measurements.
+    start-wait sensitivity is the first character after a fresh setup: in a
+    focused `1300ms` first-character run, p50 rose from `15.9ms` at `0s` wait to
+    `23.1ms` after `60s`, mostly in the `keypress` trace slice. Throwaway policy
+    matters more than pre-run settling for the retained repeated-key
+    measurements.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -398,6 +399,8 @@ The R script derives:
     external child-process, and prestarted external child-process CPU controls.
 -   `data/typing-delay-start-settle-*.csv`: targeted checks for changing the
     wait after editor setup and before typing starts.
+-   `data/typing-delay-start-wait-first-char-*.csv`: focused first-character
+    checks for changing the wait after a fresh editor setup.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -606,12 +609,51 @@ Fresh-editor throwaway p50s:
 | `10s`      | `20.0ms` | `19.0ms` | `20.2ms` | `20.2ms` |
 | `60s`      | `23.1ms` | `22.6ms` | `21.4ms` | `21.8ms` |
 
+A focused follow-up isolates just that first-character effect. This run used
+`BENCHMARK_FRESH_EDITOR_PER_DELAY=1`, `BENCHMARK_DELAYS_MS=1300`,
+`BENCHMARK_ROUNDS=6`, `BENCHMARK_SAMPLES_PER_DELAY=1`,
+`BENCHMARK_THROWAWAY_PER_DELAY=0`, and start waits of `0s`, `1s`, `5s`, `10s`,
+`30s`, and `60s`. Each sample creates a fresh editor, waits for the configured
+post-setup interval, then measures exactly one held-key character.
+
+![First-character start-wait curve](figures/59-start-wait-first-character-curve.png)
+
+Focused first-character p50s at `1300ms`:
+
+| Start wait | First-character p50 | p10-p90 |
+| ---------- | ------------------: | ------: |
+| `0s`       | `15.9ms` | `13.7-17.3ms` |
+| `1s`       | `19.3ms` | `18.0-21.0ms` |
+| `5s`       | `19.9ms` | `17.9-22.5ms` |
+| `10s`      | `23.4ms` | `19.1-26.0ms` |
+| `30s`      | `22.4ms` | `22.2-23.6ms` |
+| `60s`      | `23.1ms` | `22.2-25.0ms` |
+
+The `0s` and `60s` p10-p90 bands do not overlap in this run, so the effect is
+large relative to the observed first-character volatility. The recorded setup
+duration also tracks the configured wait plus about `1.6s` of editor setup work,
+so this is the intended post-setup wait knob, not accidental extra time hidden
+elsewhere in the harness.
+
 That is the part of the benchmark that start wait really changes. With a fresh
-editor, reducing the wait from `60s` to `0s` makes the first typed character
-faster, consistent with recent setup activity leaving the machine/browser in a
-more active state. Increasing the wait lets that state decay and makes the first
-character slower. After the throwaway, the repeated key-hold samples return to
-the delay-controlled regimes.
+editor, reducing an artificial wait from `60s` to the default `0s` makes the
+first typed character faster. Increasing the wait moves the first character
+toward a slower idle plateau. The benchmark does not prove the hardware-level
+cause of that plateau, but the shape is consistent with recent setup activity
+leaving the browser and machine in a more active state. After the first
+character is discarded, the repeated key-hold samples return to the
+delay-controlled regimes.
+
+The component split is also useful:
+
+![First-character start-wait components](figures/60-start-wait-first-character-components.png)
+
+The `keydown` trace slice stays tiny, roughly `0.1-0.2ms`. The change is mostly
+in the `keypress` slice: p50 goes from `15.1ms` at `0s` to roughly
+`21-23ms` at the long waits. `keyup` is usually sub-millisecond, although it is
+around `1.9ms` in the `30s` and `60s` rows. So the start-wait effect is not a
+measurement bookkeeping artifact from waiting before the first `keydown`; it is
+showing up inside the measured browser event work for the first input.
 
 The interpretation is conservative: increasing the pre-run settle time is not a
 fix for this benchmark's main artifacts. It mainly changes the first character
@@ -3605,7 +3647,10 @@ The key runs used in this report were:
     `task_end_external_background_idle_noop_timeout_1250_delay_1300`,
     `start_settle_0`, `start_settle_10000`, `start_settle_60000`,
     `start_settle_fresh_0`, `start_settle_fresh_10000`,
-    `start_settle_fresh_60000`,
+    `start_settle_fresh_60000`, `start_wait_first_char_0`,
+    `start_wait_first_char_1000`, `start_wait_first_char_5000`,
+    `start_wait_first_char_10000`, `start_wait_first_char_30000`,
+    `start_wait_first_char_60000`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,
