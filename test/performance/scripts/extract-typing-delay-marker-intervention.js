@@ -2135,6 +2135,18 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				batchSpans,
 				( span ) => span.name === 'data.useSelect.updateValue'
 			);
+			const useSelectUpdateValueInvalidCount = countSpans(
+				batchSpans,
+				( span ) =>
+					span.name === 'data.useSelect.updateValue' &&
+					span.metadata?.lastMapResultValid === false
+			);
+			const useSelectUpdateValueCachedCount = countSpans(
+				batchSpans,
+				( span ) =>
+					span.name === 'data.useSelect.updateValue' &&
+					span.metadata?.hasCachedMapSelect === true
+			);
 			const useSelectRenderQueueAddDurationMs = sumSpanDuration(
 				batchSpans,
 				( span ) => span.name === 'data.useSelect.renderQueueAdd'
@@ -2324,6 +2336,10 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				),
 				use_select_update_value_duration_ms:
 					useSelectUpdateValueDurationMs,
+				use_select_update_value_invalid_count:
+					useSelectUpdateValueInvalidCount,
+				use_select_update_value_cached_count:
+					useSelectUpdateValueCachedCount,
 				use_select_render_queue_add_count: countSpans(
 					batchSpans,
 					( span ) => span.name === 'data.useSelect.renderQueueAdd'
@@ -2704,6 +2720,14 @@ const allSpanInputBatchSummaryRows = Array.from(
 		),
 		use_select_update_value_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.use_select_update_value_duration_ms ),
+			0.5
+		),
+		use_select_update_value_invalid_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_update_value_invalid_count ),
+			0.5
+		),
+		use_select_update_value_cached_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_update_value_cached_count ),
 			0.5
 		),
 		cycle_use_select_update_value_duration_p50_ms: quantile(
@@ -3841,6 +3865,8 @@ writeCsv(
 		'use_select_map_select_duration_ms',
 		'use_select_update_value_count',
 		'use_select_update_value_duration_ms',
+		'use_select_update_value_invalid_count',
+		'use_select_update_value_cached_count',
 		'use_select_render_queue_add_count',
 		'use_select_render_queue_add_duration_ms',
 		'cycle_latency_ms',
@@ -3933,6 +3959,8 @@ writeCsv(
 		'cycle_use_select_map_select_duration_p50_ms',
 		'use_select_update_value_count_p50',
 		'use_select_update_value_duration_p50_ms',
+		'use_select_update_value_invalid_count_p50',
+		'use_select_update_value_cached_count_p50',
 		'cycle_use_select_update_value_duration_p50_ms',
 		'use_select_render_queue_add_count_p50',
 		'use_select_render_queue_add_duration_p50_ms',

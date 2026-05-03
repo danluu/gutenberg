@@ -101,6 +101,13 @@ The short version:
     `core/block-editor` store-emitter resume and `useSelect` subscriber fanout.
     The expensive path is selector/subscriber invalidation, not the two direct
     RichText callbacks.
+-   The next-input gap is not explained by different subscriber counts,
+    selector-cache misses, or render-queue counts. In the all-data-span probe,
+    the compared interventions all have two `core/block-editor` root
+    subscriptions, about nine thousand Redux listener wrappers, `4544`
+    `useSelect.onChange` callbacks, `716` `useSelect.updateValue` calls, `716`
+    invalidated cached selector results, and `3828` render-queue adds. The
+    movement is duration through the same fanout shape.
 -   A deeper owner-attribution trace shows that both the direct `useSelect`
     callback cost and the enclosing listener-span cost are broad fanout, not one
     pathological selector. The largest source-mapped groups have hundreds or
@@ -1822,6 +1829,37 @@ cycle much worse than the next-input-only metric. That disconfirms a strong
 restored block-editor fanout before the key is sufficient to get most of the
 measured drop, while the exact low-overhead gap between `14-15ms` and `~11ms`
 is not yet pinned to one source-level mechanism.
+
+I also split the same input batch into `useSelect` subphases and added
+cache-state counts:
+
+![Extended useSelect subphase comparison](figures/38c-marker-use-select-subphase-extended.png)
+
+Selected p50 counts and durations:
+
+| Metric                               | normal marker | marker no-op | stop/start | toggle selection |
+| ------------------------------------ | ------------: | -----------: | ---------: | ---------------: |
+| `rootSubscribe` count                |           `2` |          `2` |        `2` |              `2` |
+| Redux listener wrappers              |        `9002` |       `9002` |     `9000` |           `9000` |
+| `useSelect.onChange` callbacks       |        `4544` |       `4544` |     `4544` |           `4544` |
+| `useSelect.updateValue` calls        |         `716` |        `716` |      `716` |            `716` |
+| invalidated cached selector results  |         `716` |        `716` |      `716` |            `716` |
+| cached `mapSelect` functions         |         `716` |        `716` |      `716` |            `716` |
+| `renderQueue.add` calls              |        `3828` |       `3828` |     `3828` |           `3828` |
+| `rootSubscribe` duration             |       `6.4ms` |      `9.3ms` |    `5.2ms` |          `5.4ms` |
+| Redux listener-wrapper duration      |       `4.6ms` |      `7.3ms` |    `3.9ms` |          `3.2ms` |
+| `useSelect.onChange` duration        |       `7.0ms` |      `8.0ms` |    `6.4ms` |          `5.9ms` |
+| `useSelect.updateValue` duration     |       `4.2ms` |      `4.2ms` |    `3.2ms` |          `3.3ms` |
+| `useSelect.mapSelect` duration       |       `3.3ms` |      `3.6ms` |    `2.9ms` |          `2.9ms` |
+| `renderQueue.add` duration           |       `0.9ms` |      `1.1ms` |    `0.9ms` |          `0.7ms` |
+
+This disconfirms several narrower theories. The no-op path is not slower
+because it has more subscribers, more selector recomputes, more selector-cache
+misses, more `updateValue` calls, or more render-queue insertions. Those counts
+are the same at p50 in the all-data-span probe. The difference is time spent
+walking essentially the same listener/useSelect shape, with the largest visible
+movement at the root-subscribe and Redux-listener-wrapper levels. That is also
+why the owner-attribution tables do not find one pathological component.
 
 This confirms the weak version of "work moves out of the next input slice" and
 disconfirms the strong version. The weak version is: a real timer task runs

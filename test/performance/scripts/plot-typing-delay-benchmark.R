@@ -3951,6 +3951,70 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		width = 11,
 		height = 7
 	)
+
+	marker_use_select_extended <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_extended_interventions) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = marker_allspan_extended_interventions
+			)
+		) %>%
+		select(
+			intervention,
+			`rootSubscribe total` = root_subscribe_duration_p50_ms,
+			`Redux listener wrappers` = redux_listener_duration_p50_ms,
+			`useSelect.onChange` = use_select_on_change_duration_p50_ms,
+			`useSelect.onStoreChange` = use_select_on_store_change_duration_p50_ms,
+			`useSelect.reactListener` = use_select_react_listener_duration_p50_ms,
+			`useSelect.mapSelect` = use_select_map_select_duration_p50_ms,
+			`useSelect.updateValue` = use_select_update_value_duration_p50_ms,
+			`renderQueue.add` = use_select_render_queue_add_duration_p50_ms
+		) %>%
+		pivot_longer(
+			cols = -intervention,
+			names_to = "component",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			component = factor(
+				component,
+				levels = rev(c(
+					"rootSubscribe total",
+					"Redux listener wrappers",
+					"useSelect.onChange",
+					"useSelect.onStoreChange",
+					"useSelect.reactListener",
+					"useSelect.mapSelect",
+					"useSelect.updateValue",
+					"renderQueue.add"
+				))
+			)
+		)
+
+	save_plot(
+		ggplot(marker_use_select_extended, aes(duration_ms, component, color = intervention, shape = intervention)) +
+			geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15,
+				`stop/start typing` = 18,
+				`toggle selection` = 8
+			), drop = FALSE) +
+			labs(
+				title = "The input-side gap is wrapper and useSelect fanout timing",
+				subtitle = "Trace-all-data-spans runs at 1000ms; counts are effectively unchanged across interventions",
+				x = "Duration, p50 (ms)",
+				y = NULL,
+				color = "Timer callback",
+				shape = "Timer callback"
+			),
+		"38c-marker-use-select-subphase-extended.png",
+		width = 11,
+		height = 7.5
+	)
 }
 
 marker_allspan_input_batch_samples_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-samples.csv")
