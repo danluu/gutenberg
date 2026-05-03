@@ -11,6 +11,14 @@ marker_next_not_persistent_targeted,targeted,mark next not persistent,990,30,29.
 marker_next_not_persistent_targeted,targeted,mark next not persistent,1000,30,19.9627,33.5935,36.3054,30.455866666666665,32.719
 marker_next_not_persistent_targeted,targeted,mark next not persistent,1010,30,18.1566,30.6765,32.927600000000005,28.1605,29.741500000000002
 marker_next_not_persistent_targeted,targeted,mark next not persistent,1300,30,27.4801,35.336,37.551899999999996,34.13603333333334,33.9675
+marker_last_then_next_not_persistent_targeted,targeted,"mark last, then force next transient",990,30,16.1885,24.528499999999998,27.232499999999998,23.100899999999992,23.5325
+marker_last_then_next_not_persistent_targeted,targeted,"mark last, then force next transient",1000,30,10.6367,11.651,15.6691,12.558333333333334,11.14
+marker_last_then_next_not_persistent_targeted,targeted,"mark last, then force next transient",1010,30,10.6687,11.398,16.1207,12.468866666666669,10.965
+marker_last_then_next_not_persistent_targeted,targeted,"mark last, then force next transient",1300,30,21.069499999999998,24.631999999999998,25.512800000000002,23.832433333333338,23.374000000000002
+marker_stop_start_typing_targeted,targeted,stop/start typing,990,30,19.047800000000002,24.656,25.9586,23.286266666666663,23.554499999999997
+marker_stop_start_typing_targeted,targeted,stop/start typing,1000,30,10.245300000000002,10.974,12.895299999999999,11.342133333333331,10.6195
+marker_stop_start_typing_targeted,targeted,stop/start typing,1010,30,9.973,10.799499999999998,12.149,10.987899999999996,10.5055
+marker_stop_start_typing_targeted,targeted,stop/start typing,1300,30,19.632400000000004,24.256499999999996,25.6334,23.084099999999996,23.2165
 marker_normal_spans,span trace,normal marker,990,6,29.121,33.3645,34.693,32.392833333333336,32.209
 marker_normal_spans,span trace,normal marker,1000,6,22.136,23.228499999999997,25.006999999999998,23.457166666666666,22.8335
 marker_normal_spans,span trace,normal marker,1010,6,22.054000000000002,23.1395,25.8885,23.694000000000003,22.768500000000003
@@ -20,3 +28,7 @@ marker_noop_spans,span trace,marker no-op,1010,6,27.681,28.2095,30.9925,28.961,2
 marker_next_not_persistent_spans,span trace,mark next not persistent,990,6,32.3325,46.774,48.212500000000006,42.43966666666667,45.721500000000006
 marker_next_not_persistent_spans,span trace,mark next not persistent,1000,6,39.448499999999996,42.881,45.6195,42.64966666666667,41.6995
 marker_next_not_persistent_spans,span trace,mark next not persistent,1010,6,33.9785,37.5155,44.843500000000006,38.77916666666667,35.852000000000004
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,8,19.5128,21.541,25.5258,22.380750000000003,20.9745
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,8,17.527900000000002,18.8955,21.302400000000002,19.41425,18.2775
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,8,17.9025,18.415999999999997,22.730399999999996,19.791624999999996,18.1315
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,8,15.9714,17.9295,18.8419,17.558875,17.634999999999998

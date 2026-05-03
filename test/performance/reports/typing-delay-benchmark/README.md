@@ -37,19 +37,29 @@ The short version:
     input handling. The dominant measured callback is registered from
     `rich-text`; source-map lookup identifies it as the `onInput` path in
     `packages/rich-text/src/hook/event-listeners/input-and-selection.js`.
--   Marker interventions disconfirm both "the timer callback alone causes the
-    1000ms drop" and "any real timer-side action is enough". The fast band
-    depends on the real `__unstableMarkLastChangeAsPersistent()` action.
--   The normal marker action also does about `16ms` of timer-side work at
-    `1000ms` in the targeted run. That work is outside the next EventDispatch
-    measurement. Adding that marker action to the same retained key changes the
-    normal `1000ms` p50 from `11.3ms` to `27.4ms`, so the low band is an
-    accounting artifact for this metric.
+-   Marker interventions disconfirm "the timer callback alone causes the
+    1000ms drop": a no-op callback does not reproduce the normal low band.
+    They also disconfirm the stronger old claim that the real persistence marker
+    is uniquely necessary. A timer callback that does `stopTyping(); startTyping()`
+    also produces the low EventDispatch band at `1000ms` / `1010ms`.
+-   The common feature of the fast intervention cases is timer-side
+    `core/block-editor` subscriber fanout before the next key, not specifically
+    `MARK_LAST_CHANGE_AS_PERSISTENT`, and not just any action. The
+    `__unstableMarkNextChangeAsNotPersistent()` replacement is a real action but
+    has near-zero callback cost and stays slow.
+-   The normal marker action does about `16ms` of timer-side work at `1000ms` in
+    the targeted run. The `stopTyping(); startTyping()` replacement does about
+    `23ms`. That work is outside the next EventDispatch measurement. Adding the
+    paired timer callback to the same retained key changes the normal `1000ms`
+    p50 from `11.3ms` to `27.4ms`, and the stop/start `1000ms` p50 from
+    `11.0ms` to `34.1ms`, so the low band is an accounting artifact for this
+    metric.
 -   The marker/no-op difference does change action ordering and the
     `useBlockSync()` parent path: normal marker goes through `onChange`, no-op
-    stays on `onInput`. But `onChange` alone is not sufficient; replacing the
-    marker with `__unstableMarkNextChangeAsNotPersistent()` still records
-    `onChange` and remains slow.
+    stays on `onInput`. But `onChange` is not necessary or sufficient.
+    `stopTyping(); startTyping()` keeps the following input on `onInput` and is
+    still fast; `__unstableMarkNextChangeAsNotPersistent()` records `onChange`
+    and remains slow.
 -   A reducer/state-path audit confirms why the path changes: the normal marker
     becomes the reducer's `lastAction` boundary and makes the following
     `updateBlockAttributes` persistent; the no-op leaves the previous text edit
@@ -415,13 +425,19 @@ inside the preceding key hold had median duration around `15.8ms`. Adding those
 two pieces gives about `26.2ms`, which is essentially the same scale as the
 event-only p50s at `970ms` (`26.252ms`) and `990ms` (`25.829ms`).
 
-The timer callback does real work because it dispatches
+The normal timer callback does real work because it dispatches
 `MARK_LAST_CHANGE_AS_PERSISTENT`. That wakes the block-editor data store and
 subscribers, and `useBlockSync()` has explicit code for the case where the blocks
 did not change in the current action but the previous block change has become
-persistent. Since that timer task happens before the next `keydown`, its own
-work is outside the next key's `EventDispatch` slices. The later source-level
-traces are consistent with a state/order split, but they do not prove the
+persistent. A later intervention shows that this explanation was too specific:
+replacing the marker with `stopTyping(); startTyping()` also creates the
+`1000ms` / `1010ms` low EventDispatch band. The common proven property is a
+timer-side block-editor subscriber fanout before the next key, not the marker
+action by itself.
+
+Since that timer task happens before the next `keydown`, its own work is outside
+the next key's `EventDispatch` slices. The later source-level traces are
+consistent with a timer-side fanout/accounting split, but they do not prove the
 lower-level cause of the smaller following input slice: in the large-post
 key-held run, RichText `registry.batch()` median time drops from about `10.5ms`
 at `990ms` to `6.5ms` at `1000ms`, and the input-matched data batch drops from
@@ -741,66 +757,76 @@ The earlier stronger explanation failed this audit:
     as user latency because timer tasks, key holds, browser scheduling, and
     subscriber fanout all sit outside or around that accounting window.
 
-The remaining useful falsification tests are narrower:
+The useful falsification tests are narrower, and the later sections now include
+several of them:
 
--   trace React commits and high-fanout `useSelect` subscribers in both the
-    timer task and the following input task;
+-   replace the timer callback with no-op, cheap action, and non-marker
+    subscriber-fanout interventions;
+-   trace high-fanout `useSelect` subscribers in both the timer task and the
+    following input task;
 -   compute a broader full-cycle wall-time metric, from one input start through
     the timer task and the next input end. The paired metric below already adds
-    marker dispatch cost to each retained key, but it intentionally does not
+    timer callback cost to each retained key, but it intentionally does not
     count idle waiting time.
 
 ## Marker Interventions
 
-I then ran the first falsification test: keep the `1000ms` timer callback, but
-make the bound `__unstableMarkLastChangeAsPersistent()` action a benchmark-only
-no-op. This keeps the timer/event-loop ordering but removes the actual
-block-editor marker action. A follow-up intervention replaced the marker with
-`__unstableMarkNextChangeAsNotPersistent()` to test whether any real timer-side
-block-editor action was sufficient.
+I then ran falsification tests against the timer explanation. The first two
+kept the `1000ms` callback but replaced the bound
+`__unstableMarkLastChangeAsPersistent()` function with either a no-op or
+`__unstableMarkNextChangeAsNotPersistent()`. A later audit added two sharper
+probes:
+
+1. run the real marker, then immediately dispatch
+   `__unstableMarkNextChangeAsNotPersistent()`;
+2. replace the marker with `stopTyping(); startTyping()`, which creates real
+   block-editor subscriber fanout and restores `isTyping()` to its original
+   value before the next key.
 
 ![Marker no-op intervention](figures/26-marker-noop-intervention.png)
 
-The targeted run used the same delays, rounds, and sample counts for three
-interventions:
+The targeted runs used the same delays, rounds, and sample counts.
 
-1. normal `__unstableMarkLastChangeAsPersistent()`;
-2. a no-op replacement for that bound action;
-3. a replacement that dispatches
-   `__unstableMarkNextChangeAsNotPersistent()` instead.
+| Timer callback                         |    Delay |   n | Latency p50 | `keypress` p50 |
+| -------------------------------------- | -------: | --: | ----------: | -------------: |
+| normal marker                          |  `990ms` |  30 |    `25.4ms` |       `24.3ms` |
+| normal marker                          | `1000ms` |  30 |    `11.3ms` |       `11.0ms` |
+| normal marker                          | `1010ms` |  30 |    `10.9ms` |       `10.4ms` |
+| normal marker                          | `1300ms` |  30 |    `25.5ms` |       `24.5ms` |
+| marker no-op                           | `1000ms` |  30 |    `22.0ms` |       `21.1ms` |
+| mark next not persistent               | `1000ms` |  30 |    `33.6ms` |       `32.7ms` |
+| mark last, then force next transient   |  `990ms` |  30 |    `24.5ms` |       `23.5ms` |
+| mark last, then force next transient   | `1000ms` |  30 |    `11.7ms` |       `11.1ms` |
+| mark last, then force next transient   | `1010ms` |  30 |    `11.4ms` |       `11.0ms` |
+| mark last, then force next transient   | `1300ms` |  30 |    `24.6ms` |       `23.4ms` |
+| stop/start typing                      |  `990ms` |  30 |    `24.7ms` |       `23.6ms` |
+| stop/start typing                      | `1000ms` |  30 |    `11.0ms` |       `10.6ms` |
+| stop/start typing                      | `1010ms` |  30 |    `10.8ms` |       `10.5ms` |
+| stop/start typing                      | `1300ms` |  30 |    `24.3ms` |       `23.2ms` |
 
-| Timer callback           |    Delay |   n | Latency p50 | `keypress` p50 |
-| ------------------------ | -------: | --: | ----------: | -------------: |
-| normal marker            |  `990ms` |  30 |    `25.4ms` |       `24.3ms` |
-| normal marker            | `1000ms` |  30 |    `11.3ms` |       `11.0ms` |
-| normal marker            | `1010ms` |  30 |    `10.9ms` |       `10.4ms` |
-| normal marker            | `1300ms` |  30 |    `25.5ms` |       `24.5ms` |
-| marker no-op             |  `990ms` |  30 |    `24.6ms` |       `23.7ms` |
-| marker no-op             | `1000ms` |  30 |    `22.0ms` |       `21.1ms` |
-| marker no-op             | `1010ms` |  30 |    `17.2ms` |       `16.6ms` |
-| marker no-op             | `1300ms` |  30 |    `25.1ms` |       `24.1ms` |
-| mark next not persistent |  `990ms` |  30 |    `35.6ms` |       `34.4ms` |
-| mark next not persistent | `1000ms` |  30 |    `33.6ms` |       `32.7ms` |
-| mark next not persistent | `1010ms` |  30 |    `30.7ms` |       `29.7ms` |
-| mark next not persistent | `1300ms` |  30 |    `35.3ms` |       `34.0ms` |
-
-This disconfirms two simple theories:
+This disconfirms several simple theories:
 
 -   "Timer callback alone" is false. In the no-op run, the `1000ms` timers still
     fired before the following input, but the following input did not enter the
     normal `~11ms` fast band.
--   "Any real timer-side action is enough" is also false. Replacing the marker
-    with `__unstableMarkNextChangeAsNotPersistent()` still ran a real
-    block-editor action from the timer callback, but the following input was
-    slower than both the normal marker and the no-op.
+-   "Any real timer-side action is enough" is false. Replacing the marker with
+    `__unstableMarkNextChangeAsNotPersistent()` still ran a real action from
+    the timer callback, but the action was near-zero-cost and the following
+    input stayed slow.
+-   "The real persistence marker is uniquely necessary" is false. Replacing it
+    with `stopTyping(); startTyping()` also produced the `1000ms` / `1010ms`
+    low EventDispatch band.
+-   "`onChange` is necessary" is false. The stop/start run keeps the following
+    retained input on the `onInput` path in the span trace and is still fast.
 
 The action trace also corrects a subtler mistake. The normal marker action is
 not important only when it visibly flips `isLastBlockChangePersistent()`. In the
 normal targeted run, all retained `1000ms`, `1010ms`, and `1300ms` delay runs
 had marker actions before the next input, but those marker actions usually did
 not change the visible `isPersistent` / `isTyping` selector state. One proven
-effect is that they are real block-editor actions and therefore become the
-reducer's previous action.
+effect is that they create a real block-editor subscriber pass. In the stop/start
+run, the timer callback changes `isTyping` from true to false and then back to
+true before the next key, with no persistent-marker state change.
 
 That matters because `withPersistentBlockChange()` classifies a block attribute
 update as transient only when the current action and previous action are both
@@ -830,61 +856,70 @@ timer callback, but no block-editor action
 UPDATE_BLOCK_ATTRIBUTES  -> transient, because previous action is UPDATE
 ```
 
-Source-level path tracing confirms that the normal marker and no-op take
-different parent paths:
+Source-level input-path tracing confirms that the normal marker and no-op take
+different parent paths, but it also shows that the path split is not the cause
+by itself:
 
 ![Marker path classification](figures/27-marker-path-classification.png)
 
-In the trace-heavy path run:
+In the trace-heavy path runs, counting only `useBlockSync.updateParent` calls
+inside the retained input batch:
 
-| Timer callback           |    Delay | `useBlockSync()` parent path |
-| ------------------------ | -------: | ---------------------------- |
-| normal marker            | `1000ms` | `7/7` `onChange`             |
-| normal marker            | `1010ms` | `7/7` `onChange`             |
-| marker no-op             | `1000ms` | `7/7` `onInput`              |
-| marker no-op             | `1010ms` | `7/7` `onInput`              |
-| mark next not persistent | `1000ms` | `7/7` `onChange`             |
-| mark next not persistent | `1010ms` | `7/7` `onChange`             |
+| Timer callback                       |    Delay | Following input parent path |
+| ------------------------------------ | -------: | --------------------------- |
+| normal marker                        | `1000ms` | `6/6` `onChange`            |
+| normal marker                        | `1010ms` | `6/6` `onChange`            |
+| marker no-op                         | `1000ms` | `6/6` `onInput`             |
+| marker no-op                         | `1010ms` | `6/6` `onInput`             |
+| mark next not persistent             | `1000ms` | `6/6` `onChange`            |
+| mark next not persistent             | `1010ms` | `6/6` `onChange`            |
+| mark last, then force next transient | `1000ms` | `7/8` `onChange`            |
+| stop/start typing                    | `1000ms` | `8/8` `onInput`             |
+| stop/start typing                    | `1010ms` | `8/8` `onInput`             |
 
-The third row is important. `onChange` versus `onInput` is not sufficient to
-explain the measured latency. The `mark next not persistent` intervention still
-records `onChange` in `useBlockSync()`, but its EventDispatch latency remains
-high. The path trace explains why no-op differs from the normal marker; it does
-not, by itself, explain why the normal marker has the `~11ms` low band.
+The `mark next not persistent` row shows that `onChange` is not sufficient: it
+records `onChange` and remains slow. The stop/start row shows that `onChange` is
+not necessary: it records `onInput` and is fast. The attempted
+mark-last-then-mark-next run is also a warning about reasoning from action names:
+the "mark next" action was consumed before the content update in most samples,
+so the following content update still became persistent.
 
 The next plot shows the accounting problem directly:
 
 ![Marker action cost](figures/28-marker-action-cost.png)
 
 At `1000ms`, the normal marker's measured next-input p50 is only `11.3ms`.
-Adding the marker action that ran before each same retained key gives a paired
-marker-inclusive p50 of `27.4ms`, not `11.3ms`. At `1010ms`, the paired
-marker-inclusive p50 is `26.7ms`. Those marker-action durations are outside the
+Adding the timer callback that ran before each same retained key gives a paired
+timer-inclusive p50 of `27.4ms`, not `11.3ms`. The stop/start intervention is
+even more explicit: its measured next-input p50 is `11.0ms`, but adding the
+paired timer callback gives `34.1ms`. Those callback durations are outside the
 benchmark's next-input EventDispatch window.
 
-| Timer callback           |    Delay | Rows with marker | Event-only p50 | Marker action p50 | Marker-inclusive p50 |
-| ------------------------ | -------: | ---------------: | -------------: | ----------------: | -------------------: |
-| normal marker            |  `990ms` |              `0` |       `25.4ms` |           `0.0ms` |             `25.4ms` |
-| normal marker            | `1000ms` |             `30` |       `11.3ms` |          `15.8ms` |             `27.4ms` |
-| normal marker            | `1010ms` |             `30` |       `10.9ms` |          `15.9ms` |             `26.7ms` |
-| normal marker            | `1300ms` |             `30` |       `25.5ms` |          `16.1ms` |             `41.3ms` |
-| marker no-op             | `1000ms` |             `30` |       `22.0ms` |           `0.0ms` |             `22.0ms` |
-| mark next not persistent | `1000ms` |             `30` |       `33.6ms` |           `0.2ms` |             `33.8ms` |
+| Timer callback                       |    Delay | Rows with callback | Event-only p50 | Timer callback p50 | Timer-inclusive p50 |
+| ------------------------------------ | -------: | -----------------: | -------------: | -----------------: | ------------------: |
+| normal marker                        |  `990ms` |                `0` |       `25.4ms` |            `0.0ms` |            `25.4ms` |
+| normal marker                        | `1000ms` |               `30` |       `11.3ms` |           `15.8ms` |            `27.4ms` |
+| normal marker                        | `1010ms` |               `30` |       `10.9ms` |           `15.9ms` |            `26.7ms` |
+| normal marker                        | `1300ms` |               `30` |       `25.5ms` |           `16.1ms` |            `41.3ms` |
+| marker no-op                         | `1000ms` |               `30` |       `22.0ms` |            `0.0ms` |            `22.0ms` |
+| mark next not persistent             | `1000ms` |               `30` |       `33.6ms` |            `0.2ms` |            `33.8ms` |
+| mark last, then force next transient | `1000ms` |               `30` |       `11.7ms` |           `16.1ms` |            `27.6ms` |
+| stop/start typing                    | `1000ms` |               `30` |       `11.0ms` |           `22.7ms` |            `34.1ms` |
 
 So the confirmed mechanism is narrower and more concrete than the earlier
 explanation:
 
-1. The `1000ms` timer controls whether a marker action appears between two text
+1. The `1000ms` timer controls whether a callback can run between two text
    updates.
-2. The normal marker action is necessary for the large `1000ms` low band; a
-   timer callback without that action does not reproduce it.
-3. The normal marker also performs about `16ms` of timer-side dispatch and
-   subscriber work in these targeted runs. The benchmark's reported input
-   latency omits that work; the paired marker-inclusive metric removes the
-   apparent `1000ms` low band.
-4. The no-op and `mark next not persistent` interventions disprove the claim
-   that the low band follows from either "a timer fired" or "a timer-side action
-   happened".
+2. The callback must do substantial block-editor subscriber work to reproduce
+   the large low band. A no-op callback does not; the cheap
+   `mark-next-not-persistent` replacement does not; normal marker and
+   stop/start typing do.
+3. The benchmark's reported input latency omits that timer-side work. The paired
+   timer-inclusive metric removes the apparent `1000ms` low band.
+4. The parent `onInput` / `onChange` path and persistent-state classification
+   are observable side effects, but they are not the root explanation by
+   themselves.
 
 This explains the "charged to the wrong place" issue without pretending the
 total work got smaller. The normal marker can make the next EventDispatch slice
@@ -1076,7 +1111,7 @@ the deferred resume phase. The trace still does not prove which selector
 dependency inside those thousands of subscribers accounts for the lower
 callback-side fanout duration.
 
-So the corrected causal chain is:
+With those three original interventions, the narrower causal chain was:
 
 1. Below the timer boundary, the next input usually runs while the previous text
    edit is still transient.
@@ -1092,16 +1127,23 @@ So the corrected causal chain is:
    difference is in block-editor subscriber fanout inside the input's
    `registry.batch()`.
 
-The important correction is that this does not mean "doing marker work is faster
-than doing no marker work." The apparent speedup is for the next input's
+The later stop/start intervention corrects that again: the persistent
+state/previous-action path is not necessary for the `1000ms` low EventDispatch
+band. It is one way to get there, and it explains the normal marker path, but
+the broader confirmed condition is timer-side block-editor subscriber fanout
+before the measured input.
+
+The important correction is that this does not mean "doing timer work is faster
+than doing no timer work." The apparent speedup is for the next input's
 event-only measurement window. In the targeted paired run at `1000ms`, the
 normal marker's event-only p50 is `11.3ms`, but adding the marker task before
-that input gives `27.4ms`; the marker no-op p50 is `22.0ms`. In the heavier
-trace-all-data-spans run, the following input p50 is `26.9ms` for normal marker
-versus `32.5ms` for marker no-op, but the normal marker also has a `23.4ms` p50
-marker action before the input. So the low band is not a total-work reduction.
-It is a measurement-window result plus a real change in the following input's
-block-editor state and fanout path.
+that input gives `27.4ms`; the marker no-op p50 is `22.0ms`. The stop/start
+intervention is even stronger: its event-only p50 is `11.0ms`, but adding the
+timer callback gives `34.1ms`. In the heavier trace-all-data-spans run, the
+following input p50 is `26.9ms` for normal marker versus `32.5ms` for marker
+no-op, but the normal marker also has a `23.4ms` p50 marker action before the
+input. So the low band is not a total-work reduction. It is a measurement-window
+result plus a timer-side subscriber pass that the EventDispatch metric omits.
 
 I then grouped the trace-all-data-spans run by `useSelect` owner using the
 generated source maps:
@@ -1355,7 +1397,9 @@ What this confirms: the timing difference is caused by Gutenberg state/action
 ordering plus the data-layer subscription model. The marker changes the
 persistence/action path, and any effective `core/block-editor` state change in
 that path wakes thousands of `useSelect` listeners. The dominant cost is the
-number of subscriptions reached by that invalidation.
+number of subscriptions reached by that invalidation. The later stop/start
+intervention makes this broader: the persistence marker is one effective way to
+create this timer-side fanout, but it is not the only one.
 
 What this disconfirms: the current evidence does not support a browser-only
 timing explanation, a single pathological selector, or unusually slow callback
@@ -1523,7 +1567,9 @@ evidence of one additional expensive Gutenberg callback.
 Finally, I paired the marker task before each retained input with that same
 input in the trace-heavy run. This tests the most important accounting theory
 directly: if the normal marker truly made the editor do less work overall, the
-marker-plus-input cycle should be lower than the no-op cycle. It is not.
+marker-plus-input cycle should be lower than the no-op cycle. It is not. The
+later stop/start targeted run gives the same conclusion with a non-marker timer
+callback.
 
 ![Marker cycle versus input-only cost](figures/38-marker-cycle-vs-input-only.png)
 
@@ -1542,34 +1588,35 @@ Selected p50s:
 | cycle `useSelect`          |      `16.8ms` |      `8.0ms` |   `7.5ms` |
 
 This confirms the weak version of "work moves out of the next input slice" and
-disconfirms the strong version. The weak version is: a real marker task runs in
-a separate timer task before the measured input, updates block-editor state, and
-does subscriber fanout that the next input measurement does not include. The
-strong version would be: the normal marker makes the total marker-plus-input
-cycle cheaper than no marker work. The data says the opposite. The normal
-marker's next-input slice is lower than no-op by about `5.6ms`, but the
-marker-plus-input cycle is higher by about `7.9ms` in this trace-heavy run.
+disconfirms the strong version. The weak version is: a real timer task runs
+before the measured input and does subscriber fanout that the next input
+measurement does not include. The strong version would be: the normal marker
+makes the total marker-plus-input cycle cheaper than no marker work. The data
+says the opposite. The normal marker's next-input slice is lower than no-op by
+about `5.6ms`, but the marker-plus-input cycle is higher by about `7.9ms` in
+this trace-heavy run.
 
-One piece remains open, but it is now narrower. The traces identify the marker
-timer fanout and the following input's block-editor fanout, the owner summary
-disconfirms a single-owner explanation, and the nested-span split disconfirms
-React-listener, selector-recompute, and render-queue explanations for the
-residual input-side delta. The newest wrapper split puts the shared remainder in
-the paused store-listener wrapper path, not in the resumed listener bodies. The
-supported statement is that timer ordering and marker dispatch explain the false
-event-only low band, and the visible work is data/subscriber fanout; attributing
-the last few milliseconds to a single React commit, selector, render queue,
-component, or resumed callback body is not supported by the current traces.
+One piece remains open, but it is now narrower. The traces identify timer-side
+block-editor fanout and the following input's block-editor fanout, the owner
+summary disconfirms a single-owner explanation, and the nested-span split
+disconfirms React-listener, selector-recompute, and render-queue explanations
+for the residual input-side delta. The newest wrapper split puts the shared
+remainder in the paused store-listener wrapper path, not in the resumed listener
+bodies. The supported statement is that timer ordering plus timer-side
+subscriber fanout explain the false event-only low band; attributing the last
+few milliseconds to a single React commit, selector, render queue, component, or
+resumed callback body is not supported by the current traces.
 
 Reasoning audit:
 
 -   Code-review standard: the reducer proves only the previous-action and
     explicit-marker logic above. It does not prove that `onChange` is inherently
-    faster than `onInput`; the `mark next not persistent` run disconfirms that
-    stronger claim.
+    faster than `onInput`; the `mark next not persistent` run disconfirms
+    "`onChange` is sufficient", and the stop/start run disconfirms "`onChange`
+    is necessary".
 -   Measurement standard: the low band is an EventDispatch accounting result,
-    not a whole-cycle latency result. The marker action is in a different task
-    and must be counted separately.
+    not a whole-cycle latency result. Timer callbacks are in different tasks and
+    must be counted separately.
 -   Benchmark standard: the benchmark is still useful for finding this ordering
     artifact, but the original graph should not be read as "a human who waits
     one second sees a faster next character."
@@ -2562,6 +2609,12 @@ The key runs used in this report were:
 -   `marker_next_not_persistent_targeted`: same delays and counts, but the bound
     marker action dispatches `__unstableMarkNextChangeAsNotPersistent()`
     instead.
+-   `marker_last_then_next_not_persistent_targeted`: same delays and counts,
+    but the bound marker action runs the real marker and then dispatches
+    `__unstableMarkNextChangeAsNotPersistent()`.
+-   `marker_stop_start_typing_targeted`: same delays and counts, but the bound
+    marker action dispatches `stopTyping()` and `startTyping()` instead of the
+    persistent marker.
 -   `timeout_970_marker_targeted`: normal marker action with `1000ms` timers
     rewritten to `970ms`, scanning `960ms`, `970ms`, `980ms`, `990ms`, and
     `1000ms`.
@@ -2571,6 +2624,10 @@ The key runs used in this report were:
 -   `marker_noop_spans`: same span trace with the marker action no-opped.
 -   `marker_next_not_persistent_spans`: same span trace with the
     `mark next not persistent` intervention.
+-   `marker_last_then_next_not_persistent_spans`: span trace for the real marker
+    followed by `mark next not persistent`.
+-   `marker_stop_start_typing_spans`: span trace for the stop/start typing
+    intervention.
 -   `marker_normal_allspans_1000`, `marker_noop_allspans_1000`,
     `marker_next_not_persistent_allspans_1000`: small `1000ms` runs with
     `BENCHMARK_TRACE_ALL_DATA_SPANS=1` to expose non-batch data spans inside the

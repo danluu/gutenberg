@@ -131,6 +131,8 @@ const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
 	'mark-next-not-persistent',
+	'mark-last-then-mark-next-not-persistent',
+	'stop-start-typing',
 ];
 
 function sleepMs( delayMs ) {
@@ -1135,9 +1137,15 @@ test.describe( 'Typing delay benchmark', () => {
 						! select ||
 						typeof actions.__unstableMarkLastChangeAsPersistent !==
 							'function' ||
-						( mode === 'mark-next-not-persistent' &&
+						( [
+							'mark-next-not-persistent',
+							'mark-last-then-mark-next-not-persistent',
+						].includes( mode ) &&
 							typeof actions.__unstableMarkNextChangeAsNotPersistent !==
-								'function' )
+								'function' ) ||
+						( mode === 'stop-start-typing' &&
+							( typeof actions.stopTyping !== 'function' ||
+								typeof actions.startTyping !== 'function' ) )
 					) {
 						return { installed: false, reason: 'missing-actions' };
 					}
@@ -1201,6 +1209,15 @@ test.describe( 'Typing delay benchmark', () => {
 								) {
 									result =
 										actions.__unstableMarkNextChangeAsNotPersistent();
+								} else if (
+									mode ===
+									'mark-last-then-mark-next-not-persistent'
+								) {
+									result = original.apply( this, arguments );
+									actions.__unstableMarkNextChangeAsNotPersistent();
+								} else if ( mode === 'stop-start-typing' ) {
+									actions.stopTyping();
+									result = actions.startTyping();
 								} else {
 									result = original.apply( this, arguments );
 								}

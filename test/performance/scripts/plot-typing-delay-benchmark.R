@@ -3146,12 +3146,19 @@ marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-sum
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
 if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
+	marker_intervention_levels <- c(
+		"normal marker",
+		"marker no-op",
+		"mark next not persistent",
+		"mark last, then force next transient",
+		"stop/start typing"
+	)
 	marker_summary <- read_csv(marker_summary_path, show_col_types = FALSE) %>%
 		filter(trace_type == "targeted") %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_intervention_levels
 			)
 		)
 	marker_samples <- read_csv(marker_samples_path, show_col_types = FALSE) %>%
@@ -3159,7 +3166,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_intervention_levels
 			)
 		)
 
@@ -3181,7 +3188,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			scale_color_brewer(type = "qual", palette = "Dark2") +
 			scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
 			labs(
-				title = "Only the real persistence marker produces the 1000ms low band",
+				title = "Timer-side subscriber work reproduces the 1000ms low band",
 				subtitle = "Points are retained samples; ranges are p10-p90 with p50 markers",
 				x = "Playwright key-hold delay (ms)",
 				y = "keydown + keypress + keyup EventDispatch duration (ms)",
@@ -3198,7 +3205,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			mutate(
 				intervention = factor(
 					intervention,
-					levels = c("normal marker", "marker no-op", "mark next not persistent")
+					levels = marker_intervention_levels
 				)
 			) %>%
 			select(intervention, delay_ms, latency_p50_ms, marker_action_duration_p50_ms, marker_inclusive_latency_p50_ms) %>%
@@ -3211,12 +3218,12 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				metric = recode(
 					metric,
 					latency_p50_ms = "measured next input",
-					marker_action_duration_p50_ms = "paired marker action",
-					marker_inclusive_latency_p50_ms = "marker-inclusive input"
+					marker_action_duration_p50_ms = "paired timer callback",
+					marker_inclusive_latency_p50_ms = "timer-inclusive input"
 				),
 				metric = factor(
 					metric,
-					levels = c("measured next input", "paired marker action", "marker-inclusive input")
+					levels = c("measured next input", "paired timer callback", "timer-inclusive input")
 				)
 			)
 
@@ -3230,13 +3237,13 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				scale_color_brewer(type = "qual", palette = "Dark2") +
 				scale_shape_manual(values = c(
 					`measured next input` = 16,
-					`paired marker action` = 17,
-					`marker-inclusive input` = 15
+					`paired timer callback` = 17,
+					`timer-inclusive input` = 15
 				)) +
 				scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
 				labs(
-					title = "The low band omits timer-side marker work",
-					subtitle = "Paired per-sample metric: next EventDispatch plus marker action before that keydown",
+					title = "The low band omits timer-side callback work",
+					subtitle = "Paired per-sample metric: next EventDispatch plus timer callback work before that keydown",
 					x = "Playwright key-hold delay (ms)",
 					y = "Duration (ms)",
 					color = "Timer callback",
@@ -3249,14 +3256,21 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 	}
 }
 
-marker_path_summary_path <- file.path(data_dir, "typing-delay-marker-path-summary.csv")
+marker_path_summary_path <- file.path(data_dir, "typing-delay-marker-input-path-summary.csv")
 if (file.exists(marker_path_summary_path)) {
+	marker_intervention_levels <- c(
+		"normal marker",
+		"marker no-op",
+		"mark next not persistent",
+		"mark last, then force next transient",
+		"stop/start typing"
+	)
 	marker_path_summary <- read_csv(marker_path_summary_path, show_col_types = FALSE) %>%
 		filter(trace_type == "span trace") %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_intervention_levels
 			),
 			update_parent = factor(update_parent, levels = c("onInput", "onChange"))
 		)
@@ -3270,8 +3284,8 @@ if (file.exists(marker_path_summary_path)) {
 			facet_wrap(~intervention, ncol = 1) +
 			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
 			labs(
-				title = "Parent path alone does not explain the measured latency",
-				subtitle = "Source-level trace of useBlockSync.updateParent; the mark-next intervention is onChange but remains slow",
+				title = "The following input path is not the whole explanation",
+				subtitle = "Source-level trace of useBlockSync.updateParent inside the retained input batch only",
 				x = "Playwright key-hold delay (ms)",
 				y = "Observed updateParent calls",
 				fill = "Parent path"

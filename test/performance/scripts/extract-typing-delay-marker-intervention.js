@@ -34,6 +34,18 @@ const runs = [
 		dir: 'artifacts/typing-delay-mark-next-not-persistent-targeted',
 	},
 	{
+		runId: 'marker_last_then_next_not_persistent_targeted',
+		traceType: 'targeted',
+		intervention: 'mark last, then force next transient',
+		dir: 'artifacts/typing-delay-mark-last-then-next-not-persistent-targeted',
+	},
+	{
+		runId: 'marker_stop_start_typing_targeted',
+		traceType: 'targeted',
+		intervention: 'stop/start typing',
+		dir: 'artifacts/typing-delay-mark-stop-start-typing-targeted',
+	},
+	{
 		runId: 'marker_normal_spans',
 		traceType: 'span trace',
 		intervention: 'normal marker',
@@ -50,6 +62,18 @@ const runs = [
 		traceType: 'span trace',
 		intervention: 'mark next not persistent',
 		dir: 'artifacts/typing-delay-mark-next-not-persistent-spans',
+	},
+	{
+		runId: 'marker_last_then_next_not_persistent_spans',
+		traceType: 'span trace',
+		intervention: 'mark last, then force next transient',
+		dir: 'artifacts/typing-delay-mark-last-then-next-not-persistent-spans',
+	},
+	{
+		runId: 'marker_stop_start_typing_spans',
+		traceType: 'span trace',
+		intervention: 'stop/start typing',
+		dir: 'artifacts/typing-delay-mark-stop-start-typing-spans',
 	},
 ];
 
@@ -907,6 +931,8 @@ const actionSampleRows = loadedRuns.flatMap( ( run ) =>
 					[
 						'__unstableMarkLastChangeAsPersistent',
 						'__unstableMarkNextChangeAsNotPersistent',
+						'stopTyping',
+						'startTyping',
 						'updateBlockAttributes',
 					].includes( event.actionName )
 			)
@@ -2965,6 +2991,127 @@ const pathSummaryRows = Array.from(
 	};
 } );
 
+const inputPathRows = loadedRuns.flatMap( ( run ) => {
+	const recordsBySummary = groupedBy( run.data.records, summaryKey );
+
+	return run.data.delayRunSummaries.flatMap( ( summary ) => {
+		const spans = summary.dataSpanEvents || [];
+		if ( spans.length === 0 ) {
+			return [];
+		}
+
+		const inputEvents = inputEventsForSummary( summary );
+		const records = ( recordsBySummary.get( summaryKey( summary ) ) || [] )
+			.slice()
+			.sort( ( left, right ) => left.sampleIndex - right.sampleIndex );
+
+		return records.flatMap( ( record, recordIndex ) => {
+			if ( record.isThrowaway ) {
+				return [];
+			}
+
+			const inputEvent = inputEvents[ recordIndex ];
+			if ( ! inputEvent ) {
+				return [];
+			}
+
+			const rootBatch = firstRootBatchAfterInput( spans, inputEvent );
+			const batchSpans = rootBatch
+				? spansInWindow(
+						spans,
+						rootBatch.startedAtMs,
+						rootBatch.startedAtMs + rootBatch.durationMs
+				  )
+				: [];
+			const updateParentSpans = batchSpans.filter(
+				( span ) =>
+					span.name === 'block-editor.useBlockSync.updateParent'
+			);
+
+			if ( updateParentSpans.length === 0 ) {
+				return [
+					{
+						run_id: run.runId,
+						trace_type: run.traceType,
+						intervention: run.intervention,
+						delay_ms: record.delayMs,
+						round: record.round,
+						sample_index: record.sampleIndex,
+						delay_sample_index: record.delaySampleIndex,
+						update_parent: '(none)',
+						duration_ms: 0,
+						blocks_changed: '',
+						selection_changed: '',
+						did_persistence_change: '',
+						are_blocks_different: '',
+						previous_are_blocks_different: '',
+						new_is_persistent: '',
+						batch_duration_ms: rootBatch?.durationMs ?? 0,
+						latency_ms: record.latencyMs,
+						keypress_ms: record.keypressMs,
+					},
+				];
+			}
+
+			return updateParentSpans.map( ( event ) => ( {
+				run_id: run.runId,
+				trace_type: run.traceType,
+				intervention: run.intervention,
+				delay_ms: record.delayMs,
+				round: record.round,
+				sample_index: record.sampleIndex,
+				delay_sample_index: record.delaySampleIndex,
+				update_parent: event.metadata?.updateParent,
+				duration_ms: event.durationMs,
+				blocks_changed: event.metadata?.blocksChanged,
+				selection_changed: event.metadata?.selectionChanged,
+				did_persistence_change: event.metadata?.didPersistenceChange,
+				are_blocks_different: event.metadata?.areBlocksDifferent,
+				previous_are_blocks_different:
+					event.metadata?.previousAreBlocksDifferent,
+				new_is_persistent: event.metadata?.newIsPersistent,
+				batch_duration_ms: rootBatch?.durationMs ?? 0,
+				latency_ms: record.latencyMs,
+				keypress_ms: record.keypressMs,
+			} ) );
+		} );
+	} );
+} );
+
+const inputPathSummaryRows = Array.from(
+	groupedBy(
+		inputPathRows,
+		( row ) => `${ row.run_id }\t${ row.delay_ms }\t${ row.update_parent }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		run_id: first.run_id,
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		delay_ms: first.delay_ms,
+		update_parent: first.update_parent,
+		n: rows.length,
+		duration_p50_ms: quantile(
+			rows.map( ( row ) => row.duration_ms ),
+			0.5
+		),
+		batch_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.batch_duration_ms ),
+			0.5
+		),
+		latency_p50_ms: quantile(
+			rows.map( ( row ) => row.latency_ms ),
+			0.5
+		),
+		did_persistence_change_count: rows.filter(
+			( row ) => row.did_persistence_change
+		).length,
+		new_is_persistent_count: rows.filter( ( row ) => row.new_is_persistent )
+			.length,
+	};
+} );
+
 fs.mkdirSync( reportDataDir, { recursive: true } );
 writeCsv(
 	path.join( reportDataDir, 'typing-delay-marker-intervention-samples.csv' ),
@@ -3720,6 +3867,47 @@ writeCsv(
 		'update_parent',
 		'n',
 		'duration_p50_ms',
+		'did_persistence_change_count',
+		'new_is_persistent_count',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-input-path-samples.csv' ),
+	inputPathRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'round',
+		'sample_index',
+		'delay_sample_index',
+		'update_parent',
+		'duration_ms',
+		'blocks_changed',
+		'selection_changed',
+		'did_persistence_change',
+		'are_blocks_different',
+		'previous_are_blocks_different',
+		'new_is_persistent',
+		'batch_duration_ms',
+		'latency_ms',
+		'keypress_ms',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-input-path-summary.csv' ),
+	inputPathSummaryRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'update_parent',
+		'n',
+		'duration_p50_ms',
+		'batch_duration_p50_ms',
+		'latency_p50_ms',
 		'did_persistence_change_count',
 		'new_is_persistent_count',
 	]

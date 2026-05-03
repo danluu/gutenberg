@@ -11,3 +11,9 @@ marker_next_not_persistent_spans,span trace,mark next not persistent,990,onChang
 marker_next_not_persistent_spans,span trace,mark next not persistent,990,onInput,6,0.6999999284744263,0,0
 marker_next_not_persistent_spans,span trace,mark next not persistent,1000,onChange,7,0.7000000476837158,0,7
 marker_next_not_persistent_spans,span trace,mark next not persistent,1010,onChange,7,0.5,0,7
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,onChange,9,0.20000004768371582,1,9
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,onInput,1,0.6000001430511475,0,0
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,onChange,9,0.20000004768371582,0,9
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,onChange,1,0.2999999523162842,0,1
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,onInput,8,0.20000004768371582,0,0
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,onInput,9,0.20000004768371582,0,0

@@ -1,0 +1,87 @@
+run_id,trace_type,intervention,delay_ms,round,sample_index,delay_sample_index,update_parent,duration_ms,blocks_changed,selection_changed,did_persistence_change,are_blocks_different,previous_are_blocks_different,new_is_persistent,batch_duration_ms,latency_ms,keypress_ms
+marker_normal_spans,span trace,normal marker,990,0,1,0,onInput,0.39999985694885254,true,true,false,true,false,false,25.09999990463257,34.175000000000004,33.136
+marker_normal_spans,span trace,normal marker,990,0,2,1,onInput,0.2999999523162842,true,true,false,true,true,false,22.699999809265137,31.653,30.485
+marker_normal_spans,span trace,normal marker,990,0,3,2,onInput,0.20000004768371582,true,true,false,true,true,false,24.600000143051147,33.684,32.56
+marker_normal_spans,span trace,normal marker,990,0,4,3,onInput,0.2999999523162842,true,true,false,true,true,false,26.700000047683716,35.211,34.375
+marker_normal_spans,span trace,normal marker,990,0,5,4,onInput,0.2999999523162842,true,true,false,true,true,false,21,26.589,25.612
+marker_normal_spans,span trace,normal marker,990,0,6,5,onInput,0.2999999523162842,true,true,false,true,true,false,24.100000143051147,33.045,31.858
+marker_normal_spans,span trace,normal marker,1000,0,1,0,onChange,0.39999985694885254,true,true,false,true,false,true,20.09999990463257,25.174,24.688
+marker_normal_spans,span trace,normal marker,1000,0,2,1,onChange,0.20000004768371582,true,true,false,true,false,true,17.09999990463257,21.767,21.413
+marker_normal_spans,span trace,normal marker,1000,0,3,2,onChange,0.20000004768371582,true,true,false,true,false,true,18.09999990463257,22.505,22.078
+marker_normal_spans,span trace,normal marker,1000,0,4,3,onChange,0.2999999523162842,true,true,false,true,false,true,18.799999952316284,23.581,23.153
+marker_normal_spans,span trace,normal marker,1000,0,5,4,onChange,0.20000004768371582,true,true,false,true,false,true,20.200000047683716,24.84,24.452
+marker_normal_spans,span trace,normal marker,1000,0,6,5,onChange,0.39999985694885254,true,true,false,true,false,true,18.5,22.875999999999998,22.514
+marker_normal_spans,span trace,normal marker,1010,0,1,0,onChange,0.3000001907348633,true,true,false,true,false,true,21.799999952316284,26.926000000000002,26.521
+marker_normal_spans,span trace,normal marker,1010,0,2,1,onChange,0.09999990463256836,true,true,false,true,false,true,17.700000047683716,22.073,21.747
+marker_normal_spans,span trace,normal marker,1010,0,3,2,onChange,0.2999999523162842,true,true,false,true,false,true,19.399999856948853,24.851000000000003,23.271
+marker_normal_spans,span trace,normal marker,1010,0,4,3,onChange,0.2999999523162842,true,true,false,true,false,true,19.200000047683716,23.269000000000002,22.937
+marker_normal_spans,span trace,normal marker,1010,0,5,4,onChange,0.20000004768371582,true,true,false,true,false,true,18.100000143051147,22.035,21.657
+marker_normal_spans,span trace,normal marker,1010,0,6,5,onChange,0.20000004768371582,true,true,false,true,false,true,18.59999990463257,23.01,22.6
+marker_noop_spans,span trace,marker no-op,990,0,1,0,onInput,0.39999985694885254,true,true,false,true,false,false,23.899999856948853,34.072,32.508
+marker_noop_spans,span trace,marker no-op,990,0,2,1,onInput,0.2999999523162842,true,true,false,true,true,false,23.899999856948853,33.067,31.821
+marker_noop_spans,span trace,marker no-op,990,0,3,2,onInput,0.2999999523162842,true,true,false,true,true,false,24.09999990463257,32.971,32.082
+marker_noop_spans,span trace,marker no-op,990,0,4,3,onInput,0.20000004768371582,true,true,false,true,true,false,19.700000047683716,25.381000000000004,24.379
+marker_noop_spans,span trace,marker no-op,990,0,5,4,onInput,0.20000004768371582,true,true,false,true,true,false,23.199999809265137,30.746,29.546
+marker_noop_spans,span trace,marker no-op,990,0,6,5,onInput,0.19999980926513672,true,true,false,true,true,false,25.299999952316284,34.511,33.522
+marker_noop_spans,span trace,marker no-op,1000,0,1,0,onInput,0.2999999523162842,true,true,false,true,true,false,23.699999809265137,31.535000000000004,30.373
+marker_noop_spans,span trace,marker no-op,1000,0,2,1,onInput,0.20000004768371582,true,true,false,true,true,false,19,27.846000000000004,26.812
+marker_noop_spans,span trace,marker no-op,1000,0,3,2,onInput,0.2999999523162842,true,true,false,true,true,false,24,33.06700000000001,32.011
+marker_noop_spans,span trace,marker no-op,1000,0,4,3,onInput,0.2999999523162842,true,true,false,true,true,false,24.299999952316284,33.122,31.939
+marker_noop_spans,span trace,marker no-op,1000,0,5,4,onInput,0.39999985694885254,true,true,false,true,true,false,24.40000009536743,32.552,31.741
+marker_noop_spans,span trace,marker no-op,1000,0,6,5,onInput,0.20000004768371582,true,true,false,true,true,false,24.299999952316284,32.623000000000005,31.85
+marker_noop_spans,span trace,marker no-op,1010,0,1,0,onInput,0.5,true,true,false,true,true,false,24.40000009536743,32.973,31.956
+marker_noop_spans,span trace,marker no-op,1010,0,2,1,onInput,0.2999999523162842,true,true,false,true,true,false,23.59999990463257,28.502000000000002,27.968
+marker_noop_spans,span trace,marker no-op,1010,0,3,2,onInput,0.2999999523162842,true,true,false,true,true,false,23.200000047683716,29.012,27.609
+marker_noop_spans,span trace,marker no-op,1010,0,4,3,onInput,0.2999999523162842,true,true,false,true,true,false,22.59999990463257,27.787,27.24
+marker_noop_spans,span trace,marker no-op,1010,0,5,4,onInput,0.39999985694885254,true,true,false,true,true,false,22.299999952316284,27.575000000000003,26.98
+marker_noop_spans,span trace,marker no-op,1010,0,6,5,onInput,0.2999999523162842,true,true,false,true,true,false,22.200000047683716,27.916999999999998,27.089
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,0,1,0,onInput,1,true,true,false,true,false,false,36,45.737,44.664
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,0,2,1,onInput,0.7999999523162842,true,true,false,true,true,false,38.700000047683716,48.127,46.945
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,0,3,2,onInput,0.6000001430511475,true,true,false,true,true,false,38.799999952316284,48.298,47.25
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,0,4,3,onInput,0.6999998092651367,true,true,false,true,true,false,38.799999952316284,47.811,46.779
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,0,5,4,onInput,0.20000004768371582,true,true,false,true,true,false,15.900000095367432,20.825,20.007
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,0,6,5,onInput,0.7000000476837158,true,true,false,true,true,false,35.40000009536743,43.84,42.624
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,0,1,0,onChange,0.5999999046325684,true,true,false,true,true,true,35.10000014305115,43.659,42.466
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,0,2,1,onChange,0.7000000476837158,true,true,false,true,true,true,35.69999980926514,44.869,43.808
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,0,3,2,onChange,0.5999999046325684,true,true,false,true,true,true,32.40000009536743,42.103,40.933
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,0,4,3,onChange,0.7000000476837158,true,true,false,true,true,true,38.39999985694885,46.37,45.376
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,0,5,4,onChange,0.7999999523162842,true,true,false,true,true,true,30.40000009536743,38.385,37.486
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,0,6,5,onChange,1,true,true,false,true,true,true,32.299999952316284,40.51199999999999,39.717
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,0,1,0,onChange,0.5,true,true,false,true,true,true,28.700000047683716,35.076,34.246
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,0,2,1,onChange,0.39999985694885254,true,true,false,true,true,true,27.100000143051147,32.881,32.146
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,0,3,2,onChange,0.5,true,true,false,true,true,true,29.700000047683716,38.777,36.214
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,0,4,3,onChange,0.39999985694885254,true,true,false,true,true,true,30.899999856948853,38.826,37.984
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,0,5,4,onChange,0.7999999523162842,true,true,false,true,true,true,41.5,50.861000000000004,49.988
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,0,6,5,onChange,0.5,true,true,false,true,true,true,28.40000009536743,36.254000000000005,35.49
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,1,0,onInput,0.6000001430511475,true,true,false,true,false,false,24.899999856948853,33.146,32.338
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,2,1,onChange,0.19999980926513672,true,true,false,true,false,true,16.799999952316284,21.054000000000002,20.471
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,3,2,onChange,0.20000004768371582,true,true,false,true,false,true,15.799999952316284,19.648999999999997,19.185
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,4,3,onChange,0.20000004768371582,true,true,false,true,false,true,18.200000047683716,22.028,21.478
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,5,4,onChange,0.09999990463256836,true,true,false,true,false,true,17.40000009536743,22.26,21.824
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,6,5,onChange,0.20000004768371582,true,true,false,true,false,true,16.09999990463257,19.66,19.251
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,7,6,onChange,0.3000001907348633,true,true,false,true,false,true,15.699999809265137,19.195,18.679
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1000,0,8,7,onChange,0.19999980926513672,true,true,false,true,false,true,17,22.054,21.563
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,1,0,onChange,0.20000004768371582,true,true,false,true,false,true,15.600000143051147,19.113999999999997,18.362
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,2,1,onChange,0.09999990463256836,true,true,false,true,false,true,17.100000143051147,21.854,21.379
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,3,2,onChange,0.19999980926513672,true,true,false,true,false,true,17.100000143051147,20.979000000000003,20.483
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,4,3,onChange,0.20000004768371582,true,true,false,true,false,true,14.599999904632568,17.545,17.167
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,5,4,onChange,0.19999980926513672,true,true,false,true,false,true,15.199999809265137,18.591,18.147
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,6,5,onChange,0.20000004768371582,true,true,false,true,false,true,14.700000047683716,17.488000000000003,17.109
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,7,6,onChange,0.20000004768371582,true,true,false,true,false,true,17.09999990463257,21.066000000000003,20.6
+marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,8,7,onChange,0.20000004768371582,true,true,false,true,false,true,14.899999856948853,18.677000000000003,18.193
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,1,0,onInput,0.5,true,true,false,true,false,false,23.09999990463257,28.378,27.877
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,2,1,onInput,0.10000014305114746,true,true,false,true,false,false,16.5,20.31,19.677
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,15.299999952316284,18.66,18.363
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,15.600000143051147,18.987,18.684
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,5,4,onInput,0.20000004768371582,true,true,false,true,false,false,14.799999952316284,17.907,17.608
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,6,5,onInput,0.20000004768371582,true,true,false,true,false,false,15,18.027,17.76
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,7,6,onInput,0.20000004768371582,true,true,false,true,false,false,15.200000047683716,18.171999999999997,17.9
+marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,8,7,onInput,0.19999980926513672,true,true,false,true,false,false,14.900000095367432,17.892,17.59
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,1,0,onInput,0.20000004768371582,true,true,false,true,false,false,16.200000047683716,19.32,18.901
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,2,1,onInput,0.09999990463256836,true,true,false,true,false,false,14,16.683,16.415
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,14.899999856948853,17.796,17.494
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,15.100000143051147,18.063000000000002,17.776
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,5,4,onInput,0.2999999523162842,true,true,false,true,false,false,15.5,18.637,18.377
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,6,5,onInput,0.20000004768371582,true,true,false,true,false,false,11.799999952316284,14.311,14.044
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,7,6,onInput,0.10000014305114746,true,true,false,true,false,false,14.900000095367432,17.567999999999998,17.309
+marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,8,7,onInput,0.19999980926513672,true,true,false,true,false,false,15.200000047683716,18.092999999999996,17.799
