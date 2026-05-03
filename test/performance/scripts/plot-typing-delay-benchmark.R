@@ -1974,6 +1974,123 @@ if (file.exists(typing_delay_startup_summary_path)) {
 		width = 9.4,
 		height = 5.2
 	)
+
+	startup_wait_reliability_current_delay <- typing_delay_startup_summary %>%
+		filter(typing_delay_ms == 1000) %>%
+		transmute(
+			startup_wait_ms,
+			current_typing_delay_ms = typing_delay_ms,
+			current_typing_delay_ci_q50_ms = latency_p50_ms,
+			current_typing_delay_mean_ms = latency_mean_ms,
+			current_typing_delay_cv = latency_cv,
+			current_typing_delay_p10_p90_width_ms = latency_p90_ms - latency_p10_ms,
+			current_typing_delay_exact_elapsed_s = suite_elapsed_s
+		)
+	startup_wait_reliability_all_delays <- typing_delay_startup_summary %>%
+		group_by(startup_wait_ms) %>%
+		summarize(
+			tested_typing_delay_cells = n(),
+			all_delay_ci_q50_median_ms = median(latency_p50_ms),
+			all_delay_ci_q50_range_ms = max(latency_p50_ms) - min(latency_p50_ms),
+			all_delay_cv_median = median(latency_cv),
+			all_delay_cv_max = max(latency_cv),
+			all_delay_p10_p90_width_median_ms = median(latency_p90_ms - latency_p10_ms),
+			.groups = "drop"
+		)
+	startup_wait_run_to_run <- if (exists("post_editor_randomized_summary")) {
+		post_editor_randomized_summary %>%
+			group_by(startup_wait_ms = typing_start_wait_ms) %>%
+			summarize(
+				run_to_run_exact_runs = n(),
+				run_to_run_ci_q50_sd_ms = sd(latency_p50_ms),
+				run_to_run_ci_q50_range_ms = max(latency_p50_ms) - min(latency_p50_ms),
+				run_to_run_suite_elapsed_median_s = median(suite_elapsed_s),
+				.groups = "drop"
+			)
+	} else {
+		tibble(
+			startup_wait_ms = numeric(),
+			run_to_run_exact_runs = numeric(),
+			run_to_run_ci_q50_sd_ms = numeric(),
+			run_to_run_ci_q50_range_ms = numeric(),
+			run_to_run_suite_elapsed_median_s = numeric()
+		)
+	}
+
+	startup_wait_tradeoff <- startup_wait_runtime_model %>%
+		left_join(startup_wait_reliability_current_delay, by = "startup_wait_ms") %>%
+		left_join(startup_wait_reliability_all_delays, by = "startup_wait_ms") %>%
+		left_join(startup_wait_run_to_run, by = "startup_wait_ms")
+	write_csv(startup_wait_tradeoff, file.path(data_dir, "typing-delay-ci-startup-wait-runtime-reliability.csv"))
+
+	startup_wait_tradeoff_plot <- startup_wait_tradeoff %>%
+		filter(startup_wait_ms <= 5000) %>%
+		mutate(startup_wait_label = factor(paste0(startup_wait_ms, "ms"), levels = paste0(startup_wait_ms, "ms"))) %>%
+		select(
+			startup_wait_ms,
+			startup_wait_label,
+			`Two-branch CI runtime delta vs current (s)` = two_branch_ci_change_vs_current_s,
+			`CI q50 at current 1000ms typing delay (ms)` = current_typing_delay_ci_q50_ms,
+			`CV at current 1000ms typing delay (%)` = current_typing_delay_cv,
+			`Median CV across tested typing delays (%)` = all_delay_cv_median
+		) %>%
+		mutate(
+			`CV at current 1000ms typing delay (%)` = 100 * `CV at current 1000ms typing delay (%)`,
+			`Median CV across tested typing delays (%)` = 100 * `Median CV across tested typing delays (%)`
+		) %>%
+		pivot_longer(
+			cols = -c(startup_wait_ms, startup_wait_label),
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"Two-branch CI runtime delta vs current (s)",
+					"CI q50 at current 1000ms typing delay (ms)",
+					"CV at current 1000ms typing delay (%)",
+					"Median CV across tested typing delays (%)"
+				)
+			),
+			value_label = case_when(
+				str_detect(as.character(metric), "runtime") ~ sprintf("%+.0fs", value),
+				str_detect(as.character(metric), "%") ~ sprintf("%.0f%%", value),
+				TRUE ~ sprintf("%.1f", value)
+			)
+		)
+	startup_wait_tradeoff_hline <- tibble(
+		metric = factor(
+			"Two-branch CI runtime delta vs current (s)",
+			levels = levels(startup_wait_tradeoff_plot$metric)
+		),
+		yintercept = 0
+	)
+
+	save_plot(
+		ggplot(startup_wait_tradeoff_plot, aes(startup_wait_label, value, color = metric)) +
+			geom_hline(
+				data = startup_wait_tradeoff_hline,
+				aes(yintercept = yintercept),
+				color = brewer_color("Greys", 7, type = "seq", n = 9),
+				linewidth = 0.35
+			) +
+			geom_point(size = 2.9, alpha = 0.9) +
+			geom_text(aes(label = value_label), vjust = -0.7, size = 2.8, show.legend = FALSE) +
+			scale_color_brewer(type = "qual", palette = "Dark2", guide = "none") +
+			scale_y_continuous(expand = expansion(mult = c(0.12, 0.2))) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "Startup-wait runtime and reliability tradeoff",
+				subtitle = "Runtime is deterministic; q50/CV are from exact post-editor Typing runs with independent startup waits",
+				x = "Startup wait",
+				y = NULL
+			) +
+			theme(axis.text.x = element_text(angle = 35, hjust = 1)),
+		"92-ci-startup-wait-runtime-reliability-tradeoff.png",
+		width = 10,
+		height = 8.6
+	)
 }
 
 ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")
