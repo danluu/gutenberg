@@ -57,6 +57,13 @@ The short version:
     does the timer-side fanout and restores the normal pre-key typing state; it
     reproduces the full low EventDispatch band without using the persistence
     marker.
+-   Three restored non-typing state toggles partially reproduce the drop:
+    `toggleSelection( false ); toggleSelection( true )`,
+    `setTemplateValidity( false ); setTemplateValidity( true )`, and
+    `toggleBlockHighlight( clientId, true ); toggleBlockHighlight( clientId,
+    false )` all lower the `1000ms` p50 to about `14-15ms`. That disconfirms
+    "typing state is the only cause," but also disconfirms "any restored
+    state-changing fanout fully explains the `~11ms` low band."
 -   The normal marker action does about `16ms` of timer-side work at `1000ms` in
     the targeted run. The `stopTyping(); startTyping()` replacement does about
     `23ms`. That work is outside the next EventDispatch measurement. Adding the
@@ -790,11 +797,16 @@ kept the `1000ms` callback but replaced the bound
    `__unstableMarkNextChangeAsNotPersistent()`;
 2. replace the marker with `20ms` and `40ms` busy waits, to test whether merely
    occupying the timer task is enough;
-3. replace the marker with `startTyping()` alone, which is effectively a no-op
+3. replace the marker with restored non-typing state toggles:
+   `toggleSelection( false ); toggleSelection( true )`,
+   `setTemplateValidity( false ); setTemplateValidity( true )`, and
+   `toggleBlockHighlight( clientId, true ); toggleBlockHighlight( clientId,
+   false )`;
+4. replace the marker with `startTyping()` alone, which is effectively a no-op
    if the editor is already typing;
-4. replace the marker with `stopTyping()` alone, which creates a real
+5. replace the marker with `stopTyping()` alone, which creates a real
    `core/block-editor` state change but leaves the next input to restart typing;
-5. replace the marker with `stopTyping(); startTyping()`, which creates real
+6. replace the marker with `stopTyping(); startTyping()`, which creates real
    block-editor subscriber fanout and restores `isTyping()` to its original
    value before the next key.
 
@@ -820,6 +832,12 @@ The targeted runs used the same delays, rounds, and sample counts.
 | busy wait 20ms                         | `1010ms` |  30 |    `17.9ms` |       `17.3ms` |
 | busy wait 40ms                         | `1000ms` |  30 |    `16.1ms` |       `15.7ms` |
 | busy wait 40ms                         | `1010ms` |  30 |    `16.1ms` |       `15.6ms` |
+| toggle selection                       | `1000ms` |  30 |    `14.6ms` |       `14.1ms` |
+| toggle selection                       | `1010ms` |  30 |    `14.6ms` |       `14.2ms` |
+| toggle template validity               | `1000ms` |  30 |    `14.6ms` |       `14.2ms` |
+| toggle template validity               | `1010ms` |  30 |    `15.6ms` |       `15.2ms` |
+| toggle block highlight                 | `1000ms` |  30 |    `14.4ms` |       `14.0ms` |
+| toggle block highlight                 | `1010ms` |  30 |    `14.0ms` |       `13.7ms` |
 | start typing                           | `1000ms` |  30 |    `24.4ms` |       `23.3ms` |
 | start typing                           | `1010ms` |  30 |    `19.5ms` |       `18.8ms` |
 | stop typing                            | `1000ms` |  30 |    `26.8ms` |       `26.5ms` |
@@ -843,6 +861,13 @@ This disconfirms several simple theories:
     drops it to `16.1ms`, but neither reaches the normal marker or stop/start
     `~11ms` band. Timer duration and browser task scheduling appear to
     contribute, but they do not explain the full effect.
+-   "Typing state is the only relevant state" is false. The restored selection,
+    template-validity, and block-highlight toggles all leave `isTyping` and
+    `isLastBlockChangePersistent()` unchanged at the callback boundary, but they
+    still lower the `1000ms` p50 to about `14-15ms`.
+-   "Any restored block-editor state toggle is enough for the full low band" is
+    also false. Those generic toggles move most of the way from no-op to
+    stop/start, but they do not match the `~11ms` band.
 -   "`startTyping()` dispatch is enough" is false. In these runs the editor was
     already typing before the callback, so `startTyping()` did no meaningful
     state transition and the `1000ms` p50 stayed slow at `24.4ms`.
@@ -869,6 +894,22 @@ fanout is not enough if it leaves the next input to repair the state. In the
 stop/start run, the timer callback changes `isTyping` from true to false and
 then back to true before the next key, with no persistent-marker state change,
 and that is the non-marker probe that matches the full low band.
+
+The `stopTyping()` result has a direct code-level explanation. `ObserveTyping`
+installs different DOM listeners depending on `isTyping`: when typing is true,
+it installs listeners that can stop typing; when typing is false, it installs
+`keypress` / `keydown` listeners that call `startTyping()` for text-field input.
+So a timer callback that leaves `isTyping=false` changes the next measured key's
+listener work. In the action trace, `stopTyping()` alone is followed by a
+`startTyping()` action during the measured key. The `stopTyping(); startTyping()`
+intervention runs both parts before the next key, so the next key starts from the
+normal `isTyping=true` listener regime.
+
+The restored non-typing toggles refine that again. They do not use the typing
+observer path, but they still run a broad block-editor subscriber pass before
+the next input and reduce the following input. That means the typing-listener
+repair explains why `stopTyping()` alone is slow, but it is not the whole
+explanation for why pre-key subscriber fanout lowers the next input slice.
 
 That matters because `withPersistentBlockChange()` classifies a block attribute
 update as transient only when the current action and previous action are both
@@ -918,6 +959,12 @@ inside the retained input batch:
 | mark last, then force next transient | `1000ms` | `7/8` `onChange`            |
 | busy wait 20ms                       | `1000ms` | `8/8` `onInput`             |
 | busy wait 20ms                       | `1010ms` | `8/8` `onInput`             |
+| toggle selection                     | `1000ms` | `8/8` `onInput`             |
+| toggle selection                     | `1010ms` | `8/8` `onInput`             |
+| toggle template validity             | `1000ms` | `8/8` `onInput`             |
+| toggle template validity             | `1010ms` | `8/8` `onInput`             |
+| toggle block highlight               | `1000ms` | `8/8` `onInput`             |
+| toggle block highlight               | `1010ms` | `8/8` `onInput`             |
 | start typing                         | `1000ms` | `8/8` `onInput`             |
 | start typing                         | `1010ms` | `8/8` `onInput`             |
 | stop typing                          | `1000ms` | `8/8` `onInput`             |
@@ -928,9 +975,10 @@ inside the retained input batch:
 The `mark next not persistent` row shows that `onChange` is not sufficient: it
 records `onChange` and remains slow. The stop/start row shows that `onChange` is
 not necessary: it records `onInput` and is fast. The busy-wait, start-only, and
-stop-only rows also record `onInput`, but they do not all have the same
-event-only latency; that reinforces that the parent path classification is an
-observable consequence, not a complete mechanism. The attempted
+stop-only rows also record `onInput`; the three generic restored toggles record
+`onInput` too. These cases have materially different event-only latencies, so
+the parent path classification is an observable consequence, not a complete
+mechanism. The attempted
 mark-last-then-mark-next run is also a warning about reasoning from action names:
 the "mark next" action was consumed before the content update in most samples,
 so the following content update still became persistent.
@@ -957,6 +1005,9 @@ benchmark's next-input EventDispatch window.
 | mark last, then force next transient | `1000ms` |               `30` |       `11.7ms` |           `16.1ms` |            `27.6ms` |
 | busy wait 20ms                       | `1000ms` |               `30` |       `17.7ms` |           `20.0ms` |            `37.8ms` |
 | busy wait 40ms                       | `1000ms` |               `29` |       `16.1ms` |           `40.0ms` |            `56.1ms` |
+| toggle selection                     | `1000ms` |               `30` |       `14.6ms` |           `22.7ms` |            `37.4ms` |
+| toggle template validity             | `1000ms` |               `30` |       `14.6ms` |           `23.8ms` |            `38.7ms` |
+| toggle block highlight               | `1000ms` |               `30` |       `14.4ms` |           `22.2ms` |            `37.5ms` |
 | start typing                         | `1000ms` |               `30` |       `24.4ms` |            `0.2ms` |            `24.6ms` |
 | stop typing                          | `1000ms` |               `30` |       `26.8ms` |           `14.9ms` |            `41.6ms` |
 | stop/start typing                    | `1000ms` |               `30` |       `11.0ms` |           `22.7ms` |            `34.1ms` |
@@ -970,13 +1021,16 @@ explanation:
    the large low band. A no-op callback does not; the cheap
    `mark-next-not-persistent` replacement does not; the busy-wait callbacks only
    partially reduce the next EventDispatch slice.
-3. A completed timer-side block-editor state transition plus restoration to the
-   normal pre-key typing state is sufficient in this benchmark:
-   `stopTyping(); startTyping()` matches the low band. `startTyping()` alone and
-   `stopTyping()` alone do not.
-4. The benchmark's reported input latency omits that timer-side work. The paired
+3. A completed timer-side block-editor state transition with restored final
+   state explains most of the drop. Generic restored state toggles lower the
+   `1000ms` event-only p50 to about `14-15ms` while staying on the `onInput`
+   path.
+4. Restoring the normal pre-key typing state explains the remaining typing-probe
+   split: `stopTyping(); startTyping()` matches the low band, while
+   `startTyping()` alone and `stopTyping()` alone do not.
+5. The benchmark's reported input latency omits that timer-side work. The paired
    timer-inclusive metric removes the apparent `1000ms` low band.
-5. The parent `onInput` / `onChange` path and persistent-state classification
+6. The parent `onInput` / `onChange` path and persistent-state classification
    are observable side effects, but they are not the root explanation by
    themselves.
 
@@ -1048,12 +1102,24 @@ Selected `1000ms` p50 spans:
 | normal marker            |       `18.6ms` |         `18.5ms` |         `1.9ms` |            `1.8ms` |      `0.0ms` |   `0.0ms` |
 | marker no-op             |       `24.4ms` |         `24.1ms` |         `2.8ms` |            `2.8ms` |      `0.2ms` |   `0.0ms` |
 | mark next not persistent |       `32.8ms` |         `32.4ms` |         `4.4ms` |            `3.6ms` |      `0.1ms` |   `0.0ms` |
+| busy wait 20ms           |       `22.5ms` |         `22.3ms` |         `2.4ms` |            `2.3ms` |      `0.1ms` |   `0.0ms` |
+| toggle selection         |       `19.2ms` |         `19.0ms` |         `2.0ms` |            `1.8ms` |      `0.1ms` |   `0.0ms` |
+| toggle template validity |       `19.5ms` |         `19.4ms` |         `1.9ms` |            `1.6ms` |      `0.1ms` |   `0.0ms` |
+| toggle block highlight   |       `19.4ms` |         `19.1ms` |         `1.8ms` |            `1.6ms` |      `0.1ms` |   `0.0ms` |
+| start typing             |       `24.6ms` |         `24.4ms` |         `2.8ms` |            `2.9ms` |      `0.1ms` |   `0.0ms` |
+| stop typing              |       `17.1ms` |         `16.9ms` |         `1.5ms` |            `1.4ms` |      `0.0ms` |   `0.0ms` |
+| stop/start typing        |       `15.3ms` |         `15.2ms` |         `1.9ms` |            `1.6ms` |      `0.1ms` |   `0.0ms` |
 
 This confirms that the event-only difference is not DOM application,
 serialization, or the direct `useEntityBlockEditor()` callback. It is the
-batched data/subscriber work under RichText input handling. The all-span run
-shows the normal marker also pays a separate subscriber pass in the timer task,
-which the event-only metric excludes.
+batched data/subscriber work under RichText input handling. The generic restored
+state toggles move that batch cost close to the normal marker even though they
+do not change persistence or typing state. The `stopTyping()` row is the
+exception that proves why a single RichText batch number is not enough: its
+input batch is low, but its total key event remains high because the next
+keypress/keydown has to run `startTyping()` before the input batch. The all-span
+run shows the normal marker also pays a separate subscriber pass in the timer
+task, which the event-only metric excludes.
 
 The trace-all-data-spans run gives a more precise answer to the previous
 "how can doing extra work be faster than doing no work?" objection. It is not
@@ -1186,16 +1252,17 @@ With those three original interventions, the narrower causal chain was:
    difference is in block-editor subscriber fanout inside the input's
    `registry.batch()`.
 
-The later busy-wait and typing-state interventions correct that again. The
-persistent state/previous-action path is not necessary for the `1000ms` low
-EventDispatch band. It is one way to get there, and it explains the normal
-marker path, but the broader confirmed condition is narrower than "some callback
-ran" and broader than "the persistence marker ran." In these probes, the full
-low band requires timer-side block-editor work that completes before the
-measured input while leaving the editor in the normal pre-key typing state. A
-busy wait is only partial; `startTyping()` alone is a no-op; `stopTyping()` alone
-creates work but leaves the next input to restart typing; `stopTyping();
-startTyping()` does the fanout and restores the state before the measured input.
+The later busy-wait, generic-toggle, and typing-state interventions correct that
+again. The persistent state/previous-action path is not necessary for the
+`1000ms` low EventDispatch band. It is one way to get there, and it explains the
+normal marker path, but the broader confirmed condition is narrower than "some
+callback ran" and broader than "the persistence marker ran." In these probes,
+generic restored block-editor state toggles explain most of the drop; the full
+low band still requires a more specific pre-key state/fanout shape. A busy wait
+is only partial; restored selection/template/highlight toggles get to about
+`14-15ms`; `startTyping()` alone is a no-op; `stopTyping()` alone creates work
+but leaves the next input to restart typing; `stopTyping(); startTyping()` does
+the fanout and restores the typing state before the measured input.
 
 The important correction is that this does not mean "doing timer work is faster
 than doing no timer work." The apparent speedup is for the next input's
@@ -2680,6 +2747,15 @@ The key runs used in this report were:
     action is replaced by a `20ms` busy wait.
 -   `marker_busy_wait_40_targeted`: targeted `1000ms` / `1010ms` run where the
     bound marker action is replaced by a `40ms` busy wait.
+-   `marker_toggle_selection_targeted`: same delays and counts, but the bound
+    marker action dispatches `toggleSelection( false )` and
+    `toggleSelection( true )`.
+-   `marker_toggle_template_validity_targeted`: same delays and counts, but the
+    bound marker action dispatches `setTemplateValidity( false )` and
+    `setTemplateValidity( true )`.
+-   `marker_toggle_block_highlight_targeted`: same delays and counts, but the
+    bound marker action dispatches `toggleBlockHighlight( clientId, true )` and
+    `toggleBlockHighlight( clientId, false )`.
 -   `marker_stop_typing_targeted`: same delays and counts, but the bound marker
     action dispatches `stopTyping()` instead of the persistent marker.
 -   `marker_start_typing_targeted`: same delays and counts, but the bound marker
@@ -2700,6 +2776,12 @@ The key runs used in this report were:
     followed by `mark next not persistent`.
 -   `marker_busy_wait_20_spans`: span trace for the `20ms` busy-wait
     intervention.
+-   `marker_toggle_selection_spans`: span trace for the restored selection
+    toggle intervention.
+-   `marker_toggle_template_validity_spans`: span trace for the restored
+    template-validity toggle intervention.
+-   `marker_toggle_block_highlight_spans`: span trace for the restored block
+    highlight toggle intervention.
 -   `marker_stop_typing_spans`: span trace for the `stopTyping()` intervention.
 -   `marker_start_typing_spans`: span trace for the `startTyping()` intervention.
 -   `marker_stop_start_typing_spans`: span trace for the stop/start typing

@@ -101,6 +101,54 @@ marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,5,4,onInput,0.2999999
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,6,5,onInput,0.3000001907348633,true,true,false,true,true,false,17.100000143051147,21.561,21.029
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,7,6,onInput,0.3000001907348633,true,true,false,true,true,false,22.09999990463257,26.538,26.037
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,8,7,onInput,0.39999985694885254,true,true,false,true,true,false,21.299999952316284,26.434,25.875
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,1,0,onInput,0.5,true,true,false,true,false,false,24.5,32.949999999999996,32.302
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,2,1,onInput,0.19999980926513672,true,true,false,true,false,false,17.09999990463257,22.046000000000003,21.027
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,19.5,23.835,23.347
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,18.799999952316284,22.788,22.247
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,5,4,onInput,0.20000004768371582,true,true,false,true,false,false,19,23.861,23.131
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,6,5,onInput,0.39999985694885254,true,true,false,true,false,false,21.899999856948853,25.974999999999998,25.634
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,7,6,onInput,0.2999999523162842,true,true,false,true,false,false,18.899999856948853,23.003,22.63
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,8,7,onInput,0.2999999523162842,true,true,false,true,false,false,19.5,23.385,23.004
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,1,0,onInput,0.2999999523162842,true,true,false,true,false,false,19.40000009536743,23.61,23.304
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,2,1,onInput,0.2999999523162842,true,true,false,true,false,false,18.799999952316284,23.192999999999998,22.836
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,18.299999952316284,22.823999999999998,22.435
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,19.800000190734863,24.267000000000003,23.896
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,5,4,onInput,0.20000004768371582,true,true,false,true,false,false,18.700000047683716,22.468,22.137
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,6,5,onInput,0.20000004768371582,true,true,false,true,false,false,16.5,20.801,20.267
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,7,6,onInput,0.2999999523162842,true,true,false,true,false,false,19.600000143051147,23.723,23.32
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,8,7,onInput,0.19999980926513672,true,true,false,true,false,false,19.40000009536743,23.122000000000003,22.8
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,1,0,onInput,0.39999985694885254,true,true,false,true,false,false,26,34.727,33.906
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,2,1,onInput,0.20000004768371582,true,true,false,true,false,false,21.299999952316284,29.674999999999997,29.183
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,3,2,onInput,0.2999999523162842,true,true,false,true,false,false,19.5,24.592000000000002,24.117
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,4,3,onInput,0.10000014305114746,true,true,false,true,false,false,15.899999856948853,21.163999999999998,20.723
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,5,4,onInput,0.20000004768371582,true,true,false,true,false,false,20,24.912,24.507
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,6,5,onInput,0.19999980926513672,true,true,false,true,false,false,19.399999856948853,24.026999999999997,23.613
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,7,6,onInput,0.09999990463256836,true,true,false,true,false,false,17.399999856948853,21.667,21.29
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,8,7,onInput,0.2999999523162842,true,true,false,true,false,false,18.40000009536743,22.501,22.114
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,1,0,onInput,0.19999980926513672,true,true,false,true,false,false,20.09999990463257,24.867,24.48
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,2,1,onInput,0.20000004768371582,true,true,false,true,false,false,18.5,22.914,22.503
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,3,2,onInput,0.2999999523162842,true,true,false,true,false,false,20.100000143051147,24.381000000000004,24.013
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,19.600000143051147,24.283,23.814
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,5,4,onInput,0.19999980926513672,true,true,false,true,false,false,16,20.582,20.058
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,6,5,onInput,0.2999999523162842,true,true,false,true,false,false,15.900000095367432,19.877,19.561
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,7,6,onInput,0.19999980926513672,true,true,false,true,false,false,19.700000047683716,24.099,23.679
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,8,7,onInput,0.2999999523162842,true,true,false,true,false,false,19.40000009536743,23.505000000000003,23.175
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,1,0,onInput,0.5999999046325684,true,true,false,true,false,false,24.899999856948853,34.400000000000006,33.639
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,2,1,onInput,0.09999990463256836,true,true,false,true,false,false,17.699999809265137,22.624,22.253
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,19.799999952316284,24.575,24.137
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,19.5,23.698,23.258
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,5,4,onInput,0.2999999523162842,true,true,false,true,false,false,17.800000190734863,22.109,21.814
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,6,5,onInput,0.20000004768371582,true,true,false,true,false,false,19.100000143051147,23.904999999999998,23.575
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,7,6,onInput,0.20000004768371582,true,true,false,true,false,false,19.799999952316284,24.425,24.082
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,8,7,onInput,0.20000004768371582,true,true,false,true,false,false,18.90000009536743,23.745,23.359
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,1,0,onInput,0.19999980926513672,true,true,false,true,false,false,19.5,24.256999999999998,23.839
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,2,1,onInput,0.20000004768371582,true,true,false,true,false,false,16.799999952316284,21.155,20.754
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,3,2,onInput,0.3000001907348633,true,true,false,true,false,false,19.5,23.218,22.88
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,4,3,onInput,0.2999999523162842,true,true,false,true,false,false,19.59999990463257,24.246000000000002,23.885
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,5,4,onInput,0.20000004768371582,true,true,false,true,false,false,18.899999856948853,23.580000000000002,23.183
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,6,5,onInput,0.2999999523162842,true,true,false,true,false,false,16.600000143051147,20.328,19.897
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,7,6,onInput,0.20000004768371582,true,true,false,true,false,false,19.699999809265137,23.908,23.526
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,8,7,onInput,0.19999980926513672,true,true,false,true,false,false,19.399999856948853,23.441000000000003,23.085
 marker_stop_typing_spans,span trace,stop typing,1000,0,1,0,onInput,0.39999985694885254,true,true,false,true,false,false,24.299999952316284,33.471000000000004,32.749
 marker_stop_typing_spans,span trace,stop typing,1000,0,2,1,onInput,0.20000004768371582,true,true,false,true,false,false,16.799999952316284,37.767,37.423
 marker_stop_typing_spans,span trace,stop typing,1000,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,17.09999990463257,37.875,37.571

@@ -134,6 +134,9 @@ const supportedMarkPersistentInterventions = [
 	'mark-last-then-mark-next-not-persistent',
 	'busy-wait-20',
 	'busy-wait-40',
+	'toggle-selection',
+	'toggle-template-validity',
+	'toggle-block-highlight',
 	'stop-typing',
 	'start-typing',
 	'stop-start-typing',
@@ -1153,7 +1156,14 @@ test.describe( 'Typing delay benchmark', () => {
 							'stop-start-typing',
 						].includes( mode ) &&
 							( typeof actions.stopTyping !== 'function' ||
-								typeof actions.startTyping !== 'function' ) )
+								typeof actions.startTyping !== 'function' ) ) ||
+						( mode === 'toggle-selection' &&
+							typeof actions.toggleSelection !== 'function' ) ||
+						( mode === 'toggle-template-validity' &&
+							typeof actions.setTemplateValidity !==
+								'function' ) ||
+						( mode === 'toggle-block-highlight' &&
+							typeof actions.toggleBlockHighlight !== 'function' )
 					) {
 						return { installed: false, reason: 'missing-actions' };
 					}
@@ -1232,6 +1242,28 @@ test.describe( 'Typing delay benchmark', () => {
 										( mode === 'busy-wait-40' ? 40 : 20 );
 									while ( performance.now() < stopAt ) {}
 									result = undefined;
+								} else if ( mode === 'toggle-selection' ) {
+									actions.toggleSelection( false );
+									result = actions.toggleSelection( true );
+								} else if (
+									mode === 'toggle-template-validity'
+								) {
+									actions.setTemplateValidity( false );
+									result =
+										actions.setTemplateValidity( true );
+								} else if (
+									mode === 'toggle-block-highlight'
+								) {
+									const clientId =
+										select.getSelectedBlockClientId?.();
+									actions.toggleBlockHighlight(
+										clientId,
+										true
+									);
+									result = actions.toggleBlockHighlight(
+										clientId,
+										false
+									);
 								} else if ( mode === 'stop-typing' ) {
 									result = actions.stopTyping();
 								} else if ( mode === 'start-typing' ) {

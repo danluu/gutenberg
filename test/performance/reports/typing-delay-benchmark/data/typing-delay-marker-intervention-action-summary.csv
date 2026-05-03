@@ -77,6 +77,42 @@ marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,1,11,0,0,0,11,11,11,0
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,1,11,0,0,0,11,11,11,0
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,2,11,0,0,0,11,11,11,0
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,2,11,0,0,0,11,13,13,0
+marker_toggle_selection_targeted,targeted,toggle selection,990,0,1,0,0,0,1,10,1,9
+marker_toggle_selection_targeted,targeted,toggle selection,1000,0,11,0,0,0,11,11,11,0
+marker_toggle_selection_targeted,targeted,toggle selection,1010,0,11,0,0,0,11,11,11,0
+marker_toggle_selection_targeted,targeted,toggle selection,1300,0,11,0,0,0,11,11,11,0
+marker_toggle_selection_targeted,targeted,toggle selection,1300,1,11,0,0,0,11,13,13,0
+marker_toggle_selection_targeted,targeted,toggle selection,1010,1,11,0,0,0,11,11,11,0
+marker_toggle_selection_targeted,targeted,toggle selection,1000,1,11,0,0,0,11,11,11,0
+marker_toggle_selection_targeted,targeted,toggle selection,990,1,1,0,0,0,1,11,1,10
+marker_toggle_selection_targeted,targeted,toggle selection,1000,2,11,0,0,0,11,11,11,0
+marker_toggle_selection_targeted,targeted,toggle selection,1010,2,11,0,0,0,11,12,12,0
+marker_toggle_selection_targeted,targeted,toggle selection,1300,2,11,0,0,0,11,11,11,0
+marker_toggle_selection_targeted,targeted,toggle selection,990,2,1,0,0,0,1,11,1,10
+marker_toggle_template_validity_targeted,targeted,toggle template validity,990,0,1,0,0,0,1,10,1,9
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1000,0,11,0,0,0,11,11,11,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1010,0,11,0,0,0,11,11,11,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1300,0,11,0,0,0,11,11,11,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1300,1,11,0,0,0,11,13,13,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1010,1,11,0,0,0,11,11,11,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1000,1,11,0,0,0,11,11,11,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,990,1,1,0,0,0,1,11,1,10
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1000,2,11,0,0,0,11,11,11,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1010,2,10,0,0,0,10,12,11,1
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1300,2,11,0,0,0,11,11,11,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,990,2,1,0,0,0,1,11,1,10
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,990,0,1,0,0,0,1,10,1,9
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1000,0,11,0,0,0,11,11,11,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1010,0,11,0,0,0,11,11,11,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1300,0,11,0,0,0,11,11,11,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1300,1,11,0,0,0,11,13,13,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1010,1,11,0,0,0,11,11,11,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1000,1,11,0,0,0,11,11,11,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,990,1,1,0,0,0,1,11,1,10
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1000,2,11,0,0,0,11,11,11,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1010,2,11,0,0,0,11,12,12,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1300,2,11,0,0,0,11,11,11,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,990,2,1,0,0,0,1,11,1,10
 marker_stop_typing_targeted,targeted,stop typing,990,0,1,1,0,0,1,10,1,9
 marker_stop_typing_targeted,targeted,stop typing,1000,0,11,11,0,0,11,11,11,0
 marker_stop_typing_targeted,targeted,stop typing,1010,0,11,11,0,0,11,11,11,0
@@ -116,6 +152,12 @@ marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,8,0,0,0,8,8,8
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,9,0,0,0,9,9,9,0
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,8,0,0,0,8,8,8,0
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,9,0,0,0,9,9,9,0
+marker_toggle_selection_spans,span trace,toggle selection,1000,0,8,0,0,0,8,8,8,0
+marker_toggle_selection_spans,span trace,toggle selection,1010,0,9,0,0,0,9,9,9,0
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,0,8,0,0,0,8,8,8,0
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,0,9,0,0,0,9,9,9,0
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,0,8,0,0,0,8,8,8,0
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,0,9,0,0,0,9,9,9,0
 marker_stop_typing_spans,span trace,stop typing,1000,0,8,8,0,0,8,8,8,0
 marker_stop_typing_spans,span trace,stop typing,1010,0,9,9,0,0,9,9,9,0
 marker_start_typing_spans,span trace,start typing,1000,0,8,0,0,0,8,8,8,0

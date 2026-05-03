@@ -58,6 +58,24 @@ const runs = [
 		dir: 'artifacts/typing-delay-mark-busy-wait-40-targeted',
 	},
 	{
+		runId: 'marker_toggle_selection_targeted',
+		traceType: 'targeted',
+		intervention: 'toggle selection',
+		dir: 'artifacts/typing-delay-mark-toggle-selection-targeted',
+	},
+	{
+		runId: 'marker_toggle_template_validity_targeted',
+		traceType: 'targeted',
+		intervention: 'toggle template validity',
+		dir: 'artifacts/typing-delay-mark-toggle-template-validity-targeted',
+	},
+	{
+		runId: 'marker_toggle_block_highlight_targeted',
+		traceType: 'targeted',
+		intervention: 'toggle block highlight',
+		dir: 'artifacts/typing-delay-mark-toggle-block-highlight-targeted',
+	},
+	{
 		runId: 'marker_stop_typing_targeted',
 		traceType: 'targeted',
 		intervention: 'stop typing',
@@ -104,6 +122,24 @@ const runs = [
 		traceType: 'span trace',
 		intervention: 'busy wait 20ms',
 		dir: 'artifacts/typing-delay-mark-busy-wait-20-spans',
+	},
+	{
+		runId: 'marker_toggle_selection_spans',
+		traceType: 'span trace',
+		intervention: 'toggle selection',
+		dir: 'artifacts/typing-delay-mark-toggle-selection-spans',
+	},
+	{
+		runId: 'marker_toggle_template_validity_spans',
+		traceType: 'span trace',
+		intervention: 'toggle template validity',
+		dir: 'artifacts/typing-delay-mark-toggle-template-validity-spans',
+	},
+	{
+		runId: 'marker_toggle_block_highlight_spans',
+		traceType: 'span trace',
+		intervention: 'toggle block highlight',
+		dir: 'artifacts/typing-delay-mark-toggle-block-highlight-spans',
 	},
 	{
 		runId: 'marker_stop_typing_spans',

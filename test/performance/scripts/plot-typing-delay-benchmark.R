@@ -3153,6 +3153,9 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 		"mark last, then force next transient",
 		"busy wait 20ms",
 		"busy wait 40ms",
+		"toggle selection",
+		"toggle template validity",
+		"toggle block highlight",
 		"stop typing",
 		"start typing",
 		"stop/start typing"
@@ -3189,7 +3192,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				position = position_dodge(width = 3.5),
 				size = 0.8
 			) +
-			scale_color_brewer(type = "qual", palette = "Set1") +
+			scale_color_brewer(type = "qual", palette = "Paired") +
 			scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
 			labs(
 				title = "Timer-side subscriber work reproduces the 1000ms low band",
@@ -3238,7 +3241,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					size = 3.2,
 					alpha = 0.9
 				) +
-				scale_color_brewer(type = "qual", palette = "Set1") +
+				scale_color_brewer(type = "qual", palette = "Paired") +
 				scale_shape_manual(values = c(
 					`measured next input` = 16,
 					`paired timer callback` = 17,
@@ -3269,6 +3272,9 @@ if (file.exists(marker_path_summary_path)) {
 		"mark last, then force next transient",
 		"busy wait 20ms",
 		"busy wait 40ms",
+		"toggle selection",
+		"toggle template validity",
+		"toggle block highlight",
 		"stop typing",
 		"start typing",
 		"stop/start typing"

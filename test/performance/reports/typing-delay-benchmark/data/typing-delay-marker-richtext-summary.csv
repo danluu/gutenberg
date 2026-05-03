@@ -194,6 +194,84 @@ span trace,busy wait 20ms,1010,rich-text.handleChange.registryBatch,9,21.1000001
 span trace,busy wait 20ms,1010,rich-text.handleChange.forceRender,9,0,0
 span trace,busy wait 20ms,1010,rich-text.handleChange.total,9,21.200000047683716,180.30000019073486
 span trace,busy wait 20ms,1010,rich-text.onInput.total,9,21.299999952316284,180.7999997138977
+span trace,toggle selection,1000,rich-text.createRecord.selection,18,0,0
+span trace,toggle selection,1000,rich-text.createRecord.create,18,0,0.7000000476837158
+span trace,toggle selection,1000,rich-text.createRecord.total,18,0,0.7000000476837158
+span trace,toggle selection,1000,rich-text.onInput.updateFormats,9,0,0.09999990463256836
+span trace,toggle selection,1000,rich-text.applyRecord,10,0.10000002384185791,1.1000001430511475
+span trace,toggle selection,1000,rich-text.handleChange.applyRecord,9,0.10000014305114746,1.1000001430511475
+span trace,toggle selection,1000,rich-text.handleChange.serialize,9,0,0.10000014305114746
+span trace,toggle selection,1000,rich-text.handleChange.onSelectionChange,9,1.7999999523162842,16.399999856948853
+span trace,toggle selection,1000,rich-text.handleChange.onChange,9,2,18.59999990463257
+span trace,toggle selection,1000,rich-text.handleChange.registryBatch,9,19,172.69999957084656
+span trace,toggle selection,1000,rich-text.handleChange.forceRender,9,0,0
+span trace,toggle selection,1000,rich-text.handleChange.total,9,19.09999990463257,173.89999985694885
+span trace,toggle selection,1000,rich-text.onInput.total,9,19.200000047683716,174.49999976158142
+span trace,toggle selection,1010,rich-text.createRecord.selection,18,0,0
+span trace,toggle selection,1010,rich-text.createRecord.create,18,0,0.6999998092651367
+span trace,toggle selection,1010,rich-text.createRecord.total,18,0,0.8999996185302734
+span trace,toggle selection,1010,rich-text.onInput.updateFormats,9,0,0
+span trace,toggle selection,1010,rich-text.applyRecord,9,0,0.2999999523162842
+span trace,toggle selection,1010,rich-text.handleChange.applyRecord,9,0,0.2999999523162842
+span trace,toggle selection,1010,rich-text.handleChange.serialize,9,0,0
+span trace,toggle selection,1010,rich-text.handleChange.onSelectionChange,9,1.6999998092651367,14.600000143051147
+span trace,toggle selection,1010,rich-text.handleChange.onChange,9,1.9000000953674316,16.899999856948853
+span trace,toggle selection,1010,rich-text.handleChange.registryBatch,9,18.799999952316284,162.6000006198883
+span trace,toggle selection,1010,rich-text.handleChange.forceRender,9,0,0.39999985694885254
+span trace,toggle selection,1010,rich-text.handleChange.total,9,19,163.30000042915344
+span trace,toggle selection,1010,rich-text.onInput.total,9,19,163.79999995231628
+span trace,toggle template validity,1000,rich-text.createRecord.selection,18,0,0.20000028610229492
+span trace,toggle template validity,1000,rich-text.createRecord.create,18,0,0.5999999046325684
+span trace,toggle template validity,1000,rich-text.createRecord.total,18,0,0.8000001907348633
+span trace,toggle template validity,1000,rich-text.onInput.updateFormats,9,0,0.19999980926513672
+span trace,toggle template validity,1000,rich-text.applyRecord,10,0.04999995231628418,1.8000001907348633
+span trace,toggle template validity,1000,rich-text.handleChange.applyRecord,9,0.09999990463256836,1.8000001907348633
+span trace,toggle template validity,1000,rich-text.handleChange.serialize,9,0,0.09999990463256836
+span trace,toggle template validity,1000,rich-text.handleChange.onSelectionChange,9,1.5999999046325684,16
+span trace,toggle template validity,1000,rich-text.handleChange.onChange,9,1.8999998569488525,18.699999570846558
+span trace,toggle template validity,1000,rich-text.handleChange.registryBatch,9,19.399999856948853,171.39999961853027
+span trace,toggle template validity,1000,rich-text.handleChange.forceRender,9,0,0.20000004768371582
+span trace,toggle template validity,1000,rich-text.handleChange.total,9,19.399999856948853,173.49999976158142
+span trace,toggle template validity,1000,rich-text.onInput.total,9,19.5,174.49999976158142
+span trace,toggle template validity,1010,rich-text.createRecord.selection,18,0,0
+span trace,toggle template validity,1010,rich-text.createRecord.create,18,0,0.39999985694885254
+span trace,toggle template validity,1010,rich-text.createRecord.total,18,0,0.39999985694885254
+span trace,toggle template validity,1010,rich-text.onInput.updateFormats,9,0,0
+span trace,toggle template validity,1010,rich-text.applyRecord,9,0.09999990463256836,0.8000001907348633
+span trace,toggle template validity,1010,rich-text.handleChange.applyRecord,9,0.09999990463256836,0.8000001907348633
+span trace,toggle template validity,1010,rich-text.handleChange.serialize,9,0,0
+span trace,toggle template validity,1010,rich-text.handleChange.onSelectionChange,9,1.6999998092651367,14.499999761581421
+span trace,toggle template validity,1010,rich-text.handleChange.onChange,9,1.8000001907348633,15.900000810623169
+span trace,toggle template validity,1010,rich-text.handleChange.registryBatch,9,19.40000009536743,161.50000071525574
+span trace,toggle template validity,1010,rich-text.handleChange.forceRender,9,0,0.09999990463256836
+span trace,toggle template validity,1010,rich-text.handleChange.total,9,19.40000009536743,162.50000071525574
+span trace,toggle template validity,1010,rich-text.onInput.total,9,19.40000009536743,162.9000005722046
+span trace,toggle block highlight,1000,rich-text.createRecord.selection,18,0,0.20000004768371582
+span trace,toggle block highlight,1000,rich-text.createRecord.create,18,0,0.6000001430511475
+span trace,toggle block highlight,1000,rich-text.createRecord.total,18,0,0.9000003337860107
+span trace,toggle block highlight,1000,rich-text.onInput.updateFormats,9,0,0.09999990463256836
+span trace,toggle block highlight,1000,rich-text.applyRecord,10,0.04999995231628418,1
+span trace,toggle block highlight,1000,rich-text.handleChange.applyRecord,9,0.09999990463256836,1.0999999046325684
+span trace,toggle block highlight,1000,rich-text.handleChange.serialize,9,0,0.10000014305114746
+span trace,toggle block highlight,1000,rich-text.handleChange.onSelectionChange,9,1.5999999046325684,15.699999570846558
+span trace,toggle block highlight,1000,rich-text.handleChange.onChange,9,1.7999999523162842,17.40000009536743
+span trace,toggle block highlight,1000,rich-text.handleChange.registryBatch,9,19.100000143051147,171.59999990463257
+span trace,toggle block highlight,1000,rich-text.handleChange.forceRender,9,0,0.39999961853027344
+span trace,toggle block highlight,1000,rich-text.handleChange.total,9,19.299999952316284,173.19999957084656
+span trace,toggle block highlight,1000,rich-text.onInput.total,9,19.40000009536743,174
+span trace,toggle block highlight,1010,rich-text.createRecord.selection,18,0,0.09999990463256836
+span trace,toggle block highlight,1010,rich-text.createRecord.create,18,0,0.20000004768371582
+span trace,toggle block highlight,1010,rich-text.createRecord.total,18,0,0.2999999523162842
+span trace,toggle block highlight,1010,rich-text.onInput.updateFormats,9,0,0.10000014305114746
+span trace,toggle block highlight,1010,rich-text.applyRecord,9,0,0.40000009536743164
+span trace,toggle block highlight,1010,rich-text.handleChange.applyRecord,9,0,0.40000009536743164
+span trace,toggle block highlight,1010,rich-text.handleChange.serialize,9,0,0
+span trace,toggle block highlight,1010,rich-text.handleChange.onSelectionChange,9,1.7000000476837158,14.899999856948853
+span trace,toggle block highlight,1010,rich-text.handleChange.onChange,9,1.8000001907348633,16.100000143051147
+span trace,toggle block highlight,1010,rich-text.handleChange.registryBatch,9,19.399999856948853,162.599999666214
+span trace,toggle block highlight,1010,rich-text.handleChange.forceRender,9,0,0
+span trace,toggle block highlight,1010,rich-text.handleChange.total,9,19.399999856948853,162.99999976158142
+span trace,toggle block highlight,1010,rich-text.onInput.total,9,19.5,163.29999995231628
 span trace,stop typing,1000,rich-text.createRecord.selection,18,0,0
 span trace,stop typing,1000,rich-text.createRecord.create,18,0.04999995231628418,0.9999992847442627
 span trace,stop typing,1000,rich-text.createRecord.total,18,0.09999990463256836,1.099999189376831

@@ -67,6 +67,30 @@ marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,updateBlockAttributes,
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,__unstableMarkLastChangeAsPersistent,32,40,40.04375001043081,0,0
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,updateBlockAttributes,33,0.9000000953674316,0.8909091010238185,0,0
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,__unstableMarkLastChangeAsPersistent,33,40,40.03333333044341,0,0
+marker_toggle_selection_targeted,targeted,toggle selection,990,updateBlockAttributes,33,1.7000000476837158,1.6393939437288227,2,1
+marker_toggle_selection_targeted,targeted,toggle selection,990,__unstableMarkLastChangeAsPersistent,3,15.099999904632568,15.366666555404663,0,0
+marker_toggle_selection_targeted,targeted,toggle selection,1000,updateBlockAttributes,33,0.9000000953674316,0.9363636537031694,0,0
+marker_toggle_selection_targeted,targeted,toggle selection,1000,__unstableMarkLastChangeAsPersistent,33,22.59999990463257,22.64545453678478,0,0
+marker_toggle_selection_targeted,targeted,toggle selection,1010,updateBlockAttributes,33,0.8999998569488525,0.8848484718438351,0,0
+marker_toggle_selection_targeted,targeted,toggle selection,1010,__unstableMarkLastChangeAsPersistent,33,22.200000047683716,21.824242440136995,0,0
+marker_toggle_selection_targeted,targeted,toggle selection,1300,updateBlockAttributes,33,1.6000001430511475,1.5333333304434111,0,0
+marker_toggle_selection_targeted,targeted,toggle selection,1300,__unstableMarkLastChangeAsPersistent,33,23.299999952316284,22.918181823961664,0,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,990,updateBlockAttributes,33,1.7999999523162842,1.6818181962677927,2,1
+marker_toggle_template_validity_targeted,targeted,toggle template validity,990,__unstableMarkLastChangeAsPersistent,3,14,14.199999888737997,0,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1000,updateBlockAttributes,33,0.8999998569488525,0.9090908801916874,0,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1000,__unstableMarkLastChangeAsPersistent,33,23.799999952316284,23.427272717158,0,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1010,updateBlockAttributes,33,1,0.9424242395343203,0,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1010,__unstableMarkLastChangeAsPersistent,32,23.399999976158142,22.871875002980232,0,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1300,updateBlockAttributes,33,1.7000000476837158,1.624242435802113,0,0
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1300,__unstableMarkLastChangeAsPersistent,33,23.200000047683716,22.878787886012685,0,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,990,updateBlockAttributes,33,1.7000000476837158,1.6696969812566584,2,1
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,990,__unstableMarkLastChangeAsPersistent,3,14.600000143051147,14.266666650772095,0,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1000,updateBlockAttributes,33,0.9000000953674316,0.8848484573942242,0,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1000,__unstableMarkLastChangeAsPersistent,33,22.299999952316284,22.13333332899845,0,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1010,updateBlockAttributes,33,0.8999998569488525,0.8969696724053585,0,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1010,__unstableMarkLastChangeAsPersistent,33,23.200000047683716,22.04848486004454,0,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1300,updateBlockAttributes,33,1.6000001430511475,1.603030305920225,0,0
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1300,__unstableMarkLastChangeAsPersistent,33,23.200000047683716,22.618181842746157,0,0
 marker_stop_typing_targeted,targeted,stop typing,990,updateBlockAttributes,33,1.5999999046325684,1.6060606132854114,2,1
 marker_stop_typing_targeted,targeted,stop typing,990,stopTyping,3,9,9.03333338101705,0,0
 marker_stop_typing_targeted,targeted,stop typing,990,__unstableMarkLastChangeAsPersistent,3,9.200000047683716,9.166666666666666,0,0
@@ -134,6 +158,18 @@ marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,updateBlockAttributes,9
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,__unstableMarkLastChangeAsPersistent,8,20.050000071525574,20.08750006556511,0,0
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,updateBlockAttributes,9,2.200000047683716,2.0777777830759683,0,0
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,__unstableMarkLastChangeAsPersistent,9,20,20.03333332803514,0,0
+marker_toggle_selection_spans,span trace,toggle selection,1000,updateBlockAttributes,9,2,2.033333354526096,2,1
+marker_toggle_selection_spans,span trace,toggle selection,1000,__unstableMarkLastChangeAsPersistent,8,30.450000047683716,29.837500005960464,0,0
+marker_toggle_selection_spans,span trace,toggle selection,1010,updateBlockAttributes,9,1.9000000953674316,1.8777777618832059,0,0
+marker_toggle_selection_spans,span trace,toggle selection,1010,__unstableMarkLastChangeAsPersistent,9,31,29.133333338631523,0,0
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,updateBlockAttributes,9,1.7999999523162842,2.0333333015441895,2,1
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,__unstableMarkLastChangeAsPersistent,8,29.600000023841858,28.375,0,0
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,updateBlockAttributes,9,1.8000001907348633,1.744444555706448,0,0
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,__unstableMarkLastChangeAsPersistent,9,30.09999990463257,29.455555544959175,0,0
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,updateBlockAttributes,9,1.7999999523162842,1.9000000423855252,2,1
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,__unstableMarkLastChangeAsPersistent,8,28.450000047683716,27.162499994039536,0,0
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,updateBlockAttributes,9,1.7000000476837158,1.7555555767483182,0,0
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,__unstableMarkLastChangeAsPersistent,9,28.799999952316284,27.99999997350905,0,0
 marker_stop_typing_spans,span trace,stop typing,1000,updateBlockAttributes,9,1.5,1.6777777936723497,2,1
 marker_stop_typing_spans,span trace,stop typing,1000,stopTyping,8,18.899999976158142,18.762500047683716,0,0
 marker_stop_typing_spans,span trace,stop typing,1000,__unstableMarkLastChangeAsPersistent,8,19.050000071525574,18.90000006556511,0,0

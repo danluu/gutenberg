@@ -25,6 +25,18 @@ marker_busy_wait_20_targeted,targeted,busy wait 20ms,1010,30,16.9608,17.866,18.6
 marker_busy_wait_20_targeted,targeted,busy wait 20ms,1300,30,21.4497,23.935499999999998,24.8034,23.455433333333325,22.803
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,30,15.4293,16.0945,17.0907,16.429766666666666,15.663499999999999
 marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,30,15.6295,16.130499999999998,16.8215,16.146266666666666,15.637
+marker_toggle_selection_targeted,targeted,toggle selection,990,30,20.2562,24.5445,25.497000000000003,23.837199999999996,23.0955
+marker_toggle_selection_targeted,targeted,toggle selection,1000,30,13.9358,14.561,15.524300000000002,14.721300000000001,14.1485
+marker_toggle_selection_targeted,targeted,toggle selection,1010,30,13.823599999999999,14.572,16.200599999999998,14.915466666666665,14.175
+marker_toggle_selection_targeted,targeted,toggle selection,1300,30,20.9596,23.729,24.8577,23.502200000000006,22.4715
+marker_toggle_template_validity_targeted,targeted,toggle template validity,990,30,21.926699999999997,24.631,25.6021,24.173900000000003,23.493499999999997
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1000,30,13.852300000000001,14.568000000000001,15.8943,14.759933333333331,14.21
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1010,30,14.1547,15.6,16.6332,15.226933333333331,15.213000000000001
+marker_toggle_template_validity_targeted,targeted,toggle template validity,1300,30,22.5449,24.632,25.4802,24.340766666666664,23.319000000000003
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,990,30,19.669200000000004,24.491,25.3617,23.276466666666668,23.2215
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1000,30,13.7558,14.3895,16.062,14.6284,14.049
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1010,30,13.242799999999999,13.99,15.7754,14.104633333333332,13.669
+marker_toggle_block_highlight_targeted,targeted,toggle block highlight,1300,30,22.268800000000002,23.792,24.756099999999996,23.339833333333335,22.6235
 marker_stop_typing_targeted,targeted,stop typing,990,30,22.993199999999998,24.364000000000004,25.3973,24.05566666666667,22.936
 marker_stop_typing_targeted,targeted,stop typing,1000,30,26.058200000000003,26.8245,29.0858,26.987633333333342,26.499000000000002
 marker_stop_typing_targeted,targeted,stop typing,1010,30,26.1134,27.174500000000002,29.4865,27.526299999999992,26.7455
@@ -48,6 +60,12 @@ marker_stop_start_typing_spans,span trace,stop/start typing,1000,8,17.9025,18.41
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,8,15.9714,17.9295,18.8419,17.558875,17.634999999999998
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,8,25.8699,27.9465,29.696099999999998,27.935000000000002,27.076999999999998
 marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,8,24.246199999999998,26.4295,26.9478,25.806625000000004,25.820999999999998
+marker_toggle_selection_spans,span trace,toggle selection,1000,8,22.5654,23.61,28.067499999999995,24.730374999999995,23.067500000000003
+marker_toggle_selection_spans,span trace,toggle selection,1010,8,21.9679,23.1575,23.8862,23.001000000000005,22.817999999999998
+marker_toggle_template_validity_spans,span trace,toggle template validity,1000,8,21.5161,24.3095,31.190599999999996,25.408125,23.865000000000002
+marker_toggle_template_validity_spans,span trace,toggle template validity,1010,8,20.3705,23.802,24.5268,23.0635,23.427
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1000,8,22.4695,23.825,27.5225,24.935125000000003,23.467
+marker_toggle_block_highlight_spans,span trace,toggle block highlight,1010,8,20.9069,23.5105,24.2493,23.016625,23.134
 marker_stop_typing_spans,span trace,stop typing,1000,8,35.3113,37.5835,37.7994,36.908,37.2645
 marker_stop_typing_spans,span trace,stop typing,1010,8,36.258199999999995,36.94200000000001,39.7409,37.459500000000006,36.602500000000006
 marker_start_typing_spans,span trace,start typing,1000,8,29.7899,33.009,34.7284,32.606625,31.661
