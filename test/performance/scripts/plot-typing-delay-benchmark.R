@@ -3561,6 +3561,49 @@ if (file.exists(marker_allspan_owner_path)) {
 		width = 13,
 		height = 10
 	)
+
+	if ("outer_listener_duration_p50_ms" %in% names(marker_allspan_owner)) {
+		marker_outer_top <- marker_allspan_owner %>%
+			filter(
+				window_kind == "next input registry.batch" | intervention == "normal marker",
+				outer_listener_duration_p50_ms > 0
+			) %>%
+			group_by(window_label, owner_label) %>%
+			summarise(max_p50 = max(outer_listener_duration_p50_ms, na.rm = TRUE), .groups = "drop") %>%
+			group_by(window_label) %>%
+			slice_max(max_p50, n = 8, with_ties = FALSE) %>%
+			ungroup()
+
+		marker_outer_plot <- marker_allspan_owner %>%
+			semi_join(marker_outer_top, by = c("window_label", "owner_label")) %>%
+			filter(window_kind == "next input registry.batch" | intervention == "normal marker") %>%
+			mutate(
+				owner_label = fct_reorder(owner_label, outer_listener_duration_p50_ms, .fun = max)
+			)
+
+		save_plot(
+			ggplot(marker_outer_plot, aes(outer_listener_duration_p50_ms, owner_label, color = intervention, shape = intervention)) +
+				geom_point(size = 2.9, alpha = 0.9, position = position_dodge(width = 0.45)) +
+				facet_wrap(vars(window_label), scales = "free_y", ncol = 1) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`normal marker` = 16,
+					`marker no-op` = 17,
+					`mark next not persistent` = 15
+				), drop = FALSE) +
+				labs(
+					title = "Outer listener attribution also shows distributed fanout",
+					subtitle = "Listener spans attributed to the first nested useSelect.onChange owner in trace-all-data-spans runs",
+					x = "Outer listener duration, p50 (ms)",
+					y = NULL,
+					color = "Timer intervention",
+					shape = "Timer intervention"
+				),
+			"34-marker-outer-listener-owner-fanout.png",
+			width = 13,
+			height = 10
+		)
+	}
 }
 
 message("Wrote plots to: ", figure_dir)

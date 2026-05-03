@@ -289,8 +289,7 @@ function ownerKey( owner ) {
 	].join( '\t' );
 }
 
-function addUseSelectOwnerSpan( groups, base, metadataById, span ) {
-	const owner = ownerForUseSelectSpan( metadataById, span );
+function ensureOwnerGroup( groups, base, owner ) {
 	const key = [
 		base.run_id,
 		base.intervention,
@@ -319,10 +318,18 @@ function addUseSelectOwnerSpan( groups, base, metadataById, span ) {
 			update_value_duration_ms: 0,
 			render_queue_add_count: 0,
 			render_queue_add_duration_ms: 0,
+			outer_listener_count: 0,
+			outer_listener_duration_ms: 0,
 		} );
 	}
 
-	const group = groups.get( key );
+	return groups.get( key );
+}
+
+function addUseSelectOwnerSpan( groups, base, metadataById, span ) {
+	const owner = ownerForUseSelectSpan( metadataById, span );
+	const group = ensureOwnerGroup( groups, base, owner );
+
 	if ( span.metadata?.useSelectId ) {
 		group.use_select_ids.add(
 			`${ span.windowName }:${ span.metadata.useSelectId }`
@@ -342,6 +349,31 @@ function addUseSelectOwnerSpan( groups, base, metadataById, span ) {
 		group.render_queue_add_count++;
 		group.render_queue_add_duration_ms += span.durationMs || 0;
 	}
+}
+
+function addOuterListenerOwnerSpan(
+	groups,
+	base,
+	metadataById,
+	listenerSpan,
+	ownerSpan
+) {
+	const owner = ownerForUseSelectSpan( metadataById, ownerSpan );
+	const group = ensureOwnerGroup( groups, base, owner );
+	group.outer_listener_count++;
+	group.outer_listener_duration_ms += listenerSpan.durationMs || 0;
+}
+
+function firstUseSelectOnChangeInsideListener( spans, listenerSpan ) {
+	const listenerStartedAt = listenerSpan.startedAtMs;
+	const listenerStoppedAt =
+		listenerSpan.startedAtMs + ( listenerSpan.durationMs || 0 ) + 0.0001;
+	return spans.find(
+		( span ) =>
+			span.name === 'data.useSelect.onChange' &&
+			span.startedAtMs >= listenerStartedAt &&
+			span.startedAtMs <= listenerStoppedAt
+	);
 }
 
 function compactOwnerRows( groups ) {
@@ -414,6 +446,22 @@ function summarizeOwnerRows( rows ) {
 				ownerRows.map( ( row ) => row.render_queue_add_duration_ms ),
 				0.5
 			),
+			outer_listener_count_p50: quantile(
+				ownerRows.map( ( row ) => row.outer_listener_count ),
+				0.5
+			),
+			outer_listener_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.outer_listener_duration_ms ),
+				0.5
+			),
+			outer_listener_duration_p90_ms: quantile(
+				ownerRows.map( ( row ) => row.outer_listener_duration_ms ),
+				0.9
+			),
+			outer_listener_duration_sum_ms: ownerRows.reduce(
+				( sum, row ) => sum + row.outer_listener_duration_ms,
+				0
+			),
 		};
 	} );
 }
@@ -464,6 +512,20 @@ function ownerDiffRows( summaryRows, baselineIntervention = 'normal marker' ) {
 				diff_on_change_count_p50:
 					row.on_change_count_p50 -
 					( baseline?.on_change_count_p50 ?? 0 ),
+				intervention_outer_listener_duration_p50_ms:
+					row.outer_listener_duration_p50_ms,
+				baseline_outer_listener_duration_p50_ms:
+					baseline?.outer_listener_duration_p50_ms ?? 0,
+				diff_outer_listener_duration_p50_ms:
+					row.outer_listener_duration_p50_ms -
+					( baseline?.outer_listener_duration_p50_ms ?? 0 ),
+				intervention_outer_listener_count_p50:
+					row.outer_listener_count_p50,
+				baseline_outer_listener_count_p50:
+					baseline?.outer_listener_count_p50 ?? 0,
+				diff_outer_listener_count_p50:
+					row.outer_listener_count_p50 -
+					( baseline?.outer_listener_count_p50 ?? 0 ),
 			};
 		} );
 }
@@ -1452,6 +1514,22 @@ for ( const run of loadedAllDataSpanRuns ) {
 					span
 				);
 			}
+
+			for ( const span of batchSpans ) {
+				if (
+					span.name !== 'data.emitter.listener' ||
+					span.metadata?.storeName !== 'core/block-editor'
+				) {
+					continue;
+				}
+				addOuterListenerOwnerSpan(
+					allSpanInputOwnerGroups,
+					base,
+					metadataById,
+					span,
+					firstUseSelectOnChangeInsideListener( batchSpans, span )
+				);
+			}
 		}
 	}
 }
@@ -1495,6 +1573,22 @@ for ( const run of loadedAllDataSpanRuns ) {
 					base,
 					metadataById,
 					span
+				);
+			}
+
+			for ( const span of actionSpans ) {
+				if (
+					span.name !== 'data.reduxStore.listener' ||
+					span.metadata?.storeName !== 'core/block-editor'
+				) {
+					continue;
+				}
+				addOuterListenerOwnerSpan(
+					allSpanMarkerOwnerGroups,
+					base,
+					metadataById,
+					span,
+					firstUseSelectOnChangeInsideListener( actionSpans, span )
 				);
 			}
 		}
@@ -2034,6 +2128,8 @@ writeCsv(
 		'update_value_duration_ms',
 		'render_queue_add_count',
 		'render_queue_add_duration_ms',
+		'outer_listener_count',
+		'outer_listener_duration_ms',
 	]
 );
 writeCsv(
@@ -2060,6 +2156,10 @@ writeCsv(
 		'map_select_duration_p50_ms',
 		'update_value_duration_p50_ms',
 		'render_queue_add_duration_p50_ms',
+		'outer_listener_count_p50',
+		'outer_listener_duration_p50_ms',
+		'outer_listener_duration_p90_ms',
+		'outer_listener_duration_sum_ms',
 	]
 );
 writeCsv(
@@ -2084,6 +2184,12 @@ writeCsv(
 		'intervention_on_change_count_p50',
 		'baseline_on_change_count_p50',
 		'diff_on_change_count_p50',
+		'intervention_outer_listener_duration_p50_ms',
+		'baseline_outer_listener_duration_p50_ms',
+		'diff_outer_listener_duration_p50_ms',
+		'intervention_outer_listener_count_p50',
+		'baseline_outer_listener_count_p50',
+		'diff_outer_listener_count_p50',
 	]
 );
 writeCsv(
