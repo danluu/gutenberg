@@ -1013,6 +1013,55 @@ if (file.exists(start_wait_span_component_delta_path)) {
 	)
 }
 
+start_wait_pretype_warmup_summary_path <- file.path(data_dir, "typing-delay-start-wait-pretype-warmup-summary.csv")
+if (file.exists(start_wait_pretype_warmup_summary_path)) {
+	start_wait_pretype_warmup <- read_csv(start_wait_pretype_warmup_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			config_label = factor(
+				config_label,
+				levels = c(
+					"0s wait",
+					"0s + 1000ms warmup",
+					"60s wait",
+					"60s + 250ms warmup",
+					"60s + 1000ms warmup"
+				)
+			),
+			start_wait_label = factor(
+				if_else(settle_ms == 0, "0s wait", "60s wait"),
+				levels = c("0s wait", "60s wait")
+			),
+			warmup_label = factor(
+				case_when(
+					warmup_ms == 0 ~ "no warmup",
+					warmup_ms == 250 ~ "250ms warmup",
+					warmup_ms == 1000 ~ "1000ms warmup",
+					TRUE ~ paste0(warmup_ms, "ms warmup")
+				),
+				levels = c("no warmup", "250ms warmup", "1000ms warmup")
+			)
+		)
+
+	save_plot(
+		ggplot(start_wait_pretype_warmup, aes(config_label, p50_ms, color = start_wait_label, shape = warmup_label)) +
+			geom_errorbar(aes(ymin = p10_ms, ymax = p90_ms), width = 0.18, alpha = 0.78) +
+			geom_point(size = 3.2) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Pre-typing main-thread warmup mostly removes the 60s first-input penalty",
+				subtitle = "Fresh large-post first character at 1300ms; warmup runs after the configured start wait but before tracing and typing",
+				x = NULL,
+				y = "Latency p50 (ms)",
+				color = "Start wait",
+				shape = "Pre-typing warmup"
+			) +
+			theme(axis.text.x = element_text(angle = 25, hjust = 1)),
+		"65-start-wait-pretype-warmup.png",
+		width = 9.5,
+		height = 5.8
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

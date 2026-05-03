@@ -103,6 +103,9 @@ const settleAfterEditorSetupMs = intEnv(
 	'BENCHMARK_SETTLE_AFTER_EDITOR_SETUP_MS',
 	0
 );
+const preTypingWarmupMs = intEnv( 'BENCHMARK_PRE_TYPE_WARMUP_MS', 0 );
+const preTypingWarmupMode =
+	process.env.BENCHMARK_PRE_TYPE_WARMUP_MODE || 'none';
 const explicitDelays = process.env.BENCHMARK_DELAYS_MS
 	? process.env.BENCHMARK_DELAYS_MS.split( ',' ).map( ( delay ) => {
 			const parsed = Number.parseInt( delay.trim(), 10 );
@@ -132,6 +135,7 @@ const supportedDelayModes = [
 	'cdp-key-hold-page-evaluate',
 	'cdp-key-hold-runtime-evaluate',
 ];
+const supportedPreTypingWarmupModes = [ 'none', 'main-thread-busy-loop' ];
 const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
@@ -593,6 +597,25 @@ if ( ! supportedDelayModes.includes( delayMode ) ) {
 	);
 }
 
+if ( ! supportedPreTypingWarmupModes.includes( preTypingWarmupMode ) ) {
+	throw new Error(
+		`Unsupported BENCHMARK_PRE_TYPE_WARMUP_MODE: ${ preTypingWarmupMode }. ` +
+			`Supported modes: ${ supportedPreTypingWarmupModes.join( ', ' ) }.`
+	);
+}
+
+if ( preTypingWarmupMode === 'none' && preTypingWarmupMs !== 0 ) {
+	throw new Error(
+		'BENCHMARK_PRE_TYPE_WARMUP_MS requires BENCHMARK_PRE_TYPE_WARMUP_MODE.'
+	);
+}
+
+if ( preTypingWarmupMode !== 'none' && preTypingWarmupMs <= 0 ) {
+	throw new Error(
+		'BENCHMARK_PRE_TYPE_WARMUP_MS must be greater than 0 when a pre-type warmup mode is set.'
+	);
+}
+
 if (
 	! supportedMarkPersistentInterventions.includes(
 		markPersistentIntervention
@@ -892,6 +915,8 @@ function benchmarkTimeoutMs() {
 			0
 		);
 	const settleMs = rounds * delays.length * settleBetweenDelayRunsMs;
+	const preTypingWarmupAllowanceMs =
+		rounds * delays.length * preTypingWarmupMs;
 	const setupCount = freshEditorPerDelay ? rounds * delays.length : 1;
 	const stateWaitMs =
 		waitForPersistenceBetweenKeys || delayMode === 'after-persistence'
@@ -902,7 +927,11 @@ function benchmarkTimeoutMs() {
 
 	return Math.max(
 		intEnv( 'BENCHMARK_TIMEOUT_MS', 0 ),
-		intentionalDelayMs * 2 + stateWaitMs + settleMs + setupAllowanceMs
+		intentionalDelayMs * 2 +
+			stateWaitMs +
+			settleMs +
+			preTypingWarmupAllowanceMs +
+			setupAllowanceMs
 	);
 }
 
@@ -2542,6 +2571,45 @@ setInterval(() => {}, 2147483647);
 			};
 		}
 
+		async function runPreTypingWarmup() {
+			if ( preTypingWarmupMode === 'none' ) {
+				return null;
+			}
+
+			const startedAtEpochMs = Date.now();
+			const result = await page.evaluate(
+				( { mode, durationMs } ) => {
+					const startedAtMs = performance.now();
+					if ( mode === 'main-thread-busy-loop' ) {
+						const stopAtMs = startedAtMs + durationMs;
+						let accumulator = 0;
+						while ( performance.now() < stopAtMs ) {
+							accumulator += Math.sqrt( accumulator + 1 );
+						}
+						const stoppedAtMs = performance.now();
+						return {
+							mode,
+							requestedDurationMs: durationMs,
+							actualDurationMs: stoppedAtMs - startedAtMs,
+							accumulator,
+						};
+					}
+
+					throw new Error( `Unsupported warmup mode: ${ mode }` );
+				},
+				{
+					mode: preTypingWarmupMode,
+					durationMs: preTypingWarmupMs,
+				}
+			);
+
+			return {
+				...result,
+				startedAtEpochMs,
+				stoppedAtEpochMs: Date.now(),
+			};
+		}
+
 		let editorSetup = null;
 		await setupEventListenerTracingInitScript();
 		await setupRichTextSpanTracingInitScript();
@@ -2573,6 +2641,7 @@ setInterval(() => {}, 2147483647);
 					await page.waitForTimeout( settleBetweenDelayRunsMs );
 				}
 
+				const preTypingWarmup = await runPreTypingWarmup();
 				const runStartedAtEpochMs = Date.now();
 				const runStartedAtBrowserNowMs = await page.evaluate( () =>
 					performance.now()
@@ -2724,6 +2793,7 @@ setInterval(() => {}, 2147483647);
 					runStoppedAtEpochMs,
 					runStartedAtBrowserNowMs,
 					runStoppedAtBrowserNowMs,
+					preTypingWarmup,
 					persistenceEvents: tracePersistence
 						? await page.evaluate(
 								( { startMs, stopMs } ) =>
@@ -3058,6 +3128,8 @@ setInterval(() => {}, 2147483647);
 				postKeyupGapMs,
 				settleAfterEditorSetupMs,
 				settleBetweenDelayRunsMs,
+				preTypingWarmupMode,
+				preTypingWarmupMs,
 				orderMode,
 				seed,
 				benchmarkStartedAtEpochMs,

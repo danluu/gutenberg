@@ -41,7 +41,10 @@ The short version:
     tracing shows the long-wait first input runs the same large Gutenberg fanout,
     but that fanout takes longer after idle: `RichText`/data `registry.batch`
     p50 rises by about `3.6-3.8ms`, while counted subscriber fanout sizes remain
-    unchanged.
+    unchanged. A benchmark-only pre-typing warmup makes the causal picture
+    sharper: after a `60s` start wait, a `1000ms` browser-main-thread warmup
+    before tracing/typing lowers first-character p50 from `23.1ms` to `18.2ms`,
+    essentially matching the `0s + 1000ms warmup` control at `18.5ms`.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -417,6 +420,9 @@ The R script derives:
     controls for the first-character start-wait effect.
 -   `data/typing-delay-start-wait-span-*.csv`: source-level attribution
     summaries for the large-post first-character start-wait effect.
+-   `data/typing-delay-start-wait-pretype-warmup-*.csv`: causality checks that
+    run a browser-main-thread warmup after the start wait but before the first
+    measured input.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -752,6 +758,37 @@ extra measured `keypress` slice, but not all of it; the remainder is likely in
 uninstrumented React/browser work plus the overhead of the tracing itself. That
 is as far as this benchmark can go without hardware-level CPU frequency/cache
 instrumentation or lower-overhead browser internals tracing.
+
+To test whether that is really an idle-state effect, I added a benchmark-only
+pre-typing warmup. It runs after the configured post-setup wait but before
+browser tracing and before the measured keypress. The current warmup mode is a
+browser-main-thread busy loop, controlled by
+`BENCHMARK_PRE_TYPE_WARMUP_MODE=main-thread-busy-loop` and
+`BENCHMARK_PRE_TYPE_WARMUP_MS`. This is not meant to model a user action; it is
+a causality probe for the state of the browser/editor immediately before the
+first input.
+
+![Start-wait pre-typing warmup](figures/65-start-wait-pretype-warmup.png)
+
+Pre-typing warmup p50s:
+
+| Configuration | p50 | p10-p90 | `keypress` p50 |
+| ------------- | --: | ------: | --------------: |
+| `0s` wait | `15.9ms` | `13.7-17.3ms` | `15.1ms` |
+| `0s + 1000ms` warmup | `18.5ms` | `14.9-21.6ms` | `17.6ms` |
+| `60s` wait | `23.1ms` | `22.2-25.0ms` | `21.2ms` |
+| `60s + 250ms` warmup | `19.1ms` | `18.4-20.1ms` | `17.0ms` |
+| `60s + 1000ms` warmup | `18.2ms` | `18.0-19.3ms` | `16.4ms` |
+
+This does not say "busy-loop before typing is good"; the `0s + 1000ms` warmup
+control is slower than the plain `0s` wait. The cleaner comparison is with equal
+immediate pre-typing work: after a `1000ms` main-thread warmup, `0s` and `60s`
+start waits are effectively the same (`18.5ms` vs. `18.2ms`). That strongly
+supports the narrower causal claim: the first-character slowdown from increasing
+start wait is mostly about the browser/editor state immediately before input,
+not the absolute elapsed time since editor setup. A short `250ms` warmup already
+recovers most of the `60s` penalty, which is also consistent with a cold/idle
+state rather than a new Gutenberg code path.
 
 The interpretation is conservative: increasing the pre-run settle time is not a
 fix for this benchmark's main artifacts. It mainly changes the first character
@@ -3755,6 +3792,9 @@ The key runs used in this report were:
     `start_wait_native_first_char_10000`,
     `start_wait_native_first_char_60000`, `start_wait_spans_large_0`,
     `start_wait_spans_large_60000`,
+    `start_wait_warmup_large_0_warmup_1000`,
+    `start_wait_warmup_large_60000_warmup_250`,
+    `start_wait_warmup_large_60000_warmup_1000`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,
