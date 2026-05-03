@@ -219,6 +219,33 @@ const reduxListenerOwnerRuns = [
 	},
 ];
 
+const listenerProbeRuns = [
+	{
+		runId: 'marker_normal_listener_1000',
+		traceType: 'event listener probe',
+		intervention: 'normal marker',
+		dir: 'artifacts/typing-delay-mark-normal-listener-1000',
+	},
+	{
+		runId: 'marker_noop_listener_1000',
+		traceType: 'event listener probe',
+		intervention: 'marker no-op',
+		dir: 'artifacts/typing-delay-mark-noop-listener-1000',
+	},
+	{
+		runId: 'marker_toggle_selection_listener_1000',
+		traceType: 'event listener probe',
+		intervention: 'toggle selection',
+		dir: 'artifacts/typing-delay-mark-toggle-selection-listener-1000',
+	},
+	{
+		runId: 'marker_stop_start_typing_listener_1000',
+		traceType: 'event listener probe',
+		intervention: 'stop/start typing',
+		dir: 'artifacts/typing-delay-mark-stop-start-typing-listener-1000',
+	},
+];
+
 function newestJson( dir ) {
 	const absDir = path.join( repoRoot, dir );
 	if ( ! fs.existsSync( absDir ) ) {
@@ -753,6 +780,7 @@ function readOptionalRuns( optionalRuns ) {
 const loadedTimeoutRewriteRuns = readOptionalRuns( timeoutRewriteRuns );
 const loadedAllDataSpanRuns = readOptionalRuns( allDataSpanRuns );
 const loadedReduxListenerOwnerRuns = readOptionalRuns( reduxListenerOwnerRuns );
+const loadedListenerProbeRuns = readOptionalRuns( listenerProbeRuns );
 
 function summaryKey( row ) {
 	return `${ row.delayMs }\t${ row.round }\t${ row.editorSetupIndex }`;
@@ -917,6 +945,143 @@ function buildPairedSummaryRows( rows ) {
 	} );
 }
 
+function clusterEventListenerEvents( events, gapMs = 200 ) {
+	const sorted = events
+		.slice()
+		.sort( ( left, right ) => left.startedAtMs - right.startedAtMs );
+	const clusters = [];
+
+	for ( const event of sorted ) {
+		const last = clusters[ clusters.length - 1 ];
+		if ( ! last || event.startedAtMs - last.lastStartedAtMs > gapMs ) {
+			clusters.push( {
+				events: [],
+				startedAtMs: event.startedAtMs,
+				lastStartedAtMs: event.startedAtMs,
+			} );
+		}
+
+		const current = clusters[ clusters.length - 1 ];
+		current.events.push( event );
+		current.lastStartedAtMs = event.startedAtMs;
+	}
+
+	return clusters;
+}
+
+function listenerProbeLabel( event ) {
+	const source = event.listenerSource || '';
+	const stack = event.registrationStack || '';
+
+	if ( source.includes( 'rich-text.onInput.total' ) ) {
+		return 'rich-text.onInput.total';
+	}
+	if ( source.includes( '__unstableAllowPrefixTransf' ) ) {
+		return 'rich-text input transform listener';
+	}
+	if ( source.includes( 'for(let i of o.current)i(n)' ) ) {
+		return 'block-editor merged input refs';
+	}
+	if ( source.includes( '[native code]' ) && stack.includes( 'react-dom' ) ) {
+		return event.capture
+			? 'React delegated listener, capture'
+			: 'React delegated listener, bubble';
+	}
+	if ( source.includes( 'removeEventListener("selectionchange"' ) ) {
+		return 'rich-text cleanup listener';
+	}
+
+	return `${ event.listenerName || '(anonymous)' }: ${ source
+		.replace( /\s+/g, ' ' )
+		.slice( 0, 80 ) }`;
+}
+
+function buildListenerProbeRows( probeRuns ) {
+	const eventTypes = [
+		'keydown',
+		'keypress',
+		'beforeinput',
+		'input',
+		'keyup',
+	];
+	const sampleRowsForProbe = [];
+	const listenerRowsForProbe = [];
+
+	for ( const run of probeRuns ) {
+		for ( const summary of run.data.delayRunSummaries ) {
+			const records = run.data.records
+				.filter(
+					( record ) =>
+						record.delayMs === summary.delayMs &&
+						record.round === summary.round &&
+						record.editorSetupIndex === summary.editorSetupIndex &&
+						! record.isThrowaway
+				)
+				.sort(
+					( left, right ) => left.sampleIndex - right.sampleIndex
+				);
+
+			for ( const type of eventTypes ) {
+				const events = ( summary.eventListenerEvents || [] ).filter(
+					( event ) =>
+						event.windowName === 'editor-canvas' &&
+						event.type === type
+				);
+				const clusters = clusterEventListenerEvents( events ).slice(
+					1,
+					records.length + 1
+				);
+
+				clusters.forEach( ( cluster, index ) => {
+					sampleRowsForProbe.push( {
+						run_id: run.runId,
+						trace_type: run.traceType,
+						intervention: run.intervention,
+						json_path: path.relative( repoRoot, run.jsonPath ),
+						delay_ms: summary.delayMs,
+						round: summary.round,
+						event_type: type,
+						occurrence_index: index,
+						listener_count: cluster.events.length,
+						listener_duration_ms: cluster.events.reduce(
+							( total, event ) => total + event.durationMs,
+							0
+						),
+						latency_ms: records[ index ]?.latencyMs,
+						keydown_ms: records[ index ]?.keydownMs,
+						keypress_ms: records[ index ]?.keypressMs,
+						keyup_ms: records[ index ]?.keyupMs,
+					} );
+
+					for ( const event of cluster.events ) {
+						listenerRowsForProbe.push( {
+							run_id: run.runId,
+							trace_type: run.traceType,
+							intervention: run.intervention,
+							json_path: path.relative( repoRoot, run.jsonPath ),
+							delay_ms: summary.delayMs,
+							round: summary.round,
+							event_type: type,
+							occurrence_index: index,
+							listener_label: listenerProbeLabel( event ),
+							window_name: event.windowName,
+							current_target_label: event.currentTargetLabel,
+							event_target_label: event.eventTargetLabel,
+							capture: event.capture,
+							listener_name: event.listenerName,
+							listener_source: event.listenerSource,
+							registration_stack: event.registrationStack,
+							duration_ms: event.durationMs,
+						} );
+					}
+				} );
+			}
+		}
+	}
+
+	return { sampleRowsForProbe, listenerRowsForProbe };
+}
+
 const sampleRows = loadedRuns.flatMap( ( run ) =>
 	run.data.records
 		.filter( ( record ) => ! record.isThrowaway )
@@ -958,6 +1123,87 @@ const summaryRows = Array.from(
 			latencies.reduce( ( sum, value ) => sum + value, 0 ) /
 			latencies.length,
 		keypress_p50_ms: quantile( keypresses, 0.5 ),
+	};
+} );
+
+const {
+	sampleRowsForProbe: listenerProbeSampleRows,
+	listenerRowsForProbe: listenerProbeListenerRows,
+} = buildListenerProbeRows( loadedListenerProbeRuns );
+
+const listenerProbeSummaryRows = Array.from(
+	groupedBy(
+		listenerProbeSampleRows,
+		( row ) => `${ row.run_id }\t${ row.delay_ms }\t${ row.event_type }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		run_id: first.run_id,
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		delay_ms: first.delay_ms,
+		event_type: first.event_type,
+		n: rows.length,
+		listener_count_p50: quantile(
+			rows.map( ( row ) => row.listener_count ),
+			0.5
+		),
+		listener_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.listener_duration_ms ),
+			0.5
+		),
+		latency_p50_ms: quantile(
+			rows.map( ( row ) => row.latency_ms ),
+			0.5
+		),
+		keydown_p50_ms: quantile(
+			rows.map( ( row ) => row.keydown_ms ),
+			0.5
+		),
+		keypress_p50_ms: quantile(
+			rows.map( ( row ) => row.keypress_ms ),
+			0.5
+		),
+		keyup_p50_ms: quantile(
+			rows.map( ( row ) => row.keyup_ms ),
+			0.5
+		),
+	};
+} );
+
+const listenerProbeInputListenerSummaryRows = Array.from(
+	groupedBy(
+		listenerProbeListenerRows.filter(
+			( row ) => row.event_type === 'input'
+		),
+		( row ) => `${ row.run_id }\t${ row.delay_ms }\t${ row.listener_label }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	const rowsByOccurrence = groupedBy(
+		rows,
+		( row ) => `${ row.round }\t${ row.occurrence_index }`
+	);
+	const occurrenceDurations = Array.from( rowsByOccurrence.values() ).map(
+		( occurrenceRows ) =>
+			occurrenceRows.reduce(
+				( total, row ) => total + row.duration_ms,
+				0
+			)
+	);
+
+	return {
+		run_id: first.run_id,
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		delay_ms: first.delay_ms,
+		listener_label: first.listener_label,
+		n: occurrenceDurations.length,
+		duration_p50_ms: quantile( occurrenceDurations, 0.5 ),
+		duration_p90_ms: quantile( occurrenceDurations, 0.9 ),
+		listener_source: first.listener_source,
+		registration_stack: first.registration_stack,
 	};
 } );
 
@@ -3237,6 +3483,71 @@ writeCsv(
 		'keypress_p50_ms',
 	]
 );
+if ( loadedListenerProbeRuns.length > 0 ) {
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-marker-listener-probe-samples.csv'
+		),
+		listenerProbeSampleRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'json_path',
+			'delay_ms',
+			'round',
+			'event_type',
+			'occurrence_index',
+			'listener_count',
+			'listener_duration_ms',
+			'latency_ms',
+			'keydown_ms',
+			'keypress_ms',
+			'keyup_ms',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-marker-listener-probe-summary.csv'
+		),
+		listenerProbeSummaryRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'delay_ms',
+			'event_type',
+			'n',
+			'listener_count_p50',
+			'listener_duration_p50_ms',
+			'latency_p50_ms',
+			'keydown_p50_ms',
+			'keypress_p50_ms',
+			'keyup_p50_ms',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-marker-input-listener-summary.csv'
+		),
+		listenerProbeInputListenerSummaryRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'delay_ms',
+			'listener_label',
+			'n',
+			'duration_p50_ms',
+			'duration_p90_ms',
+			'listener_source',
+			'registration_stack',
+		]
+	);
+}
 writeCsv(
 	path.join(
 		reportDataDir,

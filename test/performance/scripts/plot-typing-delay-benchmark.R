@@ -3335,6 +3335,80 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 	}
 }
 
+marker_listener_probe_summary_path <- file.path(data_dir, "typing-delay-marker-listener-probe-summary.csv")
+marker_input_listener_summary_path <- file.path(data_dir, "typing-delay-marker-input-listener-summary.csv")
+if (file.exists(marker_listener_probe_summary_path)) {
+	marker_listener_probe_levels <- c(
+		"normal marker",
+		"marker no-op",
+		"toggle selection",
+		"stop/start typing"
+	)
+	marker_listener_probe <- read_csv(marker_listener_probe_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			intervention = factor(intervention, levels = marker_listener_probe_levels),
+			event_type = factor(event_type, levels = c("keydown", "keypress", "beforeinput", "input", "keyup"))
+		)
+
+	save_plot(
+		ggplot(marker_listener_probe, aes(event_type, listener_duration_p50_ms, color = intervention, shape = intervention)) +
+			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`toggle selection` = 8,
+				`stop/start typing` = 7
+			), drop = FALSE) +
+			labs(
+				title = "The keypress-latency gap is input listener work",
+				subtitle = "Same-configuration 1000ms listener probe; points are p50 callback duration by actual DOM event type",
+				x = "Actual DOM event listener",
+				y = "Listener callback duration, p50 (ms)",
+				color = "Timer callback",
+				shape = "Timer callback"
+			),
+		"26c-marker-listener-event-type-probe.png",
+		width = 11,
+		height = 7
+	)
+
+	if (file.exists(marker_input_listener_summary_path)) {
+		marker_input_listener <- read_csv(marker_input_listener_summary_path, show_col_types = FALSE) %>%
+			filter(intervention %in% marker_listener_probe_levels) %>%
+			group_by(listener_label) %>%
+			filter(max(duration_p50_ms, na.rm = TRUE) > 0.05) %>%
+			ungroup() %>%
+			mutate(
+				intervention = factor(intervention, levels = marker_listener_probe_levels),
+				listener_label = fct_reorder(listener_label, duration_p50_ms, .fun = max)
+			)
+
+		save_plot(
+			ggplot(marker_input_listener, aes(duration_p50_ms, listener_label, color = intervention, shape = intervention)) +
+				geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.45)) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`normal marker` = 16,
+					`marker no-op` = 17,
+					`toggle selection` = 8,
+					`stop/start typing` = 7
+				), drop = FALSE) +
+				labs(
+					title = "One RichText input listener dominates the listener probe",
+					subtitle = "Same-configuration 1000ms listener probe; p50 input listener duration by source label",
+					x = "Input listener duration, p50 (ms)",
+					y = NULL,
+					color = "Timer callback",
+					shape = "Timer callback"
+				),
+			"26d-marker-input-listener-probe.png",
+			width = 11,
+			height = 6.5
+		)
+	}
+}
+
 marker_path_summary_path <- file.path(data_dir, "typing-delay-marker-input-path-summary.csv")
 if (file.exists(marker_path_summary_path)) {
 	marker_intervention_levels <- c(

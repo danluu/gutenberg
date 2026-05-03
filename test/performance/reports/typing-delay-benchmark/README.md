@@ -50,9 +50,15 @@ The short version:
     not enough: `20ms` and `40ms` busy-wait callbacks only partly lower the
     `1000ms` event-only p50, to `17.7ms` and `16.1ms`.
 -   Splitting the measured key into `keydown`, `keypress`, and `keyup` shows
-    that the intervention gap is almost entirely `keypress` listener time.
+    that the intervention gap is almost entirely in the measured `keypress`
+    component.
     That disconfirms theories based on `keyup`, key release accounting, or
     Chrome-only `EventDispatch` bookkeeping.
+-   A same-configuration event-listener probe refines that statement: the DOM
+    `keypress` listeners themselves are not expensive. The expensive callback
+    is the `input` listener, dominated by RichText's `onInput` handler. In
+    Chrome's trace-derived metric that input-handling work is showing up in the
+    measured keypress-driven character-insertion slice.
 -   The `stopTyping()` / `startTyping()` probes show one concrete way to change
     that `keypress` slice. `startTyping()` alone is effectively a no-op when the
     editor is already typing and stays slow. `stopTyping()` alone leaves the
@@ -872,7 +878,34 @@ location of the intervention effect explicit:
 
 That disconfirms a large class of explanations. The difference is not
 `keydown`, `keyup`, the release after the held key, or a missing key-release
-measurement. The meaningful movement is in the `keypress` listener slice.
+measurement. The meaningful movement is in the measured `keypress` component.
+
+I then reran a small `1000ms` probe with identical event-listener tracing for
+normal marker, marker no-op, restored selection, and stop/start typing. This
+corrects the wording above: the browser-trace component is labeled `keypress`,
+but the DOM `keypress` listeners themselves are not where the time goes.
+
+![Marker listener event type probe](figures/26c-marker-listener-event-type-probe.png)
+
+| Timer callback     | Benchmark `keypress` p50 | DOM `keypress` listeners | DOM `input` listeners | RichText `onInput` listener |
+| ------------------ | -----------------------: | -----------------------: | --------------------: | --------------------------: |
+| normal marker      |                 `12.1ms` |                  `0.0ms` |               `8.9ms` |                     `8.7ms` |
+| marker no-op       |                 `19.8ms` |                  `0.0ms` |              `13.8ms` |                    `13.5ms` |
+| toggle selection   |                  `9.7ms` |                  `0.0ms` |               `7.7ms` |                     `7.5ms` |
+| stop/start typing  |                  `9.9ms` |                  `0.0ms` |               `7.5ms` |                     `7.4ms` |
+
+![Marker input listener probe](figures/26d-marker-input-listener-probe.png)
+
+This confirms that "keypress" is an accounting label for the measured
+character-insertion slice, not evidence that Gutenberg's `keypress` callbacks
+are expensive. The expensive event-listener callback is the actual DOM `input`
+listener, and within that listener the p50-visible work is overwhelmingly
+RichText's `rich-text.onInput.total` path. The secondary RichText input
+transform listener is `0.1-0.2ms` p50. This also explains why the Firefox/WebKit
+results can have the same qualitative dip even though the original explanation
+was phrased in terms of Chrome `EventDispatch`: Gutenberg's input handler and
+state history are changing; Chrome's trace just labels the measured slice in a
+particular way.
 
 This disconfirms several simple theories:
 
@@ -1802,13 +1835,16 @@ this trace-heavy run.
 One piece remains open, but it is now narrower. The traces identify timer-side
 block-editor fanout and the following input's block-editor fanout, the owner
 summary disconfirms a single-owner explanation, and the nested-span split
-disconfirms React-listener, selector-recompute, and render-queue explanations
-for the residual input-side delta. The newest wrapper split puts the shared
-remainder in the paused store-listener wrapper path, not in the resumed listener
-bodies. The supported statement is that timer ordering plus timer-side
-subscriber fanout explain the false event-only low band; attributing the last
-few milliseconds to a single React commit, selector, render queue, component, or
-resumed callback body is not supported by the current traces.
+disconfirms selector-recompute and render-queue explanations for the residual
+input-side delta. The listener probe also disconfirms expensive DOM `keypress`
+callbacks: the p50-visible listener work is the actual DOM `input` listener,
+dominated by RichText's `onInput` handler. The newest wrapper split puts the
+shared data-layer remainder in the paused store-listener wrapper path, not in
+the resumed listener bodies. The supported statement is that timer ordering plus
+timer-side subscriber fanout explain the false event-only low band; attributing
+the last few milliseconds to a single React commit, selector, render queue,
+component, DOM `keypress` callback, or resumed callback body is not supported by
+the current traces.
 
 Reasoning audit:
 
@@ -2866,6 +2902,11 @@ The key runs used in this report were:
     `marker_toggle_selection_allspans_1000`: additional small `1000ms`
     all-data-span runs comparing a typing-state restored fanout against a
     generic restored selection-toggle fanout.
+-   `marker_normal_listener_1000`, `marker_noop_listener_1000`,
+    `marker_toggle_selection_listener_1000`,
+    `marker_stop_start_typing_listener_1000`: same-configuration `1000ms`
+    event-listener probes used to distinguish the browser-trace `keypress`
+    slice from actual DOM `keypress` and `input` listener callbacks.
 -   `redux_listener_owner_normal_1000`, `redux_listener_owner_noop_1000`,
     `redux_listener_owner_next_not_persistent_1000`: reduced `1000ms`
     owner-attribution runs with diagnostic `useSelectId` metadata propagated to

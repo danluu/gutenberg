@@ -1,0 +1,241 @@
+run_id,trace_type,intervention,delay_ms,listener_label,n,duration_p50_ms,duration_p90_ms,listener_source,registration_stack
+marker_normal_listener_1000,event listener probe,normal marker,1000,"React delegated listener, capture",15,0,0,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32595)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32246
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_normal_listener_1000,event listener probe,normal marker,1000,rich-text.onInput.total,15,8.700000047683716,10.85999994277954,"function i(f){return L(""rich-text.onInput.total"",()=>{if(o)return;let l;f&&(l=f.inputType);let{record:m,applyRecord:y,createRecord:b,handleChange:d}=e.current;if(l&&(l.indexOf(""format"")===0||xn.has(l))){y(m.current);return}let h=b(),{start:v,activeFormats:T=[]}=m.current,g=!Y(m.current)&&h.start<=v,","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:19903
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21528
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21521
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17977
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)"
+marker_normal_listener_1000,event listener probe,normal marker,1000,rich-text input transform listener,15,0.10000014305114746,0.20000004768371582,"function r(n){let{inputType:i,type:s}=n,{getValue:a,onChange:c,__unstableAllowPrefixTransformations:u,formatTypes:d,registry:f,onReplace:m}=e.current;if(i!==""insertText""&&s!==""compositionend""||u&&o())return;let h=a(),p=(0,Qb.getBlockTransforms)(""from"").filter(y=>y.type===""input""),g=(0,Qb.findTransfo","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:75692
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_normal_listener_1000,event listener probe,normal marker,1000,block-editor merged input refs,15,0,0,function r(n){for(let i of o.current)i(n)},"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:76609
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_normal_listener_1000,event listener probe,normal marker,1000,"React delegated listener, bubble",15,0,0,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32669)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32235
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_normal_listener_1000,event listener probe,normal marker,1000,rich-text cleanup listener,15,0,0.05999994277954098,"function u(){t.removeEventListener(c,f),t.removeEventListener(""selectionchange"",u),t.removeEventListener(""input"",u)}","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLDocument.addEventListener (<anonymous>:104:54)
+    at HTMLParagraphElement.s (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:20648)
+    at HTMLParagraphElement.wrappedTypingBenchmarkEventListener (<anonymous>:68:29)"
+marker_noop_listener_1000,event listener probe,marker no-op,1000,"React delegated listener, capture",15,0,0.10000014305114746,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32595)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32246
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_noop_listener_1000,event listener probe,marker no-op,1000,rich-text.onInput.total,15,13.5,15.5,"function i(f){return L(""rich-text.onInput.total"",()=>{if(o)return;let l;f&&(l=f.inputType);let{record:m,applyRecord:y,createRecord:b,handleChange:d}=e.current;if(l&&(l.indexOf(""format"")===0||xn.has(l))){y(m.current);return}let h=b(),{start:v,activeFormats:T=[]}=m.current,g=!Y(m.current)&&h.start<=v,","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:19903
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21528
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21521
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17977
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)"
+marker_noop_listener_1000,event listener probe,marker no-op,1000,rich-text input transform listener,15,0.20000004768371582,0.2599999904632568,"function r(n){let{inputType:i,type:s}=n,{getValue:a,onChange:c,__unstableAllowPrefixTransformations:u,formatTypes:d,registry:f,onReplace:m}=e.current;if(i!==""insertText""&&s!==""compositionend""||u&&o())return;let h=a(),p=(0,Qb.getBlockTransforms)(""from"").filter(y=>y.type===""input""),g=(0,Qb.findTransfo","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:75692
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_noop_listener_1000,event listener probe,marker no-op,1000,block-editor merged input refs,15,0,0,function r(n){for(let i of o.current)i(n)},"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:76609
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_noop_listener_1000,event listener probe,marker no-op,1000,"React delegated listener, bubble",15,0,0.10000014305114746,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32669)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32235
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_noop_listener_1000,event listener probe,marker no-op,1000,rich-text cleanup listener,15,0,0,"function u(){t.removeEventListener(c,f),t.removeEventListener(""selectionchange"",u),t.removeEventListener(""input"",u)}","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLDocument.addEventListener (<anonymous>:104:54)
+    at HTMLParagraphElement.s (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:20648)
+    at HTMLParagraphElement.wrappedTypingBenchmarkEventListener (<anonymous>:68:29)"
+marker_toggle_selection_listener_1000,event listener probe,toggle selection,1000,"React delegated listener, capture",15,0,0,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32595)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32246
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_toggle_selection_listener_1000,event listener probe,toggle selection,1000,rich-text.onInput.total,15,7.5,8.100000047683716,"function i(f){return L(""rich-text.onInput.total"",()=>{if(o)return;let l;f&&(l=f.inputType);let{record:m,applyRecord:y,createRecord:b,handleChange:d}=e.current;if(l&&(l.indexOf(""format"")===0||xn.has(l))){y(m.current);return}let h=b(),{start:v,activeFormats:T=[]}=m.current,g=!Y(m.current)&&h.start<=v,","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:19903
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21528
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21521
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17977
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)"
+marker_toggle_selection_listener_1000,event listener probe,toggle selection,1000,rich-text input transform listener,15,0.10000014305114746,0.20000004768371582,"function r(n){let{inputType:i,type:s}=n,{getValue:a,onChange:c,__unstableAllowPrefixTransformations:u,formatTypes:d,registry:f,onReplace:m}=e.current;if(i!==""insertText""&&s!==""compositionend""||u&&o())return;let h=a(),p=(0,Qb.getBlockTransforms)(""from"").filter(y=>y.type===""input""),g=(0,Qb.findTransfo","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:75692
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_toggle_selection_listener_1000,event listener probe,toggle selection,1000,block-editor merged input refs,15,0,0.06000008583068844,function r(n){for(let i of o.current)i(n)},"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:76609
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_toggle_selection_listener_1000,event listener probe,toggle selection,1000,"React delegated listener, bubble",15,0,0,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32669)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32235
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_toggle_selection_listener_1000,event listener probe,toggle selection,1000,rich-text cleanup listener,15,0,0.05999994277954098,"function u(){t.removeEventListener(c,f),t.removeEventListener(""selectionchange"",u),t.removeEventListener(""input"",u)}","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLDocument.addEventListener (<anonymous>:104:54)
+    at HTMLParagraphElement.s (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:20648)
+    at HTMLParagraphElement.wrappedTypingBenchmarkEventListener (<anonymous>:68:29)"
+marker_stop_start_typing_listener_1000,event listener probe,stop/start typing,1000,"React delegated listener, capture",15,0,0,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32595)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32246
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_stop_start_typing_listener_1000,event listener probe,stop/start typing,1000,rich-text.onInput.total,15,7.3999998569488525,8.480000066757203,"function i(f){return L(""rich-text.onInput.total"",()=>{if(o)return;let l;f&&(l=f.inputType);let{record:m,applyRecord:y,createRecord:b,handleChange:d}=e.current;if(l&&(l.indexOf(""format"")===0||xn.has(l))){y(m.current);return}let h=b(),{start:v,activeFormats:T=[]}=m.current,g=!Y(m.current)&&h.start<=v,","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:19903
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21528
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:21521
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17977
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)"
+marker_stop_start_typing_listener_1000,event listener probe,stop/start typing,1000,rich-text input transform listener,15,0.10000014305114746,0.20000004768371582,"function r(n){let{inputType:i,type:s}=n,{getValue:a,onChange:c,__unstableAllowPrefixTransformations:u,formatTypes:d,registry:f,onReplace:m}=e.current;if(i!==""insertText""&&s!==""compositionend""||u&&o())return;let h=a(),p=(0,Qb.getBlockTransforms)(""from"").filter(y=>y.type===""input""),g=(0,Qb.findTransfo","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:75692
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_stop_start_typing_listener_1000,event listener probe,stop/start typing,1000,block-editor merged input refs,15,0,0,function r(n){for(let i of o.current)i(n)},"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLParagraphElement.addEventListener (<anonymous>:104:54)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:169:76609
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:686
+    at Array.map (<anonymous>)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/block-editor/index.min.js?ver=95766808703f0ccbed24:177:679
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:13064
+    at Re (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17495)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/compose/index.min.js?ver=2b5a9d090a41c1120be7:1:17795
+    at Array.forEach (<anonymous>)"
+marker_stop_start_typing_listener_1000,event listener probe,stop/start typing,1000,"React delegated listener, bubble",15,0,0.05999994277954098,function () { [native code] },"Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLHtmlElement.addEventListener (<anonymous>:104:54)
+    at Qs (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32669)
+    at Ol (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32069)
+    at http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32235
+    at Set.forEach (<anonymous>)
+    at jt (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:5:32180)
+    at jf (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:19777)
+    at Ba (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39865)
+    at Aa (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/vendors/react-dom.min.js?ver=18.3.1:8:39755)"
+marker_stop_start_typing_listener_1000,event listener probe,stop/start typing,1000,rich-text cleanup listener,15,0,0.05999994277954098,"function u(){t.removeEventListener(c,f),t.removeEventListener(""selectionchange"",u),t.removeEventListener(""input"",u)}","Error
+    at getWrappedListener (<anonymous>:58:31)
+    at HTMLDocument.addEventListener (<anonymous>:104:54)
+    at HTMLParagraphElement.s (http://localhost:8889/wp-content/plugins/gutenberg/build/scripts/rich-text/index.min.js?ver=969ccdfc019ef61cb7a9:4:20648)
+    at HTMLParagraphElement.wrappedTypingBenchmarkEventListener (<anonymous>:68:29)"
