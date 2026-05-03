@@ -3502,4 +3502,65 @@ if (file.exists(marker_allspan_input_batch_path)) {
 	)
 }
 
+marker_allspan_owner_path <- file.path(data_dir, "typing-delay-marker-allspan-owner-summary.csv")
+if (file.exists(marker_allspan_owner_path)) {
+	marker_allspan_owner <- read_csv(marker_allspan_owner_path, show_col_types = FALSE) %>%
+		filter(
+			window_kind %in% c("marker action", "next input registry.batch"),
+			!is.na(source_path),
+			source_path != ""
+		) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			window_label = recode(
+				window_kind,
+				`marker action` = "Timer marker action",
+				`next input registry.batch` = "Following input batch"
+			),
+			owner_label = paste0(source_path, ":", source_line),
+			owner_label = str_trunc(owner_label, width = 72, side = "left")
+		)
+
+	marker_owner_top <- marker_allspan_owner %>%
+		filter(window_kind == "next input registry.batch" | intervention == "normal marker") %>%
+		group_by(window_label, owner_label) %>%
+		summarise(max_p50 = max(on_change_duration_p50_ms, na.rm = TRUE), .groups = "drop") %>%
+		group_by(window_label) %>%
+		slice_max(max_p50, n = 8, with_ties = FALSE) %>%
+		ungroup()
+
+	marker_owner_plot <- marker_allspan_owner %>%
+		semi_join(marker_owner_top, by = c("window_label", "owner_label")) %>%
+		filter(window_kind == "next input registry.batch" | intervention == "normal marker") %>%
+		mutate(
+			owner_label = fct_reorder(owner_label, on_change_duration_p50_ms, .fun = max)
+		)
+
+	save_plot(
+		ggplot(marker_owner_plot, aes(on_change_duration_p50_ms, owner_label, color = intervention, shape = intervention)) +
+			geom_point(size = 2.9, alpha = 0.9, position = position_dodge(width = 0.45)) +
+			facet_wrap(vars(window_label), scales = "free_y", ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "No single useSelect owner explains the input-side delta",
+				subtitle = "Top owner groups by p50 useSelect.onChange duration in trace-all-data-spans runs",
+				x = "useSelect.onChange duration, p50 (ms)",
+				y = NULL,
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			),
+		"33-marker-owner-fanout.png",
+		width = 13,
+		height = 10
+	)
+}
+
 message("Wrote plots to: ", figure_dir)

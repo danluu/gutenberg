@@ -210,6 +210,9 @@ The R script derives:
     a small `1000ms` marker-intervention run.
 -   `data/typing-delay-marker-allspan-input-batch-*.csv`: retained-input
     timelines and batch decomposition from the same trace-all-data-spans run.
+-   `data/typing-delay-marker-allspan-owner-*.csv`: source-map-backed owner
+    summaries for `useSelect` fanout in the marker task and following input
+    batch.
 -   `data/typing-delay-marker-richtext-summary.csv`: RichText span summaries for
     the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
@@ -978,13 +981,53 @@ So the corrected causal chain is:
    difference is in block-editor subscriber fanout inside the input's
    `registry.batch()`.
 
+I then grouped the trace-all-data-spans run by `useSelect` owner using the
+generated source maps:
+
+![Marker owner fanout](figures/33-marker-owner-fanout.png)
+
+The marker timer task has clear hotspots:
+
+| Marker task owner                                                | p50 `useSelect.onChange` | p50 calls |
+| ---------------------------------------------------------------- | -----------------------: | --------: |
+| `packages/block-editor/src/components/block-list/index.js:196`   |                  `5.8ms` |     `580` |
+| `packages/editor/src/hooks/pattern-overrides.js:40`              |                  `1.8ms` |    `1437` |
+| `packages/block-editor/src/components/block-list/block.js:563`   |                  `1.7ms` |    `1437` |
+| `packages/block-editor/src/components/inner-blocks/index.js:195` |                  `0.5ms` |     `580` |
+| `packages/edit-post/src/components/layout/index.js:400`          |                  `0.4ms` |       `1` |
+
+That is another confirmation that the marker task is real subscriber work, not
+a reducer-only flag flip.
+
+For the following input batch, however, the owner-level deltas are small. The
+largest positive p50 owner delta versus normal marker is only `0.3ms`:
+
+| Comparison                                   | Owner                                                            | p50 delta |
+| -------------------------------------------- | ---------------------------------------------------------------- | --------: |
+| marker no-op minus normal marker             | `packages/block-editor/src/components/use-settings/index.js:30`  |  `0.30ms` |
+| mark next not persistent minus normal marker | `packages/block-editor/src/components/block-list/block.js:563`   |  `0.25ms` |
+| marker no-op minus normal marker             | `packages/editor/src/hooks/pattern-overrides.js:40`              |  `0.25ms` |
+| mark next not persistent minus normal marker | `packages/block-editor/src/components/inner-blocks/index.js:195` |  `0.15ms` |
+| mark next not persistent minus normal marker | `packages/editor/src/hooks/pattern-overrides.js:40`              |  `0.15ms` |
+| marker no-op minus normal marker             | `packages/edit-post/src/components/layout/index.js:400`          |  `0.15ms` |
+| marker no-op minus normal marker             | `packages/block-editor/src/components/block-list/block.js:563`   |  `0.15ms` |
+
+This disconfirms the theory that one obvious subscriber owner explains the
+remaining input-side difference. The residual difference is a few milliseconds
+of aggregate fanout timing across thousands of listeners, while the biggest
+owner-level `useSelect.onChange` p50 delta is sub-millisecond. The owner summary
+does not account for every nanosecond of `rootSubscribe` and emitter overhead,
+but it does show that the visible `useSelect` work is broad rather than
+dominated by one component.
+
 One piece remains open, but it is now narrower. The traces identify the marker
-timer fanout and the following input's block-editor fanout. They do not isolate
-a single React commit or a single subscriber owner responsible for the few
-milliseconds of input-side fanout difference. The supported statement is that
-timer ordering and marker dispatch explain the false event-only low band, and
-the visible work is data/subscriber fanout; the exact owner-level distribution
-inside that fanout remains a smaller unresolved question.
+timer fanout and the following input's block-editor fanout, and the owner
+summary disconfirms a single-owner explanation for the residual input-side
+delta. What remains is lower-level fanout overhead and scheduling noise inside
+the thousands of subscriber callbacks. The supported statement is that timer
+ordering and marker dispatch explain the false event-only low band, and the
+visible work is data/subscriber fanout; attributing the last few milliseconds to
+a single React commit or component is not supported by the current traces.
 
 Reasoning audit:
 

@@ -5,12 +5,14 @@
  */
 const fs = require( 'fs' );
 const path = require( 'path' );
+const { SourceMapConsumer } = require( 'source-map' );
 
 const repoRoot = path.resolve( __dirname, '../../..' );
 const reportDataDir = path.join(
 	repoRoot,
 	'test/performance/reports/typing-delay-benchmark/data'
 );
+const sourceMapConsumers = new Map();
 
 const runs = [
 	{
@@ -150,6 +152,320 @@ function groupedBy( rows, keyForRow ) {
 		grouped.get( key ).push( row );
 	}
 	return grouped;
+}
+
+function ownerFrame( stack = '' ) {
+	for ( const line of stack.split( '\n' ).slice( 1 ) ) {
+		if ( line.includes( '/build/scripts/data/' ) ) {
+			continue;
+		}
+		if ( line.includes( '/build/scripts/vendors/' ) ) {
+			continue;
+		}
+
+		const match = line.match(
+			/build\/scripts\/([^/]+)\/index(?:\.min)?\.js[^:]*:(\d+):(\d+)/
+		);
+		if ( match ) {
+			return {
+				script: match[ 1 ],
+				line: Number( match[ 2 ] ),
+				column: Number( match[ 3 ] ),
+				frame: `${ match[ 1 ] }:${ match[ 2 ] }:${ match[ 3 ] }`,
+			};
+		}
+	}
+
+	return {
+		script: 'unknown',
+		line: null,
+		column: null,
+		frame: 'unknown',
+	};
+}
+
+function sourceMapConsumer( script ) {
+	if ( sourceMapConsumers.has( script ) ) {
+		return sourceMapConsumers.get( script );
+	}
+
+	const mapPath = path.join(
+		repoRoot,
+		'build/scripts',
+		script,
+		'index.min.js.map'
+	);
+	if ( ! fs.existsSync( mapPath ) ) {
+		sourceMapConsumers.set( script, null );
+		return null;
+	}
+
+	const consumer = new SourceMapConsumer(
+		JSON.parse( fs.readFileSync( mapPath, 'utf8' ) )
+	);
+	sourceMapConsumers.set( script, consumer );
+	return consumer;
+}
+
+function originalPosition( frame ) {
+	const consumer = sourceMapConsumer( frame.script );
+	if ( ! consumer || frame.line === null || frame.column === null ) {
+		return {};
+	}
+
+	const position = consumer.originalPositionFor( {
+		line: frame.line,
+		column: frame.column,
+	} );
+
+	return {
+		sourcePath: position.source
+			? position.source.replace( /^\.\.\/\.\.\/\.\.\//, '' )
+			: '',
+		sourceLine: position.line || '',
+		sourceColumn: position.column ?? '',
+		sourceName: position.name || '',
+	};
+}
+
+function sourceSnippet( source = '' ) {
+	return source.replace( /\s+/g, ' ' ).slice( 0, 180 );
+}
+
+function useSelectMetadataById( run ) {
+	const metadataById = new Map();
+	for ( const metadata of run.data.useSelectMetadata || [] ) {
+		const frame = ownerFrame( metadata.useSelectStack );
+		metadataById.set(
+			`${ metadata.windowName }:${ metadata.useSelectId }`,
+			{
+				...metadata,
+				...frame,
+				...originalPosition( frame ),
+				sourceSnippet: sourceSnippet( metadata.initialMapSelectSource ),
+			}
+		);
+	}
+	return metadataById;
+}
+
+function ownerForUseSelectSpan( metadataById, span ) {
+	if ( ! span?.metadata?.useSelectId ) {
+		return {
+			ownerScript: 'unknown',
+			ownerFrame: 'unknown',
+			sourcePath: '(non-useSelect)',
+			sourceLine: '',
+			sourceColumn: '',
+			sourceName: '',
+			sourceSnippet: '',
+			hasUseSelectOwner: false,
+		};
+	}
+
+	const metadata =
+		metadataById.get(
+			`${ span.windowName }:${ span.metadata.useSelectId }`
+		) || {};
+	return {
+		ownerScript: metadata.script || 'unknown',
+		ownerFrame: metadata.frame || 'unknown',
+		sourcePath: metadata.sourcePath || '',
+		sourceLine: metadata.sourceLine || '',
+		sourceColumn: metadata.sourceColumn || '',
+		sourceName: metadata.sourceName || '',
+		sourceSnippet: metadata.sourceSnippet || '',
+		hasUseSelectOwner: true,
+	};
+}
+
+function ownerKey( owner ) {
+	return [
+		owner.sourcePath,
+		owner.sourceLine,
+		owner.sourceColumn,
+		owner.sourceName,
+		owner.sourceSnippet,
+	].join( '\t' );
+}
+
+function addUseSelectOwnerSpan( groups, base, metadataById, span ) {
+	const owner = ownerForUseSelectSpan( metadataById, span );
+	const key = [
+		base.run_id,
+		base.intervention,
+		base.window_kind,
+		base.sample_id,
+		ownerKey( owner ),
+	].join( '\t' );
+
+	if ( ! groups.has( key ) ) {
+		groups.set( key, {
+			...base,
+			owner_script: owner.ownerScript,
+			owner_frame: owner.ownerFrame,
+			source_path: owner.sourcePath,
+			source_line: owner.sourceLine,
+			source_column: owner.sourceColumn,
+			source_name: owner.sourceName,
+			source_snippet: owner.sourceSnippet,
+			has_use_select_owner: owner.hasUseSelectOwner,
+			use_select_ids: new Set(),
+			on_change_count: 0,
+			on_change_duration_ms: 0,
+			map_select_count: 0,
+			map_select_duration_ms: 0,
+			update_value_count: 0,
+			update_value_duration_ms: 0,
+			render_queue_add_count: 0,
+			render_queue_add_duration_ms: 0,
+		} );
+	}
+
+	const group = groups.get( key );
+	if ( span.metadata?.useSelectId ) {
+		group.use_select_ids.add(
+			`${ span.windowName }:${ span.metadata.useSelectId }`
+		);
+	}
+
+	if ( span.name === 'data.useSelect.onChange' ) {
+		group.on_change_count++;
+		group.on_change_duration_ms += span.durationMs || 0;
+	} else if ( span.name === 'data.useSelect.mapSelect' ) {
+		group.map_select_count++;
+		group.map_select_duration_ms += span.durationMs || 0;
+	} else if ( span.name === 'data.useSelect.updateValue' ) {
+		group.update_value_count++;
+		group.update_value_duration_ms += span.durationMs || 0;
+	} else if ( span.name === 'data.useSelect.renderQueueAdd' ) {
+		group.render_queue_add_count++;
+		group.render_queue_add_duration_ms += span.durationMs || 0;
+	}
+}
+
+function compactOwnerRows( groups ) {
+	return Array.from( groups.values() ).map( ( row ) => ( {
+		...row,
+		use_select_instances: row.use_select_ids.size,
+		use_select_ids: undefined,
+	} ) );
+}
+
+function summarizeOwnerRows( rows ) {
+	return Array.from(
+		groupedBy( rows, ( row ) =>
+			[
+				row.intervention,
+				row.window_kind,
+				row.source_path,
+				row.source_line,
+				row.source_column,
+				row.source_name,
+				row.source_snippet,
+			].join( '\t' )
+		).entries()
+	).map( ( [ , ownerRows ] ) => {
+		const first = ownerRows[ 0 ];
+		return {
+			trace_type: first.trace_type,
+			intervention: first.intervention,
+			window_kind: first.window_kind,
+			owner_script: first.owner_script,
+			owner_frame: first.owner_frame,
+			source_path: first.source_path,
+			source_line: first.source_line,
+			source_column: first.source_column,
+			source_name: first.source_name,
+			source_snippet: first.source_snippet,
+			n_windows: ownerRows.length,
+			use_select_instances_max: maxFinite(
+				ownerRows.map( ( row ) => row.use_select_instances )
+			),
+			on_change_count_p50: quantile(
+				ownerRows.map( ( row ) => row.on_change_count ),
+				0.5
+			),
+			on_change_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.on_change_duration_ms ),
+				0.5
+			),
+			on_change_duration_p90_ms: quantile(
+				ownerRows.map( ( row ) => row.on_change_duration_ms ),
+				0.9
+			),
+			on_change_duration_sum_ms: ownerRows.reduce(
+				( sum, row ) => sum + row.on_change_duration_ms,
+				0
+			),
+			map_select_count_p50: quantile(
+				ownerRows.map( ( row ) => row.map_select_count ),
+				0.5
+			),
+			map_select_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.map_select_duration_ms ),
+				0.5
+			),
+			update_value_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.update_value_duration_ms ),
+				0.5
+			),
+			render_queue_add_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.render_queue_add_duration_ms ),
+				0.5
+			),
+		};
+	} );
+}
+
+function ownerDiffRows( summaryRows, baselineIntervention = 'normal marker' ) {
+	const rowKey = ( row ) =>
+		[
+			row.window_kind,
+			row.source_path,
+			row.source_line,
+			row.source_column,
+			row.source_name,
+			row.source_snippet,
+		].join( '\t' );
+	const baselineRowsByKey = new Map(
+		summaryRows
+			.filter( ( row ) => row.intervention === baselineIntervention )
+			.map( ( row ) => [ rowKey( row ), row ] )
+	);
+
+	return summaryRows
+		.filter( ( row ) => row.intervention !== baselineIntervention )
+		.map( ( row ) => {
+			const baseline = baselineRowsByKey.get( rowKey( row ) );
+			return {
+				trace_type: row.trace_type,
+				window_kind: row.window_kind,
+				comparison: `${ row.intervention } minus ${ baselineIntervention }`,
+				intervention: row.intervention,
+				baseline_intervention: baselineIntervention,
+				owner_script: row.owner_script,
+				owner_frame: row.owner_frame,
+				source_path: row.source_path,
+				source_line: row.source_line,
+				source_column: row.source_column,
+				source_name: row.source_name,
+				source_snippet: row.source_snippet,
+				intervention_on_change_duration_p50_ms:
+					row.on_change_duration_p50_ms,
+				baseline_on_change_duration_p50_ms:
+					baseline?.on_change_duration_p50_ms ?? 0,
+				diff_on_change_duration_p50_ms:
+					row.on_change_duration_p50_ms -
+					( baseline?.on_change_duration_p50_ms ?? 0 ),
+				intervention_on_change_count_p50: row.on_change_count_p50,
+				baseline_on_change_count_p50:
+					baseline?.on_change_count_p50 ?? 0,
+				diff_on_change_count_p50:
+					row.on_change_count_p50 -
+					( baseline?.on_change_count_p50 ?? 0 ),
+			};
+		} );
 }
 
 function changedPersistentState( event ) {
@@ -1087,6 +1403,115 @@ const allSpanInputBatchSummaryRows = Array.from(
 	};
 } );
 
+const allSpanUseSelectMetadataByRun = new Map(
+	loadedAllDataSpanRuns.map( ( run ) => [
+		run.runId,
+		useSelectMetadataById( run ),
+	] )
+);
+
+const allSpanInputOwnerGroups = new Map();
+for ( const run of loadedAllDataSpanRuns ) {
+	const metadataById = allSpanUseSelectMetadataByRun.get( run.runId );
+	for ( const summary of run.data.delayRunSummaries ) {
+		const spans = summary.dataSpanEvents || [];
+		const inputs = inputEventsForSummary( summary );
+		for ( const [ sampleIndex, inputEvent ] of inputs.entries() ) {
+			const record = recordForInputSample( run, summary, sampleIndex );
+			if ( record?.isThrowaway ) {
+				continue;
+			}
+			const rootBatch = firstRootBatchAfterInput( spans, inputEvent );
+			if ( ! rootBatch ) {
+				continue;
+			}
+			const batchSpans = spansInWindow(
+				spans,
+				rootBatch.startedAtMs,
+				rootBatch.startedAtMs + rootBatch.durationMs
+			);
+			const base = {
+				run_id: run.runId,
+				trace_type: run.traceType,
+				intervention: run.intervention,
+				window_kind: 'next input registry.batch',
+				delay_ms: summary.delayMs,
+				round: summary.round,
+				sample_id: `${ summary.round }:${ sampleIndex }`,
+				sample_index: sampleIndex,
+			};
+
+			for ( const span of batchSpans ) {
+				if ( ! span.name.startsWith( 'data.useSelect.' ) ) {
+					continue;
+				}
+				addUseSelectOwnerSpan(
+					allSpanInputOwnerGroups,
+					base,
+					metadataById,
+					span
+				);
+			}
+		}
+	}
+}
+
+const allSpanMarkerOwnerGroups = new Map();
+for ( const run of loadedAllDataSpanRuns ) {
+	const metadataById = allSpanUseSelectMetadataByRun.get( run.runId );
+	for ( const summary of run.data.delayRunSummaries ) {
+		const spans = summary.dataSpanEvents || [];
+		for ( const [ actionIndex, action ] of (
+			summary.dataEvents || []
+		).entries() ) {
+			if (
+				action.storeName !== 'core/block-editor' ||
+				action.actionName !== '__unstableMarkLastChangeAsPersistent'
+			) {
+				continue;
+			}
+			const actionSpans = spansInWindow(
+				spans,
+				action.nowMs,
+				action.nowMs + action.durationMs
+			);
+			const base = {
+				run_id: run.runId,
+				trace_type: run.traceType,
+				intervention: run.intervention,
+				window_kind: 'marker action',
+				delay_ms: summary.delayMs,
+				round: summary.round,
+				sample_id: `${ summary.round }:${ actionIndex }`,
+				sample_index: actionIndex,
+			};
+
+			for ( const span of actionSpans ) {
+				if ( ! span.name.startsWith( 'data.useSelect.' ) ) {
+					continue;
+				}
+				addUseSelectOwnerSpan(
+					allSpanMarkerOwnerGroups,
+					base,
+					metadataById,
+					span
+				);
+			}
+		}
+	}
+}
+
+const allSpanOwnerRows = [
+	...compactOwnerRows( allSpanInputOwnerGroups ),
+	...compactOwnerRows( allSpanMarkerOwnerGroups ),
+];
+const allSpanOwnerSummaryRows = summarizeOwnerRows( allSpanOwnerRows );
+const allSpanOwnerDiffRows = ownerDiffRows(
+	allSpanOwnerSummaryRows.filter(
+		( row ) => row.window_kind === 'next input registry.batch'
+	)
+);
+
 const allSpanCategoryRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 	run.data.delayRunSummaries.flatMap( ( summary ) => {
 		const spans = summary.dataSpanEvents || [];
@@ -1581,6 +2006,87 @@ writeCsv(
 	]
 );
 writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-allspan-owner-samples.csv' ),
+	allSpanOwnerRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'window_kind',
+		'delay_ms',
+		'round',
+		'sample_id',
+		'sample_index',
+		'owner_script',
+		'owner_frame',
+		'source_path',
+		'source_line',
+		'source_column',
+		'source_name',
+		'source_snippet',
+		'has_use_select_owner',
+		'use_select_instances',
+		'on_change_count',
+		'on_change_duration_ms',
+		'map_select_count',
+		'map_select_duration_ms',
+		'update_value_count',
+		'update_value_duration_ms',
+		'render_queue_add_count',
+		'render_queue_add_duration_ms',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-allspan-owner-summary.csv' ),
+	allSpanOwnerSummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'window_kind',
+		'owner_script',
+		'owner_frame',
+		'source_path',
+		'source_line',
+		'source_column',
+		'source_name',
+		'source_snippet',
+		'n_windows',
+		'use_select_instances_max',
+		'on_change_count_p50',
+		'on_change_duration_p50_ms',
+		'on_change_duration_p90_ms',
+		'on_change_duration_sum_ms',
+		'map_select_count_p50',
+		'map_select_duration_p50_ms',
+		'update_value_duration_p50_ms',
+		'render_queue_add_duration_p50_ms',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-allspan-owner-diff.csv' ),
+	allSpanOwnerDiffRows,
+	[
+		'trace_type',
+		'window_kind',
+		'comparison',
+		'intervention',
+		'baseline_intervention',
+		'owner_script',
+		'owner_frame',
+		'source_path',
+		'source_line',
+		'source_column',
+		'source_name',
+		'source_snippet',
+		'intervention_on_change_duration_p50_ms',
+		'baseline_on_change_duration_p50_ms',
+		'diff_on_change_duration_p50_ms',
+		'intervention_on_change_count_p50',
+		'baseline_on_change_count_p50',
+		'diff_on_change_count_p50',
+	]
+);
+writeCsv(
 	path.join(
 		reportDataDir,
 		'typing-delay-marker-allspan-category-summary.csv'
@@ -1645,3 +2151,7 @@ writeCsv(
 		'new_is_persistent_count',
 	]
 );
+
+for ( const consumer of sourceMapConsumers.values() ) {
+	consumer?.destroy?.();
+}
