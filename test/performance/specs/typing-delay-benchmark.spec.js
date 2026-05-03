@@ -127,7 +127,11 @@ const supportedDelayModes = [
 	'cdp-key-hold-page-evaluate',
 	'cdp-key-hold-runtime-evaluate',
 ];
-const supportedMarkPersistentInterventions = [ 'normal', 'noop' ];
+const supportedMarkPersistentInterventions = [
+	'normal',
+	'noop',
+	'mark-next-not-persistent',
+];
 
 function sleepMs( delayMs ) {
 	if ( delayMs <= 0 ) {
@@ -1130,7 +1134,10 @@ test.describe( 'Typing delay benchmark', () => {
 						! actions ||
 						! select ||
 						typeof actions.__unstableMarkLastChangeAsPersistent !==
-							'function'
+							'function' ||
+						( mode === 'mark-next-not-persistent' &&
+							typeof actions.__unstableMarkNextChangeAsNotPersistent !==
+								'function' )
 					) {
 						return { installed: false, reason: 'missing-actions' };
 					}
@@ -1189,6 +1196,11 @@ test.describe( 'Typing delay benchmark', () => {
 							try {
 								if ( mode === 'noop' ) {
 									result = undefined;
+								} else if (
+									mode === 'mark-next-not-persistent'
+								) {
+									result =
+										actions.__unstableMarkNextChangeAsNotPersistent();
 								} else {
 									result = original.apply( this, arguments );
 								}

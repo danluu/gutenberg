@@ -3144,16 +3144,23 @@ if (file.exists(input_path_summary_path)) {
 
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
+marker_action_duration_path <- file.path(data_dir, "typing-delay-marker-action-duration-summary.csv")
 if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 	marker_summary <- read_csv(marker_summary_path, show_col_types = FALSE) %>%
 		filter(trace_type == "targeted") %>%
 		mutate(
-			intervention = factor(intervention, levels = c("normal marker", "marker no-op"))
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			)
 		)
 	marker_samples <- read_csv(marker_samples_path, show_col_types = FALSE) %>%
 		filter(trace_type == "targeted") %>%
 		mutate(
-			intervention = factor(intervention, levels = c("normal marker", "marker no-op"))
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			)
 		)
 
 	save_plot(
@@ -3174,7 +3181,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			scale_color_brewer(type = "qual", palette = "Dark2") +
 			scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
 			labs(
-				title = "No-oping the persistence marker removes the 1000ms low band",
+				title = "Only the real persistence marker produces the 1000ms low band",
 				subtitle = "Points are retained samples; ranges are p10-p90 with p50 markers",
 				x = "Playwright key-hold delay (ms)",
 				y = "keydown + keypress + keyup EventDispatch duration (ms)",
@@ -3184,6 +3191,67 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 		width = 11,
 		height = 7
 	)
+
+	if (file.exists(marker_action_duration_path)) {
+		marker_action_summary <- read_csv(marker_action_duration_path, show_col_types = FALSE) %>%
+			filter(
+				trace_type == "targeted",
+				action_name == "__unstableMarkLastChangeAsPersistent"
+			) %>%
+			select(intervention, delay_ms, marker_action_p50_ms = duration_p50_ms)
+
+		marker_cost <- marker_summary %>%
+			left_join(marker_action_summary, by = c("intervention", "delay_ms")) %>%
+			mutate(
+				marker_action_p50_ms = coalesce(marker_action_p50_ms, 0),
+				timer_plus_next_input_p50_ms = latency_p50_ms + marker_action_p50_ms
+			) %>%
+			select(intervention, delay_ms, latency_p50_ms, marker_action_p50_ms, timer_plus_next_input_p50_ms) %>%
+			pivot_longer(
+				cols = c(latency_p50_ms, marker_action_p50_ms, timer_plus_next_input_p50_ms),
+				names_to = "metric",
+				values_to = "duration_ms"
+			) %>%
+			mutate(
+				metric = recode(
+					metric,
+					latency_p50_ms = "measured next input",
+					marker_action_p50_ms = "timer marker action",
+					timer_plus_next_input_p50_ms = "marker + next input"
+				),
+				metric = factor(
+					metric,
+					levels = c("measured next input", "timer marker action", "marker + next input")
+				)
+			)
+
+		save_plot(
+			ggplot(marker_cost, aes(delay_ms, duration_ms, color = intervention, shape = metric)) +
+				geom_point(
+					position = position_dodge(width = 3.5),
+					size = 3.2,
+					alpha = 0.9
+				) +
+				scale_color_brewer(type = "qual", palette = "Dark2") +
+				scale_shape_manual(values = c(
+					`measured next input` = 16,
+					`timer marker action` = 17,
+					`marker + next input` = 15
+				)) +
+				scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
+				labs(
+					title = "The low band omits timer-side marker work",
+					subtitle = "P50 action duration is outside the next EventDispatch measurement; sums are p50 + p50",
+					x = "Playwright key-hold delay (ms)",
+					y = "Duration (ms)",
+					color = "Timer callback",
+					shape = "Metric"
+				),
+			"28-marker-action-cost.png",
+			width = 11,
+			height = 7
+		)
+	}
 }
 
 marker_path_summary_path <- file.path(data_dir, "typing-delay-marker-path-summary.csv")
@@ -3191,7 +3259,10 @@ if (file.exists(marker_path_summary_path)) {
 	marker_path_summary <- read_csv(marker_path_summary_path, show_col_types = FALSE) %>%
 		filter(trace_type == "span trace") %>%
 		mutate(
-			intervention = factor(intervention, levels = c("normal marker", "marker no-op")),
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
 			update_parent = factor(update_parent, levels = c("onInput", "onChange"))
 		)
 
@@ -3204,15 +3275,15 @@ if (file.exists(marker_path_summary_path)) {
 			facet_wrap(~intervention, ncol = 1) +
 			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
 			labs(
-				title = "The marker changes the next input from onInput to onChange",
-				subtitle = "Source-level trace of useBlockSync.updateParent; trace-heavy run, path counts only",
+				title = "Parent path alone does not explain the measured latency",
+				subtitle = "Source-level trace of useBlockSync.updateParent; the mark-next intervention is onChange but remains slow",
 				x = "Playwright key-hold delay (ms)",
 				y = "Observed updateParent calls",
 				fill = "Parent path"
 			),
 		"27-marker-path-classification.png",
 		width = 10,
-		height = 7
+		height = 8
 	)
 }
 

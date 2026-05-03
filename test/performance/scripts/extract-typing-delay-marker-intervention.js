@@ -26,6 +26,12 @@ const runs = [
 		dir: 'artifacts/typing-delay-mark-noop-targeted',
 	},
 	{
+		runId: 'marker_next_not_persistent_targeted',
+		traceType: 'targeted',
+		intervention: 'mark next not persistent',
+		dir: 'artifacts/typing-delay-mark-next-not-persistent-targeted',
+	},
+	{
 		runId: 'marker_normal_spans',
 		traceType: 'span trace',
 		intervention: 'normal marker',
@@ -36,6 +42,12 @@ const runs = [
 		traceType: 'span trace',
 		intervention: 'marker no-op',
 		dir: 'artifacts/typing-delay-mark-noop-spans',
+	},
+	{
+		runId: 'marker_next_not_persistent_spans',
+		traceType: 'span trace',
+		intervention: 'mark next not persistent',
+		dir: 'artifacts/typing-delay-mark-next-not-persistent-spans',
 	},
 ];
 
@@ -186,6 +198,13 @@ const actionRows = loadedRuns.flatMap( ( run ) =>
 				event.storeName === 'core/block-editor' &&
 				event.actionName === '__unstableMarkLastChangeAsPersistent'
 		);
+		const markNextNotPersistentActions = (
+			summary.dataEvents || []
+		).filter(
+			( event ) =>
+				event.storeName === 'core/block-editor' &&
+				event.actionName === '__unstableMarkNextChangeAsNotPersistent'
+		);
 		const timers = ( summary.timerEvents || [] ).filter(
 			( event ) => event.requestedTimeoutMs === 1000
 		);
@@ -201,6 +220,11 @@ const actionRows = loadedRuns.flatMap( ( run ) =>
 			mark_actions_changing_visible_state: markActions.filter(
 				changedPersistentState
 			).length,
+			mark_next_not_persistent_actions:
+				markNextNotPersistentActions.length,
+			mark_next_not_persistent_actions_changing_visible_state:
+				markNextNotPersistentActions.filter( changedPersistentState )
+					.length,
 			intervention_events: interventionEvents.length,
 			timers_scheduled: timers.length,
 			timers_fired: timers.filter( ( event ) => event.firedAtMs ).length,
@@ -210,6 +234,62 @@ const actionRows = loadedRuns.flatMap( ( run ) =>
 		};
 	} )
 );
+
+const actionSampleRows = loadedRuns.flatMap( ( run ) =>
+	run.data.delayRunSummaries.flatMap( ( summary ) =>
+		( summary.dataEvents || [] )
+			.filter(
+				( event ) =>
+					event.storeName === 'core/block-editor' &&
+					[
+						'__unstableMarkLastChangeAsPersistent',
+						'__unstableMarkNextChangeAsNotPersistent',
+						'updateBlockAttributes',
+					].includes( event.actionName )
+			)
+			.map( ( event ) => ( {
+				run_id: run.runId,
+				trace_type: run.traceType,
+				intervention: run.intervention,
+				delay_ms: summary.delayMs,
+				round: summary.round,
+				action_name: event.actionName,
+				duration_ms: event.durationMs,
+				before_is_persistent: event.before?.isPersistent,
+				after_is_persistent: event.after?.isPersistent,
+				before_is_typing: event.before?.isTyping,
+				after_is_typing: event.after?.isTyping,
+			} ) )
+	)
+);
+
+const actionDurationRows = Array.from(
+	groupedBy(
+		actionSampleRows,
+		( row ) => `${ row.run_id }\t${ row.delay_ms }\t${ row.action_name }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	const durations = rows.map( ( row ) => row.duration_ms );
+	return {
+		run_id: first.run_id,
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		delay_ms: first.delay_ms,
+		action_name: first.action_name,
+		n: rows.length,
+		duration_p50_ms: quantile( durations, 0.5 ),
+		duration_mean_ms:
+			durations.reduce( ( sum, value ) => sum + value, 0 ) /
+			durations.length,
+		before_persistent_count: rows.filter(
+			( row ) => row.before_is_persistent
+		).length,
+		after_persistent_count: rows.filter(
+			( row ) => row.after_is_persistent
+		).length,
+	};
+} );
 
 const pathRows = loadedRuns.flatMap( ( run ) =>
 	run.data.delayRunSummaries.flatMap( ( summary ) =>
@@ -313,10 +393,48 @@ writeCsv(
 		'round',
 		'mark_actions',
 		'mark_actions_changing_visible_state',
+		'mark_next_not_persistent_actions',
+		'mark_next_not_persistent_actions_changing_visible_state',
 		'intervention_events',
 		'timers_scheduled',
 		'timers_fired',
 		'timers_cleared_before_fire',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-marker-action-samples.csv' ),
+	actionSampleRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'round',
+		'action_name',
+		'duration_ms',
+		'before_is_persistent',
+		'after_is_persistent',
+		'before_is_typing',
+		'after_is_typing',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-marker-action-duration-summary.csv'
+	),
+	actionDurationRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'action_name',
+		'n',
+		'duration_p50_ms',
+		'duration_mean_ms',
+		'before_persistent_count',
+		'after_persistent_count',
 	]
 );
 writeCsv(

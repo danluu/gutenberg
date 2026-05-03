@@ -1,0 +1,50 @@
+run_id,trace_type,intervention,delay_ms,action_name,n,duration_p50_ms,duration_mean_ms,before_persistent_count,after_persistent_count
+marker_normal_targeted,targeted,normal marker,990,updateBlockAttributes,33,1.8999998569488525,1.8515151558500347,6,3
+marker_normal_targeted,targeted,normal marker,990,__unstableMarkLastChangeAsPersistent,3,7.200000047683716,7.233333269755046,0,3
+marker_normal_targeted,targeted,normal marker,1000,updateBlockAttributes,33,0.7999999523162842,0.8757576075467196,33,33
+marker_normal_targeted,targeted,normal marker,1000,__unstableMarkLastChangeAsPersistent,33,15.799999952316284,15.521212122657083,33,33
+marker_normal_targeted,targeted,normal marker,1010,updateBlockAttributes,33,0.7000000476837158,0.7757575873172644,33,33
+marker_normal_targeted,targeted,normal marker,1010,__unstableMarkLastChangeAsPersistent,33,15.899999856948853,14.887878786433827,33,33
+marker_normal_targeted,targeted,normal marker,1300,updateBlockAttributes,33,1.8999998569488525,1.8151514891422156,33,33
+marker_normal_targeted,targeted,normal marker,1300,__unstableMarkLastChangeAsPersistent,33,16,15.506060607505567,33,33
+marker_noop_targeted,targeted,marker no-op,990,updateBlockAttributes,33,1.7000000476837158,1.6666666449922505,2,1
+marker_noop_targeted,targeted,marker no-op,990,__unstableMarkLastChangeAsPersistent,4,0.05000007152557373,0.07499998807907104,0,0
+marker_noop_targeted,targeted,marker no-op,1000,updateBlockAttributes,33,1.7000000476837158,1.6090909206505977,0,0
+marker_noop_targeted,targeted,marker no-op,1000,__unstableMarkLastChangeAsPersistent,33,0,0.03939391627456203,0,0
+marker_noop_targeted,targeted,marker no-op,1010,updateBlockAttributes,33,1.2000000476837158,1.2575757720253684,0,0
+marker_noop_targeted,targeted,marker no-op,1010,__unstableMarkLastChangeAsPersistent,33,0,0.03939394517378374,0,0
+marker_noop_targeted,targeted,marker no-op,1300,updateBlockAttributes,33,1.5999999046325684,1.5060605858311509,0,0
+marker_noop_targeted,targeted,marker no-op,1300,__unstableMarkLastChangeAsPersistent,33,0,0.03030301585341945,0,0
+marker_next_not_persistent_targeted,targeted,mark next not persistent,990,updateBlockAttributes,33,2.6000001430511475,2.41515149492206,5,4
+marker_next_not_persistent_targeted,targeted,mark next not persistent,990,__unstableMarkNextChangeAsNotPersistent,4,0.10000014305114746,0.12500005960464478,0,0
+marker_next_not_persistent_targeted,targeted,mark next not persistent,990,__unstableMarkLastChangeAsPersistent,4,0.15000009536743164,0.17500007152557373,0,0
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1000,updateBlockAttributes,33,2.1999998092651367,2.209090890306415,0,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1000,__unstableMarkNextChangeAsNotPersistent,33,0.10000014305114746,0.15151515151515152,33,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1000,__unstableMarkLastChangeAsPersistent,33,0.20000004768371582,0.21212121212121213,33,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1010,updateBlockAttributes,33,2.200000047683716,2.0909090836842856,0,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1010,__unstableMarkNextChangeAsNotPersistent,33,0.19999980926513672,0.16060608806032123,33,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1010,__unstableMarkLastChangeAsPersistent,33,0.20000004768371582,0.1939394185037324,33,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1300,updateBlockAttributes,33,2.4000000953674316,2.4030303160349527,0,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1300,__unstableMarkNextChangeAsNotPersistent,33,0.10000014305114746,0.14242422941959265,33,33
+marker_next_not_persistent_targeted,targeted,mark next not persistent,1300,__unstableMarkLastChangeAsPersistent,33,0.20000004768371582,0.1909090822393244,33,33
+marker_normal_spans,span trace,normal marker,990,updateBlockAttributes,7,2.799999952316284,2.771428550992693,2,1
+marker_normal_spans,span trace,normal marker,990,__unstableMarkLastChangeAsPersistent,1,12.599999904632568,12.599999904632568,0,1
+marker_normal_spans,span trace,normal marker,1000,updateBlockAttributes,7,1.9000000953674316,1.8000000204358781,7,7
+marker_normal_spans,span trace,normal marker,1000,__unstableMarkLastChangeAsPersistent,7,19.09999990463257,19.571428537368774,7,7
+marker_normal_spans,span trace,normal marker,1010,updateBlockAttributes,7,1.8999998569488525,1.8714285578046526,7,7
+marker_normal_spans,span trace,normal marker,1010,__unstableMarkLastChangeAsPersistent,7,19.399999856948853,19.37142859186445,7,7
+marker_noop_spans,span trace,marker no-op,990,updateBlockAttributes,7,2.700000047683716,2.5714286054883684,2,1
+marker_noop_spans,span trace,marker no-op,990,__unstableMarkLastChangeAsPersistent,1,0.20000004768371582,0.20000004768371582,0,0
+marker_noop_spans,span trace,marker no-op,1000,updateBlockAttributes,7,2.700000047683716,2.414285727909633,0,0
+marker_noop_spans,span trace,marker no-op,1000,__unstableMarkLastChangeAsPersistent,7,0.09999990463256836,0.0857142720903669,0,0
+marker_noop_spans,span trace,marker no-op,1010,updateBlockAttributes,7,2.5999999046325684,2.4285713945116316,0,0
+marker_noop_spans,span trace,marker no-op,1010,__unstableMarkLastChangeAsPersistent,7,0,0.04285710198538644,0,0
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,updateBlockAttributes,7,3.700000047683716,3.5428571360451833,2,1
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,__unstableMarkNextChangeAsNotPersistent,1,0.20000004768371582,0.20000004768371582,0,0
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,__unstableMarkLastChangeAsPersistent,1,0.5,0.5,0,0
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,updateBlockAttributes,7,4.300000190734863,4.028571435383388,0,7
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,__unstableMarkNextChangeAsNotPersistent,7,0.20000004768371582,0.21428578240530832,7,7
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,__unstableMarkLastChangeAsPersistent,7,0.3000001907348633,0.3142858232770647,7,7
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,updateBlockAttributes,7,3.4000000953674316,3.3857143265860423,0,7
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,__unstableMarkNextChangeAsNotPersistent,7,0.19999980926513672,0.1714285441807338,7,7
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,__unstableMarkLastChangeAsPersistent,7,0.20000004768371582,0.24285714966910227,7,7

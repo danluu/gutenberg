@@ -7,3 +7,7 @@ marker_noop_spans,span trace,marker no-op,990,onChange,1,0.2999999523162842,0,1
 marker_noop_spans,span trace,marker no-op,990,onInput,6,0.25,0,0
 marker_noop_spans,span trace,marker no-op,1000,onInput,7,0.2999999523162842,0,0
 marker_noop_spans,span trace,marker no-op,1010,onInput,7,0.2999999523162842,0,0
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,onChange,1,0.20000004768371582,0,1
+marker_next_not_persistent_spans,span trace,mark next not persistent,990,onInput,6,0.6999999284744263,0,0
+marker_next_not_persistent_spans,span trace,mark next not persistent,1000,onChange,7,0.7000000476837158,0,7
+marker_next_not_persistent_spans,span trace,mark next not persistent,1010,onChange,7,0.5,0,7
