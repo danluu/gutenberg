@@ -1,0 +1,145 @@
+run_id,settle_ms,settle_label,round,component,duration_ms,count
+start_wait_spans_large_0,0,0s,0,Browser EventDispatch latency,24.496,NA
+start_wait_spans_large_0,0,0s,1,Browser EventDispatch latency,23.232,NA
+start_wait_spans_large_0,0,0s,2,Browser EventDispatch latency,25.266000000000002,NA
+start_wait_spans_large_0,0,0s,3,Browser EventDispatch latency,24.221999999999998,NA
+start_wait_spans_large_0,0,0s,4,Browser EventDispatch latency,25.246000000000002,NA
+start_wait_spans_large_0,0,0s,5,Browser EventDispatch latency,25.983999999999998,NA
+start_wait_spans_large_60000,60000,60s,0,Browser EventDispatch latency,33.232,NA
+start_wait_spans_large_60000,60000,60s,1,Browser EventDispatch latency,34.565999999999995,NA
+start_wait_spans_large_60000,60000,60s,2,Browser EventDispatch latency,34.148999999999994,NA
+start_wait_spans_large_60000,60000,60s,3,Browser EventDispatch latency,32.141,NA
+start_wait_spans_large_60000,60000,60s,4,Browser EventDispatch latency,34.78,NA
+start_wait_spans_large_60000,60000,60s,5,Browser EventDispatch latency,32.827,NA
+start_wait_spans_large_0,0,0s,0,Browser keypress trace slice,23.676,NA
+start_wait_spans_large_0,0,0s,1,Browser keypress trace slice,22.861,NA
+start_wait_spans_large_0,0,0s,2,Browser keypress trace slice,24.358,NA
+start_wait_spans_large_0,0,0s,3,Browser keypress trace slice,23.205,NA
+start_wait_spans_large_0,0,0s,4,Browser keypress trace slice,24.474,NA
+start_wait_spans_large_0,0,0s,5,Browser keypress trace slice,25.152,NA
+start_wait_spans_large_60000,60000,60s,0,Browser keypress trace slice,30.209,NA
+start_wait_spans_large_60000,60000,60s,1,Browser keypress trace slice,32.19,NA
+start_wait_spans_large_60000,60000,60s,2,Browser keypress trace slice,32.407,NA
+start_wait_spans_large_60000,60000,60s,3,Browser keypress trace slice,29.99,NA
+start_wait_spans_large_60000,60000,60s,4,Browser keypress trace slice,32.64,NA
+start_wait_spans_large_60000,60000,60s,5,Browser keypress trace slice,31.527,NA
+start_wait_spans_large_0,0,0s,0,Browser keyup trace slice,0.502,NA
+start_wait_spans_large_0,0,0s,1,Browser keyup trace slice,0.232,NA
+start_wait_spans_large_0,0,0s,2,Browser keyup trace slice,0.757,NA
+start_wait_spans_large_0,0,0s,3,Browser keyup trace slice,0.868,NA
+start_wait_spans_large_0,0,0s,4,Browser keyup trace slice,0.629,NA
+start_wait_spans_large_0,0,0s,5,Browser keyup trace slice,0.679,NA
+start_wait_spans_large_60000,60000,60s,0,Browser keyup trace slice,2.631,NA
+start_wait_spans_large_60000,60000,60s,1,Browser keyup trace slice,2.177,NA
+start_wait_spans_large_60000,60000,60s,2,Browser keyup trace slice,1.541,NA
+start_wait_spans_large_60000,60000,60s,3,Browser keyup trace slice,1.973,NA
+start_wait_spans_large_60000,60000,60s,4,Browser keyup trace slice,1.941,NA
+start_wait_spans_large_60000,60000,60s,5,Browser keyup trace slice,1.135,NA
+start_wait_spans_large_0,0,0s,0,RichText onInput total,11.5,NA
+start_wait_spans_large_0,0,0s,1,RichText onInput total,11.599999904632568,NA
+start_wait_spans_large_0,0,0s,2,RichText onInput total,11.799999952316284,NA
+start_wait_spans_large_0,0,0s,3,RichText onInput total,11.800000190734863,NA
+start_wait_spans_large_0,0,0s,4,RichText onInput total,12.100000143051147,NA
+start_wait_spans_large_0,0,0s,5,RichText onInput total,13.099999904632568,NA
+start_wait_spans_large_60000,60000,60s,0,RichText onInput total,15.099999904632568,NA
+start_wait_spans_large_60000,60000,60s,1,RichText onInput total,15.400000095367432,NA
+start_wait_spans_large_60000,60000,60s,2,RichText onInput total,16.100000143051147,NA
+start_wait_spans_large_60000,60000,60s,3,RichText onInput total,15.400000095367432,NA
+start_wait_spans_large_60000,60000,60s,4,RichText onInput total,15.799999952316284,NA
+start_wait_spans_large_60000,60000,60s,5,RichText onInput total,16.40000009536743,NA
+start_wait_spans_large_0,0,0s,0,RichText registry.batch,10.900000095367432,NA
+start_wait_spans_large_0,0,0s,1,RichText registry.batch,11,NA
+start_wait_spans_large_0,0,0s,2,RichText registry.batch,11.299999952316284,NA
+start_wait_spans_large_0,0,0s,3,RichText registry.batch,11.400000095367432,NA
+start_wait_spans_large_0,0,0s,4,RichText registry.batch,11.600000143051147,NA
+start_wait_spans_large_0,0,0s,5,RichText registry.batch,12.599999904632568,NA
+start_wait_spans_large_60000,60000,60s,0,RichText registry.batch,14.400000095367432,NA
+start_wait_spans_large_60000,60000,60s,1,RichText registry.batch,14.700000047683716,NA
+start_wait_spans_large_60000,60000,60s,2,RichText registry.batch,15.099999904632568,NA
+start_wait_spans_large_60000,60000,60s,3,RichText registry.batch,14.799999952316284,NA
+start_wait_spans_large_60000,60000,60s,4,RichText registry.batch,15.299999952316284,NA
+start_wait_spans_large_60000,60000,60s,5,RichText registry.batch,15.700000047683716,NA
+start_wait_spans_large_0,0,0s,0,Data registry.batch root,10.900000095367432,NA
+start_wait_spans_large_0,0,0s,1,Data registry.batch root,11,NA
+start_wait_spans_large_0,0,0s,2,Data registry.batch root,11.299999952316284,NA
+start_wait_spans_large_0,0,0s,3,Data registry.batch root,11.400000095367432,NA
+start_wait_spans_large_0,0,0s,4,Data registry.batch root,11.5,NA
+start_wait_spans_large_0,0,0s,5,Data registry.batch root,12.599999904632568,NA
+start_wait_spans_large_60000,60000,60s,0,Data registry.batch root,14.400000095367432,NA
+start_wait_spans_large_60000,60000,60s,1,Data registry.batch root,14.700000047683716,NA
+start_wait_spans_large_60000,60000,60s,2,Data registry.batch root,15.099999904632568,NA
+start_wait_spans_large_60000,60000,60s,3,Data registry.batch root,14.799999952316284,NA
+start_wait_spans_large_60000,60000,60s,4,Data registry.batch root,15.299999952316284,NA
+start_wait_spans_large_60000,60000,60s,5,Data registry.batch root,15.700000047683716,NA
+start_wait_spans_large_0,0,0s,0,core/block-editor subscribers,6.5,4497
+start_wait_spans_large_0,0,0s,0,data batch callback,3.200000286102295,2
+start_wait_spans_large_0,0,0s,0,notify core/block-editor,7.799999952316284,1
+start_wait_spans_large_0,0,0s,0,resume core/block-editor,7.799999952316284,2
+start_wait_spans_large_0,0,0s,0,useSelect mapSelect,1.999999761581421,714
+start_wait_spans_large_0,0,0s,0,useSelect onChange,4.399999618530273,4542
+start_wait_spans_large_0,0,0s,1,core/block-editor subscribers,6.900000333786011,4497
+start_wait_spans_large_0,0,0s,1,data batch callback,2.9000000953674316,2
+start_wait_spans_large_0,0,0s,1,notify core/block-editor,8.100000143051147,1
+start_wait_spans_large_0,0,0s,1,resume core/block-editor,8.100000143051147,2
+start_wait_spans_large_0,0,0s,1,useSelect mapSelect,1.799999713897705,714
+start_wait_spans_large_0,0,0s,1,useSelect onChange,4.800000429153442,4542
+start_wait_spans_large_0,0,0s,2,core/block-editor subscribers,6.700000047683716,4497
+start_wait_spans_large_0,0,0s,2,data batch callback,3.1000001430511475,2
+start_wait_spans_large_0,0,0s,2,notify core/block-editor,8.299999952316284,1
+start_wait_spans_large_0,0,0s,2,resume core/block-editor,8.299999952316284,2
+start_wait_spans_large_0,0,0s,2,useSelect mapSelect,2,714
+start_wait_spans_large_0,0,0s,2,useSelect onChange,4.500000715255737,4542
+start_wait_spans_large_0,0,0s,3,core/block-editor subscribers,6.300000429153442,4497
+start_wait_spans_large_0,0,0s,3,data batch callback,3,2
+start_wait_spans_large_0,0,0s,3,notify core/block-editor,8.400000095367432,1
+start_wait_spans_large_0,0,0s,3,resume core/block-editor,8.400000095367432,2
+start_wait_spans_large_0,0,0s,3,useSelect mapSelect,1.5000004768371582,714
+start_wait_spans_large_0,0,0s,3,useSelect onChange,4.000000715255737,4542
+start_wait_spans_large_0,0,0s,4,core/block-editor subscribers,6.600000381469727,4497
+start_wait_spans_large_0,0,0s,4,data batch callback,3.3000001907348633,2
+start_wait_spans_large_0,0,0s,4,notify core/block-editor,8.299999952316284,1
+start_wait_spans_large_0,0,0s,4,resume core/block-editor,8.299999952316284,2
+start_wait_spans_large_0,0,0s,4,useSelect mapSelect,1.7000000476837158,714
+start_wait_spans_large_0,0,0s,4,useSelect onChange,4.09999942779541,4542
+start_wait_spans_large_0,0,0s,5,core/block-editor subscribers,7.900000095367432,4497
+start_wait_spans_large_0,0,0s,5,data batch callback,3.6000001430511475,2
+start_wait_spans_large_0,0,0s,5,notify core/block-editor,9.199999809265137,1
+start_wait_spans_large_0,0,0s,5,resume core/block-editor,9.199999809265137,2
+start_wait_spans_large_0,0,0s,5,useSelect mapSelect,1.9000005722045898,714
+start_wait_spans_large_0,0,0s,5,useSelect onChange,5.400000810623169,4542
+start_wait_spans_large_60000,60000,60s,0,core/block-editor subscribers,8.899999856948853,4497
+start_wait_spans_large_60000,60000,60s,0,data batch callback,4.099999904632568,2
+start_wait_spans_large_60000,60000,60s,0,notify core/block-editor,10.299999952316284,1
+start_wait_spans_large_60000,60000,60s,0,resume core/block-editor,10.400000095367432,2
+start_wait_spans_large_60000,60000,60s,0,useSelect mapSelect,2.499999761581421,714
+start_wait_spans_large_60000,60000,60s,0,useSelect onChange,6.199999809265137,4542
+start_wait_spans_large_60000,60000,60s,1,core/block-editor subscribers,8.200000286102295,4497
+start_wait_spans_large_60000,60000,60s,1,data batch callback,4.400000095367432,2
+start_wait_spans_large_60000,60000,60s,1,notify core/block-editor,10.5,1
+start_wait_spans_large_60000,60000,60s,1,resume core/block-editor,10.5,2
+start_wait_spans_large_60000,60000,60s,1,useSelect mapSelect,2.6999995708465576,714
+start_wait_spans_large_60000,60000,60s,1,useSelect onChange,5.600000381469727,4542
+start_wait_spans_large_60000,60000,60s,2,core/block-editor subscribers,7.90000057220459,4497
+start_wait_spans_large_60000,60000,60s,2,data batch callback,4.5,2
+start_wait_spans_large_60000,60000,60s,2,notify core/block-editor,10.799999952316284,1
+start_wait_spans_large_60000,60000,60s,2,resume core/block-editor,10.799999952316284,2
+start_wait_spans_large_60000,60000,60s,2,useSelect mapSelect,1.499999761581421,714
+start_wait_spans_large_60000,60000,60s,2,useSelect onChange,4.999999046325684,4542
+start_wait_spans_large_60000,60000,60s,3,core/block-editor subscribers,7.6000001430511475,4497
+start_wait_spans_large_60000,60000,60s,3,data batch callback,4.400000095367432,2
+start_wait_spans_large_60000,60000,60s,3,notify core/block-editor,10.5,1
+start_wait_spans_large_60000,60000,60s,3,resume core/block-editor,10.5,2
+start_wait_spans_large_60000,60000,60s,3,useSelect mapSelect,2.0999999046325684,714
+start_wait_spans_large_60000,60000,60s,3,useSelect onChange,4.700000762939453,4542
+start_wait_spans_large_60000,60000,60s,4,core/block-editor subscribers,8.799999713897705,4497
+start_wait_spans_large_60000,60000,60s,4,data batch callback,4.5,2
+start_wait_spans_large_60000,60000,60s,4,notify core/block-editor,10.899999856948853,1
+start_wait_spans_large_60000,60000,60s,4,resume core/block-editor,10.899999856948853,2
+start_wait_spans_large_60000,60000,60s,4,useSelect mapSelect,2.099999189376831,714
+start_wait_spans_large_60000,60000,60s,4,useSelect onChange,4.999999284744263,4542
+start_wait_spans_large_60000,60000,60s,5,core/block-editor subscribers,9.6999990940094,4497
+start_wait_spans_large_60000,60000,60s,5,data batch callback,4.299999713897705,2
+start_wait_spans_large_60000,60000,60s,5,notify core/block-editor,11.5,1
+start_wait_spans_large_60000,60000,60s,5,resume core/block-editor,11.5,2
+start_wait_spans_large_60000,60000,60s,5,useSelect mapSelect,2.6000008583068848,714
+start_wait_spans_large_60000,60000,60s,5,useSelect onChange,6.90000057220459,4542

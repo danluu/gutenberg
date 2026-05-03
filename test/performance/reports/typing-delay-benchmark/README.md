@@ -37,7 +37,11 @@ The short version:
     character moves from `16.3ms` to `22.0ms` when the start wait grows from
     `0s` to `60s`, while the next three `1300ms` held-key characters stay in the
     normal `24-27ms` slow band. Native `contenteditable` moves by only `0.27ms`,
-    so the effect is not just browser/Playwright timing overhead.
+    so the effect is not just browser/Playwright timing overhead. Source-level
+    tracing shows the long-wait first input runs the same large Gutenberg fanout,
+    but that fanout takes longer after idle: `RichText`/data `registry.batch`
+    p50 rises by about `3.6-3.8ms`, while counted subscriber fanout sizes remain
+    unchanged.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -411,6 +415,8 @@ The R script derives:
     `data/typing-delay-start-wait-native-first-char-*.csv`, and
     `data/typing-delay-start-wait-scenario-first-char-summary.csv`: scenario
     controls for the first-character start-wait effect.
+-   `data/typing-delay-start-wait-span-*.csv`: source-level attribution
+    summaries for the large-post first-character start-wait effect.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -712,6 +718,40 @@ include colder CPU state, browser scheduling state, JIT/cache state, or a mix of
 those. The important benchmark conclusion is narrower and better supported: a
 long pre-start wait changes first-input coldness in Gutenberg, while retained
 repeated-key samples remain controlled mostly by the key-hold/timer interaction.
+
+Finally, I traced the large-post first input at `0s` and `60s` with RichText,
+data-store, and event-listener instrumentation enabled. This trace is deliberately
+heavier than the normal benchmark, so the absolute latencies are not comparable
+to the uninstrumented runs above. It is still useful for within-trace attribution:
+both waits run through the same source-level path, but the long-wait path spends
+more time in the same RichText/data batch.
+
+![Start-wait source-span components](figures/63-start-wait-source-span-components.png)
+
+Selected large-post source-span p50s:
+
+| Component | `0s` wait | `60s` wait | Delta | Count |
+| --------- | --------: | ---------: | ----: | ----: |
+| Browser EventDispatch latency | `24.9ms` | `33.7ms` | `+8.8ms` | |
+| Browser `keypress` trace slice | `24.0ms` | `31.9ms` | `+7.8ms` | |
+| `RichText` `onInput` total | `11.8ms` | `15.6ms` | `+3.8ms` | |
+| `RichText` `registry.batch` | `11.4ms` | `14.9ms` | `+3.6ms` | |
+| Data `registry.batch` root | `11.4ms` | `14.9ms` | `+3.6ms` | |
+| `core/block-editor` subscribers | `6.7ms` | `8.5ms` | `+1.9ms` | `4497 -> 4497` |
+| `useSelect.onChange` | `4.5ms` | `5.3ms` | `+0.9ms` | `4542 -> 4542` |
+| `useSelect.mapSelect` | `1.9ms` | `2.3ms` | `+0.5ms` | `714 -> 714` |
+| Browser `keyup` trace slice | `0.7ms` | `2.0ms` | `+1.3ms` | |
+
+![Start-wait source-span deltas](figures/64-start-wait-source-span-deltas.png)
+
+The counted fanout sizes are unchanged. The long wait does not create a new
+class of work or cause thousands of extra `useSelect` callbacks. Instead, the
+same thousands of callbacks and the same `registry.batch` path take longer after
+the editor has been idle. The source spans account for a substantial part of the
+extra measured `keypress` slice, but not all of it; the remainder is likely in
+uninstrumented React/browser work plus the overhead of the tracing itself. That
+is as far as this benchmark can go without hardware-level CPU frequency/cache
+instrumentation or lower-overhead browser internals tracing.
 
 The interpretation is conservative: increasing the pre-run settle time is not a
 fix for this benchmark's main artifacts. It mainly changes the first character
@@ -3713,7 +3753,8 @@ The key runs used in this report were:
     `start_wait_empty_first_char_0`, `start_wait_empty_first_char_10000`,
     `start_wait_empty_first_char_60000`, `start_wait_native_first_char_0`,
     `start_wait_native_first_char_10000`,
-    `start_wait_native_first_char_60000`,
+    `start_wait_native_first_char_60000`, `start_wait_spans_large_0`,
+    `start_wait_spans_large_60000`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,

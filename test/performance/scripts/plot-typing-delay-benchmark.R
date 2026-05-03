@@ -909,6 +909,110 @@ if (file.exists(start_wait_scenario_summary_path)) {
 	)
 }
 
+start_wait_span_component_summary_path <- file.path(data_dir, "typing-delay-start-wait-span-component-summary.csv")
+if (file.exists(start_wait_span_component_summary_path)) {
+	start_wait_span_components <- read_csv(start_wait_span_component_summary_path, show_col_types = FALSE) %>%
+		filter(
+			component %in% c(
+				"Browser EventDispatch latency",
+				"Browser keypress trace slice",
+				"RichText onInput total",
+				"RichText registry.batch",
+				"Data registry.batch root",
+				"core/block-editor subscribers",
+				"useSelect onChange",
+				"useSelect mapSelect",
+				"Browser keyup trace slice"
+			)
+		) %>%
+		mutate(
+			settle_label = factor(settle_label, levels = c("0s", "60s")),
+			component = factor(
+				component,
+				levels = rev(c(
+					"Browser EventDispatch latency",
+					"Browser keypress trace slice",
+					"RichText onInput total",
+					"RichText registry.batch",
+					"Data registry.batch root",
+					"core/block-editor subscribers",
+					"useSelect onChange",
+					"useSelect mapSelect",
+					"Browser keyup trace slice"
+				))
+			)
+		)
+
+	save_plot(
+		ggplot(start_wait_span_components, aes(component, p50_ms, color = settle_label, shape = settle_label)) +
+			geom_errorbar(
+				aes(ymin = p10_ms, ymax = p90_ms),
+				width = 0.18,
+				position = position_dodge(width = 0.55),
+				alpha = 0.78
+			) +
+			geom_point(position = position_dodge(width = 0.55), size = 3) +
+			coord_flip() +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Source spans show first-input work slows after a long start wait",
+				subtitle = "Large-post first character at 1300ms; instrumentation changes absolute latency, so compare 0s vs 60s within this trace",
+				x = NULL,
+				y = "Duration p50 (ms)",
+				color = "Wait after editor setup",
+				shape = "Wait after editor setup"
+			),
+		"63-start-wait-source-span-components.png",
+		width = 10,
+		height = 6.5
+	)
+}
+
+start_wait_span_component_delta_path <- file.path(data_dir, "typing-delay-start-wait-span-component-delta.csv")
+if (file.exists(start_wait_span_component_delta_path)) {
+	start_wait_span_deltas <- read_csv(start_wait_span_component_delta_path, show_col_types = FALSE) %>%
+		filter(
+			component %in% c(
+				"Browser EventDispatch latency",
+				"Browser keypress trace slice",
+				"RichText onInput total",
+				"RichText registry.batch",
+				"Data registry.batch root",
+				"core/block-editor subscribers",
+				"useSelect onChange",
+				"useSelect mapSelect",
+				"Browser keyup trace slice"
+			)
+		) %>%
+		mutate(
+			component = fct_reorder(component, delta_ms),
+			count_label = if_else(
+				is.na(count_delta),
+				"not counted",
+				if_else(count_delta == 0, "same count", "count changed")
+			)
+		)
+
+	save_plot(
+		ggplot(start_wait_span_deltas, aes(component, delta_ms, color = count_label, shape = count_label)) +
+			geom_hline(yintercept = 0, color = "gray65") +
+			geom_point(size = 3.2) +
+			coord_flip() +
+			scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "The 60s start wait slows the same Gutenberg fanout",
+				subtitle = "p50 delta from 0s to 60s in the large-post source-span trace; counted subscriber components keep the same count",
+				x = NULL,
+				y = "p50 delta (ms)",
+				color = "Invocation count",
+				shape = "Invocation count"
+			),
+		"64-start-wait-source-span-deltas.png",
+		width = 10,
+		height = 6
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

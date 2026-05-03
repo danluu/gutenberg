@@ -1,0 +1,13 @@
+run_id,settle_ms,settle_label,round,sample_index,latency_ms,keydown_ms,keypress_ms,keyup_ms
+start_wait_spans_large_0,0,0s,0,0,24.496,0.318,23.676,0.502
+start_wait_spans_large_0,0,0s,1,0,23.232,0.139,22.861,0.232
+start_wait_spans_large_0,0,0s,2,0,25.266000000000002,0.151,24.358,0.757
+start_wait_spans_large_0,0,0s,3,0,24.221999999999998,0.149,23.205,0.868
+start_wait_spans_large_0,0,0s,4,0,25.246000000000002,0.143,24.474,0.629
+start_wait_spans_large_0,0,0s,5,0,25.983999999999998,0.153,25.152,0.679
+start_wait_spans_large_60000,60000,60s,0,0,33.232,0.392,30.209,2.631
+start_wait_spans_large_60000,60000,60s,1,0,34.565999999999995,0.199,32.19,2.177
+start_wait_spans_large_60000,60000,60s,2,0,34.148999999999994,0.201,32.407,1.541
+start_wait_spans_large_60000,60000,60s,3,0,32.141,0.178,29.99,1.973
+start_wait_spans_large_60000,60000,60s,4,0,34.78,0.199,32.64,1.941
+start_wait_spans_large_60000,60000,60s,5,0,32.827,0.165,31.527,1.135
