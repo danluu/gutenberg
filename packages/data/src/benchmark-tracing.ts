@@ -4,6 +4,10 @@ type DataBenchmarkTracer = < T >(
 	metadata?: Record< string, unknown >
 ) => T;
 
+interface DataBenchmarkListener extends VoidFunction {
+	__typingBenchmarkDataListenerMetadata?: Record< string, unknown >;
+}
+
 /**
  * Runs a callback inside an optional benchmark timing span.
  *
@@ -49,5 +53,37 @@ export function isDataSpanTracingEnabled(): boolean {
 				__typingBenchmarkTraceDataSpan?: DataBenchmarkTracer;
 			}
 		 ).__typingBenchmarkTraceDataSpan === 'function'
+	);
+}
+
+/**
+ * Stores optional benchmark metadata on a listener function so lower-level
+ * subscription wrappers can preserve subscriber identity in diagnostic traces.
+ *
+ * @param listener Listener function.
+ * @param metadata Benchmark metadata.
+ */
+export function setDataListenerBenchmarkMetadata(
+	listener: VoidFunction,
+	metadata: Record< string, unknown >
+): void {
+	(
+		listener as DataBenchmarkListener
+	 ).__typingBenchmarkDataListenerMetadata = metadata;
+}
+
+/**
+ * Reads optional benchmark metadata from a listener function.
+ *
+ * @param listener Listener function.
+ *
+ * @return Benchmark metadata.
+ */
+export function getDataListenerBenchmarkMetadata(
+	listener: VoidFunction
+): Record< string, unknown > {
+	return (
+		( listener as DataBenchmarkListener )
+			.__typingBenchmarkDataListenerMetadata || {}
 	);
 }

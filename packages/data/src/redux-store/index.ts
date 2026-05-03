@@ -15,7 +15,10 @@ import { compose } from '@wordpress/compose';
  * Internal dependencies
  */
 import { combineReducers } from './combine-reducers';
-import { traceDataSpan } from '../benchmark-tracing';
+import {
+	getDataListenerBenchmarkMetadata,
+	traceDataSpan,
+} from '../benchmark-tracing';
 import { builtinControls } from '../controls';
 import { lock } from '../lock-unlock';
 import promise from '../promise-middleware';
@@ -544,6 +547,9 @@ export default function createReduxStore< State, Actions, Selectors >(
 									'data.reduxStore.listener',
 									listener,
 									{
+										...getDataListenerBenchmarkMetadata(
+											listener
+										),
 										storeName: key,
 										listenerIndex,
 										listenerCount: listeners.size,

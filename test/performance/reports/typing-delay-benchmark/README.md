@@ -66,9 +66,12 @@ The short version:
     pathological selector. The largest source-mapped groups have hundreds or
     thousands of active hook/listener instances in the large-post fixture.
 -   Drilling into the lower Redux listener wrappers also disconfirms a single
-    heavy subscriber explanation. The top one and top ten listener-wrapper
-    durations barely move; the difference appears as more tiny measured listener
-    spans and larger aggregate `rootSubscribe` time.
+    heavy subscriber explanation. After propagating diagnostic `useSelectId`
+    metadata down to `data.reduxStore.listener`, more than `99.93%` of
+    `core/block-editor` listener-wrapper spans in the new traces have a
+    source-mapped `useSelect` owner. The marker and next-input deltas are still
+    distributed across high-fanout block-list / pattern override / inner-block
+    subscribers; no source site moves by even `1ms` p50.
 -   A marker-plus-input cycle check in the trace-heavy run confirms the same
     accounting story: the normal marker has a lower next-input slice than no-op,
     but a higher marker-plus-input cycle cost.
@@ -225,6 +228,9 @@ The R script derives:
 -   `data/typing-delay-marker-allspan-owner-*.csv`: source-map-backed owner
     summaries for `useSelect` fanout and attributed enclosing listener spans in
     the marker task and following input batch.
+-   `data/typing-delay-redux-listener-owner-*.csv`: source-map-backed owner
+    summaries for low-level `data.reduxStore.listener` spans after propagating
+    diagnostic `useSelectId` metadata through the registry subscription wrapper.
 -   `data/typing-delay-marker-richtext-summary.csv`: RichText span summaries for
     the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
@@ -1136,13 +1142,12 @@ listener-span attribution only raises the largest single-owner delta to about
 `1ms`.
 
 I also checked the lower `data.reduxStore.listener` wrapper spans that make up
-the callback-side `rootSubscribe` fanout. These spans are below the
-source-mapped `useSelect` metadata: `packages/data/src/registry.ts` installs an
-anonymous wrapper around each store subscriber, and the current
-`data.reduxStore.listener` trace metadata records `storeName`, `listenerIndex`,
-and `listenerCount`, not a component owner or selector. That means the current
-trace can test the shape of the fanout, but it cannot honestly name a specific
-React component for this lower layer.
+the callback-side `rootSubscribe` fanout. In the first trace these spans were
+below the source-mapped `useSelect` metadata: `packages/data/src/registry.ts`
+installed a wrapper around each store subscriber, and
+`data.reduxStore.listener` only recorded `storeName`, `listenerIndex`, and
+`listenerCount`. That first trace could test the shape of the fanout, but it
+could not honestly name a component owner for this lower layer.
 
 ![Redux listener fanout shape](figures/37-marker-redux-listener-fanout-shape.png)
 
@@ -1165,13 +1170,65 @@ also found no `listenerIndex` that was nonzero in all four retained samples for
 either action in the normal-marker or no-op run. That disconfirms a stable
 single-listener explanation for the residual few milliseconds.
 
-The supported statement is narrower: the normal marker puts the following input
-on a different persistence/action path, and that changes callback-side
-block-editor store fanout by a few milliseconds. The trace localizes that
-difference to broad low-level subscriber-wrapper fanout, but not to one named
-selector or React component. Proving a selector-level cause would require new
-metadata at `data.reduxStore.listener` subscription time, for example recording
-the subscriber stack or propagating `useSelectId` into the lower wrapper.
+I then added that diagnostic metadata: `useSelect` marks its `onChange`
+subscriber with a benchmark-only `useSelectId`, the registry wrapper preserves
+that metadata, and `data.reduxStore.listener` records it. This is not a proposed
+production behavior change; it is attribution plumbing for this benchmark.
+
+The full 8-retained-sample action-plus-all-data-spans run with this metadata hit
+Node's heap limit while serializing the JSON. That is itself a benchmark setup
+warning: the "trace everything" mode can become the benchmark. I reduced the
+owner-attribution pass to four retained samples and used
+`NODE_OPTIONS=--max-old-space-size=8192`. The raw JSONs are still large
+(`182..222MB` each), but the compact CSVs are small enough to audit.
+
+Coverage in the reduced owner-attribution traces:
+
+| Intervention             | `core/block-editor` listener spans | spans with `useSelectId` | coverage |
+| ------------------------ | ---------------------------------: | -----------------------: | -------: |
+| normal marker            |                           `89,941` |                 `89,881` | `99.93%` |
+| marker no-op             |                           `71,937` |                 `71,889` | `99.93%` |
+| mark next not persistent |                           `71,937` |                 `71,889` | `99.93%` |
+
+That confirms the lower listener-wrapper fanout is overwhelmingly
+`useSelect.onChange` subscriber fanout, not an unknown listener class.
+
+![Redux listener marker owner fanout](figures/39-redux-listener-marker-owner-fanout.png)
+
+The normal marker task's largest low-level owner groups are the same
+high-fanout editor subscriptions seen in the direct `useSelect` trace:
+
+| Marker task owner                                                | p50 listener duration | p50 listener calls |
+| ---------------------------------------------------------------- | --------------------: | -----------------: |
+| `packages/block-editor/src/components/block-list/index.js:196`   |               `5.3ms` |              `580` |
+| `packages/editor/src/hooks/pattern-overrides.js:40`              |               `3.6ms` |            `1,437` |
+| `packages/block-editor/src/components/block-list/block.js:563`   |               `3.5ms` |            `1,437` |
+| `packages/block-editor/src/components/inner-blocks/index.js:195` |               `1.1ms` |              `580` |
+| `packages/block-library/src/heading/edit.js:35`                  |               `0.5ms` |              `202` |
+
+![Redux listener next-input deltas](figures/40-redux-listener-next-input-deltas.png)
+
+For the following input, the largest positive p50 deltas versus the normal
+marker run remain small and distributed:
+
+| Window                  | Intervention             | Owner                                                            | p50 delta |
+| ----------------------- | ------------------------ | ---------------------------------------------------------------- | --------: |
+| `selectionChange`       | marker no-op             | `packages/block-editor/src/components/block-list/block.js:563`   |  `0.80ms` |
+| `selectionChange`       | mark next not persistent | `packages/editor/src/hooks/pattern-overrides.js:40`              |  `0.75ms` |
+| `selectionChange`       | marker no-op             | `packages/editor/src/hooks/pattern-overrides.js:40`              |  `0.55ms` |
+| `selectionChange`       | mark next not persistent | `packages/block-editor/src/components/block-list/block.js:563`   |  `0.30ms` |
+| `updateBlockAttributes` | mark next not persistent | `packages/block-editor/src/components/inner-blocks/index.js:195` |  `0.40ms` |
+| `updateBlockAttributes` | marker no-op             | `packages/block-editor/src/components/inner-blocks/index.js:195` |  `0.30ms` |
+| `updateBlockAttributes` | marker no-op             | `packages/block-editor/src/components/block-list/block.js:563`   |  `0.25ms` |
+
+This confirms the earlier fanout-shape result with source attribution at the
+lower wrapper layer. It disconfirms the theory that a single named subscriber,
+selector, or React component explains the residual input-side gap. The supported
+statement is narrower: the normal marker puts the following input on a different
+persistence/action path, and that changes callback-side block-editor store
+fanout by a few milliseconds. The changed fanout is spread across thousands of
+cheap subscribers, dominated by block-list, pattern-overrides, and inner-blocks
+owner families.
 
 Finally, I paired the marker task before each retained input with that same
 input in the trace-heavy run. This tests the most important accounting theory
@@ -1986,8 +2043,9 @@ Known problems:
     not for defining a user-facing benchmark.
 -   **The native baseline is intentionally too small.** It is useful as a browser
     and Playwright control, not as a model of real editor work.
--   **Single browser.** These results are from Chromium. They do not prove that
-    Safari or Firefox will have the same timer/event behavior.
+-   **Chromium-heavy source tracing.** The cross-browser listener/timer checks
+    cover Firefox and WebKit, but the source-level RichText/data/useSelect
+    attribution is still Chromium-only.
 -   **Single local setup.** More process executions and fresh browser contexts are
     needed before treating absolute numbers as portable.
 -   **No real typing distribution.** Real users type with bursts, corrections,
@@ -2084,10 +2142,12 @@ For investigation:
     event sequence and ordinary JS callback traces.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
--   Add a textarea/native baseline to estimate browser/editor overhead.
+-   Keep the native baseline and add more minimal editor-like baselines to
+    estimate browser/editor overhead.
 -   Add input-to-paint instrumentation, or calibrate with high-speed camera data
     for bench runs.
--   Repeat on Safari and Firefox.
+-   Repeat source-level attribution on Safari and Firefox if comparable tooling
+    is available.
 -   Repeat with plugin-heavy editor setups if long-session lag is suspected there.
 
 ## Reproduction Notes
@@ -2223,6 +2283,10 @@ The key runs used in this report were:
     `marker_next_not_persistent_allspans_1000`: small `1000ms` runs with
     `BENCHMARK_TRACE_ALL_DATA_SPANS=1` to expose non-batch data spans inside the
     marker task.
+-   `redux_listener_owner_normal_1000`, `redux_listener_owner_noop_1000`,
+    `redux_listener_owner_next_not_persistent_1000`: reduced `1000ms`
+    owner-attribution runs with diagnostic `useSelectId` metadata propagated to
+    low-level `data.reduxStore.listener` spans.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
@@ -2238,6 +2302,13 @@ with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-use-select-owners.js
+```
+
+The marker-intervention and low-level Redux listener owner CSVs were extracted
+with:
+
+```sh
+NODE_OPTIONS=--max-old-space-size=8192 node test/performance/scripts/extract-typing-delay-marker-intervention.js
 ```
 
 The compact keyup-gap causality CSVs were extracted with:

@@ -9,7 +9,11 @@ import deprecated from '@wordpress/deprecated';
 import createReduxStore from './redux-store';
 import coreDataStore from './store';
 import { createEmitter } from './utils/emitter';
-import { traceDataSpan } from './benchmark-tracing';
+import {
+	getDataListenerBenchmarkMetadata,
+	setDataListenerBenchmarkMetadata,
+	traceDataSpan,
+} from './benchmark-tracing';
 import { lock, unlock } from './lock-unlock';
 import type {
 	StoreDescriptor,
@@ -241,19 +245,33 @@ export function createRegistry(
 		} );
 		const currentSubscribe = store.subscribe;
 		store.subscribe = ( listener: () => void ) => {
-			const unsubscribeFromEmitter = store.emitter.subscribe( listener, {
+			const benchmarkListenerMetadata =
+				getDataListenerBenchmarkMetadata( listener );
+			const listenerMetadata = {
+				...benchmarkListenerMetadata,
 				listenerType:
 					listener === globalListener
 						? 'registry global listener'
 						: 'store subscriber',
-			} );
-			const unsubscribeFromStore = currentSubscribe( () => {
+			};
+			const unsubscribeFromEmitter = store.emitter.subscribe(
+				listener,
+				listenerMetadata
+			);
+			const reduxStoreListener = () => {
 				if ( store.emitter.isPaused ) {
 					store.emitter.emit();
 					return;
 				}
 				listener();
-			} );
+			};
+			if ( Object.keys( benchmarkListenerMetadata ).length ) {
+				setDataListenerBenchmarkMetadata(
+					reduxStoreListener,
+					listenerMetadata
+				);
+			}
+			const unsubscribeFromStore = currentSubscribe( reduxStoreListener );
 
 			return () => {
 				unsubscribeFromStore?.();

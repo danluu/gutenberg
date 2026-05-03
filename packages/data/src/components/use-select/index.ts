@@ -23,6 +23,7 @@ import useRegistry from '../registry-provider/use-registry';
 import useAsyncMode from '../async-mode-provider/use-async-mode';
 import {
 	isDataSpanTracingEnabled,
+	setDataListenerBenchmarkMetadata,
 	traceDataSpan,
 } from '../../benchmark-tracing';
 import type {
@@ -220,6 +221,17 @@ function Store(
 
 			const unsubs: Array< VoidFunction > = [];
 			function subscribeStore( storeName: string ) {
+				if ( benchmarkMetadata ) {
+					setDataListenerBenchmarkMetadata(
+						onChange,
+						benchmarkSpanMetadata( benchmarkMetadata, {
+							activeStoreCount: activeStores.length,
+							activeStores: activeStores.join( ',' ),
+							subscribedStoreName: storeName,
+							subscriberType: 'useSelect.onChange',
+						} )
+					);
+				}
 				unsubs.push( registry.subscribe( onChange, storeName ) );
 			}
 

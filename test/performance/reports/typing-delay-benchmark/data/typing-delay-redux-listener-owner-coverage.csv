@@ -1,0 +1,4 @@
+run_id,trace_type,intervention,json_path,records,summaries,use_select_metadata_rows,block_editor_redux_listener_spans,block_editor_redux_listener_spans_with_use_select_id,block_editor_redux_listener_span_owner_coverage
+redux_listener_owner_normal_1000,redux listener owner attribution,normal marker,test/performance/artifacts/typing-delay-redux-listener-owner-data-normal-1000-small/typing-delay-benchmark-1777795997927.json,5,1,16376,89941,89881,0.9993328960096063
+redux_listener_owner_noop_1000,redux listener owner attribution,marker no-op,test/performance/artifacts/typing-delay-redux-listener-owner-data-noop-1000-small/typing-delay-benchmark-1777796043321.json,5,1,16412,71937,71889,0.9993327494891363
+redux_listener_owner_next_not_persistent_1000,redux listener owner attribution,mark next not persistent,test/performance/artifacts/typing-delay-redux-listener-owner-data-next-1000-small/typing-delay-benchmark-1777796082762.json,5,1,16460,71937,71889,0.9993327494891363

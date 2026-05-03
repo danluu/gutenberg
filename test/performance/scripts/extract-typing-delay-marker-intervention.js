@@ -84,6 +84,27 @@ const allDataSpanRuns = [
 	},
 ];
 
+const reduxListenerOwnerRuns = [
+	{
+		runId: 'redux_listener_owner_normal_1000',
+		traceType: 'redux listener owner attribution',
+		intervention: 'normal marker',
+		dir: 'test/performance/artifacts/typing-delay-redux-listener-owner-data-normal-1000-small',
+	},
+	{
+		runId: 'redux_listener_owner_noop_1000',
+		traceType: 'redux listener owner attribution',
+		intervention: 'marker no-op',
+		dir: 'test/performance/artifacts/typing-delay-redux-listener-owner-data-noop-1000-small',
+	},
+	{
+		runId: 'redux_listener_owner_next_not_persistent_1000',
+		traceType: 'redux listener owner attribution',
+		intervention: 'mark next not persistent',
+		dir: 'test/performance/artifacts/typing-delay-redux-listener-owner-data-next-1000-small',
+	},
+];
+
 function newestJson( dir ) {
 	const absDir = path.join( repoRoot, dir );
 	if ( ! fs.existsSync( absDir ) ) {
@@ -577,6 +598,7 @@ function readOptionalRuns( optionalRuns ) {
 
 const loadedTimeoutRewriteRuns = readOptionalRuns( timeoutRewriteRuns );
 const loadedAllDataSpanRuns = readOptionalRuns( allDataSpanRuns );
+const loadedReduxListenerOwnerRuns = readOptionalRuns( reduxListenerOwnerRuns );
 
 function summaryKey( row ) {
 	return `${ row.delayMs }\t${ row.round }\t${ row.editorSetupIndex }`;
@@ -1016,6 +1038,165 @@ function actionStartedSpans( spans, action ) {
 		action.nowMs,
 		action.nowMs + ( action.durationMs || 0 )
 	);
+}
+
+function ensureReduxListenerOwnerGroup( groups, base, owner ) {
+	const key = [
+		base.run_id,
+		base.intervention,
+		base.window_kind,
+		base.sample_id,
+		ownerKey( owner ),
+	].join( '\t' );
+
+	if ( ! groups.has( key ) ) {
+		groups.set( key, {
+			...base,
+			owner_script: owner.ownerScript,
+			owner_frame: owner.ownerFrame,
+			source_path: owner.sourcePath,
+			source_line: owner.sourceLine,
+			source_column: owner.sourceColumn,
+			source_name: owner.sourceName,
+			source_snippet: owner.sourceSnippet,
+			has_use_select_owner: owner.hasUseSelectOwner,
+			use_select_ids: new Set(),
+			listener_count: 0,
+			listener_duration_ms: 0,
+		} );
+	}
+
+	return groups.get( key );
+}
+
+function addReduxListenerOwnerSpan( groups, base, metadataById, span ) {
+	if (
+		span.name !== 'data.reduxStore.listener' ||
+		span.metadata?.storeName !== 'core/block-editor'
+	) {
+		return;
+	}
+
+	const owner = ownerForUseSelectSpan( metadataById, span );
+	const group = ensureReduxListenerOwnerGroup( groups, base, owner );
+
+	if ( span.metadata?.useSelectId ) {
+		group.use_select_ids.add(
+			`${ span.windowName }:${ span.metadata.useSelectId }`
+		);
+	}
+	group.listener_count++;
+	group.listener_duration_ms += span.durationMs || 0;
+}
+
+function compactReduxListenerOwnerRows( groups ) {
+	return Array.from( groups.values() ).map( ( row ) => ( {
+		...row,
+		use_select_instances: row.use_select_ids.size,
+		use_select_ids: undefined,
+	} ) );
+}
+
+function summarizeReduxListenerOwnerRows( rows ) {
+	return Array.from(
+		groupedBy( rows, ( row ) =>
+			[
+				row.intervention,
+				row.window_kind,
+				row.source_path,
+				row.source_line,
+				row.source_column,
+				row.source_name,
+				row.source_snippet,
+			].join( '\t' )
+		).entries()
+	).map( ( [ , ownerRows ] ) => {
+		const first = ownerRows[ 0 ];
+		return {
+			trace_type: first.trace_type,
+			intervention: first.intervention,
+			window_kind: first.window_kind,
+			owner_script: first.owner_script,
+			owner_frame: first.owner_frame,
+			source_path: first.source_path,
+			source_line: first.source_line,
+			source_column: first.source_column,
+			source_name: first.source_name,
+			source_snippet: first.source_snippet,
+			n_windows: ownerRows.length,
+			use_select_instances_max: maxFinite(
+				ownerRows.map( ( row ) => row.use_select_instances )
+			),
+			listener_count_p50: quantile(
+				ownerRows.map( ( row ) => row.listener_count ),
+				0.5
+			),
+			listener_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.listener_duration_ms ),
+				0.5
+			),
+			listener_duration_p90_ms: quantile(
+				ownerRows.map( ( row ) => row.listener_duration_ms ),
+				0.9
+			),
+			listener_duration_sum_ms: ownerRows.reduce(
+				( sum, row ) => sum + row.listener_duration_ms,
+				0
+			),
+		};
+	} );
+}
+
+function buildReduxListenerOwnerDiffRows(
+	ownerSummaryRows,
+	baselineIntervention = 'normal marker'
+) {
+	const rowKey = ( row ) =>
+		[
+			row.window_kind,
+			row.source_path,
+			row.source_line,
+			row.source_column,
+			row.source_name,
+			row.source_snippet,
+		].join( '\t' );
+	const baselineRowsByKey = new Map(
+		ownerSummaryRows
+			.filter( ( row ) => row.intervention === baselineIntervention )
+			.map( ( row ) => [ rowKey( row ), row ] )
+	);
+
+	return ownerSummaryRows
+		.filter( ( row ) => row.intervention !== baselineIntervention )
+		.map( ( row ) => {
+			const baseline = baselineRowsByKey.get( rowKey( row ) );
+			return {
+				trace_type: row.trace_type,
+				window_kind: row.window_kind,
+				comparison: `${ row.intervention } minus ${ baselineIntervention }`,
+				intervention: row.intervention,
+				baseline_intervention: baselineIntervention,
+				owner_script: row.owner_script,
+				owner_frame: row.owner_frame,
+				source_path: row.source_path,
+				source_line: row.source_line,
+				source_column: row.source_column,
+				source_name: row.source_name,
+				source_snippet: row.source_snippet,
+				intervention_listener_duration_p50_ms:
+					row.listener_duration_p50_ms,
+				baseline_listener_duration_p50_ms:
+					baseline?.listener_duration_p50_ms ?? 0,
+				diff_listener_duration_p50_ms:
+					row.listener_duration_p50_ms -
+					( baseline?.listener_duration_p50_ms ?? 0 ),
+				intervention_listener_count_p50: row.listener_count_p50,
+				baseline_listener_count_p50: baseline?.listener_count_p50 ?? 0,
+				diff_listener_count_p50:
+					row.listener_count_p50 -
+					( baseline?.listener_count_p50 ?? 0 ),
+			};
+		} );
 }
 
 const allSpanActionRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
@@ -2002,6 +2183,138 @@ const allSpanCategorySummaryRows = Array.from(
 	};
 } );
 
+const reduxListenerCoverageRows = loadedReduxListenerOwnerRuns.map( ( run ) => {
+	const listenerSpans = run.data.delayRunSummaries.flatMap( ( summary ) =>
+		( summary.dataSpanEvents || [] ).filter(
+			( span ) =>
+				span.name === 'data.reduxStore.listener' &&
+				span.metadata?.storeName === 'core/block-editor'
+		)
+	);
+	return {
+		run_id: run.runId,
+		trace_type: run.traceType,
+		intervention: run.intervention,
+		json_path: path.relative( repoRoot, run.jsonPath ),
+		records: run.data.records?.length || 0,
+		summaries: run.data.delayRunSummaries?.length || 0,
+		use_select_metadata_rows: run.data.useSelectMetadata?.length || 0,
+		block_editor_redux_listener_spans: listenerSpans.length,
+		block_editor_redux_listener_spans_with_use_select_id:
+			listenerSpans.filter( ( span ) => span.metadata?.useSelectId )
+				.length,
+		block_editor_redux_listener_span_owner_coverage:
+			listenerSpans.length === 0
+				? null
+				: listenerSpans.filter( ( span ) => span.metadata?.useSelectId )
+						.length / listenerSpans.length,
+	};
+} );
+
+const reduxListenerOwnerGroups = new Map();
+for ( const run of loadedReduxListenerOwnerRuns ) {
+	const metadataById = useSelectMetadataById( run );
+	for ( const summary of run.data.delayRunSummaries ) {
+		const spans = summary.dataSpanEvents || [];
+		const dataEvents = summary.dataEvents || [];
+		const inputs = inputEventsForSummary( summary );
+
+		for ( const [ sampleIndex, inputEvent ] of inputs.entries() ) {
+			const record = recordForInputSample( run, summary, sampleIndex );
+			if ( record?.isThrowaway ) {
+				continue;
+			}
+
+			const rootBatch = firstRootBatchAfterInput( spans, inputEvent );
+			if ( ! rootBatch ) {
+				continue;
+			}
+
+			const batchStop = rootBatch.startedAtMs + rootBatch.durationMs;
+			const previousInputEvent = inputs[ sampleIndex - 1 ];
+			const previousInputMs =
+				previousInputEvent?.nowMs ?? summary.runStartedAtBrowserNowMs;
+			const windows = [];
+			const selectionChangeAction = firstBlockEditorActionInWindow(
+				dataEvents,
+				'selectionChange',
+				rootBatch.startedAtMs - 1,
+				batchStop + 1
+			);
+			const updateBlockAction = firstBlockEditorActionInWindow(
+				dataEvents,
+				'updateBlockAttributes',
+				inputEvent.nowMs - 1,
+				batchStop + 1
+			);
+			if ( selectionChangeAction ) {
+				windows.push( {
+					kind: 'next input selectionChange',
+					action: selectionChangeAction,
+				} );
+			}
+			if ( updateBlockAction ) {
+				windows.push( {
+					kind: 'next input updateBlockAttributes',
+					action: updateBlockAction,
+				} );
+			}
+			for ( const markerAction of dataEvents.filter(
+				( event ) =>
+					event.storeName === 'core/block-editor' &&
+					event.actionName ===
+						'__unstableMarkLastChangeAsPersistent' &&
+					event.nowMs >= previousInputMs &&
+					event.nowMs < inputEvent.nowMs
+			) ) {
+				windows.push( {
+					kind: 'marker before input',
+					action: markerAction,
+				} );
+			}
+
+			for ( const window of windows ) {
+				const actionSpans = actionStartedSpans( spans, window.action );
+				const base = {
+					run_id: run.runId,
+					trace_type: run.traceType,
+					intervention: run.intervention,
+					window_kind: window.kind,
+					delay_ms: summary.delayMs,
+					round: summary.round,
+					sample_id: `${ summary.round }:${ sampleIndex }`,
+					sample_index: sampleIndex,
+					action_name: window.action.actionName,
+				};
+
+				for ( const span of actionSpans ) {
+					addReduxListenerOwnerSpan(
+						reduxListenerOwnerGroups,
+						base,
+						metadataById,
+						span
+					);
+				}
+			}
+		}
+	}
+}
+
+const reduxListenerOwnerRows = compactReduxListenerOwnerRows(
+	reduxListenerOwnerGroups
+);
+const reduxListenerOwnerSummaryRows = summarizeReduxListenerOwnerRows(
+	reduxListenerOwnerRows
+);
+const reduxListenerOwnerDiffRows = buildReduxListenerOwnerDiffRows(
+	reduxListenerOwnerSummaryRows.filter( ( row ) =>
+		[
+			'next input selectionChange',
+			'next input updateBlockAttributes',
+		].includes( row.window_kind )
+	)
+);
+
 const richTextRows = loadedRuns.flatMap( ( run ) =>
 	run.traceType === 'span trace'
 		? run.data.delayRunSummaries.flatMap( ( summary ) =>
@@ -2563,6 +2876,97 @@ writeCsv(
 		'intervention_outer_listener_count_p50',
 		'baseline_outer_listener_count_p50',
 		'diff_outer_listener_count_p50',
+	]
+);
+writeCsv(
+	path.join(
+		reportDataDir,
+		'typing-delay-redux-listener-owner-coverage.csv'
+	),
+	reduxListenerCoverageRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'json_path',
+		'records',
+		'summaries',
+		'use_select_metadata_rows',
+		'block_editor_redux_listener_spans',
+		'block_editor_redux_listener_spans_with_use_select_id',
+		'block_editor_redux_listener_span_owner_coverage',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-redux-listener-owner-samples.csv' ),
+	reduxListenerOwnerRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'window_kind',
+		'delay_ms',
+		'round',
+		'sample_id',
+		'sample_index',
+		'action_name',
+		'owner_script',
+		'owner_frame',
+		'source_path',
+		'source_line',
+		'source_column',
+		'source_name',
+		'source_snippet',
+		'has_use_select_owner',
+		'use_select_instances',
+		'listener_count',
+		'listener_duration_ms',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-redux-listener-owner-summary.csv' ),
+	reduxListenerOwnerSummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'window_kind',
+		'owner_script',
+		'owner_frame',
+		'source_path',
+		'source_line',
+		'source_column',
+		'source_name',
+		'source_snippet',
+		'n_windows',
+		'use_select_instances_max',
+		'listener_count_p50',
+		'listener_duration_p50_ms',
+		'listener_duration_p90_ms',
+		'listener_duration_sum_ms',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-redux-listener-owner-diff.csv' ),
+	reduxListenerOwnerDiffRows,
+	[
+		'trace_type',
+		'window_kind',
+		'comparison',
+		'intervention',
+		'baseline_intervention',
+		'owner_script',
+		'owner_frame',
+		'source_path',
+		'source_line',
+		'source_column',
+		'source_name',
+		'source_snippet',
+		'intervention_listener_duration_p50_ms',
+		'baseline_listener_duration_p50_ms',
+		'diff_listener_duration_p50_ms',
+		'intervention_listener_count_p50',
+		'baseline_listener_count_p50',
+		'diff_listener_count_p50',
 	]
 );
 writeCsv(

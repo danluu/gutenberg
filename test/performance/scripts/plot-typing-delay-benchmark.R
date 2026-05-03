@@ -3884,4 +3884,96 @@ if (file.exists(marker_allspan_owner_path)) {
 	}
 }
 
+redux_listener_owner_summary_path <- file.path(data_dir, "typing-delay-redux-listener-owner-summary.csv")
+redux_listener_owner_diff_path <- file.path(data_dir, "typing-delay-redux-listener-owner-diff.csv")
+
+if (file.exists(redux_listener_owner_summary_path)) {
+	redux_listener_owner_summary <- read_csv(redux_listener_owner_summary_path, show_col_types = FALSE) %>%
+		filter(!is.na(source_path), source_path != "") %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			owner_label = paste0(source_path, ":", source_line),
+			owner_label = str_trunc(owner_label, width = 78, side = "left")
+		)
+
+	redux_marker_owner_top <- redux_listener_owner_summary %>%
+		filter(window_kind == "marker before input", intervention == "normal marker") %>%
+		slice_max(listener_duration_p50_ms, n = 10, with_ties = FALSE) %>%
+		mutate(owner_label = fct_reorder(owner_label, listener_duration_p50_ms))
+
+	if (nrow(redux_marker_owner_top) > 0) {
+		save_plot(
+			ggplot(redux_marker_owner_top, aes(listener_duration_p50_ms, owner_label, color = owner_script, size = listener_count_p50)) +
+				geom_point(alpha = 0.9) +
+				scale_color_brewer(type = "qual", palette = "Set2") +
+				scale_size_area(max_size = 5, labels = label_number()) +
+				labs(
+					title = "The timer marker's low-level Redux listener cost is broad fanout",
+					subtitle = "Normal 1000ms marker action; points are source-mapped useSelect owners, p50 over retained windows",
+					x = "Redux listener duration, p50 (ms)",
+					y = NULL,
+					color = "Bundle",
+					size = "p50 listener calls"
+				),
+			"39-redux-listener-marker-owner-fanout.png",
+			width = 12,
+			height = 7
+		)
+	}
+}
+
+if (file.exists(redux_listener_owner_diff_path)) {
+	redux_listener_owner_diff <- read_csv(redux_listener_owner_diff_path, show_col_types = FALSE) %>%
+		filter(
+			window_kind %in% c("next input selectionChange", "next input updateBlockAttributes"),
+			diff_listener_duration_p50_ms > 0,
+			!is.na(source_path),
+			source_path != ""
+		) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("marker no-op", "mark next not persistent")
+			),
+			window_label = recode(
+				window_kind,
+				`next input selectionChange` = "Next input: selectionChange",
+				`next input updateBlockAttributes` = "Next input: updateBlockAttributes"
+			),
+			owner_label = paste0(source_path, ":", source_line),
+			owner_label = str_trunc(owner_label, width = 78, side = "left")
+		) %>%
+		group_by(window_label) %>%
+		slice_max(diff_listener_duration_p50_ms, n = 8, with_ties = FALSE) %>%
+		ungroup() %>%
+		mutate(owner_label = fct_reorder(owner_label, diff_listener_duration_p50_ms, .fun = max))
+
+	if (nrow(redux_listener_owner_diff) > 0) {
+		save_plot(
+			ggplot(redux_listener_owner_diff, aes(diff_listener_duration_p50_ms, owner_label, color = intervention, shape = intervention)) +
+				geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.45)) +
+				facet_wrap(vars(window_label), scales = "free_y", ncol = 1) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`marker no-op` = 17,
+					`mark next not persistent` = 15
+				), drop = FALSE) +
+				labs(
+					title = "The remaining input-side delta is spread across high-fanout owners",
+					subtitle = "Positive p50 Redux listener-duration deltas versus the normal marker run; no source site moves by even 1ms",
+					x = "p50 duration delta versus normal marker (ms)",
+					y = NULL,
+					color = "Timer intervention",
+					shape = "Timer intervention"
+				),
+			"40-redux-listener-next-input-deltas.png",
+			width = 12,
+			height = 8
+		)
+	}
+}
+
 message("Wrote plots to: ", figure_dir)
