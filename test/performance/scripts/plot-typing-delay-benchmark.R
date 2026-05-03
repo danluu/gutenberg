@@ -4144,4 +4144,68 @@ if (file.exists(redux_listener_owner_summary_path)) {
 	)
 }
 
+if (file.exists(redux_listener_owner_summary_path)) {
+	redux_listener_owner_family <- read_csv(redux_listener_owner_summary_path, show_col_types = FALSE) %>%
+		filter(
+			!is.na(source_path),
+			source_path != "",
+			source_path != "(non-useSelect)",
+			window_kind %in% c("marker before input", "next input selectionChange", "next input updateBlockAttributes")
+		) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			window_label = recode(
+				window_kind,
+				`marker before input` = "Timer marker before input",
+				`next input selectionChange` = "Next input: selectionChange",
+				`next input updateBlockAttributes` = "Next input: updateBlockAttributes"
+			),
+			owner_family = case_when(
+				str_detect(source_path, "block-list/block.js|block-list/index.js") ~ "block-list",
+				str_detect(source_path, "pattern-overrides") ~ "pattern-overrides",
+				str_detect(source_path, "inner-blocks") ~ "inner-blocks",
+				str_detect(source_path, "heading/edit") ~ "heading",
+				str_detect(source_path, "layout.js") ~ "layout",
+				str_detect(source_path, "use-settings") ~ "use-settings",
+				TRUE ~ "other"
+			)
+		) %>%
+		group_by(window_kind, window_label, intervention, owner_family) %>%
+		summarise(
+			listener_duration_p50_sum_ms = sum(listener_duration_p50_ms, na.rm = TRUE),
+			listener_count_p50_sum = sum(listener_count_p50, na.rm = TRUE),
+			owner_groups = n(),
+			.groups = "drop"
+		)
+
+	write_csv(redux_listener_owner_family, file.path(data_dir, "typing-delay-redux-listener-owner-family-summary.csv"))
+
+	redux_listener_owner_family_plot <- redux_listener_owner_family %>%
+		mutate(
+			owner_family = fct_reorder(owner_family, listener_duration_p50_sum_ms, .fun = sum),
+			intervention = fct_drop(intervention)
+		)
+
+	save_plot(
+		ggplot(redux_listener_owner_family_plot, aes(listener_duration_p50_sum_ms, owner_family, fill = owner_family)) +
+			geom_col(width = 0.72, alpha = 0.9) +
+			facet_grid(window_label ~ intervention, scales = "free_x") +
+			scale_fill_brewer(type = "qual", palette = "Set2") +
+			labs(
+				title = "Block-list and pattern families explain most measured listener time",
+				subtitle = "Family sums of owner p50 Redux listener-wrapper duration; reduced 1000ms attribution traces",
+				x = "Sum of owner p50 listener duration (ms)",
+				y = NULL,
+				fill = "Owner family"
+			) +
+			theme(legend.position = "bottom"),
+		"43-redux-listener-owner-family-breakdown.png",
+		width = 12,
+		height = 8
+	)
+}
+
 message("Wrote plots to: ", figure_dir)

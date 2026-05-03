@@ -236,6 +236,8 @@ The R script derives:
     `data/typing-delay-redux-listener-owner-count-duration.csv`: aggregate
     accounting, owner concentration, and count-vs-duration summaries derived
     from the low-level Redux listener owner samples.
+-   `data/typing-delay-redux-listener-owner-family-summary.csv`: owner-family
+    grouping for the same low-level Redux listener owner data.
 -   `data/typing-delay-marker-richtext-summary.csv`: RichText span summaries for
     the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
@@ -1287,6 +1289,63 @@ hundreds or thousands of very cheap listener calls in block-tree-wide
 subscriptions. The remaining open question is not "which one callback is slow?"
 but "which invalidation boundaries make thousands of block-list and
 pattern-override subscribers run on this input path?"
+
+![Redux listener owner family breakdown](figures/43-redux-listener-owner-family-breakdown.png)
+
+The family grouping makes the same point with less per-file noise. In the normal
+marker task, the family p50 sums are:
+
+| Family                  | p50 duration sum | p50 listener calls |
+| ----------------------- | ---------------: | -----------------: |
+| block-list              |          `8.8ms` |            `2,018` |
+| pattern-overrides       |          `3.6ms` |            `1,437` |
+| inner-blocks            |          `1.1ms` |              `580` |
+| heading                 |          `0.5ms` |              `202` |
+| layout                  |          `0.2ms` |               `91` |
+| all other mapped owners |          `1.0ms` |              `111` |
+
+This supports a code-level theory:
+
+-   `useSelect` invalidates its cached value on store update before rerunning
+    selectors (`packages/data/src/components/use-select/index.ts:162-168`).
+-   The Redux store wrapper runs every subscribed listener when the store's root
+    state object changes (`packages/data/src/redux-store/index.ts:535-559`).
+-   The registry store wrapper preserves all store subscribers and routes them
+    through the paused/resumed emitter path used by `registry.batch()`
+    (`packages/data/src/registry.ts:239-274` and
+    `packages/data/src/utils/emitter.ts:38-58`).
+-   The top owner families are per-block or per-block-list subscriptions:
+    `BlockListItems` reads block order, selected client IDs, visible blocks,
+    zoom state, template lock, block editing mode, block name, and inserter
+    capability (`packages/block-editor/src/components/block-list/index.js:195-259`);
+    `BlockListBlockProvider` reads block identity, attributes, selection,
+    movement/removal capability, editing mode, block index, block variations,
+    same-name blocks, and section ancestry
+    (`packages/block-editor/src/components/block-list/block.js:562-700`);
+    `useInnerBlocksProps` reads block name, zoom state, template lock, root
+    client ID, editing mode, block settings, and section root
+    (`packages/block-editor/src/components/inner-blocks/index.js:194-248`);
+    `withPatternOverrideControls` reads
+    `getSettings().__experimentalBlockBindingsSupportedAttributes` for every
+    block edit wrapper (`packages/editor/src/hooks/pattern-overrides.js:39-48`).
+-   The persistence reducer explains why the marker changes the later input's
+    path: consecutive same-attribute `UPDATE_BLOCK_ATTRIBUTES` actions are
+    non-persistent, but `MARK_LAST_CHANGE_AS_PERSISTENT` is an explicit boundary
+    (`packages/block-editor/src/store/reducer.js:166-173` and `421-480`).
+    `useBlockSync()` then chooses `onChange` or `onInput` from
+    `isLastBlockChangePersistent()` (`packages/block-editor/src/components/provider/use-block-sync.js:379-470`).
+
+What this confirms: the timing difference is caused by Gutenberg state/action
+ordering plus the data-layer subscription model. The marker changes the
+persistence/action path, and any effective `core/block-editor` state change in
+that path wakes thousands of `useSelect` listeners. The dominant cost is the
+number of subscriptions reached by that invalidation.
+
+What this disconfirms: the current evidence does not support a browser-only
+timing explanation, a single pathological selector, or unusually slow callback
+bodies. It also does not support "the marker makes the whole cycle cheaper";
+the marker task itself is expensive and is outside the next input's event-only
+metric.
 
 Finally, I paired the marker task before each retained input with that same
 input in the trace-heavy run. This tests the most important accounting theory

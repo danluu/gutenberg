@@ -1,0 +1,50 @@
+window_kind,window_label,intervention,owner_family,listener_duration_p50_sum_ms,listener_count_p50_sum,owner_groups
+marker before input,Timer marker before input,normal marker,block-list,8.800000429153442,2018,3
+marker before input,Timer marker before input,normal marker,heading,0.4999997615814209,202,1
+marker before input,Timer marker before input,normal marker,inner-blocks,1.1000003814697266,580,1
+marker before input,Timer marker before input,normal marker,layout,0.19999980926513672,91,1
+marker before input,Timer marker before input,normal marker,other,0.9999997615814209,111,59
+marker before input,Timer marker before input,normal marker,pattern-overrides,3.5999996662139893,1437,1
+marker before input,Timer marker before input,normal marker,use-settings,0.10000014305114746,58,1
+next input selectionChange,Next input: selectionChange,normal marker,block-list,1.2499998807907104,2013.5,3
+next input selectionChange,Next input: selectionChange,normal marker,heading,0.25,202,1
+next input selectionChange,Next input: selectionChange,normal marker,inner-blocks,0.2999997138977051,578,1
+next input selectionChange,Next input: selectionChange,normal marker,layout,0.05000007152557373,91,1
+next input selectionChange,Next input: selectionChange,normal marker,other,0.10000014305114746,90,39
+next input selectionChange,Next input: selectionChange,normal marker,pattern-overrides,0.6000000238418579,1434.5,1
+next input selectionChange,Next input: selectionChange,normal marker,use-settings,0,53,1
+next input selectionChange,Next input: selectionChange,marker no-op,block-list,1.850000262260437,2018,3
+next input selectionChange,Next input: selectionChange,marker no-op,heading,0.20000004768371585,202,1
+next input selectionChange,Next input: selectionChange,marker no-op,inner-blocks,0.45000016689300537,580,1
+next input selectionChange,Next input: selectionChange,marker no-op,layout,0.10000002384185792,91,1
+next input selectionChange,Next input: selectionChange,marker no-op,other,0,111.5,60
+next input selectionChange,Next input: selectionChange,marker no-op,pattern-overrides,1.1499996185302734,1437,1
+next input selectionChange,Next input: selectionChange,marker no-op,use-settings,0.04999995231628418,55.5,1
+next input selectionChange,Next input: selectionChange,mark next not persistent,block-list,1.8499997854232788,2017.5,3
+next input selectionChange,Next input: selectionChange,mark next not persistent,heading,0.1499999761581421,202,1
+next input selectionChange,Next input: selectionChange,mark next not persistent,inner-blocks,0.4500000476837158,580,1
+next input selectionChange,Next input: selectionChange,mark next not persistent,layout,0.09999990463256836,91,1
+next input selectionChange,Next input: selectionChange,mark next not persistent,other,0.15000009536743164,93,42
+next input selectionChange,Next input: selectionChange,mark next not persistent,pattern-overrides,1.3500001430511477,1436.5,1
+next input selectionChange,Next input: selectionChange,mark next not persistent,use-settings,0,53.5,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,normal marker,block-list,0.8000000715255737,2002,3
+next input updateBlockAttributes,Next input: updateBlockAttributes,normal marker,heading,0.09999990463256836,201,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,normal marker,inner-blocks,0.2499997615814209,574.5,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,normal marker,layout,0,90.5,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,normal marker,other,0,110.5,60
+next input updateBlockAttributes,Next input: updateBlockAttributes,normal marker,pattern-overrides,0.7999997138977051,1426,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,normal marker,use-settings,0,56.5,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,marker no-op,block-list,1.1500002145767212,2018,3
+next input updateBlockAttributes,Next input: updateBlockAttributes,marker no-op,heading,0.09999990463256836,202,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,marker no-op,inner-blocks,0.5500000715255737,580,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,marker no-op,layout,0.10000002384185792,91,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,marker no-op,other,0,119,60
+next input updateBlockAttributes,Next input: updateBlockAttributes,marker no-op,pattern-overrides,0.5,1437,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,marker no-op,use-settings,0,56,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,mark next not persistent,block-list,0.9999997615814209,2004.5,3
+next input updateBlockAttributes,Next input: updateBlockAttributes,mark next not persistent,heading,0.15000009536743164,202,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,mark next not persistent,inner-blocks,0.6500000953674316,574.5,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,mark next not persistent,layout,0,90.5,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,mark next not persistent,other,0,110.5,60
+next input updateBlockAttributes,Next input: updateBlockAttributes,mark next not persistent,pattern-overrides,0.4499998092651367,1429.5,1
+next input updateBlockAttributes,Next input: updateBlockAttributes,mark next not persistent,use-settings,0,56,1
