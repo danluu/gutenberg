@@ -3,7 +3,7 @@
  */
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -11,6 +11,8 @@ import { defineConfig } from '@playwright/test';
 import baseConfig from '@wordpress/scripts/config/playwright.config.js';
 
 process.env.ASSETS_PATH = path.join( __dirname, 'assets' );
+
+const benchmarkBrowser = process.env.BENCHMARK_BROWSER;
 
 const config = defineConfig( {
 	...baseConfig,
@@ -32,6 +34,15 @@ const config = defineConfig( {
 		actionTimeout: 120_000, // 2 minutes.
 		video: 'off',
 	},
+	projects:
+		benchmarkBrowser === 'firefox'
+			? [
+					{
+						name: 'firefox',
+						use: { ...devices[ 'Desktop Firefox' ] },
+					},
+			  ]
+			: baseConfig.projects,
 } );
 
 export default config;

@@ -43,6 +43,8 @@ run_specs <- tribble(
 	"between_keys_1110_2000_dense", "Complete keypress, then wait: 1110-2000ms, 10ms step", "artifacts/typing-delay-benchmark-between-keys-1110-2000-dense/typing-delay-benchmark-1777764764748.json", "large post", "delay after full keydown/keypress/input/keyup sequence, dense 1110-2000ms extension",
 	"container_keyhold_0_2000_dense", "Container block: key held during delay", "artifacts/typing-delay-benchmark-container-keyhold-0-2000-dense/typing-delay-benchmark-1777781875940.json", "small post with containers", "typing inside the Columns container fixture, normal Playwright delay, dense 0-2000ms scan",
 	"container_between_keys_0_2000_dense", "Container block: complete keypress, then wait", "artifacts/typing-delay-benchmark-container-between-keys-0-2000-dense/typing-delay-benchmark-1777783331811.json", "small post with containers", "typing inside the Columns container fixture, delay after full keydown/keypress/input/keyup sequence, dense 0-2000ms scan",
+	"firefox_boundary_listeners", "Firefox input listener boundary", "artifacts/typing-delay-benchmark-firefox-boundary-listeners-confirm/typing-delay-benchmark-1777785299877.json", "large post, Firefox", "Firefox listener-timing check around 1000ms, two orderings",
+	"firefox_1000_narrow_listeners", "Firefox input listener narrow boundary", "artifacts/typing-delay-benchmark-firefox-1000-narrow-listeners/typing-delay-benchmark-1777785514268.json", "large post, Firefox", "Firefox listener-timing check from 995ms to 1010ms",
 	"mode_trace_keyhold", "Paired trace: key held during delay", "artifacts/typing-delay-benchmark-mode-trace-keyhold/typing-delay-benchmark-1777759091224.json", "large post", "paired browser/action/timer trace for normal Playwright delay",
 	"mode_trace_between_keys", "Paired trace: wait after keyup", "artifacts/typing-delay-benchmark-mode-trace-between-keys/typing-delay-benchmark-1777759237728.json", "large post", "paired browser/action/timer trace for delay after full keypress",
 	"native_keyhold_timer", "Native contenteditable: key held during delay", "artifacts/typing-delay-benchmark-native-keyhold-timer/typing-delay-benchmark-1777759696881.json", "native contenteditable", "minimal contenteditable with a 1000ms input timer and normal Playwright delay",
@@ -1694,6 +1696,73 @@ listener_events <- derived$event_listener_events %>%
 			.default = NA_character_
 		)
 	)
+
+firefox_listener_run_ids <- c("firefox_boundary_listeners", "firefox_1000_narrow_listeners")
+
+firefox_input_dispatches <- listener_events %>%
+	filter(run_id %in% firefox_listener_run_ids, type == "input", data == "x" | inputType == "insertText") %>%
+	group_by(run_id, run_label, round, delayMs) %>%
+	arrange(eventMs, .by_group = TRUE) %>%
+	mutate(
+		stopMs = eventMs + replace_na(durationMs, 0),
+		previousStopMs = lag(cummax(stopMs), default = -Inf),
+		dispatchIndex = cumsum(row_number() == 1 | eventMs > previousStopMs + 2)
+	) %>%
+	group_by(run_id, run_label, round, delayMs, dispatchIndex) %>%
+	summarise(
+		startMs = min(eventMs, na.rm = TRUE),
+		stopMs = max(stopMs, na.rm = TRUE),
+		duration_ms = stopMs - startMs,
+		listener_count = n(),
+		.groups = "drop_last"
+	) %>%
+	arrange(startMs, .by_group = TRUE) %>%
+	mutate(sample_index = row_number(), is_throwaway = sample_index == 1) %>%
+	ungroup()
+
+firefox_input_by_delay <- firefox_input_dispatches %>%
+	filter(!is_throwaway) %>%
+	group_by(delayMs) %>%
+	summarise(
+		n = n(),
+		mean_ms = mean(duration_ms, na.rm = TRUE),
+		median_ms = median(duration_ms, na.rm = TRUE),
+		p10_ms = quant(duration_ms, 0.1),
+		p90_ms = quant(duration_ms, 0.9),
+		.groups = "drop"
+	)
+
+firefox_input_by_delay_path <- file.path(data_dir, "typing-delay-firefox-input-by-delay.csv")
+firefox_input_dispatches_path <- file.path(data_dir, "typing-delay-firefox-input-dispatches.csv")
+
+if (nrow(firefox_input_dispatches) > 0) {
+	write_csv(firefox_input_dispatches, firefox_input_dispatches_path)
+}
+
+if (nrow(firefox_input_by_delay) == 0 && file.exists(firefox_input_by_delay_path)) {
+	firefox_input_by_delay <- read_csv(firefox_input_by_delay_path, show_col_types = FALSE)
+}
+
+if (nrow(firefox_input_by_delay) > 0) {
+	write_csv(firefox_input_by_delay, firefox_input_by_delay_path)
+
+	save_plot(
+		ggplot(firefox_input_by_delay, aes(delayMs, median_ms)) +
+			geom_linerange(aes(ymin = p10_ms, ymax = p90_ms), color = brewer_color("Blues", 5, type = "seq", n = 9), alpha = 0.75) +
+			geom_point(color = brewer_color("Dark2", 1), size = 2.4) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+			scale_x_continuous(breaks = sort(unique(firefox_input_by_delay$delayMs))) +
+			labs(
+				title = "Firefox also drops after the one-second boundary",
+				subtitle = "Firefox cannot use Chromium EventDispatch tracing here, so this uses input-event listener dispatch spans; bars show p10-p90",
+				x = "Configured Playwright key-hold delay",
+				y = "Input-event listener dispatch span (ms)"
+			),
+		"17-firefox-input-listener-boundary.png",
+		width = 10,
+		height = 5.5
+	)
+}
 
 listener_input_summary <- listener_events %>%
 	filter(run_id %in% listener_trace_run_ids, type == "input") %>%

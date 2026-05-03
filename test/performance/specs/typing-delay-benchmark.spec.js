@@ -60,6 +60,9 @@ const traceData =
 const traceEventListeners =
 	process.env.BENCHMARK_TRACE_EVENT_LISTENERS === '1' ||
 	process.env.BENCHMARK_TRACE_EVENT_LISTENERS === 'true';
+const useBrowserTrace =
+	process.env.BENCHMARK_USE_BROWSER_TRACE !== '0' &&
+	process.env.BENCHMARK_USE_BROWSER_TRACE !== 'false';
 const traceRichTextSpans =
 	process.env.BENCHMARK_TRACE_RICH_TEXT_SPANS === '1' ||
 	process.env.BENCHMARK_TRACE_RICH_TEXT_SPANS === 'true';
@@ -624,7 +627,7 @@ function keyboardEventDispatches( trace ) {
 		.sort( ( a, b ) => a.timestampMs - b.timestampMs );
 }
 
-function groupedKeyboardEvents( trace ) {
+function groupKeyboardDispatches( dispatches ) {
 	const groups = [];
 	let currentGroup = {
 		keydownEvents: [],
@@ -632,7 +635,7 @@ function groupedKeyboardEvents( trace ) {
 		keyup: null,
 	};
 
-	for ( const event of keyboardEventDispatches( trace ) ) {
+	for ( const event of dispatches ) {
 		if (
 			event.type === 'keydown' &&
 			( currentGroup.keypress || currentGroup.keyup )
@@ -672,6 +675,68 @@ function groupedKeyboardEvents( trace ) {
 	}
 
 	return groups;
+}
+
+function groupedKeyboardEvents( trace ) {
+	return groupKeyboardDispatches( keyboardEventDispatches( trace ) );
+}
+
+function eventListenerKeyboardDispatches( events ) {
+	const dispatches = [];
+	let currentDispatch = null;
+	const listenerEvents = events
+		.filter(
+			( event ) =>
+				[ 'keydown', 'keypress', 'keyup' ].includes( event.type ) &&
+				typeof event.durationMs === 'number'
+		)
+		.sort( ( a, b ) => a.startedAtMs - b.startedAtMs );
+
+	function flushDispatch() {
+		if ( ! currentDispatch ) {
+			return;
+		}
+
+		dispatches.push( {
+			type: currentDispatch.type,
+			timestampMs: currentDispatch.startedAtMs,
+			durationMs:
+				currentDispatch.stoppedAtMs - currentDispatch.startedAtMs,
+			listenerDurationMs: currentDispatch.listenerDurationMs,
+		} );
+		currentDispatch = null;
+	}
+
+	for ( const event of listenerEvents ) {
+		const startedAtMs = event.startedAtMs;
+		const stoppedAtMs = startedAtMs + event.durationMs;
+		const startsAfterCurrentDispatch =
+			currentDispatch && startedAtMs > currentDispatch.stoppedAtMs + 2;
+
+		if (
+			! currentDispatch ||
+			event.type !== currentDispatch.type ||
+			startsAfterCurrentDispatch
+		) {
+			flushDispatch();
+			currentDispatch = {
+				type: event.type,
+				startedAtMs,
+				stoppedAtMs,
+				listenerDurationMs: 0,
+			};
+		}
+
+		currentDispatch.stoppedAtMs = Math.max(
+			currentDispatch.stoppedAtMs,
+			stoppedAtMs
+		);
+		currentDispatch.listenerDurationMs += event.durationMs;
+	}
+
+	flushDispatch();
+
+	return dispatches;
 }
 
 async function dispatchCdpKeyPress( cdpSession, delayMs ) {
@@ -835,6 +900,55 @@ test.describe( 'Typing delay benchmark', () => {
 					currentWindow.__typingBenchmarkEventListenerEvents = [];
 				}
 			} );
+		}
+
+		async function collectEventListenerEvents( startMs, stopMs ) {
+			if ( ! traceEventListeners ) {
+				return undefined;
+			}
+
+			return await page.evaluate(
+				( {
+					startMs: collectionStartMs,
+					stopMs: collectionStopMs,
+				} ) => {
+					const windows = [ { name: 'parent', window } ];
+					for ( const iframe of document.querySelectorAll(
+						'iframe'
+					) ) {
+						try {
+							if ( iframe.contentWindow ) {
+								windows.push( {
+									name: iframe.name || iframe.id || 'iframe',
+									window: iframe.contentWindow,
+								} );
+							}
+						} catch {
+							// Ignore inaccessible frames.
+						}
+					}
+
+					return windows.flatMap(
+						( { name, window: currentWindow } ) =>
+							(
+								currentWindow.__typingBenchmarkEventListenerEvents ||
+								[]
+							)
+								.filter(
+									( event ) =>
+										event.startedAtMs >=
+											collectionStartMs - 5 &&
+										event.startedAtMs <=
+											collectionStopMs + 5
+								)
+								.map( ( event ) => ( {
+									...event,
+									windowName: name,
+								} ) )
+					);
+				},
+				{ startMs, stopMs }
+			);
 		}
 
 		async function setupRichTextSpanTracingInitScript() {
@@ -1644,7 +1758,9 @@ test.describe( 'Typing delay benchmark', () => {
 					performance.now()
 				);
 
-				await metrics.startTracing();
+				if ( useBrowserTrace ) {
+					await metrics.startTracing();
+				}
 				if (
 					waitForPersistenceBetweenKeys ||
 					delayMode === 'after-persistence'
@@ -1741,15 +1857,25 @@ test.describe( 'Typing delay benchmark', () => {
 						timeout: Math.max( 30_000, sampleCount * delayMs * 4 ),
 					} );
 				}
-				await metrics.stopTracing();
+				if ( useBrowserTrace ) {
+					await metrics.stopTracing();
+				}
 
 				const runStoppedAtBrowserNowMs = await page.evaluate( () =>
 					performance.now()
 				);
 				const runStoppedAtEpochMs = Date.now();
+				const eventListenerEvents = await collectEventListenerEvents(
+					runStartedAtBrowserNowMs,
+					runStoppedAtBrowserNowMs
+				);
 
-				const keyboardEvents = keyboardEventDispatches( metrics.trace );
-				const keyGroups = groupedKeyboardEvents( metrics.trace );
+				const keyboardEvents = useBrowserTrace
+					? keyboardEventDispatches( metrics.trace )
+					: eventListenerKeyboardDispatches(
+							eventListenerEvents || []
+					  );
+				const keyGroups = groupKeyboardDispatches( keyboardEvents );
 
 				delayRunSummaries.push( {
 					round,
@@ -1853,55 +1979,7 @@ test.describe( 'Typing delay benchmark', () => {
 					gapTraceEvents: traceGapEvents
 						? traceEventsForKeyGaps( metrics.trace )
 						: undefined,
-					eventListenerEvents: traceEventListeners
-						? await page.evaluate(
-								( { startMs, stopMs } ) => {
-									const windows = [
-										{ name: 'parent', window },
-									];
-									for ( const iframe of document.querySelectorAll(
-										'iframe'
-									) ) {
-										try {
-											if ( iframe.contentWindow ) {
-												windows.push( {
-													name:
-														iframe.name ||
-														iframe.id ||
-														'iframe',
-													window: iframe.contentWindow,
-												} );
-											}
-										} catch {
-											// Ignore inaccessible frames.
-										}
-									}
-
-									return windows.flatMap(
-										( { name, window: currentWindow } ) =>
-											(
-												currentWindow.__typingBenchmarkEventListenerEvents ||
-												[]
-											)
-												.filter(
-													( event ) =>
-														event.startedAtMs >=
-															startMs - 5 &&
-														event.startedAtMs <=
-															stopMs + 5
-												)
-												.map( ( event ) => ( {
-													...event,
-													windowName: name,
-												} ) )
-									);
-								},
-								{
-									startMs: runStartedAtBrowserNowMs,
-									stopMs: runStoppedAtBrowserNowMs,
-								}
-						  )
-						: undefined,
+					eventListenerEvents,
 					richTextSpanEvents: traceRichTextSpans
 						? await page.evaluate(
 								( { startMs, stopMs } ) => {
@@ -2068,7 +2146,7 @@ test.describe( 'Typing delay benchmark', () => {
 					}
 				}
 
-				if ( keyGroups.length !== sampleCount ) {
+				if ( useBrowserTrace && keyGroups.length !== sampleCount ) {
 					console.warn(
 						`Delay ${ delayMs }ms round ${ round } produced ` +
 							`${ keyGroups.length } key groups, expected ${ sampleCount }.`
@@ -2124,6 +2202,10 @@ test.describe( 'Typing delay benchmark', () => {
 				traceSchedulers,
 				traceGapEvents,
 				traceEventListeners,
+				useBrowserTrace,
+				latencyMetric: useBrowserTrace
+					? 'browser EventDispatch trace'
+					: 'event listener dispatch span',
 				traceRichTextSpans,
 				traceDataSpans,
 				traceAllDataSpans,

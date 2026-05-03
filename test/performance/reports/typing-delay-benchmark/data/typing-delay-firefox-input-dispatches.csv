@@ -1,0 +1,225 @@
+run_id,run_label,round,delayMs,dispatchIndex,startMs,stopMs,duration_ms,listener_count,sample_index,is_throwaway
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,1,153,204,51,6,1,TRUE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,2,1214,1271,57,6,2,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,3,2285,2331,46,6,3,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,4,3335,3376,41,6,4,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,5,4422,4450,28,6,5,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,6,5457,5507,50,6,6,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,7,6549,6578,29,6,7,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,8,7620,7651,31,6,8,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,9,8697,8729,32,6,9,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,10,9739,9792,53,6,10,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,11,10798,10851,53,6,11,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,12,11897,11926,29,6,12,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,13,12934,12986,52,6,13,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,14,13993,14042,49,6,14,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,15,15049,15104,55,6,15,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,16,16110,16162,52,6,16,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,17,17169,17222,53,6,17,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,18,18227,18281,54,6,18,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,19,19287,19342,55,6,19,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,995,20,20348,20400,52,6,20,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,1,124,181,57,6,1,TRUE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,2,1266,1286,20,6,2,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,3,2298,2348,50,6,3,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,4,3433,3454,21,6,4,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,5,4498,4524,26,6,5,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,6,5533,5587,54,6,6,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,7,6596,6649,53,6,7,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,8,7658,7711,53,6,8,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,9,8761,8789,28,6,9,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,10,9886,9907,21,6,10,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,11,10955,10985,30,6,11,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,12,11995,12047,52,6,12,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,13,13058,13113,55,6,13,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,14,14123,14170,47,6,14,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,15,15216,15247,31,6,15,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,16,16301,16328,27,6,16,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,17,17375,17407,32,6,17,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,18,18492,18512,20,6,18,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,19,19568,19595,27,6,19,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1000,20,20684,20704,20,6,20,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,1,163,193,30,6,1,TRUE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,2,1284,1306,22,6,2,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,3,2319,2375,56,6,3,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,4,3457,3478,21,6,4,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,5,4571,4592,21,6,5,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,6,5643,5681,38,6,6,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,7,6774,6793,19,6,7,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,8,7806,7859,53,6,8,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,9,8910,8947,37,6,9,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,10,10012,10044,32,6,10,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,11,11103,11132,29,6,11,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,12,12179,12209,30,6,12,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,13,13295,13316,21,6,13,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,14,14407,14428,21,6,14,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,15,15473,15497,24,6,15,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,16,16549,16578,29,6,16,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,17,17663,17683,20,6,17,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,18,18726,18772,46,6,18,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,19,19828,19858,30,6,19,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1005,20,20909,20939,30,6,20,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,1,153,177,24,6,1,TRUE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,2,1277,1305,28,6,2,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,3,2402,2423,21,6,3,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,4,3479,3507,28,6,4,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,5,4606,4628,22,6,5,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,6,5719,5742,23,6,6,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,7,6805,6832,27,6,7,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,8,7863,7891,28,6,8,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,9,8989,9011,22,6,9,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,10,10110,10130,20,6,10,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,11,11229,11253,24,6,11,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,12,12346,12366,20,6,12,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,13,13454,13474,20,6,13,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,14,14534,14560,26,6,14,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,15,15630,15654,24,6,15,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,16,16697,16726,29,6,16,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,17,17785,17812,27,6,17,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,18,18901,18922,21,6,18,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,19,19973,20002,29,6,19,FALSE
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,0,1010,20,21099,21119,20,6,20,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,1,69,123,54,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,2,1084,1135,51,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,3,2107,2148,41,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,4,3110,3165,55,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,5,4129,4180,51,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,6,5138,5191,53,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,7,6156,6206,50,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,950,8,7167,7214,47,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,1,64,119,55,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,2,1100,1152,52,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,3,2132,2183,51,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,4,3161,3218,57,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,5,4199,4255,56,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,6,5235,5289,54,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,7,6269,6325,56,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,970,8,7306,7357,51,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,1,76,130,54,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,2,1119,1174,55,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,3,2167,2220,53,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,4,3207,3257,50,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,5,4248,4303,55,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,6,5293,5346,53,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,7,6337,6388,51,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,980,8,7377,7430,53,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,1,85,138,53,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,2,1138,1194,56,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,3,2194,2243,49,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,4,3244,3294,50,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,5,4293,4345,52,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,6,5344,5400,56,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,7,6404,6455,51,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,990,8,7456,7511,55,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,1,95,137,42,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,2,1150,1202,52,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,3,2212,2267,55,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,4,3276,3335,59,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,5,4349,4402,53,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,6,5413,5462,49,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,7,6472,6525,53,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1000,8,7612,7632,20,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,1,180,201,21,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,2,1286,1306,20,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,3,2391,2414,23,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,4,3504,3525,21,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,5,4615,4636,21,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,6,5726,5747,21,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,7,6834,6853,19,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1010,8,7940,7961,21,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,1,145,172,27,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,2,1272,1296,24,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,3,2396,2417,21,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,4,3464,3491,27,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,5,4582,4602,20,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,6,5688,5708,20,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,7,6796,6816,20,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1020,8,7911,7930,19,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,1,162,193,31,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,2,1244,1273,29,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,3,2366,2386,20,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,4,3478,3500,22,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,5,4593,4615,22,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,6,5708,5729,21,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,7,6810,6832,22,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1030,8,7875,7906,31,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,1,180,201,21,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,2,1288,1310,22,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,3,2404,2425,21,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,4,3498,3523,25,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,5,4619,4639,20,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,6,5731,5753,22,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,7,6845,6866,21,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,0,1050,8,7956,7977,21,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,1,46,101,55,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,2,1063,1119,56,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,3,2080,2126,46,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,4,3086,3135,49,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,5,4094,4141,47,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,6,5100,5151,51,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,7,6112,6163,51,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,950,8,7123,7174,51,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,1,65,119,54,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,2,1099,1157,58,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,3,2141,2184,43,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,4,3163,3216,53,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,5,4196,4247,51,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,6,5228,5282,54,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,7,6262,6313,51,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,970,8,7293,7347,54,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,1,74,120,46,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,2,1108,1161,53,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,3,2153,2206,53,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,4,3198,3250,52,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,5,4239,4291,52,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,6,5283,5336,53,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,7,6327,6379,52,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,980,8,7371,7422,51,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,1,83,132,49,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,2,1132,1185,53,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,3,2185,2237,52,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,4,3240,3292,52,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,5,4291,4344,53,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,6,5345,5399,54,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,7,6396,6448,52,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,990,8,7450,7503,53,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,1,95,150,55,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,2,1160,1208,48,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,3,2218,2271,53,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,4,3281,3336,55,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,5,4391,4417,26,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,6,5428,5481,53,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,7,6492,6544,52,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1000,8,7629,7651,22,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,1,179,200,21,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,2,1293,1312,19,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,3,2400,2420,20,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,4,3477,3503,26,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,5,4604,4624,20,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,6,5715,5736,21,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,7,6832,6852,20,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1010,8,7956,7975,19,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,1,171,191,20,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,2,1284,1305,21,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,3,2354,2383,29,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,4,3450,3476,26,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,5,4569,4589,20,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,6,5685,5705,20,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,7,6792,6812,20,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1020,8,7862,7880,18,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,1,138,162,24,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,2,1207,1238,31,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,3,2330,2350,20,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,4,3440,3461,21,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,5,4554,4574,20,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,6,5637,5664,27,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,7,6754,6780,26,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1030,8,7835,7862,27,6,8,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,1,184,206,22,6,1,TRUE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,2,1294,1316,22,6,2,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,3,2377,2404,27,6,3,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,4,3497,3517,20,6,4,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,5,4618,4638,20,6,5,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,6,5731,5751,20,6,6,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,7,6840,6860,20,6,7,FALSE
+firefox_boundary_listeners,Firefox input listener boundary,1,1050,8,7950,7971,21,6,8,FALSE

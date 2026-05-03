@@ -1355,6 +1355,28 @@ container_between_keys_0_2000_dense,"Container block: complete keypress, then wa
 container_between_keys_0_2000_dense,"Container block: complete keypress, then wait",small post with containers,0,1980,0,2,7,7,14,7,7,1777784550834,1777784562967,12133
 container_between_keys_0_2000_dense,"Container block: complete keypress, then wait",small post with containers,0,1990,0,2,7,7,14,7,7,1777784562967,1777784575164,12197
 container_between_keys_0_2000_dense,"Container block: complete keypress, then wait",small post with containers,0,2000,0,2,7,7,14,7,7,1777784575165,1777784587405,12240
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,950,0,953,9,0,17,8,9,1777785299877,1777785309097,9220
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,970,0,953,9,0,17,8,9,1777785309185,1777785318562,9377
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,980,0,953,9,0,17,8,9,1777785318612,1777785328052,9440
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,990,0,953,9,0,17,8,9,1777785328115,1777785337664,9549
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,1000,0,953,9,0,17,8,9,1777785337726,1777785347413,9687
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,1010,0,953,9,0,17,8,9,1777785347464,1777785357479,10015
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,1020,0,953,9,0,17,8,9,1777785357526,1777785367516,9990
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,1030,0,953,9,0,17,8,9,1777785367567,1777785377534,9967
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",0,1050,0,953,9,0,17,8,9,1777785377581,1777785387611,10030
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,1050,0,953,9,0,17,8,9,1777785387656,1777785397685,10029
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,1030,0,953,9,0,17,8,9,1777785397728,1777785407647,9919
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,1020,0,953,9,0,17,8,9,1777785407694,1777785417632,9938
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,1010,0,953,9,0,17,8,9,1777785417675,1777785427704,10029
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,1000,0,953,9,0,17,8,9,1777785427749,1777785437449,9700
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,990,0,953,9,0,17,8,9,1777785437492,1777785447029,9537
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,980,0,953,9,0,17,8,9,1777785447073,1777785456512,9439
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,970,0,953,9,0,17,8,9,1777785456577,1777785465933,9356
+firefox_boundary_listeners,Firefox input listener boundary,"large post, Firefox",1,950,0,953,9,0,17,8,9,1777785465996,1777785475120,9124
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post, Firefox",0,995,0,953,21,0,41,20,21,1777785514268,1777785536674,22406
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post, Firefox",0,1000,0,953,21,0,41,20,21,1777785536780,1777785559505,22725
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post, Firefox",0,1005,0,953,21,0,41,20,21,1777785559595,1777785582573,22978
+firefox_1000_narrow_listeners,Firefox input listener narrow boundary,"large post, Firefox",0,1010,0,953,21,0,41,20,21,1777785582685,1777785605826,23141
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,990,0,953,9,9,18,9,9,1777759091225,1777759100525,9300
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,1000,0,953,9,9,18,9,9,1777759100603,1777759110200,9597
 mode_trace_keyhold,Paired trace: key held during delay,large post,0,1010,0,953,9,9,18,9,9,1777759110272,1777759119870,9598

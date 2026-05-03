@@ -488,6 +488,40 @@ points at `230..250ms` and its cleanest low points at `260..330ms`, and why the
 The intervention runs should not be treated as production benchmarks. Wrapping
 `setTimeout` can perturb scheduling. Their purpose is causal attribution.
 
+## Firefox Check
+
+Firefox cannot use the Chromium `EventDispatch` trace metric used for the main
+Chrome plots. To check whether the same boundary exists there, I added a Firefox
+project path and ran the benchmark with in-page event-listener timing. The graph
+below measures the dispatch span of the editable element's `input` event
+listeners, not Chromium trace slices.
+
+![Firefox input listener boundary](figures/17-firefox-input-listener-boundary.png)
+
+Firefox shows the same qualitative transition, but the exact `1000ms` point is
+mixed. The high regime is clear through `990ms`; `1000ms` contains both high and
+low samples; `1005ms` is mostly low; `1010ms` and later are consistently low in
+these runs.
+
+|    Delay |   n |        p50 |        p10 |        p90 |       mean |
+| -------: | --: | ---------: | ---------: | ---------: | ---------: |
+|  `950ms` |  14 | `51.0ms`  | `46.3ms`  | `54.4ms`  | `49.9ms`  |
+|  `970ms` |  14 | `53.5ms`  | `51.0ms`  | `56.7ms`  | `52.9ms`  |
+|  `980ms` |  14 | `53.0ms`  | `51.0ms`  | `54.4ms`  | `52.6ms`  |
+|  `990ms` |  14 | `52.5ms`  | `50.3ms`  | `55.7ms`  | `52.7ms`  |
+|  `995ms` |  19 | `52.0ms`  | `29.0ms`  | `55.0ms`  | `45.8ms`  |
+| `1000ms` |  33 | `48.0ms`  | `20.2ms`  | `54.8ms`  | `39.9ms`  |
+| `1005ms` |  19 | `29.0ms`  | `20.8ms`  | `47.4ms`  | `30.5ms`  |
+| `1010ms` |  33 | `21.0ms`  | `20.0ms`  | `28.0ms`  | `22.7ms`  |
+| `1020ms` |  14 | `20.0ms`  | `19.3ms`  | `26.7ms`  | `21.8ms`  |
+| `1030ms` |  14 | `22.0ms`  | `20.0ms`  | `30.4ms`  | `24.2ms`  |
+| `1050ms` |  14 | `21.0ms`  | `20.0ms`  | `24.1ms`  | `21.6ms`  |
+
+So the answer is "yes, with a caveat": Firefox has the same one-second boundary
+effect, but with this listener-based metric the clean low band starts just after
+the one-second mark rather than being cleanly centered on the exact `1000ms`
+sample.
+
 ## Deeper Pass: The Delay Is A Key Hold
 
 The first report explained the `~1000ms` cliff but left the later `1200-2000ms`
@@ -1387,6 +1421,10 @@ The key runs used in this report were:
     fixture, normal Playwright key-hold delay, `0..2000ms` with a `10ms` step.
 -   `container_between_keys_0_2000_dense`: typing inside the Columns container
     fixture, complete keypress then wait, `0..2000ms` with a `10ms` step.
+-   `firefox_boundary_listeners`: Firefox listener-timing check around
+    `1000ms`, with ascending and descending orderings.
+-   `firefox_1000_narrow_listeners`: Firefox listener-timing check at
+    `995ms`, `1000ms`, `1005ms`, and `1010ms`.
 -   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
 -   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer
