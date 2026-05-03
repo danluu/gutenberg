@@ -897,6 +897,10 @@ cross-run p50 difference.
 
 ![CI-comparable start-wait by character](figures/78-ci-comparable-start-wait-by-character.png)
 
+![CI-comparable start-wait keypress distributions](figures/78b-ci-comparable-start-wait-keypress-distributions.png)
+
+![CI-comparable start-wait keypress p10-p90](figures/78c-ci-comparable-start-wait-keypress-p10-p90.png)
+
 ![CI-comparable start-wait phases](figures/79-ci-comparable-start-wait-phases.png)
 
 ![CI-comparable start-wait per draft](figures/80-ci-comparable-start-wait-per-draft.png)
@@ -920,14 +924,16 @@ literal wall-clock time before tracing starts. In this run, adding a `60s`
 post-setup wait added about `60s` per fresh draft before typing, but did not
 move the retained p50.
 
-The per-character plot is the important caveat. The beginning of the sequence is
-not the same as the retained aggregate: the discarded first character is slow,
-and the first retained character is also slow at about `25ms` across the
-selected waits. By character 2, the sequence has fallen into the ordinary
-`~16-17ms` low band. So CI's current one-character throwaway removes the coldest
-first input, but it still retains one early slow sample. That early retained
-sample affects means and p90s more than p50s. Changing the start wait does not
-remove that shape; it just moves idle time before the sequence.
+The per-keypress distribution is the important caveat. The beginning of the
+sequence is not the same as the retained aggregate: keypress 1 is the discarded
+throwaway and is slow, and keypress 2, the first retained keypress, is also slow
+at about `25ms` across the selected waits. By keypress 3, the sequence has fallen
+into the ordinary `~16-17ms` low band. So CI's current one-character throwaway
+removes the coldest first input, but it still retains one early slow sample. That
+early retained sample affects means and p90s more than p50s. Changing the start
+wait does not remove that shape; it just moves idle time before the sequence.
+The raw box/point plot also shows the few large outliers: they are isolated and
+mostly on the discarded first keypress, not a monotonic startup-wait effect.
 
 Per-draft summaries also show no monotonic start-wait effect hiding under the
 aggregate p50. Fitting per-draft retained p50 against `log10(wait + 100ms)` gives

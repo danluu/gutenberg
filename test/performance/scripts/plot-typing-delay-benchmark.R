@@ -1412,6 +1412,7 @@ if (
 }
 
 ci_start_wait_curve_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-summary.csv")
+ci_start_wait_curve_samples_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-samples.csv")
 ci_start_wait_curve_sample_index_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-sample-index-summary.csv")
 ci_start_wait_curve_phases_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-phases.csv")
 ci_start_wait_curve_draft_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-draft-summary.csv")
@@ -1510,6 +1511,100 @@ if (
 		width = 10.5,
 		height = 5.5
 	)
+
+	if (file.exists(ci_start_wait_curve_samples_path)) {
+		ci_start_wait_keypress_samples <- read_csv(ci_start_wait_curve_samples_path, show_col_types = FALSE) %>%
+			mutate(
+				startup_wait_ms = settle_after_editor_setup_ms,
+				keypress_index = sample_index + 1,
+				keypress_label = factor(as.character(keypress_index), levels = as.character(1:11)),
+				wait_label = factor(
+					case_when(
+						startup_wait_ms == 0 ~ "0",
+						startup_wait_ms < 1000 ~ paste0(startup_wait_ms, "ms"),
+						TRUE ~ paste0(startup_wait_ms / 1000, "s")
+					),
+					levels = ci_start_wait_labels
+				),
+				sample_class = factor(
+					if_else(is_throwaway, "discarded first keypress", "retained keypress"),
+					levels = c("discarded first keypress", "retained keypress")
+				)
+			)
+
+		ci_start_wait_keypress_distribution <- ci_start_wait_keypress_samples %>%
+			group_by(startup_wait_ms, wait_label, keypress_index, sample_index, sample_class) %>%
+			summarize(
+				n = n(),
+				latency_p10_ms = quant(latency_ms, 0.1),
+				latency_p25_ms = quant(latency_ms, 0.25),
+				latency_p50_ms = median(latency_ms),
+				latency_p75_ms = quant(latency_ms, 0.75),
+				latency_p90_ms = quant(latency_ms, 0.9),
+				latency_mean_ms = mean(latency_ms),
+				latency_sd_ms = sd(latency_ms),
+				latency_min_ms = min(latency_ms),
+				latency_max_ms = max(latency_ms),
+				.groups = "drop"
+			)
+		write_csv(
+			ci_start_wait_keypress_distribution,
+			file.path(data_dir, "typing-delay-ci-comparable-start-wait-keypress-distribution-summary.csv")
+		)
+
+		ci_start_wait_keypress_selected <- ci_start_wait_keypress_samples %>%
+			filter(startup_wait_ms %in% c(0, 500, 1000, 2000, 5000, 60000)) %>%
+			mutate(wait_label = fct_drop(wait_label))
+
+		save_plot(
+			ggplot(ci_start_wait_keypress_selected, aes(keypress_label, latency_ms, fill = sample_class)) +
+				geom_vline(xintercept = 1.5, linetype = "dashed", color = brewer_color("Greys", 6, type = "seq", n = 9)) +
+				geom_boxplot(outlier.shape = NA, width = 0.58, alpha = 0.62, color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+				geom_point(
+					aes(color = sample_class),
+					position = position_jitter(width = 0.13, height = 0, seed = 7),
+					size = 1.0,
+					alpha = 0.62,
+					show.legend = FALSE
+				) +
+				facet_wrap(vars(wait_label), ncol = 2) +
+				scale_x_discrete(labels = c("1\nthrowaway", as.character(2:11))) +
+				scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				labs(
+					title = "Latency distributions by keypress and startup wait",
+					subtitle = "CI-comparable saved/reopened draft setup; n=8 runs per keypress/wait; dashed line separates the discarded first keypress",
+					x = "Keypress within target.type()",
+					y = "Latency (ms)",
+					fill = "Sample class"
+				) +
+				theme(axis.text.x = element_text(size = 8)),
+			"78b-ci-comparable-start-wait-keypress-distributions.png",
+			width = 11,
+			height = 8.6
+		)
+
+		save_plot(
+			ggplot(ci_start_wait_keypress_distribution, aes(keypress_index, latency_p50_ms, color = sample_class, shape = sample_class)) +
+				geom_vline(xintercept = 1.5, linetype = "dashed", color = brewer_color("Greys", 6, type = "seq", n = 9)) +
+				geom_linerange(aes(ymin = latency_p10_ms, ymax = latency_p90_ms), alpha = 0.7, linewidth = 0.55) +
+				geom_point(size = 1.8) +
+				facet_wrap(vars(wait_label), ncol = 3) +
+				scale_x_continuous(breaks = 1:11) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				labs(
+					title = "Per-keypress distributions have the same shape across startup waits",
+					subtitle = "Points are p50s and bars are p10-p90 across 8 CI-comparable runs per wait/key; keypress 1 is discarded by CI",
+					x = "Keypress within target.type()",
+					y = "Latency (ms)",
+					color = "Sample class",
+					shape = "Sample class"
+				),
+			"78c-ci-comparable-start-wait-keypress-p10-p90.png",
+			width = 11.5,
+			height = 8.6
+		)
+	}
 
 	ci_start_wait_phases <- read_csv(ci_start_wait_curve_phases_path, show_col_types = FALSE) %>%
 		select(
