@@ -273,6 +273,29 @@ flows through:
     persistent changes through `onChange` and non-persistent changes through
     `onInput`.
 
+The `1000ms` point drops because the timer changes when expensive work falls
+relative to the benchmark's measured keypress window. Below the boundary, for
+example at `990ms`, each next character arrives before the persistence timeout
+fires. The RichText effect cleanup cancels the old timeout, so the next measured
+keypress still runs as another continuous, non-persistent text input update.
+
+At `1000ms`, Playwright's normal `keyboard.type( ..., { delay } )` has held the
+previous key down for roughly one second before sending `keyup`, and the next
+`keydown` follows almost immediately. That gives the RichText timeout just enough
+room to fire between synthetic characters. The timeout dispatches
+`MARK_LAST_CHANGE_AS_PERSISTENT`, `useBlockSync()` can push the previous text
+update through the persistent `onChange` path, and part of the block-editor/data
+subscriber work for the previous character has already happened before the next
+keypress starts being measured.
+
+So the drop is not evidence that the persistence timer makes Gutenberg
+intrinsically faster. It is a phase/measurement effect: the timer moves some of
+the expensive block-editor synchronization out of the next keypress dispatch
+slice. The later source-level traces are consistent with this: in the large-post
+key-held run, RichText `registry.batch()` median time drops from about `10.5ms`
+at `990ms` to `6.5ms` at `1000ms`, and the input-matched data batch drops from
+about `23.4ms` to `14.2ms`.
+
 The action trace shows the boundary directly:
 
 ![Persistence action timeline](figures/06-persistence-action-timeline.png)
