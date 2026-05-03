@@ -845,6 +845,71 @@ if (file.exists(start_wait_first_char_summary_path)) {
 	)
 }
 
+start_wait_onset_summary_path <- file.path(data_dir, "typing-delay-start-wait-onset-summary.csv")
+if (file.exists(start_wait_onset_summary_path)) {
+	start_wait_onset <- read_csv(start_wait_onset_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_region = factor(
+				case_when(
+					settle_ms <= 50 ~ "0-50ms",
+					settle_ms <= 1000 ~ "100ms-1s",
+					TRUE ~ "1.5s-30s"
+				),
+				levels = c("0-50ms", "100ms-1s", "1.5s-30s")
+			)
+		)
+
+	onset_breaks <- c(0, 50, 100, 250, 500, 1000, 2000, 5000, 10000, 30000)
+	onset_labels <- c("0", "50", "100", "250", "500", "1s", "2s", "5s", "10s", "30s")
+
+	save_plot(
+		ggplot(start_wait_onset, aes(settle_ms, p50_ms, color = wait_region, shape = wait_region)) +
+			geom_errorbar(aes(ymin = p10_ms, ymax = p90_ms), width = 0, alpha = 0.78) +
+			geom_point(size = 3.1) +
+			scale_x_continuous(
+				trans = pseudo_log_trans(sigma = 100),
+				breaks = onset_breaks,
+				labels = onset_labels
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "The first-input idle penalty starts within hundreds of milliseconds",
+				subtitle = "Fresh large-post first character at 1300ms; points are p50s and bars are p10-p90",
+				x = "Wait after editor setup before typing",
+				y = "Latency p50 (ms)",
+				color = "Start-wait region",
+				shape = "Start-wait region"
+			),
+		"68-start-wait-onset.png",
+		width = 10,
+		height = 5.5
+	)
+
+	save_plot(
+		ggplot(start_wait_onset, aes(settle_ms, probability_sample_slower_than_0, color = wait_region, shape = wait_region)) +
+			geom_hline(yintercept = 0.5, color = "gray65", linetype = "dashed") +
+			geom_point(size = 3.1) +
+			scale_x_continuous(
+				trans = pseudo_log_trans(sigma = 100),
+				breaks = onset_breaks,
+				labels = onset_labels
+			) +
+			scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0.4, 1)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "By 250ms, almost every sample is slower than the 0ms control",
+				subtitle = "Probability that a random sample at each start wait exceeds a random 0ms-start sample; 50% means no separation",
+				x = "Wait after editor setup before typing",
+				y = "Probability slower than 0ms control",
+				color = "Start-wait region",
+				shape = "Start-wait region"
+			),
+		"69-start-wait-onset-probability.png",
+		width = 10,
+		height = 5.5
+	)
+}
+
 start_wait_sample_index_summary_path <- file.path(data_dir, "typing-delay-start-wait-sample-index-summary.csv")
 if (file.exists(start_wait_sample_index_summary_path)) {
 	start_wait_sample_index_summary <- read_csv(start_wait_sample_index_summary_path, show_col_types = FALSE) %>%

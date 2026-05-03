@@ -50,7 +50,10 @@ The short version:
     instead of after setup removes the slowdown: first-character p50 is `15.2ms`,
     essentially the same as the `0s` control at `15.9ms`. So the causal variable
     is not absolute elapsed time since the test began; it is whether the browser
-    and editor have been idle immediately before the measured input.
+    and editor have been idle immediately before the measured input. A denser
+    `0..30s` onset scan shows that `50ms` after setup is still indistinguishable
+    from `0ms`, `100ms` starts to separate, `250ms-1s` is consistently slower,
+    and `30s` reaches the long-idle plateau.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -432,6 +435,8 @@ The R script derives:
     measured input.
 -   `data/typing-delay-start-wait-placement-*.csv`: checks that move the same
     `60s` idle interval before editor setup versus after editor setup.
+-   `data/typing-delay-start-wait-onset-*.csv`: denser first-character checks
+    from `0ms` through `30s` after editor setup.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -665,11 +670,54 @@ Focused first-character p50s at `1300ms`:
 | `30s`      | `22.4ms` | `22.2-23.6ms` |
 | `60s`      | `23.1ms` | `22.2-25.0ms` |
 
-The `0s` and `60s` p10-p90 bands do not overlap in this run, so the effect is
-large relative to the observed first-character volatility. The recorded setup
-duration also tracks the configured wait plus about `1.6s` of editor setup work,
-so this is the intended post-setup wait knob, not accidental extra time hidden
-elsewhere in the harness.
+A denser follow-up puts more resolution near the default. It used the same
+fresh-editor, first-character-only shape, but 12 samples per setting and waits
+of `0ms`, `50ms`, `100ms`, `250ms`, `500ms`, `750ms`, `1s`, `1.5s`, `2s`,
+`5s`, `10s`, and `30s`.
+
+![Start-wait onset](figures/68-start-wait-onset.png)
+
+![Start-wait onset probability](figures/69-start-wait-onset-probability.png)
+
+Dense onset p50s:
+
+| Start wait | p50 | p10-p90 | p50 delta vs `0ms` | P(sample > `0ms` sample) |
+| ---------- | --: | ------: | -----------------: | -----------------------: |
+| `0ms`      | `16.2ms` | `14.3-17.3ms` | `+0.0ms` | `50%` |
+| `50ms`     | `15.9ms` | `15.3-16.4ms` | `-0.4ms` | `48%` |
+| `100ms`    | `17.2ms` | `16.2-21.2ms` | `+1.0ms` | `79%` |
+| `250ms`    | `18.6ms` | `17.3-21.2ms` | `+2.4ms` | `95%` |
+| `500ms`    | `18.7ms` | `17.6-19.9ms` | `+2.5ms` | `98%` |
+| `750ms`    | `18.1ms` | `17.5-18.7ms` | `+1.9ms` | `94%` |
+| `1s`       | `18.9ms` | `18.0-20.9ms` | `+2.7ms` | `99%` |
+| `1.5s`     | `21.3ms` | `19.3-24.5ms` | `+5.0ms` | `100%` |
+| `2s`       | `20.1ms` | `18.9-23.1ms` | `+3.9ms` | `99%` |
+| `5s`       | `20.5ms` | `19.4-21.5ms` | `+4.3ms` | `100%` |
+| `10s`      | `20.6ms` | `18.9-22.4ms` | `+4.4ms` | `100%` |
+| `30s`      | `23.5ms` | `22.1-26.2ms` | `+7.3ms` | `100%` |
+
+This sharpens the answer to "what happens if the benchmark starts sooner or
+later?" Starting immediately is the fastest case this harness can test. Adding
+only `50ms` after editor setup does not matter in this run. By `100ms`, the
+distribution starts to separate from the `0ms` control, although the p10-p90
+band still overlaps. By `250ms`, almost every pairwise comparison against a
+`0ms` sample is slower. The exact p50s are not monotonic, so it would be wrong
+to read `500ms` as meaningfully worse than `750ms` or `2s` as meaningfully
+better than `1.5s`; the robust result is the regime split: `0-50ms` looks hot,
+`100ms-1s` is already cooler, and tens of seconds reaches the long-idle plateau.
+
+This also separates the first-character start-wait effect from the rich-text
+`1000ms` persistence-timer cliff discussed later. The first-character slowdown
+starts before a one-second timer could be the direct boundary, and the measured
+setup-to-run gap is `0ms` at every point, so the extra time is not hidden between
+setup completion and the measured key. The extra latency again sits mostly in
+the `keypress` trace slice.
+
+In the original six-sample first-character run, the `0s` and `60s` p10-p90
+bands do not overlap, so the effect is large relative to the observed
+first-character volatility. The recorded setup duration also tracks the
+configured wait plus about `1.6s` of editor setup work, so this is the intended
+post-setup wait knob, not accidental extra time hidden elsewhere in the harness.
 
 That is the part of the benchmark that start wait really changes. With a fresh
 editor, reducing an artificial wait from `60s` to the default `0s` makes the
@@ -3840,6 +3888,12 @@ The key runs used in this report were:
     `start_wait_first_char_1000`, `start_wait_first_char_5000`,
     `start_wait_first_char_10000`, `start_wait_first_char_30000`,
     `start_wait_first_char_60000`, `start_wait_before_setup_large_60000`,
+    `start_wait_onset_0`, `start_wait_onset_50`, `start_wait_onset_100`,
+    `start_wait_onset_250`, `start_wait_onset_500`,
+    `start_wait_onset_750`, `start_wait_onset_1000`,
+    `start_wait_onset_1500`, `start_wait_onset_2000`,
+    `start_wait_onset_5000`, `start_wait_onset_10000`,
+    `start_wait_onset_30000`,
     `start_wait_sample_index_0`, `start_wait_sample_index_10000`,
     `start_wait_sample_index_60000`, `start_wait_empty_first_char_0`,
     `start_wait_empty_first_char_10000`, `start_wait_empty_first_char_60000`,
