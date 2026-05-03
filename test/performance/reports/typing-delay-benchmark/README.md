@@ -451,6 +451,10 @@ The R script derives:
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
     throwaway sample per delay.
+-   `data/typing-delay-ci-comparable-0-1400-dense-n50-*.csv`: same
+    CI-comparable dense delay sweep, but with 50 retained samples plus 1
+    throwaway sample per delay to estimate volatility with less sensitivity to
+    individual outliers.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -830,6 +834,17 @@ the CI saved/reopened draft setup for each delay. The volatility graph also
 shows why n=10 per delay is only a CI-shape copy, not a high-confidence
 variance estimate: a single retained outlier at `640ms` and another at `960ms`
 dominate CV at those delays.
+
+I made an additional volatility copy with the same CI-comparable setup and
+delay grid, but with 50 retained samples per delay. It produced 7050 retained
+samples, 7191 total typed characters including throwaways, and no missing key
+groups. The larger sample count removes the giant isolated CV spikes from the
+n=10 plot: the old maximum CV was `1.79` at `640ms`, while the n=50 maximum is
+`0.20` at `270ms`; median CV stays almost the same (`0.118` to `0.114`). That
+means the n=10 graph was good enough to show that volatility depends on delay,
+but not good enough to rank individual delay buckets by volatility.
+
+![CI-comparable coefficient of variation, n=50](figures/76-ci-comparable-coefficient-of-variation-0-1400-n50.png)
 
 In the original six-sample first-character run, the `0s` and `60s` p10-p90
 bands do not overlap, so the effect is large relative to the observed
@@ -4043,6 +4058,8 @@ The key runs used in this report were:
 -   `ci_typing_0_1400_dense`: CI-comparable post-editor Typing dense sweep from
     `0ms` to `1400ms` in `10ms` steps, one fresh saved/reopened large-post
     draft per delay, 10 retained samples and 1 throwaway sample per delay.
+-   `ci_typing_0_1400_dense_n50`: same CI-comparable dense sweep and delay
+    grid, but with 50 retained samples and 1 throwaway sample per delay.
 -   `native_busy_0_timeout_1250_delay_1300`,
     `native_busy_20_timeout_1230_delay_1300`,
     `native_busy_40_timeout_1210_delay_1300`, and

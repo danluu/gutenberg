@@ -1455,6 +1455,28 @@ if (file.exists(ci_dense_summary_path)) {
 	)
 }
 
+ci_dense_n50_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-n50-summary.csv")
+if (file.exists(ci_dense_n50_summary_path)) {
+	ci_dense_n50_summary <- read_csv(ci_dense_n50_summary_path, show_col_types = FALSE)
+
+	save_plot(
+		ggplot(ci_dense_n50_summary, aes(delay_ms, latency_cv)) +
+			geom_point(color = brewer_color("Dark2", 3), size = 1.25) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Set1", 1)) +
+			scale_x_continuous(breaks = seq(0, 1400, 100)) +
+			scale_y_continuous(labels = percent_format(accuracy = 1)) +
+			labs(
+				title = "CI-comparable volatility with more samples",
+				subtitle = "Coefficient of variation by delay; n=50 retained samples per delay",
+				x = "Configured Playwright delay between key events",
+				y = "Coefficient of variation"
+			),
+		"76-ci-comparable-coefficient-of-variation-0-1400-n50.png",
+		width = 10.5,
+		height = 5.5
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%
