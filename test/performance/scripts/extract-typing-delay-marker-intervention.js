@@ -1000,6 +1000,130 @@ function reduxListenerDistribution( spans, predicate ) {
 	};
 }
 
+function durationBinMs( durationMs ) {
+	return Math.round( ( durationMs || 0 ) * 10 ) / 10;
+}
+
+function pairedChildSpanStats( parentSpans, childSpans, childPredicate ) {
+	const sortedParents = [ ...parentSpans ].sort(
+		( left, right ) => left.startedAtMs - right.startedAtMs
+	);
+	const sortedChildren = [ ...childSpans ]
+		.filter( childPredicate )
+		.sort( ( left, right ) => left.startedAtMs - right.startedAtMs );
+	const childrenByParent = new Map();
+	let childStartIndex = 0;
+
+	for ( const parent of sortedParents ) {
+		const parentStart = parent.startedAtMs;
+		const parentStop = parentStart + ( parent.durationMs || 0 ) + 0.0001;
+		while (
+			sortedChildren[ childStartIndex ] &&
+			sortedChildren[ childStartIndex ].startedAtMs < parentStart - 0.0001
+		) {
+			childStartIndex++;
+		}
+
+		let childIndex = childStartIndex;
+		while (
+			sortedChildren[ childIndex ] &&
+			sortedChildren[ childIndex ].startedAtMs <= parentStop
+		) {
+			const child = sortedChildren[ childIndex ];
+			if (
+				child.startedAtMs >= parentStart &&
+				child.depth === parent.depth + 1
+			) {
+				childrenByParent.set( parent, child );
+				childStartIndex = childIndex + 1;
+				break;
+			}
+			childIndex++;
+		}
+	}
+
+	return childrenByParent;
+}
+
+function pausedWrapperStats( spans ) {
+	const listenerSpans = spans.filter(
+		( span ) =>
+			span.name === 'data.reduxStore.listener' &&
+			span.metadata?.storeName === 'core/block-editor'
+	);
+	const childByListener = pairedChildSpanStats(
+		listenerSpans,
+		spans,
+		( span ) =>
+			span.name === 'data.emitter.emit' &&
+			span.metadata?.storeName === 'core/block-editor' &&
+			span.metadata?.isPaused === true
+	);
+	const binCounts = new Map();
+	const addBin = ( component, durationMs ) => {
+		const key = `${ component }\t${ durationBinMs( durationMs ) }`;
+		binCounts.set( key, ( binCounts.get( key ) || 0 ) + 1 );
+	};
+
+	let pausedEmitDurationMs = 0;
+	let wrapperOutsideEmitDurationMs = 0;
+	let wrapperNonzeroCount = 0;
+	let pausedEmitNonzeroCount = 0;
+	let wrapperOutsideEmitNonzeroCount = 0;
+
+	for ( const listenerSpan of listenerSpans ) {
+		const wrapperDurationMs = listenerSpan.durationMs || 0;
+		const childSpan = childByListener.get( listenerSpan );
+		const childDurationMs = childSpan?.durationMs || 0;
+		const outsideDurationMs = Math.max(
+			0,
+			wrapperDurationMs - childDurationMs
+		);
+
+		pausedEmitDurationMs += childDurationMs;
+		wrapperOutsideEmitDurationMs += outsideDurationMs;
+		if ( wrapperDurationMs > 0 ) {
+			wrapperNonzeroCount++;
+		}
+		if ( childDurationMs > 0 ) {
+			pausedEmitNonzeroCount++;
+		}
+		if ( outsideDurationMs > 0 ) {
+			wrapperOutsideEmitNonzeroCount++;
+		}
+
+		addBin( 'Redux listener wrapper', wrapperDurationMs );
+		addBin( 'paused emitter.emit child', childDurationMs );
+		addBin( 'wrapper outside emitter.emit', outsideDurationMs );
+	}
+
+	return {
+		listener_count: listenerSpans.length,
+		paused_emit_child_count: childByListener.size,
+		paused_emit_child_coverage:
+			listenerSpans.length === 0
+				? null
+				: childByListener.size / listenerSpans.length,
+		listener_duration_ms: listenerSpans.reduce(
+			( sum, span ) => sum + ( span.durationMs || 0 ),
+			0
+		),
+		paused_emit_child_duration_ms: pausedEmitDurationMs,
+		wrapper_outside_emit_duration_ms: wrapperOutsideEmitDurationMs,
+		listener_nonzero_count: wrapperNonzeroCount,
+		paused_emit_child_nonzero_count: pausedEmitNonzeroCount,
+		wrapper_outside_emit_nonzero_count: wrapperOutsideEmitNonzeroCount,
+		bin_rows: Array.from( binCounts.entries() ).map( ( [ key, count ] ) => {
+			const [ component, durationBin ] = key.split( '\t' );
+			return {
+				component,
+				duration_bin_ms: Number( durationBin ),
+				count,
+			};
+		} ),
+	};
+}
+
 function modeCountsText( values ) {
 	const counts = new Map();
 	for ( const value of values ) {
@@ -2273,6 +2397,131 @@ const allSpanInputBatchSummaryRows = Array.from(
 	};
 } );
 
+const pausedWrapperSampleRows = [];
+const pausedWrapperBinRows = [];
+for ( const run of loadedAllDataSpanRuns ) {
+	for ( const summary of run.data.delayRunSummaries ) {
+		const spans = summary.dataSpanEvents || [];
+		const inputs = inputEventsForSummary( summary );
+		for ( const [ sampleIndex, inputEvent ] of inputs.entries() ) {
+			const record = recordForInputSample( run, summary, sampleIndex );
+			if ( record?.isThrowaway ) {
+				continue;
+			}
+			const rootBatch = firstRootBatchAfterInput( spans, inputEvent );
+			if ( ! rootBatch ) {
+				continue;
+			}
+			const batchSpans = spansInWindow(
+				spans,
+				rootBatch.startedAtMs,
+				rootBatch.startedAtMs + rootBatch.durationMs
+			);
+			const stats = pausedWrapperStats( batchSpans );
+			const base = {
+				run_id: run.runId,
+				trace_type: run.traceType,
+				intervention: run.intervention,
+				delay_ms: summary.delayMs,
+				round: summary.round,
+				sample_index: sampleIndex,
+			};
+			pausedWrapperSampleRows.push( {
+				...base,
+				listener_count: stats.listener_count,
+				paused_emit_child_count: stats.paused_emit_child_count,
+				paused_emit_child_coverage: stats.paused_emit_child_coverage,
+				listener_duration_ms: stats.listener_duration_ms,
+				paused_emit_child_duration_ms:
+					stats.paused_emit_child_duration_ms,
+				wrapper_outside_emit_duration_ms:
+					stats.wrapper_outside_emit_duration_ms,
+				listener_nonzero_count: stats.listener_nonzero_count,
+				paused_emit_child_nonzero_count:
+					stats.paused_emit_child_nonzero_count,
+				wrapper_outside_emit_nonzero_count:
+					stats.wrapper_outside_emit_nonzero_count,
+			} );
+
+			for ( const binRow of stats.bin_rows ) {
+				pausedWrapperBinRows.push( {
+					...base,
+					...binRow,
+				} );
+			}
+		}
+	}
+}
+
+const pausedWrapperSummaryRows = Array.from(
+	groupedBy( pausedWrapperSampleRows, ( row ) => row.intervention ).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		n_inputs: rows.length,
+		listener_count_p50: quantile(
+			rows.map( ( row ) => row.listener_count ),
+			0.5
+		),
+		paused_emit_child_count_p50: quantile(
+			rows.map( ( row ) => row.paused_emit_child_count ),
+			0.5
+		),
+		paused_emit_child_coverage_p50: quantile(
+			rows.map( ( row ) => row.paused_emit_child_coverage ),
+			0.5
+		),
+		listener_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.listener_duration_ms ),
+			0.5
+		),
+		paused_emit_child_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.paused_emit_child_duration_ms ),
+			0.5
+		),
+		wrapper_outside_emit_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.wrapper_outside_emit_duration_ms ),
+			0.5
+		),
+		listener_nonzero_count_p50: quantile(
+			rows.map( ( row ) => row.listener_nonzero_count ),
+			0.5
+		),
+		paused_emit_child_nonzero_count_p50: quantile(
+			rows.map( ( row ) => row.paused_emit_child_nonzero_count ),
+			0.5
+		),
+		wrapper_outside_emit_nonzero_count_p50: quantile(
+			rows.map( ( row ) => row.wrapper_outside_emit_nonzero_count ),
+			0.5
+		),
+	};
+} );
+
+const pausedWrapperBinSummaryRows = Array.from(
+	groupedBy(
+		pausedWrapperBinRows,
+		( row ) =>
+			`${ row.intervention }\t${ row.component }\t${ row.duration_bin_ms }`
+	).entries()
+).map( ( [ , rows ] ) => {
+	const first = rows[ 0 ];
+	return {
+		trace_type: first.trace_type,
+		intervention: first.intervention,
+		component: first.component,
+		duration_bin_ms: first.duration_bin_ms,
+		n_inputs: rows.length,
+		count_p50: quantile(
+			rows.map( ( row ) => row.count ),
+			0.5
+		),
+		count_sum: rows.reduce( ( sum, row ) => sum + row.count, 0 ),
+	};
+} );
+
 const allSpanUseSelectMetadataByRun = new Map(
 	loadedAllDataSpanRuns.map( ( run ) => [
 		run.runId,
@@ -3147,6 +3396,58 @@ writeCsv(
 		'edit_entity_record_duration_p50_ms',
 		'serialize_duration_p50_ms',
 		'create_undo_level_duration_p50_ms',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-paused-wrapper-samples.csv' ),
+	pausedWrapperSampleRows,
+	[
+		'run_id',
+		'trace_type',
+		'intervention',
+		'delay_ms',
+		'round',
+		'sample_index',
+		'listener_count',
+		'paused_emit_child_count',
+		'paused_emit_child_coverage',
+		'listener_duration_ms',
+		'paused_emit_child_duration_ms',
+		'wrapper_outside_emit_duration_ms',
+		'listener_nonzero_count',
+		'paused_emit_child_nonzero_count',
+		'wrapper_outside_emit_nonzero_count',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-paused-wrapper-summary.csv' ),
+	pausedWrapperSummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'n_inputs',
+		'listener_count_p50',
+		'paused_emit_child_count_p50',
+		'paused_emit_child_coverage_p50',
+		'listener_duration_p50_ms',
+		'paused_emit_child_duration_p50_ms',
+		'wrapper_outside_emit_duration_p50_ms',
+		'listener_nonzero_count_p50',
+		'paused_emit_child_nonzero_count_p50',
+		'wrapper_outside_emit_nonzero_count_p50',
+	]
+);
+writeCsv(
+	path.join( reportDataDir, 'typing-delay-paused-wrapper-duration-bins.csv' ),
+	pausedWrapperBinSummaryRows,
+	[
+		'trace_type',
+		'intervention',
+		'component',
+		'duration_bin_ms',
+		'n_inputs',
+		'count_p50',
+		'count_sum',
 	]
 );
 writeCsv(

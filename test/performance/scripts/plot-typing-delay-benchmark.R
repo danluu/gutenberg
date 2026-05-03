@@ -4500,6 +4500,51 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 				height = 7
 			)
 		}
+
+		paused_wrapper_bins_path <- file.path(data_dir, "typing-delay-paused-wrapper-duration-bins.csv")
+		if (file.exists(paused_wrapper_bins_path)) {
+			paused_wrapper_bins <- read_csv(paused_wrapper_bins_path, show_col_types = FALSE) %>%
+				filter(count_p50 > 0) %>%
+				mutate(
+					intervention = factor(
+						intervention,
+						levels = c("normal marker", "marker no-op", "mark next not persistent")
+					),
+					component = factor(
+						component,
+						levels = rev(c(
+							"Redux listener wrapper",
+							"paused emitter.emit child",
+							"wrapper outside emitter.emit"
+						))
+					)
+				)
+
+			save_plot(
+				ggplot(paused_wrapper_bins, aes(duration_bin_ms, count_p50, color = intervention, shape = intervention)) +
+					geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.015)) +
+					facet_wrap(vars(component), ncol = 1) +
+					scale_y_log10(labels = label_number()) +
+					scale_x_continuous(breaks = c(0, 0.1, 0.2), labels = number_format(accuracy = 0.1)) +
+					scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+					scale_shape_manual(values = c(
+						`normal marker` = 16,
+						`marker no-op` = 17,
+						`mark next not persistent` = 15
+					), drop = FALSE) +
+					labs(
+						title = "Paused wrapper timing is mostly zero with small 0.1ms quanta",
+						subtitle = "P50 count of spans per rounded duration bin; every Redux listener wrapper contains a paused emitter.emit child",
+						x = "Rounded span duration (ms)",
+						y = "p50 span count (log scale)",
+						color = "Timer intervention",
+						shape = "Timer intervention"
+					),
+				"47-paused-wrapper-duration-bins.png",
+				width = 11,
+				height = 8
+			)
+		}
 	}
 }
 

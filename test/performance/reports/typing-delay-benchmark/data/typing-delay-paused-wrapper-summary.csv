@@ -1,0 +1,4 @@
+trace_type,intervention,n_inputs,listener_count_p50,paused_emit_child_count_p50,paused_emit_child_coverage_p50,listener_duration_p50_ms,paused_emit_child_duration_p50_ms,wrapper_outside_emit_duration_p50_ms,listener_nonzero_count_p50,paused_emit_child_nonzero_count_p50,wrapper_outside_emit_nonzero_count_p50
+all data spans,normal marker,4,9002,9002,1,4.600000262260437,1.2500001192092896,3.5500000715255737,46,12.5,35.5
+all data spans,marker no-op,4,9002,9002,1,7.300000429153442,2.3500001430511475,4.799999952316284,73,23.5,47.5
+all data spans,mark next not persistent,4,9002,9002,1,6.2499998807907104,1.799999713897705,4.4000004529953,62.5,18,44

@@ -1,0 +1,23 @@
+trace_type,intervention,component,duration_bin_ms,n_inputs,count_p50,count_sum
+all data spans,normal marker,Redux listener wrapper,0,4,8956,35808
+all data spans,normal marker,paused emitter.emit child,0,4,8989.5,35959
+all data spans,normal marker,wrapper outside emitter.emit,0,4,8966.5,35857
+all data spans,normal marker,Redux listener wrapper,0.1,4,46,200
+all data spans,normal marker,wrapper outside emitter.emit,0.1,4,35.5,151
+all data spans,normal marker,paused emitter.emit child,0.1,4,12.5,49
+all data spans,marker no-op,Redux listener wrapper,0,4,8929,35714
+all data spans,marker no-op,paused emitter.emit child,0,4,8978.5,35909
+all data spans,marker no-op,wrapper outside emitter.emit,0,4,8954.5,35813
+all data spans,marker no-op,Redux listener wrapper,0.1,4,73,293
+all data spans,marker no-op,wrapper outside emitter.emit,0.1,4,47,194
+all data spans,marker no-op,paused emitter.emit child,0.1,4,23.5,99
+all data spans,marker no-op,Redux listener wrapper,0.2,1,1,1
+all data spans,marker no-op,wrapper outside emitter.emit,0.2,1,1,1
+all data spans,mark next not persistent,Redux listener wrapper,0,4,8939.5,35763
+all data spans,mark next not persistent,paused emitter.emit child,0,4,8984,35937
+all data spans,mark next not persistent,wrapper outside emitter.emit,0,4,8958,35834
+all data spans,mark next not persistent,Redux listener wrapper,0.1,4,62.5,244
+all data spans,mark next not persistent,wrapper outside emitter.emit,0.1,4,44,173
+all data spans,mark next not persistent,paused emitter.emit child,0.1,4,18,71
+all data spans,mark next not persistent,Redux listener wrapper,0.2,1,1,1
+all data spans,mark next not persistent,wrapper outside emitter.emit,0.2,1,1,1

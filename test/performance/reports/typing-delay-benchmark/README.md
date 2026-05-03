@@ -1471,16 +1471,38 @@ Counts are unchanged: `2` `rootSubscribe` spans, `9002` Redux listener wrappers,
 `9002` paused `emitter.emit()` spans, and `4501` emitter listener callbacks for
 all three interventions.
 
+I then paired every `data.reduxStore.listener` wrapper span with its immediate
+paused `data.emitter.emit` child. The coverage is complete:
+
+| Metric                               | normal marker | marker no-op | mark next |
+| ------------------------------------ | ------------: | -----------: | --------: |
+| Redux listener wrappers              |       `9,002` |      `9,002` |   `9,002` |
+| wrappers with paused `emitter.emit`  |       `9,002` |      `9,002` |   `9,002` |
+| child coverage                       |      `100.0%` |     `100.0%` |  `100.0%` |
+| wrapper duration                     |       `4.6ms` |      `7.3ms` |   `6.3ms` |
+| paused `emitter.emit` child duration |       `1.3ms` |      `2.4ms` |   `1.8ms` |
+| wrapper outside child duration       |       `3.6ms` |      `4.8ms` |   `4.4ms` |
+| nonzero wrapper spans                |          `46` |         `73` |  `62.5` |
+| nonzero paused child spans           |        `12.5` |       `23.5` |    `18` |
+| nonzero wrapper-outside-child spans  |        `35.5` |       `47.5` |    `44` |
+
+This pairing disconfirms another possible theory: the wrapper delta is not
+coming from hidden real subscriber bodies inside `data.reduxStore.listener`.
+Every measured wrapper in this batch contains the paused-emitter fast path.
+
+![Paused wrapper duration bins](figures/47-paused-wrapper-duration-bins.png)
+
 This confirms that the shared part of the residual gap is in the paused
 dispatch-wrapper path. It disconfirms "the slow path is the resume callback" as
 the common explanation: `emitter.notifyListeners()`, `emitter.listener`,
 `reactListener`, and `mapSelect` all move down in the mark-next run while
 `rootSubscribe` and Redux listener-wrapper time move up.
 
-The remaining wrapper-only delta should be treated carefully. The action-level
-listener distributions show that the wrapper totals are mostly a small number of
-`~0.1ms` nonzero spans among thousands of otherwise zero-duration wrappers. For
-example, in the two action slices that make up the next input:
+The remaining wrapper-only delta should be treated carefully. The duration-bin
+plot shows that this is mostly `0.0ms` spans plus a small number of `0.1ms`
+spans, with only one p50-visible `0.2ms` bin in the slow interventions. The
+action-level listener distributions show the same thing in the two action
+slices that make up the next input:
 
 | Action                  | Metric                | normal marker | marker no-op | mark next |
 | ----------------------- | --------------------- | ------------: | -----------: | --------: |
