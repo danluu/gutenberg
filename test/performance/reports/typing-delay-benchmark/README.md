@@ -63,7 +63,9 @@ The short version:
     mostly costs wall time before tracing; it does not buy a more stable retained
     Typing metric. The beginning of the sequence is the sensitive part: the
     discarded first character and the first retained character are slow, while
-    retained characters 2-10 are already in the ordinary low band.
+    retained characters 2-10 are already in the ordinary low band. A blocked
+    `60s`, `0ms`, `60s`, `0ms` order-control run confirms this is not just
+    monotonic run-order drift.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -459,6 +461,9 @@ The R script derives:
     saved/reopened large-post draft setup, `target.type()` entry point, `1000ms`
     key delay, 8 fresh drafts per wait setting, 10 retained samples, and 1
     throwaway sample.
+-   `data/typing-delay-ci-comparable-start-wait-blocked-*.csv`: an order-control
+    rerun of the CI-comparable start-wait extremes in `60s`, `0ms`, `60s`,
+    `0ms` order, with 4 fresh saved/reopened drafts per block.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -830,6 +835,10 @@ cross-run p50 difference.
 
 ![CI-comparable start-wait phases](figures/79-ci-comparable-start-wait-phases.png)
 
+![CI-comparable start-wait per draft](figures/80-ci-comparable-start-wait-per-draft.png)
+
+![CI-comparable start-wait sample classes](figures/81-ci-comparable-start-wait-sample-classes.png)
+
 Selected deeper CI-comparable start-wait rows:
 
 | Extra wait after setup | Retained p50 | Retained p10-p90 | Retained mean | Discarded first-char p50 | First retained-char p50 | Post-setup idle p50 |
@@ -855,6 +864,26 @@ selected waits. By character 2, the sequence has fallen into the ordinary
 first input, but it still retains one early slow sample. That early retained
 sample affects means and p90s more than p50s. Changing the start wait does not
 remove that shape; it just moves idle time before the sequence.
+
+Per-draft summaries also show no monotonic start-wait effect hiding under the
+aggregate p50. Fitting per-draft retained p50 against `log10(wait + 100ms)` gives
+a slope of `-0.06ms` per log10 unit with `R^2 = 0.003`; Spearman correlation
+between wait and per-draft retained p50 is `rho = -0.09`. Comparing the two
+extremes in the curve, the `60s` wait's median per-draft p50 is `0.67ms` lower
+than the `0ms` wait, while the mean per-draft p50 differs by only `-0.04ms`.
+That is smaller than ordinary draft-to-draft spread.
+
+To check whether the monotonic wait order created a false negative, I ran a
+blocked extreme check in this order: `60s`, `0ms`, `60s`, `0ms`, with 4 fresh
+saved/reopened drafts per block and the same CI Typing shape. The retained p50s
+were `15.67ms`, `15.70ms`, `16.32ms`, and `16.31ms` respectively:
+
+![CI-comparable start-wait blocked extremes](figures/82-ci-comparable-start-wait-blocked-extremes.png)
+
+That order-control run supports the same conclusion as the full curve. Starting
+later is a wall-clock cost, not a retained Typing-latency improvement. Starting
+earlier, down to the current `0ms` post-setup wait, does not hurt the retained
+CI Typing metric in these local runs.
 
 One naming trap: in `post-editor.spec.js`, `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before the Typing benchmark
@@ -4120,6 +4149,9 @@ The key runs used in this report were:
     `5s`, `10s`, `30s`, and `60s` after editor setup, with 8 fresh
     saved/reopened drafts per wait setting, 10 retained samples and 1 throwaway
     sample per draft.
+-   `ci_typing_start_wait_blocked_*`: CI-comparable start-wait order-control
+    check in `60s`, `0ms`, `60s`, `0ms` order, with 4 fresh saved/reopened
+    drafts per block, 10 retained samples and 1 throwaway sample per draft.
 -   `ci_typing_0_1400_dense`: CI-comparable post-editor Typing dense sweep from
     `0ms` to `1400ms` in `10ms` steps, one fresh saved/reopened large-post
     draft per delay, 10 retained samples and 1 throwaway sample per delay.

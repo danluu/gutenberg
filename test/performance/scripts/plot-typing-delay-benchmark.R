@@ -1414,6 +1414,9 @@ if (
 ci_start_wait_curve_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-summary.csv")
 ci_start_wait_curve_sample_index_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-sample-index-summary.csv")
 ci_start_wait_curve_phases_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-phases.csv")
+ci_start_wait_curve_draft_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-draft-summary.csv")
+ci_start_wait_curve_sample_class_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-sample-class-summary.csv")
+ci_start_wait_blocked_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-blocked-summary.csv")
 if (
 	file.exists(ci_start_wait_curve_summary_path) &&
 	file.exists(ci_start_wait_curve_sample_index_path) &&
@@ -1556,6 +1559,99 @@ if (
 		width = 10.5,
 		height = 5.5
 	)
+
+	if (file.exists(ci_start_wait_curve_draft_path)) {
+		ci_start_wait_draft <- read_csv(ci_start_wait_curve_draft_path, show_col_types = FALSE)
+
+		save_plot(
+			ggplot(ci_start_wait_draft, aes(settle_after_editor_setup_ms, retained_latency_p50_ms)) +
+				geom_jitter(width = 0, height = 0, size = 2.2, alpha = 0.72, color = brewer_color("Dark2", 1)) +
+				stat_summary(fun = median, geom = "point", size = 4.1, color = brewer_color("Set1", 1), shape = 95) +
+				scale_x_continuous(
+					trans = pseudo_log_trans(sigma = 100),
+					breaks = ci_start_wait_breaks,
+					labels = ci_start_wait_labels
+				) +
+				labs(
+					title = "Per-draft retained medians do not trend with start wait",
+					subtitle = "Each point is one fresh saved/reopened draft; red ticks are medians across drafts",
+					x = "Extra wait after editor setup before tracing and target.type()",
+					y = "Per-draft retained latency p50 (ms)"
+				) +
+				theme(axis.text.x = element_text(angle = 35, hjust = 1)),
+			"80-ci-comparable-start-wait-per-draft.png",
+			width = 10.5,
+			height = 5.5
+		)
+	}
+
+	if (file.exists(ci_start_wait_curve_sample_class_path)) {
+		ci_start_wait_sample_class <- read_csv(ci_start_wait_curve_sample_class_path, show_col_types = FALSE) %>%
+			filter(sample_class != "retained aggregate") %>%
+			mutate(
+				sample_class = factor(
+					sample_class,
+					levels = c("discarded first character", "first retained character", "retained characters 2-10")
+				)
+			)
+
+		save_plot(
+			ggplot(ci_start_wait_sample_class, aes(settle_after_editor_setup_ms, latency_p50_ms, color = sample_class, shape = sample_class)) +
+				geom_errorbar(aes(ymin = latency_p10_ms, ymax = latency_p90_ms), width = 0, alpha = 0.72) +
+				geom_point(size = 3.0) +
+				facet_wrap(~sample_class, ncol = 1, scales = "free_y") +
+				scale_x_continuous(
+					trans = pseudo_log_trans(sigma = 100),
+					breaks = ci_start_wait_breaks,
+					labels = ci_start_wait_labels
+				) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				labs(
+					title = "The retained aggregate mixes two different sample classes",
+					subtitle = "Points are p50s and bars are p10-p90 across all fresh drafts at each start wait",
+					x = "Extra wait after editor setup before tracing and target.type()",
+					y = "Latency (ms)",
+					color = "Sample class",
+					shape = "Sample class"
+				) +
+				theme(axis.text.x = element_text(angle = 35, hjust = 1)),
+			"81-ci-comparable-start-wait-sample-classes.png",
+			width = 10.5,
+			height = 7
+		)
+	}
+
+	if (file.exists(ci_start_wait_blocked_summary_path)) {
+		ci_start_wait_blocked <- read_csv(ci_start_wait_blocked_summary_path, show_col_types = FALSE) %>%
+			mutate(
+				wait_label = factor(
+					if_else(settle_after_editor_setup_ms == 0, "0ms", "60s"),
+					levels = c("0ms", "60s")
+				),
+				block_label = factor(
+					paste0(block_index, ": ", wait_label),
+					levels = paste0(block_index, ": ", wait_label)
+				)
+			)
+
+		save_plot(
+			ggplot(ci_start_wait_blocked, aes(block_label, retained_latency_p50_ms, color = wait_label, shape = wait_label)) +
+				geom_point(size = 3.5) +
+				geom_errorbar(aes(ymin = retained_latency_p10_ms, ymax = retained_latency_p90_ms), width = 0.16, alpha = 0.78) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				labs(
+					title = "Blocked extreme starts confirm the wait-order result",
+					subtitle = "Order was 60s, 0ms, 60s, 0ms; four fresh drafts per block",
+					x = "Block order and post-setup wait",
+					y = "Retained typing latency (ms)",
+					color = "Start wait",
+					shape = "Start wait"
+				),
+			"82-ci-comparable-start-wait-blocked-extremes.png",
+			width = 8.5,
+			height = 5.2
+		)
+	}
 }
 
 ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")

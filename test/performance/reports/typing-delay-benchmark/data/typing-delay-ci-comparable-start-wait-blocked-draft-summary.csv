@@ -1,0 +1,17 @@
+run_id,run_group,block_index,setup_style,delay_mode,settle_after_editor_setup_ms,delay_ms,round,editor_setup_index,retained_n,retained_latency_p50_ms,retained_latency_mean_ms,retained_latency_p90_ms,retained_tail_n,retained_tail_latency_p50_ms,retained_tail_latency_mean_ms,first_retained_latency_ms,throwaway_latency_ms,active_setup_ms,post_setup_idle_ms,setup_stop_to_run_start_ms,run_duration_ms
+ci_typing_start_wait_blocked_b0_60000,blocked_extremes,0,ci-post-editor-typing,keyboard,60000,1000,0,0,10,16.1265,16.4698,18.2563,9,15.846,16.034,20.392,30.292,3901,60033,0,11997
+ci_typing_start_wait_blocked_b0_60000,blocked_extremes,0,ci-post-editor-typing,keyboard,60000,1000,1,1,10,15.171,16.5672,18.7147,9,15.061,15.7659,23.779,28.669,3794,60027,0,11957
+ci_typing_start_wait_blocked_b0_60000,blocked_extremes,0,ci-post-editor-typing,keyboard,60000,1000,2,2,10,15.1365,16.6168,18.8187,9,15.025,15.6804,25.044,29.041,3440,60030,0,11958
+ci_typing_start_wait_blocked_b0_60000,blocked_extremes,0,ci-post-editor-typing,keyboard,60000,1000,3,3,10,16.5995,17.1292,18.9148,9,16.58,16.198,25.51,29.036,3684,60058,0,11954
+ci_typing_start_wait_blocked_b1_0,blocked_extremes,1,ci-post-editor-typing,keyboard,0,1000,0,0,10,15.755,16.9675,19.2776,9,15.598,15.9642,25.997,22.061,3854,0,0,11855
+ci_typing_start_wait_blocked_b1_0,blocked_extremes,1,ci-post-editor-typing,keyboard,0,1000,1,1,10,15.168,16.7148,19.3174,9,15.029,15.8332,24.649,26.487,3467,0,0,11866
+ci_typing_start_wait_blocked_b1_0,blocked_extremes,1,ci-post-editor-typing,keyboard,0,1000,2,2,10,17.755,18.3579,21.5911,9,17.669,17.4976,26.101,27.426,3447,0,0,11823
+ci_typing_start_wait_blocked_b1_0,blocked_extremes,1,ci-post-editor-typing,keyboard,0,1000,3,3,10,14.78,16.2783,18.1494,9,14.691,15.162,26.325,21.764,3813,0,0,11841
+ci_typing_start_wait_blocked_b2_60000,blocked_extremes,2,ci-post-editor-typing,keyboard,60000,1000,0,0,10,16.0365,17.0754,19.4167,9,16.034,16.1216,25.66,31.407,3824,60032,0,11996
+ci_typing_start_wait_blocked_b2_60000,blocked_extremes,2,ci-post-editor-typing,keyboard,60000,1000,1,1,10,15.677,16.4379,18.8341,9,15.584,15.6836,23.227,27.163,3782,60027,0,11968
+ci_typing_start_wait_blocked_b2_60000,blocked_extremes,2,ci-post-editor-typing,keyboard,60000,1000,2,2,10,17.546,18.5492,20.4748,9,17.304,17.7694,25.567,28.504,3727,60027,0,11987
+ci_typing_start_wait_blocked_b2_60000,blocked_extremes,2,ci-post-editor-typing,keyboard,60000,1000,3,3,10,16.419,17.5313,19.8424,9,15.943,16.5761,26.128,27.339,3714,60032,0,11976
+ci_typing_start_wait_blocked_b3_0,blocked_extremes,3,ci-post-editor-typing,keyboard,0,1000,0,0,10,15.8595,16.9587,18.9034,9,15.816,16.0742,24.919,22.256,3859,0,0,11868
+ci_typing_start_wait_blocked_b3_0,blocked_extremes,3,ci-post-editor-typing,keyboard,0,1000,1,1,10,16.6455,17.2574,19.3414,9,16.199,16.2774,26.077,26.005,3471,0,0,11838
+ci_typing_start_wait_blocked_b3_0,blocked_extremes,3,ci-post-editor-typing,keyboard,0,1000,2,2,10,16.6795,17.5887,19.2888,9,16.465,16.679,25.776,28.023,3486,0,0,11933
+ci_typing_start_wait_blocked_b3_0,blocked_extremes,3,ci-post-editor-typing,keyboard,0,1000,3,3,10,16.1285,17.3174,19.3422,9,15.835,16.4172,25.419,21.948,3856,0,0,11850
