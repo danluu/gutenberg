@@ -21,7 +21,10 @@ import { isShallowEqual } from '@wordpress/is-shallow-equal';
  */
 import useRegistry from '../registry-provider/use-registry';
 import useAsyncMode from '../async-mode-provider/use-async-mode';
-import { traceDataSpan } from '../../benchmark-tracing';
+import {
+	isDataSpanTracingEnabled,
+	traceDataSpan,
+} from '../../benchmark-tracing';
 import type {
 	MapSelect,
 	SelectFunction,
@@ -32,6 +35,47 @@ import type {
 } from '../../types';
 
 const renderQueue = createQueue();
+let benchmarkUseSelectInstanceId = 0;
+
+interface BenchmarkUseSelectMetadata {
+	useSelectId: number;
+}
+
+function formatBenchmarkMapSelectSource( mapSelect: MapSelect ): string {
+	try {
+		return Function.prototype.toString.call( mapSelect ).slice( 0, 900 );
+	} catch {
+		return '';
+	}
+}
+
+function benchmarkSpanMetadata(
+	benchmarkMetadata: BenchmarkUseSelectMetadata | undefined,
+	metadata: Record< string, unknown > = {}
+): Record< string, unknown > {
+	return benchmarkMetadata
+		? {
+				...benchmarkMetadata,
+				...metadata,
+		  }
+		: metadata;
+}
+
+function recordBenchmarkUseSelectMetadata(
+	useSelectId: number,
+	mapSelect: MapSelect
+): void {
+	const global = globalThis as typeof globalThis & {
+		__typingBenchmarkUseSelectMetadata?: Array< Record< string, unknown > >;
+	};
+	global.__typingBenchmarkUseSelectMetadata =
+		global.__typingBenchmarkUseSelectMetadata || [];
+	global.__typingBenchmarkUseSelectMetadata.push( {
+		useSelectId,
+		useSelectStack: new Error().stack?.slice( 0, 900 ),
+		initialMapSelectSource: formatBenchmarkMapSelectSource( mapSelect ),
+	} );
+}
 
 function warnOnUnstableReference(
 	a: Record< string, unknown >,
@@ -60,7 +104,11 @@ interface StoreSubscriber {
 	updateStores: ( newStores: string[] ) => void;
 }
 
-function Store( registry: DataRegistry, suspense: boolean ) {
+function Store(
+	registry: DataRegistry,
+	suspense: boolean,
+	benchmarkMetadata?: BenchmarkUseSelectMetadata
+) {
 	const select = ( suspense
 		? registry.suspendSelect
 		: registry.select ) as unknown as SelectFunction;
@@ -120,15 +168,17 @@ function Store( registry: DataRegistry, suspense: boolean ) {
 							'data.useSelect.reactListener',
 							listener,
 							{
-								activeStoreCount: activeStores.length,
-								activeStores: activeStores.join( ',' ),
+								...benchmarkSpanMetadata( benchmarkMetadata, {
+									activeStoreCount: activeStores.length,
+									activeStores: activeStores.join( ',' ),
+								} ),
 							}
 						);
 					},
-					{
+					benchmarkSpanMetadata( benchmarkMetadata, {
 						activeStoreCount: activeStores.length,
 						activeStores: activeStores.join( ',' ),
-					}
+					} )
 				);
 			};
 
@@ -145,19 +195,26 @@ function Store( registry: DataRegistry, suspense: boolean ) {
 										onStoreChange
 									),
 								{
-									activeStoreCount: activeStores.length,
-									activeStores: activeStores.join( ',' ),
+									...benchmarkSpanMetadata(
+										benchmarkMetadata,
+										{
+											activeStoreCount:
+												activeStores.length,
+											activeStores:
+												activeStores.join( ',' ),
+										}
+									),
 								}
 							);
 						} else {
 							onStoreChange();
 						}
 					},
-					{
+					benchmarkSpanMetadata( benchmarkMetadata, {
 						activeStoreCount: activeStores.length,
 						activeStores: activeStores.join( ',' ),
 						isAsync: !! lastIsAsync,
-					}
+					} )
 				);
 			};
 
@@ -219,6 +276,12 @@ function Store( registry: DataRegistry, suspense: boolean ) {
 					const listeningStores = {
 						current: null as string[] | null,
 					};
+					const mapSelectMetadata = benchmarkSpanMetadata(
+						benchmarkMetadata,
+						{
+							isAsync,
+						}
+					);
 					const mapResult = traceDataSpan(
 						'data.useSelect.mapSelect',
 						() =>
@@ -226,10 +289,12 @@ function Store( registry: DataRegistry, suspense: boolean ) {
 								() => mapSelect( select, registry ),
 								listeningStores
 							),
-						{
-							isAsync,
-						}
+						mapSelectMetadata
 					);
+					mapSelectMetadata.activeStoreCount =
+						listeningStores.current?.length ?? 0;
+					mapSelectMetadata.activeStores =
+						listeningStores.current?.join( ',' ) ?? '';
 
 					if ( ( globalThis as any ).SCRIPT_DEBUG ) {
 						if ( ! didWarnUnstableReference ) {
@@ -271,11 +336,11 @@ function Store( registry: DataRegistry, suspense: boolean ) {
 					lastMapSelect = mapSelect;
 					lastMapResultValid = true;
 				},
-				{
+				benchmarkSpanMetadata( benchmarkMetadata, {
 					isAsync,
 					lastMapResultValid,
 					hasCachedMapSelect: mapSelect === lastMapSelect,
-				}
+				} )
 			);
 		}
 
@@ -313,8 +378,16 @@ function _useMappingSelect(
 ) {
 	const registry = useRegistry();
 	const isAsync = useAsyncMode();
+	const benchmarkMetadataRef = useRef< BenchmarkUseSelectMetadata >();
+	if ( ! benchmarkMetadataRef.current && isDataSpanTracingEnabled() ) {
+		const useSelectId = ++benchmarkUseSelectInstanceId;
+		benchmarkMetadataRef.current = {
+			useSelectId,
+		};
+		recordBenchmarkUseSelectMetadata( useSelectId, mapSelect );
+	}
 	const store = useMemo(
-		() => Store( registry, suspense ),
+		() => Store( registry, suspense, benchmarkMetadataRef.current ),
 		[ registry, suspense ]
 	);
 

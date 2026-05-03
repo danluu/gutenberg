@@ -33,3 +33,21 @@ export function traceDataSpan< T >(
 
 	return tracer( name, callback, metadata );
 }
+
+/**
+ * Checks whether the optional typing benchmark data tracer is installed.
+ *
+ * This keeps expensive diagnostic metadata, such as stack capture, out of normal
+ * execution and out of non-data-span benchmark runs.
+ *
+ * @return Whether data span tracing is active.
+ */
+export function isDataSpanTracingEnabled(): boolean {
+	return (
+		typeof (
+			globalThis as typeof globalThis & {
+				__typingBenchmarkTraceDataSpan?: DataBenchmarkTracer;
+			}
+		 ).__typingBenchmarkTraceDataSpan === 'function'
+	);
+}

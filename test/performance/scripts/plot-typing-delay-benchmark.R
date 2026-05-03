@@ -552,7 +552,12 @@ selected_distribution <- records %>%
 save_plot(
 	ggplot(selected_distribution, aes(delay_label, latency_ms)) +
 		geom_boxplot(outlier.shape = NA, fill = brewer_color("Blues", 2, type = "seq", n = 9), color = brewer_color("Blues", 8, type = "seq", n = 9)) +
-		geom_jitter(width = 0.15, height = 0, alpha = 0.45, size = 1, color = brewer_color("Dark2", 1)) +
+		geom_point(
+			position = position_jitter(width = 0.15, height = 0, seed = 51383),
+			alpha = 0.45,
+			size = 1,
+			color = brewer_color("Dark2", 1)
+		) +
 		labs(
 			title = "Landmark delays: the 1000-1110ms band is a separate regime",
 			subtitle = "Each dot is one retained key sample",
@@ -1894,6 +1899,88 @@ if (
 				color = "Store"
 			),
 		"20-data-store-resume-breakdown.png",
+		width = 12,
+		height = 8
+	)
+}
+
+use_select_owner_summary_path <- file.path(data_dir, "typing-delay-use-select-owner-summary.csv")
+if (file.exists(use_select_owner_summary_path)) {
+	use_select_owner_summary <- read_csv(use_select_owner_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			owner_label = if_else(
+				!is.na(source_path) & source_path != "",
+				paste0(str_remove(source_path, "^packages/"), ":", source_line),
+				owner_frame
+			)
+		)
+
+	owner_1300 <- use_select_owner_summary %>%
+		filter(span_name == "data.useSelect.onChange", delay_ms == 1300) %>%
+		group_by(owner_label) %>%
+		mutate(owner_peak_ms_per_key = max(ms_per_key, na.rm = TRUE)) %>%
+		ungroup()
+
+	top_owner_levels <- owner_1300 %>%
+		distinct(owner_label, owner_peak_ms_per_key) %>%
+		slice_max(owner_peak_ms_per_key, n = 10, with_ties = FALSE) %>%
+		arrange(owner_peak_ms_per_key) %>%
+		pull(owner_label)
+
+	save_plot(
+		ggplot(
+			owner_1300 %>%
+				filter(owner_label %in% top_owner_levels) %>%
+				mutate(owner_label = factor(owner_label, levels = top_owner_levels)),
+			aes(ms_per_key, owner_label, fill = mode_label)
+		) +
+			geom_col(position = position_dodge(width = 0.72), width = 0.65) +
+			scale_fill_brewer(type = "qual", palette = "Set1") +
+			labs(
+				title = "useSelect fanout is concentrated in repeated block editor subscriptions",
+				subtitle = "Source-mapped owner groups for data.useSelect.onChange at 1300ms; values are total traced time per key",
+				x = "Total traced time per typed key (ms)",
+				y = NULL,
+				fill = NULL
+			),
+		"21-use-select-owner-fanout-1300.png",
+		width = 12,
+		height = 7
+	)
+
+	top_profile_levels <- use_select_owner_summary %>%
+		filter(span_name == "data.useSelect.onChange") %>%
+		group_by(owner_label) %>%
+		summarise(max_ms_per_key = max(ms_per_key, na.rm = TRUE), .groups = "drop") %>%
+		slice_max(max_ms_per_key, n = 6, with_ties = FALSE) %>%
+		arrange(max_ms_per_key) %>%
+		pull(owner_label)
+
+	save_plot(
+		ggplot(
+			use_select_owner_summary %>%
+				filter(
+					span_name == "data.useSelect.onChange",
+					owner_label %in% top_profile_levels
+				) %>%
+				mutate(owner_label = factor(owner_label, levels = top_profile_levels)),
+			aes(delay_ms, ms_per_key, color = owner_label)
+		) +
+			geom_point(size = 2.1, alpha = 0.88) +
+			facet_wrap(~mode_label, ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_x_continuous(
+				breaks = sort(unique(use_select_owner_summary$delay_ms)),
+				guide = guide_axis(angle = 45)
+			) +
+			labs(
+				title = "The same high-fanout useSelect owners dominate across diagnostic delays",
+				subtitle = "No single owner uniquely explains the key-hold plateau; the cost is broad subscriber fanout",
+				x = "Configured delay",
+				y = "Total traced time per typed key (ms)",
+				color = "Owner"
+			),
+		"22-use-select-owner-delay-profile.png",
 		width = 12,
 		height = 8
 	)

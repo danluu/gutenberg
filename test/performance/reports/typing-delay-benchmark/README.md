@@ -39,6 +39,10 @@ The short version:
     `core/block-editor` store-emitter resume and `useSelect` subscriber fanout.
     The expensive path is selector/subscriber invalidation, not the two direct
     RichText callbacks.
+-   A deeper owner-attribution trace shows that the `useSelect` cost is broad
+    fanout, not one pathological selector. The largest source-mapped group is
+    `packages/block-editor/src/components/block-list/index.js:196`, with hundreds
+    of active hook instances in the large-post fixture.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -150,6 +154,8 @@ The R script derives:
     batch breakdown.
 -   `data/typing-delay-data-store-resume-summary.csv`: per-store resume timing
     for input-matched data batches.
+-   `data/typing-delay-use-select-owner-summary.csv`: source-mapped owner
+    summary for the targeted `useSelect` attribution traces.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -681,10 +687,60 @@ was too broad. The expensive store is not an even spread across the registry:
 `core/block-editor` is the dominant resume in the input-matched batches. Other
 stores are small in this workload.
 
-The remaining unattributed work is now below the store/subscriber layer: which
-`useSelect` subscriptions and selectors are costly, and which React components
-they wake up. The current spans identify the mechanism but not the component
-owners.
+### useSelect Owner Attribution
+
+The previous data-span pass stopped at "subscriber fanout." I added one more
+diagnostic layer: when data-span tracing is active, each `useSelect` hook instance
+gets a stable ID, and the benchmark records the hook's call stack and
+`mapSelect` source once. A compact extractor then joins those IDs back to the hot
+`useSelect` spans and source-map-resolves the first non-`@wordpress/data`,
+non-React frame.
+
+This trace is intentionally small: large-post fixture only, key-held and
+wait-after-keyup modes, delays `990ms`, `1000ms`, `1300ms`, `1550ms`, and
+`2000ms`, one round, and four retained samples per delay. The raw JSON is large
+because it carries per-subscriber span events; the committed CSV is the compact
+derived form.
+
+![useSelect owner fanout](figures/21-use-select-owner-fanout-1300.png)
+
+At `1300ms`, the dominant `useSelect` owner group is
+`packages/block-editor/src/components/block-list/index.js:196`. In this large
+fixture it had `580` active hook instances and `2900` `onChange` span events in
+one delay run. That single source-mapped group accounts for about `2.7ms` of
+traced `useSelect.onChange` time per key in the key-held trace and `2.3ms` per
+key in the wait-after-keyup trace.
+
+The next high-fanout groups are also block-tree/editor-wide subscriptions, not a
+single isolated callback:
+
+| Source | Instances | Events | Key-held `onChange` ms/key | Wait-after-keyup `onChange` ms/key |
+| ------ | --------: | -----: | -------------------------: | ---------------------------------: |
+| `packages/block-editor/src/components/block-list/index.js:196` | `580` | `2900` | `2.68` | `2.30` |
+| `packages/block-editor/src/components/block-list/block.js:563` | `1437` | `7185` | `1.22` | `1.00` |
+| `packages/editor/src/hooks/pattern-overrides.js:40` | `1437` | `7185` | `0.74` | `0.98` |
+| `packages/block-editor/src/components/inner-blocks/index.js:195` | `580` | `2900` | `0.40` | `0.24` |
+
+The same ranking appears if we look specifically at `mapSelect` time, though
+the per-instance medians are mostly below the timer resolution. The meaningful
+signal is aggregate fanout: many cheap selectors running thousands of times per
+delay run. At `1300ms`, the `block-list/index.js:196` group alone contributed
+about `1.4ms` of traced `mapSelect` time per key in key-held mode and `1.2ms`
+per key in wait-after-keyup mode.
+
+![useSelect owner delay profile](figures/22-use-select-owner-delay-profile.png)
+
+This does not overturn the earlier key-hold conclusion. The owner trace does not
+find one selector that appears only in the slow key-held plateau. Instead, the
+same high-fanout owners dominate both modes and all diagnostic delays. Key-held
+mode is usually somewhat higher for the top block-list owners, but the delta is
+spread across many subscriber callbacks. The mechanism is better described as
+"large block editor subscriber fanout on the input path" than as "one bad
+selector."
+
+The remaining open question moved one level lower again: which of these
+block-list subscriptions are necessary on every typed character, and which can be
+made less sensitive to ordinary RichText text updates.
 
 ## Scenario Sensitivity
 
@@ -780,6 +836,9 @@ Known problems:
 -   **Source-level data span tracing is heavier still.** Even after filtering to
     input-matched batch spans, it instruments hot emitter and `useSelect` paths.
     Treat it as attribution, not latency scoring.
+-   **`useSelect` owner attribution is heavier again.** It records source stacks
+    once per hook instance and joins hundreds of thousands of subscriber-span
+    events. It is useful for ranking owners, not for reporting latency scores.
 -   **The paired trace is diagnostic, not a score run.** It uses only 8 retained
     samples per delay and heavy instrumentation. Its value is in comparing modes
     under similar tracing overhead.
@@ -867,9 +926,11 @@ For investigation:
     values.
 -   Split the RichText `onInput` callback into source-level timing spans for
     `createRecord`, `applyRecord`, serialization, data dispatch, and render.
--   Add component/subscription ownership to the `useSelect` span traces, so the
-    expensive selectors and components behind the `core/block-editor` fanout are
-    identifiable.
+-   Extend the `useSelect` owner traces from source-mapped hook callbacks to
+    React render ownership, so the components woken by the `core/block-editor`
+    fanout are identifiable.
+-   For the block-list owner groups identified here, separate necessary
+    text-input invalidations from broad block-tree invalidations.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Add a textarea/native baseline to estimate browser/editor overhead.
@@ -933,6 +994,10 @@ The key runs used in this report were:
     registry and `useSelect` spans.
 -   `data_spans_empty_between_keys`: empty-post complete-keypress-then-wait trace
     with source-level data registry and `useSelect` spans.
+-   `use_select_owners_large_keyhold`: large-post key-hold trace with
+    `useSelect` owner metadata.
+-   `use_select_owners_large_between_keys`: large-post complete-keypress-then-wait
+    trace with `useSelect` owner metadata.
 
 The local environment used `nvm` default Node `v20.20.2`.
 
@@ -941,6 +1006,13 @@ scripts after the probe changes:
 
 ```sh
 npm run build -- --skip-types
+```
+
+The compact `useSelect` owner CSV was extracted from the raw owner-trace JSON
+with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-use-select-owners.js
 ```
 
 ## References

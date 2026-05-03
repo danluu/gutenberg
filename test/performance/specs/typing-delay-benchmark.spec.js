@@ -399,10 +399,13 @@ function installDataSpanTracing() {
 	if ( window.__typingBenchmarkDataSpanTracingInstalled ) {
 		window.__typingBenchmarkDataSpanEvents =
 			window.__typingBenchmarkDataSpanEvents || [];
+		window.__typingBenchmarkUseSelectMetadata =
+			window.__typingBenchmarkUseSelectMetadata || [];
 		return;
 	}
 
 	window.__typingBenchmarkDataSpanEvents = [];
+	window.__typingBenchmarkUseSelectMetadata = [];
 	let depth = 0;
 	let batchDepth = 0;
 	const defaultExcludedSpanNames = new Set( [
@@ -1891,6 +1894,36 @@ test.describe( 'Typing delay benchmark', () => {
 		}
 
 		const benchmarkStoppedAtEpochMs = Date.now();
+		const useSelectMetadata = traceDataSpans
+			? await page.evaluate( () => {
+					const windows = [ { name: 'parent', window } ];
+					for ( const iframe of document.querySelectorAll(
+						'iframe'
+					) ) {
+						try {
+							if ( iframe.contentWindow ) {
+								windows.push( {
+									name: iframe.name || iframe.id || 'iframe',
+									window: iframe.contentWindow,
+								} );
+							}
+						} catch {
+							// Ignore inaccessible frames.
+						}
+					}
+
+					return windows.flatMap(
+						( { name, window: currentWindow } ) =>
+							(
+								currentWindow.__typingBenchmarkUseSelectMetadata ||
+								[]
+							).map( ( metadata ) => ( {
+								...metadata,
+								windowName: name,
+							} ) )
+					);
+			  } )
+			: undefined;
 		const result = {
 			metadata: {
 				scenario,
@@ -1924,6 +1957,7 @@ test.describe( 'Typing delay benchmark', () => {
 			},
 			delayRunSummaries,
 			records,
+			useSelectMetadata,
 		};
 		const outputPath = path.join(
 			outputDir,
