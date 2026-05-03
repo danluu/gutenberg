@@ -2661,6 +2661,83 @@ if (file.exists(nontyping_wait_screen_summary_path) && file.exists(nontyping_wai
 	)
 }
 
+site_pattern_alternating_wait_path <- file.path(data_dir, "typing-delay-site-pattern-alternating-wait-summary.csv")
+site_pattern_readiness_probe_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-probe-summary.csv")
+if (file.exists(site_pattern_alternating_wait_path)) {
+	site_pattern_alternating_wait <- read_csv(site_pattern_alternating_wait_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(measurement_idle_wait_ms, "ms"),
+				levels = c("0ms", "1000ms")
+			)
+		)
+
+	save_plot(
+		ggplot(site_pattern_alternating_wait, aes(pair, p50_ms, color = wait_label)) +
+			geom_line(aes(group = pair), color = "grey70", linewidth = 0.45, show.legend = FALSE) +
+			geom_point(size = 2.8, alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_x_continuous(breaks = sort(unique(site_pattern_alternating_wait$pair))) +
+			labs(
+				title = "Site-editor pattern loading really is faster after the 1000ms wait",
+				subtitle = "Exact existing Loading Patterns spec, alternating waits; lines connect adjacent paired runs",
+				x = "Alternating pair",
+				y = "Reported q50",
+				color = "Wait"
+			),
+		"101-site-pattern-alternating-wait.png",
+		width = 8.5,
+		height = 5.2
+	)
+}
+
+if (file.exists(site_pattern_readiness_probe_summary_path)) {
+	site_pattern_readiness_probe <- read_csv(site_pattern_readiness_probe_summary_path, show_col_types = FALSE)
+
+	site_pattern_readiness_probe_plot <- site_pattern_readiness_probe %>%
+		transmute(
+			waitMs,
+			`reported q50 (ms)` = median_duration_ms,
+			`requests during wait` = median_wait_requests_started,
+			`requests during measurement` = median_measurement_requests_started,
+			`resources added during wait` = median_wait_resource_delta,
+			`resources added during measurement` = median_measurement_resource_delta
+		) %>%
+		pivot_longer(
+			cols = -waitMs,
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"reported q50 (ms)",
+					"requests during wait",
+					"requests during measurement",
+					"resources added during wait",
+					"resources added during measurement"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(site_pattern_readiness_probe_plot, aes(waitMs, value)) +
+			geom_point(color = brewer_color("Dark2", 1), size = 2.3, alpha = 0.9) +
+			geom_smooth(method = "loess", se = FALSE, color = brewer_color("Set1", 1), linewidth = 0.55) +
+			facet_wrap(vars(metric), ncol = 2, scales = "free_y") +
+			labs(
+				title = "The explicit wait moves site-editor readiness requests before measurement",
+				subtitle = "Probe adds observer overhead, so use it for phase attribution, not q50 deltas",
+				x = "MEASUREMENT_IDLE_WAIT_MS",
+				y = NULL
+			),
+		"102-site-pattern-readiness-probe.png",
+		width = 9.8,
+		height = 7.2
+	)
+}
+
 if (file.exists(ci_dense_n50_summary_path)) {
 	ci_held_key_delay_runtime_reliability <- read_csv(ci_dense_n50_summary_path, show_col_types = FALSE) %>%
 		transmute(
