@@ -1023,7 +1023,10 @@ if (file.exists(start_wait_pretype_warmup_summary_path)) {
 					"0s wait",
 					"0s + 1000ms warmup",
 					"60s wait",
+					"60s + 50ms warmup",
+					"60s + 100ms warmup",
 					"60s + 250ms warmup",
+					"60s + 500ms warmup",
 					"60s + 1000ms warmup"
 				)
 			),
@@ -1034,11 +1037,21 @@ if (file.exists(start_wait_pretype_warmup_summary_path)) {
 			warmup_label = factor(
 				case_when(
 					warmup_ms == 0 ~ "no warmup",
+					warmup_ms == 50 ~ "50ms warmup",
+					warmup_ms == 100 ~ "100ms warmup",
 					warmup_ms == 250 ~ "250ms warmup",
+					warmup_ms == 500 ~ "500ms warmup",
 					warmup_ms == 1000 ~ "1000ms warmup",
 					TRUE ~ paste0(warmup_ms, "ms warmup")
 				),
-				levels = c("no warmup", "250ms warmup", "1000ms warmup")
+				levels = c(
+					"no warmup",
+					"50ms warmup",
+					"100ms warmup",
+					"250ms warmup",
+					"500ms warmup",
+					"1000ms warmup"
+				)
 			)
 		)
 
@@ -1057,8 +1070,51 @@ if (file.exists(start_wait_pretype_warmup_summary_path)) {
 			) +
 			theme(axis.text.x = element_text(angle = 25, hjust = 1)),
 		"65-start-wait-pretype-warmup.png",
-		width = 9.5,
+		width = 11,
 		height = 5.8
+	)
+
+	warmup_dose_response <- start_wait_pretype_warmup %>%
+		filter(settle_ms == 60000)
+	reference_0s <- start_wait_pretype_warmup %>%
+		filter(settle_ms == 0, warmup_ms == 0) %>%
+		slice(1)
+	reference_0s_warmup <- start_wait_pretype_warmup %>%
+		filter(settle_ms == 0, warmup_ms == 1000) %>%
+		slice(1)
+
+	save_plot(
+		ggplot(warmup_dose_response, aes(warmup_ms, p50_ms)) +
+			geom_hline(
+				data = reference_0s,
+				aes(yintercept = p50_ms, color = "0s wait"),
+				linetype = "dashed",
+				linewidth = 0.6
+			) +
+			geom_hline(
+				data = reference_0s_warmup,
+				aes(yintercept = p50_ms, color = "0s + 1000ms warmup"),
+				linetype = "dotted",
+				linewidth = 0.7
+			) +
+			geom_errorbar(
+				aes(ymin = p10_ms, ymax = p90_ms),
+				width = 24,
+				alpha = 0.78,
+				color = "#1b9e77"
+			) +
+			geom_point(size = 3.2, color = "#1b9e77") +
+			scale_x_continuous(breaks = c(0, 50, 100, 250, 500, 1000)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Reference") +
+			labs(
+				title = "A short pre-typing warmup recovers most of the 60s idle penalty",
+				subtitle = "Fresh large-post first character after a 60s start wait; points are p50s and bars are p10-p90",
+				x = "Browser-main-thread warmup before tracing and typing (ms)",
+				y = "Latency p50 (ms)"
+			),
+		"66-start-wait-pretype-warmup-dose-response.png",
+		width = 9,
+		height = 5.5
 	)
 }
 
