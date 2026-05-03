@@ -3145,21 +3145,21 @@ if (file.exists(input_path_summary_path)) {
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
+marker_intervention_levels <- c(
+	"normal marker",
+	"marker no-op",
+	"mark next not persistent",
+	"mark last, then force next transient",
+	"busy wait 20ms",
+	"busy wait 40ms",
+	"toggle selection",
+	"toggle template validity",
+	"toggle block highlight",
+	"stop typing",
+	"start typing",
+	"stop/start typing"
+)
 if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
-	marker_intervention_levels <- c(
-		"normal marker",
-		"marker no-op",
-		"mark next not persistent",
-		"mark last, then force next transient",
-		"busy wait 20ms",
-		"busy wait 40ms",
-		"toggle selection",
-		"toggle template validity",
-		"toggle block highlight",
-		"stop typing",
-		"start typing",
-		"stop/start typing"
-	)
 	marker_summary <- read_csv(marker_summary_path, show_col_types = FALSE) %>%
 		filter(trace_type == "targeted") %>%
 		mutate(
@@ -3202,6 +3202,78 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				color = "Timer callback"
 			),
 		"26-marker-noop-intervention.png",
+		width = 11,
+		height = 7
+	)
+
+	marker_component_interventions <- c(
+		"normal marker",
+		"marker no-op",
+		"mark next not persistent",
+		"busy wait 40ms",
+		"toggle selection",
+		"start typing",
+		"stop typing",
+		"stop/start typing"
+	)
+	marker_event_components <- marker_samples %>%
+		filter(delay_ms == 1000, intervention %in% marker_component_interventions) %>%
+		group_by(intervention) %>%
+		summarise(
+			n = n(),
+			latency_p50_ms = median(latency_ms, na.rm = TRUE),
+			keydown_p50_ms = median(keydown_ms, na.rm = TRUE),
+			keypress_p50_ms = median(keypress_ms, na.rm = TRUE),
+			keyup_p50_ms = median(keyup_ms, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		mutate(intervention = factor(intervention, levels = marker_component_interventions))
+
+	write_csv(
+		marker_event_components,
+		file.path(data_dir, "typing-delay-marker-event-component-summary.csv")
+	)
+
+	marker_event_components_plot <- marker_event_components %>%
+		select(intervention, keydown_p50_ms, keypress_p50_ms, keyup_p50_ms) %>%
+		pivot_longer(
+			cols = -intervention,
+			names_to = "component",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			component = recode(
+				component,
+				keydown_p50_ms = "keydown",
+				keypress_p50_ms = "keypress",
+				keyup_p50_ms = "keyup"
+			),
+			component = factor(component, levels = c("keydown", "keypress", "keyup"))
+		)
+
+	save_plot(
+		ggplot(marker_event_components_plot, aes(component, duration_ms, color = intervention, shape = intervention)) +
+			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15,
+				`busy wait 40ms` = 3,
+				`toggle selection` = 8,
+				`start typing` = 4,
+				`stop typing` = 18,
+				`stop/start typing` = 7
+			), drop = FALSE) +
+			labs(
+				title = "The marker-intervention gap is keypress listener time",
+				subtitle = "Targeted 1000ms runs; points are p50 EventDispatch components across retained samples",
+				x = "Measured key event",
+				y = "Duration, p50 (ms)",
+				color = "Timer callback",
+				shape = "Timer callback"
+			),
+		"26b-marker-event-component-split.png",
 		width = 11,
 		height = 7
 	)
@@ -3355,8 +3427,21 @@ if (file.exists(timeout_970_marker_summary_path)) {
 }
 
 marker_allspan_action_path <- file.path(data_dir, "typing-delay-marker-allspan-action-summary.csv")
+marker_allspan_core_interventions <- c(
+	"normal marker",
+	"marker no-op",
+	"mark next not persistent"
+)
+marker_allspan_extended_interventions <- c(
+	"normal marker",
+	"marker no-op",
+	"mark next not persistent",
+	"stop/start typing",
+	"toggle selection"
+)
 if (file.exists(marker_allspan_action_path)) {
 	marker_allspan_action <- read_csv(marker_allspan_action_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_core_interventions) %>%
 		filter(action_name %in% c(
 			"__unstableMarkLastChangeAsPersistent",
 			"__unstableMarkNextChangeAsNotPersistent",
@@ -3365,7 +3450,7 @@ if (file.exists(marker_allspan_action_path)) {
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			),
 			action_label = recode(
 				action_name,
@@ -3413,11 +3498,14 @@ if (file.exists(marker_richtext_summary_path)) {
 		"rich-text.handleChange.serialize"
 	)
 	marker_richtext_summary <- read_csv(marker_richtext_summary_path, show_col_types = FALSE) %>%
-		filter(delay_ms == 1000, name %in% richtext_selected_names) %>%
+		filter(
+			delay_ms == 1000,
+			name %in% richtext_selected_names
+		) %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_intervention_levels
 			),
 			span_label = recode(
 				name,
@@ -3470,10 +3558,11 @@ if (file.exists(marker_richtext_summary_path)) {
 marker_allspan_input_batch_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-summary.csv")
 if (file.exists(marker_allspan_input_batch_path)) {
 	marker_allspan_input_batch <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_core_interventions) %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			)
 		) %>%
 		select(
@@ -3530,10 +3619,11 @@ if (file.exists(marker_allspan_input_batch_path)) {
 	)
 
 	marker_input_action_phases <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_core_interventions) %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			)
 		) %>%
 		select(
@@ -3595,10 +3685,11 @@ if (file.exists(marker_allspan_input_batch_path)) {
 	)
 
 	marker_redux_listener_shape <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_core_interventions) %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			)
 		)
 
@@ -3664,10 +3755,11 @@ if (file.exists(marker_allspan_input_batch_path)) {
 	)
 
 	marker_cycle_cost <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_core_interventions) %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			)
 		)
 
@@ -3735,16 +3827,66 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		width = 11,
 		height = 8
 	)
+
+	marker_cycle_cost_extended <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_extended_interventions) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = marker_allspan_extended_interventions
+			)
+		) %>%
+		transmute(
+			intervention,
+			`next input only` = latency_p50_ms,
+			`timer callback before input` = marker_before_input_duration_p50_ms,
+			`timer + next input` = cycle_latency_p50_ms
+		) %>%
+		pivot_longer(
+			cols = -intervention,
+			names_to = "window",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			window = factor(
+				window,
+				levels = rev(c("next input only", "timer callback before input", "timer + next input"))
+			)
+		)
+
+	save_plot(
+		ggplot(marker_cycle_cost_extended, aes(duration_ms, window, color = intervention, shape = intervention)) +
+			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15,
+				`stop/start typing` = 18,
+				`toggle selection` = 8
+			), drop = FALSE) +
+			labs(
+				title = "Restored state fanout reduces the next input slice, not total cycle cost",
+				subtitle = "Trace-all-data-spans runs at 1000ms; timer and input p50s are paired by retained input",
+				x = "Duration, p50 (ms)",
+				y = NULL,
+				color = "Timer callback",
+				shape = "Timer callback"
+			),
+		"38b-marker-cycle-vs-input-extended.png",
+		width = 11,
+		height = 7
+	)
 }
 
 marker_allspan_input_batch_samples_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-samples.csv")
 if (file.exists(marker_allspan_input_batch_samples_path)) {
 	marker_state_path_cases <- read_csv(marker_allspan_input_batch_samples_path, show_col_types = FALSE) %>%
-		filter(!is_throwaway) %>%
+		filter(!is_throwaway, intervention %in% marker_allspan_core_interventions) %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			),
 			marker_case = case_when(
 				marker_before_input_actions == "__unstableMarkLastChangeAsPersistent" ~ "marker before input",
@@ -3812,6 +3954,7 @@ marker_allspan_owner_path <- file.path(data_dir, "typing-delay-marker-allspan-ow
 if (file.exists(marker_allspan_owner_path)) {
 	marker_allspan_owner <- read_csv(marker_allspan_owner_path, show_col_types = FALSE) %>%
 		filter(
+			intervention %in% marker_allspan_core_interventions,
 			window_kind %in% c("marker action", "next input registry.batch"),
 			!is.na(source_path),
 			source_path != ""
@@ -3819,7 +3962,7 @@ if (file.exists(marker_allspan_owner_path)) {
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			),
 			window_label = recode(
 				window_kind,
@@ -4238,10 +4381,11 @@ if (file.exists(redux_listener_owner_summary_path)) {
 
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
 	use_select_phase_accounting <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% marker_allspan_core_interventions) %>%
 		mutate(
 			intervention = factor(
 				intervention,
-				levels = c("normal marker", "marker no-op", "mark next not persistent")
+				levels = marker_allspan_core_interventions
 			)
 		)
 
@@ -4330,10 +4474,11 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 		"marker_use_select_render_queue_add_duration_p50_ms"
 	) %in% names(read_csv(marker_allspan_input_batch_path, show_col_types = FALSE)))) {
 		use_select_subphase_source <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+			filter(intervention %in% marker_allspan_core_interventions) %>%
 			mutate(
 				intervention = factor(
 					intervention,
-					levels = c("normal marker", "marker no-op", "mark next not persistent")
+					levels = marker_allspan_core_interventions
 				)
 			)
 
@@ -4532,11 +4677,11 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 		paused_wrapper_bins_path <- file.path(data_dir, "typing-delay-paused-wrapper-duration-bins.csv")
 		if (file.exists(paused_wrapper_bins_path)) {
 			paused_wrapper_bins <- read_csv(paused_wrapper_bins_path, show_col_types = FALSE) %>%
-				filter(count_p50 > 0) %>%
+				filter(count_p50 > 0, intervention %in% marker_allspan_core_interventions) %>%
 				mutate(
 					intervention = factor(
 						intervention,
-						levels = c("normal marker", "marker no-op", "mark next not persistent")
+						levels = marker_allspan_core_interventions
 					),
 					component = factor(
 						component,

@@ -6,3 +6,7 @@ all data spans,marker no-op,__unstableMarkLastChangeAsPersistent,4,0.10000002384
 all data spans,mark next not persistent,updateBlockAttributes,5,3.799999952316284,9024,4501,3.1999998092651367,4501,0,0,0,0,0,0,0,0,0,0
 all data spans,mark next not persistent,__unstableMarkNextChangeAsNotPersistent,4,0.10000002384185791,1,4501,0,0,0,0,0,0,0,0,0,0,0,0
 all data spans,mark next not persistent,__unstableMarkLastChangeAsPersistent,4,0.15000009536743164,1,4501,0,0,0,0,0,0,0,0,0,0,0,0
+all data spans,stop/start typing,updateBlockAttributes,7,2.700000047683716,9026,4500,2.4000000953674316,4500,0,0,0,0,0,0,0,0,0,0
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,6,33.85000002384186,31022,4500,33.550000071525574,9000,8996,1340,10.950000047683716,1340,10.25000011920929,1340,0,0,0,0
+all data spans,toggle selection,updateBlockAttributes,7,2.700000047683716,9026,4500,2.5,4500,0,0,0,0,0,0,0,0,0,0
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,6,36.049999952316284,31020,4500,35.699999928474426,9000,8996,1340,10.849999070167542,1340,9.899999022483826,1340,0,0,0,0

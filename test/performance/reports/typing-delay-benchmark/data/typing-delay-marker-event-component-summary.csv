@@ -1,0 +1,9 @@
+intervention,n,latency_p50_ms,keydown_p50_ms,keypress_p50_ms,keyup_p50_ms
+normal marker,30,11.339,0.112,10.9925,0.303
+marker no-op,30,21.997,0.3835,21.1015,0.4855
+mark next not persistent,30,33.5935,0.395,32.719,0.511
+busy wait 40ms,30,16.0945,0.18,15.663499999999999,0.276
+toggle selection,30,14.561,0.1735,14.1485,0.191
+stop typing,30,26.8245,0.155,26.499000000000002,0.1575
+start typing,30,24.4085,0.487,23.2715,0.6685000000000001
+stop/start typing,30,10.974,0.1325,10.6195,0.194

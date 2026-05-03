@@ -101,3 +101,65 @@ all data spans,mark next not persistent,updateBlockAttributes,notify:store:core/
 all data spans,mark next not persistent,updateBlockAttributes,resume:store:core/block-editor,3,1,12.799999952316284,4501
 all data spans,mark next not persistent,__unstableMarkNextChangeAsNotPersistent,rootSubscribe:core/block-editor,4,1,0,4501
 all data spans,mark next not persistent,__unstableMarkLastChangeAsPersistent,rootSubscribe:core/block-editor,4,1,0,4501
+all data spans,stop/start typing,updateBlockAttributes,emit:store:core/block-editor,7,4500,0.3000004291534424,4500
+all data spans,stop/start typing,updateBlockAttributes,reduxListener:core/block-editor,7,4500,1.7000000476837158,4500
+all data spans,stop/start typing,updateBlockAttributes,rootSubscribe:core/block-editor,7,1,2.4000000953674316,4500
+all data spans,stop/start typing,updateBlockAttributes,resume:registry:,7,1,0,1
+all data spans,stop/start typing,updateBlockAttributes,data.registry.batch.resumeRegistry,7,1,0,
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/data,7,1,0,1
+all data spans,stop/start typing,updateBlockAttributes,data.registry.batch.resumeStore,7,9,13.900000095367432,
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/rich-text,7,1,0,1236
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/blocks,7,1,0,3617
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/keyboard-shortcuts,7,1,0,3
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/preferences,7,1,0,26
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/commands,6,1,0,2
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/notices,6,1,0,3
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/upload-media,6,1,0,2
+all data spans,stop/start typing,updateBlockAttributes,emitterListener:registry::registry subscriber,5,1,0.39999985694885254,1
+all data spans,stop/start typing,updateBlockAttributes,notify:registry:,5,1,0.39999985694885254,1
+all data spans,stop/start typing,updateBlockAttributes,emit:registry:,5,1,0.39999985694885254,1
+all data spans,stop/start typing,updateBlockAttributes,emitterListener:store:core/block-editor:registry global listener,5,1,0.39999985694885254,4500
+all data spans,stop/start typing,updateBlockAttributes,notify:store:core/block-editor,5,1,13.900000095367432,4500
+all data spans,stop/start typing,updateBlockAttributes,resume:store:core/block-editor,6,1,14.200000047683716,4500
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,emitterListener:registry::registry subscriber,6,2,0,1
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,notify:registry:,6,2,0,1
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,emit:registry:,6,2,0,1
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,reduxListener:core/block-editor,6,9000,30.399999618530273,4500
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,useSelect.mapSelect,6,1340,6.399999737739563,
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,useSelect.updateValue,6,1342,8.199999690055847,
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,useSelect.reactListener,6,1340,10.25000011920929,
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,useSelect.onStoreChange,6,1340,10.950000047683716,
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,useSelect.onChange,6,8996,17.949999570846558,
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,useSelect.renderQueueAdd,6,7656,2.399999737739563,
+all data spans,stop/start typing,__unstableMarkLastChangeAsPersistent,rootSubscribe:core/block-editor,6,2,33.550000071525574,4500
+all data spans,toggle selection,updateBlockAttributes,emit:store:core/block-editor,7,4500,0.5000004768371582,4500
+all data spans,toggle selection,updateBlockAttributes,reduxListener:core/block-editor,7,4500,1.6000001430511475,4500
+all data spans,toggle selection,updateBlockAttributes,rootSubscribe:core/block-editor,7,1,2.5,4500
+all data spans,toggle selection,updateBlockAttributes,resume:registry:,7,1,0,1
+all data spans,toggle selection,updateBlockAttributes,data.registry.batch.resumeRegistry,7,1,0,
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/data,6,1,0,1
+all data spans,toggle selection,updateBlockAttributes,data.registry.batch.resumeStore,7,9,13.700000047683716,
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/rich-text,6,1,0,1236
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/blocks,6,1,0,3617
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/keyboard-shortcuts,6,1,0,3
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/preferences,6,1,0,26
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/commands,6,1,0,2
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/notices,6,1,0,3
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/upload-media,6,1,0,2
+all data spans,toggle selection,updateBlockAttributes,emitterListener:registry::registry subscriber,4,1,0.4500000476837158,1
+all data spans,toggle selection,updateBlockAttributes,notify:registry:,4,1,0.4500000476837158,1
+all data spans,toggle selection,updateBlockAttributes,emit:registry:,4,1,0.4500000476837158,1
+all data spans,toggle selection,updateBlockAttributes,emitterListener:store:core/block-editor:registry global listener,4,1,0.4500000476837158,4500
+all data spans,toggle selection,updateBlockAttributes,notify:store:core/block-editor,4,1,13.799999952316284,4500
+all data spans,toggle selection,updateBlockAttributes,resume:store:core/block-editor,6,1,13.800000071525574,4500
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,emitterListener:registry::registry subscriber,6,2,0,1
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,notify:registry:,6,2,0,1
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,emit:registry:,6,2,0,1
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,reduxListener:core/block-editor,6,9000,31.499999284744263,4500
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,useSelect.mapSelect,6,1340,6.9499993324279785,
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,useSelect.updateValue,6,1340,8.399999141693115,
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,useSelect.reactListener,6,1340,9.899999022483826,
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,useSelect.onStoreChange,6,1340,10.849999070167542,
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,useSelect.onChange,6,8996,18.350000023841858,
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,useSelect.renderQueueAdd,6,7656,2.6500003337860107,
+all data spans,toggle selection,__unstableMarkLastChangeAsPersistent,rootSubscribe:core/block-editor,6,2,35.699999928474426,4500

@@ -184,6 +184,18 @@ const allDataSpanRuns = [
 		intervention: 'mark next not persistent',
 		dir: 'artifacts/typing-delay-mark-next-not-persistent-allspans-1000',
 	},
+	{
+		runId: 'marker_stop_start_typing_allspans_1000',
+		traceType: 'all data spans',
+		intervention: 'stop/start typing',
+		dir: 'artifacts/typing-delay-mark-stop-start-typing-allspans-1000',
+	},
+	{
+		runId: 'marker_toggle_selection_allspans_1000',
+		traceType: 'all data spans',
+		intervention: 'toggle selection',
+		dir: 'artifacts/typing-delay-mark-toggle-selection-allspans-1000',
+	},
 ];
 
 const reduxListenerOwnerRuns = [

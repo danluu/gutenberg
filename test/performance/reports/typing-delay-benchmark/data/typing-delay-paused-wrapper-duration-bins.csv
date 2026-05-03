@@ -21,3 +21,15 @@ all data spans,mark next not persistent,wrapper outside emitter.emit,0.1,4,44,17
 all data spans,mark next not persistent,paused emitter.emit child,0.1,4,18,71
 all data spans,mark next not persistent,Redux listener wrapper,0.2,1,1,1
 all data spans,mark next not persistent,wrapper outside emitter.emit,0.2,1,1,1
+all data spans,stop/start typing,Redux listener wrapper,0,6,8961,53754
+all data spans,stop/start typing,paused emitter.emit child,0,6,8987,53931
+all data spans,stop/start typing,wrapper outside emitter.emit,0,6,8973,53823
+all data spans,stop/start typing,Redux listener wrapper,0.1,6,39,246
+all data spans,stop/start typing,wrapper outside emitter.emit,0.1,6,27,177
+all data spans,stop/start typing,paused emitter.emit child,0.1,6,13,69
+all data spans,toggle selection,Redux listener wrapper,0,6,8968,53781
+all data spans,toggle selection,paused emitter.emit child,0,6,8988.5,53936
+all data spans,toggle selection,wrapper outside emitter.emit,0,6,8978,53845
+all data spans,toggle selection,Redux listener wrapper,0.1,6,32,219
+all data spans,toggle selection,paused emitter.emit child,0.1,6,11.5,64
+all data spans,toggle selection,wrapper outside emitter.emit,0.1,6,22,155
