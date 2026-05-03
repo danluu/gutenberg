@@ -1817,6 +1817,80 @@ if (file.exists(post_editor_randomized_summary_path) && file.exists(post_editor_
 	)
 }
 
+typing_delay_startup_summary_path <- file.path(data_dir, "typing-delay-post-editor-typing-delay-startup-grid-summary.csv")
+if (file.exists(typing_delay_startup_summary_path)) {
+	typing_delay_startup_summary <- read_csv(typing_delay_startup_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			typing_delay_label = factor(
+				paste0(typing_delay_ms, "ms typing delay"),
+				levels = paste0(sort(unique(typing_delay_ms)), "ms typing delay")
+			),
+			startup_wait_label = factor(
+				paste0(startup_wait_ms, "ms"),
+				levels = paste0(sort(unique(startup_wait_ms)), "ms")
+			)
+		)
+
+	save_plot(
+		ggplot(typing_delay_startup_summary, aes(startup_wait_label, typing_delay_label, fill = latency_p50_ms)) +
+			geom_tile(color = "white", linewidth = 0.35) +
+			geom_text(aes(label = sprintf("%.1f", latency_p50_ms)), size = 3.1) +
+			scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1) +
+			labs(
+				title = "Typing delay dominates the independent startup-wait grid",
+				subtitle = "Exact post-editor.spec.js Typing metric; one run per cell, 10 retained samples per run",
+				x = "Startup wait before tracing and typing",
+				y = "Delay between typed characters",
+				fill = "Retained p50 (ms)"
+			),
+		"86-post-editor-typing-delay-startup-grid-heatmap.png",
+		width = 9.8,
+		height = 5.8
+	)
+
+	save_plot(
+		ggplot(typing_delay_startup_summary, aes(startup_wait_ms, latency_p50_ms, color = typing_delay_label, shape = typing_delay_label)) +
+			geom_point(size = 2.7, alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_x_continuous(
+				trans = scales::pseudo_log_trans(sigma = 100),
+				breaks = sort(unique(typing_delay_startup_summary$startup_wait_ms)),
+				labels = function(x) paste0(x, "ms")
+			) +
+			facet_wrap(vars(typing_delay_label), ncol = 1, scales = "free_y") +
+			labs(
+				title = "Startup wait has no single trend once typing delay is held fixed",
+				subtitle = "Scatter only: each point is one exact CI-shaped Typing invocation",
+				x = "Startup wait before tracing and typing",
+				y = "Retained typing p50 (ms)"
+			) +
+			theme(
+				legend.position = "none",
+				axis.text.x = element_text(angle = 35, hjust = 1)
+			),
+		"87-post-editor-typing-delay-startup-grid-scatter.png",
+		width = 9.8,
+		height = 8.5
+	)
+
+	save_plot(
+		ggplot(typing_delay_startup_summary, aes(startup_wait_label, typing_delay_label, fill = suite_elapsed_s)) +
+			geom_tile(color = "white", linewidth = 0.35) +
+			geom_text(aes(label = sprintf("%.1f", suite_elapsed_s)), size = 3.1) +
+			scale_fill_distiller(type = "seq", palette = "Blues", direction = 1) +
+			labs(
+				title = "Elapsed time rises with both independent waits",
+				subtitle = "Elapsed seconds for the exact post-editor Typing setup/run pair",
+				x = "Startup wait before tracing and typing",
+				y = "Delay between typed characters",
+				fill = "Elapsed (s)"
+			),
+		"88-post-editor-typing-delay-startup-grid-elapsed.png",
+		width = 9.8,
+		height = 5.8
+	)
+}
+
 ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")
 if (file.exists(ci_dense_summary_path)) {
 	ci_dense_summary <- read_csv(ci_dense_summary_path, show_col_types = FALSE)

@@ -18,7 +18,20 @@ import { PerfUtils } from '../fixtures';
 import { sum } from '../utils.js';
 
 // See https://github.com/WordPress/gutenberg/issues/51383#issuecomment-1613460429
-const BROWSER_IDLE_WAIT = 1000;
+const DEFAULT_BROWSER_IDLE_WAIT_MS = Number.parseInt(
+	process.env.PERFORMANCE_BROWSER_IDLE_WAIT_MS || '1000',
+	10
+);
+const TYPING_DELAY_MS = Number.parseInt(
+	process.env.PERFORMANCE_TYPING_DELAY_MS ||
+		String( DEFAULT_BROWSER_IDLE_WAIT_MS ),
+	10
+);
+const MEASUREMENT_IDLE_WAIT_MS = Number.parseInt(
+	process.env.PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS ||
+		String( DEFAULT_BROWSER_IDLE_WAIT_MS ),
+	10
+);
 const TYPING_START_WAIT_MS = Number.parseInt(
 	process.env.POST_EDITOR_TYPING_START_WAIT_MS || '0',
 	10
@@ -26,6 +39,30 @@ const TYPING_START_WAIT_MS = Number.parseInt(
 const TYPING_START_WAIT_PHASE =
 	process.env.POST_EDITOR_TYPING_START_WAIT_PHASE || 'before-trace';
 const RESULTS_OUTPUT_DIR = process.env.POST_EDITOR_RESULTS_OUTPUT_DIR;
+
+if (
+	! Number.isFinite( DEFAULT_BROWSER_IDLE_WAIT_MS ) ||
+	DEFAULT_BROWSER_IDLE_WAIT_MS < 0
+) {
+	throw new Error(
+		'PERFORMANCE_BROWSER_IDLE_WAIT_MS must be a non-negative integer.'
+	);
+}
+
+if ( ! Number.isFinite( TYPING_DELAY_MS ) || TYPING_DELAY_MS < 0 ) {
+	throw new Error(
+		'PERFORMANCE_TYPING_DELAY_MS must be a non-negative integer.'
+	);
+}
+
+if (
+	! Number.isFinite( MEASUREMENT_IDLE_WAIT_MS ) ||
+	MEASUREMENT_IDLE_WAIT_MS < 0
+) {
+	throw new Error(
+		'PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS must be a non-negative integer.'
+	);
+}
 
 if ( ! Number.isFinite( TYPING_START_WAIT_MS ) || TYPING_START_WAIT_MS < 0 ) {
 	throw new Error(
@@ -86,7 +123,9 @@ test.describe( 'Post Editor Performance', () => {
 						metadata: {
 							typingStartWaitMs: TYPING_START_WAIT_MS,
 							typingStartWaitPhase: TYPING_START_WAIT_PHASE,
-							browserIdleWait: BROWSER_IDLE_WAIT,
+							browserIdleWait: DEFAULT_BROWSER_IDLE_WAIT_MS,
+							typingDelayMs: TYPING_DELAY_MS,
+							measurementIdleWaitMs: MEASUREMENT_IDLE_WAIT_MS,
 						},
 						results,
 					},
@@ -179,10 +218,10 @@ test.describe( 'Post Editor Performance', () => {
 
 		// Type the testing sequence into the empty paragraph.
 		await target.type( 'x'.repeat( iterations ), {
-			delay: BROWSER_IDLE_WAIT,
+			delay: TYPING_DELAY_MS,
 			// The extended timeout is needed because the typing is very slow
 			// and the `delay` value itself does not extend it.
-			timeout: iterations * BROWSER_IDLE_WAIT * 2, // 2x the total time to be safe.
+			timeout: Math.max( iterations * TYPING_DELAY_MS * 2, 5000 ), // 2x the total time to be safe.
 		} );
 
 		// Stop tracing.
@@ -343,7 +382,7 @@ test.describe( 'Post Editor Performance', () => {
 			for ( let i = 1; i <= iterations; i++ ) {
 				// Wait for the browser to be idle before starting the monitoring.
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
-				await page.waitForTimeout( BROWSER_IDLE_WAIT );
+				await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
 
 				// Start tracing.
 				await metrics.startTracing();
@@ -392,7 +431,7 @@ test.describe( 'Post Editor Performance', () => {
 			for ( let i = 1; i <= iterations; i++ ) {
 				// Wait for the browser to be idle before starting the monitoring.
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
-				await page.waitForTimeout( BROWSER_IDLE_WAIT );
+				await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
 
 				// Start tracing.
 				await metrics.startTracing();
@@ -444,7 +483,7 @@ test.describe( 'Post Editor Performance', () => {
 			for ( let i = 1; i <= iterations; i++ ) {
 				// Wait for the browser to be idle before starting the monitoring.
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
-				await page.waitForTimeout( BROWSER_IDLE_WAIT );
+				await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
 
 				// Start tracing.
 				await metrics.startTracing();
@@ -508,7 +547,7 @@ test.describe( 'Post Editor Performance', () => {
 			for ( let i = 1; i <= iterations; i++ ) {
 				// Wait for the browser to be idle before starting the monitoring.
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
-				await page.waitForTimeout( BROWSER_IDLE_WAIT );
+				await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
 
 				// Start tracing.
 				await metrics.startTracing();
@@ -575,7 +614,7 @@ test.describe( 'Post Editor Performance', () => {
 			for ( let i = 1; i <= iterations; i++ ) {
 				// Wait for the browser to be idle before starting the monitoring.
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
-				await page.waitForTimeout( BROWSER_IDLE_WAIT );
+				await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
 
 				// Start tracing.
 				await metrics.startTracing();
@@ -731,7 +770,7 @@ test.describe( 'Post Editor Performance', () => {
 			for ( let i = 1; i <= iterations; i++ ) {
 				// Wait for the browser to be idle before starting the monitoring.
 				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
-				await page.waitForTimeout( BROWSER_IDLE_WAIT );
+				await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
 
 				await globalInserterToggle.click();
 				await perfUtils.expectExpandedState(

@@ -79,6 +79,14 @@ The short version:
     `18.3s`, and `78.0s`. The local evidence says a `60s` pre-typing wait costs
     about a minute per Typing invocation and does not buy a more stable retained
     Typing result.
+-   The historical `BROWSER_IDLE_WAIT = 1000` constant is overloaded. In the
+    current post/site editor performance specs it controls both explicit
+    pre-measurement sleeps in non-Typing tests and the inter-key delay inside
+    Typing tests. Those must be analyzed separately. I split the knobs and ran
+    an exact `post-editor.spec.js` Typing grid over typing delays of `100ms`,
+    `200ms`, `400ms`, `600ms`, and `1000ms`, crossed with startup waits from
+    `0ms` through `5000ms`. Typing delay dominates; startup wait has no single
+    direction once typing delay is held fixed.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -483,6 +491,9 @@ The R script derives:
 -   `data/typing-delay-post-editor-ci-start-wait-randomized-exact-*.csv`: a
     randomized exact `post-editor.spec.js` Typing follow-up with four
     before-trace runs each at `0ms`, `1000ms`, and `60000ms`.
+-   `data/typing-delay-post-editor-typing-delay-startup-grid-*.csv`: exact
+    `post-editor.spec.js` Typing runs with independent inter-key typing delay
+    and pre-typing startup wait controls.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -964,11 +975,79 @@ changes the median exact Typing invocation from about `17-18s` to `78s`, so
 removing it would save roughly one minute per invocation in this setup without a
 detectable hit to the retained Typing metric.
 
-One naming trap: in `post-editor.spec.js`, `BROWSER_IDLE_WAIT = 1000` is the
-delay passed to `target.type()`, not a separate wait before the Typing benchmark
+### Independent Typing Delay And Startup Wait
+
+The wording around `BROWSER_IDLE_WAIT` is a trap. In the current performance
+specs it is not one thing:
+
+-   In Typing tests, it is the delay between typed characters inside
+    `target.type( ..., { delay } )`.
+-   In several non-Typing tests, it is an explicit
+    `page.waitForTimeout( BROWSER_IDLE_WAIT )` before tracing/measurement.
+
+Those are independent variables. By static count in the current post/site editor
+performance specs, the fixed `1000ms` constant accounts for about `76s` of
+explicit pre-measurement sleeps (`66s` in `post-editor.spec.js`, `10s` in
+`site-editor.spec.js`) plus about `55s` of inter-key Typing delay (`44s` in
+post-editor Typing variants, `11s` in site-editor Typing). So the current
+post/site editor performance specs contain roughly `131s` of fixed time from
+this one constant. Removing only startup/pre-measurement waits is not the same
+as reducing the Typing delay.
+
+To measure the independent variables, I split the default-off controls:
+
+-   `PERFORMANCE_TYPING_DELAY_MS`: delay between typed characters.
+-   `POST_EDITOR_TYPING_START_WAIT_MS`: wait after the Typing setup and before
+    tracing/typing.
+-   `PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS`: explicit pre-measurement wait for
+    non-Typing measurements.
+
+Defaults preserve the current `1000ms` behavior. The grid below is the exact
+plain `Post Editor Performance > Typing` setup/run pair. It crosses typing
+delays of `100ms`, `200ms`, `400ms`, `600ms`, and `1000ms` with startup waits of
+`0ms`, `50ms`, `100ms`, `250ms`, `500ms`, `750ms`, `1000ms`, `1500ms`,
+`2000ms`, and `5000ms`. Each cell is one exact run with 10 retained samples and
+one discarded first character.
+
+![Independent typing-delay/startup-wait heatmap](figures/86-post-editor-typing-delay-startup-grid-heatmap.png)
+
+![Independent typing-delay/startup-wait scatter](figures/87-post-editor-typing-delay-startup-grid-scatter.png)
+
+![Independent typing-delay/startup-wait elapsed time](figures/88-post-editor-typing-delay-startup-grid-elapsed.png)
+
+Summary by typing delay:
+
+| Typing delay | Startup waits | Median p50 | p50 range | `0ms` startup | `1000ms` startup | `2000ms` startup |
+| -----------: | ------------: | ---------: | --------: | ------------: | ----------------: | ----------------: |
+|      `100ms` |          `10` |   `10.8ms` | `9.8-11.8ms` |       `9.8ms` |          `10.4ms` |          `10.7ms` |
+|      `200ms` |          `10` |   `19.8ms` | `15.8-26.4ms` |      `22.0ms` |          `19.1ms` |          `15.8ms` |
+|      `400ms` |          `10` |   `27.7ms` | `20.8-35.4ms` |      `33.1ms` |          `31.0ms` |          `23.6ms` |
+|      `600ms` |          `10` |   `29.1ms` | `21.4-36.0ms` |      `35.3ms` |          `22.4ms` |          `34.4ms` |
+|     `1000ms` |          `10` |   `12.2ms` | `10.9-14.6ms` |      `12.4ms` |          `11.4ms` |          `12.5ms` |
+
+The grid disconfirms a simple "wait `1000ms` before Typing or the metric gets
+worse" story. At `100ms` typing delay, changing startup wait from `0ms` to
+`1000ms` moves p50 by only `+0.6ms`. At the current `1000ms` typing delay,
+`0ms`, `1000ms`, and `2000ms` startup waits are all in the same low band
+(`12.4ms`, `11.4ms`, and `12.5ms`). The large differences come from typing
+delay itself: `400ms` and `600ms` typing delays can be around `20-36ms`, while
+`100ms` and `1000ms` are around `10-14ms` in this run. The `1000ms` typing delay
+is not a neutral "longer sleep"; it is the previously analyzed one-second
+timer-boundary regime.
+
+This does not prove every individual startup-wait cell is stable. There is one
+exact run per cell, so some within-band movement is ordinary run volatility.
+But it does show the thing needed for CI-speed reasoning: reducing startup wait
+to `0ms` is not the same as changing typing delay, and with typing delay held
+fixed there is no broad penalty from starting Typing as soon as possible.
+
+One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
+delay passed to `target.type()`, not a separate wait before that Typing benchmark
 starts. Reducing that value changes the key-delay benchmark itself and crosses
-the one-second timer behavior analyzed above. It is different from reducing an
-extra post-setup start wait.
+the one-second timer behavior analyzed above. That is different from reducing
+an extra post-setup start wait. Elsewhere in the performance specs the same
+constant is also used for explicit pre-measurement sleeps, which is why the
+independent grid above separates the knobs.
 
 I then made CI-comparable copies of the main dense delay and volatility plots.
 This run used `BENCHMARK_SETUP_STYLE=ci-post-editor-typing`,
@@ -4238,6 +4317,11 @@ The key runs used in this report were:
 -   `post_editor_ci_start_wait_randomized_exact_*`: actual
     `post-editor.spec.js` Typing setup/run tests in randomized before-trace
     order, with four runs each at `0ms`, `1000ms`, and `60000ms`.
+-   `post_editor_typing_delay_startup_grid_*`: actual `post-editor.spec.js`
+    Typing setup/run tests with independent `PERFORMANCE_TYPING_DELAY_MS` and
+    `POST_EDITOR_TYPING_START_WAIT_MS` settings. The grid uses typing delays of
+    `100ms`, `200ms`, `400ms`, `600ms`, and `1000ms`, crossed with startup
+    waits from `0ms` through `5000ms`.
 -   `ci_typing_0_1400_dense`: CI-comparable post-editor Typing dense sweep from
     `0ms` to `1400ms` in `10ms` steps, one fresh saved/reopened large-post
     draft per delay, 10 retained samples and 1 throwaway sample per delay.
