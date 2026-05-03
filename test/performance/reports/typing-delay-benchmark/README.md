@@ -65,6 +65,10 @@ The short version:
     callback cost and the enclosing listener-span cost are broad fanout, not one
     pathological selector. The largest source-mapped groups have hundreds or
     thousands of active hook/listener instances in the large-post fixture.
+-   Drilling into the lower Redux listener wrappers also disconfirms a single
+    heavy subscriber explanation. The top one and top ten listener-wrapper
+    durations barely move; the difference appears as more tiny measured listener
+    spans and larger aggregate `rootSubscribe` time.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -1122,12 +1126,49 @@ largest positive outer-listener p50 deltas versus normal marker are:
 | marker no-op minus normal marker             | `packages/editor/src/hooks/pattern-overrides.js:40`              |  `0.20ms` |
 | mark next not persistent minus normal marker | `packages/editor/src/hooks/pattern-overrides.js:40`              |  `0.20ms` |
 
-This disconfirms the theory that one obvious subscriber owner explains the
-remaining input-side difference. The residual difference is a few milliseconds
-of aggregate fanout timing across thousands of listeners. The biggest
-owner-level `useSelect.onChange` p50 delta is sub-millisecond, and the enclosing
+This disconfirms the theory that one obvious source-mapped subscriber owner
+explains the remaining input-side difference. The biggest owner-level
+`useSelect.onChange` p50 delta is sub-millisecond, and the enclosing
 listener-span attribution only raises the largest single-owner delta to about
 `1ms`.
+
+I also checked the lower `data.reduxStore.listener` wrapper spans that make up
+the callback-side `rootSubscribe` fanout. These spans are below the
+source-mapped `useSelect` metadata: `packages/data/src/registry.ts` installs an
+anonymous wrapper around each store subscriber, and the current
+`data.reduxStore.listener` trace metadata records `storeName`, `listenerIndex`,
+and `listenerCount`, not a component owner or selector. That means the current
+trace can test the shape of the fanout, but it cannot honestly name a specific
+React component for this lower layer.
+
+![Redux listener fanout shape](figures/37-marker-redux-listener-fanout-shape.png)
+
+The shape is not what a single bad subscriber would produce:
+
+| Action                  | Intervention             | `rootSubscribe` p50 | all listener spans p50 | nonzero listener spans p50 | top 1 p50 | top 10 p50 |
+| ----------------------- | ------------------------ | ------------------: | ---------------------: | -------------------------: | --------: | ---------: |
+| `selectionChange`       | normal marker            |             `3.2ms` |                `2.2ms` |                       `22` |   `0.1ms` |    `1.0ms` |
+| `selectionChange`       | marker no-op             |             `5.1ms` |                `4.2ms` |                     `41.5` |   `0.1ms` |    `1.0ms` |
+| `selectionChange`       | mark next not persistent |             `4.8ms` |                `3.5ms` |                     `35.5` |   `0.1ms` |    `1.0ms` |
+| `updateBlockAttributes` | normal marker            |             `3.1ms` |                `2.4ms` |                       `24` |   `0.1ms` |    `1.0ms` |
+| `updateBlockAttributes` | marker no-op             |             `4.1ms` |                `3.2ms` |                     `31.5` |   `0.1ms` |    `1.0ms` |
+| `updateBlockAttributes` | mark next not persistent |             `3.6ms` |                `2.6ms` |                       `26` |   `0.1ms` |    `1.0ms` |
+
+The largest individual listener wrapper is still around the trace's `0.1ms`
+timing granularity, and the top ten wrappers are about `1ms` for every
+intervention. What changes is the number of wrappers with measurable nonzero
+time and the aggregate `rootSubscribe` total. A listener-index stability check
+also found no `listenerIndex` that was nonzero in all four retained samples for
+either action in the normal-marker or no-op run. That disconfirms a stable
+single-listener explanation for the residual few milliseconds.
+
+The supported statement is narrower: the normal marker puts the following input
+on a different persistence/action path, and that changes callback-side
+block-editor store fanout by a few milliseconds. The trace localizes that
+difference to broad low-level subscriber-wrapper fanout, but not to one named
+selector or React component. Proving a selector-level cause would require new
+metadata at `data.reduxStore.listener` subscription time, for example recording
+the subscriber stack or propagating `useSelectId` into the lower wrapper.
 
 One piece remains open, but it is now narrower. The traces identify the marker
 timer fanout and the following input's block-editor fanout, and the owner
@@ -1136,7 +1177,7 @@ delta. What remains is lower-level fanout overhead across thousands of
 subscriber callbacks. The supported statement is that timer ordering and marker
 dispatch explain the false event-only low band, and the visible work is
 data/subscriber fanout; attributing the last few milliseconds to a single React
-commit or component is not supported by the current traces.
+commit, selector, or component is not supported by the current traces.
 
 Reasoning audit:
 

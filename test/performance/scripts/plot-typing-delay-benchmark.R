@@ -3565,6 +3565,75 @@ if (file.exists(marker_allspan_input_batch_path)) {
 		width = 12,
 		height = 8
 	)
+
+	marker_redux_listener_shape <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			)
+		)
+
+	marker_redux_listener_shape <- bind_rows(
+		marker_redux_listener_shape %>%
+			transmute(
+				intervention,
+				action = "selectionChange",
+				`top 1 listener` = selection_change_redux_listener_top1_duration_p50_ms,
+				`top 10 listeners` = selection_change_redux_listener_top10_duration_p50_ms,
+				`all listener spans` = selection_change_redux_listener_duration_p50_ms,
+				`rootSubscribe total` = selection_change_root_subscribe_duration_p50_ms
+			),
+		marker_redux_listener_shape %>%
+			transmute(
+				intervention,
+				action = "updateBlockAttributes",
+				`top 1 listener` = update_block_attributes_redux_listener_top1_duration_p50_ms,
+				`top 10 listeners` = update_block_attributes_redux_listener_top10_duration_p50_ms,
+				`all listener spans` = update_block_attributes_redux_listener_duration_p50_ms,
+				`rootSubscribe total` = update_block_attributes_root_subscribe_duration_p50_ms
+			)
+	) %>%
+		pivot_longer(
+			cols = -c(intervention, action),
+			names_to = "aggregation",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			action = factor(action, levels = c("selectionChange", "updateBlockAttributes")),
+			aggregation = factor(
+				aggregation,
+				levels = rev(c(
+					"top 1 listener",
+					"top 10 listeners",
+					"all listener spans",
+					"rootSubscribe total"
+				))
+			)
+		)
+
+	save_plot(
+		ggplot(marker_redux_listener_shape, aes(duration_ms, aggregation, color = intervention, shape = intervention)) +
+			geom_point(size = 3, alpha = 0.9, position = position_dodge(width = 0.55)) +
+			facet_wrap(vars(action), ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "The callback-side gap is not one heavy Redux listener",
+				subtitle = "Per-action listener aggregation at 1000ms; top listeners stay tiny while the all-listener total moves",
+				x = "Duration, p50 (ms)",
+				y = NULL,
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			),
+		"37-marker-redux-listener-fanout-shape.png",
+		width = 11,
+		height = 7
+	)
 }
 
 marker_allspan_input_batch_samples_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-samples.csv")

@@ -915,6 +915,29 @@ function maxFinite( values ) {
 	return finiteValues.length ? Math.max( ...finiteValues ) : null;
 }
 
+function sumFirst( values, count ) {
+	return values.slice( 0, count ).reduce( ( sum, value ) => sum + value, 0 );
+}
+
+function reduxListenerDistribution( spans, predicate ) {
+	const listenerSpans = spans.filter( predicate );
+	const durations = listenerSpans
+		.map( ( span ) => span.durationMs || 0 )
+		.sort( ( left, right ) => right - left );
+
+	return {
+		count: listenerSpans.length,
+		nonzeroCount: durations.filter( ( duration ) => duration > 0 ).length,
+		top1DurationMs: sumFirst( durations, 1 ),
+		top10DurationMs: sumFirst( durations, 10 ),
+		top100DurationMs: sumFirst( durations, 100 ),
+		allDurationMs: durations.reduce(
+			( sum, duration ) => sum + duration,
+			0
+		),
+	};
+}
+
 function modeCountsText( values ) {
 	const counts = new Map();
 	for ( const value of values ) {
@@ -1262,6 +1285,14 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				spans,
 				updateBlockAction
 			);
+			const selectionReduxListeners = reduxListenerDistribution(
+				selectionChangeSpans,
+				blockEditorReduxListener
+			);
+			const updateBlockReduxListeners = reduxListenerDistribution(
+				updateBlockActionSpans,
+				blockEditorReduxListener
+			);
 			const eventsBeforeContentUpdate = updateBlockAction
 				? dataEvents.filter(
 						( event ) =>
@@ -1349,6 +1380,14 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					selectionChangeSpans,
 					blockEditorReduxListener
 				),
+				selection_change_redux_listener_nonzero_count:
+					selectionReduxListeners.nonzeroCount,
+				selection_change_redux_listener_top1_duration_ms:
+					selectionReduxListeners.top1DurationMs,
+				selection_change_redux_listener_top10_duration_ms:
+					selectionReduxListeners.top10DurationMs,
+				selection_change_redux_listener_top100_duration_ms:
+					selectionReduxListeners.top100DurationMs,
 				update_block_attributes_duration_ms:
 					updateBlockAction?.durationMs,
 				update_block_attributes_root_subscribe_duration_ms:
@@ -1361,6 +1400,14 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 						updateBlockActionSpans,
 						blockEditorReduxListener
 					),
+				update_block_attributes_redux_listener_nonzero_count:
+					updateBlockReduxListeners.nonzeroCount,
+				update_block_attributes_redux_listener_top1_duration_ms:
+					updateBlockReduxListeners.top1DurationMs,
+				update_block_attributes_redux_listener_top10_duration_ms:
+					updateBlockReduxListeners.top10DurationMs,
+				update_block_attributes_redux_listener_top100_duration_ms:
+					updateBlockReduxListeners.top100DurationMs,
 				root_subscribe_count: countSpans(
 					batchSpans,
 					blockEditorRootSubscribe
@@ -1502,6 +1549,31 @@ const allSpanInputBatchSummaryRows = Array.from(
 			),
 			0.5
 		),
+		selection_change_redux_listener_nonzero_count_p50: quantile(
+			rows.map(
+				( row ) => row.selection_change_redux_listener_nonzero_count
+			),
+			0.5
+		),
+		selection_change_redux_listener_top1_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.selection_change_redux_listener_top1_duration_ms
+			),
+			0.5
+		),
+		selection_change_redux_listener_top10_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.selection_change_redux_listener_top10_duration_ms
+			),
+			0.5
+		),
+		selection_change_redux_listener_top100_duration_p50_ms: quantile(
+			rows.map(
+				( row ) =>
+					row.selection_change_redux_listener_top100_duration_ms
+			),
+			0.5
+		),
 		update_block_attributes_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.update_block_attributes_duration_ms ),
 			0.5
@@ -1517,6 +1589,34 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map(
 				( row ) =>
 					row.update_block_attributes_redux_listener_duration_ms
+			),
+			0.5
+		),
+		update_block_attributes_redux_listener_nonzero_count_p50: quantile(
+			rows.map(
+				( row ) =>
+					row.update_block_attributes_redux_listener_nonzero_count
+			),
+			0.5
+		),
+		update_block_attributes_redux_listener_top1_duration_p50_ms: quantile(
+			rows.map(
+				( row ) =>
+					row.update_block_attributes_redux_listener_top1_duration_ms
+			),
+			0.5
+		),
+		update_block_attributes_redux_listener_top10_duration_p50_ms: quantile(
+			rows.map(
+				( row ) =>
+					row.update_block_attributes_redux_listener_top10_duration_ms
+			),
+			0.5
+		),
+		update_block_attributes_redux_listener_top100_duration_p50_ms: quantile(
+			rows.map(
+				( row ) =>
+					row.update_block_attributes_redux_listener_top100_duration_ms
 			),
 			0.5
 		),
@@ -2182,9 +2282,17 @@ writeCsv(
 		'selection_change_duration_ms',
 		'selection_change_root_subscribe_duration_ms',
 		'selection_change_redux_listener_duration_ms',
+		'selection_change_redux_listener_nonzero_count',
+		'selection_change_redux_listener_top1_duration_ms',
+		'selection_change_redux_listener_top10_duration_ms',
+		'selection_change_redux_listener_top100_duration_ms',
 		'update_block_attributes_duration_ms',
 		'update_block_attributes_root_subscribe_duration_ms',
 		'update_block_attributes_redux_listener_duration_ms',
+		'update_block_attributes_redux_listener_nonzero_count',
+		'update_block_attributes_redux_listener_top1_duration_ms',
+		'update_block_attributes_redux_listener_top10_duration_ms',
+		'update_block_attributes_redux_listener_top100_duration_ms',
 		'root_subscribe_count',
 		'root_subscribe_duration_ms',
 		'redux_listener_count',
@@ -2225,9 +2333,17 @@ writeCsv(
 		'selection_change_duration_p50_ms',
 		'selection_change_root_subscribe_duration_p50_ms',
 		'selection_change_redux_listener_duration_p50_ms',
+		'selection_change_redux_listener_nonzero_count_p50',
+		'selection_change_redux_listener_top1_duration_p50_ms',
+		'selection_change_redux_listener_top10_duration_p50_ms',
+		'selection_change_redux_listener_top100_duration_p50_ms',
 		'update_block_attributes_duration_p50_ms',
 		'update_block_attributes_root_subscribe_duration_p50_ms',
 		'update_block_attributes_redux_listener_duration_p50_ms',
+		'update_block_attributes_redux_listener_nonzero_count_p50',
+		'update_block_attributes_redux_listener_top1_duration_p50_ms',
+		'update_block_attributes_redux_listener_top10_duration_p50_ms',
+		'update_block_attributes_redux_listener_top100_duration_p50_ms',
 		'root_subscribe_count_p50',
 		'root_subscribe_duration_p50_ms',
 		'redux_listener_count_p50',
