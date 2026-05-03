@@ -425,30 +425,59 @@ This establishes two separate facts:
 
 ## Timer Intervention
 
-To test causality, the benchmark added a timer tracer/intervention mode. In one
-run, `setTimeout(..., 1000)` calls were rewritten to `500ms`. Source-map lookup
-for the repeated timer stack mapped the minified frame back to
+To test causality, the benchmark added a timer tracer/intervention mode. The
+mode rewrites `setTimeout(..., 1000)` calls and records which callbacks were
+rewritten. Source-map lookup for the repeated timer stack mapped the minified
+frame back to
 `packages/block-editor/src/components/rich-text/use-mark-persistent.js:29`.
 
-![500ms timer rewrite](figures/07-timeout-rewrite-500ms.png)
+I first rewrote the timer to `500ms`, then repeated the check at `230ms` and
+`710ms`. The three runs rewrote 359 rich-text `1000ms` timers in total: 235 in
+the dense `230ms` transition scan, 62 in the `500ms` run, and 62 in the `710ms`
+run.
 
-The low-latency band moved with the timer:
+![Timer rewrite interventions](figures/07-timeout-rewrite-interventions.png)
 
-|    Delay |   n |        p50 |       mean |
-| -------: | --: | ---------: | ---------: |
-|  `490ms` |   8 | `19.940ms` | `19.323ms` |
-|  `500ms` |   8 | `12.077ms` | `12.105ms` |
-|  `510ms` |   8 | `11.686ms` | `11.904ms` |
-|  `600ms` |   8 | `11.345ms` | `11.292ms` |
-|  `700ms` |   8 | `18.053ms` | `18.022ms` |
-|  `990ms` |   8 | `18.643ms` | `18.648ms` |
-| `1000ms` |   8 | `17.690ms` | `17.074ms` |
+![Timer rewrite relative alignment](figures/07b-timeout-rewrite-relative.png)
+
+The low-latency band moved with the timer, and the original `1000ms` boundary
+stopped being special in the intervention runs:
+
+| Timer rewrite |    Delay |   n |        p50 |       mean |
+| ------------: | -------: | --: | ---------: | ---------: |
+|       `230ms` |  `220ms` |   8 | `36.268ms` | `34.812ms` |
+|       `230ms` |  `230ms` |   8 | `24.091ms` | `23.876ms` |
+|       `230ms` |  `260ms` |   8 | `10.902ms` | `11.188ms` |
+|       `230ms` |  `280ms` |   8 | `10.821ms` | `10.820ms` |
+|       `230ms` |  `330ms` |   8 | `14.110ms` | `14.209ms` |
+|       `230ms` |  `430ms` |   8 | `37.959ms` | `37.294ms` |
+|       `230ms` |  `990ms` |   8 | `35.248ms` | `33.889ms` |
+|       `230ms` | `1000ms` |   8 | `34.287ms` | `31.301ms` |
+|       `500ms` |  `490ms` |   8 | `19.939ms` | `19.323ms` |
+|       `500ms` |  `500ms` |   8 | `12.077ms` | `12.105ms` |
+|       `500ms` |  `510ms` |   8 | `11.686ms` | `11.904ms` |
+|       `500ms` |  `600ms` |   8 | `11.345ms` | `11.292ms` |
+|       `500ms` |  `700ms` |   8 | `18.052ms` | `18.022ms` |
+|       `710ms` |  `700ms` |   8 | `36.629ms` | `36.090ms` |
+|       `710ms` |  `710ms` |   8 | `18.005ms` | `18.323ms` |
+|       `710ms` |  `720ms` |   8 | `11.096ms` | `11.266ms` |
+|       `710ms` |  `810ms` |   8 | `14.397ms` | `13.966ms` |
+|       `710ms` |  `910ms` |   8 | `35.809ms` | `34.766ms` |
 
 This is the strongest evidence that the `~1000ms` cliff is not VM warmup or a
-random browser scheduling artifact. Moving the timer moves the first cliff.
+random browser scheduling artifact. Moving the timer moves the low-latency
+window.
 
-The intervention run should not be treated as a production benchmark. Wrapping
-`setTimeout` can perturb scheduling. Its purpose is causal attribution.
+The exact transition is not a step function at the rewritten millisecond. The
+timer callback has to fire, run the rich-text persistence work, and yield back
+to the browser before the next measured keydown can benefit from that work
+having already happened. That is why the `230ms` rewrite has mixed/partial
+points at `230..250ms` and its cleanest low points at `260..330ms`, and why the
+`710ms` rewrite has a mixed point at `710ms` followed by a clear low point at
+`720ms`.
+
+The intervention runs should not be treated as production benchmarks. Wrapping
+`setTimeout` can perturb scheduling. Their purpose is causal attribution.
 
 ## Deeper Pass: The Delay Is A Key Hold
 
@@ -1306,8 +1335,12 @@ The key runs used in this report were:
 -   `dense_1110_2000`: dense extension to `2000ms`.
 -   `landmarks_0_2000`: repeated landmark run through `2000ms`.
 -   `cliff_actions`: action trace from `970ms` through `1300ms`.
+-   `timeout_230_rewrite`: timer intervention rewriting `1000ms` timers to
+    `230ms`, with dense `220..430ms` transition coverage.
 -   `timeout_500_rewrite`: timer intervention rewriting `1000ms` timers to
     `500ms`.
+-   `timeout_710_rewrite`: timer intervention rewriting `1000ms` timers to
+    `710ms`.
 -   `after_persistence_scan`: wait for persistence, then wait `0..400ms`.
 -   `keyhold_schedulers`: normal Playwright key-hold delay with scheduler/action
     tracing.

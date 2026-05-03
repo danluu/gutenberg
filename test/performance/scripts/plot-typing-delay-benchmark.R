@@ -33,7 +33,9 @@ run_specs <- tribble(
 	"dense_1110_2000", "1110-2000ms, 10ms step", "artifacts/typing-delay-benchmark-1110-2000-dense/typing-delay-benchmark-1777755635782.json", "large post", "1 round, dense extension",
 	"landmarks_0_2000", "0-2000ms landmarks", "artifacts/typing-delay-benchmark-0-2000-landmarks/typing-delay-benchmark-1777756530004.json", "large post", "3 rounds, selected delays",
 	"cliff_actions", "Cliff action trace", "artifacts/typing-delay-benchmark-cliff-actions-970/typing-delay-benchmark-1777778178028.json", "large post", "action instrumentation from 970 to 1300ms",
+	"timeout_230_rewrite", "1000ms timers rewritten to 230ms", "artifacts/typing-delay-benchmark-timeout-230-dense/typing-delay-benchmark-1777780999061.json", "large post", "timer intervention: 1000ms setTimeout calls rewritten to 230ms, dense transition scan",
 	"timeout_500_rewrite", "1000ms timers rewritten to 500ms", "artifacts/typing-delay-benchmark-timeout-500/typing-delay-benchmark-1777757430029.json", "large post", "timer intervention: 1000ms setTimeout calls rewritten to 500ms",
+	"timeout_710_rewrite", "1000ms timers rewritten to 710ms", "artifacts/typing-delay-benchmark-timeout-710/typing-delay-benchmark-1777780840129.json", "large post", "timer intervention: 1000ms setTimeout calls rewritten to 710ms",
 	"after_persistence_scan", "Wait for persistence, then wait", "artifacts/typing-delay-benchmark-after-persistence-scan/typing-delay-benchmark-1777758189761.json", "large post", "delay after isLastBlockChangePersistent()",
 	"keyhold_schedulers", "Key-hold scheduler trace", "artifacts/typing-delay-benchmark-keyhold-schedulers/typing-delay-benchmark-1777758386189.json", "large post", "normal Playwright delay with action/timer/scheduler tracing",
 	"between_keys", "Complete keypress, then wait", "artifacts/typing-delay-benchmark-between-keys/typing-delay-benchmark-1777758545134.json", "large post", "delay after full keydown/keypress/input/keyup sequence",
@@ -1040,25 +1042,65 @@ save_plot(
 	height = 10
 )
 
+timer_rewrite_run_ids <- c("timeout_230_rewrite", "timeout_500_rewrite", "timeout_710_rewrite")
+
 timer_rewrite <- by_delay %>%
-	filter(run_id == "timeout_500_rewrite")
+	filter(run_id %in% timer_rewrite_run_ids) %>%
+	mutate(
+		rewrite_ms = case_when(
+			run_id == "timeout_230_rewrite" ~ 230,
+			run_id == "timeout_500_rewrite" ~ 500,
+			run_id == "timeout_710_rewrite" ~ 710
+		),
+		rewrite_label = factor(
+			paste0(rewrite_ms, "ms timer rewrite"),
+			levels = c("230ms timer rewrite", "500ms timer rewrite", "710ms timer rewrite")
+		)
+	)
 
 timer_events <- derived$timer_events %>%
-	filter(run_id == "timeout_500_rewrite", requestedTimeoutMs == 1000, rewritten)
+	filter(run_id %in% timer_rewrite_run_ids, requestedTimeoutMs == 1000, rewritten)
 
 save_plot(
-	ggplot(timer_rewrite, aes(delay_ms, median_ms)) +
-		geom_point(color = brewer_color("Dark2", 3), size = 2.3) +
-		geom_text(aes(label = round(median_ms, 1)), nudge_y = 0.65, size = 3, color = brewer_color("Greys", 9, type = "seq", n = 9)) +
-		geom_vline(xintercept = 500, linetype = "dashed", color = brewer_color("Set1", 1)) +
-		annotate("label", x = 500, y = max(timer_rewrite$median_ms), label = "1000ms timers rewritten to 500ms", hjust = 0, size = 3) +
+	ggplot(timer_rewrite, aes(delay_ms, median_ms, color = rewrite_label)) +
+		geom_vline(
+			data = timer_rewrite %>% distinct(rewrite_ms, rewrite_label),
+			aes(xintercept = rewrite_ms, color = rewrite_label),
+			linetype = "dashed",
+			linewidth = 0.45,
+			show.legend = FALSE
+		) +
+		geom_point(size = 2.3, alpha = 0.9) +
+		facet_wrap(~rewrite_label, ncol = 1) +
+		scale_color_brewer(type = "qual", palette = "Dark2") +
 		labs(
-			title = "Moving the timer moves the cliff",
-			subtitle = paste0(nrow(timer_events), " rich-text 1000ms timers were rewritten in this run"),
-			x = "Configured Playwright delay between key events",
-			y = "p50 latency (ms)"
-		),
-	"07-timeout-rewrite-500ms.png"
+			title = "Moving the rich-text timer moves the low-latency window",
+			subtitle = paste0(nrow(timer_events), " rich-text 1000ms timers were rewritten across three intervention runs"),
+			x = "Configured Playwright key-hold delay",
+			y = "p50 event-only latency (ms)",
+			color = NULL
+		) +
+		theme(legend.position = "none"),
+	"07-timeout-rewrite-interventions.png",
+	width = 9,
+	height = 8.5
+)
+
+save_plot(
+	ggplot(timer_rewrite, aes(delay_ms - rewrite_ms, median_ms, color = rewrite_label)) +
+		annotate("rect", xmin = 0, xmax = 120, ymin = -Inf, ymax = Inf, fill = brewer_color("Greys", 2, type = "seq", n = 9), alpha = 0.35) +
+		geom_vline(xintercept = 0, linetype = "dashed", color = brewer_color("Greys", 7, type = "seq", n = 9), linewidth = 0.45) +
+		geom_point(size = 2.3, alpha = 0.9) +
+		scale_color_brewer(type = "qual", palette = "Dark2") +
+		labs(
+			title = "The low-latency window aligns relative to the rewritten timer",
+			subtitle = "X=0 is the rewritten timeout; the first low points occur shortly after that callback can fire while the key is still held",
+			x = "Configured key-hold delay minus rewritten timer (ms)",
+			y = "p50 event-only latency (ms)",
+			color = NULL
+		) +
+		theme(legend.position = "bottom"),
+	"07b-timeout-rewrite-relative.png"
 )
 
 scenario_boundary <- by_delay %>%
