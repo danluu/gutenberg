@@ -46,6 +46,30 @@ const runs = [
 		dir: 'artifacts/typing-delay-mark-stop-start-typing-targeted',
 	},
 	{
+		runId: 'marker_busy_wait_20_targeted',
+		traceType: 'targeted',
+		intervention: 'busy wait 20ms',
+		dir: 'artifacts/typing-delay-mark-busy-wait-20-targeted',
+	},
+	{
+		runId: 'marker_busy_wait_40_targeted',
+		traceType: 'targeted',
+		intervention: 'busy wait 40ms',
+		dir: 'artifacts/typing-delay-mark-busy-wait-40-targeted',
+	},
+	{
+		runId: 'marker_stop_typing_targeted',
+		traceType: 'targeted',
+		intervention: 'stop typing',
+		dir: 'artifacts/typing-delay-mark-stop-typing-targeted',
+	},
+	{
+		runId: 'marker_start_typing_targeted',
+		traceType: 'targeted',
+		intervention: 'start typing',
+		dir: 'artifacts/typing-delay-mark-start-typing-targeted',
+	},
+	{
 		runId: 'marker_normal_spans',
 		traceType: 'span trace',
 		intervention: 'normal marker',
@@ -74,6 +98,24 @@ const runs = [
 		traceType: 'span trace',
 		intervention: 'stop/start typing',
 		dir: 'artifacts/typing-delay-mark-stop-start-typing-spans',
+	},
+	{
+		runId: 'marker_busy_wait_20_spans',
+		traceType: 'span trace',
+		intervention: 'busy wait 20ms',
+		dir: 'artifacts/typing-delay-mark-busy-wait-20-spans',
+	},
+	{
+		runId: 'marker_stop_typing_spans',
+		traceType: 'span trace',
+		intervention: 'stop typing',
+		dir: 'artifacts/typing-delay-mark-stop-typing-spans',
+	},
+	{
+		runId: 'marker_start_typing_spans',
+		traceType: 'span trace',
+		intervention: 'start typing',
+		dir: 'artifacts/typing-delay-mark-start-typing-spans',
 	},
 ];
 

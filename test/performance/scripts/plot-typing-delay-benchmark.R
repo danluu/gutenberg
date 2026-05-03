@@ -2165,7 +2165,7 @@ if (nrow(listener_input_summary) > 0) {
 		ggplot(listener_plot, aes(delayMs, median_ms, color = script_label)) +
 			geom_point(size = 2.2) +
 			facet_wrap(~ mode_label, ncol = 1) +
-			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_color_brewer(type = "qual", palette = "Set1") +
 			labs(
 				title = "The dominant measured callback is RichText's input listener",
 				subtitle = "Listener timing is diagnostic and adds overhead, but it localizes the key-hold cost inside editor-canvas input handling",
@@ -2350,7 +2350,7 @@ if (nrow(rich_text_span_summary) > 0) {
 		ggplot(span_line_plot, aes(delayMs, median_ms, color = span_label)) +
 			geom_point(size = 1.9) +
 			facet_grid(span_scenario_label ~ mode_label) +
-			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_color_brewer(type = "qual", palette = "Set1") +
 			labs(
 				title = "Source-level RichText spans put the cost inside registry.batch",
 				subtitle = "DOM parsing, apply, serialization, and forceRender are small in these targeted traces",
@@ -3151,6 +3151,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 		"marker no-op",
 		"mark next not persistent",
 		"mark last, then force next transient",
+		"busy wait 20ms",
+		"busy wait 40ms",
+		"stop typing",
+		"start typing",
 		"stop/start typing"
 	)
 	marker_summary <- read_csv(marker_summary_path, show_col_types = FALSE) %>%
@@ -3185,7 +3189,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				position = position_dodge(width = 3.5),
 				size = 0.8
 			) +
-			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_color_brewer(type = "qual", palette = "Set1") +
 			scale_x_continuous(breaks = c(990, 1000, 1010, 1300)) +
 			labs(
 				title = "Timer-side subscriber work reproduces the 1000ms low band",
@@ -3234,7 +3238,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					size = 3.2,
 					alpha = 0.9
 				) +
-				scale_color_brewer(type = "qual", palette = "Dark2") +
+				scale_color_brewer(type = "qual", palette = "Set1") +
 				scale_shape_manual(values = c(
 					`measured next input` = 16,
 					`paired timer callback` = 17,
@@ -3263,6 +3267,10 @@ if (file.exists(marker_path_summary_path)) {
 		"marker no-op",
 		"mark next not persistent",
 		"mark last, then force next transient",
+		"busy wait 20ms",
+		"busy wait 40ms",
+		"stop typing",
+		"start typing",
 		"stop/start typing"
 	)
 	marker_path_summary <- read_csv(marker_path_summary_path, show_col_types = FALSE) %>%

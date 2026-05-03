@@ -168,3 +168,81 @@ span trace,stop/start typing,1010,rich-text.handleChange.registryBatch,9,14.9000
 span trace,stop/start typing,1010,rich-text.handleChange.forceRender,9,0,0
 span trace,stop/start typing,1010,rich-text.handleChange.total,9,14.900000095367432,130.10000014305115
 span trace,stop/start typing,1010,rich-text.onInput.total,9,15,130.70000004768372
+span trace,busy wait 20ms,1000,rich-text.createRecord.selection,18,0,0.10000014305114746
+span trace,busy wait 20ms,1000,rich-text.createRecord.create,18,0,0.8999998569488525
+span trace,busy wait 20ms,1000,rich-text.createRecord.total,18,0.04999995231628418,1
+span trace,busy wait 20ms,1000,rich-text.onInput.updateFormats,9,0,0.09999990463256836
+span trace,busy wait 20ms,1000,rich-text.applyRecord,10,0.09999990463256836,1.1000001430511475
+span trace,busy wait 20ms,1000,rich-text.handleChange.applyRecord,9,0.09999990463256836,1.2000000476837158
+span trace,busy wait 20ms,1000,rich-text.handleChange.serialize,9,0,0.09999990463256836
+span trace,busy wait 20ms,1000,rich-text.handleChange.onSelectionChange,9,2.299999952316284,19.09999990463257
+span trace,busy wait 20ms,1000,rich-text.handleChange.onChange,9,2.3999998569488525,20.90000009536743
+span trace,busy wait 20ms,1000,rich-text.handleChange.registryBatch,9,22.299999952316284,192.599999666214
+span trace,busy wait 20ms,1000,rich-text.handleChange.forceRender,9,0,0.40000057220458984
+span trace,busy wait 20ms,1000,rich-text.handleChange.total,9,22.399999856948853,194.30000019073486
+span trace,busy wait 20ms,1000,rich-text.onInput.total,9,22.5,195.30000042915344
+span trace,busy wait 20ms,1010,rich-text.createRecord.selection,18,0,0
+span trace,busy wait 20ms,1010,rich-text.createRecord.create,18,0,0.5999996662139893
+span trace,busy wait 20ms,1010,rich-text.createRecord.total,18,0,0.5999996662139893
+span trace,busy wait 20ms,1010,rich-text.onInput.updateFormats,9,0,0
+span trace,busy wait 20ms,1010,rich-text.applyRecord,9,0,0.39999985694885254
+span trace,busy wait 20ms,1010,rich-text.handleChange.applyRecord,9,0.09999990463256836,0.5
+span trace,busy wait 20ms,1010,rich-text.handleChange.serialize,9,0,0
+span trace,busy wait 20ms,1010,rich-text.handleChange.onSelectionChange,9,2,17.200000286102295
+span trace,busy wait 20ms,1010,rich-text.handleChange.onChange,9,2.200000047683716,18.899999856948853
+span trace,busy wait 20ms,1010,rich-text.handleChange.registryBatch,9,21.100000143051147,179.7000002861023
+span trace,busy wait 20ms,1010,rich-text.handleChange.forceRender,9,0,0
+span trace,busy wait 20ms,1010,rich-text.handleChange.total,9,21.200000047683716,180.30000019073486
+span trace,busy wait 20ms,1010,rich-text.onInput.total,9,21.299999952316284,180.7999997138977
+span trace,stop typing,1000,rich-text.createRecord.selection,18,0,0
+span trace,stop typing,1000,rich-text.createRecord.create,18,0.04999995231628418,0.9999992847442627
+span trace,stop typing,1000,rich-text.createRecord.total,18,0.09999990463256836,1.099999189376831
+span trace,stop typing,1000,rich-text.onInput.updateFormats,9,0,0.3000001907348633
+span trace,stop typing,1000,rich-text.applyRecord,10,0.04999995231628418,0.7000000476837158
+span trace,stop typing,1000,rich-text.handleChange.applyRecord,9,0,0.6000001430511475
+span trace,stop typing,1000,rich-text.handleChange.serialize,9,0,0.2999999523162842
+span trace,stop typing,1000,rich-text.handleChange.onSelectionChange,9,1.4000000953674316,13.700000286102295
+span trace,stop typing,1000,rich-text.handleChange.onChange,9,1.5,15.399999856948853
+span trace,stop typing,1000,rich-text.handleChange.registryBatch,9,16.90000009536743,156.19999980926514
+span trace,stop typing,1000,rich-text.handleChange.forceRender,9,0,0.09999990463256836
+span trace,stop typing,1000,rich-text.handleChange.total,9,16.90000009536743,157.29999995231628
+span trace,stop typing,1000,rich-text.onInput.total,9,17.09999990463257,158.19999957084656
+span trace,stop typing,1010,rich-text.createRecord.selection,18,0,0.20000004768371582
+span trace,stop typing,1010,rich-text.createRecord.create,18,0,0.4999997615814209
+span trace,stop typing,1010,rich-text.createRecord.total,18,0,0.6999998092651367
+span trace,stop typing,1010,rich-text.onInput.updateFormats,9,0,0
+span trace,stop typing,1010,rich-text.applyRecord,9,0.09999990463256836,0.5999999046325684
+span trace,stop typing,1010,rich-text.handleChange.applyRecord,9,0.09999990463256836,0.5999999046325684
+span trace,stop typing,1010,rich-text.handleChange.serialize,9,0,0
+span trace,stop typing,1010,rich-text.handleChange.onSelectionChange,9,1.2999999523162842,11.700000047683716
+span trace,stop typing,1010,rich-text.handleChange.onChange,9,1.4000000953674316,13.099999904632568
+span trace,stop typing,1010,rich-text.handleChange.registryBatch,9,16.799999952316284,145.80000019073486
+span trace,stop typing,1010,rich-text.handleChange.forceRender,9,0,0
+span trace,stop typing,1010,rich-text.handleChange.total,9,16.899999856948853,146.5
+span trace,stop typing,1010,rich-text.onInput.total,9,16.90000009536743,146.90000009536743
+span trace,start typing,1000,rich-text.createRecord.selection,18,0,0.3000001907348633
+span trace,start typing,1000,rich-text.createRecord.create,18,0,1.000000238418579
+span trace,start typing,1000,rich-text.createRecord.total,18,0.10000002384185791,1.4000005722045898
+span trace,start typing,1000,rich-text.onInput.updateFormats,9,0,0
+span trace,start typing,1000,rich-text.applyRecord,10,0.10000002384185791,1.3999996185302734
+span trace,start typing,1000,rich-text.handleChange.applyRecord,9,0.10000014305114746,1.3999996185302734
+span trace,start typing,1000,rich-text.handleChange.serialize,9,0,0.10000014305114746
+span trace,start typing,1000,rich-text.handleChange.onSelectionChange,9,2.8999998569488525,23.799999713897705
+span trace,start typing,1000,rich-text.handleChange.onChange,9,2.8000001907348633,24.600000619888306
+span trace,start typing,1000,rich-text.handleChange.registryBatch,9,24.40000009536743,210.79999995231628
+span trace,start typing,1000,rich-text.handleChange.forceRender,9,0,0.09999990463256836
+span trace,start typing,1000,rich-text.handleChange.total,9,24.5,212.49999976158142
+span trace,start typing,1000,rich-text.onInput.total,9,24.59999990463257,213.90000009536743
+span trace,start typing,1010,rich-text.createRecord.selection,18,0,0.19999980926513672
+span trace,start typing,1010,rich-text.createRecord.create,18,0,0.3000001907348633
+span trace,start typing,1010,rich-text.createRecord.total,18,0,0.5999999046325684
+span trace,start typing,1010,rich-text.onInput.updateFormats,9,0,0.20000004768371582
+span trace,start typing,1010,rich-text.applyRecord,9,0.10000014305114746,0.700000524520874
+span trace,start typing,1010,rich-text.handleChange.applyRecord,9,0.10000014305114746,0.8000004291534424
+span trace,start typing,1010,rich-text.handleChange.serialize,9,0,0
+span trace,start typing,1010,rich-text.handleChange.onSelectionChange,9,2.700000047683716,23.300000190734863
+span trace,start typing,1010,rich-text.handleChange.onChange,9,2.799999952316284,23.600000381469727
+span trace,start typing,1010,rich-text.handleChange.registryBatch,9,23.700000047683716,202.19999980926514
+span trace,start typing,1010,rich-text.handleChange.forceRender,9,0,0.20000004768371582
+span trace,start typing,1010,rich-text.handleChange.total,9,23.799999952316284,203.30000019073486
+span trace,start typing,1010,rich-text.onInput.total,9,23.899999856948853,204

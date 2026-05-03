@@ -59,6 +59,48 @@ marker_stop_start_typing_targeted,targeted,stop/start typing,1000,2,11,0,0,0,11,
 marker_stop_start_typing_targeted,targeted,stop/start typing,1010,2,11,0,0,0,11,12,12,0
 marker_stop_start_typing_targeted,targeted,stop/start typing,1300,2,11,0,0,0,11,11,11,0
 marker_stop_start_typing_targeted,targeted,stop/start typing,990,2,1,0,0,0,1,11,1,10
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,990,0,1,0,0,0,1,10,1,9
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1000,0,11,0,0,0,11,11,11,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1010,0,11,0,0,0,11,11,11,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1300,0,11,0,0,0,11,11,11,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1300,1,11,0,0,0,11,13,13,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1010,1,11,0,0,0,11,11,11,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1000,1,11,0,0,0,11,11,11,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,990,1,1,0,0,0,1,11,1,10
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1000,2,11,0,0,0,11,11,11,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1010,2,11,0,0,0,11,12,12,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1300,2,11,0,0,0,11,11,11,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,990,2,1,0,0,0,1,11,1,10
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,0,10,0,0,0,10,10,10,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,0,11,0,0,0,11,11,11,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,1,11,0,0,0,11,11,11,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,1,11,0,0,0,11,11,11,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,2,11,0,0,0,11,11,11,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,2,11,0,0,0,11,13,13,0
+marker_stop_typing_targeted,targeted,stop typing,990,0,1,1,0,0,1,10,1,9
+marker_stop_typing_targeted,targeted,stop typing,1000,0,11,11,0,0,11,11,11,0
+marker_stop_typing_targeted,targeted,stop typing,1010,0,11,11,0,0,11,11,11,0
+marker_stop_typing_targeted,targeted,stop typing,1300,0,11,11,0,0,11,11,11,0
+marker_stop_typing_targeted,targeted,stop typing,1300,1,11,11,0,0,11,13,13,0
+marker_stop_typing_targeted,targeted,stop typing,1010,1,11,11,0,0,11,11,11,0
+marker_stop_typing_targeted,targeted,stop typing,1000,1,11,11,0,0,11,11,11,0
+marker_stop_typing_targeted,targeted,stop typing,990,1,1,1,0,0,1,11,1,10
+marker_stop_typing_targeted,targeted,stop typing,1000,2,11,11,0,0,11,11,11,0
+marker_stop_typing_targeted,targeted,stop typing,1010,2,11,11,0,0,11,12,12,0
+marker_stop_typing_targeted,targeted,stop typing,1300,2,11,11,0,0,11,11,11,0
+marker_stop_typing_targeted,targeted,stop typing,990,2,1,1,0,0,1,11,1,10
+marker_start_typing_targeted,targeted,start typing,990,0,1,0,0,0,1,10,1,9
+marker_start_typing_targeted,targeted,start typing,1000,0,11,0,0,0,11,11,11,0
+marker_start_typing_targeted,targeted,start typing,1010,0,11,0,0,0,11,11,11,0
+marker_start_typing_targeted,targeted,start typing,1300,0,11,0,0,0,11,11,11,0
+marker_start_typing_targeted,targeted,start typing,1300,1,11,0,0,0,11,13,13,0
+marker_start_typing_targeted,targeted,start typing,1010,1,11,0,0,0,11,11,11,0
+marker_start_typing_targeted,targeted,start typing,1000,1,11,0,0,0,11,11,11,0
+marker_start_typing_targeted,targeted,start typing,990,1,1,0,0,0,1,11,1,10
+marker_start_typing_targeted,targeted,start typing,1000,2,11,0,0,0,11,11,11,0
+marker_start_typing_targeted,targeted,start typing,1010,2,11,0,0,0,11,12,12,0
+marker_start_typing_targeted,targeted,start typing,1300,2,11,0,0,0,11,11,11,0
+marker_start_typing_targeted,targeted,start typing,990,2,2,0,0,0,2,11,2,9
 marker_normal_spans,span trace,normal marker,990,0,1,1,0,0,0,6,1,5
 marker_normal_spans,span trace,normal marker,1000,0,7,0,0,0,0,7,7,0
 marker_normal_spans,span trace,normal marker,1010,0,7,0,0,0,0,7,7,0
@@ -72,3 +114,9 @@ marker_last_then_next_not_persistent_spans,span trace,"mark last, then force nex
 marker_last_then_next_not_persistent_spans,span trace,"mark last, then force next transient",1010,0,9,0,9,0,9,9,9,0
 marker_stop_start_typing_spans,span trace,stop/start typing,1000,0,8,0,0,0,8,8,8,0
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,9,0,0,0,9,9,9,0
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,8,0,0,0,8,8,8,0
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,9,0,0,0,9,9,9,0
+marker_stop_typing_spans,span trace,stop typing,1000,0,8,8,0,0,8,8,8,0
+marker_stop_typing_spans,span trace,stop typing,1010,0,9,9,0,0,9,9,9,0
+marker_start_typing_spans,span trace,start typing,1000,0,8,0,0,0,8,8,8,0
+marker_start_typing_spans,span trace,start typing,1010,0,9,0,0,0,9,9,9,0

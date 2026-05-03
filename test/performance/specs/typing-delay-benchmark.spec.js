@@ -132,6 +132,10 @@ const supportedMarkPersistentInterventions = [
 	'noop',
 	'mark-next-not-persistent',
 	'mark-last-then-mark-next-not-persistent',
+	'busy-wait-20',
+	'busy-wait-40',
+	'stop-typing',
+	'start-typing',
 	'stop-start-typing',
 ];
 
@@ -1143,7 +1147,11 @@ test.describe( 'Typing delay benchmark', () => {
 						].includes( mode ) &&
 							typeof actions.__unstableMarkNextChangeAsNotPersistent !==
 								'function' ) ||
-						( mode === 'stop-start-typing' &&
+						( [
+							'stop-typing',
+							'start-typing',
+							'stop-start-typing',
+						].includes( mode ) &&
 							( typeof actions.stopTyping !== 'function' ||
 								typeof actions.startTyping !== 'function' ) )
 					) {
@@ -1215,6 +1223,19 @@ test.describe( 'Typing delay benchmark', () => {
 								) {
 									result = original.apply( this, arguments );
 									actions.__unstableMarkNextChangeAsNotPersistent();
+								} else if (
+									mode === 'busy-wait-20' ||
+									mode === 'busy-wait-40'
+								) {
+									const stopAt =
+										performance.now() +
+										( mode === 'busy-wait-40' ? 40 : 20 );
+									while ( performance.now() < stopAt ) {}
+									result = undefined;
+								} else if ( mode === 'stop-typing' ) {
+									result = actions.stopTyping();
+								} else if ( mode === 'start-typing' ) {
+									result = actions.startTyping();
 								} else if ( mode === 'stop-start-typing' ) {
 									actions.stopTyping();
 									result = actions.startTyping();

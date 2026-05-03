@@ -85,3 +85,51 @@ marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,5,4,onInput,0
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,6,5,onInput,0.20000004768371582,true,true,false,true,false,false,11.799999952316284,14.311,14.044
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,7,6,onInput,0.10000014305114746,true,true,false,true,false,false,14.900000095367432,17.567999999999998,17.309
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,0,8,7,onInput,0.19999980926513672,true,true,false,true,false,false,15.200000047683716,18.092999999999996,17.799
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,1,0,onInput,0.40000009536743164,true,true,false,true,false,false,23.899999856948853,31.598,30.844
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,2,1,onInput,0.5,true,true,false,true,true,false,21.600000143051147,26.031000000000002,25.489
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,3,2,onInput,0.20000004768371582,true,true,false,true,true,false,20.5,25.494,24.995
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,4,3,onInput,0.5,true,true,false,true,true,false,23.59999990463257,28.881,28.27
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,5,4,onInput,0.2999999523162842,true,true,false,true,true,false,23,28.278000000000002,27.68
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,6,5,onInput,0.40000009536743164,true,true,false,true,true,false,22.299999952316284,27.304999999999996,26.74
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,7,6,onInput,0.2999999523162842,true,true,false,true,true,false,22.5,27.931,27.396
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,0,8,7,onInput,0.5,true,true,false,true,true,false,21.59999990463257,27.962,26.758
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,1,0,onInput,0.20000004768371582,true,true,false,true,true,false,21.800000190734863,26.919,26.329
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,2,1,onInput,0.2999999523162842,true,true,false,true,true,false,21.700000047683716,27.015,26.465
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,3,2,onInput,0.2999999523162842,true,true,false,true,true,false,21.09999990463257,26.163999999999998,25.641
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,4,3,onInput,0.2999999523162842,true,true,false,true,true,false,21,25.397,24.983
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,5,4,onInput,0.2999999523162842,true,true,false,true,true,false,21,26.425,25.767
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,6,5,onInput,0.3000001907348633,true,true,false,true,true,false,17.100000143051147,21.561,21.029
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,7,6,onInput,0.3000001907348633,true,true,false,true,true,false,22.09999990463257,26.538,26.037
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,0,8,7,onInput,0.39999985694885254,true,true,false,true,true,false,21.299999952316284,26.434,25.875
+marker_stop_typing_spans,span trace,stop typing,1000,0,1,0,onInput,0.39999985694885254,true,true,false,true,false,false,24.299999952316284,33.471000000000004,32.749
+marker_stop_typing_spans,span trace,stop typing,1000,0,2,1,onInput,0.20000004768371582,true,true,false,true,false,false,16.799999952316284,37.767,37.423
+marker_stop_typing_spans,span trace,stop typing,1000,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,17.09999990463257,37.875,37.571
+marker_stop_typing_spans,span trace,stop typing,1000,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,16.40000009536743,36.1,35.752
+marker_stop_typing_spans,span trace,stop typing,1000,0,5,4,onInput,0.19999980926513672,true,true,false,true,false,false,17.09999990463257,37.656,37.326
+marker_stop_typing_spans,span trace,stop typing,1000,0,6,5,onInput,0.20000004768371582,true,true,false,true,false,false,17.5,37.764,37.441
+marker_stop_typing_spans,span trace,stop typing,1000,0,7,6,onInput,0.19999980926513672,true,true,false,true,false,false,16.90000009536743,37.511,37.203
+marker_stop_typing_spans,span trace,stop typing,1000,0,8,7,onInput,0.10000014305114746,true,true,false,true,false,false,16.59999990463257,37.120000000000005,36.789
+marker_stop_typing_spans,span trace,stop typing,1010,0,1,0,onInput,0.09999990463256836,true,true,false,true,false,false,17.5,37.568,37.241
+marker_stop_typing_spans,span trace,stop typing,1010,0,2,1,onInput,0.09999990463256836,true,true,false,true,false,false,16.700000047683716,37.078,36.746
+marker_stop_typing_spans,span trace,stop typing,1010,0,3,2,onInput,0.20000004768371582,true,true,false,true,false,false,16.799999952316284,36.467,36.175
+marker_stop_typing_spans,span trace,stop typing,1010,0,4,3,onInput,0.20000004768371582,true,true,false,true,false,false,16.90000009536743,39.799,39.476
+marker_stop_typing_spans,span trace,stop typing,1010,0,5,4,onInput,0.19999980926513672,true,true,false,true,false,false,16.800000190734863,39.716,39.334
+marker_stop_typing_spans,span trace,stop typing,1010,0,6,5,onInput,0.3000001907348633,true,true,false,true,false,false,16.5,36.464,36.095
+marker_stop_typing_spans,span trace,stop typing,1010,0,7,6,onInput,0.20000004768371582,true,true,false,true,false,false,17.299999952316284,36.806000000000004,36.459
+marker_stop_typing_spans,span trace,stop typing,1010,0,8,7,onInput,0.2999999523162842,true,true,false,true,false,false,16,35.77799999999999,35.452
+marker_start_typing_spans,span trace,start typing,1000,0,1,0,onInput,0.5999999046325684,true,true,false,true,false,false,25.40000009536743,34.524,33.101
+marker_start_typing_spans,span trace,start typing,1000,0,2,1,onInput,0.2999999523162842,true,true,false,true,true,false,24.5,33.751999999999995,32.308
+marker_start_typing_spans,span trace,start typing,1000,0,3,2,onInput,0.2999999523162842,true,true,false,true,true,false,23.09999990463257,32.266,31.014
+marker_start_typing_spans,span trace,start typing,1000,0,4,3,onInput,0.2999999523162842,true,true,false,true,true,false,25.700000047683716,34.603,33.642
+marker_start_typing_spans,span trace,start typing,1000,0,5,4,onInput,0.20000004768371582,true,true,false,true,true,false,23.59999990463257,29.449,28.8
+marker_start_typing_spans,span trace,start typing,1000,0,6,5,onInput,0.19999980926513672,true,true,false,true,true,false,24.09999990463257,29.936,28.958
+marker_start_typing_spans,span trace,start typing,1000,0,7,6,onInput,0.39999985694885254,true,true,false,true,true,false,26.5,35.020999999999994,33.805
+marker_start_typing_spans,span trace,start typing,1000,0,8,7,onInput,0.40000009536743164,true,true,false,true,true,false,24.40000009536743,31.302,29.929
+marker_start_typing_spans,span trace,start typing,1010,0,1,0,onInput,0.40000009536743164,true,true,false,true,true,false,26.200000047683716,33.644,32.713
+marker_start_typing_spans,span trace,start typing,1010,0,2,1,onInput,0.2999999523162842,true,true,false,true,true,false,23.100000143051147,29.056,28.131
+marker_start_typing_spans,span trace,start typing,1010,0,3,2,onInput,0.2999999523162842,true,true,false,true,true,false,23.700000047683716,28.633,28.023
+marker_start_typing_spans,span trace,start typing,1010,0,4,3,onInput,0.20000004768371582,true,true,false,true,true,false,22.09999990463257,28.085,27.007
+marker_start_typing_spans,span trace,start typing,1010,0,5,4,onInput,0.2999999523162842,true,true,false,true,true,false,24.699999809265137,33.099,32.119
+marker_start_typing_spans,span trace,start typing,1010,0,6,5,onInput,0.2999999523162842,true,true,false,true,true,false,18.700000047683716,24.124,23.331
+marker_start_typing_spans,span trace,start typing,1010,0,7,6,onInput,0.39999985694885254,true,true,false,true,true,false,26.100000143051147,34.586,33.342
+marker_start_typing_spans,span trace,start typing,1010,0,8,7,onInput,0.2999999523162842,true,true,false,true,true,false,25.09999990463257,33.222,32.324

@@ -599,6 +599,426 @@ marker_stop_start_typing_targeted,targeted,stop/start typing,artifacts/typing-de
 marker_stop_start_typing_targeted,targeted,stop/start typing,artifacts/typing-delay-mark-stop-start-typing-targeted/typing-delay-benchmark-1777799358376.json,990,2,8,27,22.217999999999996,0.406,21.22,0.592
 marker_stop_start_typing_targeted,targeted,stop/start typing,artifacts/typing-delay-mark-stop-start-typing-targeted/typing-delay-benchmark-1777799358376.json,990,2,9,28,24.454000000000004,0.391,23.44,0.623
 marker_stop_start_typing_targeted,targeted,stop/start typing,artifacts/typing-delay-mark-stop-start-typing-targeted/typing-delay-benchmark-1777799358376.json,990,2,10,29,25.651,0.34,23.758,1.553
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,1,0,25.676,0.708,24.146,0.822
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,2,1,23.623,0.469,22.453,0.701
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,3,2,25.773,0.467,24.696,0.61
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,4,3,23.938999999999997,0.577,22.961,0.401
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,5,4,18.285,0.288,17.373,0.624
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,6,5,25.214,0.378,24.208,0.628
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,7,6,25.177,0.541,23.894,0.742
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,8,7,22.378999999999998,0.798,20.801,0.78
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,9,8,24.076,0.524,22.963,0.589
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,0,10,9,22.968,0.535,22.058,0.375
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,1,0,18.332,0.228,17.833,0.271
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,2,1,17.573,0.165,17.113,0.295
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,3,2,18.085,0.286,17.576,0.223
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,4,3,18.133000000000003,0.21,17.605,0.318
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,5,4,18.421000000000003,0.216,17.908,0.297
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,6,5,17.898,0.21,17.381,0.307
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,7,6,17.450999999999997,0.205,16.948,0.298
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,8,7,17.334,0.205,16.864,0.265
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,9,8,17.402,0.196,16.926,0.28
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,0,10,9,17.564,0.188,17.084,0.292
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,1,0,16.986,0.199,16.467,0.32
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,2,1,18.287000000000003,0.274,17.789,0.224
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,3,2,17.704,0.211,17.297,0.196
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,4,3,18.79,0.226,17.552,1.012
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,5,4,17.877000000000002,0.202,17.465,0.21
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,6,5,17.648,0.241,17.175,0.232
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,7,6,16.733999999999998,0.168,16.267,0.299
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,8,7,18.469,0.251,17.931,0.287
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,9,8,16.534,0.215,16.034,0.285
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,0,10,9,17.708999999999996,0.243,17.194,0.272
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,1,0,24.072999999999997,0.45,22.74,0.883
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,2,1,24.195999999999998,0.483,22.929,0.784
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,3,2,24.293,0.503,23.06,0.73
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,4,3,23.326,0.422,22.299,0.605
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,5,4,23.909999999999997,0.404,22.958,0.548
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,6,5,24.767,0.438,23.276,1.053
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,7,6,25.131,0.736,23.744,0.651
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,8,7,24.139999999999997,0.484,22.895,0.761
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,9,8,22.797,0.392,21.707,0.698
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,0,10,9,24.628000000000004,0.542,23.332,0.754
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,1,10,23.823,0.474,22.507,0.842
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,2,11,24.127000000000002,0.582,22.888,0.657
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,3,12,23.768,0.498,22.495,0.775
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,4,13,24.147000000000002,0.592,22.827,0.728
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,5,14,24.615,0.471,23.331,0.813
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,6,15,24.387,0.519,23.306,0.562
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,7,16,17.083,0.192,16.648,0.243
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,8,17,18.455,0.211,17.565,0.679
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,9,18,23.362000000000002,0.316,22.513,0.533
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,1,10,19,23.417,0.445,22.427,0.545
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,1,10,17.624,0.255,17.139,0.23
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,2,11,17.325999999999997,0.185,16.857,0.284
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,3,12,18.084,0.209,17.525,0.35
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,4,13,17.871000000000002,0.187,17.443,0.241
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,5,14,18.357999999999997,0.205,17.831,0.322
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,6,15,18.352,0.223,17.786,0.343
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,7,16,17.997,0.203,17.497,0.297
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,8,17,17.75,0.198,17.252,0.3
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,9,18,17.318999999999996,0.211,16.894,0.214
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,1,10,19,17.218,0.206,16.73,0.282
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,1,10,17.398999999999997,0.209,16.976,0.214
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,2,11,17.831999999999997,0.212,16.833,0.787
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,3,12,16.823999999999998,0.166,16.307,0.351
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,4,13,17.919999999999998,0.185,17.432,0.303
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,5,14,17.677999999999997,0.212,17.162,0.304
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,6,15,17.627,0.217,17.104,0.306
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,7,16,17.401999999999997,0.226,16.956,0.22
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,8,17,17.68,0.223,17.248,0.209
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,9,18,16.12,0.179,15.625,0.316
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,1,10,19,18.075999999999997,0.214,17.56,0.302
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,1,10,24.465,0.584,23.162,0.719
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,2,11,22.889,0.357,21.638,0.894
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,3,12,26.660000000000004,0.489,25.562,0.609
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,4,13,22.252999999999997,0.371,21.016,0.866
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,5,14,25.046999999999997,0.473,23.688,0.886
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,6,15,24.701,0.442,23.512,0.747
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,7,16,24.173000000000002,0.606,22.838,0.729
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,8,17,23.817,0.462,22.979,0.376
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,9,18,18.82,0.187,17.892,0.741
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,1,10,19,23.169999999999998,0.419,22.246,0.505
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,1,20,17.745,0.175,17.271,0.299
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,2,21,18.246,0.189,17.308,0.749
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,3,22,17.301,0.188,16.813,0.3
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,4,23,17.993000000000002,0.212,17.484,0.297
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,5,24,17.415000000000003,0.166,16.937,0.312
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,6,25,18.043999999999997,0.18,17.391,0.473
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,7,26,17.709000000000003,0.202,17.23,0.277
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,8,27,17.395,0.166,16.897,0.332
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,9,28,18.27,0.195,17.467,0.608
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1000,2,10,29,17.63,0.218,17.133,0.279
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,1,20,17.932999999999996,0.194,17.24,0.499
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,2,21,16.328,0.152,15.854,0.322
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,3,22,17.090999999999998,0.194,16.563,0.334
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,4,23,17.766000000000002,0.218,17.225,0.323
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,5,24,17.9,0.212,17.371,0.317
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,6,25,18.466,0.222,17.621,0.623
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,7,26,19.444,0.155,19.008,0.281
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,8,27,19.083,0.19,18.589,0.304
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,9,28,17.861,0.158,17.203,0.5
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1010,2,10,29,18.590999999999998,0.153,18.072,0.366
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,1,20,25.337,0.774,23.781,0.782
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,2,21,23.249000000000002,0.416,22.071,0.762
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,3,22,23.773,0.49,22.779,0.504
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,4,23,21.150000000000002,0.422,20.146,0.582
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,5,24,25.302,0.426,24.082,0.794
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,6,25,24.323999999999998,0.508,23.218,0.598
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,7,26,23.334,0.566,21.986,0.782
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,8,27,23.961000000000002,0.477,22.893,0.591
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,9,28,23.305,0.384,22.128,0.793
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,1300,2,10,29,21.483,0.573,19.967,0.943
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,1,20,19.359,0.239,18.436,0.684
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,2,21,24.673000000000002,0.694,23.225,0.754
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,3,22,20.76,0.463,19.668,0.629
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,4,23,21.735999999999997,0.331,20.63,0.775
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,5,24,23.997,0.404,23.051,0.542
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,6,25,26.387,0.626,25.13,0.631
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,7,26,19.023999999999997,0.49,18.192,0.342
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,8,27,17.465,0.217,16.506,0.742
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,9,28,21.991,0.421,20.836,0.734
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-targeted/typing-delay-benchmark-1777800229628.json,990,2,10,29,26.153000000000002,0.555,24.036,1.562
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,1,0,25.561999999999998,0.674,24.612,0.276
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,2,1,17.075,0.198,16.644,0.233
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,3,2,17.232,0.22,16.739,0.273
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,4,3,18.069999999999997,0.261,17.505,0.304
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,5,4,16.287000000000003,0.241,15.769,0.277
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,6,5,16.727,0.193,16.265,0.269
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,7,6,16.378999999999998,0.32,15.774,0.285
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,8,7,15.995999999999999,0.24,15.482,0.274
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,9,8,16.62,0.268,16.081,0.271
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,0,10,9,16.653000000000002,0.161,16.014,0.478
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,1,0,16.942999999999998,0.168,16.476,0.299
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,2,1,16.133,0.197,15.681,0.255
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,3,2,15.517,0.193,15.017,0.307
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,4,3,16.998,0.252,16.434,0.312
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,5,4,16.311,0.187,15.854,0.27
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,6,5,16.808,0.18,16.35,0.278
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,7,6,16.470000000000002,0.169,16.047,0.254
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,8,7,16.563000000000002,0.193,16.137,0.233
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,9,8,15.992999999999999,0.209,15.51,0.274
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,0,10,9,15.805,0.188,15.356,0.261
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,1,10,15.778,0.153,15.434,0.191
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,2,11,16.332,0.196,15.923,0.213
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,3,12,15.926,0.191,15.527,0.208
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,4,13,16.665,0.183,15.518,0.964
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,5,14,16.157,0.177,15.722,0.258
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,6,15,15.642,0.206,15.132,0.304
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,7,16,15.857,0.188,15.383,0.286
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,8,17,16.107,0.221,15.593,0.293
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,9,18,16.635,0.224,16.077,0.334
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,1,10,19,16.128,0.265,15.578,0.285
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,1,10,16.746,0.16,15.907,0.679
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,2,11,15.433,0.181,14.957,0.295
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,3,12,16.052,0.179,15.681,0.192
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,4,13,16.479,0.165,16.035,0.279
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,5,14,16.432000000000002,0.187,15.982,0.263
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,6,15,15.965,0.186,15.503,0.276
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,7,16,15.816,0.185,15.35,0.281
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,8,17,15.932,0.174,15.541,0.217
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,9,18,16.154,0.178,15.702,0.274
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,1,10,19,15.654,0.183,15.171,0.3
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,1,20,16.34,0.139,15.957,0.244
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,2,21,15.059000000000001,0.138,14.662,0.259
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,3,22,16.122,0.143,15.699,0.28
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,4,23,15.843,0.149,15.493,0.201
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,5,24,15.954,0.161,15.583,0.21
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,6,25,17.118000000000002,0.213,16.212,0.693
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,7,26,14.532,0.147,14.16,0.225
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,8,27,16.354,0.183,15.774,0.397
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,9,28,16.197,0.205,15.691,0.301
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1010,2,10,29,16.101,0.183,15.249,0.669
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,1,20,15.626999999999999,0.163,15.222,0.242
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,2,21,15.6,0.142,15.252,0.206
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,3,22,14.572,0.17,14.184,0.218
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,4,23,15.454,0.195,14.975,0.284
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,5,24,14.575,0.176,14.136,0.263
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,6,25,16.137,0.176,15.646,0.315
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,7,26,15.931999999999999,0.177,15.315,0.44
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,8,27,15.806000000000001,0.162,15.386,0.258
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,9,28,16.53,0.178,16.031,0.321
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,artifacts/typing-delay-mark-busy-wait-40-targeted/typing-delay-benchmark-1777800930804.json,1000,2,10,29,15.396,0.167,14.906,0.323
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,1,0,25.83,0.598,24.39,0.842
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,2,1,24.826999999999998,0.505,23.133,1.189
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,3,2,24.610000000000003,0.567,23.26,0.783
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,4,3,25.385,0.603,24.363,0.419
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,5,4,18.828,0.266,18,0.562
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,6,5,24.503999999999998,0.674,23,0.83
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,7,6,24.769,0.445,23.673,0.651
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,8,7,25.508000000000003,0.53,24.056,0.922
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,9,8,23.195999999999998,0.473,21.915,0.808
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,0,10,9,24.608,0.566,23.26,0.782
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,1,0,28.854,0.156,28.54,0.158
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,2,1,26.509,0.134,26.181,0.194
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,3,2,27.761000000000003,0.161,27.341,0.259
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,4,3,27.364,0.165,27.042,0.157
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,5,4,26.911,0.164,26.6,0.147
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,6,5,26.259,0.161,25.976,0.122
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,7,6,29.041999999999998,0.152,28.548,0.342
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,8,7,23.549,0.161,23.208,0.18
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,9,8,26.533,0.184,26.187,0.162
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,0,10,9,26.47,0.133,26.222,0.115
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,1,0,29.039,0.171,28.719,0.149
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,2,1,26.500999999999998,0.183,26.15,0.168
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,3,2,27.436,0.166,27.154,0.116
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,4,3,27.345000000000002,0.167,26.263,0.915
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,5,4,29.471,0.155,29.165,0.151
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,6,5,28.139,0.164,27.778,0.197
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,7,6,27.253000000000004,0.17,26.94,0.143
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,8,7,27.385,0.178,27.059,0.148
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,9,8,26.924999999999997,0.162,26.572,0.191
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,0,10,9,29.083,0.186,28.612,0.285
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,1,0,34.693999999999996,0.427,33.535,0.732
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,2,1,34.046,0.534,32.807,0.705
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,3,2,35.848,0.508,34.711,0.629
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,4,3,34.547999999999995,0.571,33.458,0.519
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,5,4,34.736999999999995,0.376,33.812,0.549
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,6,5,33.641999999999996,0.351,32.61,0.681
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,7,6,29.875999999999998,0.24,28.95,0.686
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,8,7,31.715000000000003,0.414,30.756,0.545
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,9,8,34.109,0.27,33.135,0.704
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,0,10,9,35.586999999999996,0.369,34.565,0.653
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,1,10,31.319000000000003,0.328,30.321,0.67
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,2,11,34.732,0.604,33.481,0.647
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,3,12,31.018,0.324,30.183,0.511
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,4,13,37.299,0.496,36.131,0.672
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,5,14,31.081999999999997,0.484,29.169,1.429
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,6,15,33.255,0.371,32.416,0.468
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,7,16,34.087,0.429,33.405,0.253
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,8,17,32.469,0.167,31.658,0.644
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,9,18,35.864000000000004,0.449,35.2,0.215
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,1,10,19,22.426,0.144,21.523,0.759
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,1,10,30.038,2.104,27.771,0.163
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,2,11,27.262000000000004,0.161,26.856,0.245
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,3,12,29.626,0.159,29.338,0.129
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,4,13,26.036,0.151,25.734,0.151
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,5,14,28.244999999999997,0.211,27.724,0.31
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,6,15,26.883,0.158,26.552,0.173
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,7,16,28.468999999999998,0.141,28.16,0.168
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,8,17,31.165,0.159,30.873,0.133
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,9,18,27.023999999999997,0.13,26.726,0.168
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,1,10,19,27.520000000000003,0.164,27.204,0.152
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,1,10,26.517,0.159,26.106,0.252
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,2,11,26.867,0.131,26.59,0.146
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,3,12,26.075000000000003,0.154,25.763,0.158
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,4,13,26.221999999999998,0.136,25.956,0.13
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,5,14,25.813000000000002,0.155,25.478,0.18
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,6,15,29.729000000000003,0.152,29.449,0.128
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,7,16,26.834,0.154,26.533,0.147
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,8,17,26.834,0.154,26.524,0.156
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,9,18,27.226000000000003,0.132,26.503,0.591
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,1,10,19,27.108999999999998,0.162,26.759,0.188
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,1,10,23.113999999999997,0.532,21.801,0.781
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,2,11,23.963,0.465,22.66,0.838
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,3,12,24.452,0.446,23.415,0.591
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,4,13,24.276000000000003,0.681,22.611,0.984
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,5,14,23.155,0.724,21.767,0.664
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,6,15,23.455000000000002,0.573,22.51,0.372
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,7,16,21.906000000000002,0.454,21.227,0.225
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,8,17,26.596,0.242,25.558,0.796
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,9,18,24.923000000000002,0.5,23.376,1.047
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,1,10,19,24.063000000000002,0.396,22.872,0.795
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,1,20,26.479000000000003,0.154,26.17,0.155
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,2,21,26.284,0.139,25.987,0.158
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,3,22,26.336,0.163,26.016,0.157
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,4,23,29.503,0.158,29.204,0.141
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,5,24,26.922,0.149,26.647,0.126
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,6,25,25.907,0.156,25.574,0.177
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,7,26,26.815,0.196,26.495,0.124
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,8,27,29.48,0.157,29.071,0.252
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,9,28,26.279,0.154,25.958,0.167
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1000,2,10,29,27.146,0.155,26.869,0.122
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,1,20,26.967,0.144,26.688,0.135
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,2,21,26.122,0.154,25.819,0.149
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,3,22,26.985999999999997,0.159,26.705,0.122
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,4,23,26.699,0.158,26.079,0.462
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,5,24,25.773,0.154,25.465,0.154
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,6,25,26.208,0.157,25.936,0.115
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,7,26,26.333,0.15,26.023,0.16
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,8,27,26.001,0.156,25.713,0.132
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,9,28,26.758999999999997,0.15,26.45,0.159
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1010,2,10,29,27.096,0.16,26.765,0.171
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,1,20,35.227000000000004,0.408,34.069,0.75
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,2,21,35.576,0.348,34.548,0.68
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,3,22,31.029,0.408,29.915,0.706
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,4,23,31.367,0.449,30.633,0.285
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,5,24,31.665000000000003,0.234,30.751,0.68
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,6,25,28.741000000000003,0.405,27.731,0.605
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,7,26,35.293,0.488,34.107,0.698
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,8,27,28.729,0.272,27.729,0.728
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,9,28,33.986000000000004,0.334,32.95,0.702
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,1300,2,10,29,33.283,0.414,32.557,0.312
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,1,20,24.602,0.63,23.233,0.739
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,2,21,23.614,0.43,22.521,0.663
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,3,22,24.875,0.338,23.708,0.829
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,4,23,23.971,0.456,22.699,0.816
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,5,24,23.717000000000002,0.444,22.574,0.699
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,6,25,24.918999999999997,0.734,23.465,0.72
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,7,26,23.796999999999997,0.455,21.561,1.781
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,8,27,21.694,0.386,20.759,0.549
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,9,28,23.999,0.59,22.401,1.008
+marker_stop_typing_targeted,targeted,stop typing,artifacts/typing-delay-mark-stop-typing-targeted/typing-delay-benchmark-1777800390665.json,990,2,10,29,24.514,0.413,23.425,0.676
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,1,0,25.865000000000002,0.6,24.345,0.92
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,2,1,25.028999999999996,0.612,23.517,0.9
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,3,2,23.765,0.602,22.663,0.5
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,4,3,24.009999999999998,0.718,22.316,0.976
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,5,4,25.099,0.553,23.944,0.602
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,6,5,25.476,0.512,24.188,0.776
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,7,6,25.547,0.535,24.29,0.722
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,8,7,23.197999999999997,0.567,21.766,0.865
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,9,8,24.728,0.514,23.382,0.832
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,0,10,9,25.276,0.514,23.938,0.824
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,1,0,22.903,0.409,21.539,0.955
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,2,1,24.563,0.496,23.493,0.574
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,3,2,24.430000000000003,0.646,23.126,0.658
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,4,3,23.932,0.563,22.537,0.832
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,5,4,24.825000000000003,0.445,23.722,0.658
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,6,5,25.605000000000004,0.591,24.225,0.789
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,7,6,22.578,0.498,21.345,0.735
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,8,7,23.336000000000002,0.443,22.231,0.662
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,9,8,24.354,0.458,23.344,0.552
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,0,10,9,23.696,0.548,22.634,0.514
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,1,0,19.346000000000004,0.202,18.856,0.288
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,2,1,18.987,0.313,18.293,0.381
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,3,2,20.064999999999998,0.217,19.185,0.663
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,4,3,21.745,0.223,19.178,2.344
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,5,4,19.66,0.246,18.873,0.541
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,6,5,19.876,0.279,19.359,0.238
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,7,6,17.458,0.173,16.647,0.638
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,8,7,19.765,0.386,19.052,0.327
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,9,8,14.656,0.284,13.655,0.717
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,0,10,9,25.805000000000003,0.611,24.501,0.693
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,1,0,23.285,0.449,22.096,0.74
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,2,1,24.974999999999998,0.468,23.848,0.659
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,3,2,24.462000000000003,0.556,23.047,0.859
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,4,3,23.451,0.531,22.353,0.567
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,5,4,25.209,0.628,23.614,0.967
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,6,5,25.514,0.455,24.327,0.732
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,7,6,24.837,0.473,23.843,0.521
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,8,7,25.371000000000002,0.57,24.123,0.678
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,9,8,21.809,0.566,20.62,0.623
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,0,10,9,24.406,0.358,23.238,0.81
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,1,10,25.156,0.583,24.009,0.564
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,2,11,25.325000000000003,0.39,24.117,0.818
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,3,12,25.692,0.47,24.344,0.878
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,4,13,25.013,0.603,23.549,0.861
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,5,14,24.264999999999997,0.537,23.104,0.624
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,6,15,25.371000000000002,0.542,24.167,0.662
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,7,16,17.487,0.208,17.01,0.269
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,8,17,13.29,0.129,12.485,0.676
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,9,18,24.123,0.372,23.498,0.253
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,1,10,19,15.802999999999999,0.154,15.229,0.42
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,1,10,19.862,0.275,18.884,0.703
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,2,11,19.726,0.196,19.208,0.322
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,3,12,19.359,0.222,18.533,0.604
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,4,13,21.096999999999998,0.359,20.066,0.672
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,5,14,19.567,0.258,19.073,0.236
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,6,15,19.339999999999996,0.2,18.403,0.737
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,7,16,19.663999999999998,0.205,18.814,0.645
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,8,17,19.168000000000003,0.201,18.492,0.475
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,9,18,18.492,0.271,17.935,0.286
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,1,10,19,18.58,0.197,17.962,0.421
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,1,10,26.434,0.931,24.799,0.704
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,2,11,25.775000000000002,0.472,24.39,0.913
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,3,12,19.713,0.216,18.878,0.619
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,4,13,23.317999999999998,0.514,22.276,0.528
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,5,14,22.787999999999997,0.362,21.842,0.584
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,6,15,24.415000000000003,0.535,23.335,0.545
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,7,16,22.777,0.747,21.276,0.754
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,8,17,25.102999999999998,0.518,23.88,0.705
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,9,18,25.092000000000002,0.504,23.789,0.799
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,1,10,19,24.816,0.668,23.473,0.675
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,1,10,24.026,0.372,23.325,0.329
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,2,11,19.451999999999998,0.221,18.386,0.845
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,3,12,24.087999999999997,0.493,22.73,0.865
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,4,13,25.417,0.541,24.221,0.655
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,5,14,24.954,0.457,23.367,1.13
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,6,15,24.522,0.416,23.464,0.642
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,7,16,25.247,0.66,23.715,0.872
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,8,17,24.661,0.512,23.523,0.626
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,9,18,24.48,0.469,23.765,0.246
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,1,10,19,18.834999999999997,0.218,17.877,0.74
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,1,20,24.401999999999997,0.489,23.208,0.705
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,2,21,24.775,0.668,23.461,0.646
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,3,22,24.8,0.419,23.611,0.77
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,4,23,25.577,0.454,24.43,0.693
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,5,24,24.764,0.433,23.671,0.66
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,6,25,23.14,0.48,22.102,0.558
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,7,26,23.15,0.438,22.079,0.633
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,8,27,21.886999999999997,0.479,20.633,0.775
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,9,28,23.255000000000003,0.451,22.146,0.658
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1000,2,10,29,25.322,0.485,24.047,0.79
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,1,20,19.662000000000003,0.215,19.12,0.327
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,2,21,18.679,0.188,17.985,0.506
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,3,22,19.275,0.206,18.732,0.337
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,4,23,19.105,0.201,18.133,0.771
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,5,24,21.067,0.422,20.301,0.344
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,6,25,19.141,0.268,18.551,0.322
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,7,26,19.483,0.31,18.44,0.733
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,8,27,19.624000000000002,0.358,18.562,0.704
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,9,28,20.01,0.431,19.314,0.265
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1010,2,10,29,18.223,0.195,17.317,0.711
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,1,20,25.04,0.429,23.774,0.837
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,2,21,25.222,0.625,23.77,0.827
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,3,22,25.323,0.614,23.982,0.727
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,4,23,24.125999999999998,0.502,22.933,0.691
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,5,24,25.333,0.455,24.15,0.728
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,6,25,24.272,0.321,23.647,0.304
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,7,26,18.135,0.188,17.135,0.812
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,8,27,24.104,0.477,22.948,0.679
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,9,28,25.771,0.456,24.392,0.923
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,1300,2,10,29,24.752000000000002,0.454,23.373,0.925
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,1,20,22.54,0.401,21.355,0.784
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,2,21,24.342,0.45,22.948,0.944
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,3,22,24.794,0.359,23.952,0.483
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,4,23,25.398999999999997,0.551,24.038,0.81
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,5,24,25.025000000000002,0.408,23.827,0.79
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,6,25,24.592,0.535,23.383,0.674
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,7,26,24.765,0.508,23.651,0.606
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,8,27,22.953000000000003,0.431,21.949,0.573
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,9,28,24.891,0.464,23.645,0.782
+marker_start_typing_targeted,targeted,start typing,artifacts/typing-delay-mark-start-typing-targeted/typing-delay-benchmark-1777800552453.json,990,2,10,29,24.27,0.531,22.561,1.178
 marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,1,0,34.175000000000004,0.531,33.136,0.508
 marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,2,1,31.653,0.466,30.485,0.702
 marker_normal_spans,span trace,normal marker,artifacts/typing-delay-mark-normal-spans/typing-delay-benchmark-1777790058635.json,990,0,3,2,33.684,0.532,32.56,0.592
@@ -685,3 +1105,51 @@ marker_stop_start_typing_spans,span trace,stop/start typing,artifacts/typing-del
 marker_stop_start_typing_spans,span trace,stop/start typing,artifacts/typing-delay-mark-stop-start-typing-spans/typing-delay-benchmark-1777799581589.json,1010,0,6,5,14.311,0.142,14.044,0.125
 marker_stop_start_typing_spans,span trace,stop/start typing,artifacts/typing-delay-mark-stop-start-typing-spans/typing-delay-benchmark-1777799581589.json,1010,0,7,6,17.567999999999998,0.141,17.309,0.118
 marker_stop_start_typing_spans,span trace,stop/start typing,artifacts/typing-delay-mark-stop-start-typing-spans/typing-delay-benchmark-1777799581589.json,1010,0,8,7,18.092999999999996,0.147,17.799,0.147
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,1,0,31.598,0.403,30.844,0.351
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,2,1,26.031000000000002,0.251,25.489,0.291
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,3,2,25.494,0.185,24.995,0.314
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,4,3,28.881,0.277,28.27,0.334
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,5,4,28.278000000000002,0.274,27.68,0.324
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,6,5,27.304999999999996,0.223,26.74,0.342
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,7,6,27.931,0.212,27.396,0.323
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1000,0,8,7,27.962,0.325,26.758,0.879
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,1,0,26.919,0.247,26.329,0.343
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,2,1,27.015,0.251,26.465,0.299
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,3,2,26.163999999999998,0.194,25.641,0.329
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,4,3,25.397,0.173,24.983,0.241
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,5,4,26.425,0.247,25.767,0.411
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,6,5,21.561,0.222,21.029,0.31
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,7,6,26.538,0.172,26.037,0.329
+marker_busy_wait_20_spans,span trace,busy wait 20ms,artifacts/typing-delay-mark-busy-wait-20-spans/typing-delay-benchmark-1777800713391.json,1010,0,8,7,26.434,0.207,25.875,0.352
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,1,0,33.471000000000004,0.546,32.749,0.176
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,2,1,37.767,0.18,37.423,0.164
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,3,2,37.875,0.18,37.571,0.124
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,4,3,36.1,0.181,35.752,0.167
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,5,4,37.656,0.158,37.326,0.172
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,6,5,37.764,0.18,37.441,0.143
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,7,6,37.511,0.164,37.203,0.144
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1000,0,8,7,37.120000000000005,0.18,36.789,0.151
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,1,0,37.568,0.169,37.241,0.158
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,2,1,37.078,0.177,36.746,0.155
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,3,2,36.467,0.139,36.175,0.153
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,4,3,39.799,0.169,39.476,0.154
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,5,4,39.716,0.236,39.334,0.146
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,6,5,36.464,0.161,36.095,0.208
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,7,6,36.806000000000004,0.191,36.459,0.156
+marker_stop_typing_spans,span trace,stop typing,artifacts/typing-delay-mark-stop-typing-spans/typing-delay-benchmark-1777800758606.json,1010,0,8,7,35.77799999999999,0.163,35.452,0.163
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,1,0,34.524,0.581,33.101,0.842
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,2,1,33.751999999999995,0.601,32.308,0.843
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,3,2,32.266,0.543,31.014,0.709
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,4,3,34.603,0.615,33.642,0.346
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,5,4,29.449,0.331,28.8,0.318
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,6,5,29.936,0.257,28.958,0.721
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,7,6,35.020999999999994,0.492,33.805,0.724
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1000,0,8,7,31.302,0.602,29.929,0.771
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,1,0,33.644,0.452,32.713,0.479
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,2,1,29.056,0.271,28.131,0.654
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,3,2,28.633,0.21,28.023,0.4
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,4,3,28.085,0.245,27.007,0.833
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,5,4,33.099,0.596,32.119,0.384
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,6,5,24.124,0.23,23.331,0.563
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,7,6,34.586,0.451,33.342,0.793
+marker_start_typing_spans,span trace,start typing,artifacts/typing-delay-mark-start-typing-spans/typing-delay-benchmark-1777800804982.json,1010,0,8,7,33.222,0.529,32.324,0.369

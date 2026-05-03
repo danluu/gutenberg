@@ -55,6 +55,46 @@ marker_stop_start_typing_targeted,targeted,stop/start typing,1300,updateBlockAtt
 marker_stop_start_typing_targeted,targeted,stop/start typing,1300,stopTyping,33,15.699999809265137,14.800000002889922,0,0
 marker_stop_start_typing_targeted,targeted,stop/start typing,1300,startTyping,33,7.6000001430511475,7.527272730162649,0,0
 marker_stop_start_typing_targeted,targeted,stop/start typing,1300,__unstableMarkLastChangeAsPersistent,33,23.299999952316284,22.37575759309711,0,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,990,updateBlockAttributes,33,1.5,1.593939427173499,2,1
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,990,__unstableMarkLastChangeAsPersistent,3,20.09999990463257,20.133333285649616,0,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1000,updateBlockAttributes,33,1.1000001430511475,1.1060606205102168,0,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1000,__unstableMarkLastChangeAsPersistent,33,20,20.063636360746443,0,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1010,updateBlockAttributes,33,1.1000001430511475,1.1484848658243816,0,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1010,__unstableMarkLastChangeAsPersistent,33,20,20.04242422363975,0,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1300,updateBlockAttributes,33,1.5,1.5787878542235403,0,0
+marker_busy_wait_20_targeted,targeted,busy wait 20ms,1300,__unstableMarkLastChangeAsPersistent,33,20,20.04242425253897,0,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,updateBlockAttributes,33,0.9000000953674316,0.9545454545454546,2,1
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1000,__unstableMarkLastChangeAsPersistent,32,40,40.04375001043081,0,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,updateBlockAttributes,33,0.9000000953674316,0.8909091010238185,0,0
+marker_busy_wait_40_targeted,targeted,busy wait 40ms,1010,__unstableMarkLastChangeAsPersistent,33,40,40.03333333044341,0,0
+marker_stop_typing_targeted,targeted,stop typing,990,updateBlockAttributes,33,1.5999999046325684,1.6060606132854114,2,1
+marker_stop_typing_targeted,targeted,stop typing,990,stopTyping,3,9,9.03333338101705,0,0
+marker_stop_typing_targeted,targeted,stop typing,990,__unstableMarkLastChangeAsPersistent,3,9.200000047683716,9.166666666666666,0,0
+marker_stop_typing_targeted,targeted,stop typing,1000,startTyping,33,8.099999904632568,7.7727272510528564,0,0
+marker_stop_typing_targeted,targeted,stop typing,1000,updateBlockAttributes,33,0.7999999523162842,0.8181818326314291,0,0
+marker_stop_typing_targeted,targeted,stop typing,1000,stopTyping,33,14.700000047683716,14.478787855668502,0,0
+marker_stop_typing_targeted,targeted,stop typing,1000,__unstableMarkLastChangeAsPersistent,33,14.799999952316284,14.557575731566459,0,0
+marker_stop_typing_targeted,targeted,stop typing,1010,startTyping,33,8.100000143051147,7.8515151486252295,0,0
+marker_stop_typing_targeted,targeted,stop typing,1010,updateBlockAttributes,33,0.7999999523162842,0.9030302799109257,0,0
+marker_stop_typing_targeted,targeted,stop typing,1010,stopTyping,33,14.200000047683716,14.293939417058771,0,0
+marker_stop_typing_targeted,targeted,stop typing,1010,__unstableMarkLastChangeAsPersistent,33,14.299999952316284,14.372727292956728,0,0
+marker_stop_typing_targeted,targeted,stop typing,1300,startTyping,33,11.599999904632568,10.630303014408458,0,0
+marker_stop_typing_targeted,targeted,stop typing,1300,updateBlockAttributes,33,1,1.0121212005615234,0,0
+marker_stop_typing_targeted,targeted,stop typing,1300,stopTyping,33,14.600000143051147,14.881818186153065,0,0
+marker_stop_typing_targeted,targeted,stop typing,1300,__unstableMarkLastChangeAsPersistent,33,14.700000047683716,14.939393961068356,0,0
+marker_stop_typing_targeted,targeted,stop typing,990,startTyping,2,4.350000023841858,4.350000023841858,0,0
+marker_start_typing_targeted,targeted,start typing,990,updateBlockAttributes,33,1.8999998569488525,1.787878773429177,2,1
+marker_start_typing_targeted,targeted,start typing,990,startTyping,4,0.1499999761581421,0.15000003576278687,0,0
+marker_start_typing_targeted,targeted,start typing,990,__unstableMarkLastChangeAsPersistent,4,0.25,0.2250000238418579,0,0
+marker_start_typing_targeted,targeted,start typing,1000,updateBlockAttributes,33,1.5,1.5939394054990825,0,0
+marker_start_typing_targeted,targeted,start typing,1000,startTyping,33,0.19999980926513672,0.16060604471148868,0,0
+marker_start_typing_targeted,targeted,start typing,1000,__unstableMarkLastChangeAsPersistent,33,0.20000004768371582,0.22121211976716013,0,0
+marker_start_typing_targeted,targeted,start typing,1010,updateBlockAttributes,33,1.2999999523162842,1.2515151717446067,0,0
+marker_start_typing_targeted,targeted,start typing,1010,startTyping,33,0.20000004768371582,0.16363638097589667,0,0
+marker_start_typing_targeted,targeted,start typing,1010,__unstableMarkLastChangeAsPersistent,33,0.20000004768371582,0.215151512261593,0,0
+marker_start_typing_targeted,targeted,start typing,1300,updateBlockAttributes,33,2,1.7636363795309355,0,0
+marker_start_typing_targeted,targeted,start typing,1300,startTyping,33,0.19999980926513672,0.14848484414996524,0,0
+marker_start_typing_targeted,targeted,start typing,1300,__unstableMarkLastChangeAsPersistent,33,0.20000004768371582,0.19090908946412982,0,0
 marker_normal_spans,span trace,normal marker,990,updateBlockAttributes,7,2.799999952316284,2.771428550992693,2,1
 marker_normal_spans,span trace,normal marker,990,__unstableMarkLastChangeAsPersistent,1,12.599999904632568,12.599999904632568,0,1
 marker_normal_spans,span trace,normal marker,1000,updateBlockAttributes,7,1.9000000953674316,1.8000000204358781,7,7
@@ -90,3 +130,21 @@ marker_stop_start_typing_spans,span trace,stop/start typing,1010,updateBlockAttr
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,stopTyping,9,19.399999856948853,19.099999984105427,0,0
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,startTyping,9,9.299999952316284,9.077777809566921,0,0
 marker_stop_start_typing_spans,span trace,stop/start typing,1010,__unstableMarkLastChangeAsPersistent,9,28.600000143051147,28.255555603239273,0,0
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,updateBlockAttributes,9,2.3999998569488525,2.2888889047834606,2,1
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1000,__unstableMarkLastChangeAsPersistent,8,20.050000071525574,20.08750006556511,0,0
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,updateBlockAttributes,9,2.200000047683716,2.0777777830759683,0,0
+marker_busy_wait_20_spans,span trace,busy wait 20ms,1010,__unstableMarkLastChangeAsPersistent,9,20,20.03333332803514,0,0
+marker_stop_typing_spans,span trace,stop typing,1000,updateBlockAttributes,9,1.5,1.6777777936723497,2,1
+marker_stop_typing_spans,span trace,stop typing,1000,stopTyping,8,18.899999976158142,18.762500047683716,0,0
+marker_stop_typing_spans,span trace,stop typing,1000,__unstableMarkLastChangeAsPersistent,8,19.050000071525574,18.90000006556511,0,0
+marker_stop_typing_spans,span trace,stop typing,1000,startTyping,7,11.700000047683716,11.657142877578735,0,0
+marker_stop_typing_spans,span trace,stop typing,1010,startTyping,9,11.700000047683716,11.3555555873447,0,0
+marker_stop_typing_spans,span trace,stop typing,1010,updateBlockAttributes,9,1.4000000953674316,1.4333333439297147,0,0
+marker_stop_typing_spans,span trace,stop typing,1010,stopTyping,9,19.799999952316284,19.544444428549873,0,0
+marker_stop_typing_spans,span trace,stop typing,1010,__unstableMarkLastChangeAsPersistent,9,19.90000009536743,19.600000010596382,0,0
+marker_start_typing_spans,span trace,start typing,1000,updateBlockAttributes,9,2.799999952316284,2.677777820163303,2,1
+marker_start_typing_spans,span trace,start typing,1000,startTyping,8,0.19999992847442627,0.1625000238418579,0,0
+marker_start_typing_spans,span trace,start typing,1000,__unstableMarkLastChangeAsPersistent,8,0.2999999523162842,0.3125000298023224,0,0
+marker_start_typing_spans,span trace,start typing,1010,updateBlockAttributes,9,2.700000047683716,2.5888889365726047,0,0
+marker_start_typing_spans,span trace,start typing,1010,startTyping,9,0.20000004768371582,0.1555555926428901,0,0
+marker_start_typing_spans,span trace,start typing,1010,__unstableMarkLastChangeAsPersistent,9,0.20000004768371582,0.222222195731269,0,0
