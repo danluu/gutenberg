@@ -50,6 +50,10 @@ The short version:
     stays on `onInput`. But `onChange` alone is not sufficient; replacing the
     marker with `__unstableMarkNextChangeAsNotPersistent()` still records
     `onChange` and remains slow.
+-   A reducer/state-path audit confirms why the path changes: the normal marker
+    becomes the reducer's `lastAction` boundary and makes the following
+    `updateBlockAttributes` persistent; the no-op leaves the previous text edit
+    as the comparison action, so the next same-attribute edit remains transient.
 -   Source-level RichText spans put nearly all of that `onInput` time inside
     `registry.batch()`, not DOM parsing, format updating, DOM apply,
     serialization, or the direct `onSelectionChange` / `onChange` callbacks.
@@ -964,6 +968,47 @@ consume the mark-next flag and leave the following content update persistent
 again. That is why the mark-next run has `onChange:3; onInput:1` rather than
 `onInput:4`, and why it cannot be used as evidence that "any timer-side action"
 reproduces the normal marker.
+
+I then checked the reducer and synchronization code directly against the trace.
+This gives a more precise statement than the earlier "work moves before the
+input" shorthand:
+
+-   `withPersistentBlockChange()` keeps both the current
+    `isPersistentChange` flag and a `lastAction`. A repeated
+    `updateBlockAttributes` on the same block attribute is classified as
+    transient because it is a continuation of the previous text edit.
+-   `MARK_LAST_CHANGE_AS_PERSISTENT` is an explicit persistent action. It sets
+    the persistence flag and also becomes the reducer's `lastAction`, so the
+    following `updateBlockAttributes` is no longer compared directly with the
+    previous text update.
+-   `useBlockSync()` turns that persistence flag into the parent callback path.
+    A real marker action can also trigger `didPersistenceChange` when the blocks
+    changed on the previous action, did not change on the marker action, and the
+    state flips from transient to persistent.
+-   `useEntityBlockEditor()` then maps persistent edits to `onChange` and
+    transient edits to `onInput`. The direct `onChange`/`onInput` code is not
+    where the milliseconds are; the trace puts the cost in subscriber fanout
+    around those callbacks.
+
+At `1000ms`, the targeted action summary matches that code-level state machine:
+
+| Intervention             | `updateBlockAttributes` samples | before persistent | after persistent | p50 action duration |
+| ------------------------ | ------------------------------: | ----------------: | ---------------: | ------------------: |
+| normal marker            |                            `33` |              `33` |             `33` |             `0.8ms` |
+| marker no-op             |                            `33` |               `0` |              `0` |             `1.7ms` |
+| mark next not persistent |                            `33` |               `0` |             `33` |             `2.2ms` |
+
+The trace-heavy state-path samples show the same split at the input-window
+level:
+
+![Marker state path cases](figures/35-marker-state-path-cases.png)
+
+This confirms the path-classification theory: normal marker makes the following
+content update start and end persistent, while marker no-op leaves it transient.
+It also disconfirms two stronger theories. First, the marker did not simply
+"move the same next-input work earlier"; the whole marker-inclusive cycle is
+larger. Second, `onChange` is not intrinsically the measured win: mark-next also
+produces `onChange` paths in this run but remains slower than normal marker.
 
 So the corrected causal chain is:
 

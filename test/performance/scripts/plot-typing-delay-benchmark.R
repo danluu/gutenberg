@@ -3502,6 +3502,77 @@ if (file.exists(marker_allspan_input_batch_path)) {
 	)
 }
 
+marker_allspan_input_batch_samples_path <- file.path(data_dir, "typing-delay-marker-allspan-input-batch-samples.csv")
+if (file.exists(marker_allspan_input_batch_samples_path)) {
+	marker_state_path_cases <- read_csv(marker_allspan_input_batch_samples_path, show_col_types = FALSE) %>%
+		filter(!is_throwaway) %>%
+		mutate(
+			intervention = factor(
+				intervention,
+				levels = c("normal marker", "marker no-op", "mark next not persistent")
+			),
+			marker_case = case_when(
+				marker_before_input_actions == "__unstableMarkLastChangeAsPersistent" ~ "marker before input",
+				marker_before_input_actions == "__unstableMarkNextChangeAsNotPersistent; __unstableMarkLastChangeAsPersistent" ~ "mark-next before input",
+				is.na(marker_before_input_actions) | marker_before_input_actions == "" ~ "no marker before input",
+				TRUE ~ marker_before_input_actions
+			),
+			state_path = paste0(
+				if_else(content_update_before_persistent, "persistent", "transient"),
+				" -> ",
+				if_else(content_update_after_persistent, "persistent", "transient"),
+				"; ",
+				update_parent
+			),
+			case_label = paste(marker_case, state_path, sep = "\n")
+		) %>%
+		group_by(intervention, case_label) %>%
+		summarise(
+			n = n(),
+			latency_p50_ms = median(latency_ms, na.rm = TRUE),
+			batch_p50_ms = median(batch_duration_ms, na.rm = TRUE),
+			root_subscribe_p50_ms = median(root_subscribe_duration_ms, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		pivot_longer(
+			cols = c(latency_p50_ms, batch_p50_ms, root_subscribe_p50_ms),
+			names_to = "metric",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			metric = recode(
+				metric,
+				latency_p50_ms = "EventDispatch latency",
+				batch_p50_ms = "RichText registry.batch",
+				root_subscribe_p50_ms = "block-editor rootSubscribe"
+			),
+			case_label = fct_reorder(case_label, duration_ms, .fun = max)
+		)
+
+	save_plot(
+		ggplot(marker_state_path_cases, aes(duration_ms, case_label, color = intervention, shape = intervention)) +
+			geom_point(size = 3.1, alpha = 0.9, position = position_dodge(width = 0.45)) +
+			facet_wrap(vars(metric), ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`normal marker` = 16,
+				`marker no-op` = 17,
+				`mark next not persistent` = 15
+			), drop = FALSE) +
+			labs(
+				title = "State transitions explain the path split, not the full cost",
+				subtitle = "Retained inputs from the trace-all-data-spans run at 1000ms; points are p50 within each observed state path",
+				x = "Duration, p50 (ms)",
+				y = NULL,
+				color = "Timer intervention",
+				shape = "Timer intervention"
+			),
+		"35-marker-state-path-cases.png",
+		width = 12,
+		height = 9
+	)
+}
+
 marker_allspan_owner_path <- file.path(data_dir, "typing-delay-marker-allspan-owner-summary.csv")
 if (file.exists(marker_allspan_owner_path)) {
 	marker_allspan_owner <- read_csv(marker_allspan_owner_path, show_col_types = FALSE) %>%
