@@ -390,6 +390,31 @@ fires after a completed keypress and ordinary idle wait, not inside a long
 synthetic key hold immediately before the next keydown. That different event
 ordering does not move the same work out of the next keypress dispatch slice.
 
+The same data can be reduced to three repeated p50 timelines:
+
+![Persistence regime timelines](figures/06b-persistence-regime-timelines.png)
+
+These timelines show three synthetic key cycles for each regime. They use p50
+offsets, so each row is a typical repeated cycle rather than one noisy sample.
+The gray bar is the wall-clock interval where Playwright is holding the key down,
+but the reported benchmark value is not the length of that bar. The reported
+value is the event-only p50: the sum of `keydown`, `keypress`, and `keyup`
+`EventDispatch` durations for the key.
+
+The three regimes are:
+
+-   **Below 1s (`990ms`).** Each new input arrives before the RichText timer has
+    run between measured keys. The text update leaves the change transient, and
+    the benchmark reports the full slow event path: `25.8ms` p50.
+-   **At the drop (`1000ms`).** The timer runs while the synthetic key is still
+    held and before the next measured keydown. The key-event p50 is only
+    `10.4ms`, but the timer task immediately before it is another `15.9ms` p50
+    outside the event metric. The work moved tasks; it did not vanish.
+-   **Above the drop (`1300ms`).** The timer still runs outside the measured key
+    event, but the later key-held path is slow again: `22.6ms` event-only p50,
+    plus a `15.7ms` timer task outside the metric. This is why the later plateau
+    is a separate phenomenon from the first `990 -> 1000ms` accounting drop.
+
 This establishes two separate facts:
 
 1. The sharp `990 -> 1000ms` drop is caused by the one-second rich-text

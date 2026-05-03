@@ -687,7 +687,11 @@ cliff_action_summary <- cliff_cycle_action_events %>%
 		)
 	) %>%
 	group_by(delayMs, delay_label, event_label) %>%
-	summarise(ms_after_keydown = median(ms_after_keydown, na.rm = TRUE), .groups = "drop")
+	summarise(
+		ms_after_keydown = median(ms_after_keydown, na.rm = TRUE),
+		duration_p50_ms = median(durationMs, na.rm = TRUE),
+		.groups = "drop"
+	)
 
 cliff_latency_labels <- by_delay %>%
 	filter(run_id == "cliff_actions") %>%
@@ -819,6 +823,221 @@ save_plot(
 	"06-persistence-action-timeline.png",
 	width = 12,
 	height = 7
+)
+
+regime_specs <- tribble(
+	~delayMs, ~regime_label, ~regime_order,
+	990, "Below 1s: timer keeps getting cleared", 1,
+	1000, "At 1s drop: timer work is outside the measured key event", 2,
+	1300, "Above the drop: timer still fires, but the key event is slow again", 3
+)
+
+regime_levels <- regime_specs$regime_label[order(regime_specs$regime_order)]
+
+regime_action_metrics <- cliff_cycle_action_events %>%
+	mutate(
+		event_label = case_when(
+			actionName == "__unstableMarkLastChangeAsPersistent" ~ "timer",
+			actionName == "updateBlockAttributes" & `after.isPersistent` == FALSE ~ "text update leaves transient",
+			actionName == "updateBlockAttributes" ~ "text update after timer"
+		)
+	) %>%
+	group_by(delayMs, event_label) %>%
+	summarise(
+		offset_p50_ms = median(ms_after_keydown, na.rm = TRUE),
+		duration_p50_ms = median(durationMs, na.rm = TRUE),
+		.groups = "drop"
+	)
+
+regime_metrics <- regime_specs %>%
+	left_join(
+		cliff_cycle_summary %>%
+			transmute(
+				delayMs,
+				keyup_p50_ms,
+				period_p50_ms = next_keydown_p50_ms
+			),
+		by = "delayMs"
+	) %>%
+	left_join(
+		by_delay %>%
+			filter(run_id == "cliff_actions") %>%
+			transmute(delayMs = delay_ms, event_p50_ms = median_ms),
+		by = "delayMs"
+	) %>%
+	left_join(
+		regime_action_metrics %>%
+			filter(event_label %in% c("text update leaves transient", "text update after timer")) %>%
+			group_by(delayMs) %>%
+			summarise(
+				update_p50_ms = first(offset_p50_ms),
+				update_label = first(event_label),
+				update_duration_p50_ms = first(duration_p50_ms),
+				.groups = "drop"
+			),
+		by = "delayMs"
+	) %>%
+	left_join(
+		regime_action_metrics %>%
+			filter(event_label == "timer") %>%
+			transmute(
+				delayMs,
+				timer_p50_ms = offset_p50_ms,
+				timer_duration_p50_ms = duration_p50_ms
+			),
+		by = "delayMs"
+	) %>%
+	mutate(
+		regime_label = factor(regime_label, levels = regime_levels),
+		timer_text = if_else(
+			is.na(timer_duration_p50_ms),
+			"no timer task between measured keys",
+			paste0("+ timer task p50 ", number(timer_duration_p50_ms, accuracy = 0.1), "ms outside event metric")
+		),
+		measurement_label = paste0(
+			"event-only p50 ", number(event_p50_ms, accuracy = 0.1), "ms\n",
+			timer_text
+		)
+	)
+
+regime_cycles <- regime_metrics %>%
+	slice(rep(row_number(), each = 3)) %>%
+	group_by(delayMs) %>%
+	mutate(
+		cycle_index = row_number() - 1,
+		cycle_label = paste0("cycle ", cycle_index + 1),
+		cycle_y = 3 - cycle_index,
+		cycle_start_ms = cycle_index * period_p50_ms,
+		keyup_ms = cycle_start_ms + keyup_p50_ms,
+		next_keydown_ms = cycle_start_ms + period_p50_ms,
+		timer_deadline_ms = cycle_start_ms + 1000,
+		update_ms = cycle_start_ms + update_p50_ms,
+		timer_ms = cycle_start_ms + timer_p50_ms
+	) %>%
+	ungroup()
+
+regime_events <- bind_rows(
+	regime_cycles %>%
+		transmute(regime_label, cycle_y, event_ms = cycle_start_ms, event_label = "keydown / measured event starts"),
+	regime_cycles %>%
+		transmute(regime_label, cycle_y, event_ms = update_ms, event_label = update_label),
+	regime_cycles %>%
+		filter(!is.na(timer_p50_ms)) %>%
+		transmute(regime_label, cycle_y, event_ms = timer_ms, event_label = "timer marks previous input persistent"),
+	regime_cycles %>%
+		transmute(regime_label, cycle_y, event_ms = keyup_ms, event_label = "keyup"),
+	regime_cycles %>%
+		transmute(regime_label, cycle_y, event_ms = next_keydown_ms, event_label = "next keydown")
+) %>%
+	mutate(
+		event_label = factor(
+			event_label,
+			levels = c(
+				"keydown / measured event starts",
+				"text update leaves transient",
+				"text update after timer",
+				"timer marks previous input persistent",
+				"keyup",
+				"next keydown"
+			)
+		)
+	)
+
+regime_labels <- regime_metrics %>%
+	mutate(
+		label_x = case_when(
+			delayMs == 990 ~ period_p50_ms * 1.2,
+			delayMs == 1000 ~ period_p50_ms * 1.05,
+			TRUE ~ period_p50_ms * 1.02
+		),
+		label_y = 2.55
+	)
+
+regime_notes <- regime_specs %>%
+	mutate(
+		regime_label = factor(regime_label, levels = regime_levels),
+		note_x = 35,
+		note_y = 0.52,
+		note = "gray bar: synthetic key held down; dashed ticks: 1000ms timer deadlines"
+	)
+
+save_plot(
+	ggplot() +
+		geom_segment(
+			data = regime_cycles,
+			aes(cycle_start_ms, cycle_y, xend = keyup_ms, yend = cycle_y),
+			color = brewer_color("Greys", 6, type = "seq", n = 9),
+			linewidth = 5,
+			alpha = 0.24
+		) +
+		geom_segment(
+			data = regime_cycles,
+			aes(timer_deadline_ms, cycle_y - 0.28, xend = timer_deadline_ms, yend = cycle_y + 0.28),
+			color = brewer_color("Greys", 7, type = "seq", n = 9),
+			linetype = "dashed",
+			linewidth = 0.45
+		) +
+		geom_point(
+			data = regime_events,
+			aes(event_ms, cycle_y, color = event_label, shape = event_label),
+			size = 2.7,
+			alpha = 0.95
+		) +
+		geom_label(
+			data = regime_labels,
+			aes(label_x, label_y, label = measurement_label),
+			hjust = 0,
+			size = 3,
+			linewidth = 0.18,
+			fill = "white",
+			alpha = 0.9
+		) +
+		geom_text(
+			data = regime_notes,
+			aes(note_x, note_y, label = note),
+			hjust = 0,
+			size = 2.9,
+			color = brewer_color("Greys", 7, type = "seq", n = 9)
+		) +
+		facet_wrap(~regime_label, ncol = 1) +
+		scale_y_continuous(
+			breaks = c(1, 2, 3),
+			labels = c("cycle 3", "cycle 2", "cycle 1"),
+			limits = c(0.35, 3.45)
+		) +
+		scale_x_continuous(
+			breaks = seq(0, 4200, by = 500),
+			labels = label_number(suffix = "ms"),
+			expand = expansion(mult = c(0.01, 0.16))
+		) +
+		scale_color_manual(values = c(
+			`keydown / measured event starts` = brewer_color("Dark2", 3),
+			`text update leaves transient` = brewer_color("Set1", 1),
+			`text update after timer` = brewer_color("Dark2", 2),
+			`timer marks previous input persistent` = brewer_color("Set1", 2),
+			`keyup` = brewer_color("Set2", 8),
+			`next keydown` = brewer_color("Dark2", 3)
+		)) +
+		scale_shape_manual(values = c(
+			`keydown / measured event starts` = 23,
+			`text update leaves transient` = 17,
+			`text update after timer` = 17,
+			`timer marks previous input persistent` = 16,
+			`keyup` = 15,
+			`next keydown` = 23
+		)) +
+		labs(
+			title = "The 1000ms cliff is task accounting, not a wrong timestamp",
+			subtitle = "Each panel repeats the p50 timing pattern for three synthetic key cycles",
+			x = "Milliseconds from the first shown keydown",
+			y = NULL,
+			color = NULL,
+			shape = NULL
+		) +
+		theme(legend.position = "bottom"),
+	"06b-persistence-regime-timelines.png",
+	width = 12,
+	height = 10
 )
 
 timer_rewrite <- by_delay %>%
