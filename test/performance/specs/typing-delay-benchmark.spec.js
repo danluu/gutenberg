@@ -130,9 +130,11 @@ const supportedDelayModes = [
 const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
+	'noop-then-busy-wait-150',
 	'raw-unknown-action',
 	'mark-next-not-persistent',
 	'mark-last-then-mark-next-not-persistent',
+	'normal-then-busy-wait-150',
 	'busy-wait-20',
 	'busy-wait-40',
 	'toggle-selection',
@@ -141,6 +143,7 @@ const supportedMarkPersistentInterventions = [
 	'stop-typing',
 	'start-typing',
 	'stop-start-typing',
+	'stop-start-typing-then-busy-wait-150',
 ];
 
 function sleepMs( delayMs ) {
@@ -1182,6 +1185,7 @@ test.describe( 'Typing delay benchmark', () => {
 							'stop-typing',
 							'start-typing',
 							'stop-start-typing',
+							'stop-start-typing-then-busy-wait-150',
 						].includes( mode ) &&
 							( typeof actions.stopTyping !== 'function' ||
 								typeof actions.startTyping !== 'function' ) ) ||
@@ -1250,8 +1254,18 @@ test.describe( 'Typing delay benchmark', () => {
 							let status = 'returned';
 							let result;
 
+							function busyWait( durationMs ) {
+								const stopAt = performance.now() + durationMs;
+								while ( performance.now() < stopAt ) {}
+							}
+
 							try {
 								if ( mode === 'noop' ) {
+									result = undefined;
+								} else if (
+									mode === 'noop-then-busy-wait-150'
+								) {
+									busyWait( 150 );
 									result = undefined;
 								} else if ( mode === 'raw-unknown-action' ) {
 									result = rawDispatch( 'core/block-editor', {
@@ -1270,13 +1284,17 @@ test.describe( 'Typing delay benchmark', () => {
 									result = original.apply( this, arguments );
 									actions.__unstableMarkNextChangeAsNotPersistent();
 								} else if (
+									mode === 'normal-then-busy-wait-150'
+								) {
+									result = original.apply( this, arguments );
+									busyWait( 150 );
+								} else if (
 									mode === 'busy-wait-20' ||
 									mode === 'busy-wait-40'
 								) {
-									const stopAt =
-										performance.now() +
-										( mode === 'busy-wait-40' ? 40 : 20 );
-									while ( performance.now() < stopAt ) {}
+									busyWait(
+										mode === 'busy-wait-40' ? 40 : 20
+									);
 									result = undefined;
 								} else if ( mode === 'toggle-selection' ) {
 									actions.toggleSelection( false );
@@ -1307,6 +1325,13 @@ test.describe( 'Typing delay benchmark', () => {
 								} else if ( mode === 'stop-start-typing' ) {
 									actions.stopTyping();
 									result = actions.startTyping();
+								} else if (
+									mode ===
+									'stop-start-typing-then-busy-wait-150'
+								) {
+									actions.stopTyping();
+									result = actions.startTyping();
+									busyWait( 150 );
 								} else {
 									result = original.apply( this, arguments );
 								}

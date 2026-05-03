@@ -325,6 +325,44 @@ const fixedHoldTimerRewriteRuns = [
 	},
 ];
 
+const taskEndProximityRuns = [
+	{
+		runId: 'task_end_noop_timeout_1250_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'marker no-op',
+		rewriteTimeoutMs: 1250,
+		dir: 'artifacts/typing-delay-fixed-hold-noop-timeout-1250-delay-1300',
+	},
+	{
+		runId: 'task_end_noop_busy_150_timeout_1000_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'no-op + busy wait 150ms',
+		rewriteTimeoutMs: 1000,
+		dir: 'artifacts/typing-delay-task-end-noop-then-busy-150-timeout-1000-delay-1300',
+	},
+	{
+		runId: 'task_end_noop_busy_150_timeout_1100_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'no-op + busy wait 150ms',
+		rewriteTimeoutMs: 1100,
+		dir: 'artifacts/typing-delay-task-end-noop-then-busy-150-timeout-1100-delay-1300',
+	},
+	{
+		runId: 'task_end_normal_busy_150_timeout_1100_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'normal marker + busy wait 150ms',
+		rewriteTimeoutMs: 1100,
+		dir: 'artifacts/typing-delay-task-end-normal-then-busy-150-timeout-1100-delay-1300',
+	},
+	{
+		runId: 'task_end_stop_start_busy_150_timeout_1100_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'stop/start + busy wait 150ms',
+		rewriteTimeoutMs: 1100,
+		dir: 'artifacts/typing-delay-task-end-stop-start-then-busy-150-timeout-1100-delay-1300',
+	},
+];
+
 function newestJson( dir ) {
 	const absDir = path.join( repoRoot, dir );
 	if ( ! fs.existsSync( absDir ) ) {
@@ -864,6 +902,7 @@ const loadedMarkerGapDenseRuns = readOptionalRuns( markerGapDenseRuns );
 const loadedFixedHoldTimerRewriteRuns = readOptionalRuns(
 	fixedHoldTimerRewriteRuns
 );
+const loadedTaskEndProximityRuns = readOptionalRuns( taskEndProximityRuns );
 
 function summaryKey( row ) {
 	return `${ row.delayMs }\t${ row.round }\t${ row.editorSetupIndex }`;
@@ -929,6 +968,8 @@ function buildPairedRows( runsToPair ) {
 					event.storeName === 'core/block-editor' &&
 					event.actionName === '__unstableMarkLastChangeAsPersistent'
 			);
+			const interventionEvents =
+				summary.markPersistentInterventionEvents || [];
 
 			return records.flatMap( ( record, recordIndex ) => {
 				if ( record.isThrowaway ) {
@@ -952,6 +993,19 @@ function buildPairedRows( runsToPair ) {
 					( sum, event ) => sum + ( event.durationMs || 0 ),
 					0
 				);
+				const priorInterventionEvents = interventionEvents.filter(
+					( event ) =>
+						event.nowMs > previousInput.nowMs &&
+						event.nowMs < currentKeydown.nowMs
+				);
+				const lastInterventionEvent =
+					priorInterventionEvents[
+						priorInterventionEvents.length - 1
+					];
+				const interventionDurationMs = priorInterventionEvents.reduce(
+					( sum, event ) => sum + ( event.durationMs || 0 ),
+					0
+				);
 
 				return {
 					run_id: run.runId,
@@ -972,10 +1026,23 @@ function buildPairedRows( runsToPair ) {
 						: null,
 					marker_action_count: priorMarkerActions.length,
 					marker_action_duration_ms: markerActionDurationMs,
+					intervention_event_count: priorInterventionEvents.length,
+					intervention_duration_ms: interventionDurationMs,
+					intervention_to_current_keydown_ms: lastInterventionEvent
+						? currentKeydown.nowMs - lastInterventionEvent.nowMs
+						: null,
+					intervention_end_to_current_keydown_ms:
+						lastInterventionEvent
+							? currentKeydown.nowMs -
+							  ( lastInterventionEvent.nowMs +
+									( lastInterventionEvent.durationMs || 0 ) )
+							: null,
 					latency_ms: record.latencyMs,
 					keypress_ms: record.keypressMs,
 					marker_inclusive_latency_ms:
 						record.latencyMs + markerActionDurationMs,
+					intervention_inclusive_latency_ms:
+						record.latencyMs + interventionDurationMs,
 					current_keydown_is_persistent: currentKeydown.isPersistent,
 					current_keydown_is_typing: currentKeydown.isTyping,
 				};
@@ -999,6 +1066,9 @@ function buildPairedSummaryRows( rows ) {
 		const markerInclusiveLatencies = groupRows.map(
 			( row ) => row.marker_inclusive_latency_ms
 		);
+		const interventionInclusiveLatencies = groupRows.map(
+			( row ) => row.intervention_inclusive_latency_ms
+		);
 		const keypresses = groupRows.map( ( row ) => row.keypress_ms );
 		return {
 			run_id: first.run_id,
@@ -1009,6 +1079,9 @@ function buildPairedSummaryRows( rows ) {
 			n: groupRows.length,
 			rows_with_marker_action: groupRows.filter(
 				( row ) => row.marker_action_count > 0
+			).length,
+			rows_with_intervention_event: groupRows.filter(
+				( row ) => row.intervention_event_count > 0
 			).length,
 			latency_p50_ms: quantile( latencies, 0.5 ),
 			keypress_p50_ms: quantile( keypresses, 0.5 ),
@@ -1030,8 +1103,28 @@ function buildPairedSummaryRows( rows ) {
 				markerActionDurations,
 				0.5
 			),
+			intervention_duration_p50_ms: quantile(
+				groupRows.map( ( row ) => row.intervention_duration_ms ),
+				0.5
+			),
+			intervention_to_current_keydown_p50_ms: quantile(
+				groupRows.map(
+					( row ) => row.intervention_to_current_keydown_ms
+				),
+				0.5
+			),
+			intervention_end_to_current_keydown_p50_ms: quantile(
+				groupRows.map(
+					( row ) => row.intervention_end_to_current_keydown_ms
+				),
+				0.5
+			),
 			marker_inclusive_latency_p50_ms: quantile(
 				markerInclusiveLatencies,
+				0.5
+			),
+			intervention_inclusive_latency_p50_ms: quantile(
+				interventionInclusiveLatencies,
 				0.5
 			),
 			marker_inclusive_latency_p10_ms: quantile(
@@ -1329,6 +1422,12 @@ const fixedHoldTimerRewritePairedRows = buildPairedRows(
 );
 const fixedHoldTimerRewritePairedSummaryRows = buildPairedSummaryRows(
 	fixedHoldTimerRewritePairedRows
+);
+const taskEndProximityPairedRows = buildPairedRows(
+	loadedTaskEndProximityRuns
+);
+const taskEndProximityPairedSummaryRows = buildPairedSummaryRows(
+	taskEndProximityPairedRows
 );
 
 const actionRows = loadedRuns.flatMap( ( run ) =>
@@ -3898,6 +3997,72 @@ if ( loadedFixedHoldTimerRewriteRuns.length > 0 ) {
 			'marker_to_current_keydown_p50_ms',
 			'marker_action_duration_p50_ms',
 			'marker_inclusive_latency_p50_ms',
+			'marker_inclusive_latency_p10_ms',
+			'marker_inclusive_latency_p90_ms',
+			'current_keydown_persistent_count',
+			'current_keydown_typing_count',
+		]
+	);
+}
+if ( loadedTaskEndProximityRuns.length > 0 ) {
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-task-end-proximity-paired-samples.csv'
+		),
+		taskEndProximityPairedRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'rewrite_timeout_ms',
+			'delay_ms',
+			'round',
+			'sample_index',
+			'delay_sample_index',
+			'previous_input_to_current_keydown_ms',
+			'previous_input_to_marker_ms',
+			'marker_to_current_keydown_ms',
+			'marker_action_count',
+			'marker_action_duration_ms',
+			'intervention_event_count',
+			'intervention_duration_ms',
+			'intervention_to_current_keydown_ms',
+			'intervention_end_to_current_keydown_ms',
+			'latency_ms',
+			'keypress_ms',
+			'marker_inclusive_latency_ms',
+			'intervention_inclusive_latency_ms',
+			'current_keydown_is_persistent',
+			'current_keydown_is_typing',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-task-end-proximity-paired-summary.csv'
+		),
+		taskEndProximityPairedSummaryRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'rewrite_timeout_ms',
+			'delay_ms',
+			'n',
+			'rows_with_marker_action',
+			'rows_with_intervention_event',
+			'latency_p50_ms',
+			'keypress_p50_ms',
+			'previous_input_to_current_keydown_p50_ms',
+			'previous_input_to_marker_p50_ms',
+			'marker_to_current_keydown_p50_ms',
+			'marker_action_duration_p50_ms',
+			'intervention_duration_p50_ms',
+			'intervention_to_current_keydown_p50_ms',
+			'intervention_end_to_current_keydown_p50_ms',
+			'marker_inclusive_latency_p50_ms',
+			'intervention_inclusive_latency_p50_ms',
 			'marker_inclusive_latency_p10_ms',
 			'marker_inclusive_latency_p90_ms',
 			'current_keydown_persistent_count',

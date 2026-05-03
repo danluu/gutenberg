@@ -55,22 +55,31 @@ The short version:
     block-editor snapshot unchanged, produced no listener fanout, and stayed in
     the no-op slow band in the all-data-span trace (`32.4ms` latency p50,
     `31.3ms` `keypress` p50). A raw dispatch/timer tick is therefore not
-    sufficient; the fast cases require an effective root-state change that wakes
-    the subscriber path before the measured input.
+    sufficient; a zero-duration no-op-ish timer callback does not reproduce the
+    low band.
 -   A dense timer-to-key gap scan adds another constraint. In the normal-marker
     and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
     low when the timer callback is roughly `40-100ms` before the next keydown,
     starts rising around `150ms`, and is back on the slow plateau around
     `200-300ms`. The no-op timer can fire only `3-30ms` before the next keydown
     and still does not reach the normal `~10-11ms` band. This disconfirms both
-    "same state at keydown is enough" and "timer ordering alone is enough"; the
-    proven condition is effective timer-side block-editor fanout close to the
-    next measured input.
+    "same state at keydown is enough" and "timer ordering alone is enough"; a
+    short effective block-editor fanout is sufficient, while a short no-op timer
+    callback is not.
 -   A fixed-hold timer rewrite confirms that this is causal. With the key hold
     fixed at `1300ms`, moving the normal marker timer from `1000ms` / `1100ms`
     to `1200ms` / `1250ms` / `1270ms` moves the same long-held key from the slow
     plateau back into the low band. At the same `1250ms` rewritten timer, no-op
     remains slow and `stopTyping(); startTyping()` is fast.
+-   A task-end proximity probe corrects the stronger "effective Gutenberg fanout
+    is required" claim. A no-op callback that only busy-waits for `150ms`
+    changes no Gutenberg selector snapshot, but it still makes the next
+    EventDispatch slice fast if the long timer task ends about `51ms` before
+    keydown (`11.3ms` p50). The same no-op busy wait ending about `151ms` before
+    keydown is intermediate (`15.1ms` p50), and a zero-duration no-op ending
+    about `53ms` before keydown is slow (`24.6ms` p50). The current best model is
+    therefore recent main-thread activity / scheduler state plus Gutenberg
+    input work, not a purely semantic editor-state transition.
 -   Splitting the measured key into `keydown`, `keypress`, and `keyup` shows
     that the intervention gap is almost entirely in the measured `keypress`
     component.
@@ -307,6 +316,9 @@ The R script derives:
 -   `data/typing-delay-fixed-hold-timer-rewrite-paired-*.csv`: fixed
     `1300ms` key-hold traces where the `1000ms` timer is rewritten to different
     values.
+-   `data/typing-delay-task-end-proximity-paired-*.csv`: fixed `1300ms`
+    key-hold traces that separate timer-task start, timer-task end, and
+    following-key timing.
 -   `data/typing-delay-timeout-970-marker-paired-*.csv`: the same paired
     accounting for a targeted run that rewrites Gutenberg's `1000ms` timers to
     `970ms`.
@@ -1036,16 +1048,16 @@ It also limits the timer-ordering theory. The no-op callback can run just a few
 milliseconds before the next keydown and still does not reproduce the
 normal-marker or stop/start `~10-11ms` band. There is some partial movement in
 the no-op scan around `1010..1030ms`, which is consistent with the busy-wait
-results: scheduling and nearby browser-task boundaries contribute. But the full
-low band still requires an effective block-editor state change and subscriber
-pass before the key, and the effect fades as that pass gets farther away in
-wall-clock time.
+results: scheduling and nearby browser-task boundaries contribute. This scan
+shows that a short zero-duration no-op is insufficient; the later task-end probe
+shows that the stronger "effective block-editor state change is required" claim
+is false.
 
 This does not prove the lower-level reason for the decay. The honest statement is
-that the event-only metric is sensitive to recent timer-side block-editor fanout,
-not that the same work literally moved from one key event into the timer task.
-The timer-inclusive column stays high, and by `1200..1300ms` it is much worse
-than the event-only low band.
+that the event-only metric is sensitive to recent timer-side activity before
+Gutenberg's input path, not that the same work literally moved from one key event
+into the timer task. The timer-inclusive column stays high, and by
+`1200..1300ms` it is much worse than the event-only low band.
 
 I then ran a stronger causality check: keep the Playwright key hold fixed at
 `1300ms`, but rewrite Gutenberg's `1000ms` timer to fire at different times
@@ -1076,11 +1088,53 @@ This confirms three things more cleanly than the gap scan alone:
    callback fired about `53ms` before keydown and stayed slow; the `1250ms`
    stop/start callback fired about `50ms` before keydown and was fast.
 
-This supports the narrower model: the event-only trace slice drops when an
-effective block-editor subscriber pass happens shortly before the next synthetic
-input. It still does not mean the benchmarked character cycle got cheaper. The
-timer-inclusive normal-marker values are `24-39ms`, and the stop/start
-timer-inclusive value is `30.4ms`.
+At this point the strongest supported statement was that a short effective
+block-editor fanout is sufficient, and that a short zero-duration no-op callback
+is not.
+
+I then tested whether "effective Gutenberg fanout" is actually required, or
+whether a long timer task ending close to the next key can also perturb the
+event-only measurement. The new intervention modes are deliberately artificial:
+
+-   `noop-then-busy-wait-150`: do not dispatch a meaningful Gutenberg action;
+    just hold the timer task open for `150ms`.
+-   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
+    open for `150ms`.
+-   `stop-start-typing-then-busy-wait-150`: run the stop/start typing
+    intervention, then hold the timer task open for `150ms`.
+
+![Task-end proximity](figures/50-task-end-proximity.png)
+
+Selected p50s:
+
+| Timer callback                 | Timer setting | Task end to keydown | Event-only p50 | Timer task p50 | Timer-inclusive p50 |
+| ------------------------------ | ------------: | ------------------: | -------------: | -------------: | ------------------: |
+| marker no-op                   |      `1250ms` |            `53.4ms` |       `24.6ms` |        `0.0ms` |            `24.6ms` |
+| no-op + busy wait `150ms`      |      `1000ms` |           `150.6ms` |       `15.1ms` |      `150.0ms` |           `164.9ms` |
+| no-op + busy wait `150ms`      |      `1100ms` |            `51.0ms` |       `11.3ms` |      `150.0ms` |           `161.0ms` |
+| normal marker + busy wait      |      `1100ms` |            `37.2ms` |        `8.5ms` |      `162.8ms` |           `170.9ms` |
+| stop/start typing + busy wait  |      `1100ms` |            `30.9ms` |        `8.1ms` |      `170.0ms` |           `177.7ms` |
+
+The no-op busy-wait rows changed no coarse Gutenberg selector snapshot:
+`isLastBlockChangePersistent()`, `isTyping()`, block count, and selected block
+ID were unchanged before and after the callback in all retained intervention
+events. That disconfirms the strong version of the "effective block-editor fanout
+is required" theory.
+
+The updated model is narrower and less semantic:
+
+1. A zero-duration timer callback, even very close to keydown, is not enough.
+2. A short effective block-editor fanout close to keydown is sufficient.
+3. A long pure-JS timer task close to keydown is also sufficient, even with no
+   Gutenberg state transition.
+4. The effect decays with distance from the following key: no-op + `150ms` busy
+   wait ending around `151ms` before keydown is only intermediate, while ending
+   around `51ms` before keydown is in the low band.
+
+That points away from a purely Gutenberg-state explanation and toward
+main-thread / browser scheduler / CPU-state sensitivity around Gutenberg's input
+path. It still does not mean the benchmarked character cycle got cheaper. The
+timer-inclusive values for the artificial busy-wait rows are `161-178ms`.
 
 The `stopTyping()` result has a direct code-level explanation. `ObserveTyping`
 installs different DOM listeners depending on `isTyping`: when typing is true,
@@ -3094,6 +3148,13 @@ The key runs used in this report were:
     `fixed_hold_stop_start_timeout_1250_delay_1300`: one-round fixed
     `1300ms` key-hold traces that rewrite Gutenberg's `1000ms` timer and test
     whether moving the timer close to the next key is causal.
+-   `task_end_noop_timeout_1250_delay_1300`,
+    `task_end_noop_busy_150_timeout_1000_delay_1300`,
+    `task_end_noop_busy_150_timeout_1100_delay_1300`,
+    `task_end_normal_busy_150_timeout_1100_delay_1300`, and
+    `task_end_stop_start_busy_150_timeout_1100_delay_1300`: fixed `1300ms`
+    key-hold traces that test whether a long timer task ending close to the next
+    key can reproduce the low event-only slice without changing Gutenberg state.
 -   `redux_listener_owner_normal_1000`, `redux_listener_owner_noop_1000`,
     `redux_listener_owner_next_not_persistent_1000`: reduced `1000ms`
     owner-attribution runs with diagnostic `useSelectId` metadata propagated to

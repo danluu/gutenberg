@@ -3147,6 +3147,7 @@ marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-sam
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
 marker_gap_dense_summary_path <- file.path(data_dir, "typing-delay-marker-gap-dense-paired-summary.csv")
 fixed_hold_timer_rewrite_summary_path <- file.path(data_dir, "typing-delay-fixed-hold-timer-rewrite-paired-summary.csv")
+task_end_proximity_summary_path <- file.path(data_dir, "typing-delay-task-end-proximity-paired-summary.csv")
 marker_intervention_levels <- c(
 	"normal marker",
 	"marker no-op",
@@ -3453,6 +3454,73 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					shape = "Timer callback"
 				),
 			"49-fixed-hold-timer-rewrite.png",
+			width = 11,
+			height = 8
+		)
+	}
+
+	if (file.exists(task_end_proximity_summary_path)) {
+		task_end_proximity <- read_csv(task_end_proximity_summary_path, show_col_types = FALSE) %>%
+			filter(delay_ms == 1300, rows_with_intervention_event > 0) %>%
+			mutate(
+				intervention = factor(
+					intervention,
+					levels = c(
+						"marker no-op",
+						"no-op + busy wait 150ms",
+						"normal marker + busy wait 150ms",
+						"stop/start + busy wait 150ms"
+					)
+				)
+			) %>%
+			select(
+				intervention,
+				rewrite_timeout_ms,
+				intervention_end_to_current_keydown_p50_ms,
+				`next EventDispatch only` = latency_p50_ms,
+				`timer callback + next EventDispatch` = intervention_inclusive_latency_p50_ms
+			) %>%
+			pivot_longer(
+				cols = c(`next EventDispatch only`, `timer callback + next EventDispatch`),
+				names_to = "metric",
+				values_to = "duration_ms"
+			) %>%
+			mutate(
+				metric = factor(
+					metric,
+					levels = c("next EventDispatch only", "timer callback + next EventDispatch")
+				)
+			)
+
+		save_plot(
+			ggplot(
+				task_end_proximity,
+				aes(
+					intervention_end_to_current_keydown_p50_ms,
+					duration_ms,
+					color = intervention,
+					shape = intervention
+				)
+			) +
+				geom_point(size = 3.3, alpha = 0.9) +
+				facet_wrap(~metric, ncol = 1, scales = "free_y") +
+				scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`marker no-op` = 17,
+					`no-op + busy wait 150ms` = 4,
+					`normal marker + busy wait 150ms` = 16,
+					`stop/start + busy wait 150ms` = 15
+				), drop = FALSE) +
+				scale_x_continuous(breaks = c(0, 50, 100, 150, 200)) +
+				labs(
+					title = "A long timer task can also make the next event slice fast",
+					subtitle = "Fixed 1300ms key hold; no-op busy wait changes no Gutenberg selector snapshot",
+					x = "Timer task end to following keydown, p50 (ms)",
+					y = "Duration, p50 (ms)",
+					color = "Timer callback",
+					shape = "Timer callback"
+				),
+			"50-task-end-proximity.png",
 			width = 11,
 			height = 8
 		)
