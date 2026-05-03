@@ -447,6 +447,10 @@ The R script derives:
     post-editor typing anchor using the same large-post saved-draft setup,
     `target.type()` entry point, `1000ms` key delay, 10 retained samples, and 1
     throwaway sample as the Performance Tests `post-editor` Typing metric.
+-   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
+    delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
+    saved/reopened large-post draft per delay and 10 retained samples plus 1
+    throwaway sample per delay.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -793,6 +797,39 @@ same low-latency band with or without an extra fixed post-setup wait. The first
 character is still slower, but CI intentionally discards it. That means the
 default CI Typing metric is much less sensitive to the start-wait issue than a
 first-character benchmark would be.
+
+I then made CI-comparable copies of the main dense delay and volatility plots.
+This run used `BENCHMARK_SETUP_STYLE=ci-post-editor-typing`,
+`BENCHMARK_FRESH_EDITOR_PER_DELAY=1`, `0..1400ms` in `10ms` steps, one round,
+10 retained samples per delay, and 1 throwaway sample per delay. It creates a
+fresh large-post draft, saves it, reopens it, disables autosave, and calls
+`target.type()` for every delay setting. The run produced 141 delay rows, 1410
+retained samples, and no missing key groups.
+
+![CI-comparable 0-1400ms delay curve](figures/74-ci-comparable-delay-curve-0-1400.png)
+
+![CI-comparable coefficient of variation](figures/75-ci-comparable-coefficient-of-variation-0-1400.png)
+
+Selected CI-comparable dense p50s:
+
+| Delay | p50 | p10-p90 | CV |
+| ----: | --: | ------: | -: |
+|  `990ms` | `25.4ms` | `21.7-26.1ms` | `0.08` |
+| `1000ms` | `15.1ms` | `11.2-17.4ms` | `0.24` |
+| `1010ms` | `12.4ms` | `11.5-18.7ms` | `0.24` |
+| `1100ms` | `13.2ms` | `12.8-15.8ms` | `0.22` |
+| `1200ms` | `22.9ms` | `21.6-24.5ms` | `0.06` |
+| `1300ms` | `26.7ms` | `25.6-27.3ms` | `0.08` |
+| `1400ms` | `26.8ms` | `25.1-29.5ms` | `0.07` |
+
+The CI-comparable sweep preserves the same qualitative artifact: `990ms` is
+slow, the measured event-only latency drops at the one-second boundary, and the
+curve climbs back to a high plateau by roughly `1200ms`. The absolute numbers
+are higher than the earlier live-editor dense sweep because this run recreates
+the CI saved/reopened draft setup for each delay. The volatility graph also
+shows why n=10 per delay is only a CI-shape copy, not a high-confidence
+variance estimate: a single retained outlier at `640ms` and another at `960ms`
+dominate CV at those delays.
 
 In the original six-sample first-character run, the `0s` and `60s` p10-p90
 bands do not overlap, so the effect is large relative to the observed
@@ -4003,6 +4040,9 @@ The key runs used in this report were:
     saved/reopened large-post draft, autosave disabled, `target.type()` with a
     `1000ms` delay, 10 retained samples and 1 throwaway per round, 4 fresh
     rounds per wait setting.
+-   `ci_typing_0_1400_dense`: CI-comparable post-editor Typing dense sweep from
+    `0ms` to `1400ms` in `10ms` steps, one fresh saved/reopened large-post
+    draft per delay, 10 retained samples and 1 throwaway sample per delay.
 -   `native_busy_0_timeout_1250_delay_1300`,
     `native_busy_20_timeout_1230_delay_1300`,
     `native_busy_40_timeout_1210_delay_1300`, and

@@ -1411,6 +1411,50 @@ if (
 	)
 }
 
+ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")
+if (file.exists(ci_dense_summary_path)) {
+	ci_dense_summary <- read_csv(ci_dense_summary_path, show_col_types = FALSE)
+
+	save_plot(
+		ggplot(ci_dense_summary, aes(delay_ms, latency_p50_ms)) +
+			geom_ribbon(
+				aes(ymin = latency_p10_ms, ymax = latency_p90_ms),
+				fill = brewer_color("Blues", 3, type = "seq", n = 9),
+				alpha = 0.25
+			) +
+			geom_point(color = brewer_color("Dark2", 1), size = 1.25) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Set1", 1)) +
+			geom_vline(xintercept = 1200, linetype = "dotted", color = brewer_color("Greys", 7, type = "seq", n = 9)) +
+			scale_x_continuous(breaks = seq(0, 1400, 100)) +
+			labs(
+				title = "CI-comparable setup preserves the measured 1000ms drop",
+				subtitle = "Saved/reopened large-post draft per delay; 0-1400ms scan, 10ms steps; points are p50 and band is p10-p90",
+				x = "Configured Playwright delay between key events",
+				y = "Latency, keydown + keypress + keyup (ms)"
+			),
+		"74-ci-comparable-delay-curve-0-1400.png",
+		width = 10.5,
+		height = 5.5
+	)
+
+	save_plot(
+		ggplot(ci_dense_summary, aes(delay_ms, latency_cv)) +
+			geom_point(color = brewer_color("Dark2", 2), size = 1.25) +
+			geom_vline(xintercept = 1000, linetype = "dashed", color = brewer_color("Set1", 1)) +
+			scale_x_continuous(breaks = seq(0, 1400, 100)) +
+			scale_y_continuous(labels = percent_format(accuracy = 1)) +
+			labs(
+				title = "CI-comparable volatility also depends on delay",
+				subtitle = "Coefficient of variation by delay; n=10 retained samples per delay, so isolated outliers are visible",
+				x = "Configured Playwright delay between key events",
+				y = "Coefficient of variation"
+			),
+		"75-ci-comparable-coefficient-of-variation-0-1400.png",
+		width = 10.5,
+		height = 5.5
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%
