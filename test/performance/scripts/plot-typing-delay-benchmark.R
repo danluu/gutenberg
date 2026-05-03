@@ -3623,6 +3623,58 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 		)
 	}
 
+	if (file.exists(task_end_proximity_summary_path)) {
+		worker_gap_decay <- read_csv(task_end_proximity_summary_path, show_col_types = FALSE) %>%
+			filter(
+				delay_ms == 1300,
+				rows_with_intervention_event > 0,
+				intervention %in% c(
+					"no-op + busy wait 150ms",
+					"worker busy wait 150ms",
+					"worker busy wait 150ms, no message"
+				)
+			) %>%
+			mutate(
+				work_type = fct_recode(
+					intervention,
+					`main-thread CPU` = "no-op + busy wait 150ms",
+					`worker CPU, msg` = "worker busy wait 150ms",
+					`worker CPU, no msg` = "worker busy wait 150ms, no message"
+				)
+			)
+
+		save_plot(
+			ggplot(
+				worker_gap_decay,
+				aes(
+					intervention_end_to_current_keydown_p50_ms,
+					latency_p50_ms,
+					color = work_type,
+					shape = work_type
+				)
+			) +
+				geom_point(size = 3.4, alpha = 0.95) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`main-thread CPU` = 16,
+					`worker CPU, msg` = 15,
+					`worker CPU, no msg` = 18
+				), drop = FALSE) +
+				scale_x_continuous(breaks = c(50, 100, 150, 200, 250)) +
+				labs(
+					title = "Worker CPU also decays with distance from the next key",
+					subtitle = "Fixed 1300ms key hold; 150ms work moved earlier relative to keydown",
+					x = "Timer-side work end to following keydown, p50 (ms)",
+					y = "Next EventDispatch duration, p50 (ms)",
+					color = "Work type",
+					shape = "Work type"
+				),
+			"53-worker-gap-decay.png",
+			width = 9,
+			height = 6
+		)
+	}
+
 	if (file.exists(native_busy_wait_control_summary_path)) {
 		native_busy_wait_control <- read_csv(native_busy_wait_control_summary_path, show_col_types = FALSE) %>%
 			mutate(

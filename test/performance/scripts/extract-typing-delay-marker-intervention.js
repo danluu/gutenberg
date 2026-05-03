@@ -404,6 +404,20 @@ const taskEndProximityRuns = [
 		dir: 'test/performance/artifacts/typing-delay-task-end-worker-busy-no-message-150-timeout-1100-delay-1300',
 	},
 	{
+		runId: 'task_end_worker_busy_no_message_150_timeout_1000_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'worker busy wait 150ms, no message',
+		rewriteTimeoutMs: 1000,
+		dir: 'test/performance/artifacts/typing-delay-task-end-worker-busy-no-message-150-timeout-1000-delay-1300',
+	},
+	{
+		runId: 'task_end_worker_busy_no_message_150_timeout_900_delay_1300',
+		traceType: 'task end proximity',
+		intervention: 'worker busy wait 150ms, no message',
+		rewriteTimeoutMs: 900,
+		dir: 'test/performance/artifacts/typing-delay-task-end-worker-busy-no-message-150-timeout-900-delay-1300',
+	},
+	{
 		runId: 'task_end_worker_delay_no_message_150_timeout_1100_delay_1300',
 		traceType: 'task end proximity',
 		intervention: 'worker delay 150ms, no message',

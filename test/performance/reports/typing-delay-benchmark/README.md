@@ -96,6 +96,11 @@ The short version:
     `11.2ms`, and `10.3ms`. A no-message worker that merely waits `150ms`
     stays slow at `24.5ms`. That disconfirms "worker creation/lifetime is
     enough" and strengthens the CPU-work interpretation.
+-   The same no-message `150ms` worker spin also decays with distance from the
+    next key: ending about `50ms`, `150ms`, and `253ms` before keydown gives
+    event-only p50s of `10.3ms`, `14.9ms`, and `24.6ms`. That disconfirms a
+    long-lived "the browser is warmed for the rest of the run" version of the
+    CPU theory. The effect is recent and proximity-sensitive.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -1161,6 +1166,8 @@ Selected p50s:
 | worker busy wait, no message   |      `1210ms` |            `50.4ms` |       `12.8ms` |       `41.6ms` |            `54.3ms` |
 | worker busy wait, no message   |      `1170ms` |            `50.5ms` |       `11.2ms` |       `81.5ms` |            `92.7ms` |
 | worker busy wait, no message   |      `1100ms` |            `50.1ms` |       `10.3ms` |      `151.2ms` |           `161.6ms` |
+| worker busy wait, no message   |      `1000ms` |           `150.4ms` |       `14.9ms` |      `151.5ms` |           `166.4ms` |
+| worker busy wait, no message   |       `900ms` |           `253.3ms` |       `24.6ms` |      `151.6ms` |           `175.8ms` |
 | worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` |      `169.1ms` |           `193.8ms` |
 | worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` |      `151.3ms` |           `175.1ms` |
 | delayed no-op                  |      `1100ms` |            `50.5ms` |       `24.4ms` |      `152.6ms` |           `176.6ms` |
@@ -1191,8 +1198,10 @@ The updated model is narrower and less semantic:
 7. The effect decays with distance from the following key: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
    around `51ms` before keydown is in the low band. The worker control shows the
-   same shape: `14.9ms` when it ends around `141ms` before keydown, and
-   `10.5ms` when it ends around `41ms` before keydown.
+   same shape: a no-message `150ms` worker spin is `10.3ms` when it ends about
+   `50ms` before keydown, `14.9ms` when it ends about `150ms` before keydown,
+   and back on the slow plateau at `24.6ms` when it ends about `253ms` before
+   keydown.
 8. The near-key main-thread task is not the mechanism by itself. The
    `worker-delay-150` and `delayed-noop-150` controls both create near-key tasks
    with no CPU spin, and both stay on the slow plateau.
@@ -1215,6 +1224,15 @@ next event-only slice down as duration increases. The worker results are not
 identical to the main-thread busy waits, especially at `20ms`, but the
 monotonic shape confirms that amount of recent CPU work matters even when that
 work never posts a main-thread completion message.
+
+The worker gap-decay sweep confirms the "recent" part:
+
+![Worker gap decay](figures/53-worker-gap-decay.png)
+
+The same `150ms` no-message worker spin is fast only near the next key. Moving
+it earlier makes it intermediate and then slow again. This matters because it
+rules out a broad warmup explanation where one worker spin simply leaves the
+browser fast for the rest of the delay run.
 
 I also added a native `contenteditable` control with the same rewritten
 one-second timer and the same `1300ms` key hold:
@@ -3263,6 +3281,8 @@ The key runs used in this report were:
     `task_end_worker_busy_no_message_40_timeout_1210_delay_1300`,
     `task_end_worker_busy_no_message_80_timeout_1170_delay_1300`,
     `task_end_worker_busy_no_message_150_timeout_1100_delay_1300`,
+    `task_end_worker_busy_no_message_150_timeout_1000_delay_1300`,
+    `task_end_worker_busy_no_message_150_timeout_900_delay_1300`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,
