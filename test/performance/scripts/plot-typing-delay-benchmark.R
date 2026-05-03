@@ -4286,6 +4286,138 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 		width = 11,
 		height = 8
 	)
+
+	if (all(c(
+		"use_select_on_store_change_duration_p50_ms",
+		"use_select_react_listener_duration_p50_ms",
+		"use_select_update_value_duration_p50_ms",
+		"use_select_render_queue_add_duration_p50_ms",
+		"cycle_use_select_on_store_change_duration_p50_ms",
+		"cycle_use_select_react_listener_duration_p50_ms",
+		"cycle_use_select_update_value_duration_p50_ms",
+		"cycle_use_select_render_queue_add_duration_p50_ms",
+		"marker_use_select_on_store_change_duration_p50_ms",
+		"marker_use_select_react_listener_duration_p50_ms",
+		"marker_use_select_update_value_duration_p50_ms",
+		"marker_use_select_render_queue_add_duration_p50_ms"
+	) %in% names(read_csv(marker_allspan_input_batch_path, show_col_types = FALSE)))) {
+		use_select_subphase_source <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+			mutate(
+				intervention = factor(
+					intervention,
+					levels = c("normal marker", "marker no-op", "mark next not persistent")
+				)
+			)
+
+		use_select_subphase_accounting <- bind_rows(
+			use_select_subphase_source %>%
+				transmute(
+					intervention,
+					accounting_window = "next input only",
+					`rootSubscribe total` = root_subscribe_duration_p50_ms,
+					`Redux listener wrappers` = redux_listener_duration_p50_ms,
+					`useSelect.onChange` = use_select_on_change_duration_p50_ms,
+					`renderQueue.add` = use_select_render_queue_add_duration_p50_ms,
+					`useSelect.onStoreChange` = use_select_on_store_change_duration_p50_ms,
+					`useSelect.reactListener` = use_select_react_listener_duration_p50_ms,
+					`useSelect.updateValue` = use_select_update_value_duration_p50_ms,
+					`useSelect.mapSelect` = use_select_map_select_duration_p50_ms
+				),
+			use_select_subphase_source %>%
+				transmute(
+					intervention,
+					accounting_window = "timer marker before input",
+					`rootSubscribe total` = marker_root_subscribe_duration_p50_ms,
+					`Redux listener wrappers` = marker_redux_listener_duration_p50_ms,
+					`useSelect.onChange` = marker_use_select_on_change_duration_p50_ms,
+					`renderQueue.add` = marker_use_select_render_queue_add_duration_p50_ms,
+					`useSelect.onStoreChange` = marker_use_select_on_store_change_duration_p50_ms,
+					`useSelect.reactListener` = marker_use_select_react_listener_duration_p50_ms,
+					`useSelect.updateValue` = marker_use_select_update_value_duration_p50_ms,
+					`useSelect.mapSelect` = marker_use_select_map_select_duration_p50_ms
+				),
+			use_select_subphase_source %>%
+				transmute(
+					intervention,
+					accounting_window = "timer + next input",
+					`rootSubscribe total` = cycle_root_subscribe_duration_p50_ms,
+					`Redux listener wrappers` = cycle_redux_listener_duration_p50_ms,
+					`useSelect.onChange` = cycle_use_select_on_change_duration_p50_ms,
+					`renderQueue.add` = cycle_use_select_render_queue_add_duration_p50_ms,
+					`useSelect.onStoreChange` = cycle_use_select_on_store_change_duration_p50_ms,
+					`useSelect.reactListener` = cycle_use_select_react_listener_duration_p50_ms,
+					`useSelect.updateValue` = cycle_use_select_update_value_duration_p50_ms,
+					`useSelect.mapSelect` = cycle_use_select_map_select_duration_p50_ms
+				)
+		) %>%
+			pivot_longer(
+				cols = -c(intervention, accounting_window),
+				names_to = "metric",
+				values_to = "duration_p50_ms"
+			) %>%
+			mutate(
+				accounting_window = factor(
+					accounting_window,
+					levels = c("next input only", "timer marker before input", "timer + next input")
+				),
+				metric = factor(
+					metric,
+					levels = rev(c(
+						"rootSubscribe total",
+						"Redux listener wrappers",
+						"useSelect.onChange",
+						"renderQueue.add",
+						"useSelect.onStoreChange",
+						"useSelect.reactListener",
+						"useSelect.updateValue",
+						"useSelect.mapSelect"
+					))
+				)
+			)
+
+		write_csv(use_select_subphase_accounting, file.path(data_dir, "typing-delay-use-select-subphase-accounting.csv"))
+
+		use_select_subphase_deltas <- use_select_subphase_accounting %>%
+			filter(accounting_window == "next input only") %>%
+			select(intervention, metric, duration_p50_ms) %>%
+			pivot_wider(names_from = intervention, values_from = duration_p50_ms) %>%
+			pivot_longer(
+				cols = c(`marker no-op`, `mark next not persistent`),
+				names_to = "intervention",
+				values_to = "duration_p50_ms"
+			) %>%
+			mutate(
+				delta_vs_normal_ms = duration_p50_ms - `normal marker`,
+				intervention = factor(
+					intervention,
+					levels = c("marker no-op", "mark next not persistent")
+				)
+			)
+
+		write_csv(use_select_subphase_deltas, file.path(data_dir, "typing-delay-use-select-subphase-deltas.csv"))
+
+		save_plot(
+			ggplot(use_select_subphase_deltas, aes(delta_vs_normal_ms, metric, color = intervention, shape = intervention)) +
+				geom_vline(xintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey50") +
+				geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.45)) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`marker no-op` = 17,
+					`mark next not persistent` = 15
+				), drop = FALSE) +
+				labs(
+					title = "The remaining input-side gap is above useSelect inner work",
+					subtitle = "Next-input p50 deltas versus the normal marker run; inner React listener and selector spans do not grow with the slow paths",
+					x = "Delta versus normal marker, p50 (ms)",
+					y = NULL,
+					color = "Timer intervention",
+					shape = "Timer intervention"
+				),
+			"45-use-select-subphase-deltas.png",
+			width = 11,
+			height = 6.5
+		)
+	}
 }
 
 message("Wrote plots to: ", figure_dir)

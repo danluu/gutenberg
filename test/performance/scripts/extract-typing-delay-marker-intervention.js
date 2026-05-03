@@ -333,6 +333,10 @@ function ensureOwnerGroup( groups, base, owner ) {
 			use_select_ids: new Set(),
 			on_change_count: 0,
 			on_change_duration_ms: 0,
+			on_store_change_count: 0,
+			on_store_change_duration_ms: 0,
+			react_listener_count: 0,
+			react_listener_duration_ms: 0,
 			map_select_count: 0,
 			map_select_duration_ms: 0,
 			update_value_count: 0,
@@ -360,6 +364,12 @@ function addUseSelectOwnerSpan( groups, base, metadataById, span ) {
 	if ( span.name === 'data.useSelect.onChange' ) {
 		group.on_change_count++;
 		group.on_change_duration_ms += span.durationMs || 0;
+	} else if ( span.name === 'data.useSelect.onStoreChange' ) {
+		group.on_store_change_count++;
+		group.on_store_change_duration_ms += span.durationMs || 0;
+	} else if ( span.name === 'data.useSelect.reactListener' ) {
+		group.react_listener_count++;
+		group.react_listener_duration_ms += span.durationMs || 0;
 	} else if ( span.name === 'data.useSelect.mapSelect' ) {
 		group.map_select_count++;
 		group.map_select_duration_ms += span.durationMs || 0;
@@ -451,6 +461,22 @@ function summarizeOwnerRows( rows ) {
 				( sum, row ) => sum + row.on_change_duration_ms,
 				0
 			),
+			on_store_change_count_p50: quantile(
+				ownerRows.map( ( row ) => row.on_store_change_count ),
+				0.5
+			),
+			on_store_change_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.on_store_change_duration_ms ),
+				0.5
+			),
+			react_listener_count_p50: quantile(
+				ownerRows.map( ( row ) => row.react_listener_count ),
+				0.5
+			),
+			react_listener_duration_p50_ms: quantile(
+				ownerRows.map( ( row ) => row.react_listener_duration_ms ),
+				0.5
+			),
 			map_select_count_p50: quantile(
 				ownerRows.map( ( row ) => row.map_select_count ),
 				0.5
@@ -533,6 +559,20 @@ function ownerDiffRows( summaryRows, baselineIntervention = 'normal marker' ) {
 				diff_on_change_count_p50:
 					row.on_change_count_p50 -
 					( baseline?.on_change_count_p50 ?? 0 ),
+				intervention_on_store_change_duration_p50_ms:
+					row.on_store_change_duration_p50_ms,
+				baseline_on_store_change_duration_p50_ms:
+					baseline?.on_store_change_duration_p50_ms ?? 0,
+				diff_on_store_change_duration_p50_ms:
+					row.on_store_change_duration_p50_ms -
+					( baseline?.on_store_change_duration_p50_ms ?? 0 ),
+				intervention_react_listener_duration_p50_ms:
+					row.react_listener_duration_p50_ms,
+				baseline_react_listener_duration_p50_ms:
+					baseline?.react_listener_duration_p50_ms ?? 0,
+				diff_react_listener_duration_p50_ms:
+					row.react_listener_duration_p50_ms -
+					( baseline?.react_listener_duration_p50_ms ?? 0 ),
 				intervention_outer_listener_duration_p50_ms:
 					row.outer_listener_duration_p50_ms,
 				baseline_outer_listener_duration_p50_ms:
@@ -1270,6 +1310,22 @@ const allSpanActionRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 						actionSpans,
 						( span ) => span.name === 'data.useSelect.onChange'
 					),
+					use_select_on_store_change_count: countSpans(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.onStoreChange'
+					),
+					use_select_on_store_change_duration_ms: sumSpanDuration(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.onStoreChange'
+					),
+					use_select_react_listener_count: countSpans(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.reactListener'
+					),
+					use_select_react_listener_duration_ms: sumSpanDuration(
+						actionSpans,
+						( span ) => span.name === 'data.useSelect.reactListener'
+					),
 					use_select_map_select_count: countSpans(
 						actionSpans,
 						( span ) => span.name === 'data.useSelect.mapSelect'
@@ -1354,6 +1410,22 @@ const allSpanActionSummaryRows = Array.from(
 		),
 		use_select_on_change_count_p50: quantile(
 			rows.map( ( row ) => row.use_select_on_change_count ),
+			0.5
+		),
+		use_select_on_store_change_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_on_store_change_count ),
+			0.5
+		),
+		use_select_on_store_change_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_on_store_change_duration_ms ),
+			0.5
+		),
+		use_select_react_listener_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_react_listener_count ),
+			0.5
+		),
+		use_select_react_listener_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_react_listener_duration_ms ),
 			0.5
 		),
 		use_select_map_select_count_p50: quantile(
@@ -1508,9 +1580,25 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				markerSpansBeforeInput,
 				( span ) => span.name === 'data.useSelect.onChange'
 			);
+			const markerUseSelectOnStoreChangeDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				( span ) => span.name === 'data.useSelect.onStoreChange'
+			);
+			const markerUseSelectReactListenerDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				( span ) => span.name === 'data.useSelect.reactListener'
+			);
 			const markerUseSelectMapSelectDurationMs = sumSpanDuration(
 				markerSpansBeforeInput,
 				( span ) => span.name === 'data.useSelect.mapSelect'
+			);
+			const markerUseSelectUpdateValueDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				( span ) => span.name === 'data.useSelect.updateValue'
+			);
+			const markerUseSelectRenderQueueAddDurationMs = sumSpanDuration(
+				markerSpansBeforeInput,
+				( span ) => span.name === 'data.useSelect.renderQueueAdd'
 			);
 			const rootSubscribeDurationMs = sumSpanDuration(
 				batchSpans,
@@ -1524,9 +1612,25 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				batchSpans,
 				( span ) => span.name === 'data.useSelect.onChange'
 			);
+			const useSelectOnStoreChangeDurationMs = sumSpanDuration(
+				batchSpans,
+				( span ) => span.name === 'data.useSelect.onStoreChange'
+			);
+			const useSelectReactListenerDurationMs = sumSpanDuration(
+				batchSpans,
+				( span ) => span.name === 'data.useSelect.reactListener'
+			);
 			const useSelectMapSelectDurationMs = sumSpanDuration(
 				batchSpans,
 				( span ) => span.name === 'data.useSelect.mapSelect'
+			);
+			const useSelectUpdateValueDurationMs = sumSpanDuration(
+				batchSpans,
+				( span ) => span.name === 'data.useSelect.updateValue'
+			);
+			const useSelectRenderQueueAddDurationMs = sumSpanDuration(
+				batchSpans,
+				( span ) => span.name === 'data.useSelect.renderQueueAdd'
 			);
 
 			return {
@@ -1551,8 +1655,16 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					markerReduxListenerDurationMs,
 				marker_use_select_on_change_duration_ms:
 					markerUseSelectOnChangeDurationMs,
+				marker_use_select_on_store_change_duration_ms:
+					markerUseSelectOnStoreChangeDurationMs,
+				marker_use_select_react_listener_duration_ms:
+					markerUseSelectReactListenerDurationMs,
 				marker_use_select_map_select_duration_ms:
 					markerUseSelectMapSelectDurationMs,
+				marker_use_select_update_value_duration_ms:
+					markerUseSelectUpdateValueDurationMs,
+				marker_use_select_render_queue_add_duration_ms:
+					markerUseSelectRenderQueueAddDurationMs,
 				marker_update_parent_count: markerUpdateParentSpans.length,
 				marker_update_parent_duration_ms:
 					markerUpdateParentSpans.reduce(
@@ -1656,6 +1768,18 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					( span ) => span.name === 'data.useSelect.onChange'
 				),
 				use_select_on_change_duration_ms: useSelectOnChangeDurationMs,
+				use_select_on_store_change_count: countSpans(
+					batchSpans,
+					( span ) => span.name === 'data.useSelect.onStoreChange'
+				),
+				use_select_on_store_change_duration_ms:
+					useSelectOnStoreChangeDurationMs,
+				use_select_react_listener_count: countSpans(
+					batchSpans,
+					( span ) => span.name === 'data.useSelect.reactListener'
+				),
+				use_select_react_listener_duration_ms:
+					useSelectReactListenerDurationMs,
 				use_select_map_select_count: countSpans(
 					batchSpans,
 					( span ) => span.name === 'data.useSelect.mapSelect'
@@ -1665,6 +1789,14 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 					batchSpans,
 					( span ) => span.name === 'data.useSelect.updateValue'
 				),
+				use_select_update_value_duration_ms:
+					useSelectUpdateValueDurationMs,
+				use_select_render_queue_add_count: countSpans(
+					batchSpans,
+					( span ) => span.name === 'data.useSelect.renderQueueAdd'
+				),
+				use_select_render_queue_add_duration_ms:
+					useSelectRenderQueueAddDurationMs,
 				cycle_latency_ms:
 					( record?.latencyMs || 0 ) + markerBeforeInputDurationMs,
 				cycle_root_subscribe_duration_ms:
@@ -1674,9 +1806,21 @@ const allSpanInputBatchRows = loadedAllDataSpanRuns.flatMap( ( run ) =>
 				cycle_use_select_on_change_duration_ms:
 					useSelectOnChangeDurationMs +
 					markerUseSelectOnChangeDurationMs,
+				cycle_use_select_on_store_change_duration_ms:
+					useSelectOnStoreChangeDurationMs +
+					markerUseSelectOnStoreChangeDurationMs,
+				cycle_use_select_react_listener_duration_ms:
+					useSelectReactListenerDurationMs +
+					markerUseSelectReactListenerDurationMs,
 				cycle_use_select_map_select_duration_ms:
 					useSelectMapSelectDurationMs +
 					markerUseSelectMapSelectDurationMs,
+				cycle_use_select_update_value_duration_ms:
+					useSelectUpdateValueDurationMs +
+					markerUseSelectUpdateValueDurationMs,
+				cycle_use_select_render_queue_add_duration_ms:
+					useSelectRenderQueueAddDurationMs +
+					markerUseSelectRenderQueueAddDurationMs,
 				direct_update_parent_duration_ms: updateParentSpans.reduce(
 					( sum, span ) => sum + ( span.durationMs || 0 ),
 					0
@@ -1758,8 +1902,32 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map( ( row ) => row.marker_use_select_on_change_duration_ms ),
 			0.5
 		),
+		marker_use_select_on_store_change_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.marker_use_select_on_store_change_duration_ms
+			),
+			0.5
+		),
+		marker_use_select_react_listener_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.marker_use_select_react_listener_duration_ms
+			),
+			0.5
+		),
 		marker_use_select_map_select_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.marker_use_select_map_select_duration_ms ),
+			0.5
+		),
+		marker_use_select_update_value_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.marker_use_select_update_value_duration_ms
+			),
+			0.5
+		),
+		marker_use_select_render_queue_add_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.marker_use_select_render_queue_add_duration_ms
+			),
 			0.5
 		),
 		keypress_p50_ms: quantile(
@@ -1919,6 +2087,34 @@ const allSpanInputBatchSummaryRows = Array.from(
 			rows.map( ( row ) => row.cycle_use_select_on_change_duration_ms ),
 			0.5
 		),
+		use_select_on_store_change_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_on_store_change_count ),
+			0.5
+		),
+		use_select_on_store_change_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_on_store_change_duration_ms ),
+			0.5
+		),
+		cycle_use_select_on_store_change_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.cycle_use_select_on_store_change_duration_ms
+			),
+			0.5
+		),
+		use_select_react_listener_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_react_listener_count ),
+			0.5
+		),
+		use_select_react_listener_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_react_listener_duration_ms ),
+			0.5
+		),
+		cycle_use_select_react_listener_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.cycle_use_select_react_listener_duration_ms
+			),
+			0.5
+		),
 		use_select_map_select_count_p50: quantile(
 			rows.map( ( row ) => row.use_select_map_select_count ),
 			0.5
@@ -1929,6 +2125,34 @@ const allSpanInputBatchSummaryRows = Array.from(
 		),
 		cycle_use_select_map_select_duration_p50_ms: quantile(
 			rows.map( ( row ) => row.cycle_use_select_map_select_duration_ms ),
+			0.5
+		),
+		use_select_update_value_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_update_value_count ),
+			0.5
+		),
+		use_select_update_value_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_update_value_duration_ms ),
+			0.5
+		),
+		cycle_use_select_update_value_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.cycle_use_select_update_value_duration_ms
+			),
+			0.5
+		),
+		use_select_render_queue_add_count_p50: quantile(
+			rows.map( ( row ) => row.use_select_render_queue_add_count ),
+			0.5
+		),
+		use_select_render_queue_add_duration_p50_ms: quantile(
+			rows.map( ( row ) => row.use_select_render_queue_add_duration_ms ),
+			0.5
+		),
+		cycle_use_select_render_queue_add_duration_p50_ms: quantile(
+			rows.map(
+				( row ) => row.cycle_use_select_render_queue_add_duration_ms
+			),
 			0.5
 		),
 		direct_update_parent_duration_p50_ms: quantile(
@@ -2607,6 +2831,10 @@ writeCsv(
 		'redux_listener_duration_ms',
 		'use_select_on_change_count',
 		'use_select_on_change_duration_ms',
+		'use_select_on_store_change_count',
+		'use_select_on_store_change_duration_ms',
+		'use_select_react_listener_count',
+		'use_select_react_listener_duration_ms',
 		'use_select_map_select_count',
 		'use_select_map_select_duration_ms',
 		'use_select_render_queue_add_count',
@@ -2637,6 +2865,10 @@ writeCsv(
 		'root_subscribe_duration_p50_ms',
 		'redux_listener_count_p50',
 		'use_select_on_change_count_p50',
+		'use_select_on_store_change_count_p50',
+		'use_select_on_store_change_duration_p50_ms',
+		'use_select_react_listener_count_p50',
+		'use_select_react_listener_duration_p50_ms',
 		'use_select_map_select_count_p50',
 		'registry_batch_total_duration_p50_ms',
 		'use_block_sync_update_parent_count_p50',
@@ -2667,7 +2899,11 @@ writeCsv(
 		'marker_root_subscribe_duration_ms',
 		'marker_redux_listener_duration_ms',
 		'marker_use_select_on_change_duration_ms',
+		'marker_use_select_on_store_change_duration_ms',
+		'marker_use_select_react_listener_duration_ms',
 		'marker_use_select_map_select_duration_ms',
+		'marker_use_select_update_value_duration_ms',
+		'marker_use_select_render_queue_add_duration_ms',
 		'marker_update_parent_count',
 		'marker_update_parent_duration_ms',
 		'marker_did_persistence_change_count',
@@ -2707,14 +2943,25 @@ writeCsv(
 		'emitter_listener_block_editor_duration_ms',
 		'use_select_on_change_count',
 		'use_select_on_change_duration_ms',
+		'use_select_on_store_change_count',
+		'use_select_on_store_change_duration_ms',
+		'use_select_react_listener_count',
+		'use_select_react_listener_duration_ms',
 		'use_select_map_select_count',
 		'use_select_map_select_duration_ms',
 		'use_select_update_value_count',
+		'use_select_update_value_duration_ms',
+		'use_select_render_queue_add_count',
+		'use_select_render_queue_add_duration_ms',
 		'cycle_latency_ms',
 		'cycle_root_subscribe_duration_ms',
 		'cycle_redux_listener_duration_ms',
 		'cycle_use_select_on_change_duration_ms',
+		'cycle_use_select_on_store_change_duration_ms',
+		'cycle_use_select_react_listener_duration_ms',
 		'cycle_use_select_map_select_duration_ms',
+		'cycle_use_select_update_value_duration_ms',
+		'cycle_use_select_render_queue_add_duration_ms',
 		'direct_update_parent_duration_ms',
 		'use_block_sync_registry_batch_duration_ms',
 		'on_input_duration_ms',
@@ -2741,7 +2988,11 @@ writeCsv(
 		'marker_root_subscribe_duration_p50_ms',
 		'marker_redux_listener_duration_p50_ms',
 		'marker_use_select_on_change_duration_p50_ms',
+		'marker_use_select_on_store_change_duration_p50_ms',
+		'marker_use_select_react_listener_duration_p50_ms',
 		'marker_use_select_map_select_duration_p50_ms',
+		'marker_use_select_update_value_duration_p50_ms',
+		'marker_use_select_render_queue_add_duration_p50_ms',
 		'keypress_p50_ms',
 		'latency_p50_ms',
 		'cycle_latency_p50_ms',
@@ -2773,9 +3024,21 @@ writeCsv(
 		'use_select_on_change_count_p50',
 		'use_select_on_change_duration_p50_ms',
 		'cycle_use_select_on_change_duration_p50_ms',
+		'use_select_on_store_change_count_p50',
+		'use_select_on_store_change_duration_p50_ms',
+		'cycle_use_select_on_store_change_duration_p50_ms',
+		'use_select_react_listener_count_p50',
+		'use_select_react_listener_duration_p50_ms',
+		'cycle_use_select_react_listener_duration_p50_ms',
 		'use_select_map_select_count_p50',
 		'use_select_map_select_duration_p50_ms',
 		'cycle_use_select_map_select_duration_p50_ms',
+		'use_select_update_value_count_p50',
+		'use_select_update_value_duration_p50_ms',
+		'cycle_use_select_update_value_duration_p50_ms',
+		'use_select_render_queue_add_count_p50',
+		'use_select_render_queue_add_duration_p50_ms',
+		'cycle_use_select_render_queue_add_duration_p50_ms',
 		'direct_update_parent_duration_p50_ms',
 		'use_block_sync_registry_batch_duration_p50_ms',
 		'on_input_duration_p50_ms',
@@ -2808,6 +3071,10 @@ writeCsv(
 		'use_select_instances',
 		'on_change_count',
 		'on_change_duration_ms',
+		'on_store_change_count',
+		'on_store_change_duration_ms',
+		'react_listener_count',
+		'react_listener_duration_ms',
 		'map_select_count',
 		'map_select_duration_ms',
 		'update_value_count',
@@ -2838,6 +3105,10 @@ writeCsv(
 		'on_change_duration_p50_ms',
 		'on_change_duration_p90_ms',
 		'on_change_duration_sum_ms',
+		'on_store_change_count_p50',
+		'on_store_change_duration_p50_ms',
+		'react_listener_count_p50',
+		'react_listener_duration_p50_ms',
 		'map_select_count_p50',
 		'map_select_duration_p50_ms',
 		'update_value_duration_p50_ms',
@@ -2870,6 +3141,12 @@ writeCsv(
 		'intervention_on_change_count_p50',
 		'baseline_on_change_count_p50',
 		'diff_on_change_count_p50',
+		'intervention_on_store_change_duration_p50_ms',
+		'baseline_on_store_change_duration_p50_ms',
+		'diff_on_store_change_duration_p50_ms',
+		'intervention_react_listener_duration_p50_ms',
+		'baseline_react_listener_duration_p50_ms',
+		'diff_react_listener_duration_p50_ms',
 		'intervention_outer_listener_duration_p50_ms',
 		'baseline_outer_listener_duration_p50_ms',
 		'diff_outer_listener_duration_p50_ms',
@@ -2878,97 +3155,108 @@ writeCsv(
 		'diff_outer_listener_count_p50',
 	]
 );
-writeCsv(
-	path.join(
-		reportDataDir,
-		'typing-delay-redux-listener-owner-coverage.csv'
-	),
-	reduxListenerCoverageRows,
-	[
-		'run_id',
-		'trace_type',
-		'intervention',
-		'json_path',
-		'records',
-		'summaries',
-		'use_select_metadata_rows',
-		'block_editor_redux_listener_spans',
-		'block_editor_redux_listener_spans_with_use_select_id',
-		'block_editor_redux_listener_span_owner_coverage',
-	]
-);
-writeCsv(
-	path.join( reportDataDir, 'typing-delay-redux-listener-owner-samples.csv' ),
-	reduxListenerOwnerRows,
-	[
-		'run_id',
-		'trace_type',
-		'intervention',
-		'window_kind',
-		'delay_ms',
-		'round',
-		'sample_id',
-		'sample_index',
-		'action_name',
-		'owner_script',
-		'owner_frame',
-		'source_path',
-		'source_line',
-		'source_column',
-		'source_name',
-		'source_snippet',
-		'has_use_select_owner',
-		'use_select_instances',
-		'listener_count',
-		'listener_duration_ms',
-	]
-);
-writeCsv(
-	path.join( reportDataDir, 'typing-delay-redux-listener-owner-summary.csv' ),
-	reduxListenerOwnerSummaryRows,
-	[
-		'trace_type',
-		'intervention',
-		'window_kind',
-		'owner_script',
-		'owner_frame',
-		'source_path',
-		'source_line',
-		'source_column',
-		'source_name',
-		'source_snippet',
-		'n_windows',
-		'use_select_instances_max',
-		'listener_count_p50',
-		'listener_duration_p50_ms',
-		'listener_duration_p90_ms',
-		'listener_duration_sum_ms',
-	]
-);
-writeCsv(
-	path.join( reportDataDir, 'typing-delay-redux-listener-owner-diff.csv' ),
-	reduxListenerOwnerDiffRows,
-	[
-		'trace_type',
-		'window_kind',
-		'comparison',
-		'intervention',
-		'baseline_intervention',
-		'owner_script',
-		'owner_frame',
-		'source_path',
-		'source_line',
-		'source_column',
-		'source_name',
-		'source_snippet',
-		'intervention_listener_duration_p50_ms',
-		'baseline_listener_duration_p50_ms',
-		'diff_listener_duration_p50_ms',
-		'intervention_listener_count_p50',
-		'baseline_listener_count_p50',
-		'diff_listener_count_p50',
-	]
-);
+if ( loadedReduxListenerOwnerRuns.length > 0 ) {
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-redux-listener-owner-coverage.csv'
+		),
+		reduxListenerCoverageRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'json_path',
+			'records',
+			'summaries',
+			'use_select_metadata_rows',
+			'block_editor_redux_listener_spans',
+			'block_editor_redux_listener_spans_with_use_select_id',
+			'block_editor_redux_listener_span_owner_coverage',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-redux-listener-owner-samples.csv'
+		),
+		reduxListenerOwnerRows,
+		[
+			'run_id',
+			'trace_type',
+			'intervention',
+			'window_kind',
+			'delay_ms',
+			'round',
+			'sample_id',
+			'sample_index',
+			'action_name',
+			'owner_script',
+			'owner_frame',
+			'source_path',
+			'source_line',
+			'source_column',
+			'source_name',
+			'source_snippet',
+			'has_use_select_owner',
+			'use_select_instances',
+			'listener_count',
+			'listener_duration_ms',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-redux-listener-owner-summary.csv'
+		),
+		reduxListenerOwnerSummaryRows,
+		[
+			'trace_type',
+			'intervention',
+			'window_kind',
+			'owner_script',
+			'owner_frame',
+			'source_path',
+			'source_line',
+			'source_column',
+			'source_name',
+			'source_snippet',
+			'n_windows',
+			'use_select_instances_max',
+			'listener_count_p50',
+			'listener_duration_p50_ms',
+			'listener_duration_p90_ms',
+			'listener_duration_sum_ms',
+		]
+	);
+	writeCsv(
+		path.join(
+			reportDataDir,
+			'typing-delay-redux-listener-owner-diff.csv'
+		),
+		reduxListenerOwnerDiffRows,
+		[
+			'trace_type',
+			'window_kind',
+			'comparison',
+			'intervention',
+			'baseline_intervention',
+			'owner_script',
+			'owner_frame',
+			'source_path',
+			'source_line',
+			'source_column',
+			'source_name',
+			'source_snippet',
+			'intervention_listener_duration_p50_ms',
+			'baseline_listener_duration_p50_ms',
+			'diff_listener_duration_p50_ms',
+			'intervention_listener_count_p50',
+			'baseline_listener_count_p50',
+			'diff_listener_count_p50',
+		]
+	);
+}
 writeCsv(
 	path.join(
 		reportDataDir,

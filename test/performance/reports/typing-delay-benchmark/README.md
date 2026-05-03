@@ -72,6 +72,13 @@ The short version:
     source-mapped `useSelect` owner. The marker and next-input deltas are still
     distributed across high-fanout block-list / pattern override / inner-block
     subscribers; no source site moves by even `1ms` p50.
+-   Extending the all-data-span extraction to include
+    `useSelect.onStoreChange`, `useSelect.reactListener`, `updateValue`, and
+    `renderQueue.add` disconfirms a React-listener, selector-recompute, or
+    render-queue explanation for the residual input-side gap. The material
+    movement is in `rootSubscribe` and Redux listener-wrapper accounting; the
+    nested `useSelect` child spans are near zero or lower in the slow
+    interventions.
 -   A marker-plus-input cycle check in the trace-heavy run confirms the same
     accounting story: the normal marker has a lower next-input slice than no-op,
     but a higher marker-plus-input cycle cost.
@@ -1382,7 +1389,53 @@ notification layer, while selector recomputation itself is a smaller and less
 consistent contributor. That fits the owner-family results above: the problem is
 not one slow selector body, and not a different number of hook instances, but the
 cost of pushing a `core/block-editor` state transition through thousands of
-subscribers on a path where more of that listener work becomes nonzero.
+subscribers on a path where more time is accounted at the wrapper/notification
+level.
+
+I then extended the compact extraction for the same raw all-data-span traces to
+keep the nested `useSelect.onStoreChange`, `useSelect.reactListener`,
+`useSelect.updateValue`, and `useSelect.renderQueueAdd` spans. That tests four
+more explanations for the remaining input-side gap: React subscriber wakeup,
+selector cache recomputation, selector body execution, and async render-queue
+scheduling.
+
+![useSelect subphase deltas](figures/45-use-select-subphase-deltas.png)
+
+Next-input p50 deltas versus the normal-marker run:
+
+| Metric                       | marker no-op | mark next |
+| ---------------------------- | -----------: | --------: |
+| block-editor `rootSubscribe` |      `+2.9ms` |   `+2.0ms` |
+| Redux listener wrappers      |      `+2.7ms` |   `+1.6ms` |
+| `useSelect.onChange`         |      `+1.0ms` |   `+0.5ms` |
+| `useSelect.renderQueueAdd`   |      `+0.2ms` |   `-0.1ms` |
+| `useSelect.onStoreChange`    |      `-0.1ms` |   `-0.7ms` |
+| `useSelect.reactListener`    |      `+0.1ms` |   `-0.4ms` |
+| `useSelect.updateValue`      |      `+0.1ms` |   `-0.5ms` |
+| `useSelect.mapSelect`        |      `+0.2ms` |   `-0.5ms` |
+
+The callback counts are also identical in this run: `4,544`
+`useSelect.onChange` callbacks, `3,828` render-queue adds, and `716` each of
+`onStoreChange`, `reactListener`, `updateValue`, and `mapSelect` for all three
+interventions.
+
+This disconfirms the remaining tempting single-layer explanations. The no-op
+and mark-next paths are not slower because they call more hook instances. They
+are not slower because React's subscribed listener callback is materially more
+expensive. They are not slower because `updateValue()` or `mapSelect()` does
+more selector work. They are not slower because `renderQueue.add()` gets
+materially more expensive. In the mark-next run, all of the nested child phases
+below `useSelect.onChange` are lower than normal even though `rootSubscribe` and
+Redux listener-wrapper time are higher.
+
+What remains is narrower and less satisfying: the extra next-input time is
+visible in the `rootSubscribe` / Redux listener-wrapper layer and only weakly in
+the parent `useSelect.onChange` span. These traces do not split that remainder
+into callback invocation overhead, wrapper bookkeeping, tracing overhead, small
+non-`useSelect` subscribers, and gaps between nested spans. The low-level owner
+coverage above says the listener wrappers are overwhelmingly `useSelect`-owned,
+but the nested-span split says the extra time is not in React listener execution
+or selector recomputation.
 
 Finally, I paired the marker task before each retained input with that same
 input in the trace-heavy run. This tests the most important accounting theory
@@ -1415,13 +1468,15 @@ marker's next-input slice is lower than no-op by about `5.6ms`, but the
 marker-plus-input cycle is higher by about `7.9ms` in this trace-heavy run.
 
 One piece remains open, but it is now narrower. The traces identify the marker
-timer fanout and the following input's block-editor fanout, and the owner
-summary disconfirms a single-owner explanation for the residual input-side
-delta. What remains is lower-level fanout overhead across thousands of
-subscriber callbacks. The supported statement is that timer ordering and marker
-dispatch explain the false event-only low band, and the visible work is
-data/subscriber fanout; attributing the last few milliseconds to a single React
-commit, selector, or component is not supported by the current traces.
+timer fanout and the following input's block-editor fanout, the owner summary
+disconfirms a single-owner explanation, and the nested-span split disconfirms
+React-listener, selector-recompute, and render-queue explanations for the
+residual input-side delta. What remains is lower-level fanout overhead across
+thousands of subscriber callbacks. The supported statement is that timer
+ordering and marker dispatch explain the false event-only low band, and the
+visible work is data/subscriber fanout; attributing the last few milliseconds to
+a single React commit, selector, render queue, or component is not supported by
+the current traces.
 
 Reasoning audit:
 
