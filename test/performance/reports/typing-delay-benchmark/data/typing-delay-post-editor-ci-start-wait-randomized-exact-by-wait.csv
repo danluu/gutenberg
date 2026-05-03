@@ -1,0 +1,4 @@
+typing_start_wait_ms,typing_start_wait_phase,run_n,run_p50_median_ms,run_p50_min_ms,run_p50_max_ms,run_p50_mean_ms,run_p50_sd_ms,run_mean_median_ms,run_mean_mean_ms,run_cv_median,suite_elapsed_median_s,suite_elapsed_min_s,suite_elapsed_max_s
+0,before-trace,4,13.1883,11.338,16.0945,13.4522,2.1511,13.761,14.0512,0.207975,17.3,17.1,17.3
+1000,before-trace,4,12.627,11.6105,14.0745,12.7348,1.1147,13.8911,13.6518,0.276137,18.3,18,18.3
+60000,before-trace,4,13.0687,11.863,16.383,13.5959,1.9804,14.1068,14.2682,0.258984,78,78,78

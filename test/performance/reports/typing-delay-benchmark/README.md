@@ -72,7 +72,13 @@ The short version:
     before-trace runs landed at `11.60ms`, `11.61ms`, `10.82ms`, and `11.57ms`
     p50. Starting the trace before a `60s` wait also stayed in-band at
     `10.21ms`, so the EventDispatch-derived Typing metric is not sensitive to
-    whether the trace starts before or after the idle interval.
+    whether the trace starts before or after the idle interval. A randomized
+    exact-spec follow-up with four runs each at `0ms`, `1000ms`, and `60000ms`
+    found the same thing: condition medians of per-run p50 were `13.19ms`,
+    `12.63ms`, and `13.07ms`, while median suite elapsed time was `17.3s`,
+    `18.3s`, and `78.0s`. The local evidence says a `60s` pre-typing wait costs
+    about a minute per Typing invocation and does not buy a more stable retained
+    Typing result.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -474,6 +480,9 @@ The R script derives:
 -   `data/typing-delay-post-editor-ci-start-wait-exact-*.csv`: actual
     `post-editor.spec.js` Typing setup/run tests with a default-off
     env-controlled start wait before or after `metrics.startTracing()`.
+-   `data/typing-delay-post-editor-ci-start-wait-randomized-exact-*.csv`: a
+    randomized exact `post-editor.spec.js` Typing follow-up with four
+    before-trace runs each at `0ms`, `1000ms`, and `60000ms`.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -924,6 +933,36 @@ penalty from starting typing later, and no penalty from starting tracing before
 the idle interval. The absolute values are lower than the custom
 CI-comparable-harness values because the exact spec does less benchmark-side
 instrumentation, but the conclusion is the same.
+
+To reduce the chance that the exact-spec result was just the small blocked
+sample, I then ran a randomized exact-spec follow-up: four before-trace runs at
+`0ms`, four at `1000ms`, and four at `60000ms`, in mixed order. Each run was
+the actual `Post Editor Performance > Typing` setup/run pair with the same
+retained-results array and reporter summary.
+
+![Randomized exact post-editor CI start-wait check](figures/84-post-editor-ci-start-wait-randomized-exact.png)
+
+![Randomized exact post-editor CI start-wait effect size](figures/85-post-editor-ci-start-wait-randomized-effect.png)
+
+Randomized exact-spec rows, summarized by wait:
+
+| Wait before trace | Runs | Median per-run p50 | Per-run p50 range | Per-run p50 sd | Median suite elapsed |
+| ----------------: | ---: | -----------------: | ----------------: | -------------: | -------------------: |
+|             `0ms` |  `4` |          `13.19ms` |  `11.34-16.09ms` |       `2.15ms` |              `17.3s` |
+|          `1000ms` |  `4` |          `12.63ms` |  `11.61-14.07ms` |       `1.11ms` |              `18.3s` |
+|         `60000ms` |  `4` |          `13.07ms` |  `11.86-16.38ms` |       `1.98ms` |              `78.0s` |
+
+The grouped exact run does not show a latency or stability win from delaying
+the start. A linear model of per-run p50 against `log10(wait + 100)` gives a
+slope of `0.10ms` per log10 unit with `R^2 = 0.005` and `p = 0.83`; Spearman
+`rho = 0.06`, and Kruskal-Wallis over the three wait groups gives `p = 0.78`.
+With only four runs per condition these are not proof of zero effect, but they
+bound the effect against the observed local volatility: the condition medians
+differ by at most `0.56ms`, while individual exact-spec run p50s range from
+`11.34ms` to `16.38ms`. The only large effect is wall time. The `60s` wait
+changes the median exact Typing invocation from about `17-18s` to `78s`, so
+removing it would save roughly one minute per invocation in this setup without a
+detectable hit to the retained Typing metric.
 
 One naming trap: in `post-editor.spec.js`, `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before the Typing benchmark
@@ -4196,6 +4235,9 @@ The key runs used in this report were:
     setup/run tests with `POST_EDITOR_TYPING_START_WAIT_MS` set to `0ms` or
     `60s`, in blocked `60s`, `0ms`, `60s`, `0ms` order, plus one
     `POST_EDITOR_TYPING_START_WAIT_PHASE=after-trace` `60s` run.
+-   `post_editor_ci_start_wait_randomized_exact_*`: actual
+    `post-editor.spec.js` Typing setup/run tests in randomized before-trace
+    order, with four runs each at `0ms`, `1000ms`, and `60000ms`.
 -   `ci_typing_0_1400_dense`: CI-comparable post-editor Typing dense sweep from
     `0ms` to `1400ms` in `10ms` steps, one fresh saved/reopened large-post
     draft per delay, 10 retained samples and 1 throwaway sample per delay.

@@ -1728,6 +1728,95 @@ if (file.exists(post_editor_exact_summary_path) && file.exists(post_editor_exact
 	)
 }
 
+post_editor_randomized_summary_path <- file.path(data_dir, "typing-delay-post-editor-ci-start-wait-randomized-exact-summary.csv")
+post_editor_randomized_samples_path <- file.path(data_dir, "typing-delay-post-editor-ci-start-wait-randomized-exact-samples.csv")
+if (file.exists(post_editor_randomized_summary_path) && file.exists(post_editor_randomized_samples_path)) {
+	post_editor_randomized_summary <- read_csv(post_editor_randomized_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(if_else(typing_start_wait_ms >= 1000, paste0(typing_start_wait_ms / 1000, "s"), paste0(typing_start_wait_ms, "ms")), " before trace"),
+				levels = c("0ms before trace", "1s before trace", "60s before trace")
+			),
+			run_order_label = factor(
+				paste0("r", str_pad(run_order, 2, pad = "0"), "\n", str_remove(as.character(wait_label), " before trace")),
+				levels = paste0("r", str_pad(run_order, 2, pad = "0"), "\n", str_remove(as.character(wait_label), " before trace"))
+			)
+		)
+	post_editor_randomized_samples <- read_csv(post_editor_randomized_samples_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(if_else(typing_start_wait_ms >= 1000, paste0(typing_start_wait_ms / 1000, "s"), paste0(typing_start_wait_ms, "ms")), " before trace"),
+				levels = levels(post_editor_randomized_summary$wait_label)
+			),
+			run_order_label = factor(
+				paste0("r", str_pad(run_order, 2, pad = "0"), "\n", str_remove(as.character(wait_label), " before trace")),
+				levels = levels(post_editor_randomized_summary$run_order_label)
+			)
+		)
+
+	set.seed(51383)
+	save_plot(
+		ggplot() +
+			geom_jitter(
+				data = post_editor_randomized_samples,
+				aes(run_order_label, latency_ms, color = wait_label),
+				width = 0.08,
+				height = 0,
+				alpha = 0.35,
+				size = 1.65
+			) +
+			geom_errorbar(
+				data = post_editor_randomized_summary,
+				aes(run_order_label, ymin = latency_p10_ms, ymax = latency_p90_ms, color = wait_label),
+				width = 0.16,
+				linewidth = 0.7
+			) +
+			geom_point(
+				data = post_editor_randomized_summary,
+				aes(run_order_label, latency_p50_ms, color = wait_label, shape = wait_label),
+				size = 3
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Randomized exact post-editor Typing runs still show no start-wait penalty",
+				subtitle = "Actual post-editor.spec.js Typing setup/run tests; points are retained samples, bars are p10-p90",
+				x = "Randomized run order and post-setup wait",
+				y = "Retained typing latency (ms)",
+				color = "Start wait",
+				shape = "Start wait"
+			),
+		"84-post-editor-ci-start-wait-randomized-exact.png",
+		width = 10,
+		height = 5.6
+	)
+
+	set.seed(51384)
+	save_plot(
+		ggplot(post_editor_randomized_summary, aes(wait_label, latency_p50_ms, color = wait_label)) +
+			geom_jitter(aes(shape = wait_label), width = 0.09, height = 0, size = 3.1, alpha = 0.85) +
+			stat_summary(
+				fun = median,
+				geom = "crossbar",
+				width = 0.45,
+				linewidth = 0.55,
+				color = brewer_color("Greys", 8, type = "seq", n = 9),
+				fill = NA
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "The randomized exact effect size is below run-to-run volatility",
+				subtitle = "Each point is one exact post-editor.spec.js Typing invocation; crossbars are condition medians",
+				x = "Post-setup wait before tracing and typing",
+				y = "Per-run retained p50 (ms)",
+				color = "Start wait",
+				shape = "Start wait"
+			),
+		"85-post-editor-ci-start-wait-randomized-effect.png",
+		width = 7.6,
+		height = 5.2
+	)
+}
+
 ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")
 if (file.exists(ci_dense_summary_path)) {
 	ci_dense_summary <- read_csv(ci_dense_summary_path, show_col_types = FALSE)
