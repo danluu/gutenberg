@@ -1,0 +1,12 @@
+run_id,setup_style,delay_mode,settle_after_editor_setup_ms,setup_rounds,pre_setup_idle_p10_ms,pre_setup_idle_p50_ms,pre_setup_idle_p90_ms,pre_setup_idle_mean_ms,active_setup_p10_ms,active_setup_p50_ms,active_setup_p90_ms,active_setup_mean_ms,post_setup_idle_p10_ms,post_setup_idle_p50_ms,post_setup_idle_p90_ms,post_setup_idle_mean_ms,setup_stop_to_run_start_p10_ms,setup_stop_to_run_start_p50_ms,setup_stop_to_run_start_p90_ms,setup_stop_to_run_start_mean_ms,run_duration_p10_ms,run_duration_p50_ms,run_duration_p90_ms,run_duration_mean_ms
+ci_typing_start_wait_curve_0,ci-post-editor-typing,keyboard,0,8,0,0,0,0,3544.6,3703.5,3810.1,3682.75,0,0,0,0,0,0,0,0,11798.4,11853.5,11877.5,11846.75
+ci_typing_start_wait_curve_50,ci-post-editor-typing,keyboard,50,8,0,0,0,0,3399.2,3637.5,3846.3,3626.63,61.7,62.5,65.2,63.13,0,0,1,0.25,11848.7,11910,11998.5,11912.63
+ci_typing_start_wait_curve_100,ci-post-editor-typing,keyboard,100,8,0,0,0,0,3387.1,3638,3770.4,3600.75,118.1,124.5,134.5,125.38,0,0,0,0,11820.5,11856,11896.5,11861
+ci_typing_start_wait_curve_250,ci-post-editor-typing,keyboard,250,8,0,0,0,0,3646,3916,4228.3,3907.38,268.7,270,270.3,269.63,0,0,0,0,11822.5,11872.5,11918.8,11872.13
+ci_typing_start_wait_curve_500,ci-post-editor-typing,keyboard,500,8,0,0,0,0,3673.9,3911.5,4219.3,3926.25,524.4,527.5,529.3,527.13,0,0,0,0,11783.2,11890,11938.9,11873.88
+ci_typing_start_wait_curve_1000,ci-post-editor-typing,keyboard,1000,8,0,0,0,0,3523.3,3635.5,3834.1,3658.38,1025.7,1026.5,1029,1027.13,0,0,0.3,0.13,11879.8,11904,11985.6,11923.5
+ci_typing_start_wait_curve_2000,ci-post-editor-typing,keyboard,2000,8,0,0,0,0,3440.2,3650,3860.9,3650.5,2023.7,2026,2028,2025.88,0,0,0,0,11880.8,11944.5,11969.6,11934
+ci_typing_start_wait_curve_5000,ci-post-editor-typing,keyboard,5000,8,0,0,0,0,3477.7,3515,4197.8,3735.88,5023.9,5026.5,5028,5026,0,0,0,0,11950.8,11998.5,12174.1,12039
+ci_typing_start_wait_curve_10000,ci-post-editor-typing,keyboard,10000,8,0,0,0,0,3404.4,3445,3650.3,3511.63,10024.1,10026.5,10031.3,10027.5,0,0,0.3,0.13,11855.7,11968.5,11994.5,11941.75
+ci_typing_start_wait_curve_30000,ci-post-editor-typing,keyboard,30000,8,0,0,0,0,3396.5,3703,3916.5,3666.88,30029.7,30031,30042.7,30035.13,0,0,0,0,11934.7,11977,12030.7,11976.25
+ci_typing_start_wait_curve_60000,ci-post-editor-typing,keyboard,60000,8,0,0,0,0,3360.7,3707,3841.4,3654,60029,60030.5,60032.3,60030.5,0,0,0.3,0.13,11922.2,11952.5,12008.8,11960.88

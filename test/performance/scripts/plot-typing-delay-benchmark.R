@@ -1411,6 +1411,153 @@ if (
 	)
 }
 
+ci_start_wait_curve_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-summary.csv")
+ci_start_wait_curve_sample_index_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-sample-index-summary.csv")
+ci_start_wait_curve_phases_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-phases.csv")
+if (
+	file.exists(ci_start_wait_curve_summary_path) &&
+	file.exists(ci_start_wait_curve_sample_index_path) &&
+	file.exists(ci_start_wait_curve_phases_path)
+) {
+	ci_start_wait_breaks <- c(0, 50, 100, 250, 500, 1000, 2000, 5000, 10000, 30000, 60000)
+	ci_start_wait_labels <- c("0", "50ms", "100ms", "250ms", "500ms", "1s", "2s", "5s", "10s", "30s", "60s")
+
+	ci_start_wait_curve <- read_csv(ci_start_wait_curve_summary_path, show_col_types = FALSE)
+	ci_start_wait_curve_long <- bind_rows(
+		ci_start_wait_curve %>%
+			transmute(
+				settle_after_editor_setup_ms,
+				metric = "retained CI metric",
+				p10_ms = retained_latency_p10_ms,
+				p50_ms = retained_latency_p50_ms,
+				p90_ms = retained_latency_p90_ms
+			),
+		ci_start_wait_curve %>%
+			transmute(
+				settle_after_editor_setup_ms,
+				metric = "discarded first character",
+				p10_ms = throwaway_latency_p10_ms,
+				p50_ms = throwaway_latency_p50_ms,
+				p90_ms = throwaway_latency_p90_ms
+			)
+	) %>%
+		mutate(
+			metric = factor(metric, levels = c("retained CI metric", "discarded first character"))
+		)
+
+	save_plot(
+		ggplot(ci_start_wait_curve_long, aes(settle_after_editor_setup_ms, p50_ms, color = metric, shape = metric)) +
+			geom_errorbar(aes(ymin = p10_ms, ymax = p90_ms), width = 0, alpha = 0.78) +
+			geom_point(size = 3.0) +
+			facet_wrap(~metric, ncol = 1, scales = "free_y") +
+			scale_x_continuous(
+				trans = pseudo_log_trans(sigma = 100),
+				breaks = ci_start_wait_breaks,
+				labels = ci_start_wait_labels
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "CI-comparable retained typing is flat across start waits",
+				subtitle = "Saved/reopened large-post draft; target.type() with 1000ms delay; points are p50s and bars are p10-p90",
+				x = "Extra wait after editor setup before tracing and target.type()",
+				y = "Latency (ms)",
+				color = "Sample set",
+				shape = "Sample set"
+			) +
+			theme(axis.text.x = element_text(angle = 35, hjust = 1)),
+		"77-ci-comparable-start-wait-curve.png",
+		width = 10.5,
+		height = 7
+	)
+
+	ci_start_wait_sample_index <- read_csv(ci_start_wait_curve_sample_index_path, show_col_types = FALSE) %>%
+		filter(settle_after_editor_setup_ms %in% c(0, 1000, 10000, 60000)) %>%
+		mutate(
+			wait_label = factor(
+				case_when(
+					settle_after_editor_setup_ms == 0 ~ "0",
+					settle_after_editor_setup_ms == 1000 ~ "1s",
+					settle_after_editor_setup_ms == 10000 ~ "10s",
+					settle_after_editor_setup_ms == 60000 ~ "60s",
+					TRUE ~ paste0(settle_after_editor_setup_ms, "ms")
+				),
+				levels = c("0", "1s", "10s", "60s")
+			)
+		)
+
+	save_plot(
+		ggplot(ci_start_wait_sample_index, aes(sample_index, latency_p50_ms, color = wait_label, shape = wait_label)) +
+			geom_vline(xintercept = 0.5, linetype = "dashed", color = brewer_color("Greys", 6, type = "seq", n = 9)) +
+			geom_line(linewidth = 0.65, alpha = 0.85) +
+			geom_point(size = 2.7) +
+			scale_x_continuous(
+				breaks = 0:10,
+				labels = c("0\nthrowaway", as.character(1:10))
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Only the beginning of the CI typing sequence is start-sensitive",
+				subtitle = "Per-character p50s from 8 fresh CI-comparable drafts per wait; vertical line separates discarded and retained samples",
+				x = "Character index within target.type()",
+				y = "Latency p50 (ms)",
+				color = "Start wait",
+				shape = "Start wait"
+			),
+		"78-ci-comparable-start-wait-by-character.png",
+		width = 10.5,
+		height = 5.5
+	)
+
+	ci_start_wait_phases <- read_csv(ci_start_wait_curve_phases_path, show_col_types = FALSE) %>%
+		select(
+			settle_after_editor_setup_ms,
+			active_setup_p50_ms,
+			post_setup_idle_p50_ms,
+			setup_stop_to_run_start_p50_ms
+		) %>%
+		pivot_longer(
+			cols = c(active_setup_p50_ms, post_setup_idle_p50_ms, setup_stop_to_run_start_p50_ms),
+			names_to = "phase",
+			values_to = "duration_ms"
+		) %>%
+		mutate(
+			wait_label = factor(
+				case_when(
+					settle_after_editor_setup_ms == 0 ~ "0",
+					settle_after_editor_setup_ms < 1000 ~ paste0(settle_after_editor_setup_ms, "ms"),
+					TRUE ~ paste0(settle_after_editor_setup_ms / 1000, "s")
+				),
+				levels = ci_start_wait_labels
+			),
+			phase = factor(
+				recode(
+					phase,
+					active_setup_p50_ms = "active CI-like setup",
+					post_setup_idle_p50_ms = "post-setup idle",
+					setup_stop_to_run_start_p50_ms = "setup-to-run gap"
+				),
+				levels = c("active CI-like setup", "post-setup idle", "setup-to-run gap")
+			),
+			duration_s = duration_ms / 1000
+		)
+
+	save_plot(
+		ggplot(ci_start_wait_phases, aes(wait_label, duration_s, fill = phase)) +
+			geom_col(width = 0.72) +
+			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "Starting later costs wall time, not measured typing time",
+				subtitle = "Stacked p50 setup phases before the traced target.type() call",
+				x = "Configured post-setup wait",
+				y = "p50 duration before measured typing (s)",
+				fill = "Phase"
+			),
+		"79-ci-comparable-start-wait-phases.png",
+		width = 10.5,
+		height = 5.5
+	)
+}
+
 ci_dense_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-0-1400-dense-summary.csv")
 if (file.exists(ci_dense_summary_path)) {
 	ci_dense_summary <- read_csv(ci_dense_summary_path, show_col_types = FALSE)

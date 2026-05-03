@@ -57,6 +57,13 @@ The short version:
     `setupWorkStarted`, `setupReady`, and `setupStopped` separately; it confirms
     that a `1000ms` wait before setup is not equivalent to a `1000ms` wait after
     the editor is ready.
+-   In the CI-comparable saved/reopened-post Typing setup, extending the
+    post-setup wait from `0ms` to `60s` still does not move the retained p50:
+    all 11 wait settings land between `16.0ms` and `17.5ms`. Starting later
+    mostly costs wall time before tracing; it does not buy a more stable retained
+    Typing metric. The beginning of the sequence is the sensitive part: the
+    discarded first character and the first retained character are slow, while
+    retained characters 2-10 are already in the ordinary low band.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -447,6 +454,11 @@ The R script derives:
     post-editor typing anchor using the same large-post saved-draft setup,
     `target.type()` entry point, `1000ms` key delay, 10 retained samples, and 1
     throwaway sample as the Performance Tests `post-editor` Typing metric.
+-   `data/typing-delay-ci-comparable-start-wait-curve-*.csv`: a deeper
+    CI-comparable start-wait curve from `0ms` through `60s`, with the same
+    saved/reopened large-post draft setup, `target.type()` entry point, `1000ms`
+    key delay, 8 fresh drafts per wait setting, 10 retained samples, and 1
+    throwaway sample.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -801,6 +813,54 @@ same low-latency band with or without an extra fixed post-setup wait. The first
 character is still slower, but CI intentionally discards it. That means the
 default CI Typing metric is much less sensitive to the start-wait issue than a
 first-character benchmark would be.
+
+For a deeper CI-comparable check, I reran the same setup as a start-wait curve:
+`0ms`, `50ms`, `100ms`, `250ms`, `500ms`, `1s`, `2s`, `5s`, `10s`, `30s`, and
+`60s` after editor setup; 8 fresh saved/reopened drafts per wait; 10 retained
+samples plus 1 throwaway sample per draft; `target.type()` with the same
+`1000ms` key delay; 0 missing key groups. This keeps the CI Typing setup fixed
+and varies only when tracing and typing begin after the editor is ready. The
+absolute latency level in this later run is higher than the earlier three-point
+anchor, so the useful comparison is the within-run wait curve, not the
+cross-run p50 difference.
+
+![CI-comparable start-wait curve](figures/77-ci-comparable-start-wait-curve.png)
+
+![CI-comparable start-wait by character](figures/78-ci-comparable-start-wait-by-character.png)
+
+![CI-comparable start-wait phases](figures/79-ci-comparable-start-wait-phases.png)
+
+Selected deeper CI-comparable start-wait rows:
+
+| Extra wait after setup | Retained p50 | Retained p10-p90 | Retained mean | Discarded first-char p50 | First retained-char p50 | Post-setup idle p50 |
+| ---------------------- | -----------: | ---------------: | ------------: | -----------------------: | ----------------------: | ------------------: |
+| `0ms` | `16.5ms` | `15.0-23.0ms` | `18.1ms` | `27.3ms` | `26.5ms` | `0ms` |
+| `1s` | `16.3ms` | `15.0-22.6ms` | `17.6ms` | `25.2ms` | `25.2ms` | `1026ms` |
+| `10s` | `16.3ms` | `14.7-19.3ms` | `17.2ms` | `27.8ms` | `25.1ms` | `10026ms` |
+| `60s` | `16.0ms` | `14.9-22.6ms` | `17.2ms` | `28.9ms` | `25.1ms` | `60030ms` |
+
+This disconfirms the theory that starting the CI Typing benchmark later makes
+the retained typing metric meaningfully slower or more stable. Across all 11
+wait settings, retained p50 stays in a narrow `16.0-17.5ms` band, and the
+p10-p90 intervals overlap. The cost of starting later is therefore mostly
+literal wall-clock time before tracing starts. In this run, adding a `60s`
+post-setup wait added about `60s` per fresh draft before typing, but did not
+move the retained p50.
+
+The per-character plot is the important caveat. The beginning of the sequence is
+not the same as the retained aggregate: the discarded first character is slow,
+and the first retained character is also slow at about `25ms` across the
+selected waits. By character 2, the sequence has fallen into the ordinary
+`~16-17ms` low band. So CI's current one-character throwaway removes the coldest
+first input, but it still retains one early slow sample. That early retained
+sample affects means and p90s more than p50s. Changing the start wait does not
+remove that shape; it just moves idle time before the sequence.
+
+One naming trap: in `post-editor.spec.js`, `BROWSER_IDLE_WAIT = 1000` is the
+delay passed to `target.type()`, not a separate wait before the Typing benchmark
+starts. Reducing that value changes the key-delay benchmark itself and crosses
+the one-second timer behavior analyzed above. It is different from reducing an
+extra post-setup start wait.
 
 I then made CI-comparable copies of the main dense delay and volatility plots.
 This run used `BENCHMARK_SETUP_STYLE=ci-post-editor-typing`,
@@ -4055,6 +4115,11 @@ The key runs used in this report were:
     saved/reopened large-post draft, autosave disabled, `target.type()` with a
     `1000ms` delay, 10 retained samples and 1 throwaway per round, 4 fresh
     rounds per wait setting.
+-   `ci_typing_start_wait_curve_*`: deeper CI-comparable post-editor Typing
+    start-wait curve at `0ms`, `50ms`, `100ms`, `250ms`, `500ms`, `1s`, `2s`,
+    `5s`, `10s`, `30s`, and `60s` after editor setup, with 8 fresh
+    saved/reopened drafts per wait setting, 10 retained samples and 1 throwaway
+    sample per draft.
 -   `ci_typing_0_1400_dense`: CI-comparable post-editor Typing dense sweep from
     `0ms` to `1400ms` in `10ms` steps, one fresh saved/reopened large-post
     draft per delay, 10 retained samples and 1 throwaway sample per delay.
