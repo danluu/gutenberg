@@ -693,7 +693,7 @@ cliff_latency_labels <- by_delay %>%
 	filter(run_id == "cliff_actions") %>%
 	mutate(
 		delay_label = factor(paste0(delay_ms, "ms"), levels = paste0(cliff_delay_levels, "ms")),
-		label = paste0("p50 ", number(median_ms, accuracy = 0.1), "ms")
+		label = paste0("event p50 ", number(median_ms, accuracy = 0.1), "ms")
 	)
 
 save_plot(

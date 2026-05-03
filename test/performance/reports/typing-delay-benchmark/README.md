@@ -312,12 +312,30 @@ subscriber work for the previous character has already happened before the next
 keypress starts being measured.
 
 So the drop is not evidence that the persistence timer makes Gutenberg
-intrinsically faster. It is a phase/measurement effect: the timer moves some of
-the expensive block-editor synchronization out of the next keypress dispatch
-slice. The later source-level traces are consistent with this: in the large-post
-key-held run, RichText `registry.batch()` median time drops from about `10.5ms`
-at `990ms` to `6.5ms` at `1000ms`, and the input-matched data batch drops from
-about `23.4ms` to `14.2ms`.
+intrinsically faster. It is an accounting effect in an event-only metric. The
+benchmark's latency value is the sum of Chromium `EventDispatch` durations for
+the key's `keydown`, `keypress`, and `keyup` events. A timer callback is a
+different browser task, so timer work is not included in that key-event number
+even if the timer was scheduled by the previous character.
+
+That means the trace timestamps are not wrong. The measured key event really is
+shorter at `1000ms`; the problem is interpreting that event-only slice as the
+whole cost of the character cycle. In the focused action trace, the `1000ms`
+row has an event-only p50 of `10.374ms`, but the persistence action that fired
+inside the preceding key hold had median duration around `15.8ms`. Adding those
+two pieces gives about `26.2ms`, which is essentially the same scale as the
+event-only p50s at `970ms` (`26.252ms`) and `990ms` (`25.829ms`).
+
+The timer callback does real work because it dispatches
+`MARK_LAST_CHANGE_AS_PERSISTENT`. That wakes the block-editor data store and
+subscribers. In particular, `useBlockSync()` observes the persistent-state
+transition and can commit the previous block change through the persistent
+`onChange` path. Since that happens before the next `keydown`, it is outside the
+next key's `EventDispatch` slices. The later source-level traces are consistent
+with this state split: in the large-post key-held run, RichText
+`registry.batch()` median time drops from about `10.5ms` at `990ms` to `6.5ms`
+at `1000ms`, and the input-matched data batch drops from about `23.4ms` to
+`14.2ms`.
 
 The action trace shows the boundary directly. This version of the graph is a
 per-delay timing diagram, not an absolute wall-clock timeline:
@@ -359,11 +377,11 @@ keypress dispatch.
 At `1000ms` and `1010ms`, the circle appears before the diamond. That means the
 timer callback ran while Playwright was still holding the previous synthetic key,
 before the next measured keypress began. The previous input has already been
-marked persistent, and some of the `core/block-editor` / `@wordpress/data`
-subscriber work associated with that transition has happened outside the next
-keypress dispatch slice. The next triangle is orange: the following text update
-starts from the post-timer persistent state. That is why the measured latency
-drops even though total editor work has not disappeared.
+marked persistent, and the `core/block-editor` / `@wordpress/data` subscriber
+work associated with that timer-side transition has happened outside the next
+keypress `EventDispatch` slices. The next triangle is orange: the following text
+update starts from the post-timer persistent state. That is why the measured
+event-only latency drops even though total editor work has not disappeared.
 
 This only happens in the key-held benchmark because the gray bar is long. In the
 complete-keypress-then-wait mode, `keyup` happens immediately and the wait occurs
