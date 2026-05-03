@@ -143,7 +143,16 @@ const supportedMarkPersistentInterventions = [
 	'worker-busy-wait-150-no-message',
 	'worker-delay-150',
 	'worker-delay-150-no-message',
+	'external-cpu-20-no-message',
+	'external-cpu-40-no-message',
+	'external-cpu-80-no-message',
 	'external-cpu-150-no-message',
+	'external-delay-150-no-message',
+	'external-persistent-cpu-20-no-message',
+	'external-persistent-cpu-40-no-message',
+	'external-persistent-cpu-80-no-message',
+	'external-persistent-cpu-150-no-message',
+	'external-persistent-delay-150-no-message',
 	'delayed-noop-150',
 	'raw-unknown-action',
 	'mark-next-not-persistent',
@@ -1143,6 +1152,39 @@ test.describe( 'Typing delay benchmark', () => {
 		}
 
 		let externalCpuBurnerExposed = false;
+		let externalPersistentProcess = null;
+		function ensureExternalPersistentProcess() {
+			if ( externalPersistentProcess ) {
+				return externalPersistentProcess;
+			}
+
+			const source = `
+process.on('message', ({ durationMs, processMode }) => {
+	if (processMode === 'delay') {
+		setTimeout(() => {}, durationMs);
+		return;
+	}
+	const stop = Date.now() + durationMs;
+	while (Date.now() < stop) Math.sqrt(Math.random());
+});
+process.on('disconnect', () => process.exit(0));
+setInterval(() => {}, 2147483647);
+`;
+			externalPersistentProcess = spawn(
+				process.execPath,
+				[ '-e', source ],
+				{ stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ] }
+			);
+			return externalPersistentProcess;
+		}
+
+		function cleanupExternalPersistentProcess() {
+			if ( externalPersistentProcess ) {
+				externalPersistentProcess.kill();
+				externalPersistentProcess = null;
+			}
+		}
+
 		async function setupMarkPersistentIntervention() {
 			if (
 				markPersistentIntervention === 'normal' ||
@@ -1152,19 +1194,33 @@ test.describe( 'Typing delay benchmark', () => {
 			}
 
 			if (
-				markPersistentIntervention === 'external-cpu-150-no-message' &&
+				markPersistentIntervention.startsWith( 'external-persistent-' )
+			) {
+				ensureExternalPersistentProcess();
+			}
+
+			if (
+				markPersistentIntervention.startsWith( 'external-' ) &&
 				! externalCpuBurnerExposed
 			) {
 				await page.exposeFunction(
-					'__typingBenchmarkStartExternalCpu',
-					( durationMs ) => {
+					'__typingBenchmarkStartExternalProcess',
+					( { durationMs, processMode, persistent } ) => {
+						if ( persistent ) {
+							ensureExternalPersistentProcess().send( {
+								durationMs,
+								processMode,
+							} );
+							return;
+						}
+
+						const source =
+							processMode === 'delay'
+								? 'const duration=Number(process.argv[1]); setTimeout(() => process.exit(0), duration);'
+								: 'const duration=Number(process.argv[1]); const stop=Date.now()+duration; while (Date.now()<stop) Math.sqrt(Math.random());';
 						const child = spawn(
 							process.execPath,
-							[
-								'-e',
-								'const duration=Number(process.argv[1]); const stop=Date.now()+duration; while (Date.now()<stop) Math.sqrt(Math.random());',
-								String( durationMs ),
-							],
+							[ '-e', source, String( durationMs ) ],
 							{
 								stdio: 'ignore',
 								detached: true,
@@ -1438,17 +1494,27 @@ test.describe( 'Typing delay benchmark', () => {
 								}, delayMs );
 							}
 
-							function startExternalCpuNoMessage( durationMs ) {
+							function startExternalProcessNoMessage(
+								durationMs,
+								processMode,
+								persistent = false
+							) {
 								const startedAtMs = performance.now();
-								window.__typingBenchmarkStartExternalCpu?.(
-									durationMs
+								window.__typingBenchmarkStartExternalProcess?.(
+									{
+										durationMs,
+										processMode,
+										persistent,
+									}
 								);
 								window.__typingBenchmarkMarkPersistentInterventionEvents.push(
 									{
 										nowMs: startedAtMs,
 										durationMs,
 										mode,
-										status: 'external-cpu-started',
+										status: `external-${
+											persistent ? 'persistent-' : ''
+										}${ processMode }-started`,
 										before,
 										after: blockEditorSnapshot(),
 									}
@@ -1495,9 +1561,66 @@ test.describe( 'Typing delay benchmark', () => {
 									startWorkerDelayNoMessage( 150 );
 									result = undefined;
 								} else if (
+									mode === 'external-cpu-20-no-message' ||
+									mode === 'external-cpu-40-no-message' ||
+									mode === 'external-cpu-80-no-message' ||
 									mode === 'external-cpu-150-no-message'
 								) {
-									startExternalCpuNoMessage( 150 );
+									startExternalProcessNoMessage(
+										mode === 'external-cpu-20-no-message'
+											? 20
+											: mode ===
+											  'external-cpu-40-no-message'
+											? 40
+											: mode ===
+											  'external-cpu-80-no-message'
+											? 80
+											: 150,
+										'cpu'
+									);
+									result = undefined;
+								} else if (
+									mode === 'external-delay-150-no-message'
+								) {
+									startExternalProcessNoMessage(
+										150,
+										'delay'
+									);
+									result = undefined;
+								} else if (
+									mode ===
+										'external-persistent-cpu-20-no-message' ||
+									mode ===
+										'external-persistent-cpu-40-no-message' ||
+									mode ===
+										'external-persistent-cpu-80-no-message' ||
+									mode ===
+										'external-persistent-cpu-150-no-message'
+								) {
+									startExternalProcessNoMessage(
+										mode ===
+											'external-persistent-cpu-20-no-message'
+											? 20
+											: mode ===
+											  'external-persistent-cpu-40-no-message'
+											? 40
+											: mode ===
+											  'external-persistent-cpu-80-no-message'
+											? 80
+											: 150,
+										'cpu',
+										true
+									);
+									result = undefined;
+								} else if (
+									mode ===
+									'external-persistent-delay-150-no-message'
+								) {
+									startExternalProcessNoMessage(
+										150,
+										'delay',
+										true
+									);
 									result = undefined;
 								} else if ( mode === 'delayed-noop-150' ) {
 									startDelayedNoop( 150 );
@@ -2691,6 +2814,8 @@ test.describe( 'Typing delay benchmark', () => {
 				}
 			}
 		}
+
+		cleanupExternalPersistentProcess();
 
 		const benchmarkStoppedAtEpochMs = Date.now();
 		const useSelectMetadata = traceDataSpans

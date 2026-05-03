@@ -3474,6 +3474,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						"worker busy wait 150ms",
 						"worker busy wait 150ms, no message",
 						"worker delay 150ms, no CPU",
+						"external persistent CPU 150ms, no message",
+						"external persistent delay 150ms, no message",
 						"delayed no-op 150ms",
 						"normal marker + busy wait 150ms",
 						"stop/start + busy wait 150ms"
@@ -3488,6 +3490,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					`worker CPU, msg` = "worker busy wait 150ms",
 					`worker CPU, no msg` = "worker busy wait 150ms, no message",
 					`worker delay, no CPU` = "worker delay 150ms, no CPU",
+					`external CPU, no msg` = "external persistent CPU 150ms, no message",
+					`external delay, no CPU` = "external persistent delay 150ms, no message",
 					`delayed no-op` = "delayed no-op 150ms",
 					`normal + busy wait` = "normal marker + busy wait 150ms",
 					`stop/start + busy wait` = "stop/start + busy wait 150ms"
@@ -3533,6 +3537,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					`worker CPU, msg` = 7,
 					`worker CPU, no msg` = 9,
 					`worker delay, no CPU` = 10,
+					`external CPU, no msg` = 12,
+					`external delay, no CPU` = 13,
 					`delayed no-op` = 11,
 					`normal + busy wait` = 16,
 					`stop/start + busy wait` = 15
@@ -3540,7 +3546,7 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				scale_x_continuous(breaks = c(0, 50, 100, 150, 200)) +
 				labs(
 					title = "Recent timer-side work can make the next event slice fast",
-					subtitle = "Fixed 1300ms key hold; worker CPU without a message is fast, delayed no-op/message-only controls are slow",
+					subtitle = "Fixed 1300ms key hold; worker/external CPU without a page message is fast, no-CPU controls are slow",
 					x = "Timer-side work end to following keydown, p50 (ms)",
 					y = "Duration, p50 (ms)",
 					color = "Timer-side work",
@@ -3572,21 +3578,27 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					"worker busy wait 40ms, no message",
 					"worker busy wait 80ms, no message",
 					"worker busy wait 150ms, no message",
-					"worker delay 150ms, no message"
+					"worker delay 150ms, no message",
+					"external persistent CPU 20ms, no message",
+					"external persistent CPU 40ms, no message",
+					"external persistent CPU 80ms, no message",
+					"external persistent CPU 150ms, no message",
+					"external persistent delay 150ms, no message"
 				)
 			) %>%
 			mutate(
 				work_type = case_when(
 					intervention == "marker no-op" ~ "zero-duration no-op",
 					intervention == "worker delay 150ms, no message" ~ "worker no CPU",
+					intervention == "external persistent delay 150ms, no message" ~ "external no CPU",
 					str_detect(intervention, "^worker busy") ~ "worker CPU, no message",
+					str_detect(intervention, "^external persistent CPU") ~ "external CPU, no message",
 					TRUE ~ "main-thread CPU"
 				),
 				work_type = factor(
 					work_type,
-					levels = c("zero-duration no-op", "main-thread CPU", "worker CPU, no message", "worker no CPU")
-				),
-				duration_label = paste0(round(intervention_duration_p50_ms), "ms")
+					levels = c("zero-duration no-op", "main-thread CPU", "worker CPU, no message", "external CPU, no message", "worker no CPU", "external no CPU")
+				)
 			)
 
 		save_plot(
@@ -3600,18 +3612,19 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				)
 			) +
 				geom_point(size = 3.4, alpha = 0.95) +
-				geom_text(aes(label = duration_label), vjust = -0.85, size = 3.1, show.legend = FALSE) +
 				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
 				scale_shape_manual(values = c(
 					`zero-duration no-op` = 17,
 					`main-thread CPU` = 16,
 					`worker CPU, no message` = 15,
-					`worker no CPU` = 4
+					`external CPU, no message` = 3,
+					`worker no CPU` = 4,
+					`external no CPU` = 7
 				), drop = FALSE) +
 				scale_x_continuous(breaks = c(0, 20, 40, 80, 150)) +
 				labs(
 					title = "Off-main-thread CPU work has a duration response",
-					subtitle = "Fixed 1300ms key hold; all points end about 50ms before keydown",
+					subtitle = "Fixed 1300ms key hold; prestarted external child removes process-startup CPU from the timer boundary",
 					x = "Timer-side work duration, p50 (ms)",
 					y = "Next EventDispatch duration, p50 (ms)",
 					color = "Work type",

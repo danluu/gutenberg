@@ -107,6 +107,15 @@ The short version:
     disconfirms "this requires browser-renderer-local worker scheduling"; the
     supported explanation is broader whole-machine CPU/scheduler/power-state
     sensitivity modulating Gutenberg's heavy input path.
+-   A cleaner prestarted external child-process control removes process creation
+    from the timer boundary and still shows a CPU-duration response. With the
+    expected CPU burn ending about `50-52ms` before keydown, `20ms`, `40ms`,
+    `80ms`, and `150ms` of external CPU give event-only p50s of `19.0ms`,
+    `14.0ms`, `12.1ms`, and `11.3ms`. A prestarted external child that only
+    waits `150ms`, with no intentional CPU burn, stays slow at `23.3ms`. That
+    disconfirms "IPC/process lifetime is enough" and confirms that recent
+    external CPU work can modulate the effect; renderer-local browser work is not
+    required.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -351,8 +360,8 @@ The R script derives:
     values.
 -   `data/typing-delay-task-end-proximity-paired-*.csv`: fixed `1300ms`
     key-hold traces that separate timer-task start, timer-task end, and
-    following-key timing, including main-thread, worker, and external
-    child-process CPU controls.
+    following-key timing, including main-thread, worker, spawn-per-timer
+    external child-process, and prestarted external child-process CPU controls.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -1152,6 +1161,20 @@ event-only measurement. The new intervention modes are deliberately artificial:
 -   `external-cpu-150-no-message`: ask Playwright's Node process to spawn a
     short-lived child process that burns CPU for `150ms`; the page records the
     expected CPU window but receives no completion message.
+-   `external-cpu-20-no-message`, `external-cpu-40-no-message`, and
+    `external-cpu-80-no-message`: shorter spawn-per-timer external child-process
+    CPU burns, scheduled to end about `50ms` before keydown by the page's
+    expected-duration accounting.
+-   `external-delay-150-no-message`: spawn the same kind of short-lived child
+    process, but have it wait `150ms` and exit without intentional CPU work.
+-   `external-persistent-cpu-20-no-message`,
+    `external-persistent-cpu-40-no-message`,
+    `external-persistent-cpu-80-no-message`, and
+    `external-persistent-cpu-150-no-message`: keep a Node child process alive
+    before typing starts, then send it a CPU-burn command from the timer
+    callback. This removes child-process startup from the timer boundary.
+-   `external-persistent-delay-150-no-message`: send a prestarted child process a
+    no-CPU delay command, to test whether IPC and child lifetime are enough.
 -   `delayed-noop-150`: main thread schedules a delayed no-op task near the
     following keydown without doing CPU work.
 -   `normal-then-busy-wait-150`: run the normal marker, then hold the timer task
@@ -1181,6 +1204,15 @@ Selected p50s:
 | external CPU, no message       |      `1100ms` |            `50.0ms` |        `8.9ms` | `150.2ms` |          `159.1ms` |
 | external CPU, no message       |      `1000ms` |           `150.5ms` |       `12.6ms` | `150.2ms` |          `162.8ms` |
 | external CPU, no message       |       `900ms` |           `252.9ms` |       `22.7ms` | `150.2ms` |          `172.6ms` |
+| external CPU, no message       |      `1230ms` |            `50.2ms` |       `10.4ms` |  `20.3ms` |           `30.7ms` |
+| external CPU, no message       |      `1210ms` |            `49.9ms` |        `9.8ms` |  `40.3ms` |           `50.0ms` |
+| external CPU, no message       |      `1170ms` |            `50.0ms` |        `8.8ms` |  `80.3ms` |           `89.1ms` |
+| external delay, no message     |      `1100ms` |            `52.5ms` |       `22.2ms` | `150.3ms` |          `172.5ms` |
+| prestarted external CPU        |      `1230ms` |            `51.5ms` |       `19.0ms` |  `20.4ms` |           `39.0ms` |
+| prestarted external CPU        |      `1210ms` |            `51.0ms` |       `14.0ms` |  `40.3ms` |           `54.2ms` |
+| prestarted external CPU        |      `1170ms` |            `50.5ms` |       `12.1ms` |  `80.3ms` |           `92.3ms` |
+| prestarted external CPU        |      `1100ms` |            `50.4ms` |       `11.3ms` | `150.3ms` |          `161.6ms` |
+| prestarted external delay      |      `1100ms` |            `53.1ms` |       `23.3ms` | `150.3ms` |          `173.9ms` |
 | worker delay, no CPU           |      `1100ms` |            `34.9ms` |       `24.7ms` | `169.1ms` |          `193.8ms` |
 | worker delay, no message       |      `1100ms` |            `52.6ms` |       `24.5ms` | `151.3ms` |          `175.1ms` |
 | delayed no-op                  |      `1100ms` |            `50.5ms` |       `24.4ms` | `152.6ms` |          `176.6ms` |
@@ -1204,45 +1236,55 @@ The updated model is narrower and less semantic:
    completion message back to the main thread.
 5. A short-lived external Node child-process CPU spin is also sufficient when it
    finishes close to keydown. That disconfirms "browser renderer-local work is
-   required" and points to a broader CPU/scheduler state effect.
+   required" and points to a broader CPU/scheduler state effect. Its
+   duration-sweep points are not perfectly calibrated, because child-process
+   startup CPU is not included in the page's expected-duration timestamp.
 6. Duration matters as well as proximity. At a roughly `51ms` task-end gap,
    `20ms`, `40ms`, and `150ms` pure busy waits form a descending event-only
    sequence: `21.0ms`, `14.1ms`, and `11.3ms`.
 7. Off-main-thread worker CPU has the same duration response without a main
    thread completion message: `20ms`, `40ms`, `80ms`, and `150ms` worker spins
    produce `15.5ms`, `12.8ms`, `11.2ms`, and `10.3ms` event-only p50s.
-8. The effect decays with distance from the following key: no-op + `150ms` busy
+8. Prestarted external child-process CPU has the same cleaner dose response
+   after process startup is removed from the timer boundary: `20ms`, `40ms`,
+   `80ms`, and `150ms` produce `19.0ms`, `14.0ms`, `12.1ms`, and `11.3ms`
+   event-only p50s. The prestarted no-CPU delay control stays slow at `23.3ms`,
+   so IPC and child lifetime are not sufficient.
+9. The effect decays with distance from the following key: no-op + `150ms` busy
    wait ending around `151ms` before keydown is only intermediate, while ending
    around `51ms` before keydown is in the low band. The worker control shows the
    same shape: a no-message `150ms` worker spin is `10.3ms` when it ends about
    `50ms` before keydown, `14.9ms` when it ends about `150ms` before keydown,
    and back on the slow plateau at `24.6ms` when it ends about `253ms` before
    keydown.
-9. The external child-process control shows the same decay: `8.9ms`, `12.6ms`,
+10. The external child-process control shows the same decay: `8.9ms`, `12.6ms`,
    and `22.7ms` when its expected CPU burn ends about `50ms`, `151ms`, and
    `253ms` before keydown.
-10. The near-key main-thread task is not the mechanism by itself. The
+11. The near-key main-thread task is not the mechanism by itself. The
    `worker-delay-150` and `delayed-noop-150` controls both create near-key tasks
    with no CPU spin, and both stay on the slow plateau.
-11. Worker creation/lifetime is not the mechanism by itself. The
-   `worker-delay-150-no-message` control keeps the same worker lifetime shape
-   without CPU spin or a completion message, and it stays slow.
+12. Worker creation/lifetime and external child-process lifetime are not the
+   mechanism by themselves. The `worker-delay-150-no-message`,
+   `external-delay-150-no-message`, and
+   `external-persistent-delay-150-no-message` controls keep the lifetime shape
+   without intentional CPU spin, and they stay slow.
 
 That points away from a purely Gutenberg-state explanation and toward
 CPU/scheduler sensitivity around Gutenberg's input path. It still does not mean
-the benchmarked character cycle got cheaper. The work-inclusive values for these
-artificial controls are `159-194ms`.
+the benchmarked character cycle got cheaper. The work-inclusive values add back
+the explicit CPU/delay work; for `150ms` artificial controls they are roughly
+`159-194ms`, not the low event-only values.
 
-The worker-duration sweep makes the CPU-work interpretation clearer:
+The duration sweep makes the CPU-work interpretation clearer:
 
-![Worker no-message duration sweep](figures/52-worker-no-message-duration.png)
+![CPU duration sweep](figures/52-worker-no-message-duration.png)
 
 All points in that plot end about `50ms` before keydown. The zero-duration
-no-op and no-CPU worker are slow. Main-thread and worker CPU work both move the
-next event-only slice down as duration increases. The worker results are not
-identical to the main-thread busy waits, especially at `20ms`, but the
-monotonic shape confirms that amount of recent CPU work matters even when that
-work never posts a main-thread completion message.
+no-op, no-CPU worker, and no-CPU prestarted external child are slow. Main-thread,
+worker, and prestarted external CPU work all move the next event-only slice down
+as duration increases. The curves are not identical, especially at `20ms`, but
+the monotonic shape confirms that amount of recent CPU work matters even when
+that work never posts a main-thread completion message to the page.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -1253,7 +1295,10 @@ it earlier makes it intermediate and then slow again. A separate Node child
 process burning CPU shows the same proximity-sensitive shape, so the effect is
 not confined to browser renderer-local worker scheduling. This matters because
 it rules out a broad warmup explanation where one worker spin simply leaves the
-browser fast for the rest of the delay run.
+browser fast for the rest of the delay run. I treat the spawn-per-timer external
+process end gaps as approximate: process startup CPU is not timestamped by the
+page's expected-duration event. The prestarted-child duration sweep above is the
+cleaner evidence that external CPU itself is sufficient.
 
 I also added a native `contenteditable` control with the same rewritten
 one-second timer and the same `1300ms` key hold:
@@ -3307,6 +3352,15 @@ The key runs used in this report were:
     `task_end_external_cpu_no_message_150_timeout_1100_delay_1300`,
     `task_end_external_cpu_no_message_150_timeout_1000_delay_1300`,
     `task_end_external_cpu_no_message_150_timeout_900_delay_1300`,
+    `task_end_external_cpu_no_message_20_timeout_1230_delay_1300`,
+    `task_end_external_cpu_no_message_40_timeout_1210_delay_1300`,
+    `task_end_external_cpu_no_message_80_timeout_1170_delay_1300`,
+    `task_end_external_delay_no_message_150_timeout_1100_delay_1300`,
+    `task_end_external_persistent_cpu_no_message_20_timeout_1230_delay_1300`,
+    `task_end_external_persistent_cpu_no_message_40_timeout_1210_delay_1300`,
+    `task_end_external_persistent_cpu_no_message_80_timeout_1170_delay_1300`,
+    `task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300`,
+    `task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_no_message_150_timeout_1100_delay_1300`,
     `task_end_worker_delay_150_timeout_1100_delay_1300`,
     `task_end_delayed_noop_150_timeout_1100_delay_1300`,
