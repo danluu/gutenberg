@@ -99,6 +99,10 @@ const freshEditorPerDelay =
 const waitForPersistenceBetweenKeys =
 	process.env.BENCHMARK_WAIT_FOR_PERSISTENCE_BETWEEN_KEYS === '1' ||
 	process.env.BENCHMARK_WAIT_FOR_PERSISTENCE_BETWEEN_KEYS === 'true';
+const settleBeforeEditorSetupMs = intEnv(
+	'BENCHMARK_SETTLE_BEFORE_EDITOR_SETUP_MS',
+	0
+);
 const settleAfterEditorSetupMs = intEnv(
 	'BENCHMARK_SETTLE_AFTER_EDITOR_SETUP_MS',
 	0
@@ -923,7 +927,11 @@ function benchmarkTimeoutMs() {
 			? rounds * delays.length * sampleCount * 1500
 			: 0;
 	const setupAllowanceMs =
-		20 * 60 * 1000 + setupCount * ( 60 * 1000 + settleAfterEditorSetupMs );
+		20 * 60 * 1000 +
+		setupCount *
+			( 60 * 1000 +
+				settleBeforeEditorSetupMs +
+				settleAfterEditorSetupMs );
 
 	return Math.max(
 		intEnv( 'BENCHMARK_TIMEOUT_MS', 0 ),
@@ -2400,6 +2408,11 @@ setInterval(() => {}, 2147483647);
 			editorSetupIndex++;
 
 			const setupStartedAtEpochMs = Date.now();
+			if ( settleBeforeEditorSetupMs > 0 ) {
+				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+				await page.waitForTimeout( settleBeforeEditorSetupMs );
+			}
+
 			if ( isNativeScenario() ) {
 				await page.setContent( `<!doctype html>
 					<html>
@@ -3126,6 +3139,7 @@ setInterval(() => {}, 2147483647);
 				waitForPersistenceBetweenKeys,
 				delayMode,
 				postKeyupGapMs,
+				settleBeforeEditorSetupMs,
 				settleAfterEditorSetupMs,
 				settleBetweenDelayRunsMs,
 				preTypingWarmupMode,

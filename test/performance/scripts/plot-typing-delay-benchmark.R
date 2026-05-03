@@ -1118,6 +1118,51 @@ if (file.exists(start_wait_pretype_warmup_summary_path)) {
 	)
 }
 
+start_wait_placement_summary_path <- file.path(data_dir, "typing-delay-start-wait-placement-summary.csv")
+if (file.exists(start_wait_placement_summary_path)) {
+	start_wait_placement <- read_csv(start_wait_placement_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			placement_label = factor(
+				placement_label,
+				levels = c(
+					"0s wait",
+					"60s before setup",
+					"60s after setup",
+					"60s after setup + 50ms warmup",
+					"60s after setup + 1000ms warmup"
+				)
+			),
+			placement_kind = factor(
+				case_when(
+					before_setup_ms > 0 ~ "Idle before setup",
+					after_setup_ms > 0 & warmup_ms == 0 ~ "Idle before typing",
+					after_setup_ms > 0 & warmup_ms > 0 ~ "Idle, then immediate warmup",
+					TRUE ~ "No added idle"
+				),
+				levels = c("No added idle", "Idle before setup", "Idle before typing", "Idle, then immediate warmup")
+			)
+		)
+
+	save_plot(
+		ggplot(start_wait_placement, aes(placement_label, p50_ms, color = placement_kind, shape = placement_kind)) +
+			geom_errorbar(aes(ymin = p10_ms, ymax = p90_ms), width = 0.18, alpha = 0.78) +
+			geom_point(size = 3.2) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Idle hurts only when it is immediately before typing",
+				subtitle = "Fresh large-post first character at 1300ms; a 60s idle before editor setup is erased by setup activity",
+				x = NULL,
+				y = "Latency p50 (ms)",
+				color = "Placement",
+				shape = "Placement"
+			) +
+			theme(axis.text.x = element_text(angle = 25, hjust = 1)),
+		"67-start-wait-placement.png",
+		width = 10.5,
+		height = 5.8
+	)
+}
+
 cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%

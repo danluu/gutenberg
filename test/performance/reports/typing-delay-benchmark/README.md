@@ -46,7 +46,11 @@ The short version:
     before tracing/typing lowers first-character p50 from `23.1ms` to `18.2ms`,
     essentially matching the `0s + 1000ms warmup` control at `18.5ms`. A
     follow-up dose-response run shows most of that recovery already happens with
-    a `50ms` warmup.
+    a `50ms` warmup. Moving the same `60s` idle interval before editor setup
+    instead of after setup removes the slowdown: first-character p50 is `15.2ms`,
+    essentially the same as the `0s` control at `15.9ms`. So the causal variable
+    is not absolute elapsed time since the test began; it is whether the browser
+    and editor have been idle immediately before the measured input.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -314,7 +318,8 @@ run:
 -   more rounds and more retained samples per delay;
 -   mixed, ascending, descending, or shuffled delay order;
 -   fresh editor setup per delay;
--   configurable wait time after editor setup and before typing starts;
+-   configurable wait time before editor setup and after editor setup before
+    typing starts;
 -   persistence-state tracing;
 -   data-action tracing;
 -   timer tracing and timer intervention.
@@ -425,6 +430,8 @@ The R script derives:
 -   `data/typing-delay-start-wait-pretype-warmup-*.csv`: causality checks that
     run a browser-main-thread warmup after the start wait but before the first
     measured input.
+-   `data/typing-delay-start-wait-placement-*.csv`: checks that move the same
+    `60s` idle interval before editor setup versus after editor setup.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -550,17 +557,22 @@ for delay regimes, there was no convincing monotonic slowdown over time in these
 runs. That is not proof that long editing sessions are safe; it only says these
 short local runs did not reproduce a simple time-based degradation.
 
-## Start Wait After Editor Setup
+## Start Wait Placement
 
 The benchmark now also tests the more direct "what if typing starts sooner or
 later after editor setup?" question. The control knob is
 `BENCHMARK_SETTLE_AFTER_EDITOR_SETUP_MS`: after Gutenberg has loaded the fixture,
 inserted/focused the paragraph, and installed any tracing hooks, the benchmark can
-wait before typing the first measured sequence.
+wait before typing the first measured sequence. A second control knob,
+`BENCHMARK_SETTLE_BEFORE_EDITOR_SETUP_MS`, waits before creating/loading the
+editor fixture, which separates "the whole test has been idle" from "the editor
+was idle immediately before typing".
 
 The default value is `0ms`, so there is no smaller start wait to test. Reducing
 the time before the benchmark starts means using the default. Increasing it means
-adding a deliberate idle interval after setup and before typing.
+adding a deliberate idle interval before setup or after setup. Those placements
+are not equivalent: editor setup itself is enough activity to erase the long-idle
+first-input slowdown.
 
 I first compared that default against `10s` and `60s` waits using the large-post
 key-hold path at the four delays that best expose the cliff: `990ms`, `1000ms`,
@@ -804,6 +816,33 @@ than with a proportional amount of useful work being done before typing. It also
 disconfirms a story where the long start wait permanently changes Gutenberg
 state: a tiny amount of immediate main-thread activity changes the result
 without changing the document, block tree, or measured key sequence.
+
+A placement check is the cleanest falsification of an "absolute elapsed time"
+story. I added `BENCHMARK_SETTLE_BEFORE_EDITOR_SETUP_MS` and ran the same fresh
+large-post first-character check with a `60s` wait before editor setup, then no
+post-setup wait. That means the wall-clock time from the run starting to the
+first measured key is still long, but the editor setup activity happens after
+the idle interval and immediately before typing.
+
+![Start-wait placement](figures/67-start-wait-placement.png)
+
+Start-wait placement p50s:
+
+| Placement | p50 | p10-p90 | `keypress` p50 |
+| --------- | --: | ------: | --------------: |
+| `0s` wait | `15.9ms` | `13.7-17.3ms` | `15.1ms` |
+| `60s` before setup | `15.2ms` | `13.6-15.7ms` | `14.6ms` |
+| `60s` after setup | `23.1ms` | `22.2-25.0ms` | `21.2ms` |
+| `60s` after setup + `50ms` warmup | `18.3ms` | `18.0-20.2ms` | `16.6ms` |
+| `60s` after setup + `1000ms` warmup | `18.2ms` | `18.0-19.3ms` | `16.4ms` |
+
+This disconfirms the idea that the first-character slowdown comes from total
+elapsed time since the benchmark process, test, or setup sequence began. A `60s`
+idle before editor setup lands on the same distribution as the `0s` control.
+The slowdown appears only when the editor/browser sit idle immediately before
+the first measured input. A short main-thread warmup after that idle interval
+partially recovers the result, and a full editor setup after that idle interval
+recovers it completely in this run.
 
 The interpretation is conservative: increasing the pre-run settle time is not a
 fix for this benchmark's main artifacts. It mainly changes the first character
@@ -3800,11 +3839,11 @@ The key runs used in this report were:
     `start_settle_fresh_60000`, `start_wait_first_char_0`,
     `start_wait_first_char_1000`, `start_wait_first_char_5000`,
     `start_wait_first_char_10000`, `start_wait_first_char_30000`,
-    `start_wait_first_char_60000`, `start_wait_sample_index_0`,
-    `start_wait_sample_index_10000`, `start_wait_sample_index_60000`,
-    `start_wait_empty_first_char_0`, `start_wait_empty_first_char_10000`,
-    `start_wait_empty_first_char_60000`, `start_wait_native_first_char_0`,
-    `start_wait_native_first_char_10000`,
+    `start_wait_first_char_60000`, `start_wait_before_setup_large_60000`,
+    `start_wait_sample_index_0`, `start_wait_sample_index_10000`,
+    `start_wait_sample_index_60000`, `start_wait_empty_first_char_0`,
+    `start_wait_empty_first_char_10000`, `start_wait_empty_first_char_60000`,
+    `start_wait_native_first_char_0`, `start_wait_native_first_char_10000`,
     `start_wait_native_first_char_60000`, `start_wait_spans_large_0`,
     `start_wait_spans_large_60000`,
     `start_wait_warmup_large_0_warmup_1000`,
