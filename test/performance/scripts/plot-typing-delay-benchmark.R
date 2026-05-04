@@ -14148,6 +14148,185 @@ if (file.exists(marker_allspan_action_summary_path)) {
 				file.path(data_dir, "typing-delay-public-selector-notification-design-runbook-audit.csv")
 			)
 
+			branch_aware_use_select_compatibility_audit <- tribble(
+				~contract_surface, ~source_reference, ~current_behavior, ~why_it_constrains_branch_aware_subscription, ~required_gate, ~risk_score, ~decision,
+				"Store-name dependency capture",
+				"packages/data/src/components/use-select/index.ts:132-235; packages/data/src/registry.ts:115-124",
+				"`useSelect` records active store names through `registry.__unstableMarkListeningStores()` and subscribes with `registry.subscribe( onChange, storeName )`.",
+				"There is no selector name, selector argument, state branch, or reducer path in the current dependency record; a branch-aware win needs a new dependency model.",
+				"Prototype must record enough dependency metadata to wake `isLastBlockChangePersistent()` consumers while skipping unrelated block-editor selectors.",
+				5,
+				"core blocker",
+				"Root listener fanout",
+				"packages/data/src/redux-store/index.ts:526-564",
+				"`createReduxStore` calls every registered listener whenever the wrapped root state identity changes.",
+				"Even a perfect selector dependency model does not reduce fanout until the store can avoid calling unrelated store listeners, or those listeners can cheaply filter before invalidating.",
+				"Marker-only source-span run must show `rootSubscribe`, `data.reduxStore.listener`, and unrelated `useSelect.onChange` counts collapse while persistence consumers still wake.",
+				5,
+				"core blocker",
+				"Public store subscription",
+				"packages/data/src/registry.ts:59-93; packages/data/src/index.ts:136-165",
+				"`registry.subscribe( listener, storeName )` and exported `subscribe()` are documented as store-level change notifications.",
+				"Unlike `useSelect`, a public store subscriber has no selected value or dependency key to filter against; narrowing it is an API semantics decision.",
+				"Either preserve store-level notification for public subscribers or explicitly document/deprecate a narrowed contract with compatibility fixtures.",
+				5,
+				"policy/API decision",
+				"Dynamic store-set growth",
+				"packages/data/src/components/use-select/test/index.js:188-260",
+				"`useSelect` incrementally subscribes to newly selected stores and keeps earlier store subscriptions; a later update to the old store still re-runs `mapSelect` even if it does not re-render.",
+				"A branch-aware system cannot assume the dependency set is fixed after first render or that old dependencies disappear automatically.",
+				"Tests must cover dependencies that expand, switch active branch, retain old subscriptions, and avoid stale values or unexpected missed reruns.",
+				4,
+				"must preserve edge case",
+				"Conditional selector reads",
+				"packages/data/src/components/use-select/test/index.js:556-620",
+				"`mapSelect` can read different stores depending on component state and dependency-array values.",
+				"Selector or branch dependencies are data-dependent and can change with React props/state; stale dependency metadata can miss a later branch.",
+				"Tests must cover conditional branches where the active selected store changes and the next update wakes the new branch.",
+				4,
+				"must preserve edge case",
+				"Registry-selector cross-store reads",
+				"packages/data/src/components/use-select/test/index.js:520-555; packages/data/src/factory.ts:53-79",
+				"`createRegistrySelector` lets a selector for one store read another store through the registry.",
+				"Recording only the outer selector or outer store is insufficient; nested registry reads must contribute dependency metadata.",
+				"Cross-store registry-selector tests must wake on nested-store changes and must not stale when selector indirection is used.",
+				5,
+				"core blocker",
+				"Parent/child registries",
+				"packages/data/src/components/use-select/test/index.js:622-656; packages/data/src/registry.ts:87-93",
+				"`useSelect` in a sub-registry can subscribe to parent-registry stores.",
+				"Dependency metadata has to cross registry boundaries and respect parent fallback semantics.",
+				"Parent-registry and child-registry fixtures must still update from parent store changes.",
+				4,
+				"must preserve edge case",
+				"Missing and late-registered stores",
+				"packages/data/src/components/use-select/test/index.js:658-744; packages/data/src/registry.ts:87-93",
+				"Selecting a not-yet-registered store falls back to a global subscription path for compatibility; late registration then becomes visible after a later dispatch.",
+				"Selector/branch metadata cannot rely only on already-registered Redux stores or `getState()` branches.",
+				"Late-registration fixtures must preserve today's blank-before-registration and update-after-dispatch behavior.",
+				4,
+				"must preserve edge case",
+				"Render-to-subscription race",
+				"packages/data/src/components/use-select/index.ts:143-160; packages/data/src/components/use-select/test/index.js:406-517",
+				"`useSelect` snapshots store states on render and invalidates after subscribing if a store changed before the subscription was installed.",
+				"A dependency filter that skips this second check can miss updates scheduled between render and effect/subscription.",
+				"Race fixtures must cover store changes between render and subscription, including after selector/dependency changes.",
+				5,
+				"core blocker",
+				"Async mode and render queue",
+				"packages/data/src/components/use-select/index.ts:186-212,360-371; packages/data/src/components/use-select/test/index.js:766-1130",
+				"Async `useSelect` queues updates through `renderQueue.add()` and cancels queued work on unmount, mapSelect change, registry change, and async-to-sync transition.",
+				"Branch-aware filtering must not leave queued work for stale dependencies or miss updates when async work is cancelled and recomputed synchronously.",
+				"Async-mode fixtures must cover queueing, cancellation, registry changes, and async-to-sync transitions with filtered notifications.",
+				4,
+				"must preserve edge case",
+				"withSelect / no-deps callbacks",
+				"packages/data/src/components/with-select/index.tsx:52-61; packages/data/src/components/use-select/test/index.js:1132-1186",
+				"`withSelect` calls `useSelect` without a deps array so ownProps changes create fresh mapSelect callbacks; no-deps `useSelect` must see current closure values.",
+				"Dependency metadata cannot assume a stable callback identity or stable selector arguments across renders.",
+				"`withSelect` and no-deps tests must verify fresh props/closures and resubscription when selected stores change.",
+				4,
+				"must preserve edge case",
+				"Custom generic stores",
+				"packages/data/src/components/use-select/test/index.js:746-817; packages/data/src/components/use-select/index.ts:127-130",
+				"Generic stores can lack Redux `getState()` behavior and even omit an unsubscribe return value.",
+				"Branch-aware filtering cannot require reducer-state branch inspection for every store type.",
+				"Generic-store fixtures must still update and unmount cleanly; branch filtering may need to fall back to store-level invalidation for generic stores.",
+				3,
+				"fallback to store-level",
+				"Static store selection mode",
+				"packages/data/src/components/use-select/index.ts:480-502; packages/data/src/components/use-select/test/index.js:1188-1216",
+				"`useSelect( storeDescriptor )` returns selectors for imperative reads and intentionally does not subscribe reactively.",
+				"Static selector mode should not be pulled into the reactive dependency system or used as evidence that subscribed consumers are covered.",
+				"Static-mode tests must stay non-reactive while mapped `useSelect` remains reactive.",
+				2,
+				"keep out of scope",
+				"Shallow-equality value contract",
+				"packages/data/src/components/use-select/index.ts:347-354; packages/data/src/components/use-select/test/index.js:262-404",
+				"`useSelect` keeps the previous returned value when the new map result is shallow-equal, even if `mapSelect` was re-run.",
+				"A filtered-notification design must distinguish skipped recomputation from recomputation that returns shallow-equal output; both are observable through mapSelect call counts in tests.",
+				"Test both render count and mapSelect call count, not only visible DOM output.",
+				3,
+				"must preserve edge case"
+			) %>%
+				mutate(
+					decision = factor(
+						decision,
+						levels = c(
+							"core blocker",
+							"policy/API decision",
+							"must preserve edge case",
+							"fallback to store-level",
+							"keep out of scope"
+						)
+					)
+				)
+
+			write_csv(
+				branch_aware_use_select_compatibility_audit,
+				file.path(data_dir, "typing-delay-branch-aware-use-select-compatibility-audit.csv")
+			)
+
+			branch_aware_use_select_compatibility_summary <- branch_aware_use_select_compatibility_audit %>%
+				group_by(decision) %>%
+				summarize(
+					contract_surfaces = n(),
+					max_risk_score = max(risk_score),
+					example_surface = first(contract_surface),
+					required_gate = first(required_gate),
+					.groups = "drop"
+				) %>%
+				arrange(desc(max_risk_score), decision)
+
+			write_csv(
+				branch_aware_use_select_compatibility_summary,
+				file.path(data_dir, "typing-delay-branch-aware-use-select-compatibility-summary.csv")
+			)
+
+			branch_aware_use_select_plot <- branch_aware_use_select_compatibility_audit %>%
+				mutate(
+					contract_surface_wrapped = str_wrap(contract_surface, width = 30),
+					contract_surface_wrapped = fct_reorder(contract_surface_wrapped, risk_score)
+				)
+
+			save_plot(
+				ggplot(
+					branch_aware_use_select_plot,
+					aes(
+						risk_score,
+						contract_surface_wrapped,
+						color = decision,
+						shape = decision
+					)
+				) +
+					geom_point(size = 4.2, alpha = 0.9) +
+					scale_color_brewer(type = "qual", palette = "Set1", name = "Decision") +
+					scale_shape_manual(
+						values = c(
+							"core blocker" = 16,
+							"policy/API decision" = 17,
+							"must preserve edge case" = 15,
+							"fallback to store-level" = 3,
+							"keep out of scope" = 4
+						),
+						name = "Decision"
+					) +
+					scale_x_continuous(
+						breaks = 1:5,
+						limits = c(1.75, 5.25)
+					) +
+					labs(
+						title = "Branch-aware data subscriptions have a broad compatibility surface",
+						subtitle = "The current useSelect contract includes dynamic store sets, cross-store registry selectors, races, async queues, and public store subscribers",
+						x = "Compatibility risk for a selector/branch-aware notification prototype",
+						y = NULL
+					) +
+					theme(legend.position = "bottom", legend.box = "vertical"),
+				"154-branch-aware-use-select-compatibility.png",
+				width = 12,
+				height = 7.6
+			)
+
 			pattern_override_first_patch_implementation_audit <- tribble(
 			~implementation_question, ~current_answer, ~source_evidence, ~required_patch_contract, ~required_test_contract, ~decision,
 			"What exactly should move?",
@@ -16491,7 +16670,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract narrows the deployment choice: pure getBlockPatterns is rejected locally, getBlockPatterns plus resource quiet is the first replacement candidate, fixed 500ms is only a validated fallback, and fixed 1000ms remains the conservative baseline if either replacement changes the metric boundary.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Run the contract in CI/mac/container lanes with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry before changing the fixed wait.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
 	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
-		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates.",
+		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector and branch-aware compatibility audits narrow the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found. The branch-aware route must preserve dynamic store sets, registry-selector cross-store reads, parent registries, late store registration, render/subscription races, async queue cancellation, no-deps withSelect closures, generic stores, shallow-equality semantics, and public store-level subscribe semantics.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent and store-level subscribe notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes the branch-aware useSelect compatibility matrix plus marker-only source-span gates.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
 		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated Runtime.evaluate/Runtime.callFunctionOn rows are the dose-response control, trace-on captureSnapshot rows isolate the perturbation, and native rows bound browser-only scale.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, EventDispatch, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows.",
 	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "OS counter contract", "Counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this JS harness.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows.",

@@ -1,0 +1,6 @@
+decision,contract_surfaces,max_risk_score,example_surface,required_gate
+core blocker,4,5,Store-name dependency capture,Prototype must record enough dependency metadata to wake `isLastBlockChangePersistent()` consumers while skipping unrelated block-editor selectors.
+policy/API decision,1,5,Public store subscription,Either preserve store-level notification for public subscribers or explicitly document/deprecate a narrowed contract with compatibility fixtures.
+must preserve edge case,7,4,Dynamic store-set growth,"Tests must cover dependencies that expand, switch active branch, retain old subscriptions, and avoid stale values or unexpected missed reruns."
+fallback to store-level,1,3,Custom generic stores,Generic-store fixtures must still update and unmount cleanly; branch filtering may need to fall back to store-level invalidation for generic stores.
+keep out of scope,1,2,Static store selection mode,Static-mode tests must stay non-reactive while mapped `useSelect` remains reactive.

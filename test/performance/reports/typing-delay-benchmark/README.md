@@ -867,6 +867,10 @@ The R script derives:
     `isLastBlockChangePersistent()` notification blocker.
 -   `data/typing-delay-public-selector-notification-design-runbook-audit.csv`:
     compatibility and fanout gates for any public-selector notification design.
+-   `data/typing-delay-branch-aware-use-select-compatibility-*.csv`: source
+    and test-contract audit for the `@wordpress/data` selector/branch-aware
+    subscription path that would be needed to keep public selector notification
+    compatibility while reducing persistence-marker fanout.
 -   `data/typing-delay-pattern-override-first-patch-implementation-audit.csv`:
     exact implementation and test contract for the first selector-guard patch.
 -   `data/typing-delay-pattern-override-postpatch-source-span-*.csv`:
@@ -5592,6 +5596,41 @@ fanout collapsing for unrelated selectors while persistence-specific subscribers
 still wake. If public `registry.subscribe( listener, blockEditorStore )`
 semantics are narrowed, that is a separate API/deprecation decision; it should
 not be hidden inside a typing benchmark patch.
+
+I then audited the existing `useSelect` and registry tests to turn
+"selector-aware or branch-aware data subscriptions" into a concrete compatibility
+surface. This is not a small optimization knob. The current implementation
+records store names with `registry.__unstableMarkListeningStores()`, subscribes
+with `registry.subscribe( onChange, storeName )`, and invalidates the cached
+selected value on a subscribed store change. The tests deliberately cover dynamic
+store sets, conditional reads, registry selectors that read other stores, parent
+registries, late store registration, render-to-subscription races, async queue
+cancellation, no-deps `withSelect` closures, generic stores, static selector
+mode, and shallow-equality behavior.
+
+![Branch-aware useSelect compatibility](figures/154-branch-aware-use-select-compatibility.png)
+
+| Contract surface | Why it matters for branch-aware notification |
+| ---------------- | -------------------------------------------- |
+| Store-name dependency capture | current `useSelect` has store names only, so selector ids, selector args, branch keys, or reducer paths would be new dependency metadata |
+| Root listener fanout | `createReduxStore` still calls every registered listener on root identity change; the performance win needs listener counts to collapse, not just selector values to compare equal later |
+| Public store subscription | `registry.subscribe( listener, storeName )` has no selected value to filter, so narrowing it is an API policy decision unless root notification remains |
+| Dynamic and conditional reads | selected stores can expand or change with state/props; old stores may remain subscribed and still rerun `mapSelect` without rerendering |
+| Registry-selector cross-store reads | an outer selector for one store can read another store through `createRegistrySelector()`, so dependency capture must see nested registry reads |
+| Parent registries and late stores | dependency metadata must work across parent/child registries and the backward-compatible missing-store fallback path |
+| Render/subscription races | current code checks whether a store changed between render and subscription install; a filtered path must not miss that race |
+| Async queue cancellation | async `useSelect` must still cancel queued updates on unmount, mapSelect change, registry change, and async-to-sync transition |
+| Generic and static stores | generic stores may not expose reducer branches, while static store-selector mode is intentionally non-reactive |
+
+This makes the remaining store-partition question sharper. A branch-aware
+prototype is not blocked because it is theoretically impossible; it is blocked
+because its acceptance test is broad. It has to pass the existing `useSelect` /
+`withSelect` / registry semantics above, add a subscribed
+`isLastBlockChangePersistent()` compatibility fixture, and still show the
+marker-only source-span win: unrelated block-editor `rootSubscribe`,
+`data.reduxStore.listener`, and `useSelect.onChange` fanout must collapse while
+persistence-specific subscribers still wake. Anything weaker is either the
+compatible no-win path or an API semantics change.
 
 The next split answers what "woken subscriber" means in the measured input
 slice. In `useSelect`, `onChange` either queues an async update through
