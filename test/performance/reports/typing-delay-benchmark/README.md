@@ -748,6 +748,9 @@ The R script derives:
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
     control joining the action summaries with the exact store-root state effect
     for normal marker, raw unknown action, and mark-next controls.
+-   `data/typing-delay-store-invalidation-contract-candidates.csv`: source-audit
+    design matrix for narrowing store notifications while preserving the
+    persistence signal.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -3784,6 +3787,46 @@ finer-grained invalidation, store partitioning, or a way for `useSelect`
 subscribers to avoid invalidation when the changed state branch cannot affect
 their selected value.
 
+I then audited the subscription contract itself to avoid an invalid "fix." The
+marker cannot simply be silenced. `useBlockSync` subscribes to the
+`core/block-editor` store and reads `isLastBlockChangePersistent()`;
+when a previous block edit becomes persistent without a block-array identity
+change, it uses that transition to send the parent `onChange` instead of
+`onInput` (`packages/block-editor/src/components/provider/use-block-sync.js`).
+So a correct store-boundary fix must keep a persistence notification for
+persistence-aware subscribers while avoiding ordinary `useSelect` invalidation
+for selectors that do not read that branch.
+
+The current `useSelect` mechanics explain why this is not a one-line local
+change. `useSelect` records which store names were read, not which selectors or
+state branches were read. When the block-editor store root changes, the
+subscription wrapper invalidates every `useSelect` value subscribed to that
+store before any selector can prove its selected value stayed the same
+(`packages/data/src/components/use-select/index.ts`). The registry emitter can
+pause/resume notifications, but resume still notifies all pending listeners for
+the store; it does not filter by branch.
+
+![Store invalidation contract candidates](figures/128-store-invalidation-contract-candidates.png)
+
+| Design | Preserves persistence semantics? | Avoids ordinary `useSelect` fanout? | Risk | Suggested order |
+| ------ | -------------------------------- | ---------------------------------- | ---- | --------------- |
+| Local selector guards only | yes | partial | low-medium | first local prototype |
+| ClientId-scoped text-attribute invalidation | yes | partial for text updates | medium-high | second local prototype |
+| Persistence-aware side channel for `useBlockSync` | yes | yes for persistence-only markers | medium-high | store-boundary prototype |
+| Split persistence state from `core/block-editor` | yes if compatibility wrapper is kept | yes for persistence-only markers | high | after side-channel prototype |
+| Branch-aware `useSelect` subscriptions | yes | yes if dependencies are correct | very high | research prototype |
+| Silence `MARK_LAST_CHANGE_AS_PERSISTENT` | no | yes | invalid | reject |
+
+This narrows the store-boundary open question. The right target is not "avoid
+the marker action"; that would break the persistence transition used by
+`useBlockSync`. The plausible target is a two-channel notification path: keep a
+small persistence-aware signal for `useBlockSync` and any direct consumers of
+`isLastBlockChangePersistent()`, but stop waking the thousands of ordinary
+block-editor `useSelect` subscribers whose selected values cannot depend on
+`blocks.isPersistentChange`. Local guards are still the safer first prototypes,
+but the store-boundary prototype should be evaluated as a subscriber-partition
+problem, not as a marker-removal problem.
+
 The next split answers what "woken subscriber" means in the measured input
 slice. In `useSelect`, `onChange` either queues an async update through
 `renderQueue.add()` or synchronously calls `onStoreChange()`
@@ -5721,6 +5764,17 @@ therefore no longer "which hot selector reads the persistence flag?" None of the
 audited hot selectors does. The harder engineering question is whether
 `@wordpress/data` / `core/block-editor` can expose a narrower invalidation path
 for persistence-only or text-only changes.
+
+The store-contract audit narrows that engineering question. Silencing
+`MARK_LAST_CHANGE_AS_PERSISTENT` is not valid because `useBlockSync` consumes the
+persistence transition to turn a previous transient block edit into the parent
+`onChange` path. Current `useSelect` subscribers also cannot opt out by branch:
+they subscribe to store names, and any block-editor root identity change
+invalidates the cached selected value. So the credible store-boundary prototype
+is a subscriber partition: keep a persistence-aware signal for `useBlockSync`
+and direct persistence consumers, while avoiding ordinary `useSelect` fanout for
+selectors that do not read `blocks.isPersistentChange`. A full branch-aware
+`useSelect` dependency system is more general but much higher risk.
 
 The subscriber-outcome funnel closes another tempting explanation. The next
 input wakes the same `4544` `useSelect.onChange` callbacks across normal marker,

@@ -10583,6 +10583,99 @@ if (file.exists(marker_allspan_action_summary_path)) {
 		width = 11,
 		height = 8
 	)
+
+	current_marker_root_subscribe_p50_ms <- marker_state_fanout_summary %>%
+		filter(intervention == "normal marker") %>%
+		pull(root_subscribe_duration_p50_ms) %>%
+		first()
+	current_marker_redux_listener_count_p50 <- marker_state_fanout_summary %>%
+		filter(intervention == "normal marker") %>%
+		pull(redux_listener_count_p50) %>%
+		first()
+	current_marker_use_select_count_p50 <- marker_state_fanout_summary %>%
+		filter(intervention == "normal marker") %>%
+		pull(use_select_on_change_count_p50) %>%
+		first()
+
+	estimated_local_guard_ms <- if (exists("redux_owner_guard_candidates")) {
+		redux_owner_guard_candidates %>%
+			filter(source_site == "(audited marker fanout total)") %>%
+			pull(estimated_skippable_duration_p50_ms) %>%
+			first()
+	} else {
+		NA_real_
+	}
+
+	store_invalidation_contract <- tribble(
+		~design_option, ~design_family, ~preserves_persistence_semantics, ~avoids_ordinary_use_select_fanout, ~prototype_risk, ~prototype_order, ~estimated_scope_ms, ~estimated_scope_listener_count, ~source_evidence, ~design_note,
+		"Silence MARK_LAST_CHANGE_AS_PERSISTENT", "do not do this", "no", "yes", "invalid", "reject", current_marker_root_subscribe_p50_ms, current_marker_redux_listener_count_p50, "The marker currently wakes thousands of listeners, but useBlockSync reads isLastBlockChangePersistent() and uses the persistence transition to choose onChange vs onInput.", "This would make the benchmark fast by dropping a semantic signal the editor uses.",
+		"Local selector guards only", "local guard", "yes", "partial", "low-medium", "first local prototype", estimated_local_guard_ms, 3655, "Hot audited useSelect owners mostly read settings, block identity, tree, or selection state, not text content or isPersistentChange.", "Good first patch class, but it does not fix the store-level wakeup contract.",
+		"Persistence-aware side channel for useBlockSync", "subscriber partition", "yes", "yes for persistence-only markers", "medium-high", "store-boundary prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The only observed semantic consumer of the marker transition in this path is useBlockSync; audited hot useSelect owners do not read blocks.isPersistentChange.", "Notify persistence-aware subscribers without invalidating ordinary block-editor useSelect subscribers.",
+		"Split persistence state from core/block-editor", "store partition", "yes if compatibility wrapper is kept", "yes for persistence-only markers", "high", "after side-channel prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The changed branch is only blocks.isPersistentChange, but public selectors expose it through the block-editor store.", "Could keep isLastBlockChangePersistent as a wrapper while storing/versioning persistence separately.",
+		"Branch-aware useSelect subscriptions", "branch-aware notification", "yes", "yes if dependencies are correct", "very high", "research prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useSelect currently records active store names, not selector or state-branch dependencies; any root change invalidates the store subscriber.", "Most general design, but it changes the data subscription contract and needs broad compatibility tests.",
+		"ClientId-scoped text-attribute invalidation", "text-update partition", "yes", "partial for text updates", "medium-high", "second local prototype", 3.4975648467210574, 1436, "Only the edited BlockListBlockProvider needs the changed paragraph attributes; other block instances are checking identity/selection/tree state.", "Targets ordinary text updates rather than the persistence-only marker."
+	) %>%
+		mutate(
+			prototype_risk = factor(
+				prototype_risk,
+				levels = c("low-medium", "medium-high", "high", "very high", "invalid")
+			),
+			prototype_order = factor(
+				prototype_order,
+				levels = c(
+					"first local prototype",
+					"second local prototype",
+					"store-boundary prototype",
+					"after side-channel prototype",
+					"research prototype",
+					"reject"
+				)
+			),
+			design_family = factor(
+				design_family,
+				levels = c(
+					"local guard",
+					"text-update partition",
+					"subscriber partition",
+					"store partition",
+					"branch-aware notification",
+					"do not do this"
+				)
+			)
+		) %>%
+		arrange(prototype_order)
+
+	write_csv(
+		store_invalidation_contract,
+		file.path(data_dir, "typing-delay-store-invalidation-contract-candidates.csv")
+	)
+
+	store_invalidation_plot <- store_invalidation_contract %>%
+		mutate(
+			design_option = fct_reorder(design_option, estimated_scope_ms),
+			plot_scope_ms = if_else(is.na(estimated_scope_ms), 0, estimated_scope_ms)
+		)
+
+	save_plot(
+		ggplot(
+			store_invalidation_plot,
+			aes(plot_scope_ms, design_option, color = prototype_risk, shape = prototype_order, size = estimated_scope_listener_count)
+		) +
+			geom_point(alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Risk") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "Affected listener count") +
+			labs(
+				title = "Store-boundary fixes need to preserve the persistence signal",
+				subtitle = "Scope is current marker root-subscribe p50 for store-boundary designs and audited skippable p50 for local guards",
+				x = "Current p50 fanout scope / audited skippable scope (ms)",
+				y = NULL,
+				shape = "Suggested order"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"128-store-invalidation-contract-candidates.png",
+		width = 12.5,
+		height = 7.3
+	)
 }
 
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
