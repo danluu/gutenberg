@@ -12189,4 +12189,136 @@ if (all(file.exists(react_render_boundary_inputs))) {
 	)
 }
 
+open_question_next_instrumentation_matrix <- tribble(
+	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
+	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Current Typing has 0ms extra post-setup wait; repeated CI-comparable and exact-spec runs did not show retained-q50 stability gains from adding wait.", "Whether a different CI image shifts absolute numbers, not whether this local knob can speed up current Typing.", "No more Typing startup-wait runs unless the CI image or spec shape changes.",
+	"Pattern-loading wait", "CI engineering", 4, 3, 4, "validate before change", "Local exact short-wait data says 500ms preserves the 1000ms q50 band while saving wall time; 0ms moves resource work into the measured interval.", "Whether 500ms or a readiness predicate is stable across CI, macOS versions, and containers.", "Prototype an explicit pattern-readiness predicate or validate 500ms in CI/mac/container before changing the shared wait.",
+	"Low-risk selector guards", "product optimization", 4, 3, 4, "prototype first", "Source audit and validation matrix identify pattern-override settings/name and HeadingEdit anchor/TOC guards as low-burden first patches.", "Actual behavior-test coverage and measured win after implementation.", "Implement the low-burden guards with text insertion, setting toggle, block-name, pattern override, and TOC insertion/removal tests.",
+	"Store subscriber partition", "product optimization", 3, 4, 5, "research after local guards", "The marker changes only blocks.isPersistentChange; audited hot selectors do not read it, but useBlockSync needs the persistence transition.", "Whether @wordpress/data/core-block-editor can expose a persistence-aware side channel without breaking existing useSelect semantics.", "After local guards, prototype persistence-aware subscriber partitioning while preserving useBlockSync and isLastBlockChangePersistent consumers.",
+	"React render ownership", "product optimization", 5, 3, 2, "secondary optimization", "Boundary audit bounds renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering as secondary contributors.", "Which components own the smaller after-input or whole-cycle cost.", "Use React profiler only for after-input optimization ownership, not as the primary 1000ms-cliff mechanism.",
+	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Raw CDP ordinary waits stay slow even at 5s, while Runtime.evaluate/callFunctionOn checkpoints have a dose response and trace snapshots explain the full Playwright trace-on fast path.", "Which Chromium renderer/runtime scheduler state is changed by those checkpoints.", "Use Chromium scheduler/runtime trace categories and protocol-level checkpoint probes around Runtime.evaluate and captureSnapshot.",
+	"CPU/QoS mechanism", "system/browser", 3, 5, 3, "outside JS harness", "Finite CPU duration and end-to-keydown gap explain 71% of local p50 variation; ordinary/utility QoS activity can make the path fast while background/maintenance stays slow.", "Exact hardware or OS scheduler layer: core residency, frequency, cache state, QoS scheduling, or a mix.", "Run the finite-burst controls with powermetrics/Instruments/OS scheduler traces and browser scheduling categories.",
+	"Calibrated presentation", "user-facing measurement", 4, 5, 4, "external calibration", "Paint, DrawFrame, RAF, and localized changed trace screenshots all preserve the key-held 1000ms drop; post-dispatch rendering is too small for the main cliff.", "Display presentation timestamp and semantic glyph recognition outside Chromium trace screenshots.", "Calibrate with compositor presentation traces, OCR on screenshots, or high-speed camera data before claiming hardware-to-screen latency.",
+	"Human/plugin workload", "workload coverage", 2, 4, 4, "needs workload data", "The benchmark is a vanilla large-post fixed-x stressor; native/minimal controls prove the large cliff needs Gutenberg-scale work.", "Whether plugin-heavy, P2-like, long-session, composition, correction, selection, and navigation workloads expose different hot paths.", "Record representative human/plugin-heavy sessions and replay them with per-sample histories instead of fixed-delay x insertion.",
+	"Portability of absolute numbers", "methodology", 3, 3, 3, "validation run", "Fresh-editor, randomized, exact-spec, and containerized local runs cover several confounders, but the report is still one local machine family.", "How much the absolute p50/CV values move across CI hosts, containers, browser versions, and OS power policy.", "Repeat the compact score runs and key diagnostic controls on CI/mac/container/browser-version variants before changing thresholds."
+) %>%
+	mutate(
+		category = factor(
+			category,
+			levels = c(
+				"CI engineering",
+				"product optimization",
+				"automation/browser",
+				"system/browser",
+				"user-facing measurement",
+				"workload coverage",
+				"methodology"
+			)
+		),
+		decision = factor(
+			decision,
+			levels = c(
+				"closed locally",
+				"validate before change",
+				"prototype first",
+				"research after local guards",
+				"secondary optimization",
+				"validation run",
+				"needs workload data",
+				"external calibration",
+				"outside JS harness"
+			)
+		),
+		short_label_wrapped = str_wrap(short_label, 18),
+		evidence_band = case_when(
+			current_answer_strength >= 5 ~ "strong local answer",
+			current_answer_strength >= 4 ~ "bounded locally",
+			current_answer_strength >= 3 ~ "partially bounded",
+			TRUE ~ "not yet covered"
+		),
+		next_work_band = case_when(
+			next_work_cost >= 5 ~ "different tooling",
+			next_work_cost >= 4 ~ "new workload/prototype",
+			next_work_cost >= 3 ~ "focused validation",
+			TRUE ~ "little/no follow-up"
+		),
+		plot_x = current_answer_strength + case_when(
+			short_label == "Pattern-loading wait" ~ -0.08,
+			short_label == "Low-risk selector guards" ~ 0.08,
+			short_label == "Chromium runtime checkpoint" ~ 0.08,
+			short_label == "Calibrated presentation" ~ -0.08,
+			TRUE ~ 0
+		),
+		plot_y = next_work_cost + case_when(
+			short_label == "Pattern-loading wait" ~ -0.08,
+			short_label == "Low-risk selector guards" ~ 0.08,
+			short_label == "Chromium runtime checkpoint" ~ 0.08,
+			short_label == "Calibrated presentation" ~ -0.08,
+			TRUE ~ 0
+		)
+	)
+
+write_csv(
+	open_question_next_instrumentation_matrix,
+	file.path(data_dir, "typing-delay-open-question-next-instrumentation-matrix.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_next_instrumentation_matrix,
+		aes(
+			plot_x,
+			plot_y,
+			color = category,
+			shape = decision,
+			size = impact_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(label = short_label_wrapped),
+			color = "grey20",
+			size = 3.1,
+			lineheight = 0.9,
+			nudge_y = 0.18,
+			show.legend = FALSE
+		) +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.5, 5.35),
+			labels = c("1" = "weak", "2" = "low", "3" = "partial", "4" = "bounded", "5" = "strong")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(0.75, 5.6),
+			labels = c("1" = "none", "2" = "small", "3" = "validate", "4" = "prototype", "5" = "new tooling")
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Question class") +
+		scale_shape_manual(
+			values = c(
+				"closed locally" = 16,
+				"validate before change" = 17,
+				"prototype first" = 15,
+				"research after local guards" = 3,
+				"secondary optimization" = 7,
+				"validation run" = 8,
+				"needs workload data" = 4,
+				"external calibration" = 18,
+				"outside JS harness" = 1
+			)
+		) +
+		scale_size_area(max_size = 7, breaks = c(2, 3, 4, 5), name = "Decision impact") +
+		labs(
+			title = "Remaining questions are now mostly validation, product work, or outside the JS harness",
+			subtitle = "Current answer strength versus the cost of the next credible measurement or prototype",
+			x = "Current answer strength",
+			y = "Next work cost",
+			shape = "Decision"
+		) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"136-open-question-next-instrumentation-matrix.png",
+	width = 12.5,
+	height = 8.4
+)
+
 message("Wrote plots to: ", figure_dir)

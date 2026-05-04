@@ -803,6 +803,9 @@ The R script derives:
     bounds the remaining React/render caveat using visual endpoint
     decomposition, `useSelect` subphase deltas, paused listener-wrapper deltas,
     and priority-queue idle timing.
+-   `data/typing-delay-open-question-next-instrumentation-matrix.csv`: ranked
+    matrix of remaining questions, current answer strength, next-work cost, and
+    recommended next instrumentation or prototype.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -6086,6 +6089,40 @@ visual/render tail; for first changed trace screenshot, the tail contributes
 whole-cycle attribution, but it is too small to be the primary cause of the
 `1000ms` cliff.
 
+### Remaining Open Questions Matrix
+
+At this point, more runs of the same JS-level benchmark are not all equally
+useful. I converted the remaining questions into a decision matrix: current
+answer strength, cost of the next credible measurement or prototype, and the
+decision that should follow from the current evidence.
+
+![Open question next instrumentation matrix](figures/136-open-question-next-instrumentation-matrix.png)
+
+The high-level split is:
+
+| Question | Current answer | Next useful work |
+| -------- | -------------- | ---------------- |
+| Typing startup wait | locally closed; current Typing has no extra post-setup wait and added waits do not improve retained q50 stability | no more local startup-wait runs unless CI/spec shape changes |
+| Pattern-loading wait | bounded locally; `500ms` matches the `1000ms` q50 band while `0ms` changes the measured work | CI/mac/container validation or an explicit readiness predicate |
+| Low-risk selector guards | bounded enough to prototype | implement pattern-override and `HeadingEdit` guards with behavior tests |
+| Store subscriber partition | partially bounded; promising but contract-sensitive | research after local guards, preserving `useBlockSync` and persistence consumers |
+| React render ownership | bounded as secondary, not primary cause | profiler only for after-input/whole-cycle ownership |
+| Chromium runtime checkpoint | bounded to automation/runtime state, not Gutenberg semantic state | Chromium scheduler/runtime tracing, outside this JS harness |
+| CPU/QoS mechanism | partially bounded to ordinary/utility-QoS CPU state interacting with Gutenberg's input path | OS scheduler/power/counter traces, outside this JS harness |
+| Calibrated presentation | bounded through Paint/DrawFrame/localized trace screenshots | compositor presentation timestamps, OCR, or high-speed camera |
+| Human/plugin workload | not covered by fixed `x` insertion | record/replay representative plugin-heavy and human editing histories |
+| Portability of absolute numbers | partially bounded by local fresh/randomized/container checks | compact validation on CI hosts, containers, browser versions, and OS power policy |
+
+This is the practical answer to "what is still open?" The main causal story for
+the `1000ms` key-held cliff no longer depends on unresolved React rendering,
+selector-body, screenshot-noise, or startup-wait theories. The expensive true
+unknowns are below the current harness: Chromium/runtime scheduler state,
+OS/hardware power or QoS state, and calibrated display presentation. The useful
+local engineering work is different: implement low-burden selector guards,
+validate or replace the pattern-loading wait, and collect more realistic
+workloads if the question shifts from this benchmark artifact to real editor
+lag.
+
 ## Recommendations
 
 For CI:
@@ -6114,6 +6151,10 @@ For investigation:
     audit above shows that equalizing to the same total runtime would undersample
     the longest delays, while `60s` per delay would make one `0..1100ms` sweep
     take about `111m`.
+-   Do not keep rerunning the same JS-level key-held benchmark for questions that
+    now require different instrumentation. CPU/QoS, Chromium runtime checkpoint,
+    and calibrated presentation questions need OS/browser/display tooling, not
+    more copies of the same trace categories.
 -   Run fresh browser contexts and fresh posts for each delay when comparing delay
     values.
 -   The RichText `onInput` split is now deep enough for this artifact: direct DOM
