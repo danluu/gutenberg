@@ -131,8 +131,8 @@ The short version:
     page-keyboard `75ms` / `100ms` are slow; `locator.type()` `50ms` / `75ms`
     are slow; `locator.press()` `50ms` / `75ms` / `100ms` are tap-like.
     Turning off `locator.press()`'s `waitForSignalsCreatedBy` epilogue with
-    `noWaitAfter` moves `50ms` and most `75ms` rows toward `locator.type()`,
-    which supports the checkpoint/epilogue explanation for why ordinary
+    `noWaitAfter` moves `50ms` and `75ms` rows toward `locator.type()`, which
+    supports the checkpoint/epilogue explanation for why ordinary
     `locator.press()` is tap-like. Because `locator.pressSequentially()`
     delegates to `locator.type()`, it should be treated as the `locator.type()`
     family, not the ordinary `locator.press()` family.
@@ -739,7 +739,8 @@ The R script derives:
     stable-target controls for current CI held key, tap-then-wait,
     page-keyboard fixed hold, locator `type()`, locator `press()`, and
     locator `press()` with `noWaitAfter` input paths at `50ms`, `75ms`, and
-    `100ms` requested holds, including a paired-differences table by round.
+    `100ms` requested holds, including paired-differences and tap-relative API
+    delta tables.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -2323,10 +2324,29 @@ per-press wait-for-signals epilogue. The p50 matrix is:
 | `locator.press()` `75ms` hold | `12.9ms` | `11.9ms` | `11.1ms` |
 | `locator.press()` `100ms` hold | `13.1ms` | `12.0ms` | `10.5ms` |
 | `locator.press(noWaitAfter)` `50ms` hold | `16.0ms` | `15.6ms` | `15.1ms` |
-| `locator.press(noWaitAfter)` `75ms` hold | `10.9ms` | `15.7ms` | `14.7ms` |
+| `locator.press(noWaitAfter)` `75ms` hold | `16.1ms` | `16.2ms` | `15.2ms` |
 | `locator.press(noWaitAfter)` `100ms` hold | `14.3ms` | `11.3ms` | `11.1ms` |
 
 ![Fresh CI code-path hold boundary](figures/147-ci-fresh-code-path-hold-boundary.png)
+
+The tap-relative phase map makes the remaining split easier to audit than the
+raw p50 table. Each cell below subtracts the same-delay tap p50, so a dark
+positive cell means "this API/hold combination is slow relative to a completed
+keypress followed by the same configured wait".
+
+![Fresh CI code-path phase map](figures/148-ci-fresh-code-path-phase-map.png)
+
+This plot rules out a single hold-duration threshold. At the same requested
+`50ms` hold, page-keyboard is tap-like while `locator.type()` and
+`locator.press(noWaitAfter)` are slow. At the same requested `100ms` hold,
+page-keyboard is slow while `locator.type()` and `locator.press(noWaitAfter)`
+are mostly tap-like at `500ms` / `1000ms`. Ordinary `locator.press()` remains
+tap-like across the matrix, and the noWaitAfter variant moves its `50ms` and
+`75ms` cells into the `locator.type()` band. That gives one proved answer and
+one remaining open question: the ordinary `locator.press()` result is mostly the
+per-key Playwright wait-for-signals checkpoint, but the page-keyboard versus
+`locator.type()` boundary is still an API/order interaction, not a physical
+hold-length threshold.
 
 This closes one open question and opens a narrower one. The reused-editor
 page-keyboard `50ms` slow band does not survive the matched fresh page-keyboard
@@ -2339,10 +2359,9 @@ tap-like, with aggregate p50s at or below tap except for `75ms` / `100ms` at
 `250ms`, where they are only `0.4-0.5ms` above tap. The `noWaitAfter` variant
 mostly removes that special tap-like behavior. At `50ms`, it reports
 `15.1-16.0ms`, essentially the `locator.type()` band. At `75ms`, it is slow at
-`500ms` / `1000ms` and noisy at `250ms`; the `250ms` aggregate p50 is low
-(`10.9ms`) but its p10-p90 span is wide (`9.7-17.0ms`). At `100ms`, it remains
-mostly tap-like, matching the fact that `locator.type()` `100ms` is also
-tap-like at `500ms` / `1000ms`.
+all three discriminator delays (`16.1ms`, `16.2ms`, and `15.2ms`), again close
+to `locator.type()`. At `100ms`, it remains mostly tap-like, matching the fact
+that `locator.type()` `100ms` is also tap-like at `500ms` / `1000ms`.
 
 The sign checks match the aggregate split. Across the three discriminator delays
 and four rounds, page-keyboard `50ms` is below page-keyboard `100ms` in `11/12`
@@ -2354,9 +2373,9 @@ comparison is mixed (`7/12` rounds and `18/30` sample-position medians above
 `locator.press(noWaitAfter)`, the strongest check is against ordinary
 `locator.press()`: `50ms` noWaitAfter is higher in `9/12` paired rounds with a
 median `+3.4ms` gap, while its median gap versus `locator.type()` is only
-`-0.3ms`. At `75ms`, noWaitAfter is higher than ordinary press in `9/12` paired
-rounds with a median `+3.1ms` gap, and is again close to `locator.type()`
-overall (`-0.6ms` median). All modes still have the same event shape: `11` key
+`-0.3ms`. At `75ms`, noWaitAfter is higher than ordinary press in `12/12`
+paired rounds with a median `+3.9ms` gap, and is again close to `locator.type()`
+overall (`+0.1ms` median). All modes still have the same event shape: `11` key
 groups, `22` keydown dispatches, `11` keypress dispatches, and `11` keyup
 dispatches per run. The movement is again in the `keypress` slice.
 
@@ -2376,8 +2395,9 @@ current held key, tap, page-keyboard `50ms` / `75ms` / `100ms`,
 `locator.press()` block should not have returned to the tap-like band. If
 earlier runs were just globally faster, the initial current-CI held-key run
 should not have been slow at `250ms` / `500ms`. The clean noWaitAfter artifacts
-then ran sequentially as `50ms`, `75ms`, and `100ms`, and the `50ms` row went
-back to the slow `locator.type()` band. That is the important direction: the
+then ran sequentially as `50ms`, `75ms`, and `100ms`, and the `50ms` / `75ms`
+rows went back to the slow `locator.type()` band. That is the important
+direction: the
 tap-like ordinary `locator.press()` result is not a generic "latest run was
 fast" artifact. The CSVs and plot use that non-overlapping sequence; I excluded
 a later duplicate `75ms` noWaitAfter artifact that overlapped the existing
@@ -2411,10 +2431,10 @@ explicit post-keyup wait. The fresh data fit that code-path split: the
 is the main reason ordinary `locator.press()` is tap-like. Removing the
 wait-for-signals epilogue moves `50ms` `locator.press()` from the ordinary press
 band (`11.5ms`, `12.3ms`, `10.8ms`) to the type-like band (`16.0ms`, `15.6ms`,
-`15.1ms`). The `75ms` row moves the same way at `500ms` / `1000ms`
-(`15.7ms`, `14.7ms`), though the `250ms` point is split and should not be used
-alone. The `100ms` row stays mostly tap-like, which is not a contradiction:
-`locator.type()` `100ms` is also tap-like at `500ms` / `1000ms`. So the
+`15.1ms`). The `75ms` row moves the same way at all three discriminator delays
+(`16.1ms`, `16.2ms`, `15.2ms`). The `100ms` row stays mostly tap-like, which is
+not a contradiction: `locator.type()` `100ms` is also tap-like at `500ms` /
+`1000ms`. So the
 automation-checkpoint answer is narrow but useful: ordinary `locator.press()` is
 not a valid model for CI's `pressSequentially()` / `type()` path because it adds
 a per-key checkpoint that can hide the slow phase.

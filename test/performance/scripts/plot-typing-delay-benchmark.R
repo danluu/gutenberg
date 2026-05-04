@@ -4736,6 +4736,7 @@ ci_fresh_code_path_sample_path <- file.path(data_dir, "typing-delay-ci-fresh-cod
 ci_fresh_code_path_run_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-runs.csv")
 ci_fresh_code_path_summary_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-summary.csv")
 ci_fresh_code_path_paired_difference_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-paired-differences.csv")
+ci_fresh_code_path_api_delta_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-api-deltas.csv")
 ci_hold_duration_artifact_dirs <- c(
 	`current CI held key` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-keyboard"),
 	`100ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-hold-100"),
@@ -5651,6 +5652,46 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 		)
 	write_csv(ci_fresh_code_path_paired_differences, ci_fresh_code_path_paired_difference_path)
 
+	ci_fresh_code_path_api_deltas <- ci_fresh_code_path_summary %>%
+		filter(delay_ms %in% c(250, 500, 1000), input_api != "page.keyboard.type") %>%
+		select(
+			input_mode,
+			input_api,
+			requested_hold_ms,
+			delay_ms,
+			retained_n,
+			latency_p50_ms,
+			latency_p10_ms,
+			latency_p90_ms,
+			keypress_p50_ms,
+			observed_keydown_to_keyup_p50_ms,
+			keypress_to_keyup_gap_p50_ms
+		) %>%
+		left_join(
+			ci_fresh_code_path_summary %>%
+				filter(delay_ms %in% c(250, 500, 1000), input_api == "tap") %>%
+				select(delay_ms, tap_latency_p50_ms = latency_p50_ms, tap_keypress_p50_ms = keypress_p50_ms),
+			by = "delay_ms"
+		) %>%
+		left_join(
+			ci_fresh_code_path_summary %>%
+				filter(delay_ms %in% c(250, 500, 1000), input_api == "page.keyboard.type") %>%
+				select(delay_ms, current_ci_latency_p50_ms = latency_p50_ms),
+			by = "delay_ms"
+		) %>%
+		mutate(
+			latency_minus_tap_p50_ms = latency_p50_ms - tap_latency_p50_ms,
+			keypress_minus_tap_p50_ms = keypress_p50_ms - tap_keypress_p50_ms,
+			latency_minus_current_ci_p50_ms = latency_p50_ms - current_ci_latency_p50_ms,
+			phase_label = case_when(
+				latency_minus_tap_p50_ms >= 2.5 ~ "slow",
+				latency_minus_tap_p50_ms <= 1.0 ~ "tap-like",
+				TRUE ~ "mixed"
+			)
+		) %>%
+		arrange(delay_ms, input_api, requested_hold_ms)
+	write_csv(ci_fresh_code_path_api_deltas, ci_fresh_code_path_api_delta_path)
+
 	ci_fresh_code_path_plot <- ci_fresh_code_path_summary %>%
 		filter(delay_ms %in% c(250, 500, 1000), input_api != "page.keyboard.type") %>%
 		mutate(
@@ -5700,6 +5741,49 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 			) +
 			theme(legend.position = "bottom", legend.box = "vertical"),
 		"147-ci-fresh-code-path-hold-boundary.png",
+		width = 12.2,
+		height = 5.8
+	)
+
+	ci_fresh_code_path_phase_map <- ci_fresh_code_path_api_deltas %>%
+		mutate(
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("250ms", "500ms", "1000ms")),
+			input_api = factor(input_api, levels = c("tap", "page.keyboard", "locator.type", "locator.press", "locator.press noWaitAfter")),
+			hold_label = factor(
+				paste0(requested_hold_ms, "ms"),
+				levels = c("0ms", "50ms", "75ms", "100ms")
+			),
+			delta_label = sprintf("%+.1f", latency_minus_tap_p50_ms)
+		)
+
+	save_plot(
+		ggplot(
+			ci_fresh_code_path_phase_map,
+			aes(hold_label, input_api, fill = latency_minus_tap_p50_ms)
+		) +
+			geom_tile(color = "white", linewidth = 0.45) +
+			geom_text(aes(label = delta_label), size = 3.2, color = brewer_color("Greys", 9, type = "seq", n = 9)) +
+			facet_wrap(vars(delay_label), nrow = 1) +
+			scale_fill_distiller(
+				type = "div",
+				palette = "RdYlBu",
+				direction = -1,
+				limits = c(-1, 5),
+				oob = squish,
+				name = "p50 - tap (ms)"
+			) +
+			labs(
+				title = "Fresh-editor phase map: no single hold-duration threshold explains the slow band",
+				subtitle = "Cells show p50 latency minus same-delay tap; slow cells are relative to tap, not absolute latency",
+				x = "Requested key hold before post-keyup wait",
+				y = "Input API"
+			) +
+			theme(
+				legend.position = "bottom",
+				panel.grid = element_blank(),
+				axis.text.x = element_text(angle = 0, hjust = 0.5)
+			),
+		"148-ci-fresh-code-path-phase-map.png",
 		width = 12.2,
 		height = 5.8
 	)
