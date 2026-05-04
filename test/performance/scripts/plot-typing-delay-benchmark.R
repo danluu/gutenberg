@@ -11605,11 +11605,31 @@ if (file.exists(marker_allspan_action_summary_path)) {
 	} else {
 		NA_real_
 	}
+	source_feasible_local_guard_ms <- if (exists("selector_guard_source_feasibility_summary")) {
+		selector_guard_source_feasibility_summary %>%
+			pull(source_audited_conservative_skippable_ms) %>%
+			first()
+	} else {
+		estimated_local_guard_ms
+	}
+	source_feasible_local_guard_count <- if (exists("selector_guard_source_feasibility")) {
+		selector_guard_source_feasibility %>%
+			summarize(
+				count = sum(
+					pmax(candidate_listener_count_p50 - after_source_audit_conservative_calls, 0),
+					na.rm = TRUE
+				),
+				.groups = "drop"
+			) %>%
+			pull(count)
+	} else {
+		3655
+	}
 
 	store_invalidation_contract <- tribble(
 		~design_option, ~design_family, ~preserves_persistence_semantics, ~avoids_ordinary_use_select_fanout, ~prototype_risk, ~prototype_order, ~estimated_scope_ms, ~estimated_scope_listener_count, ~source_evidence, ~design_note,
 		"Silence MARK_LAST_CHANGE_AS_PERSISTENT", "do not do this", "no", "yes", "invalid", "reject", current_marker_root_subscribe_p50_ms, current_marker_redux_listener_count_p50, "The marker currently wakes thousands of listeners, but useBlockSync reads isLastBlockChangePersistent() and uses the persistence transition to choose onChange vs onInput.", "This would make the benchmark fast by dropping a semantic signal the editor uses.",
-		"Local selector guards only", "local guard", "yes", "partial", "low-medium", "first local prototype", estimated_local_guard_ms, 3655, "Hot audited useSelect owners mostly read settings, block identity, tree, or selection state, not text content or isPersistentChange.", "Good first patch class, but it does not fix the store-level wakeup contract.",
+		"Local selector guards only", "local guard", "yes", "partial", "low-medium", "first local prototype", source_feasible_local_guard_ms, source_feasible_local_guard_count, "Hot audited useSelect owners mostly read settings, block identity, tree, or selection state, not text content or isPersistentChange; source feasibility removes the heading row until it has a shared signal.", "Good first patch class, but it does not fix the store-level wakeup contract.",
 		"Persistence-aware side channel for useBlockSync", "subscriber partition", "yes", "yes for persistence-only markers", "medium-high", "store-boundary prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The only observed semantic consumer of the marker transition in this path is useBlockSync; audited hot useSelect owners do not read blocks.isPersistentChange.", "Notify persistence-aware subscribers without invalidating ordinary block-editor useSelect subscribers.",
 		"Split persistence state from core/block-editor", "store partition", "yes if compatibility wrapper is kept", "yes for persistence-only markers", "high", "after side-channel prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The changed branch is only blocks.isPersistentChange, but public selectors expose it through the block-editor store.", "Could keep isLastBlockChangePersistent as a wrapper while storing/versioning persistence separately.",
 		"Branch-aware useSelect subscriptions", "branch-aware notification", "yes", "yes if dependencies are correct", "very high", "research prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useSelect currently records active store names, not selector or state-branch dependencies; any root change invalidates the store subscriber.", "Most general design, but it changes the data subscription contract and needs broad compatibility tests.",
@@ -11675,6 +11695,119 @@ if (file.exists(marker_allspan_action_summary_path)) {
 		"128-store-invalidation-contract-candidates.png",
 		width = 12.5,
 		height = 7.3
+	)
+
+	store_boundary_source_feasibility <- tribble(
+		~design_option, ~source_feasibility, ~contract_surface_score, ~current_scope_ms, ~listener_scope, ~source_finding, ~compatibility_risk, ~revised_recommendation,
+		"Source-feasible local selector guards", "source-feasible local work", 1, source_feasible_local_guard_ms, source_feasible_local_guard_count, "Pattern override can be split by selected block; block-provider and inner-blocks guards need local invalidation prototypes; no data subscription contract change.", "Local stale UI risk only; covered by component behavior tests.", "Do before store-boundary work.",
+		"Persistence-aware useBlockSync side channel", "possible but contract-sensitive", 4, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useBlockSync is a global registry subscriber. The registry currently does not know which global subscribers read the persistence branch.", "Needs a new persistence-aware subscription path or explicit useBlockSync registration; external registry.subscribe plus isLastBlockChangePersistent consumers are compatibility risk.", "Research after local guards; prototype with compatibility audit.",
+		"Split persistence state out of block-editor root", "blocked without side channel", 5, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "Moving the flag avoids the block-editor root change only if selector and notification semantics are replaced.", "Direct consumers of isLastBlockChangePersistent can observe stale state or miss the transition unless a side channel exists.", "Do only after a side-channel design works.",
+		"Branch-aware useSelect dependencies", "research only", 6, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useSelect records store names, not selector names, state branches, or dynamic selector dependencies.", "Broad data contract change; selectors can read conditionally and across stores.", "Treat as a separate data-layer research project.",
+		"Silence MARK_LAST_CHANGE_AS_PERSISTENT", "invalid", 7, current_marker_root_subscribe_p50_ms, current_marker_redux_listener_count_p50, "This removes the persistence transition that useBlockSync uses to convert a previous transient edit into parent onChange.", "Breaks editor semantics to make the benchmark faster.", "Reject."
+	) %>%
+		mutate(
+			source_feasibility = factor(
+				source_feasibility,
+				levels = c(
+					"source-feasible local work",
+					"possible but contract-sensitive",
+					"blocked without side channel",
+					"research only",
+					"invalid"
+				)
+			),
+			design_option = factor(
+				design_option,
+				levels = c(
+					"Source-feasible local selector guards",
+					"Persistence-aware useBlockSync side channel",
+					"Split persistence state out of block-editor root",
+					"Branch-aware useSelect dependencies",
+					"Silence MARK_LAST_CHANGE_AS_PERSISTENT"
+				)
+			)
+		)
+
+	write_csv(
+		store_boundary_source_feasibility,
+		file.path(data_dir, "typing-delay-store-boundary-source-feasibility.csv")
+	)
+
+	store_boundary_source_feasibility_summary <- store_boundary_source_feasibility %>%
+		summarize(
+			source_feasible_local_guard_ms = current_scope_ms[design_option == "Source-feasible local selector guards"],
+			source_feasible_local_guard_listener_scope = listener_scope[design_option == "Source-feasible local selector guards"],
+			persistence_marker_root_scope_ms = current_marker_root_subscribe_p50_ms,
+			persistence_marker_use_select_scope = current_marker_use_select_count_p50,
+			local_guard_share_of_marker_root_scope_pct = 100 * source_feasible_local_guard_ms / persistence_marker_root_scope_ms,
+			.groups = "drop"
+		)
+
+	write_csv(
+		store_boundary_source_feasibility_summary,
+		file.path(data_dir, "typing-delay-store-boundary-source-feasibility-summary.csv")
+	)
+
+	store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
+		mutate(
+			plot_label = case_when(
+				design_option == "Source-feasible local selector guards" ~ "local guards",
+				design_option == "Persistence-aware useBlockSync side channel" ~ "useBlockSync side channel",
+				design_option == "Split persistence state out of block-editor root" ~ "split persistence state",
+				design_option == "Branch-aware useSelect dependencies" ~ "branch-aware useSelect",
+				TRUE ~ "silence marker"
+			),
+			label_x = case_when(
+				design_option == "Source-feasible local selector guards" ~ current_scope_ms + 1.2,
+				design_option == "Persistence-aware useBlockSync side channel" ~ current_scope_ms - 2.5,
+				design_option == "Split persistence state out of block-editor root" ~ current_scope_ms - 2.9,
+				design_option == "Branch-aware useSelect dependencies" ~ current_scope_ms - 2.5,
+				TRUE ~ current_scope_ms - 1.4
+			),
+			label_y = case_when(
+				design_option == "Persistence-aware useBlockSync side channel" ~ contract_surface_score - 0.24,
+				design_option == "Split persistence state out of block-editor root" ~ contract_surface_score - 0.18,
+				design_option == "Branch-aware useSelect dependencies" ~ contract_surface_score + 0.22,
+				TRUE ~ contract_surface_score + 0.18
+			)
+		)
+
+	save_plot(
+		ggplot(
+			store_boundary_source_feasibility_plot,
+			aes(
+				current_scope_ms,
+				contract_surface_score,
+				color = source_feasibility,
+				shape = source_feasibility,
+				size = listener_scope
+			)
+		) +
+			geom_point(alpha = 0.92) +
+			geom_text(
+				aes(label_x, label_y, label = plot_label),
+				size = 3.1,
+				color = "grey20",
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Source feasibility") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "listener scope") +
+			scale_x_continuous(labels = label_number(suffix = "ms")) +
+			scale_y_continuous(
+				breaks = 1:7,
+				labels = c("local", "", "", "contract", "blocked", "research", "invalid"),
+				limits = c(0.6, 7.4)
+			) +
+			labs(
+				title = "Store-boundary fixes are larger than local selector guards",
+				subtitle = "Marker-specific designs touch the registry/useSelect contract; local guards cover a smaller but source-feasible envelope",
+				x = "Current p50 scope",
+				y = "Contract surface / risk"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"140-store-boundary-source-feasibility.png",
+		width = 12,
+		height = 7.4
 	)
 }
 

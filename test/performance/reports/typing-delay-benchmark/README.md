@@ -778,6 +778,10 @@ The R script derives:
 -   `data/typing-delay-store-invalidation-contract-candidates.csv`: source-audit
     design matrix for narrowing store notifications while preserving the
     persistence signal.
+-   `data/typing-delay-store-boundary-source-feasibility*.csv`: source-level
+    feasibility audit for store-boundary designs after accounting for
+    `registry.subscribe`, store-specific `useSelect` subscriptions, and the
+    corrected local selector-guard envelope.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -4059,6 +4063,36 @@ block-editor `useSelect` subscribers whose selected values cannot depend on
 but the store-boundary prototype should be evaluated as a subscriber-partition
 problem, not as a marker-removal problem.
 
+I then audited that subscriber-partition idea against the registry source. This
+adds a compatibility constraint that the earlier design table did not spell out.
+`useSelect` subscribes to specific stores through `registry.subscribe( onChange,
+storeName )`, so it is on the store emitter path. `useBlockSync` uses
+`registry.subscribe( listener )` with no store name, so it is on the global
+registry emitter path. The registry currently does not know which global
+subscribers read `isLastBlockChangePersistent()`, and `useSelect` currently
+knows only active store names, not selector names or state branches.
+
+![Store-boundary source feasibility](figures/140-store-boundary-source-feasibility.png)
+
+| Design | Current p50 scope | Source finding | Compatibility risk | Revised recommendation |
+| ------ | ----------------: | -------------- | ------------------ | ---------------------- |
+| Source-feasible local selector guards | `8.2ms` / `3,452` listeners | Pattern override can be split by selected block; block-provider and inner-blocks need local invalidation prototypes; no data subscription contract change. | Local stale UI risk only; covered by component behavior tests. | Do before store-boundary work. |
+| Persistence-aware `useBlockSync` side channel | `23.2ms` / `4,498` `useSelect` listeners | `useBlockSync` is a global registry subscriber; the registry does not classify global subscribers by persistence-branch dependency. | Needs a new persistence-aware subscription path or explicit `useBlockSync` registration; external `registry.subscribe` plus `isLastBlockChangePersistent` consumers are compatibility risk. | Research after local guards, with compatibility audit. |
+| Split persistence state out of block-editor root | `23.2ms` / `4,498` listeners | Moving the flag avoids the block-editor root change only if selector and notification semantics are replaced. | Direct consumers can observe stale persistence state or miss the transition unless a side channel exists. | Do only after a side-channel design works. |
+| Branch-aware `useSelect` dependencies | `23.2ms` / `4,498` listeners | `useSelect` records store names, not selector names, state branches, or dynamic selector dependencies. | Broad data contract change; selectors can read conditionally and across stores. | Treat as a separate data-layer research project. |
+| Silence `MARK_LAST_CHANGE_AS_PERSISTENT` | `23.2ms` / `4,501` listeners | Removes the persistence transition that `useBlockSync` uses to convert a previous transient edit into parent `onChange`. | Breaks editor semantics to make the benchmark faster. | Reject. |
+
+This tightens the ordering again. The store-boundary problem is real and larger
+than the source-feasible local guard envelope (`23.2ms` marker fanout versus
+`8.2ms` source-feasible local guards), but it is not the next patch. A correct
+store-boundary fix needs an explicit persistence-aware notification contract
+before it can stop invalidating ordinary `useSelect` subscribers. Without that,
+splitting the persistence flag out of the block-editor root would preserve the
+number in a selector while losing the notification semantics that make the
+selector useful. So the current engineering order is: local selected-only /
+local invalidation guards first; side-channel design second; branch-aware
+`useSelect` only as broader data-layer research.
+
 The next split answers what "woken subscriber" means in the measured input
 slice. In `useSelect`, `onChange` either queues an async update through
 `renderQueue.add()` or synchronously calls `onStoreChange()`
@@ -6158,11 +6192,14 @@ The store-contract audit narrows that engineering question. Silencing
 persistence transition to turn a previous transient block edit into the parent
 `onChange` path. Current `useSelect` subscribers also cannot opt out by branch:
 they subscribe to store names, and any block-editor root identity change
-invalidates the cached selected value. So the credible store-boundary prototype
-is a subscriber partition: keep a persistence-aware signal for `useBlockSync`
-and direct persistence consumers, while avoiding ordinary `useSelect` fanout for
-selectors that do not read `blocks.isPersistentChange`. A full branch-aware
-`useSelect` dependency system is more general but much higher risk.
+invalidates the cached selected value. The source-feasibility follow-up adds
+the missing contract constraint: `useBlockSync` is currently a global registry
+subscriber, not a store-specific `useSelect` subscriber, and the registry does
+not classify global subscribers by state-branch dependency. So the credible
+store-boundary prototype first needs a persistence-aware notification contract
+or explicit `useBlockSync` side channel. Local selector guards remain the next
+patch class; a full branch-aware `useSelect` dependency system is broader
+data-layer research.
 
 The subscriber-outcome funnel closes another tempting explanation. The next
 input wakes the same `4544` `useSelect.onChange` callbacks across normal marker,
