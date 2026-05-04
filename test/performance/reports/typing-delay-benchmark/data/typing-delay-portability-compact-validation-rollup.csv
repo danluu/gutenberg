@@ -1,0 +1,4 @@
+validation_tier,rows,rows_with_known_wait_cost,known_two_branch_intentional_wait_s,median_local_effect_ms,max_local_effect_ms,known_two_branch_intentional_wait_min
+threshold score,3,3,774.5,7.189000000000002,13.360249999999999,12.908333333333333
+deployment score,2,2,162,7.732820437500013,10.330125000000407,2.7
+causal diagnostic,3,0,0,12.753249943256378,14.583124999999995,0

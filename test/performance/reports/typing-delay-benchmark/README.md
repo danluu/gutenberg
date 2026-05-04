@@ -965,6 +965,9 @@ The R script derives:
 -   `data/typing-delay-portability-validation-runbook-audit.csv`: concrete
     portability validation lanes, compact row families, metadata, expansion
     triggers, and claim boundaries.
+-   `data/typing-delay-portability-compact-validation-*.csv`: executable
+    compact-validation manifest and rollup, joining the runbook to local effect
+    sizes and known two-branch intentional-wait costs.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -8211,6 +8214,40 @@ timer ordering, or visual-endpoint direction. Before that runbook exists, the
 report can make local causal, source-path, and artifact-scope claims; it still
 cannot make portable p50/CV claims or move CI thresholds.
 
+I then turned the runbook into an executable compact-validation manifest by
+joining each row to the local discriminator it is supposed to preserve. This is
+not a new local benchmark result. It is a stricter answer to the portability
+open question: run the rows that can falsify the local conclusions, and expand
+only when one of those rows changes class.
+
+![Portability compact validation effects](figures/164-portability-compact-validation-effects.png)
+
+![Portability compact validation wait cost](figures/165-portability-compact-validation-wait-cost.png)
+
+| Validation tier | Rows | Rows with known wait cost | Known two-branch intentional wait | Median local effect | Max local effect |
+| --------------- | ---: | ------------------------: | --------------------------------: | ------------------: | ---------------: |
+| Threshold score | `3` | `3` | `774.5s` (`12.9m`) | `7.2ms` | `13.4ms` |
+| Deployment score | `2` | `2` | `162.0s` (`2.7m`) | `7.7ms` | `10.3ms` |
+| Causal diagnostic | `3` | `0` | instrumentation-specific | `12.8ms` | `14.6ms` |
+
+The threshold-score wait cost is dominated by the held-key boundary bundle:
+`990ms`, `1000ms`, `1010ms`, and `1300ms` cost `473s` of intentional typing wait
+in a two-branch-style comparison. That cost is still far smaller than rerunning a
+full dense sweep, and it directly tests the row that would invalidate the local
+`1000ms`-cliff story if it moved. The deployment-score rows are cheaper: the
+Post Editor wait-removal candidates and the Site Editor fixed-`500ms` fallback
+cover `162s` of known intentional wait. The causal diagnostics have no stable
+CI-style wait-cost estimate because browser tracing, OS counters, or external
+calibration overhead will dominate their wall-clock time.
+
+The manifest also makes the pass/fail boundary more concrete. CI threshold work
+must preserve the held-key boundary ordering, tap-versus-held helper split, and
+short-hold controls. Deployment work must preserve the Post Editor `0ms`
+candidates and the Site Editor `500ms` readiness band without misses or variance
+class changes. Runtime checkpoint, CPU/QoS, and visual endpoint rows are causal
+diagnostics; they can explain portability failures, but they should not set
+absolute thresholds by themselves.
+
 ### Remaining Open Questions Matrix
 
 At this point, more runs of the same JS-level benchmark are not all equally
@@ -8234,7 +8271,7 @@ The high-level split is:
 | CPU/QoS mechanism | counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this harness | run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows |
 | Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
 | Human/plugin workload | workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency | build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims |
-| Portability of absolute numbers | portability runbook audit separates threshold lanes from causal lanes: use exact Playwright-bundled Chromium on CI plus a comparable local/container lane, compact mechanism rows, environment metadata, and expansion triggers before changing absolute p50/CV claims | run the portability runbook first: compact mechanism rows with per-run p50/CV/order/first-key metadata on CI Chromium and one comparable lane; expand only when ordering, variance, timer, or visual endpoint behavior changes |
+| Portability of absolute numbers | portability runbook audit now has an executable compact manifest: three threshold-score rows, two deployment-score rows, and three causal diagnostics, with local effect sizes and known intentional-wait costs; the known threshold-score wait cost is `774.5s` and the known deployment-score wait cost is `162.0s` in a two-branch-style comparison | run that compact manifest on CI Chromium and one comparable lane before moving thresholds; expand only when a row changes ordering, variance class, timer/runtime behavior, or visual endpoint direction |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

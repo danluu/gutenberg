@@ -18192,4 +18192,317 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 		)
 	}
 
+	portability_compact_manifest_path <- file.path(data_dir, "typing-delay-portability-compact-validation-manifest.csv")
+	portability_compact_rollup_path <- file.path(data_dir, "typing-delay-portability-compact-validation-rollup.csv")
+
+	build_portability_compact_manifest <- function() {
+		rows <- list()
+
+		held_key_runtime_path <- file.path(data_dir, "typing-delay-ci-held-key-delay-runtime-reliability.csv")
+		if (file.exists(held_key_runtime_path)) {
+			held_key_runtime <- read_csv(held_key_runtime_path, show_col_types = FALSE)
+			boundary_rows <- held_key_runtime %>%
+				filter(delay_ms %in% c(990, 1000, 1010, 1300))
+			if (nrow(boundary_rows) == 4) {
+				slow_neighbor_p50 <- boundary_rows %>%
+					filter(delay_ms %in% c(990, 1300)) %>%
+					summarise(value = mean(reported_q50_ms), .groups = "drop") %>%
+					pull(value)
+				fast_p50 <- boundary_rows %>%
+					filter(delay_ms == 1000) %>%
+					pull(reported_q50_ms)
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "threshold score",
+					row_family = "held-key boundary",
+					validation_row = "held key 990/1000/1010/1300ms",
+					source_table = basename(held_key_runtime_path),
+					local_reference = "n=50 CI-comparable dense sweep",
+					local_effect_ms = slow_neighbor_p50 - fast_p50,
+					local_effect_definition = "mean(990ms, 1300ms) q50 minus 1000ms q50",
+					local_reference_p50_ms = fast_p50,
+					local_reference_cv = boundary_rows %>%
+						filter(delay_ms == 1000) %>%
+						pull(reported_cv),
+					known_two_branch_intentional_wait_s = sum(boundary_rows$two_branch_intentional_typing_wait_s),
+					required_lanes = "CI Chromium plus comparable local/container lane",
+					pass_condition = "990ms and 1300ms remain slow relative to 1000ms; 1010ms stays in the 1000ms low band",
+					expansion_trigger = "boundary ordering, q50 band, or CV class changes"
+				)
+			}
+		}
+
+		if (file.exists(ci_key_mode_runtime_path)) {
+			key_mode_runtime <- read_csv(ci_key_mode_runtime_path, show_col_types = FALSE)
+			key_mode_1000 <- key_mode_runtime %>%
+				filter(delay_ms == 1000)
+			tap_row <- key_mode_1000 %>% filter(input_mode == "tap then wait")
+			held_row <- key_mode_1000 %>% filter(input_mode == "current CI held key")
+			if (nrow(tap_row) == 1 && nrow(held_row) == 1) {
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "threshold score",
+					row_family = "input helper semantics",
+					validation_row = "tap then wait versus current held key at 1000ms",
+					source_table = basename(ci_key_mode_runtime_path),
+					local_reference = "paired CI-comparable key-mode block",
+					local_effect_ms = held_row$run_reported_q50_median_ms - tap_row$run_reported_q50_median_ms,
+					local_effect_definition = "held-key run q50 minus tap-then-wait run q50",
+					local_reference_p50_ms = tap_row$run_reported_q50_median_ms,
+					local_reference_cv = tap_row$latency_cv,
+					known_two_branch_intentional_wait_s = tap_row$two_branch_intentional_typing_wait_s,
+					required_lanes = "same helper family and Playwright-bundled Chromium used by CI",
+					pass_condition = "tap remains flat while held-key remains a separate metric-definition path",
+					expansion_trigger = "helper implementation, Playwright version, or tap/held ordering changes"
+				)
+			}
+		}
+
+		if (file.exists(ci_hold_duration_runtime_path)) {
+			hold_duration_runtime <- read_csv(ci_hold_duration_runtime_path, show_col_types = FALSE)
+			hold_rows <- hold_duration_runtime %>%
+				filter(input_mode %in% c("50ms hold then wait", "100ms hold then wait"), delay_ms == 1000)
+			held_baseline <- hold_duration_runtime %>%
+				filter(input_mode == "current CI held key", delay_ms == 1000)
+			if (nrow(hold_rows) == 2 && nrow(held_baseline) == 1) {
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "threshold score",
+					row_family = "realistic hold controls",
+					validation_row = "50ms and 100ms holds at 1000ms total delay",
+					source_table = basename(ci_hold_duration_runtime_path),
+					local_reference = "paired CI-comparable fixed-hold block",
+					local_effect_ms = held_baseline$run_reported_q50_median_ms - median(hold_rows$run_reported_q50_median_ms),
+					local_effect_definition = "current held-key run q50 minus median short-hold run q50",
+					local_reference_p50_ms = median(hold_rows$run_reported_q50_median_ms),
+					local_reference_cv = median(hold_rows$latency_cv),
+					known_two_branch_intentional_wait_s = sum(hold_rows$two_branch_intentional_typing_wait_s),
+					required_lanes = "CI Chromium using the same final input helper",
+					pass_condition = "short holds remain tap-like and do not reproduce the current full-delay held-key band",
+					expansion_trigger = "short-hold controls enter the slow held-key band or helper family changes"
+				)
+			}
+		}
+
+		if (file.exists(wait_removal_ledger_path)) {
+			wait_removal_ledger_existing <- read_csv(wait_removal_ledger_path, show_col_types = FALSE)
+			interaction_post_candidates <- wait_removal_ledger_existing %>%
+				filter(candidate_type == "local 0ms candidate")
+			if (nrow(interaction_post_candidates) > 0) {
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "deployment score",
+					row_family = "non-Typing wait removal",
+					validation_row = "Post Editor interaction waits plus Post Editor loadPatterns 0ms candidates",
+					source_table = basename(wait_removal_ledger_path),
+					local_reference = "8-run local wait-removal ledger",
+					local_effect_ms = median(abs(interaction_post_candidates$q50_delta_vs_current_ms), na.rm = TRUE),
+					local_effect_definition = "median absolute local q50 improvement versus 1000ms",
+					local_reference_p50_ms = NA_real_,
+					local_reference_cv = NA_real_,
+					known_two_branch_intentional_wait_s = sum(interaction_post_candidates$current_two_branch_wait_s, na.rm = TRUE),
+					required_lanes = "CI/mac/container lanes for the affected Post Editor metrics",
+					pass_condition = "0ms rows keep retained counts, q50/mean/p90, and failure rate inside the 1000ms baseline band",
+					expansion_trigger = "preview/canvas misses, actionability failures, or q50 variance class changes"
+				)
+			}
+		}
+
+		if (file.exists(site_pattern_short_wait_summary_path)) {
+			site_pattern_short_wait <- read_csv(site_pattern_short_wait_summary_path, show_col_types = FALSE)
+			site_500 <- site_pattern_short_wait %>% filter(measurement_idle_wait_ms == 500)
+			site_1000 <- site_pattern_short_wait %>% filter(measurement_idle_wait_ms == 1000)
+			if (nrow(site_500) == 1 && nrow(site_1000) == 1) {
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "deployment score",
+					row_family = "site pattern readiness",
+					validation_row = "Site Editor loadPatterns fixed 500ms versus 1000ms",
+					source_table = basename(site_pattern_short_wait_summary_path),
+					local_reference = "10 exact runs per settled wait",
+					local_effect_ms = site_1000$median_reported_q50_ms - site_500$median_reported_q50_ms,
+					local_effect_definition = "1000ms median q50 minus 500ms median q50",
+					local_reference_p50_ms = site_500$median_reported_q50_ms,
+					local_reference_cv = site_500$run_to_run_q50_sd_ms / site_500$median_reported_q50_ms,
+					known_two_branch_intentional_wait_s = site_500$two_branch_explicit_wait_s + site_1000$two_branch_explicit_wait_s,
+					required_lanes = "CI/mac/container lanes with pattern resource telemetry",
+					pass_condition = "500ms stays inside the 1000ms q50 band without preview/canvas misses or extra q50 sd",
+					expansion_trigger = "resource boundary misses, preview misses, or 500ms q50 exits the 1000ms band"
+				)
+			}
+		}
+
+		if (file.exists(wait_vs_checkpoint_summary_path)) {
+			wait_vs_checkpoint <- read_csv(wait_vs_checkpoint_summary_path, show_col_types = FALSE)
+			raw_wait_1000 <- wait_vs_checkpoint %>%
+				filter(mechanism == "explicit post-keyup wait only", point_label == "wait 1000ms")
+			runtime_fast <- wait_vs_checkpoint %>%
+				filter(mechanism == "Runtime.evaluate checkpoints", point_label == "x17")
+			if (nrow(raw_wait_1000) == 1 && nrow(runtime_fast) == 1) {
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "causal diagnostic",
+					row_family = "Chromium runtime checkpoint",
+					validation_row = "raw post-keyup wait versus Runtime.evaluate x17",
+					source_table = basename(wait_vs_checkpoint_summary_path),
+					local_reference = "raw-CDP and runtime checkpoint controls",
+					local_effect_ms = raw_wait_1000$keypress_p50_ms - runtime_fast$keypress_p50_ms,
+					local_effect_definition = "raw 1000ms wait p50 minus Runtime.evaluate x17 p50",
+					local_reference_p50_ms = runtime_fast$keypress_p50_ms,
+					local_reference_cv = NA_real_,
+					known_two_branch_intentional_wait_s = NA_real_,
+					required_lanes = "browser/runtime trace lane; not a threshold lane",
+					pass_condition = "ordinary waits stay slow while repeated runtime checkpoints stay fast",
+					expansion_trigger = "runtime checkpoint dose response disappears or ordinary waits become fast"
+				)
+			}
+		}
+
+		cpu_qos_summary_path <- file.path(data_dir, "typing-delay-cpu-qos-control-summary.csv")
+		if (file.exists(cpu_qos_summary_path)) {
+			cpu_qos_summary_existing <- read_csv(cpu_qos_summary_path, show_col_types = FALSE)
+			ordinary_fast <- cpu_qos_summary_existing %>%
+				filter(control_class == "continuous ordinary/utility CPU")
+			no_cpu_slow <- cpu_qos_summary_existing %>%
+				filter(control_class == "near-key no CPU task")
+			background_slow <- cpu_qos_summary_existing %>%
+				filter(control_class == "continuous background/maintenance CPU")
+			if (nrow(ordinary_fast) == 1 && nrow(no_cpu_slow) == 1 && nrow(background_slow) == 1) {
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "causal diagnostic",
+					row_family = "CPU/QoS mechanism",
+					validation_row = "ordinary/utility CPU versus no-CPU and background/maintenance controls",
+					source_table = basename(cpu_qos_summary_path),
+					local_reference = "CPU/QoS control runset",
+					local_effect_ms = mean(c(no_cpu_slow$latency_p50_median_ms, background_slow$latency_p50_median_ms)) -
+						ordinary_fast$latency_p50_median_ms,
+					local_effect_definition = "mean slow-control p50 minus ordinary/utility p50",
+					local_reference_p50_ms = ordinary_fast$latency_p50_median_ms,
+					local_reference_cv = NA_real_,
+					known_two_branch_intentional_wait_s = NA_real_,
+					required_lanes = "OS/browser counter lane; not a threshold lane",
+					pass_condition = "ordinary/utility rows stay fast while no-CPU and background/maintenance rows stay slow",
+					expansion_trigger = "QoS split fails, finite-burst decay changes, or power metadata is missing"
+				)
+			}
+		}
+
+		if (file.exists(visual_endpoint_drop_summary_path)) {
+			visual_endpoint_drop <- read_csv(visual_endpoint_drop_summary_path, show_col_types = FALSE)
+			held_visual <- visual_endpoint_drop %>%
+				filter(input_mode == "key held during delay", str_detect(endpoint, "Paint|DrawFrame|screenshot")) %>%
+				summarise(
+					local_effect_ms = median(drop_vs_slow_neighbors_ms, na.rm = TRUE),
+					local_reference_p50_ms = median(p50_1000_ms, na.rm = TRUE),
+					.groups = "drop"
+				)
+			if (nrow(held_visual) == 1 && is.finite(held_visual$local_effect_ms)) {
+				rows[[length(rows) + 1]] <- tibble(
+					validation_tier = "causal diagnostic",
+					row_family = "visual endpoint propagation",
+					validation_row = "held-key 1000ms drop across Paint, DrawFrame, and changed screenshot endpoints",
+					source_table = basename(visual_endpoint_drop_summary_path),
+					local_reference = "Chromium internal visual endpoint probes",
+					local_effect_ms = held_visual$local_effect_ms,
+					local_effect_definition = "median 1000ms drop versus 990/1300 slow neighbors across visual endpoints",
+					local_reference_p50_ms = held_visual$local_reference_p50_ms,
+					local_reference_cv = NA_real_,
+					known_two_branch_intentional_wait_s = NA_real_,
+					required_lanes = "visual trace lane; external calibration only if making display claims",
+					pass_condition = "EventDispatch, RAF, Paint/DrawFrame, and changed screenshot endpoints preserve the same direction",
+					expansion_trigger = "visual endpoints decouple from EventDispatch or external calibration disagrees"
+				)
+			}
+		}
+
+		if (length(rows) == 0) {
+			return(NULL)
+		}
+
+		bind_rows(rows) %>%
+			mutate(
+				validation_tier = factor(
+					validation_tier,
+					levels = c("threshold score", "deployment score", "causal diagnostic")
+				),
+				row_family = factor(row_family, levels = unique(row_family)),
+				validation_row = factor(validation_row, levels = rev(unique(validation_row))),
+				effect_label = if_else(is.finite(local_effect_ms), sprintf("%.1fms", local_effect_ms), "n/a"),
+				wait_label = if_else(
+					is.finite(known_two_branch_intentional_wait_s),
+					sprintf("%.1fs", known_two_branch_intentional_wait_s),
+					"instrumentation-specific"
+				)
+			) %>%
+			arrange(validation_tier, row_family)
+	}
+
+	portability_compact_manifest <- build_portability_compact_manifest()
+	if (!is.null(portability_compact_manifest)) {
+		write_csv(portability_compact_manifest, portability_compact_manifest_path)
+
+		portability_compact_rollup <- portability_compact_manifest %>%
+			group_by(validation_tier) %>%
+			summarise(
+				rows = n(),
+				rows_with_known_wait_cost = sum(is.finite(known_two_branch_intentional_wait_s)),
+				known_two_branch_intentional_wait_s = sum(known_two_branch_intentional_wait_s, na.rm = TRUE),
+				median_local_effect_ms = median(local_effect_ms, na.rm = TRUE),
+				max_local_effect_ms = max(local_effect_ms, na.rm = TRUE),
+				.groups = "drop"
+			) %>%
+			mutate(
+				known_two_branch_intentional_wait_min = known_two_branch_intentional_wait_s / 60
+			)
+		write_csv(portability_compact_rollup, portability_compact_rollup_path)
+
+		save_plot(
+			ggplot(
+				portability_compact_manifest,
+				aes(local_effect_ms, validation_row, color = validation_tier, shape = validation_tier)
+			) +
+				geom_vline(xintercept = 0, color = brewer_color("Greys", 6, type = "seq", n = 9), linewidth = 0.35) +
+				geom_point(aes(size = known_two_branch_intentional_wait_s), alpha = 0.88) +
+				geom_text(aes(label = effect_label), nudge_x = 0.8, size = 2.8, color = "grey20", show.legend = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Validation tier") +
+				scale_shape_manual(
+					values = c("threshold score" = 16, "deployment score" = 17, "causal diagnostic" = 15),
+					name = "Validation tier",
+					drop = FALSE
+				) +
+				scale_size_area(max_size = 7, name = "known two-branch\nintentional wait (s)", na.value = 2) +
+				scale_x_continuous(expand = expansion(mult = c(0.02, 0.16))) +
+				labs(
+					title = "Compact portability rows should preserve local discriminators, not every delay",
+					subtitle = "Effect size is the local separation each row is meant to validate; point size is known two-branch intentional-wait cost",
+					x = "Local discriminator effect size",
+					y = NULL
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"164-portability-compact-validation-effects.png",
+			width = 12,
+			height = 7.2
+		)
+
+		portability_wait_plot <- portability_compact_manifest %>%
+			filter(is.finite(known_two_branch_intentional_wait_s)) %>%
+			mutate(
+				validation_row = fct_reorder(validation_row, known_two_branch_intentional_wait_s)
+			)
+
+		save_plot(
+			ggplot(
+				portability_wait_plot,
+				aes(known_two_branch_intentional_wait_s, validation_row, fill = validation_tier)
+			) +
+				geom_col(width = 0.68, alpha = 0.92, show.legend = FALSE) +
+				geom_text(aes(label = wait_label), nudge_x = 18, size = 2.8, color = "grey20") +
+				scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+				scale_x_continuous(labels = label_number(suffix = "s"), expand = expansion(mult = c(0.02, 0.18))) +
+				labs(
+					title = "Known compact-validation wait cost is dominated by typing boundary rows",
+					subtitle = "This is intentional wait only, not full wall-clock runtime or browser-trace overhead",
+					x = "Known two-branch intentional wait",
+					y = NULL
+				),
+			"165-portability-compact-validation-wait-cost.png",
+			width = 11,
+			height = 6.8
+		)
+	}
+
 	message("Wrote plots to: ", figure_dir)
