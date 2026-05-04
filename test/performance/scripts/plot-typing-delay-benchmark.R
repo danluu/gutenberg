@@ -11172,6 +11172,187 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		height = 7.2
 	)
 
+	selector_guard_source_feasibility <- redux_owner_guard_validation_matrix %>%
+		filter(
+			source_site %in% c(
+				"Pattern override support HOC",
+				"HeadingEdit anchor useSelect",
+				"BlockListBlockProvider useSelect",
+				"useInnerBlocksProps useSelect",
+				"BlockListItems useSelect"
+			)
+		) %>%
+		mutate(
+			implementation_candidate = case_when(
+				source_site == "Pattern override support HOC" ~ "selected-only pattern override support check",
+				source_site == "HeadingEdit anchor useSelect" ~ "shared heading-anchor capability signal",
+				source_site == "BlockListBlockProvider useSelect" ~ "clientId-scoped text-attribute guard",
+				source_site == "useInnerBlocksProps useSelect" ~ "root/order/settings structural guard",
+				source_site == "BlockListItems useSelect" ~ "structural/selection-version guard",
+				TRUE ~ guard_candidate
+			),
+			source_feasibility = case_when(
+				source_site == "Pattern override support HOC" ~ "clear local split",
+				source_site == "HeadingEdit anchor useSelect" ~ "needs shared/global signal",
+				source_site %in% c("BlockListBlockProvider useSelect", "useInnerBlocksProps useSelect") ~ "needs invalidation prototype",
+				source_site == "BlockListItems useSelect" ~ "validate before counting",
+				TRUE ~ "unknown"
+			),
+			feasibility_score = case_when(
+				source_feasibility == "clear local split" ~ 1,
+				source_feasibility == "needs shared/global signal" ~ 3,
+				source_feasibility == "needs invalidation prototype" ~ 4,
+				source_feasibility == "validate before counting" ~ 5,
+				TRUE ~ 6
+			),
+			source_finding = case_when(
+				source_site == "Pattern override support HOC" ~ "The visible controls are already selected-only, but the support-check useSelect is mounted on every BlockEdit wrapper.",
+				source_site == "HeadingEdit anchor useSelect" ~ "Every heading must react when generateAnchors changes or a table-of-contents block appears; a component-local memo does not remove the store subscription.",
+				source_site == "BlockListBlockProvider useSelect" ~ "Only the edited paragraph needs changed text attributes, but the selector also carries selection, movement, overlay, variation, and identity state.",
+				source_site == "useInnerBlocksProps useSelect" ~ "The selector is structural/root/settings-oriented, but it needs a versioned root/order/settings boundary.",
+				source_site == "BlockListItems useSelect" ~ "The selector is large and not content-attribute work, but it is the block-list selection/appender/visibility surface.",
+				TRUE ~ candidate_notes
+			),
+			revised_first_patch_decision = case_when(
+				source_site == "Pattern override support HOC" ~ "do first",
+				source_site == "HeadingEdit anchor useSelect" ~ "do after deciding on a shared capability signal",
+				source_site == "BlockListBlockProvider useSelect" ~ "second local prototype",
+				source_site == "useInnerBlocksProps useSelect" ~ "second local prototype",
+				source_site == "BlockListItems useSelect" ~ "validation prototype only",
+				TRUE ~ "defer"
+			),
+			conservative_source_audited_skippable_ms = case_when(
+				source_site == "Pattern override support HOC" ~ candidate_duration_p50_ms * pmax(candidate_listener_count_p50 - 1, 0) / candidate_listener_count_p50,
+				source_site == "HeadingEdit anchor useSelect" ~ 0,
+				source_site == "BlockListItems useSelect" ~ 0,
+				TRUE ~ estimated_skippable_duration_p50_ms
+			),
+			after_source_audit_conservative_calls = case_when(
+				source_site == "Pattern override support HOC" ~ 1,
+				source_site %in% c("HeadingEdit anchor useSelect", "BlockListItems useSelect") ~ candidate_listener_count_p50,
+				TRUE ~ candidate_listener_count_p50 - estimated_skippable_listener_count_p50
+			),
+			source_paths = case_when(
+				source_site == "Pattern override support HOC" ~ "packages/editor/src/hooks/pattern-overrides.js:37-59",
+				source_site == "HeadingEdit anchor useSelect" ~ "packages/block-library/src/heading/edit.js:35-43,49-80",
+				source_site == "BlockListBlockProvider useSelect" ~ "packages/block-editor/src/components/block-list/block.js:560-620",
+				source_site == "useInnerBlocksProps useSelect" ~ "packages/block-editor/src/components/inner-blocks/index.js:195",
+				source_site == "BlockListItems useSelect" ~ "packages/block-editor/src/components/block-list/index.js:196",
+				TRUE ~ NA_character_
+			),
+			test_gap = case_when(
+				source_site == "Pattern override support HOC" ~ "No focused unit test found for this HOC; add selected supported/unsupported and settings-change coverage.",
+				source_site == "HeadingEdit anchor useSelect" ~ "Only native heading tests are present locally; add web tests for generateAnchors and table-of-contents insertion/removal before refactoring.",
+				source_site == "BlockListBlockProvider useSelect" ~ required_behavior_checks,
+				source_site == "useInnerBlocksProps useSelect" ~ required_behavior_checks,
+				source_site == "BlockListItems useSelect" ~ required_behavior_checks,
+				TRUE ~ required_behavior_checks
+			),
+			implementation_candidate = factor(
+				implementation_candidate,
+				levels = c(
+					"selected-only pattern override support check",
+					"shared heading-anchor capability signal",
+					"clientId-scoped text-attribute guard",
+					"root/order/settings structural guard",
+					"structural/selection-version guard"
+				)
+			),
+			source_feasibility = factor(
+				source_feasibility,
+				levels = c(
+					"clear local split",
+					"needs shared/global signal",
+					"needs invalidation prototype",
+					"validate before counting"
+				)
+			)
+		) %>%
+		arrange(feasibility_score, desc(conservative_source_audited_skippable_ms))
+
+	write_csv(
+		selector_guard_source_feasibility,
+		file.path(data_dir, "typing-delay-selector-guard-source-feasibility.csv")
+	)
+
+	selector_guard_source_feasibility_summary <- selector_guard_source_feasibility %>%
+		summarize(
+			clear_local_split_skippable_ms = sum(conservative_source_audited_skippable_ms[source_feasibility == "clear local split"], na.rm = TRUE),
+			needs_shared_signal_current_ms = sum(candidate_duration_p50_ms[source_feasibility == "needs shared/global signal"], na.rm = TRUE),
+			needs_invalidation_prototype_skippable_ms = sum(conservative_source_audited_skippable_ms[source_feasibility == "needs invalidation prototype"], na.rm = TRUE),
+			validate_before_counting_current_ms = sum(candidate_duration_p50_ms[source_feasibility == "validate before counting"], na.rm = TRUE),
+			source_audited_conservative_skippable_ms = sum(conservative_source_audited_skippable_ms, na.rm = TRUE),
+			share_of_prior_conservative_skippable_pct = 100 * source_audited_conservative_skippable_ms / audited_conservative_skippable_p50_ms,
+			.groups = "drop"
+		)
+
+	write_csv(
+		selector_guard_source_feasibility_summary,
+		file.path(data_dir, "typing-delay-selector-guard-source-feasibility-summary.csv")
+	)
+
+	selector_guard_source_feasibility_plot <- selector_guard_source_feasibility %>%
+		mutate(
+			plot_label = case_when(
+				source_site == "Pattern override support HOC" ~ "pattern selected-only split",
+				source_site == "HeadingEdit anchor useSelect" ~ "heading shared signal",
+				source_site == "BlockListBlockProvider useSelect" ~ "block provider",
+				source_site == "useInnerBlocksProps useSelect" ~ "inner blocks",
+				source_site == "BlockListItems useSelect" ~ "BlockListItems",
+				TRUE ~ as.character(implementation_candidate)
+			),
+			label_x = case_when(
+				source_site == "HeadingEdit anchor useSelect" ~ candidate_duration_p50_ms + 0.45,
+				source_site == "BlockListItems useSelect" ~ candidate_duration_p50_ms - 0.18,
+				source_site == "Pattern override support HOC" ~ candidate_duration_p50_ms - 0.35,
+				source_site == "BlockListBlockProvider useSelect" ~ candidate_duration_p50_ms - 0.18,
+				TRUE ~ candidate_duration_p50_ms
+			),
+			label_y = conservative_source_audited_skippable_ms + case_when(
+				source_site == "Pattern override support HOC" ~ 0.45,
+				source_site == "HeadingEdit anchor useSelect" ~ 0.42,
+				source_site == "BlockListItems useSelect" ~ 0.42,
+				source_site == "BlockListBlockProvider useSelect" ~ -0.42,
+				TRUE ~ 0.42
+			)
+		)
+
+	save_plot(
+		ggplot(
+			selector_guard_source_feasibility_plot,
+			aes(
+				candidate_duration_p50_ms,
+				conservative_source_audited_skippable_ms,
+				color = source_feasibility,
+				shape = revised_first_patch_decision,
+				size = candidate_listener_count_p50
+			)
+		) +
+			geom_abline(linetype = "dashed", linewidth = 0.35, color = "grey55") +
+			geom_point(alpha = 0.92) +
+			geom_text(
+				aes(x = label_x, y = label_y, label = plot_label),
+				size = 3.1,
+				color = "grey20",
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Source feasibility") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "p50 listener calls") +
+			scale_x_continuous(labels = label_number(suffix = "ms"), expand = expansion(mult = c(0.08, 0.1))) +
+			scale_y_continuous(labels = label_number(suffix = "ms")) +
+			labs(
+				title = "Source audit leaves one clear first selector guard",
+				subtitle = "Pattern overrides can be split by selected block; heading anchor needs a shared/global signal before counting a win",
+				x = "Current audited p50 exposure",
+				y = "Source-audited conservative skippable p50",
+				shape = "Revised decision"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"139-selector-guard-source-feasibility.png",
+		width = 12,
+		height = 7.4
+	)
+
 	redux_owner_other_breakdown <- redux_listener_owner_source_summary %>%
 		anti_join(
 			redux_owner_source_audit_sites,

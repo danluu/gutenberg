@@ -766,6 +766,10 @@ The R script derives:
     `data/typing-delay-selector-guard-frontier-summary.csv`: cumulative
     risk/benefit frontier for implementing selector guards in the audited
     marker fanout.
+-   `data/typing-delay-selector-guard-source-feasibility*.csv`: source-level
+    feasibility correction for those selector guards, separating locally
+    removable subscriptions from guards that need shared signals or broader
+    invalidation support.
 -   `data/typing-delay-redux-listener-other-owner-*.csv`: residual breakdown
     of the `Other mapped owners` bucket from the source audit.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
@@ -3910,6 +3914,48 @@ still does not make store-partition work a first patch: store partition overlaps
 the local-guard envelope and has to preserve the `useBlockSync` persistence
 contract.
 
+I then audited the source shape of those "first local" guards. That changed the
+first-patch recommendation. The pattern-override row is cleaner than the earlier
+cache wording: the visible controls are already selected-only, but the support
+check is still subscribed once per `BlockEdit` wrapper
+(`packages/editor/src/hooks/pattern-overrides.js`). The HOC computes
+`isSupportedBlock` for every block, then only renders
+`ControlsWithStoreSubscription` when `props.isSelected && isSupportedBlock`. A
+selected-only child component would preserve that visible condition while
+reducing the support-check subscription from every rendered block to the
+selected block.
+
+The heading row goes the other way. `HeadingEdit` reads
+`settings.generateAnchors || getGlobalBlockCount( 'core/table-of-contents' ) >
+0` and uses that result both in the anchor-generation effect and in
+`onContentChange` (`packages/block-library/src/heading/edit.js`). Existing
+headings need to react when the global setting changes or a table-of-contents
+block appears. A component-local memo does not remove the per-heading store
+subscription; this needs a shared/global capability signal or broader
+invalidation support before its `0.5ms` can be counted as a local guard win.
+
+![Selector guard source feasibility](figures/139-selector-guard-source-feasibility.png)
+
+| Source site | Current p50 | Source-audited conservative skippable p50 | Source finding | Revised decision |
+| ----------- | ----------: | ----------------------------------------: | -------------- | ---------------- |
+| Pattern override support HOC | `3.6ms` / `1,437` calls | `3.6ms` / `1,436` calls | Controls are already selected-only; only the support-check subscription is mounted per block. | Do first as a selected-only split. |
+| `HeadingEdit` anchor selector | `0.5ms` / `202` calls | `0.0ms` counted | Existing headings must observe global anchor capability and table-of-contents count changes. | Do only after deciding on a shared/global signal. |
+| `BlockListBlockProvider` | `3.5ms` / `1,437` calls | `3.5ms` / `1,436` calls | Only the edited paragraph needs changed text attributes, but the selector also carries selection, movement, overlay, variation, and identity state. | Second local prototype. |
+| `useInnerBlocksProps` | `1.1ms` / `580` calls | `1.1ms` / `580` calls | Structural/root/settings selector; needs a versioned root/order/settings boundary. | Second local prototype. |
+| `BlockListItems` | `5.3ms` / `580` calls | `0.0ms` counted | Large and not content-attribute work, but it owns block-list selection, appender, and visibility state. | Validation prototype only. |
+
+That corrects the source-feasible local envelope. The clearly local first patch
+is the pattern-override selected-only split, worth about `3.6ms` p50 in the
+audited marker window. Heading remains semantically low risk, but it is not a
+simple local selector guard. After this source audit, the conservative
+source-feasible envelope is `8.2ms`, or `94.2%` of the earlier `8.7ms`
+conservative estimate; the missing `0.5ms` is the heading selector until a
+shared/global anchor-capability signal exists. I did not find a focused web unit
+test for either source-site behavior in this audit; a patch should add selected
+supported/unsupported pattern override coverage and web coverage for
+`generateAnchors` plus table-of-contents insertion/removal before changing the
+heading path.
+
 I also broke down the residual `Other mapped owners` row so that it is not a
 black box. That row is small: `1.3ms` p50 across `62` source-mapped sites and
 `261` p50 listener calls. The nonzero p50 cost is split between
@@ -6080,6 +6126,11 @@ cover `4.1ms`, or `47.1%` of the conservative skippable marker-window p50, with
 a combined validation-burden score of `3`. The second local guards bring the
 conservative local envelope to `8.7ms`; `BlockListItems` could lift the local
 envelope to `14.0ms`, but only after structural/selection behavior validation.
+The source-feasibility audit sharpens that again: the pattern-override
+selected-only split is the clear first patch (`~3.6ms`), while the heading
+selector should not be counted until there is a shared/global anchor-capability
+signal. The conservative source-feasible local envelope is therefore `8.2ms`,
+not the full `8.7ms`, before validating `BlockListItems`.
 The broad store-partition design remains plausible but high risk because it
 overlaps that local-guard envelope and must keep the persistence transition
 visible to `useBlockSync` and direct `isLastBlockChangePersistent` consumers.
