@@ -1,0 +1,4 @@
+scenario,current_two_branch_wait_s,candidate_two_branch_wait_s,two_branch_wait_saved_s,validation_status,wait_removed_pct
+Current fixed waits,152,152,0,baseline,0
+Local candidates plus fixed 500ms Site fallback,152,10,142,best conservative local candidate set; needs CI/mac/container validation,0.9342105263157895
+Local candidates plus Site predicate,152,6.024999997615822,145.97500000238418,higher-upside predicate path; needs fuller validation,0.96036184212094855

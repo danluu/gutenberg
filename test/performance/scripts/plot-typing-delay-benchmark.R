@@ -17880,4 +17880,316 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 		)
 	}
 
+	wait_removal_ledger_path <- file.path(data_dir, "typing-delay-open-question-wait-removal-ledger.csv")
+	wait_removal_rollup_path <- file.path(data_dir, "typing-delay-open-question-wait-removal-rollup.csv")
+
+	build_wait_removal_ledger <- function() {
+		rows <- list()
+
+		if (file.exists(post_interaction_wait_matrix_deltas_path)) {
+			post_interaction_deltas_existing <- read_csv(
+				post_interaction_wait_matrix_deltas_path,
+				show_col_types = FALSE
+			)
+			rows[[length(rows) + 1]] <- post_interaction_deltas_existing %>%
+				transmute(
+					metric_group = "Post Editor interactions",
+					metric_label,
+					candidate = "0ms",
+					current_baseline = "1000ms",
+					candidate_type = "local 0ms candidate",
+					evidence = "8 runs per wait; original screen plus fresh grouped interaction block",
+					current_two_branch_wait_s = two_branch_saved_if_zero_wait_s,
+					candidate_two_branch_wait_s = 0,
+					two_branch_wait_saved_s = two_branch_saved_if_zero_wait_s,
+					q50_delta_vs_current_ms = median_q50_delta_0_minus_1000_ms,
+					p90_delta_vs_current_ms = p90_delta_0_minus_1000_ms,
+					q50_sd_delta_vs_current_ms = q50_sd_delta_0_minus_1000_ms,
+					local_result = "0ms lower on q50, mean, p90, and run-to-run q50 sd",
+					remaining_gate = "CI/mac/container failure and portability validation"
+				)
+		}
+
+		if (file.exists(post_pattern_wait_matrix_summary_path)) {
+			post_pattern_summary_existing <- read_csv(
+				post_pattern_wait_matrix_summary_path,
+				show_col_types = FALSE
+			)
+			post_pattern_candidate <- post_pattern_summary_existing %>%
+				filter(measurement_idle_wait_ms == 0)
+			post_pattern_baseline <- post_pattern_summary_existing %>%
+				filter(measurement_idle_wait_ms == 1000)
+			if (nrow(post_pattern_candidate) == 1 && nrow(post_pattern_baseline) == 1) {
+				rows[[length(rows) + 1]] <- tibble(
+					metric_group = "Post Editor pattern loading",
+					metric_label = "post-editor / loadPatterns",
+					candidate = "0ms",
+					current_baseline = "1000ms",
+					candidate_type = "local 0ms candidate",
+					evidence = "8 exact runs per wait; 10 retained samples per run",
+					current_two_branch_wait_s = post_pattern_baseline$two_branch_explicit_wait_s,
+					candidate_two_branch_wait_s = post_pattern_candidate$two_branch_explicit_wait_s,
+					two_branch_wait_saved_s = post_pattern_candidate$two_branch_saved_vs_1000ms_s,
+					q50_delta_vs_current_ms = post_pattern_candidate$median_run_q50_ms - post_pattern_baseline$median_run_q50_ms,
+					p90_delta_vs_current_ms = post_pattern_candidate$median_run_p90_ms - post_pattern_baseline$median_run_p90_ms,
+					q50_sd_delta_vs_current_ms = post_pattern_candidate$run_to_run_q50_sd_ms - post_pattern_baseline$run_to_run_q50_sd_ms,
+					local_result = "0ms lower on q50 and run-to-run q50 sd in the focused matrix",
+					remaining_gate = "CI/mac/container validation with preview/canvas and resource telemetry"
+				)
+			}
+		}
+
+		if (file.exists(site_pattern_short_wait_summary_path)) {
+			site_pattern_summary_existing <- read_csv(
+				site_pattern_short_wait_summary_path,
+				show_col_types = FALSE
+			)
+			site_pattern_candidate <- site_pattern_summary_existing %>%
+				filter(measurement_idle_wait_ms == 500)
+			site_pattern_baseline <- site_pattern_summary_existing %>%
+				filter(measurement_idle_wait_ms == 1000)
+			if (nrow(site_pattern_candidate) == 1 && nrow(site_pattern_baseline) == 1) {
+				rows[[length(rows) + 1]] <- tibble(
+					metric_group = "Site Editor pattern loading",
+					metric_label = "site-editor / loadPatterns",
+					candidate = "fixed 500ms",
+					current_baseline = "1000ms",
+					candidate_type = "fixed fallback candidate",
+					evidence = "10 exact 500ms runs and 10 exact 1000ms runs",
+					current_two_branch_wait_s = site_pattern_baseline$two_branch_explicit_wait_s,
+					candidate_two_branch_wait_s = site_pattern_candidate$two_branch_explicit_wait_s,
+					two_branch_wait_saved_s = site_pattern_candidate$two_branch_saved_vs_1000ms_s,
+					q50_delta_vs_current_ms = site_pattern_candidate$median_reported_q50_ms - site_pattern_baseline$median_reported_q50_ms,
+					p90_delta_vs_current_ms = site_pattern_candidate$median_p90_ms - site_pattern_baseline$median_p90_ms,
+					q50_sd_delta_vs_current_ms = site_pattern_candidate$run_to_run_q50_sd_ms - site_pattern_baseline$run_to_run_q50_sd_ms,
+					local_result = "500ms stays inside or below the 1000ms q50 range with lower q50 sd",
+					remaining_gate = "CI/mac/container validation before replacing the blind sleep"
+				)
+			}
+		}
+
+		if (file.exists(site_pattern_predicate_validation_summary_path)) {
+			site_predicate_summary_existing <- read_csv(
+				site_pattern_predicate_validation_summary_path,
+				show_col_types = FALSE
+			)
+			site_predicate_candidate <- site_predicate_summary_existing %>%
+				filter(condition == "predicate + resource quiet")
+			site_predicate_baseline <- site_predicate_summary_existing %>%
+				filter(condition == "fixed 1000ms")
+			if (nrow(site_predicate_candidate) == 1 && nrow(site_predicate_baseline) == 1) {
+				predicate_wait_s <- 20 * site_predicate_candidate$median_readiness_wait_ms / 1000
+				rows[[length(rows) + 1]] <- tibble(
+					metric_group = "Site Editor pattern loading",
+					metric_label = "site-editor / loadPatterns",
+					candidate = "predicate + resource quiet",
+					current_baseline = "1000ms",
+					candidate_type = "semantic predicate candidate",
+					evidence = "3 validation runs; not pooled with the 10-run fixed-wait sweep",
+					current_two_branch_wait_s = 20,
+					candidate_two_branch_wait_s = predicate_wait_s,
+					two_branch_wait_saved_s = 20 - predicate_wait_s,
+					q50_delta_vs_current_ms = site_predicate_candidate$median_run_p50_ms - site_predicate_baseline$median_run_p50_ms,
+					p90_delta_vs_current_ms = NA_real_,
+					q50_sd_delta_vs_current_ms = site_predicate_candidate$run_to_run_q50_sd_ms - site_predicate_baseline$run_to_run_q50_sd_ms,
+					local_result = "best predicate-shaped local candidate, but only a small validation block",
+					remaining_gate = "full CI/mac/container predicate validation with timeout and resource telemetry"
+				)
+			}
+		}
+
+		if (length(rows) == 0) {
+			return(NULL)
+		}
+
+		bind_rows(rows) %>%
+			mutate(
+				candidate_type = factor(
+					candidate_type,
+					levels = c(
+						"local 0ms candidate",
+						"fixed fallback candidate",
+						"semantic predicate candidate"
+					)
+				),
+				metric_label = factor(
+					metric_label,
+					levels = rev(unique(metric_label))
+				),
+				q50_delta_label = sprintf("%+.1fms", q50_delta_vs_current_ms),
+				saved_label = sprintf("%.1fs", two_branch_wait_saved_s)
+			) %>%
+			arrange(metric_group, as.character(metric_label), candidate)
+	}
+
+	wait_removal_ledger <- build_wait_removal_ledger()
+	if (!is.null(wait_removal_ledger)) {
+		write_csv(wait_removal_ledger, wait_removal_ledger_path)
+
+		interaction_saved_s <- wait_removal_ledger %>%
+			filter(metric_group == "Post Editor interactions") %>%
+			summarise(value = sum(two_branch_wait_saved_s, na.rm = TRUE), .groups = "drop") %>%
+			pull(value)
+		post_pattern_saved_s <- wait_removal_ledger %>%
+			filter(metric_group == "Post Editor pattern loading", candidate == "0ms") %>%
+			summarise(value = sum(two_branch_wait_saved_s, na.rm = TRUE), .groups = "drop") %>%
+			pull(value)
+		site_fixed_saved_s <- wait_removal_ledger %>%
+			filter(metric_group == "Site Editor pattern loading", candidate == "fixed 500ms") %>%
+			summarise(value = sum(two_branch_wait_saved_s, na.rm = TRUE), .groups = "drop") %>%
+			pull(value)
+		site_predicate_saved_s <- wait_removal_ledger %>%
+			filter(metric_group == "Site Editor pattern loading", candidate == "predicate + resource quiet") %>%
+			summarise(value = sum(two_branch_wait_saved_s, na.rm = TRUE), .groups = "drop") %>%
+			pull(value)
+		interaction_current_s <- wait_removal_ledger %>%
+			filter(metric_group == "Post Editor interactions") %>%
+			summarise(value = sum(current_two_branch_wait_s, na.rm = TRUE), .groups = "drop") %>%
+			pull(value)
+		post_pattern_current_s <- wait_removal_ledger %>%
+			filter(metric_group == "Post Editor pattern loading", candidate == "0ms") %>%
+			summarise(value = sum(current_two_branch_wait_s, na.rm = TRUE), .groups = "drop") %>%
+			pull(value)
+		site_current_s <- wait_removal_ledger %>%
+			filter(metric_group == "Site Editor pattern loading", candidate == "fixed 500ms") %>%
+			summarise(value = sum(current_two_branch_wait_s, na.rm = TRUE), .groups = "drop") %>%
+			pull(value)
+		for (name in c(
+			"interaction_saved_s",
+			"post_pattern_saved_s",
+			"site_fixed_saved_s",
+			"site_predicate_saved_s",
+			"interaction_current_s",
+			"post_pattern_current_s",
+			"site_current_s"
+		)) {
+			if (length(get(name)) == 0 || !is.finite(get(name))) {
+				assign(name, 0)
+			}
+		}
+		current_total_wait_s <- interaction_current_s + post_pattern_current_s + site_current_s
+		conservative_saved_s <- interaction_saved_s + post_pattern_saved_s + site_fixed_saved_s
+		predicate_saved_s <- interaction_saved_s + post_pattern_saved_s + site_predicate_saved_s
+
+		wait_removal_rollup <- tribble(
+			~scenario, ~current_two_branch_wait_s, ~candidate_two_branch_wait_s, ~two_branch_wait_saved_s, ~validation_status,
+			"Current fixed waits", current_total_wait_s, current_total_wait_s, 0, "baseline",
+			"Local candidates plus fixed 500ms Site fallback", current_total_wait_s, current_total_wait_s - conservative_saved_s, conservative_saved_s, "best conservative local candidate set; needs CI/mac/container validation",
+			"Local candidates plus Site predicate", current_total_wait_s, current_total_wait_s - predicate_saved_s, predicate_saved_s, "higher-upside predicate path; needs fuller validation"
+		) %>%
+			mutate(
+				wait_removed_pct = two_branch_wait_saved_s / current_two_branch_wait_s,
+				scenario = factor(scenario, levels = scenario)
+			)
+		write_csv(wait_removal_rollup, wait_removal_rollup_path)
+
+		save_plot(
+			ggplot(
+				wait_removal_ledger,
+				aes(two_branch_wait_saved_s, metric_label, color = candidate_type, shape = candidate_type)
+			) +
+				geom_vline(xintercept = 0, color = brewer_color("Greys", 6, type = "seq", n = 9), linewidth = 0.35) +
+				geom_point(size = 3.3, alpha = 0.9) +
+				geom_text(aes(label = saved_label), nudge_x = 1.8, size = 2.8, color = "grey20", show.legend = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Candidate type") +
+				scale_shape_manual(
+					values = c(
+						"local 0ms candidate" = 16,
+						"fixed fallback candidate" = 17,
+						"semantic predicate candidate" = 15
+					),
+					name = "Candidate type",
+					drop = FALSE
+				) +
+				scale_x_continuous(labels = label_number(suffix = "s"), expand = expansion(mult = c(0.02, 0.18))) +
+				labs(
+					title = "Most remaining non-Typing fixed-wait savings are locally isolated",
+					subtitle = "Each point is a local candidate against the current 1000ms baseline; Site Editor has two alternative candidates",
+					x = "Two-branch explicit wait saved",
+					y = NULL
+				) +
+				theme(legend.position = "bottom"),
+			"161-open-question-wait-removal-ledger.png",
+			width = 11,
+			height = 6.8
+		)
+
+		wait_removal_tradeoff <- wait_removal_ledger %>%
+			mutate(
+				q50_sd_delta_abs = abs(q50_sd_delta_vs_current_ms),
+				metric_label = fct_reorder(metric_label, two_branch_wait_saved_s)
+			)
+
+		save_plot(
+			ggplot(
+				wait_removal_tradeoff,
+				aes(two_branch_wait_saved_s, q50_delta_vs_current_ms, color = candidate_type, shape = candidate_type)
+			) +
+				geom_hline(yintercept = 0, color = brewer_color("Greys", 6, type = "seq", n = 9), linewidth = 0.35, linetype = "dashed") +
+				geom_point(aes(size = q50_sd_delta_abs), alpha = 0.88) +
+				geom_text(aes(label = q50_delta_label), nudge_y = -2.0, size = 2.7, color = "grey20", show.legend = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Candidate type") +
+				scale_shape_manual(
+					values = c(
+						"local 0ms candidate" = 16,
+						"fixed fallback candidate" = 17,
+						"semantic predicate candidate" = 15
+					),
+					name = "Candidate type",
+					drop = FALSE
+				) +
+				scale_size_area(max_size = 6, name = "|q50 sd delta|") +
+				scale_x_continuous(labels = label_number(suffix = "s")) +
+				labs(
+					title = "Local wait-removal candidates do not show a q50 penalty",
+					subtitle = "Negative q50 deltas mean the candidate is faster than the current 1000ms baseline",
+					x = "Two-branch explicit wait saved",
+					y = "Candidate q50 minus current q50"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"162-open-question-wait-removal-tradeoff.png",
+			width = 11,
+			height = 6.8
+		)
+
+		wait_removal_rollup_plot <- wait_removal_rollup %>%
+			select(scenario, candidate_two_branch_wait_s, two_branch_wait_saved_s) %>%
+			pivot_longer(
+				cols = c(candidate_two_branch_wait_s, two_branch_wait_saved_s),
+				names_to = "component",
+				values_to = "seconds"
+			) %>%
+			mutate(
+				component = factor(
+					component,
+					levels = c("two_branch_wait_saved_s", "candidate_two_branch_wait_s"),
+					labels = c("wait saved", "wait remaining")
+				),
+				value_label = sprintf("%.1fs", seconds)
+			)
+
+		save_plot(
+			ggplot(wait_removal_rollup_plot, aes(scenario, seconds, fill = component)) +
+				geom_col(width = 0.65, alpha = 0.92) +
+				geom_text(
+					aes(label = if_else(seconds > 0, value_label, "")),
+					position = position_stack(vjust = 0.5),
+					size = 3.0,
+					color = "grey15"
+				) +
+				scale_fill_brewer(type = "qual", palette = "Set2", name = "Two-branch wait") +
+				scale_y_continuous(labels = label_number(suffix = "s")) +
+				labs(
+					title = "The local wait-removal envelope is about 142s to 146s per two-branch comparison",
+					subtitle = "Current non-Typing fixed-wait exposure in these rows is 152s; the Site Editor choice determines the last few seconds",
+					x = NULL,
+					y = "Two-branch explicit wait"
+				) +
+				theme(axis.text.x = element_text(angle = 12, hjust = 1), legend.position = "bottom"),
+			"163-open-question-wait-removal-rollup.png",
+			width = 10.5,
+			height = 6.8
+		)
+	}
+
 	message("Wrote plots to: ", figure_dir)
