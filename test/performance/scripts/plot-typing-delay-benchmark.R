@@ -3578,6 +3578,147 @@ if (file.exists(screenshot_trace_samples_path) && file.exists(screenshot_trace_s
 	)
 }
 
+screenshot_pixel_samples_path <- file.path(data_dir, "typing-delay-screenshot-pixel-samples.csv")
+screenshot_pixel_summary_path <- file.path(data_dir, "typing-delay-screenshot-pixel-summary.csv")
+
+read_screenshot_pixel_runs <- function() {
+	raw_specs <- tribble(
+		~input_mode, ~delay_mode, ~json_dir,
+		"key held during delay", "keyboard", file.path(repo_root, "test/performance/artifacts/typing-delay-screenshot-pixel-sharp-keyhold"),
+		"complete keypress then wait", "between-keys", file.path(repo_root, "test/performance/artifacts/typing-delay-screenshot-pixel-sharp-between-keys")
+	) %>%
+		filter(dir.exists(json_dir))
+
+	if (nrow(raw_specs) == 0) {
+		return(NULL)
+	}
+
+	column_or <- function(data, column, value = NA) {
+		if (column %in% names(data)) {
+			data[[column]]
+		} else {
+			rep(value, nrow(data))
+		}
+	}
+
+	rows <- list()
+	for (i in seq_len(nrow(raw_specs))) {
+		spec <- raw_specs[i, ]
+		json_files <- list.files(spec$json_dir, pattern = "^typing-delay-benchmark-.*\\.json$", full.names = TRUE)
+		if (length(json_files) == 0) {
+			next
+		}
+		raw <- fromJSON(json_files[[1]], flatten = TRUE)
+		if (is.null(raw$records)) {
+			next
+		}
+
+		records <- as_tibble(raw$records) %>%
+			filter(!isThrowaway)
+
+		rows[[length(rows) + 1]] <- records %>%
+			transmute(
+				input_mode = spec$input_mode,
+				delay_mode = spec$delay_mode,
+				delay_ms = delayMs,
+				round,
+				delay_sample_index = delaySampleIndex,
+				latency_ms = latencyMs,
+				screenshot_first_changed_after_keydown_ms = column_or(records, "screenshotFirstChangedAfterKeydownMs", NA_real_),
+				screenshot_changed_pixel_count = column_or(records, "screenshotChangedPixelCount", NA_real_),
+				screenshot_changed_box_overlap_target_ratio = column_or(records, "screenshotChangedBoxOverlapTargetRatio", NA_real_),
+				screenshot_changed_box_overlaps_target = column_or(records, "screenshotChangedBoxOverlapsTarget", NA),
+				screenshot_changed_box_center_in_target = column_or(records, "screenshotChangedBoxCenterInTarget", NA),
+				screenshot_pixel_diff_failed = column_or(records, "screenshotPixelDiffFailed", FALSE),
+				screenshot_pixel_diff_error = column_or(records, "screenshotPixelDiffError", NA_character_)
+			)
+	}
+
+	if (length(rows) == 0) {
+		return(NULL)
+	}
+
+	bind_rows(rows)
+}
+
+screenshot_pixel_samples_from_artifacts <- read_screenshot_pixel_runs()
+if (!is.null(screenshot_pixel_samples_from_artifacts)) {
+	screenshot_pixel_samples <- screenshot_pixel_samples_from_artifacts
+	write_csv(screenshot_pixel_samples, screenshot_pixel_samples_path)
+
+	screenshot_pixel_summary <- screenshot_pixel_samples %>%
+		group_by(input_mode, delay_mode, delay_ms) %>%
+		summarise(
+			retained_n = n(),
+			decoded_n = sum(!is.na(screenshot_changed_pixel_count)),
+			decode_failed_n = sum(screenshot_pixel_diff_failed %in% TRUE, na.rm = TRUE),
+			overlap_target_n = sum(screenshot_changed_box_overlaps_target %in% TRUE, na.rm = TRUE),
+			center_in_target_n = sum(screenshot_changed_box_center_in_target %in% TRUE, na.rm = TRUE),
+			latency_p50_ms = quant(latency_ms, 0.5),
+			screenshot_first_changed_after_keydown_p50_ms = quant(screenshot_first_changed_after_keydown_ms, 0.5),
+			screenshot_changed_pixel_count_p50 = quant(screenshot_changed_pixel_count, 0.5),
+			screenshot_changed_box_overlap_target_ratio_p50 = quant(screenshot_changed_box_overlap_target_ratio, 0.5),
+			.groups = "drop"
+		)
+	write_csv(screenshot_pixel_summary, screenshot_pixel_summary_path)
+}
+
+if (file.exists(screenshot_pixel_samples_path) && file.exists(screenshot_pixel_summary_path)) {
+	screenshot_pixel_samples <- read_csv(screenshot_pixel_samples_path, show_col_types = FALSE) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms"))
+		)
+
+	screenshot_pixel_plot <- screenshot_pixel_samples %>%
+		select(
+			input_mode,
+			delay_label,
+			`changed-pixel count` = screenshot_changed_pixel_count,
+			`changed-box overlap ratio with target` = screenshot_changed_box_overlap_target_ratio
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		)
+
+	save_plot(
+		ggplot(screenshot_pixel_plot, aes(delay_label, value, color = input_mode, shape = input_mode)) +
+			geom_point(
+				position = position_jitter(width = 0.09, height = 0, seed = 112),
+				size = 2.1,
+				alpha = 0.65
+			) +
+			stat_summary(
+				aes(group = input_mode),
+				fun = median,
+				geom = "point",
+				shape = 95,
+				size = 7,
+				position = position_dodge(width = 0.35),
+				color = brewer_color("Set1", 1),
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_grid(metric ~ input_mode, scales = "free_y") +
+			labs(
+				title = "Changed trace-screenshot pixels are localized to the text box",
+				subtitle = "Red ticks are medians; 8 retained samples per delay and input mode",
+				x = "Delay",
+				y = NULL,
+				color = "Input mode",
+				shape = "Input mode"
+			),
+		"112-screenshot-pixel-overlap.png",
+		width = 11.5,
+		height = 7.4
+	)
+}
+
 taskpolicy_tier_samples_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-samples.csv")
 taskpolicy_tier_summary_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-summary.csv")
 

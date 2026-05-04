@@ -353,6 +353,13 @@ The short version:
     `1300ms` to `18.4ms`; complete-keypress-then-wait stays in the
     `16.9-19.9ms` band. This is still not high-speed-camera calibration, but it
     disconfirms "render trace bookkeeping only."
+-   A follow-up trace-screenshot pixel localization check decodes the previous
+    and first changed trace screenshots, diffs the pixels, and checks whether the
+    changed-pixel box overlaps the target text box. Across 48 retained samples
+    at `990ms`, `1000ms`, and `1300ms`, every decoded changed screenshot
+    overlapped the target and every changed-pixel box center landed inside it.
+    This does not OCR the character or calibrate presentation, but it rules out
+    the changed-screenshot endpoint being unrelated viewport activity.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -622,6 +629,8 @@ The R script derives:
     `DrawFrame` timing.
 -   `data/typing-delay-screenshot-trace-*.csv`: opt-in Chromium trace-screenshot
     samples and summaries for first changed screenshot after keydown.
+-   `data/typing-delay-screenshot-pixel-*.csv`: opt-in pixel localization
+    samples and summaries for changed trace screenshots.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 
@@ -4471,6 +4480,42 @@ user-facing caveat is now specifically calibrated presentation: trace screenshot
 are closer to pixels, but they are not display presentation timestamps or an
 external screen observation.
 
+## Trace Screenshot Pixel Localization
+
+The screenshot-trace result above still had one avoidable ambiguity: a changed
+trace screenshot hash proves that Chromium's screenshot stream changed, but does
+not prove that the changed pixels are in the edited paragraph. I added an opt-in
+`BENCHMARK_TRACE_SCREENSHOT_PIXELS=1` check for that narrower question. For each
+retained key, it decodes the previous trace screenshot and the first changed
+trace screenshot, computes a simple RGB pixel diff, finds the changed-pixel
+bounding box, and maps the editor target textbox into screenshot coordinates.
+The benchmark still writes only derived numbers, not raw screenshot images.
+
+One setup bug fell out of this check. The original target locator matched the
+inserted block by its "Empty block" accessible name. After the first delay group
+typed into that block, later delay groups no longer had that accessible name, so
+the pixel check had no target box. The benchmark now falls back to the last
+`contenteditable` box in the editor canvas when the original locator no longer
+matches; in this setup, that is the inserted benchmark paragraph.
+
+![Screenshot pixel localization](figures/112-screenshot-pixel-overlap.png)
+
+| Input mode | Delay | Decoded | Changed box overlaps target | Changed box center in target | Changed pixels p50 | Changed-box overlap ratio p50 |
+| ---------- | ----: | ------: | --------------------------: | ---------------------------: | -----------------: | ----------------------------: |
+| key held during delay |  `990ms` | `8/8` | `8/8` | `8/8` | `23` | `0.740` |
+| key held during delay | `1000ms` | `8/8` | `8/8` | `8/8` | `23` | `0.741` |
+| key held during delay | `1300ms` | `8/8` | `8/8` | `8/8` | `31` | `0.745` |
+| complete keypress then wait |  `990ms` | `8/8` | `8/8` | `8/8` | `32.5` | `0.745` |
+| complete keypress then wait | `1000ms` | `8/8` | `8/8` | `8/8` | `31` | `0.741` |
+| complete keypress then wait | `1300ms` | `8/8` | `8/8` | `8/8` | `31` | `0.745` |
+
+This closes the "unrelated screenshot hash" caveat for these Chromium runs. The
+first changed screenshot after keydown is localized to the edited text box in
+both input modes and at the relevant delays. It is still not OCR, compositor
+presentation timing, or high-speed-camera validation; the remaining caveat is
+calibrated presentation, not whether the trace screenshot change is in the
+editor target.
+
 ## Trace Grouping Bug Avoided
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
@@ -4522,9 +4567,11 @@ Known problems:
 -   **It still does not have a calibrated input-to-screen endpoint.** The visual
     proxy reaches editor-canvas input, mutation, and RAF boundaries, and the
     render trace probe reaches Chromium `Paint` / `DrawFrame` trace events. The
-    screenshot trace probe reaches changed Chromium trace snapshots. Those are
-    still not compositor presentation timestamps, high-speed-camera pixels, or
-    semantic proof that the exact typed character is visible.
+    screenshot trace probe reaches changed Chromium trace snapshots. The pixel
+    localization check confirms those changed screenshots change inside the
+    target textbox, but they are still not compositor presentation timestamps,
+    high-speed-camera pixels, or semantic proof that the exact typed character is
+    visible.
 -   **Synthetic keyboard input is not real keyboard input.** Playwright's
     `page.keyboard.type()` is useful, but it is not a hardware-to-screen pipeline.
 -   **There are now multiple delay modes.** This is useful for diagnosis, but any
@@ -4674,7 +4721,11 @@ about `35ms` / `34ms` to `18ms`. That disconfirms "EventDispatch trace
 accounting only", "JS/RAF proxy only", and "render-event bookkeeping only"
 theories. What remains open is calibrated input-to-screen: Chrome trace
 screenshots are not compositor presentation timestamps, high-speed-camera
-pixels, or semantic proof that the newly typed character is visible.
+pixels, or semantic proof that the newly typed character is visible. The
+follow-up pixel localization check narrows that caveat: the changed trace
+screenshot pixels are in the target textbox for every decoded retained sample,
+so the remaining gap is presentation calibration and semantic OCR, not unrelated
+screenshot noise.
 
 ## Recommendations
 
@@ -4723,9 +4774,9 @@ For investigation:
     undo, and block insertion.
 -   Keep the native baseline and add more minimal editor-like baselines to
     estimate browser/editor overhead.
--   Extend the visual/render/screenshot probes to a calibrated input-to-screen
-    endpoint, or calibrate them with presentation traces or high-speed camera
-    data for benchmark runs.
+-   Calibrate the visual/render/screenshot probes against compositor presentation
+    traces, OCR, or high-speed camera data if CI is going to claim
+    input-to-screen latency.
 -   Repeat source-level attribution on Safari and Firefox if comparable tooling
     is available.
 -   Repeat with plugin-heavy editor setups if long-session lag is suspected there.
@@ -4793,6 +4844,10 @@ The key runs used in this report were:
     `1000ms`, and `1300ms`, with opt-in Chromium trace screenshots.
 -   `screenshot_between_keys`: complete keypress, then wait at `990ms`,
     `1000ms`, and `1300ms`, with the same trace-screenshot probe.
+-   `screenshot_pixel_keyhold`: normal Playwright key-hold delay at `990ms`,
+    `1000ms`, and `1300ms`, with opt-in changed-screenshot pixel localization.
+-   `screenshot_pixel_between_keys`: complete keypress, then wait at `990ms`,
+    `1000ms`, and `1300ms`, with the same pixel localization probe.
 -   `taskpolicy_tier_sweep`: `taskpolicy -l 0..5` and `taskpolicy -t 0..5`
     background CPU controls with a `1250ms` no-op timer and `1300ms` held-key
     delay.

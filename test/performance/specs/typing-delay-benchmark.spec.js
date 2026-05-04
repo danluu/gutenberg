@@ -101,7 +101,11 @@ const traceRenderEvents =
 	process.env.BENCHMARK_TRACE_RENDER_EVENTS === '1' ||
 	process.env.BENCHMARK_TRACE_RENDER_EVENTS === 'true';
 const renderTraceWindowMs = intEnv( 'BENCHMARK_RENDER_TRACE_WINDOW_MS', 150 );
+const traceScreenshotPixels =
+	process.env.BENCHMARK_TRACE_SCREENSHOT_PIXELS === '1' ||
+	process.env.BENCHMARK_TRACE_SCREENSHOT_PIXELS === 'true';
 const traceScreenshots =
+	traceScreenshotPixels ||
 	process.env.BENCHMARK_TRACE_SCREENSHOTS === '1' ||
 	process.env.BENCHMARK_TRACE_SCREENSHOTS === 'true';
 const screenshotTraceWindowMs = intEnv(
@@ -1202,6 +1206,7 @@ function screenshotTraceEventsForKeyWindows( trace ) {
 		)
 		.map( ( item ) => ( {
 			durationMs: item.dur ? item.dur / 1000 : 0,
+			snapshot: item.args.snapshot,
 			snapshotBytes: item.args.snapshot.length,
 			snapshotHash: screenshotHash( item.args.snapshot ),
 			timestampMs: item.ts / 1000,
@@ -1211,7 +1216,7 @@ function screenshotTraceEventsForKeyWindows( trace ) {
 
 function screenshotTraceDeltasForKey( screenshotEvents, keydownTimestampMs ) {
 	if ( ! screenshotEvents ) {
-		return {};
+		return { metrics: {} };
 	}
 
 	const windowStartMs = keydownTimestampMs;
@@ -1232,22 +1237,26 @@ function screenshotTraceDeltasForKey( screenshotEvents, keydownTimestampMs ) {
 		);
 
 	return {
-		screenshotTraceEventCountAfterKeydown: screenshotsInWindow.length,
-		screenshotPreviousBeforeKeydownMs: previousScreenshot
-			? keydownTimestampMs - previousScreenshot.timestampMs
-			: undefined,
-		screenshotFirstAfterKeydownMs: firstScreenshot
-			? firstScreenshot.timestampMs - keydownTimestampMs
-			: undefined,
-		screenshotFirstAfterKeydownHash: firstScreenshot?.snapshotHash,
-		screenshotFirstAfterKeydownBytes: firstScreenshot?.snapshotBytes,
-		screenshotFirstChangedAfterKeydownMs: firstChangedScreenshot
-			? firstChangedScreenshot.timestampMs - keydownTimestampMs
-			: undefined,
-		screenshotFirstChangedAfterKeydownHash:
-			firstChangedScreenshot?.snapshotHash,
-		screenshotFirstChangedAfterKeydownBytes:
-			firstChangedScreenshot?.snapshotBytes,
+		previousSnapshot: previousScreenshot?.snapshot,
+		changedSnapshot: firstChangedScreenshot?.snapshot,
+		metrics: {
+			screenshotTraceEventCountAfterKeydown: screenshotsInWindow.length,
+			screenshotPreviousBeforeKeydownMs: previousScreenshot
+				? keydownTimestampMs - previousScreenshot.timestampMs
+				: undefined,
+			screenshotFirstAfterKeydownMs: firstScreenshot
+				? firstScreenshot.timestampMs - keydownTimestampMs
+				: undefined,
+			screenshotFirstAfterKeydownHash: firstScreenshot?.snapshotHash,
+			screenshotFirstAfterKeydownBytes: firstScreenshot?.snapshotBytes,
+			screenshotFirstChangedAfterKeydownMs: firstChangedScreenshot
+				? firstChangedScreenshot.timestampMs - keydownTimestampMs
+				: undefined,
+			screenshotFirstChangedAfterKeydownHash:
+				firstChangedScreenshot?.snapshotHash,
+			screenshotFirstChangedAfterKeydownBytes:
+				firstChangedScreenshot?.snapshotBytes,
+		},
 	};
 }
 
@@ -1739,6 +1748,144 @@ test.describe( 'Typing delay benchmark', () => {
 					windowName: name,
 				} ) )
 			);
+		}
+
+		async function screenshotPixelDiffForSnapshots(
+			previousSnapshot,
+			changedSnapshot,
+			targetBoundingBox,
+			viewportSize
+		) {
+			if (
+				! traceScreenshotPixels ||
+				! previousSnapshot ||
+				! changedSnapshot ||
+				! targetBoundingBox ||
+				! viewportSize
+			) {
+				return {};
+			}
+
+			try {
+				const sharp = ( await import( 'sharp' ) ).default;
+				const snapshotBuffer = ( snapshot ) =>
+					Buffer.from( snapshot.split( ',' ).at( -1 ), 'base64' );
+				const decode = async ( snapshot ) => {
+					const decoded = await sharp( snapshotBuffer( snapshot ) )
+						.ensureAlpha()
+						.raw()
+						.toBuffer( { resolveWithObject: true } );
+
+					return {
+						data: decoded.data,
+						width: decoded.info.width,
+						height: decoded.info.height,
+					};
+				};
+
+				const [ previousImage, changedImage ] = await Promise.all( [
+					decode( previousSnapshot ),
+					decode( changedSnapshot ),
+				] );
+				const width = Math.min(
+					previousImage.width,
+					changedImage.width
+				);
+				const height = Math.min(
+					previousImage.height,
+					changedImage.height
+				);
+
+				let changedPixelCount = 0;
+				let minX = width;
+				let minY = height;
+				let maxX = -1;
+				let maxY = -1;
+
+				for ( let y = 0; y < height; y++ ) {
+					for ( let x = 0; x < width; x++ ) {
+						const offset = ( y * width + x ) * 4;
+						const redDelta = Math.abs(
+							previousImage.data[ offset ] -
+								changedImage.data[ offset ]
+						);
+						const greenDelta = Math.abs(
+							previousImage.data[ offset + 1 ] -
+								changedImage.data[ offset + 1 ]
+						);
+						const blueDelta = Math.abs(
+							previousImage.data[ offset + 2 ] -
+								changedImage.data[ offset + 2 ]
+						);
+						if ( redDelta + greenDelta + blueDelta <= 60 ) {
+							continue;
+						}
+
+						changedPixelCount++;
+						minX = Math.min( minX, x );
+						minY = Math.min( minY, y );
+						maxX = Math.max( maxX, x );
+						maxY = Math.max( maxY, y );
+					}
+				}
+
+				if ( changedPixelCount === 0 ) {
+					return {
+						screenshotDiffImageWidth: width,
+						screenshotDiffImageHeight: height,
+						screenshotChangedPixelCount: 0,
+						screenshotChangedPixelRatio: 0,
+						screenshotChangedBoxOverlapsTarget: false,
+					};
+				}
+
+				const scaleX = width / viewportSize.width;
+				const scaleY = height / viewportSize.height;
+				const targetMinX = targetBoundingBox.x * scaleX;
+				const targetMinY = targetBoundingBox.y * scaleY;
+				const targetMaxX =
+					( targetBoundingBox.x + targetBoundingBox.width ) * scaleX;
+				const targetMaxY =
+					( targetBoundingBox.y + targetBoundingBox.height ) * scaleY;
+				const overlapMinX = Math.max( minX, targetMinX );
+				const overlapMinY = Math.max( minY, targetMinY );
+				const overlapMaxX = Math.min( maxX, targetMaxX );
+				const overlapMaxY = Math.min( maxY, targetMaxY );
+				const overlapWidth = Math.max( 0, overlapMaxX - overlapMinX );
+				const overlapHeight = Math.max( 0, overlapMaxY - overlapMinY );
+				const changedBoxArea =
+					( maxX - minX + 1 ) * ( maxY - minY + 1 );
+				const overlapArea = overlapWidth * overlapHeight;
+				const centerX = ( minX + maxX ) / 2;
+				const centerY = ( minY + maxY ) / 2;
+
+				return {
+					screenshotDiffImageWidth: width,
+					screenshotDiffImageHeight: height,
+					screenshotChangedPixelCount: changedPixelCount,
+					screenshotChangedPixelRatio:
+						changedPixelCount / ( width * height ),
+					screenshotChangedMinX: minX,
+					screenshotChangedMinY: minY,
+					screenshotChangedMaxX: maxX,
+					screenshotChangedMaxY: maxY,
+					screenshotChangedBoxArea: changedBoxArea,
+					screenshotChangedBoxOverlapTargetArea: overlapArea,
+					screenshotChangedBoxOverlapTargetRatio:
+						overlapArea / changedBoxArea,
+					screenshotChangedBoxOverlapsTarget: overlapArea > 0,
+					screenshotChangedBoxCenterInTarget:
+						centerX >= targetMinX &&
+						centerX <= targetMaxX &&
+						centerY >= targetMinY &&
+						centerY <= targetMaxY,
+				};
+			} catch ( error ) {
+				return {
+					screenshotPixelDiffFailed: true,
+					screenshotPixelDiffError: error.message,
+				};
+			}
 		}
 
 		async function setupPersistenceTracing() {
@@ -3035,6 +3182,7 @@ setInterval(() => {}, 2147483647);
 
 		let editorSetupIndex = -1;
 		let paragraph;
+		let canvas;
 
 		async function setupEditor() {
 			editorSetupIndex++;
@@ -3199,7 +3347,7 @@ setInterval(() => {}, 2147483647);
 				window.wp.data.select( 'core/block-editor' ).getBlockCount()
 			);
 
-			const canvas = await perfUtils.getCanvas();
+			canvas = await perfUtils.getCanvas();
 			if ( scenario === 'small-containers-paragraph' ) {
 				paragraph = canvas
 					.getByRole( 'document', {
@@ -3244,6 +3392,29 @@ setInterval(() => {}, 2147483647);
 				dataTracingSetup,
 				markPersistentInterventionSetup,
 			};
+		}
+
+		async function screenshotTargetBoundingBox() {
+			if ( ! traceScreenshots ) {
+				return null;
+			}
+
+			const paragraphBox = await paragraph
+				.boundingBox()
+				.catch( () => null );
+			if ( paragraphBox ) {
+				return paragraphBox;
+			}
+
+			if ( ! canvas ) {
+				return null;
+			}
+
+			return await canvas
+				.locator( '[contenteditable="true"]' )
+				.last()
+				.boundingBox()
+				.catch( () => null );
 		}
 
 		async function runPreTypingWarmup() {
@@ -3318,6 +3489,10 @@ setInterval(() => {}, 2147483647);
 				}
 
 				const preTypingWarmup = await runPreTypingWarmup();
+				const targetBoundingBox = await screenshotTargetBoundingBox();
+				const viewportSize = traceScreenshots
+					? page.viewportSize()
+					: null;
 				const runStartedAtEpochMs = Date.now();
 				const runStartedAtBrowserNowMs = await page.evaluate( () =>
 					performance.now()
@@ -3503,6 +3678,8 @@ setInterval(() => {}, 2147483647);
 					runStoppedAtEpochMs,
 					runStartedAtBrowserNowMs,
 					runStoppedAtBrowserNowMs,
+					targetBoundingBox,
+					viewportSize,
 					preTypingWarmup,
 					persistenceEvents: tracePersistence
 						? await page.evaluate(
@@ -3722,10 +3899,21 @@ setInterval(() => {}, 2147483647);
 						renderTraceEvents,
 						keydown.timestampMs
 					);
-					const screenshotTraceDeltas = screenshotTraceDeltasForKey(
+					const {
+						metrics: screenshotTraceDeltas,
+						previousSnapshot,
+						changedSnapshot,
+					} = screenshotTraceDeltasForKey(
 						screenshotTraceEvents,
 						keydown.timestampMs
 					);
+					const screenshotPixelDiffDeltas =
+						await screenshotPixelDiffForSnapshots(
+							previousSnapshot,
+							changedSnapshot,
+							targetBoundingBox,
+							viewportSize
+						);
 					const isThrowaway = sampleIndex < throwawayPerDelay;
 					const delaySampleIndex =
 						retainedSamplesByDelay.get( delayMs );
@@ -3824,6 +4012,7 @@ setInterval(() => {}, 2147483647);
 								  visualLatencyEvent.keydownAtMs,
 						...renderTraceDeltas,
 						...screenshotTraceDeltas,
+						...screenshotPixelDiffDeltas,
 					} );
 
 					globalTypedCharacterIndex++;
@@ -3907,6 +4096,7 @@ setInterval(() => {}, 2147483647);
 				traceRenderEvents,
 				renderTraceWindowMs,
 				traceScreenshots,
+				traceScreenshotPixels,
 				screenshotTraceWindowMs,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
