@@ -142,7 +142,11 @@ The short version:
     `15.3-15.4ms` with eleven checkpoints, and `13.2-13.4ms` with seventeen
     checkpoints. That means the trace-off residual is not evidence for a hidden
     Gutenberg semantic state change caused by Playwright evaluation; enough
-    browser/runtime checkpoints between keys can reproduce and exceed it.
+    browser/runtime checkpoints between keys can reproduce and exceed it. A
+    combined decoupling plot makes the important negative control explicit:
+    raw CDP plus ordinary post-keyup waits stays slow from about `4ms` through
+    `1008ms`, while runtime checkpoints become fast at much shorter observed
+    gaps.
 -   A native `contenteditable` control has the same direction but not the same
     scale. Repeating the same runtime checkpoints moves native `keypress` p50 by
     only about `0.3-0.4ms`, while the Gutenberg large-post path moves by multiple
@@ -646,6 +650,9 @@ The R script derives:
     runtime deltas.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
+-   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
+    that joins raw-CDP explicit post-keyup waits with the runtime-checkpoint
+    dose response.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -4334,6 +4341,47 @@ layer can change the amount of Gutenberg input work charged to the next
 `EventDispatch` slice. Playwright trace snapshots are the largest version of
 that in the default performance-test configuration; even with trace disabled,
 additional runtime checkpoints remain a smaller measurement perturbation.
+
+### Decoupling Wait Time From Runtime Checkpoints
+
+The remaining ambiguity in the runtime-repeat result was whether the checkpoint
+effect was just another way to create a longer post-keyup gap. The existing raw
+CDP explicit-gap controls answer that. They keep the same raw
+`Input.dispatchKeyEvent` path and add ordinary post-keyup waits, without any
+between-key runtime evaluation. I combined those controls with the runtime-repeat
+grid in one plot.
+
+![Explicit wait vs runtime checkpoints](figures/25i-explicit-wait-vs-runtime-checkpoints.png)
+
+Selected p50s:
+
+| Between-key mechanism | Point | Observed previous keyup to next keydown | `keypress` p50 |
+| --------------------- | ----: | --------------------------------------: | -------------: |
+| explicit post-keyup wait only | `wait 0ms` | `3.9ms` | `21.4ms` |
+| explicit post-keyup wait only | `wait 16ms` | `21.5ms` | `23.1ms` |
+| explicit post-keyup wait only | `wait 33ms` | `38.8ms` | `22.5ms` |
+| explicit post-keyup wait only | `wait 1000ms` | `1007.8ms` | `23.9ms` |
+| `Runtime.evaluate` checkpoints | `x1` | `4.3ms` | `19.7ms` |
+| `Runtime.evaluate` checkpoints | `x7` | `12.0ms` | `15.4ms` |
+| `Runtime.evaluate` checkpoints | `x17` | `18.4ms` | `13.2ms` |
+| `Runtime.callFunctionOn` checkpoints | `x1` | `5.2ms` | `19.9ms` |
+| `Runtime.callFunctionOn` checkpoints | `x7` | `11.9ms` | `16.0ms` |
+| `Runtime.callFunctionOn` checkpoints | `x17` | `19.2ms` | `13.4ms` |
+
+This is the cleanest negative control for the "post-keyup gap" explanation. If
+elapsed gap were sufficient, raw CDP plus `16ms`, `33ms`, or `1000ms` of ordinary
+waiting would move toward the low band. It does not; those rows stay around
+`22-24ms`. Runtime checkpoints move the next keypress lower at comparable or
+shorter observed gaps. The difference is therefore not elapsed time after
+`keyup`; it is crossing renderer/runtime/protocol checkpoints inserted by the
+automation path.
+
+That does not identify the exact Chromium internal state that changes at those
+checkpoints. It does remove a class of bad explanations: no amount of ordinary
+sleep in this raw-CDP path reproduced the fast path, so the fast path is not
+"the browser had time to rest" or "queued JavaScript drained during the gap."
+The remaining mechanism is browser/runtime scheduling below this benchmark's
+ordinary DOM and Gutenberg instrumentation.
 
 ### Native Runtime Repeat Control
 
