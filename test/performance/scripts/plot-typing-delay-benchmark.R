@@ -6778,6 +6778,102 @@ if (file.exists(playwright_trace_mode_summary_path)) {
 	)
 }
 
+eval_path_summary_path <- file.path(data_dir, "typing-delay-eval-path-summary.csv")
+if (file.exists(eval_path_summary_path)) {
+	eval_path_summary <- read_csv(eval_path_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			evaluation_path = factor(
+				evaluation_path,
+				levels = c(
+					"raw CDP only",
+					"Runtime.evaluate",
+					"Runtime.evaluate await/value/userGesture",
+					"Runtime.callFunctionOn globalThis",
+					"page.evaluate",
+					"page.evaluateHandle",
+					"main locator.evaluate",
+					"frame locator.evaluate"
+				)
+			),
+			evaluation_group = case_when(
+				evaluation_path == "raw CDP only" ~ "raw input",
+				str_starts(as.character(evaluation_path), "Runtime.") ~ "direct CDP runtime",
+				str_detect(as.character(evaluation_path), "locator") ~ "Playwright locator",
+				TRUE ~ "Playwright page evaluation"
+			),
+			point_label = recode(
+				as.character(evaluation_path),
+				`raw CDP only` = "raw CDP",
+				`Runtime.evaluate` = "Runtime.evaluate",
+				`Runtime.evaluate await/value/userGesture` = "Runtime.evaluate + flags",
+				`Runtime.callFunctionOn globalThis` = "Runtime.callFunctionOn",
+				`page.evaluate` = "page.evaluate",
+				`page.evaluateHandle` = "evaluateHandle",
+				`main locator.evaluate` = "main locator",
+				`frame locator.evaluate` = "frame locator"
+			),
+			label_x = case_when(
+				point_label == "raw CDP" ~ actual_post_keyup_gap_p50_ms * 1.25,
+				point_label == "Runtime.evaluate" ~ actual_post_keyup_gap_p50_ms * 0.93,
+				point_label == "Runtime.evaluate + flags" ~ actual_post_keyup_gap_p50_ms * 1.12,
+				point_label == "Runtime.callFunctionOn" ~ actual_post_keyup_gap_p50_ms * 1.12,
+				point_label == "page.evaluate" ~ actual_post_keyup_gap_p50_ms * 1.08,
+				point_label == "evaluateHandle" ~ actual_post_keyup_gap_p50_ms * 1.08,
+				point_label == "main locator" ~ actual_post_keyup_gap_p50_ms * 1.03,
+				point_label == "frame locator" ~ actual_post_keyup_gap_p50_ms * 1.02,
+				TRUE ~ actual_post_keyup_gap_p50_ms
+			),
+			label_y = case_when(
+				point_label == "raw CDP" ~ keypress_p50_ms + 0.35,
+				point_label == "Runtime.evaluate" ~ keypress_p50_ms + 0.45,
+				point_label == "Runtime.evaluate + flags" ~ keypress_p50_ms - 0.2,
+				point_label == "Runtime.callFunctionOn" ~ keypress_p50_ms + 0.4,
+				point_label == "page.evaluate" ~ keypress_p50_ms + 0.35,
+				point_label == "evaluateHandle" ~ keypress_p50_ms - 0.25,
+				point_label == "main locator" ~ keypress_p50_ms + 0.35,
+				point_label == "frame locator" ~ keypress_p50_ms + 0.35,
+				TRUE ~ keypress_p50_ms
+			)
+		)
+
+	save_plot(
+		ggplot(
+			eval_path_summary,
+			aes(
+				actual_post_keyup_gap_p50_ms,
+				keypress_p50_ms,
+				color = evaluation_group,
+				shape = evaluation_group
+			)
+		) +
+			geom_point(size = 3.2, alpha = 0.92) +
+			geom_errorbar(
+				aes(ymin = keypress_p10_ms, ymax = keypress_p90_ms),
+				width = 0.14,
+				alpha = 0.45
+			) +
+			geom_text(
+				aes(label_x, label_y, label = point_label),
+				size = 3.0,
+				check_overlap = FALSE,
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			labs(
+				title = "Trace-off evaluation paths only partially explain the gap",
+				subtitle = "Raw CDP 1300ms held-key input with Playwright trace disabled",
+				x = "Observed previous keyup to next keydown, p50 (ms)",
+				y = "keypress EventDispatch duration (ms)",
+				color = "Path",
+				shape = "Path"
+			) +
+			theme(legend.position = "bottom"),
+		"25d-trace-off-evaluation-path.png",
+		width = 11,
+		height = 6.5
+	)
+}
+
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")

@@ -157,7 +157,12 @@ const supportedDelayModes = [
 	'down-up-key-hold',
 	'cdp-key-hold',
 	'cdp-key-hold-page-evaluate',
+	'cdp-key-hold-page-evaluate-handle',
+	'cdp-key-hold-main-locator-evaluate',
+	'cdp-key-hold-frame-locator-evaluate',
 	'cdp-key-hold-runtime-evaluate',
+	'cdp-key-hold-runtime-evaluate-full',
+	'cdp-key-hold-runtime-call-function-on',
 	'cdp-key-hold-runtime-timeout',
 	'cdp-key-hold-runtime-raf',
 ];
@@ -3731,13 +3736,25 @@ setInterval(() => {}, 2147483647);
 				} else if (
 					delayMode === 'cdp-key-hold' ||
 					delayMode === 'cdp-key-hold-page-evaluate' ||
+					delayMode === 'cdp-key-hold-page-evaluate-handle' ||
+					delayMode === 'cdp-key-hold-main-locator-evaluate' ||
+					delayMode === 'cdp-key-hold-frame-locator-evaluate' ||
 					delayMode === 'cdp-key-hold-runtime-evaluate' ||
+					delayMode === 'cdp-key-hold-runtime-evaluate-full' ||
+					delayMode === 'cdp-key-hold-runtime-call-function-on' ||
 					delayMode === 'cdp-key-hold-runtime-timeout' ||
 					delayMode === 'cdp-key-hold-runtime-raf'
 				) {
 					const cdpSession = await page
 						.context()
 						.newCDPSession( page );
+					const callFunctionGlobalObject =
+						delayMode === 'cdp-key-hold-runtime-call-function-on'
+							? await cdpSession.send( 'Runtime.evaluate', {
+									expression: 'globalThis',
+									objectGroup: 'typing-delay-benchmark',
+							  } )
+							: null;
 					try {
 						for ( let i = 0; i < sampleCount; i++ ) {
 							await dispatchCdpKeyPress( cdpSession, delayMs );
@@ -3748,12 +3765,71 @@ setInterval(() => {}, 2147483647);
 								await page.evaluate( () => undefined );
 							}
 							if (
+								delayMode ===
+									'cdp-key-hold-page-evaluate-handle' &&
+								i < sampleCount - 1
+							) {
+								const handle = await page.evaluateHandle(
+									() => undefined
+								);
+								await handle.dispose();
+							}
+							if (
+								delayMode ===
+									'cdp-key-hold-main-locator-evaluate' &&
+								i < sampleCount - 1
+							) {
+								await page
+									.locator( 'body' )
+									.evaluate( () => undefined );
+							}
+							if (
+								delayMode ===
+									'cdp-key-hold-frame-locator-evaluate' &&
+								i < sampleCount - 1
+							) {
+								await canvas
+									.locator( 'body' )
+									.evaluate( () => undefined );
+							}
+							if (
 								delayMode === 'cdp-key-hold-runtime-evaluate' &&
 								i < sampleCount - 1
 							) {
 								await cdpSession.send( 'Runtime.evaluate', {
 									expression: 'undefined',
 								} );
+							}
+							if (
+								delayMode ===
+									'cdp-key-hold-runtime-evaluate-full' &&
+								i < sampleCount - 1
+							) {
+								await cdpSession.send( 'Runtime.evaluate', {
+									awaitPromise: true,
+									expression: 'undefined',
+									returnByValue: true,
+									userGesture: true,
+								} );
+							}
+							if (
+								delayMode ===
+									'cdp-key-hold-runtime-call-function-on' &&
+								i < sampleCount - 1
+							) {
+								await cdpSession.send(
+									'Runtime.callFunctionOn',
+									{
+										awaitPromise: true,
+										functionDeclaration:
+											'function() { return undefined; }',
+										objectId:
+											callFunctionGlobalObject.result
+												.objectId,
+										returnByValue: true,
+										userGesture: true,
+									}
+								);
 							}
 							if (
 								delayMode === 'cdp-key-hold-runtime-timeout' &&
@@ -3780,6 +3856,14 @@ setInterval(() => {}, 2147483647);
 							}
 						}
 					} finally {
+						if ( callFunctionGlobalObject ) {
+							await cdpSession.send(
+								'Runtime.releaseObjectGroup',
+								{
+									objectGroup: 'typing-delay-benchmark',
+								}
+							);
+						}
 						await cdpSession.detach();
 					}
 				} else {
