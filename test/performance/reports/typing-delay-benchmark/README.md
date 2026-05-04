@@ -762,6 +762,10 @@ The R script derives:
     concrete guard/prototype candidates for the audited text-update fanout.
 -   `data/typing-delay-redux-listener-guard-validation-matrix.csv`:
     validation-burden matrix for those concrete guard/prototype candidates.
+-   `data/typing-delay-selector-guard-implementation-frontier.csv` and
+    `data/typing-delay-selector-guard-frontier-summary.csv`: cumulative
+    risk/benefit frontier for implementing selector guards in the audited
+    marker fanout.
 -   `data/typing-delay-redux-listener-other-owner-*.csv`: residual breakdown
     of the `Other mapped owners` bucket from the source audit.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
@@ -3881,6 +3885,31 @@ store-partition idea needs to preserve the persistence signal used by
 `useBlockSync`, so it is not a first patch unless the local guards fail to
 produce the expected shape.
 
+I then converted the guard matrix into a cumulative implementation frontier.
+This treats validation burden as a cost score and only counts p50 as
+"conservatively skippable" when the source audit says an ordinary paragraph
+text update should not affect that selector's result. `BlockListItems` is shown
+as unvalidated potential because it is large but selection/tree sensitive.
+
+![Selector guard implementation frontier](figures/138-selector-guard-implementation-frontier.png)
+
+| Stage | Candidates | Cumulative burden score | Conservative skippable p50 | Share of audited marker fanout | Share of conservative skippable p50 |
+| ----- | ---------- | ----------------------: | -------------------------: | -----------------------------: | ----------------------------------: |
+| low-risk local guards | pattern override settings/name; heading anchor setting/count | `3` | `4.1ms` | `26.8%` | `47.1%` |
+| second local guards | non-edited block provider; inner-blocks root/order | `10` | `8.7ms` | `56.8%` | `100.0%` |
+| validation prototype | block-list structural/selection | `15` | `8.7ms` conservative; `14.0ms` if validated | `56.8%` conservative; `91.5%` if validated | `100.0%` |
+
+That makes the next engineering decision more concrete. The low-risk local
+guards alone cover almost half of the conservative skippable marker-window p50.
+Adding the non-edited block-provider and inner-block guards covers all of the
+currently conservative skippable p50 in the audited top rows. `BlockListItems`
+should not be counted as a win until a structural/selection-version prototype
+survives behavior tests; if it does, the reachable local-guard envelope rises
+from `8.7ms` to about `14.0ms` of the `15.3ms` audited marker-window p50. That
+still does not make store-partition work a first patch: store partition overlaps
+the local-guard envelope and has to preserve the `useBlockSync` persistence
+contract.
+
 I also broke down the residual `Other mapped owners` row so that it is not a
 black box. That row is small: `1.3ms` p50 across `62` source-mapped sites and
 `261` p50 listener calls. The nonzero p50 cost is split between
@@ -6046,9 +6075,14 @@ selector there can affect selection, appender, template-lock, zoom, and visible
 block-list behavior. The safer first patches are the pattern-override
 settings/name guard and the `HeadingEdit` anchor/TOC-count guard: both have
 clear stale-state tests and do not depend on the edited paragraph's content.
+The implementation frontier adds the cumulative payoff: those first two guards
+cover `4.1ms`, or `47.1%` of the conservative skippable marker-window p50, with
+a combined validation-burden score of `3`. The second local guards bring the
+conservative local envelope to `8.7ms`; `BlockListItems` could lift the local
+envelope to `14.0ms`, but only after structural/selection behavior validation.
 The broad store-partition design remains plausible but high risk because it
-must keep the persistence transition visible to `useBlockSync` and direct
-`isLastBlockChangePersistent` consumers.
+overlaps that local-guard envelope and must keep the persistence transition
+visible to `useBlockSync` and direct `isLastBlockChangePersistent` consumers.
 
 The residual-owner follow-up closes the suspicion that the `unknown/mixed` tail
 might hide another large text-specific path. It does not. The tail is `1.3ms`

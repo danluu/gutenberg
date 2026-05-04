@@ -1,0 +1,4 @@
+stage,candidates,stage_validation_burden_score,stage_conservative_skippable_ms,stage_unvalidated_potential_ms,cumulative_validation_burden_score,cumulative_conservative_skippable_ms,cumulative_possible_after_validation_ms,share_of_audited_marker_fanout_pct,share_of_conservative_skippable_pct
+low-risk local guards,pattern override settings/name; heading anchor setting/count,3,4.09999942779541,0,3,4.09999942779541,4.09999942779541,26.79738196453201,47.13962574539231
+second local guards,non-edited block provider; inner-blocks root/order,7,4.597565228190784,0,10,8.697564655986195,8.697564655986195,56.84682799407108,100
+validation prototype,block-list structural/selection,5,0,5.299999952316284,15,8.697564655986195,13.99756460830248,56.84682799407108,100

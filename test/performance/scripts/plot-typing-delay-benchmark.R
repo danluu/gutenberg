@@ -11015,6 +11015,163 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		height = 8.0
 	)
 
+	audited_marker_fanout_p50_ms <- redux_owner_guard_validation_matrix %>%
+		filter(source_site == "(audited marker fanout total)") %>%
+		pull(candidate_duration_p50_ms) %>%
+		first()
+	audited_conservative_skippable_p50_ms <- redux_owner_guard_validation_matrix %>%
+		filter(source_site == "(audited marker fanout total)") %>%
+		pull(estimated_skippable_duration_p50_ms) %>%
+		first()
+
+	selector_guard_frontier <- redux_owner_guard_validation_matrix %>%
+		filter(
+			source_site %in% c(
+				"Pattern override support HOC",
+				"HeadingEdit anchor useSelect",
+				"BlockListBlockProvider useSelect",
+				"useInnerBlocksProps useSelect",
+				"BlockListItems useSelect"
+			)
+		) %>%
+		mutate(
+			implementation_order = case_when(
+				source_site == "Pattern override support HOC" ~ 1,
+				source_site == "HeadingEdit anchor useSelect" ~ 2,
+				source_site == "BlockListBlockProvider useSelect" ~ 3,
+				source_site == "useInnerBlocksProps useSelect" ~ 4,
+				source_site == "BlockListItems useSelect" ~ 5,
+				TRUE ~ 99
+			),
+			stage = case_when(
+				implementation_order <= 2 ~ "low-risk local guards",
+				implementation_order <= 4 ~ "second local guards",
+				TRUE ~ "validation prototype"
+			),
+			conservative_counted_skippable_ms = case_when(
+				source_site == "BlockListItems useSelect" ~ 0,
+				TRUE ~ estimated_skippable_duration_p50_ms
+			),
+			unvalidated_potential_ms = case_when(
+				source_site == "BlockListItems useSelect" ~ candidate_duration_p50_ms,
+				TRUE ~ 0
+			),
+			guard_short_name = case_when(
+				source_site == "Pattern override support HOC" ~ "pattern override settings/name",
+				source_site == "HeadingEdit anchor useSelect" ~ "heading anchor setting/count",
+				source_site == "BlockListBlockProvider useSelect" ~ "non-edited block provider",
+				source_site == "useInnerBlocksProps useSelect" ~ "inner-blocks root/order",
+				source_site == "BlockListItems useSelect" ~ "block-list structural/selection",
+				TRUE ~ source_site
+			),
+			order_label = paste0(implementation_order, ". ", guard_short_name)
+		) %>%
+		arrange(implementation_order) %>%
+		mutate(
+			cumulative_validation_burden_score = cumsum(validation_burden_score),
+			cumulative_conservative_skippable_ms = cumsum(conservative_counted_skippable_ms),
+			cumulative_possible_after_validation_ms = cumulative_conservative_skippable_ms + cumsum(unvalidated_potential_ms),
+			share_of_audited_marker_fanout_pct = 100 * cumulative_conservative_skippable_ms / audited_marker_fanout_p50_ms,
+			share_of_conservative_skippable_pct = 100 * cumulative_conservative_skippable_ms / audited_conservative_skippable_p50_ms,
+			remaining_conservative_skippable_ms = audited_conservative_skippable_p50_ms - cumulative_conservative_skippable_ms,
+			stage = factor(
+				stage,
+				levels = c("low-risk local guards", "second local guards", "validation prototype")
+			)
+		)
+
+	write_csv(
+		selector_guard_frontier,
+		file.path(data_dir, "typing-delay-selector-guard-implementation-frontier.csv")
+	)
+
+	selector_guard_frontier_summary <- selector_guard_frontier %>%
+		group_by(stage) %>%
+		summarize(
+			candidates = str_c(guard_short_name, collapse = "; "),
+			stage_validation_burden_score = sum(validation_burden_score, na.rm = TRUE),
+			stage_conservative_skippable_ms = sum(conservative_counted_skippable_ms, na.rm = TRUE),
+			stage_unvalidated_potential_ms = sum(unvalidated_potential_ms, na.rm = TRUE),
+			cumulative_validation_burden_score = max(cumulative_validation_burden_score, na.rm = TRUE),
+			cumulative_conservative_skippable_ms = max(cumulative_conservative_skippable_ms, na.rm = TRUE),
+			cumulative_possible_after_validation_ms = max(cumulative_possible_after_validation_ms, na.rm = TRUE),
+			share_of_audited_marker_fanout_pct = max(share_of_audited_marker_fanout_pct, na.rm = TRUE),
+			share_of_conservative_skippable_pct = max(share_of_conservative_skippable_pct, na.rm = TRUE),
+			.groups = "drop"
+		)
+
+	write_csv(
+		selector_guard_frontier_summary,
+		file.path(data_dir, "typing-delay-selector-guard-frontier-summary.csv")
+	)
+
+	selector_guard_frontier_plot <- selector_guard_frontier %>%
+		mutate(
+			plot_label = case_when(
+				implementation_order == 1 ~ "1 pattern",
+				implementation_order == 2 ~ "2 heading",
+				implementation_order == 3 ~ "3 provider",
+				implementation_order == 4 ~ "4 inner blocks",
+				implementation_order == 5 ~ "5 BlockListItems",
+				TRUE ~ as.character(implementation_order)
+			),
+			label_y = case_when(
+				implementation_order == 1 ~ cumulative_conservative_skippable_ms + 0.45,
+				implementation_order == 2 ~ cumulative_conservative_skippable_ms + 0.45,
+				implementation_order == 3 ~ cumulative_conservative_skippable_ms - 0.5,
+				implementation_order == 4 ~ cumulative_conservative_skippable_ms + 0.45,
+				TRUE ~ cumulative_conservative_skippable_ms - 0.55
+			)
+		)
+
+	save_plot(
+		ggplot(
+			selector_guard_frontier_plot,
+			aes(
+				cumulative_validation_burden_score,
+				cumulative_conservative_skippable_ms,
+				color = stage,
+				shape = stage,
+				size = candidate_listener_count_p50
+			)
+		) +
+			geom_hline(
+				yintercept = audited_conservative_skippable_p50_ms,
+				linetype = "dashed",
+				linewidth = 0.4,
+				color = "grey45"
+			) +
+			geom_point(alpha = 0.92) +
+			geom_point(
+				aes(y = cumulative_possible_after_validation_ms),
+				alpha = 0.28,
+				stroke = 1.2
+			) +
+			geom_text(
+				aes(y = label_y, label = plot_label),
+				size = 3.1,
+				color = "grey20",
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Prototype stage") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "p50 listener calls") +
+			scale_y_continuous(
+				limits = c(0, max(selector_guard_frontier_plot$cumulative_possible_after_validation_ms, na.rm = TRUE) + 1),
+				labels = label_number(suffix = "ms")
+			) +
+			labs(
+				title = "Selector-guard frontier favors local guards before store surgery",
+				subtitle = "Solid points count conservative skippable p50; faint duplicate point includes unvalidated BlockListItems potential",
+				x = "Cumulative validation-burden score",
+				y = "Cumulative skippable marker-window p50",
+				shape = "Prototype stage"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"138-selector-guard-implementation-frontier.png",
+		width = 12,
+		height = 7.2
+	)
+
 	redux_owner_other_breakdown <- redux_listener_owner_source_summary %>%
 		anti_join(
 			redux_owner_source_audit_sites,
