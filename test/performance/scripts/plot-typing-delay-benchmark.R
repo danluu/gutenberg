@@ -6976,6 +6976,66 @@ if (file.exists(runtime_repeat_summary_path)) {
 	)
 }
 
+native_runtime_repeat_summary_path <- file.path(data_dir, "typing-delay-native-runtime-repeat-summary.csv")
+if (file.exists(runtime_repeat_summary_path) && file.exists(native_runtime_repeat_summary_path)) {
+	gutenberg_runtime_repeat <- read_csv(runtime_repeat_summary_path, show_col_types = FALSE) %>%
+		mutate(scenario_label = "Gutenberg large post")
+	native_runtime_repeat <- read_csv(native_runtime_repeat_summary_path, show_col_types = FALSE) %>%
+		mutate(scenario_label = "native contenteditable")
+	runtime_repeat_control <- bind_rows(
+		gutenberg_runtime_repeat,
+		native_runtime_repeat
+	) %>%
+		group_by(scenario_label) %>%
+		mutate(
+			raw_keypress_p50_ms = keypress_p50_ms[repeat_count == 0][1],
+			keypress_delta_from_raw_ms = keypress_p50_ms - raw_keypress_p50_ms
+		) %>%
+		ungroup() %>%
+		mutate(
+			repeat_mode = factor(
+				repeat_mode,
+				levels = c(
+					"raw CDP only",
+					"Runtime.evaluate",
+					"Runtime.callFunctionOn"
+				)
+			),
+			scenario_label = factor(
+				scenario_label,
+				levels = c("Gutenberg large post", "native contenteditable")
+			)
+		)
+
+	save_plot(
+		ggplot(
+			runtime_repeat_control,
+			aes(
+				repeat_count,
+				keypress_delta_from_raw_ms,
+				color = scenario_label,
+				shape = repeat_mode
+			)
+		) +
+			geom_hline(yintercept = 0, color = "gray65", linewidth = 0.35) +
+			geom_point(size = 3.1, alpha = 0.92) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_x_continuous(breaks = c(0, 1, 3, 7, 11, 17)) +
+			labs(
+				title = "Native contenteditable has only a tiny runtime-checkpoint effect",
+				subtitle = "1300ms raw-CDP held-key input; y-axis is the p50 keypress change from raw CDP",
+				x = "Direct runtime no-op calls between keys",
+				y = "Change from raw-CDP keypress p50 (ms)",
+				color = "Scenario",
+				shape = "Between-key action"
+			) +
+			theme(legend.position = "bottom"),
+		"25g-runtime-repeat-native-control.png",
+		width = 11,
+		height = 6.5
+	)
+}
+
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")

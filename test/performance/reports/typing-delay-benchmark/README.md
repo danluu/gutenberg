@@ -138,6 +138,12 @@ The short version:
     checkpoints. That means the trace-off residual is not evidence for a hidden
     Gutenberg semantic state change caused by Playwright evaluation; enough
     browser/runtime checkpoints between keys can reproduce and exceed it.
+-   A native `contenteditable` control has the same direction but not the same
+    scale. Repeating the same runtime checkpoints moves native `keypress` p50 by
+    only about `0.3-0.4ms`, while the Gutenberg large-post path moves by multiple
+    milliseconds. So the checkpoint effect is a real browser/runtime measurement
+    perturbation, but the large absolute swing needs Gutenberg's heavier input
+    path.
 -   Event-listener timing narrows the visible Gutenberg work to editor-canvas
     input handling. The dominant measured callback is registered from
     `rich-text`; source-map lookup identifies it as the `onInput` path in
@@ -546,6 +552,8 @@ The R script derives:
     direct CDP runtime calls, Playwright page evaluation, and locator evaluation.
 -   `data/typing-delay-runtime-repeat-*.csv`: trace-off dose-response follow-up
     traces that repeat direct CDP runtime checkpoints between raw CDP key events.
+-   `data/typing-delay-native-runtime-repeat-*.csv`: the same runtime-repeat
+    trace-off dose-response in the native `contenteditable` scenario.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -4284,6 +4292,40 @@ layer can change the amount of Gutenberg input work charged to the next
 that in the default performance-test configuration; even with trace disabled,
 additional runtime checkpoints remain a smaller measurement perturbation.
 
+### Native Runtime Repeat Control
+
+That still left a browser-vs-Gutenberg scale question: do the same direct runtime
+checkpoints shrink any `contenteditable` keypress, or only Gutenberg's editor?
+I reran the same raw-CDP held-key runtime-repeat grid in the
+`native-contenteditable-timer` scenario. This scenario is a plain
+`contenteditable` node with the same one-second input timer shape, but without
+Gutenberg, React, data subscriptions, rich text, undo persistence, or iframe
+editor work.
+
+![Runtime repeat native control](figures/25g-runtime-repeat-native-control.png)
+
+| Scenario | Between-key checkpoint | Repeat count | Observed post-keyup gap p50 | `keypress` p50 | Change from raw |
+| -------- | ---------------------- | -----------: | --------------------------: | -------------: | --------------: |
+| native `contenteditable` | raw CDP only | `0` |  `4.1ms` | `0.802ms` |  `0.000ms` |
+| native `contenteditable` | `Runtime.evaluate` | `1` |  `6.5ms` | `0.525ms` | `-0.277ms` |
+| native `contenteditable` | `Runtime.evaluate` | `3` |  `9.4ms` | `0.440ms` | `-0.362ms` |
+| native `contenteditable` | `Runtime.evaluate` | `7` | `11.9ms` | `0.438ms` | `-0.364ms` |
+| native `contenteditable` | `Runtime.evaluate` | `11` | `15.3ms` | `0.436ms` | `-0.367ms` |
+| native `contenteditable` | `Runtime.evaluate` | `17` | `18.8ms` | `0.472ms` | `-0.330ms` |
+| native `contenteditable` | `Runtime.callFunctionOn` | `1` |  `6.3ms` | `0.533ms` | `-0.269ms` |
+| native `contenteditable` | `Runtime.callFunctionOn` | `3` |  `9.0ms` | `0.422ms` | `-0.381ms` |
+| native `contenteditable` | `Runtime.callFunctionOn` | `7` | `12.8ms` | `0.433ms` | `-0.370ms` |
+| native `contenteditable` | `Runtime.callFunctionOn` | `11` | `15.2ms` | `0.466ms` | `-0.336ms` |
+| native `contenteditable` | `Runtime.callFunctionOn` | `17` | `19.3ms` | `0.457ms` | `-0.346ms` |
+
+This confirms the checkpoint effect is not purely a Gutenberg semantic-state
+transition. The plain native editor also gets slightly faster after one or more
+runtime checkpoints. But it disconfirms the opposite overbroad explanation too:
+the native absolute movement is only about `0.3-0.4ms`, while the Gutenberg
+large-post run moves by about `2ms` with one checkpoint and roughly `8ms` at the
+largest repeat count. The automation/browser checkpoint is real, but Gutenberg's
+heavy input path amplifies it into the multi-millisecond benchmark artifact.
+
 ### Native Contenteditable Baseline
 
 The key-state traces show conditions that separate slow and fast Gutenberg
@@ -5185,6 +5227,8 @@ The key runs used in this report were:
 -   `runtime_repeat_*`: trace-off `1300ms` raw-CDP held-key traces repeating direct
     CDP `Runtime.evaluate` and `Runtime.callFunctionOn` checkpoints between
     characters at repeat counts `1`, `3`, `7`, `11`, and `17`.
+-   `native_runtime_repeat_*`: the same trace-off runtime-repeat grid in the
+    native `contenteditable` scenario.
 -   `marker_normal_targeted`: normal marker action at `990ms`, `1000ms`,
     `1010ms`, and `1300ms`, with timer/action tracing.
 -   `marker_noop_targeted`: same delays and counts, but the bound
@@ -5434,6 +5478,12 @@ The compact runtime-repeat dose-response CSVs were extracted with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-runtime-repeat.js
+```
+
+The compact native runtime-repeat control CSVs were extracted with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-native-runtime-repeat.js
 ```
 
 The compact marker-intervention CSVs were extracted with:
