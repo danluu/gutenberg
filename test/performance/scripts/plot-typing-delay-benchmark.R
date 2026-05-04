@@ -11919,6 +11919,142 @@ if (file.exists(marker_allspan_action_summary_path)) {
 		width = 12,
 		height = 7.4
 	)
+
+	blocklist_items_invalidation_audit <- tribble(
+		~signal_group, ~source_reads, ~owned_output, ~ordinary_text_update_effect, ~must_invalidate_for, ~stale_failure_mode, ~guard_role, ~risk_score, ~surface_count,
+		"Paragraph content attributes", "not read by BlockListItems", "none", "changed by the typing benchmark", "none", "none; this is the avoidable wakeup for ordinary text input", "must not be part of the render key", 1, 0,
+		"Child order / root tree", "getBlockOrder( rootClientId )", "block rows, placeholder, default appender condition", "unchanged by ordinary text", "insert, remove, move, replace, or controlled inner-block root changes", "missing, duplicated, or stale block rows", "root structural version", 5, 3,
+		"Selected block ids", "getSelectedBlockClientIds()", "sync/async mode and root appender eligibility", "usually unchanged after the first typed key", "select, clear selection, multi-select, or selected-root changes", "selected block rendered asynchronously or root appender shown/hidden incorrectly", "selection version", 5, 2,
+		"Visible block set", "__unstableGetVisibleBlocks()", "AsyncModeProvider value for every row", "unchanged by ordinary text", "intersection-observer SET_BLOCK_VISIBILITY updates", "visible blocks scheduled asynchronously or hidden blocks forced synchronous", "visibility version", 4, 1,
+		"Zoom state", "isZoomOut()", "zoom separators and appender suppression", "unchanged by ordinary text", "zoom-in, zoom-out, and auto-scaled zoom changes", "missing separators or stale zoom appender state", "zoom version", 4, 2,
+		"Preview mode", "getSettings().isPreviewMode", "short-circuits selection, visibility, zoom, and appender reads", "unchanged by ordinary text", "preview/live mode transitions", "preview renders live editing affordances or vice versa", "settings preview version", 3, 4,
+		"Template/editing/section/appender capability", "getTemplateLock, getBlockEditingMode, isSectionBlock, isContainerInsertableToInContentOnlyMode, canInsertBlockType", "BlockListAppender visibility", "unchanged for ordinary paragraph text", "template lock, content-only section, synced/unsynced pattern, edited section, default-block insertion, or selected block-name changes", "appender appears where insertion is forbidden or disappears where insertion is allowed", "root/appender capability version", 5, 5
+	) %>%
+		mutate(
+			ordinary_text_update_effect = factor(
+				ordinary_text_update_effect,
+				levels = c(
+					"changed by the typing benchmark",
+					"usually unchanged after the first typed key",
+					"unchanged by ordinary text",
+					"unchanged for ordinary paragraph text"
+				)
+			),
+			signal_group = factor(
+				signal_group,
+				levels = c(
+					"Paragraph content attributes",
+					"Child order / root tree",
+					"Selected block ids",
+					"Visible block set",
+					"Zoom state",
+					"Preview mode",
+					"Template/editing/section/appender capability"
+				)
+			)
+		)
+
+	write_csv(
+		blocklist_items_invalidation_audit,
+		file.path(data_dir, "typing-delay-blocklistitems-invalidation-audit.csv")
+	)
+
+	blocklist_items_invalidation_summary <- blocklist_items_invalidation_audit %>%
+		summarize(
+			current_scope_ms = 5.299999952316284,
+			listener_scope = 580,
+			content_attribute_dependencies = sum(signal_group == "Paragraph content attributes" & source_reads != "not read by BlockListItems"),
+			required_non_text_invalidation_groups = sum(signal_group != "Paragraph content attributes"),
+			max_required_risk_score = max(risk_score[signal_group != "Paragraph content attributes"]),
+			total_owned_surface_count = sum(surface_count),
+			recommendation = "Prototype a structural/selection/appender render key before counting BlockListItems as skippable.",
+			.groups = "drop"
+		)
+
+	write_csv(
+		blocklist_items_invalidation_summary,
+		file.path(data_dir, "typing-delay-blocklistitems-invalidation-summary.csv")
+	)
+
+	blocklist_items_invalidation_plot <- blocklist_items_invalidation_audit %>%
+		mutate(
+			plot_label = case_when(
+				signal_group == "Paragraph content attributes" ~ "text attrs",
+				signal_group == "Child order / root tree" ~ "order/tree",
+				signal_group == "Selected block ids" ~ "selection",
+				signal_group == "Visible block set" ~ "visibility",
+				signal_group == "Zoom state" ~ "zoom",
+				signal_group == "Preview mode" ~ "preview",
+				TRUE ~ "appender capability"
+			),
+			label_x = risk_score + if_else(surface_count >= 4, -0.25, 0.18),
+			label_y = surface_count + case_when(
+				signal_group == "Paragraph content attributes" ~ 0.22,
+				signal_group == "Preview mode" ~ -0.22,
+				TRUE ~ 0.18
+			)
+		)
+
+	save_plot(
+		ggplot(
+			blocklist_items_invalidation_plot,
+			aes(
+				risk_score,
+				surface_count,
+				color = ordinary_text_update_effect,
+				shape = ordinary_text_update_effect,
+				size = surface_count + 1
+			)
+		) +
+			geom_point(alpha = 0.9) +
+			geom_text(
+				aes(label_x, label_y, label = plot_label),
+				size = 3.05,
+				color = "grey20",
+				show.legend = FALSE
+			) +
+			scale_color_brewer(
+				type = "qual",
+				palette = "Set2",
+				name = "Ordinary text update",
+				labels = c(
+					"text attribute changes",
+					"selection usually same",
+					"unchanged",
+					"paragraph unchanged"
+				)
+			) +
+			scale_shape_manual(
+				values = c(16, 17, 15, 3),
+				name = "Ordinary text update",
+				labels = c(
+					"text attribute changes",
+					"selection usually same",
+					"unchanged",
+					"paragraph unchanged"
+				)
+			) +
+			scale_size_area(max_size = 8, guide = "none") +
+			scale_x_continuous(
+				breaks = 1:5,
+				labels = c("none", "low", "medium", "high", "highest"),
+				limits = c(0.7, 5.5)
+			) +
+			scale_y_continuous(
+				breaks = 0:5,
+				limits = c(-0.2, 5.45)
+			) +
+			labs(
+				title = "BlockListItems is a text-update opportunity, not a first patch",
+				subtitle = "It does not read paragraph content, but it owns selection, visibility, zoom, order, and appender invalidation",
+				x = "Stale-UI risk if the signal is missed",
+				y = "Owned output surfaces"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"142-blocklistitems-invalidation-audit.png",
+		width = 12,
+		height = 7.4
+	)
 }
 
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {

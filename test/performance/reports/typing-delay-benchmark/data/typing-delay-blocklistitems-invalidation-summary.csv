@@ -1,0 +1,2 @@
+current_scope_ms,listener_scope,content_attribute_dependencies,required_non_text_invalidation_groups,max_required_risk_score,total_owned_surface_count,recommendation
+5.299999952316284,580,0,6,5,17,Prototype a structural/selection/appender render key before counting BlockListItems as skippable.

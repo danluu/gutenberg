@@ -772,6 +772,9 @@ The R script derives:
     invalidation support.
 -   `data/typing-delay-first-patch-test-readiness*.csv`: source/test readiness
     matrix for the first local selector-guard patch candidates.
+-   `data/typing-delay-blocklistitems-invalidation-*.csv`: source-level
+    invalidation-key audit for the large but not-yet-counted `BlockListItems`
+    selector guard candidate.
 -   `data/typing-delay-redux-listener-other-owner-*.csv`: residual breakdown
     of the `Other mapped owners` bucket from the source audit.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
@@ -3989,6 +3992,47 @@ guard envelope. That is smaller than the whole persistence marker fanout, but it
 is the only high-impact row that is both source-feasible and does not require a
 new invalidation contract.
 
+I then pushed on the largest uncounted selector row: `BlockListItems`. The source
+audit makes the split sharper. `BlockListItems` does not read paragraph content
+attributes at all. Its `Items` selector in
+`packages/block-editor/src/components/block-list/index.js` reads child order,
+selected block ids, visible blocks, preview mode, zoom state, template/editing
+mode, section status, selected block name, and appender eligibility. An ordinary
+paragraph `UPDATE_BLOCK_ATTRIBUTES` changes the typed block's content attribute,
+but not those block-list signals. That means the `5.3ms` / `580` listener row is
+a real text-update opportunity in principle.
+
+The same source audit also explains why I still do not count it in the
+source-feasible local envelope. A bad guard would stale real UI, not just a
+hidden cache: block rows and placeholders depend on order, sync/async rendering
+depends on selection and visibility, zoom separators depend on zoom state, and
+`BlockListAppender` visibility depends on template lock, editing mode, section
+rules, selected block name, and insertion capability. I also did not find a
+focused web component test for `BlockListItems`; the nearby web test coverage is
+mostly `InnerBlocks` serialization, while block-list component tests here are
+native or selector-level.
+
+![BlockListItems invalidation audit](figures/142-blocklistitems-invalidation-audit.png)
+
+| Signal group | Read by `BlockListItems` | Ordinary paragraph text effect | Owned output / failure mode | Guard role |
+| ------------ | ------------------------ | ------------------------------ | --------------------------- | ---------- |
+| Paragraph content attributes | no | changed by the benchmark | no owned output; this is the avoidable wakeup | exclude from render key |
+| Child order / root tree | `getBlockOrder( rootClientId )` | unchanged | block rows, placeholder, default-appender condition; stale rows if missed | root structural version |
+| Selected block ids | `getSelectedBlockClientIds()` | usually unchanged after the first typed key | sync/async mode and root appender; stale selected rendering if missed | selection version |
+| Visible block set | `__unstableGetVisibleBlocks()` | unchanged | async scheduling for row rendering; visible rows can be queued incorrectly | visibility version |
+| Zoom state | `isZoomOut()` | unchanged | zoom separators and appender suppression | zoom version |
+| Preview mode | `getSettings().isPreviewMode` | unchanged | preview short-circuit for editing affordances | settings preview version |
+| Template/editing/section/appender capability | `getTemplateLock`, `getBlockEditingMode`, `isSectionBlock`, `isContainerInsertableToInContentOnlyMode`, `canInsertBlockType` | unchanged for ordinary paragraph text | appender visibility can become wrong | root/appender capability version |
+
+This closes a narrower `BlockListItems` question: the row is not bogus, and it is
+not content-dependent. It should stay out of the first-patch envelope because a
+correct optimization needs a structural/selection/appender render key and web
+behavior tests for selection, visibility, zoom, insertion/removal/reorder,
+template/content-only sections, and appender eligibility. If that prototype is
+validated, it can add the currently uncounted `5.3ms` / `580` listener calls to
+the local-guard envelope; until then, treating it as a free `5.3ms` win would be
+overclaiming.
+
 I also broke down the residual `Other mapped owners` row so that it is not a
 black box. That row is small: `1.3ms` p50 across `62` source-mapped sites and
 `261` p50 listener calls. The nonzero p50 cost is split between
@@ -6146,7 +6190,12 @@ slow selector body. The new text-update opportunity triage quantifies the next
 product question: in the audited marker fanout, `8.7ms` p50 / `3,655` listener
 calls are likely skippable for ordinary text-only edits, while `5.3ms` /
 `580` `BlockListItems` calls remain a selection/tree-validation target rather
-than an obvious removal.
+than an obvious removal. The latest `BlockListItems` invalidation audit sharpens
+that target: the selector has zero paragraph-content dependencies, so it is a
+real ordinary-text opportunity, but it owns six non-text invalidation groups and
+`17` output surfaces. Count it only after a structural/selection/appender render
+key proves that selection, visibility, zoom, order, template/content-only
+sections, and appender eligibility stay fresh.
 
 The older RichText-split open item is closed by the existing instrumented runs
 and the new funnel view. Direct non-batch RichText work is sub-millisecond in
