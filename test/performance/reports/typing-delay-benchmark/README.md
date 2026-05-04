@@ -1052,6 +1052,10 @@ The R script derives:
 -   `data/typing-delay-open-question-critical-path.csv`: critical-path schedule
     for the shared open-question artifacts, including blockers, parallel work,
     stop conditions, and work to avoid before prerequisites pass.
+-   `data/typing-delay-open-question-artifact-requirements.csv`: requirements
+    matrix for the shared open-question artifacts, showing which raw fields,
+    gates, joins, and controls are required or conditional before interpreting a
+    result.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9397,6 +9401,21 @@ resource movement. If the source prototype fails behavior gates, the next work
 is a narrower source owner, not a broader timing sweep. If both pass, then the
 remaining mechanism work can be explicitly scoped as explanatory rather than
 decision-blocking.
+
+The artifact-requirements matrix is the concrete guard against under-
+instrumented reruns. A result that lacks its required fields is not a weak data
+point; it is an incomplete artifact.
+
+![Open question artifact requirements](figures/211-open-question-artifact-requirements.png)
+
+| Artifact | Required before interpretation | Incomplete if missing |
+| -------- | ------------------------------ | --------------------- |
+| Compact CI topology artifact | raw retained samples, q25/q50/q75/cnt, per-run order, first-key distribution, failures/actionability, resource timing, environment metadata | raw/per-run data, failure counts, first-key tails, resources, or runner/browser/wp-env metadata |
+| Pattern readiness/resource artifact | source readiness events, resource quiet, preview/canvas/actionability counts, retained samples, timeout/fallback logs, spec/lane metadata | only aggregate q50, or no proof that readiness work stayed out of the measured window |
+| Behavior-gated source prototype | behavior fixtures, source-span microscope, listener/source fanout counts, compatibility checks, aggregate p50 only after behavior/source gates | timing without behavior fixtures or source-span collapse |
+| Shared retained-key sidecar | key-window IDs, helper policy, renderer/command identity, clock sync, join coverage, observer-overhead/class-ordering checks | unjoinable counters or sidecar perturbing the row ordering |
+| CPU/QoS counter bundle | accepted sidecar, root `powermetrics`, controls for class ordering, optional root trace fallback | counters that correlate weakly but do not separate retained fast/slow classes |
+| Workload/display expansion artifacts | replay strata or external endpoints, behavior/visual assertions, per-stratum summaries, retained-key joins | one aggregate product/display headline without joined strata or calibrated endpoint evidence |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

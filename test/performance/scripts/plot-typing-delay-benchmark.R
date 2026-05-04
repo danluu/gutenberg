@@ -22463,6 +22463,115 @@ save_plot(
 	height = 7.4
 )
 
+open_question_artifact_requirement_dimensions <- tribble(
+	~requirement_key, ~requirement_label, ~requirement_order, ~requirement_group, ~why_it_matters,
+	"raw_samples", "raw samples", 1, "measurement", "Needed to recompute summaries, tails, and per-key distributions.",
+	"q_summary", "q25/q50/q75/cnt", 2, "measurement", "Needed to match CI's reported q50 while preserving spread and retained counts.",
+	"per_run_order", "per-run order", 3, "measurement", "Needed to detect phase, order, and warmup changes.",
+	"first_key", "first-key tails", 4, "measurement", "Needed because retained aggregates can hide first-input behavior.",
+	"failures", "failures/actionability", 5, "correctness", "Needed so wait removal does not trade latency for failed or skipped interactions.",
+	"resources", "resource timing", 6, "readiness", "Needed to prove async readiness work stayed outside the measured window.",
+	"env_metadata", "env metadata", 7, "portability", "Needed to separate local semantics from CI runner/browser/wp-env portability.",
+	"behavior_fixtures", "behavior fixtures", 8, "source safety", "Needed before claiming a source optimization is behavior-preserving.",
+	"source_spans", "source spans", 9, "source safety", "Needed before citing aggregate p50 as a source win.",
+	"compatibility", "compat checks", 10, "source safety", "Needed before data-layer or public API behavior is changed.",
+	"join_keys", "retained-key joins", 11, "mechanism", "Needed before joining sidecars, counters, runtime state, or external endpoints.",
+	"observer_overhead", "observer overhead", 12, "mechanism", "Needed to prove instrumentation did not change class ordering.",
+	"root_counters", "root counters", 13, "mechanism", "Needed only for CPU/QoS or OS-level mechanism naming.",
+	"replay_or_external", "replay/external endpoint", 14, "claim expansion", "Needed only for product workload or calibrated display claims."
+)
+
+open_question_artifact_requirement_artifacts <- tribble(
+	~artifact, ~artifact_order, ~artifact_label, ~artifact_class, ~required_keys, ~conditional_keys, ~incomplete_if_missing,
+	"Compact CI topology artifact", 1, "CI topology", "decision artifact",
+	list(c("raw_samples", "q_summary", "per_run_order", "first_key", "failures", "resources", "env_metadata")),
+	list(c()),
+	"Raw/per-run data, failure counts, first-key tails, resources, or runner/browser/wp-env metadata.",
+	"Pattern readiness/resource artifact", 2, "patterns", "decision artifact",
+	list(c("raw_samples", "q_summary", "failures", "resources", "env_metadata")),
+	list(c("per_run_order", "first_key")),
+	"Only aggregate q50, or no proof that readiness work stayed out of the measured window.",
+	"Behavior-gated source prototype", 3, "source", "decision artifact",
+	list(c("behavior_fixtures", "source_spans", "compatibility")),
+	list(c("raw_samples", "q_summary", "per_run_order")),
+	"Timing without behavior fixtures or source-span collapse.",
+	"Shared retained-key sidecar", 4, "sidecar", "mechanism prerequisite",
+	list(c("join_keys", "observer_overhead", "per_run_order", "env_metadata")),
+	list(c("raw_samples", "q_summary", "source_spans")),
+	"Unjoinable counters or sidecar perturbing the row ordering.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "mechanism artifact",
+	list(c("join_keys", "observer_overhead", "root_counters", "per_run_order", "env_metadata")),
+	list(c("raw_samples", "q_summary")),
+	"Counters that correlate weakly but do not separate retained fast/slow classes.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "claim expansion",
+	list(c("join_keys", "observer_overhead", "replay_or_external", "behavior_fixtures")),
+	list(c("raw_samples", "q_summary", "source_spans", "resources")),
+	"One aggregate product/display headline without joined strata or calibrated endpoint evidence."
+)
+
+open_question_artifact_requirements <- crossing(
+	open_question_artifact_requirement_artifacts,
+	open_question_artifact_requirement_dimensions
+) %>%
+	rowwise() %>%
+	mutate(
+		requirement_level = case_when(
+			requirement_key %in% unlist(required_keys) ~ "required",
+			requirement_key %in% unlist(conditional_keys) ~ "conditional",
+			TRUE ~ "not needed"
+		)
+	) %>%
+	ungroup() %>%
+	mutate(
+		artifact_label = fct_reorder(artifact_label, artifact_order, .desc = TRUE),
+		requirement_label = fct_reorder(requirement_label, requirement_order),
+		requirement_level = factor(
+			requirement_level,
+			levels = c("required", "conditional", "not needed")
+		)
+	)
+
+write_csv(
+	open_question_artifact_requirements %>%
+		select(
+			artifact,
+			artifact_order,
+			artifact_label,
+			artifact_class,
+			requirement_key,
+			requirement_label,
+			requirement_order,
+			requirement_group,
+			requirement_level,
+			why_it_matters,
+			incomplete_if_missing
+		),
+	file.path(data_dir, "typing-delay-open-question-artifact-requirements.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_artifact_requirements,
+		aes(requirement_label, artifact_label, fill = requirement_level)
+	) +
+		geom_tile(color = "white", linewidth = 0.45) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Requirement") +
+		labs(
+			title = "Immediate artifacts need required fields, not just more q50 rows",
+			subtitle = "Missing required fields make the artifact incomplete; conditional fields narrow the claim if absent",
+			x = "Required field or gate",
+			y = "Artifact bundle"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(
+			axis.text.x = element_text(angle = 30, hjust = 1),
+			legend.position = "bottom"
+		),
+	"211-open-question-artifact-requirements.png",
+	width = 13.2,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
