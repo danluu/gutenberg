@@ -126,7 +126,10 @@ The short version:
     calls is not explained by DOM key event payloads, key repeat/composition,
     exact raw-CDP packet shape, or elapsed post-keyup time. Raw CDP stays slow
     even with long post-keyup gaps, while raw CDP plus a no-op `page.evaluate()`
-    between keys flips to the fast path.
+    between keys flips to the fast path. A follow-up shows direct CDP
+    `Runtime.evaluate` checkpoints, including an awaited timer and RAF, improve
+    only partway; they do not reproduce the Playwright `page.evaluate()` fast
+    band.
 -   Event-listener timing narrows the visible Gutenberg work to editor-canvas
     input handling. The dominant measured callback is registered from
     `rich-text`; source-map lookup identifies it as the `onInput` path in
@@ -446,7 +449,11 @@ run:
     -   `cdp-key-hold-page-evaluate`: send raw CDP key events plus a no-op
         `page.evaluate()` between characters;
     -   `cdp-key-hold-runtime-evaluate`: send raw CDP key events plus a direct
-        CDP `Runtime.evaluate` between characters.
+        CDP `Runtime.evaluate` between characters;
+    -   `cdp-key-hold-runtime-timeout`: send raw CDP key events plus an awaited
+        CDP `Runtime.evaluate` `setTimeout( 0 )` between characters;
+    -   `cdp-key-hold-runtime-raf`: send raw CDP key events plus an awaited CDP
+        `Runtime.evaluate` `requestAnimationFrame` between characters.
 -   a native `contenteditable` scenario with a minimal one-second input timer.
 
 The benchmark records every retained sample rather than only aggregate values.
@@ -506,6 +513,8 @@ The R script derives:
     DOM key flags explain the post-keyup gap effect.
 -   `data/typing-delay-input-path-*.csv`: raw-CDP follow-up traces separating the
     observed post-keyup gap from Playwright's higher-level keyboard helpers.
+-   `data/typing-delay-cdp-checkpoint-*.csv`: raw-CDP follow-up traces comparing
+    direct `Runtime.evaluate` checkpoints with Playwright `page.evaluate()`.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -4039,12 +4048,47 @@ The current model is therefore:
    crossing a Playwright/page-evaluation boundary between keys appears to force a
    renderer or editor checkpoint that changes the next RichText/data fanout path.
 
+### Raw-CDP Checkpoint Follow-Up
+
+The previous result still left a concrete ambiguity: maybe `page.evaluate()` was
+fast only because it forced any renderer task, timer, or frame checkpoint between
+keys. I added three direct-CDP checkpoints between raw `Input.dispatchKeyEvent`
+key holds:
+
+-   synchronous `Runtime.evaluate( 'undefined' )`;
+-   awaited `Runtime.evaluate( 'new Promise( resolve => setTimeout( resolve, 0 ) )' )`;
+-   awaited `Runtime.evaluate( 'new Promise( resolve => requestAnimationFrame( () => resolve() ) )' )`.
+
+These were compared with raw CDP alone and raw CDP plus Playwright
+`page.evaluate( () => undefined )`, all at `1300ms`, with 12 retained samples.
+
+![CDP checkpoint follow-up](figures/25b-cdp-checkpoint-follow-up.png)
+
+| Checkpoint | Retained samples | Observed post-keyup gap p50 | `keypress` p50 | `keypress` p10-p90 |
+| ---------- | ---------------: | --------------------------: | -------------: | ------------------: |
+| Raw CDP only | `12` |  `4.2ms` | `21.1ms` | `19.4-23.3ms` |
+| CDP `Runtime.evaluate`, sync | `12` |  `5.8ms` | `19.6ms` | `18.6-20.8ms` |
+| CDP `Runtime.evaluate`, `setTimeout( 0 )` | `12` |  `5.8ms` | `18.9ms` | `18.3-21.5ms` |
+| CDP `Runtime.evaluate`, RAF | `12` |  `6.6ms` | `18.9ms` | `18.0-19.7ms` |
+| Playwright `page.evaluate()` | `12` | `30.0ms` | `16.1ms` | `15.1-17.2ms` |
+
+This disconfirms a broad "any renderer checkpoint is enough" explanation. A
+direct CDP runtime evaluation, an awaited zero-delay timer, and an awaited RAF
+all move raw CDP slightly downward, but none reaches the `page.evaluate()` fast
+band. The RAF result is especially useful: a frame checkpoint alone is not the
+missing boundary.
+
+The remaining boundary is now more specific than "task/frame checkpoint": it is
+something about Playwright's page action/evaluation path, its execution context
+selection, or the protocol scheduling around that path. The benchmark-level
+recommendation is unchanged, because all of these are synthetic-input
+implementation details rather than user typing behavior.
+
 That means the safe benchmark fix is unchanged: do not use a synthetic key-hold
 delay as a proxy for typing pauses. Use a complete keypress and then wait, or
 replay recorded human typing. For root cause, the next useful probe is below the
-DOM event layer: compare the browser/renderer work and execution contexts used
-by `page.evaluate()`, Playwright per-key actions, direct CDP `Runtime.evaluate`,
-and raw `Input.dispatchKeyEvent`.
+DOM event layer: compare the execution contexts and protocol command sequence
+used by Playwright `page.evaluate()` against raw CDP `Runtime.evaluate`.
 
 ### Native Contenteditable Baseline
 
@@ -4929,6 +4973,11 @@ The key runs used in this report were:
     `1300ms` with a no-op Playwright `page.evaluate()` between characters.
 -   `cdp_runtime_evaluate_gap_0`: direct `Input.dispatchKeyEvent` key-hold trace
     at `1300ms` with a no-op CDP `Runtime.evaluate` between characters.
+-   `cdp_checkpoint_baseline`, `cdp_checkpoint_runtime_sync`,
+    `cdp_checkpoint_runtime_timeout`, `cdp_checkpoint_runtime_raf`, and
+    `cdp_checkpoint_page_evaluate`: direct `Input.dispatchKeyEvent` key-hold
+    traces at `1300ms` comparing no checkpoint, direct CDP runtime checkpoints,
+    and Playwright `page.evaluate()` between characters.
 -   `marker_normal_targeted`: normal marker action at `990ms`, `1000ms`,
     `1010ms`, and `1300ms`, with timer/action tracing.
 -   `marker_noop_targeted`: same delays and counts, but the bound

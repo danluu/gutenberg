@@ -158,6 +158,8 @@ const supportedDelayModes = [
 	'cdp-key-hold',
 	'cdp-key-hold-page-evaluate',
 	'cdp-key-hold-runtime-evaluate',
+	'cdp-key-hold-runtime-timeout',
+	'cdp-key-hold-runtime-raf',
 ];
 const supportedPreTypingWarmupModes = [ 'none', 'main-thread-busy-loop' ];
 const supportedSetupStyles = [
@@ -3729,7 +3731,9 @@ setInterval(() => {}, 2147483647);
 				} else if (
 					delayMode === 'cdp-key-hold' ||
 					delayMode === 'cdp-key-hold-page-evaluate' ||
-					delayMode === 'cdp-key-hold-runtime-evaluate'
+					delayMode === 'cdp-key-hold-runtime-evaluate' ||
+					delayMode === 'cdp-key-hold-runtime-timeout' ||
+					delayMode === 'cdp-key-hold-runtime-raf'
 				) {
 					const cdpSession = await page
 						.context()
@@ -3749,6 +3753,26 @@ setInterval(() => {}, 2147483647);
 							) {
 								await cdpSession.send( 'Runtime.evaluate', {
 									expression: 'undefined',
+								} );
+							}
+							if (
+								delayMode === 'cdp-key-hold-runtime-timeout' &&
+								i < sampleCount - 1
+							) {
+								await cdpSession.send( 'Runtime.evaluate', {
+									awaitPromise: true,
+									expression:
+										'new Promise((resolve) => setTimeout(resolve, 0))',
+								} );
+							}
+							if (
+								delayMode === 'cdp-key-hold-runtime-raf' &&
+								i < sampleCount - 1
+							) {
+								await cdpSession.send( 'Runtime.evaluate', {
+									awaitPromise: true,
+									expression:
+										'new Promise((resolve) => requestAnimationFrame(() => resolve()))',
 								} );
 							}
 							if ( postKeyupGapMs > 0 && i < sampleCount - 1 ) {

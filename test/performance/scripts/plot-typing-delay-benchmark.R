@@ -6624,6 +6624,79 @@ if (file.exists(input_path_summary_path)) {
 	)
 }
 
+cdp_checkpoint_summary_path <- file.path(data_dir, "typing-delay-cdp-checkpoint-summary.csv")
+if (file.exists(cdp_checkpoint_summary_path)) {
+	cdp_checkpoint_summary <- read_csv(cdp_checkpoint_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			checkpoint = factor(
+				checkpoint,
+				levels = c(
+					"Raw CDP only",
+					"Runtime.evaluate sync",
+					"Runtime.evaluate setTimeout(0)",
+					"Runtime.evaluate RAF",
+					"page.evaluate sync"
+				)
+			),
+			checkpoint_label = recode(
+				as.character(checkpoint),
+				`Raw CDP only` = "raw CDP",
+				`Runtime.evaluate sync` = "Runtime sync",
+				`Runtime.evaluate setTimeout(0)` = "Runtime timeout",
+				`Runtime.evaluate RAF` = "Runtime RAF",
+				`page.evaluate sync` = "page.evaluate"
+			),
+			label_x = case_when(
+				checkpoint_label == "Runtime timeout" ~ actual_post_keyup_gap_p50_ms * 0.86,
+				checkpoint_label == "Runtime RAF" ~ actual_post_keyup_gap_p50_ms * 1.07,
+				TRUE ~ actual_post_keyup_gap_p50_ms
+			),
+			label_y = case_when(
+				checkpoint_label == "Runtime sync" ~ keypress_p50_ms + 0.45,
+				checkpoint_label == "Runtime timeout" ~ keypress_p50_ms - 0.15,
+				checkpoint_label == "Runtime RAF" ~ keypress_p50_ms + 0.5,
+				TRUE ~ keypress_p50_ms + 0.45
+			)
+		)
+
+	save_plot(
+		ggplot(
+			cdp_checkpoint_summary,
+			aes(
+				actual_post_keyup_gap_p50_ms,
+				keypress_p50_ms,
+				color = checkpoint,
+				shape = checkpoint
+			)
+		) +
+			geom_point(size = 3.3, alpha = 0.92) +
+			geom_errorbar(
+				aes(ymin = keypress_p10_ms, ymax = keypress_p90_ms),
+				width = 0.16,
+				alpha = 0.45
+			) +
+			geom_text(
+				aes(label_x, label_y, label = checkpoint_label),
+				size = 3.2,
+				check_overlap = FALSE,
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Set2") +
+			labs(
+				title = "Runtime checkpoints do not reproduce page.evaluate",
+				subtitle = "Raw CDP 1300ms held-key input; vertical bars show p10-p90 keypress dispatch",
+				x = "Observed previous keyup to next keydown, p50 (ms)",
+				y = "keypress EventDispatch duration (ms)",
+				color = "Checkpoint",
+				shape = "Checkpoint"
+			) +
+			theme(legend.position = "none"),
+		"25b-cdp-checkpoint-follow-up.png",
+		width = 10.5,
+		height = 6.3
+	)
+}
+
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
