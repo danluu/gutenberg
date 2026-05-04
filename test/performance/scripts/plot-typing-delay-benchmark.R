@@ -15184,10 +15184,10 @@ if (file.exists(marker_allspan_action_summary_path)) {
 					contract_surface_wrapped = fct_reorder(contract_surface_wrapped, risk_score)
 				)
 
-			save_plot(
-				ggplot(
-					branch_aware_use_select_plot,
-					aes(
+				save_plot(
+					ggplot(
+						branch_aware_use_select_plot,
+						aes(
 						risk_score,
 						contract_surface_wrapped,
 						color = decision,
@@ -15218,12 +15218,235 @@ if (file.exists(marker_allspan_action_summary_path)) {
 					) +
 					theme(legend.position = "bottom", legend.box = "vertical"),
 				"154-branch-aware-use-select-compatibility.png",
-				width = 12,
-				height = 7.6
-			)
+					width = 12,
+					height = 7.6
+				)
 
-			pattern_override_first_patch_implementation_audit <- tribble(
-			~implementation_question, ~current_answer, ~source_evidence, ~required_patch_contract, ~required_test_contract, ~decision,
+				observed_non_use_select_marker_listener_count <- current_marker_redux_listener_count_p50 - current_marker_use_select_count_p50
+				observed_use_select_marker_share_pct <- 100 * current_marker_use_select_count_p50 / current_marker_redux_listener_count_p50
+
+				store_subscriber_partition_lane_audit <- tribble(
+					~lane_design, ~source_boundary, ~root_state_requirement, ~public_subscribe_semantics, ~use_select_semantics, ~current_woken_use_select_listeners, ~current_woken_non_use_select_listeners, ~estimated_unrelated_use_select_listeners_skipped, ~compatibility_risk_score, ~fanout_win_score, ~prototype_gate, ~decision,
+					"Current one-lane store notification",
+					"packages/data/src/redux-store/index.ts:526-564 calls every registered store listener when root identity changes; useSelect registers through registry.subscribe.",
+					"root changes today",
+					"preserved",
+					"all useSelect subscribers for the store are invalidated before selected values can prove unchanged",
+					current_marker_use_select_count_p50,
+					observed_non_use_select_marker_listener_count,
+					0,
+					1,
+					1,
+					"baseline only",
+					"current behavior",
+					"Private useBlockSync side channel while root update remains",
+					"packages/block-editor/src/components/provider/use-block-sync.js:351-532 can be migrated as the known in-tree persistence consumer.",
+					"root still changes",
+					"preserved",
+					"unchanged; ordinary useSelect listeners still wake because the root update remains on the one-lane path",
+					current_marker_use_select_count_p50,
+					observed_non_use_select_marker_listener_count,
+					0,
+					2,
+					1,
+					"useBlockSync onInput/onChange behavior tests",
+					"behavior seam, no fanout claim",
+					"Stop root update after only migrating useBlockSync",
+					"useBlockSync would see the private side channel, but public isLastBlockChangePersistent useSelect and registry.subscribe consumers would not see the marker transition.",
+					"root no longer changes",
+					"broken unless API policy changes",
+					"public subscribed persistence consumers miss the transition",
+					current_marker_use_select_count_p50,
+					observed_non_use_select_marker_listener_count,
+					current_marker_use_select_count_p50,
+					5,
+					4,
+					"explicit public API/deprecation decision",
+					"unsafe shortcut",
+					"Filtered internal useSelect lane plus public root lane",
+					"Keep registry.subscribe/store-level root notifications for public subscribers, but register useSelect through an internal dependency-aware lane with branch/selector metadata.",
+					"root can still change",
+					"preserved for public registry.subscribe",
+					"useSelect consumers wake only when their captured selector/branch dependencies can change; isLastBlockChangePersistent useSelect still wakes",
+					current_marker_use_select_count_p50,
+					observed_non_use_select_marker_listener_count,
+					current_marker_use_select_count_p50,
+					5,
+					5,
+					"dependency capture, race, async, dynamic-store, cross-store, and marker source-span gates",
+					"best compatibility-preserving fanout prototype",
+					"Public branch-aware registry.subscribe semantics",
+					"Change the public store subscription contract so root-level subscribers can opt into or receive filtered branch notifications.",
+					"root can still change",
+					"changed or option-scoped",
+					"useSelect could share the public filtered API, but plain subscribers have no selected value to compare",
+					current_marker_use_select_count_p50,
+					observed_non_use_select_marker_listener_count,
+					current_marker_use_select_count_p50,
+					5,
+					5,
+					"public subscription policy and plugin compatibility matrix",
+					"broader API research"
+				) %>%
+					mutate(
+						lane_design = factor(
+							lane_design,
+							levels = c(
+								"Current one-lane store notification",
+								"Private useBlockSync side channel while root update remains",
+								"Stop root update after only migrating useBlockSync",
+								"Filtered internal useSelect lane plus public root lane",
+								"Public branch-aware registry.subscribe semantics"
+							)
+						),
+						decision = factor(
+							decision,
+							levels = c(
+								"current behavior",
+								"behavior seam, no fanout claim",
+								"unsafe shortcut",
+								"best compatibility-preserving fanout prototype",
+								"broader API research"
+							)
+						)
+					)
+
+				write_csv(
+					store_subscriber_partition_lane_audit,
+					file.path(data_dir, "typing-delay-store-subscriber-partition-lane-audit.csv")
+				)
+
+				store_subscriber_partition_composition <- tribble(
+					~listener_class, ~listener_count_p50, ~share_pct, ~source_path, ~interpretation,
+					"useSelect store listeners",
+					current_marker_use_select_count_p50,
+					observed_use_select_marker_share_pct,
+					"packages/data/src/components/use-select/index.ts:222-235",
+					"The persistence marker fanout is almost entirely useSelect subscribers in this workload.",
+					"observed non-useSelect store listeners",
+					observed_non_use_select_marker_listener_count,
+					100 - observed_use_select_marker_share_pct,
+					"packages/data/src/registry.ts:246-282; packages/block-editor/src/components/provider/use-block-sync.js:367-532",
+					"This small residual includes non-useSelect store subscribers observed in the trace, including the in-tree persistence consumer path."
+				)
+
+				write_csv(
+					store_subscriber_partition_composition,
+					file.path(data_dir, "typing-delay-store-subscriber-partition-current-composition.csv")
+				)
+
+				save_plot(
+					ggplot(
+						store_subscriber_partition_composition,
+						aes(listener_class, listener_count_p50, fill = listener_class)
+					) +
+						geom_col(width = 0.62, color = "white", linewidth = 0.25) +
+						geom_text(
+							aes(
+								label = paste0(
+									label_number(accuracy = 1)(listener_count_p50),
+									" (",
+									label_number(accuracy = 0.1)(share_pct),
+									"%)"
+								)
+							),
+							vjust = -0.35,
+							size = 3.4,
+							color = "grey20"
+						) +
+						scale_fill_brewer(type = "qual", palette = "Set2", guide = "none") +
+						scale_y_continuous(
+							labels = label_number(),
+							expand = expansion(mult = c(0, 0.12))
+						) +
+						labs(
+							title = "The marker fanout is almost entirely useSelect listeners",
+							subtitle = "Normal marker p50 listener counts: 4,498 useSelect callbacks out of 4,501 Redux-store listeners",
+							x = NULL,
+							y = "p50 listener callbacks"
+						),
+					"180-store-subscriber-partition-current-composition.png",
+					width = 10.5,
+					height = 6.6
+				)
+
+				store_subscriber_partition_lane_plot <- store_subscriber_partition_lane_audit %>%
+					mutate(
+						lane_label = str_wrap(as.character(lane_design), width = 28),
+						lane_label = fct_reorder(lane_label, fanout_win_score),
+						plot_label = case_when(
+							decision == "best compatibility-preserving fanout prototype" ~ "internal useSelect lane",
+							decision == "behavior seam, no fanout claim" ~ "side channel seam",
+							decision == "unsafe shortcut" ~ "breaks subscribers",
+							TRUE ~ NA_character_
+						),
+						label_x = fanout_win_score + case_when(
+							decision == "best compatibility-preserving fanout prototype" ~ -0.65,
+							decision == "behavior seam, no fanout claim" ~ 0.2,
+							decision == "unsafe shortcut" ~ -0.2,
+							TRUE ~ 0
+						),
+						label_y = compatibility_risk_score + case_when(
+							decision == "best compatibility-preserving fanout prototype" ~ 0.22,
+							decision == "behavior seam, no fanout claim" ~ 0.22,
+							decision == "unsafe shortcut" ~ -0.25,
+							TRUE ~ 0
+						)
+					)
+
+				save_plot(
+					ggplot(
+						store_subscriber_partition_lane_plot,
+						aes(
+							fanout_win_score,
+							compatibility_risk_score,
+							color = decision,
+							shape = decision
+						)
+					) +
+						geom_point(size = 4.2, alpha = 0.9) +
+						geom_text(
+							aes(label_x, label_y, label = plot_label),
+							size = 3.1,
+							color = "grey20",
+							na.rm = TRUE,
+							show.legend = FALSE
+						) +
+						scale_color_brewer(type = "qual", palette = "Dark2", name = "Decision") +
+						scale_shape_manual(
+							values = c(
+								"current behavior" = 16,
+								"behavior seam, no fanout claim" = 17,
+								"unsafe shortcut" = 4,
+								"best compatibility-preserving fanout prototype" = 15,
+								"broader API research" = 3
+							),
+							name = "Decision"
+						) +
+						scale_x_continuous(
+							breaks = 1:5,
+							limits = c(0.7, 5.35),
+							labels = c("1" = "none", "2" = "seam", "3" = "partial", "4" = "large unsafe", "5" = "large filtered")
+						) +
+						scale_y_continuous(
+							breaks = 1:5,
+							limits = c(0.7, 5.35),
+							labels = c("1" = "low", "2" = "local", "3" = "medium", "4" = "high", "5" = "API/high")
+						) +
+						labs(
+							title = "The better store-partition prototype is a filtered useSelect lane",
+							subtitle = "It can keep public root subscribe semantics; stopping the root update after only migrating useBlockSync is the unsafe shortcut",
+							x = "Potential marker fanout win",
+							y = "Compatibility risk"
+						) +
+						theme(legend.position = "bottom", legend.box = "vertical"),
+					"181-store-subscriber-partition-lane-audit.png",
+					width = 12,
+					height = 7.2
+				)
+
+				pattern_override_first_patch_implementation_audit <- tribble(
+				~implementation_question, ~current_answer, ~source_evidence, ~required_patch_contract, ~required_test_contract, ~decision,
 			"What exactly should move?",
 			"The support-check useSelect is now behind the selected-block gate.",
 			"Before the patch, packages/editor/src/hooks/pattern-overrides.js called useSelect at the top of withPatternOverrideControls to read getSettings().__experimentalBlockBindingsSupportedAttributes[ props.name ], then rendered ControlsWithStoreSubscription only when props.isSelected && isSupportedBlock.",

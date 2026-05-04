@@ -1,0 +1,3 @@
+listener_class,listener_count_p50,share_pct,source_path,interpretation
+useSelect store listeners,4498,99.9333481448567,packages/data/src/components/use-select/index.ts:222-235,The persistence marker fanout is almost entirely useSelect subscribers in this workload.
+observed non-useSelect store listeners,3,0.06665185514330574,packages/data/src/registry.ts:246-282; packages/block-editor/src/components/provider/use-block-sync.js:367-532,"This small residual includes non-useSelect store subscribers observed in the trace, including the in-tree persistence consumer path."
