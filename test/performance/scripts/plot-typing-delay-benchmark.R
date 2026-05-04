@@ -10784,8 +10784,8 @@ if (
 			3, 3, "native scale", 3.00, 3.02
 		)
 
-		chromium_runtime_falsification_gate_audit <- tribble(
-			~candidate_mechanism, ~current_status, ~current_evidence, ~supporting_trace_result, ~falsifying_trace_result, ~required_rows, ~instrumentation_level, ~evidence_score, ~next_cost_score, ~plot_label, ~plot_x, ~plot_y,
+			chromium_runtime_falsification_gate_audit <- tribble(
+				~candidate_mechanism, ~current_status, ~current_evidence, ~supporting_trace_result, ~falsifying_trace_result, ~required_rows, ~instrumentation_level, ~evidence_score, ~next_cost_score, ~plot_label, ~plot_x, ~plot_y,
 			"Elapsed post-keyup time / browser rest",
 			"falsified locally",
 			"Ordinary raw-CDP waits through about `5008ms` stay near the slow `21-24ms` keypress band.",
@@ -10863,12 +10863,133 @@ if (
 						"open",
 						"open lower layer"
 					)
+					)
 				)
-			)
 
-		write_csv(
-			cdp_boundary_consolidated,
-			file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
+			chromium_runtime_protocol_sidecar_contract <- tribble(
+				~sidecar_surface, ~required_fields, ~current_state, ~why_required, ~failure_mode_if_missing, ~implementation_phase, ~mechanism_value_score, ~observer_blocker_score, ~plot_label,
+				"Retained key and gap identity",
+				"run id; sample index; retained/throwaway; delay mode; repeat count; prior keyup end; next keydown enqueue; EventDispatch start/end",
+				"Partial: retained sample index, observed gap, browser events, and key durations are already recorded.",
+				"Every runtime command and trace state has to be tied to the same inter-key window that later contributes to the p50.",
+				"Checkpoint timing can only be compared by aggregate row, leaving dose-response and per-sample outliers unauditable.",
+				"sidecar first", 5, 5, "key window",
+				"Low-overhead protocol command log",
+				"command id; method; parameters fingerprint; start/end driver timestamps; result/error; executionContextId; objectId/objectGroup; release timing",
+				"Missing: runtime calls are issued, but command boundaries and object lifecycle are not stored beside retained samples.",
+				"Separates command-count, command-duration, context-resolution, and handle-lifecycle effects from browser trace categories.",
+				"Trace-on `captureSnapshot` and trace-off runtime repeats remain story-shaped instead of command-shaped.",
+				"sidecar first", 5, 5, "protocol log",
+				"Browser and driver timebase",
+				"browser monotonic timestamps; driver monotonic timestamps; before/after clock sync points; browser revision; trace timebase",
+				"Partial: run start/stop browser times exist, but protocol-command timestamps are not aligned per retained gap.",
+				"Needed to align CDP command windows, trace events, and EventDispatch without assuming wall-clock equality.",
+				"Commands can appear before or after the wrong key window, especially when repeated checkpoint loops are short.",
+				"sidecar first", 5, 4, "timebase",
+				"Runtime trace category bundle",
+				"task queue; scheduler priority; input task state; V8 execution; microtask checkpoints if exposed; process/thread ids; flow ids",
+				"Missing: current trace options are render/screenshot oriented: `devtools.timeline`, render categories, and optional screenshots.",
+				"Names the browser/runtime state that differs after checkpoints but not after ordinary waits.",
+				"The benchmark can show a runtime checkpoint dose response but cannot say whether it is V8, scheduler, input queue, or task-boundary state.",
+				"trace bundle", 5, 5, "runtime trace",
+				"Trace snapshot observer split",
+				"external protocol log; trace-on/off flag; captureSnapshot/DOMSnapshot command windows; observer configuration; disabled-snapshot control if available",
+				"Partial: protocol-log audit already shows `captureSnapshot` aligned with the trace-on fast band, but Playwright tracing is also the perturbation.",
+				"Prevents using the perturbing Playwright trace facility as the only observer of the perturbation.",
+				"Trace snapshots can be mistaken for a human-typing or helper-family mechanism.",
+				"observer control", 5, 5, "snapshot split",
+				"OS counter join",
+				"optional powermetrics/trace sample ids; renderer pid/thread id; frequency/residency/QoS state; CPU collector configuration",
+				"Deferred: CPU/QoS audit identifies this as a separate privileged counter ladder.",
+				"Checks whether runtime checkpoints only proxy an OS power/scheduler/cache state.",
+				"A browser mechanism can be overclaimed when frequency, QoS, or scheduler counters explain the same split.",
+				"after browser trace", 4, 4, "OS join",
+				"Native and Gutenberg scale join",
+				"scenario id; native listener spans; Gutenberg source-span ids; fixture metadata; same runtime rows and trace categories",
+				"Partial: native runtime-repeat rows exist and show only a sub-millisecond movement.",
+				"Separates the browser trigger from Gutenberg's multi-millisecond fanout amplification.",
+				"A correct browser mechanism could be incorrectly promoted into a product-latency claim.",
+				"scale gate", 4, 3, "scale join",
+				"Observer overhead sentinels",
+				"trace-off protocol-only control; trace-on runtime bundle control; command-count no-op control; class-order preservation; dropped trace-event counts",
+				"Partial: trace-on/off controls exist for some rows, but not for the proposed runtime category bundle.",
+				"Runtime tracing can perturb the exact state it is supposed to observe.",
+				"A trace-state difference could be caused by the observer, not by the checkpoint mechanism.",
+				"sidecar first", 4, 5, "overhead"
+			) %>%
+				mutate(
+					implementation_phase = factor(
+						implementation_phase,
+						levels = c("sidecar first", "trace bundle", "observer control", "after browser trace", "scale gate")
+					),
+					label_x = case_when(
+						plot_label == "key window" ~ 5.12,
+						plot_label == "protocol log" ~ 4.62,
+						plot_label == "runtime trace" ~ 5.12,
+						plot_label == "snapshot split" ~ 4.62,
+						plot_label == "overhead" ~ 3.62,
+						TRUE ~ mechanism_value_score + 0.08
+					),
+					label_y = case_when(
+						plot_label == "key window" ~ 5.08,
+						plot_label == "protocol log" ~ 4.86,
+						plot_label == "runtime trace" ~ 5.24,
+						plot_label == "snapshot split" ~ 5.02,
+						plot_label == "overhead" ~ 4.84,
+						TRUE ~ observer_blocker_score + 0.08
+					)
+				)
+
+			chromium_runtime_mechanism_decision_tree <- tribble(
+				~stage, ~stage_order, ~question_answered, ~required_inputs, ~advance_condition, ~fallback_condition, ~mechanism_value_score, ~observer_burden_score, ~decision, ~plot_label,
+				"Protocol sidecar dry run", 1,
+				"Can retained key gaps be joined to runtime commands without changing the p50 class ordering?",
+				"raw CDP wait, Runtime.evaluate repeat, Runtime.callFunctionOn repeat, and trace-off page.evaluate rows with protocol command timing only",
+				"Every retained gap has command ids/timing/context/object fields and the existing wait/checkpoint class ordering survives.",
+				"Do not add runtime trace categories until command timing and observer overhead are clean.",
+				5, 2, "do first", "sidecar",
+				"Runtime scheduler/V8 trace", 2,
+				"Which renderer/runtime state differs after repeated checkpoints but not after ordinary waits?",
+				"same raw-CDP rows plus scheduler/task-queue, input priority, V8, microtask, EventDispatch, and source-span channels",
+				"A trace-state metric tracks x0/x1/x3/x7/x17 and separates waits from runtime checkpoints per retained key.",
+				"If all browser trace states match while p50 differs, check OS counters or observer effects.",
+				5, 4, "primary trace", "runtime",
+				"Snapshot perturbation split", 3,
+				"Does trace-on `captureSnapshot` create the same browser state as high-repeat runtime checkpoints?",
+				"trace-on keyboard.press and raw CDP plus page.evaluate, trace-off runtime repeats, external protocol log",
+				"Snapshot command windows align with the fast band and share the same scheduler/V8 state as repeated runtime checkpoints.",
+				"If trace observer configuration creates the fast band by itself, do not generalize to trace-off helpers.",
+				5, 5, "observer gate", "snapshot",
+				"OS counter alignment", 4,
+				"Are runtime checkpoints a proxy for power, frequency, QoS, scheduler placement, or cache state?",
+				"runtime trace rows joined to the CPU/QoS sidecar and compact powermetrics/trace rows",
+				"Browser runtime state still predicts latency after matching OS state, or OS counters explain the checkpoint split.",
+				"If OS state explains it, keep the mechanism at the OS/QoS layer.",
+				4, 5, "conditional", "OS",
+				"Native/Gutenberg scale gate", 5,
+				"How much of the browser trigger is amplified by Gutenberg source fanout?",
+				"matched native contenteditable and Gutenberg large-post runtime trace subsets plus source/listener spans",
+				"Browser state is similar across scenarios, while Gutenberg spans account for the multi-millisecond scale gap.",
+				"If native moves by the same magnitude, the scale claim is not Gutenberg-specific.",
+				4, 3, "scale gate", "scale",
+				"Mechanism report gate", 6,
+				"Is one named state variable enough to update the report?",
+				"joined per-key rows for wait/checkpoint, dose response, snapshot perturbation, OS alignment, and scale control",
+				"One recorded state predicts fast/slow samples across all required contrasts with observer controls intact.",
+				"If contrasts need unrelated explanations or only medians agree, leave the Chromium mechanism unnamed.",
+				5, 3, "report gate", "gate"
+			) %>%
+				mutate(
+					stage = factor(stage, levels = stage),
+					decision = factor(
+						decision,
+						levels = c("do first", "primary trace", "observer gate", "conditional", "scale gate", "report gate")
+					)
+				)
+
+			write_csv(
+				cdp_boundary_consolidated,
+				file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
 		)
 		write_csv(
 			cdp_boundary_theory_matrix,
@@ -10890,10 +11011,18 @@ if (
 				chromium_runtime_current_harness_gap_audit,
 				file.path(data_dir, "typing-delay-chromium-runtime-current-harness-gap-audit.csv")
 			)
-			write_csv(
-				chromium_runtime_falsification_gate_audit,
-				file.path(data_dir, "typing-delay-chromium-runtime-falsification-gate-audit.csv")
-			)
+				write_csv(
+					chromium_runtime_falsification_gate_audit,
+					file.path(data_dir, "typing-delay-chromium-runtime-falsification-gate-audit.csv")
+				)
+				write_csv(
+					chromium_runtime_protocol_sidecar_contract %>% select(-label_x, -label_y),
+					file.path(data_dir, "typing-delay-chromium-runtime-protocol-sidecar-contract.csv")
+				)
+				write_csv(
+					chromium_runtime_mechanism_decision_tree,
+					file.path(data_dir, "typing-delay-chromium-runtime-mechanism-decision-tree.csv")
+				)
 
 		save_plot(
 			ggplot(
@@ -10984,11 +11113,83 @@ if (
 						color = "Current status",
 						shape = "Current status"
 					),
-				"171-runtime-checkpoint-falsification-gates.png",
-				width = 12,
-				height = 7
-			)
-	}
+					"171-runtime-checkpoint-falsification-gates.png",
+					width = 12,
+					height = 7
+				)
+
+				save_plot(
+					ggplot(
+						chromium_runtime_protocol_sidecar_contract,
+						aes(
+							mechanism_value_score,
+							observer_blocker_score,
+							color = implementation_phase,
+							shape = implementation_phase
+						)
+					) +
+						geom_point(size = 3.8, alpha = 0.94) +
+						geom_text(
+							aes(x = label_x, y = label_y, label = plot_label),
+							size = 3,
+							show.legend = FALSE
+						) +
+						scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+						scale_shape_manual(values = c(16, 17, 15, 8, 18), drop = FALSE) +
+						scale_x_continuous(breaks = 1:5, limits = c(1, 5.7)) +
+						scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+						labs(
+							title = "Chromium runtime checkpoints need a protocol sidecar before a mechanism claim",
+							subtitle = "Higher x means more decisive for the mechanism; higher y means larger observer-state risk if missing",
+							x = "mechanism value (1 = weak, 5 = decisive)",
+							y = "observer blocker if absent (1 = low, 5 = severe)",
+							color = "Implementation phase",
+							shape = "Implementation phase"
+						),
+					"184-runtime-protocol-sidecar-contract.png",
+					width = 12,
+					height = 7
+				)
+
+				save_plot(
+					ggplot(
+						chromium_runtime_mechanism_decision_tree,
+						aes(
+							stage_order,
+							observer_burden_score,
+							color = decision,
+							shape = decision,
+							size = mechanism_value_score
+						)
+					) +
+						geom_point(alpha = 0.94) +
+						geom_text(
+							aes(label = plot_label),
+							nudge_x = 0.09,
+							nudge_y = 0.08,
+							size = 3,
+							show.legend = FALSE,
+							check_overlap = TRUE
+						) +
+						scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+						scale_shape_manual(values = c(16, 17, 15, 8, 18, 3), drop = FALSE) +
+						scale_size_continuous(range = c(2.8, 6), breaks = 1:5) +
+						scale_x_continuous(breaks = 1:6, limits = c(0.8, 6.8)) +
+						scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+						labs(
+							title = "The Chromium runtime mechanism ladder starts trace-off",
+							subtitle = "Command timing and observer overhead must be clean before scheduler/V8 or OS-counter explanations are named",
+							x = "stage order",
+							y = "observer burden (1 = low, 5 = high)",
+							color = "Decision",
+							shape = "Decision",
+							size = "mechanism value"
+						),
+					"185-runtime-mechanism-decision-tree.png",
+					width = 12,
+					height = 7
+				)
+		}
 
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")

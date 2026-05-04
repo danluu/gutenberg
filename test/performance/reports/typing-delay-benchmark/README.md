@@ -648,6 +648,12 @@ The R script derives:
 -   `data/typing-delay-chromium-runtime-falsification-gate-audit.csv`: theory
     audit that separates falsified controls from open runtime/scheduler/V8/OS
     mechanism gates.
+-   `data/typing-delay-chromium-runtime-protocol-sidecar-contract.csv`: required
+    per-retained-key protocol, timebase, trace, OS-counter, and scale joins for
+    naming the remaining Chromium runtime mechanism.
+-   `data/typing-delay-chromium-runtime-mechanism-decision-tree.csv`: staged
+    runtime mechanism ladder: trace-off protocol sidecar, scheduler/V8 trace,
+    snapshot observer split, OS-counter alignment, scale gate, and report gate.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -7274,11 +7280,54 @@ The practical split is:
 | Trace snapshot boundary | protocol-log audit around `captureSnapshot` | Existing protocol logs line up trace-on `captureSnapshot` calls with the full fast band. | The Playwright trace facility cannot be both the perturbation and the only observer of the perturbing commands. |
 | Native scale control | native runtime-repeat extractor and summary CSV | Native `contenteditable` repeats the same raw-CDP/runtime grid and shows only a sub-millisecond movement. | Native rows still need the same runtime/scheduler sidecar if the final claim names Chromium internals. |
 
+The deeper audit splits "add Chromium tracing" into separate failure modes. The
+current `browserTraceOptions()` path is aimed at render/screenshot evidence, and
+the runtime delay modes already vary raw CDP input, `Runtime.evaluate`,
+`Runtime.callFunctionOn`, Playwright evaluation, timeout, RAF, and repeat counts.
+What is missing is not another mode; it is a trace-off protocol sidecar that can
+say exactly which commands happened inside each retained previous-keyup to
+next-keydown window before any heavier browser trace observer is added.
+
+![Runtime protocol sidecar contract](figures/184-runtime-protocol-sidecar-contract.png)
+
+The sidecar contract is:
+
+| Sidecar surface | Required fields | Why it matters |
+| --------------- | --------------- | -------------- |
+| Retained key and gap identity | run id, sample index, retained/throwaway flag, delay mode, repeat count, prior keyup end, next keydown enqueue, `EventDispatch` start/end | ties runtime commands and trace state to the same inter-key window that contributes to p50 |
+| Low-overhead protocol command log | command id, method, parameter fingerprint, start/end driver timestamps, result/error, execution context id, object id/group, release timing | separates command-count, command-duration, context-resolution, and handle-lifecycle effects from trace-category effects |
+| Browser and driver timebase | browser monotonic timestamps, driver monotonic timestamps, before/after sync points, browser revision, trace timebase | prevents short repeated checkpoint loops from being joined to the wrong key window |
+| Runtime trace category bundle | task queue, scheduler priority, input task state, V8 execution, microtask checkpoints if exposed, process/thread ids, flow ids | names the browser/runtime state that differs after checkpoints but not after ordinary waits |
+| Trace snapshot observer split | external protocol log, trace-on/off flag, `captureSnapshot`/DOMSnapshot command windows, observer configuration, disabled-snapshot control if available | avoids using the perturbing Playwright trace facility as the only observer of that perturbation |
+| OS counter join | optional `powermetrics`/`trace` sample ids, renderer pid/thread id, frequency/residency/QoS state, CPU collector configuration | checks whether runtime checkpoints are only a proxy for OS power, scheduler, QoS, or cache state |
+| Native and Gutenberg scale join | scenario id, native listener spans, Gutenberg source-span ids, fixture metadata, same runtime rows and trace categories | separates the browser trigger from Gutenberg's multi-millisecond fanout amplification |
+| Observer overhead sentinels | trace-off protocol-only control, trace-on runtime-bundle control, command-count no-op control, class-order preservation, dropped event counts | detects the observer changing the scheduler/runtime state under test |
+
+That yields a stricter mechanism ladder:
+
+![Runtime mechanism decision tree](figures/185-runtime-mechanism-decision-tree.png)
+
+1. First add the protocol sidecar with tracing off. The wait/checkpoint class
+   ordering must survive with command timing recorded.
+2. Then add the runtime scheduler/V8 trace bundle. A candidate trace-state metric
+   should separate ordinary waits from repeated checkpoints and track the
+   `x0/x1/x3/x7/x17` dose response per retained key.
+3. Then split the trace snapshot perturbation with an external protocol log. A
+   trace-on `captureSnapshot` fast band should line up with the same state as
+   high-repeat runtime checkpoints before the report names that state.
+4. Add OS counter alignment only if browser trace state does not cleanly explain
+   the split, or if CPU/QoS state appears to dominate the runtime rows.
+5. Keep the native/Gutenberg scale gate separate: a Chromium state can be real
+   while still being too small to explain product latency without Gutenberg
+   source-span amplification.
+
 That audit gives the stricter rule I should have used earlier: if a theory says
 "some work moved" or "some state was already finalized," it has to identify a
 recorded event, command, trace state, or source span that moved. For the
 Chromium checkpoint question, the current data proves the boundary but not the
-internal browser mechanism.
+internal browser mechanism. The next credible implementation starts trace-off
+with protocol-command timing; a heavier scheduler/V8 trace comes only after that
+observer is shown not to change the row ordering.
 
 ![Runtime checkpoint falsification gates](figures/171-runtime-checkpoint-falsification-gates.png)
 
@@ -8226,7 +8275,10 @@ payload, single generic task/frame checkpoint, and native browser-only scale
 theories. It does not have enough browser-side observer data to name the exact
 Chromium state. The remaining credible theories require per-retained-key
 protocol-command timing plus scheduler/runtime/V8 or OS-counter state aligned to
-the existing `EventDispatch` and Gutenberg source spans.
+the existing `EventDispatch` and Gutenberg source spans. The sidecar analysis
+makes the order stricter: record trace-off protocol command timing first, verify
+the wait/checkpoint class ordering is unchanged, then add runtime scheduler/V8
+categories and only later OS counters or scale gates.
 
 The CPU/QoS open item now has the same kind of executable boundary. The compact
 counter row set was already identified; the new feasibility audit shows the
@@ -8696,7 +8748,7 @@ The high-level split is:
 | Low-risk selector guards | behavior-gate audit closes the first-patch question: the pattern-override selected-only patch is implemented locally, covered by focused unit tests, and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry; the provider row has only source evidence plus a partial `lastBlockAttributesChange` hint, and the inner-blocks row has one clean root/drop-zone slice but known layout/default-layout and side-effect blockers | prototype `BlockListBlockProvider` first as a narrow latest-attribute-action fast path with public-filter, edited-block, selection, structure, editability, settings, visibility, and binding gates; split `useInnerBlocksProps` into root/drop-zone versus full-hook work, preserving identity/root, layout/default-layout, nested-settings, and controlled-inner-block gates; run aggregate before/after p50 only after behavior gates and source spans pass |
 | Store subscriber partition | lane audit refines the compatibility path: the marker wakes `4,501` Redux-store listeners at p50 and `4,498` are `useSelect`, so the best fanout prototype is not an external persistence slot or narrowed public `registry.subscribe`; it is an internal dependency-filtered `useSelect` lane that preserves public root subscribe semantics while waking `isLastBlockChangePersistent()` consumers and skipping unrelated selectors | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; for a fanout claim, prototype the filtered internal `useSelect` lane with public `registry.subscribe` fixtures, persistence-selector `useSelect` fixtures, unrelated-selector skip fixtures, dynamic/cross-store/race/async gates, and marker-only source-span collapse |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
-| Chromium runtime checkpoint | harness-gap and falsification audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement the runtime trace runbook with per-retained-key protocol-command timing, command counts, execution context/object lifecycle, scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
+| Chromium runtime checkpoint | harness-gap, falsification, and protocol-sidecar audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
 | CPU/QoS mechanism | local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but a root run without retained-key/helper/renderer/collector joins would still only prove class-level correlation | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split |
 | Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
 | Human/plugin workload | workload schema audit now has a source-level implementation plan: the current harness can reuse raw attachments, the custom reporter, Metrics tracing, fixture loaders, editor helpers, and `pressKeys`, but it still needs an event-record sidecar, manifest-driven executor, assertion packs, and an opt-in recorder before product-latency ranking is valid | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; do not treat another fixed-x q50 array as representative replay |
