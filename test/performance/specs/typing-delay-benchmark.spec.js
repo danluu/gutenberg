@@ -156,6 +156,7 @@ const supportedDelayModes = [
 	'fixed-hold-then-wait',
 	'locator-type-fixed-hold-then-wait',
 	'locator-press-fixed-hold-then-wait',
+	'locator-press-no-wait-after-fixed-hold-then-wait',
 	'after-persistence',
 	'hold-then-keyup-gap',
 	'type-one-char-hold',
@@ -1483,12 +1484,14 @@ test.describe( 'Typing delay benchmark', () => {
 				'fixed-hold-then-wait',
 				'locator-type-fixed-hold-then-wait',
 				'locator-press-fixed-hold-then-wait',
+				'locator-press-no-wait-after-fixed-hold-then-wait',
 			].includes( delayMode )
 		) {
 			throw new Error(
 				'BENCHMARK_SETUP_STYLE=ci-post-editor-typing only supports ' +
 					'BENCHMARK_DELAY_MODE=keyboard, between-keys, fixed-hold-then-wait, ' +
-					'locator-type-fixed-hold-then-wait, or locator-press-fixed-hold-then-wait.'
+					'locator-type-fixed-hold-then-wait, locator-press-fixed-hold-then-wait, ' +
+					'or locator-press-no-wait-after-fixed-hold-then-wait.'
 			);
 		}
 
@@ -3869,7 +3872,9 @@ setInterval(() => {}, 2147483647);
 						}
 					}
 				} else if (
-					delayMode === 'locator-press-fixed-hold-then-wait'
+					delayMode === 'locator-press-fixed-hold-then-wait' ||
+					delayMode ===
+						'locator-press-no-wait-after-fixed-hold-then-wait'
 				) {
 					const locatorPressTarget =
 						setupStyle === 'ci-post-editor-typing'
@@ -3883,6 +3888,9 @@ setInterval(() => {}, 2147483647);
 					for ( let i = 0; i < sampleCount; i++ ) {
 						await locatorPressTarget.press( 'x', {
 							delay: holdMs,
+							noWaitAfter:
+								delayMode ===
+								'locator-press-no-wait-after-fixed-hold-then-wait',
 							timeout: Math.max( 30_000, holdMs * 4 ),
 						} );
 						if ( postKeyupWaitMs > 0 && i < sampleCount - 1 ) {

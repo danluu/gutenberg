@@ -5459,7 +5459,10 @@ ci_fresh_code_path_specs <- tribble(
 	"100ms locator.type hold", "locator.type", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-type-100"),
 	"50ms locator.press hold", "locator.press", 50, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-press-50"),
 	"75ms locator.press hold", "locator.press", 75, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-press-75"),
-	"100ms locator.press hold", "locator.press", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-press-100")
+	"100ms locator.press hold", "locator.press", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-press-100"),
+	"50ms locator.press noWaitAfter hold", "locator.press noWaitAfter", 50, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-press-no-wait-after-50"),
+	"75ms locator.press noWaitAfter hold", "locator.press noWaitAfter", 75, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-press-no-wait-after-75"),
+	"100ms locator.press noWaitAfter hold", "locator.press noWaitAfter", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-locator-press-no-wait-after-100")
 ) %>%
 	mutate(
 		json_path = map_chr(artifact_dir, function(artifact_dir) {
@@ -5629,6 +5632,9 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 			locator_press_hold_50_q50_ms = `50ms locator.press hold`,
 			locator_press_hold_75_q50_ms = `75ms locator.press hold`,
 			locator_press_hold_100_q50_ms = `100ms locator.press hold`,
+			locator_press_no_wait_after_hold_50_q50_ms = `50ms locator.press noWaitAfter hold`,
+			locator_press_no_wait_after_hold_75_q50_ms = `75ms locator.press noWaitAfter hold`,
+			locator_press_no_wait_after_hold_100_q50_ms = `100ms locator.press noWaitAfter hold`,
 			full_minus_tap_ms = `current CI held key` - `tap then wait`,
 			full_minus_page_50_ms = `current CI held key` - `50ms page.keyboard hold`,
 			full_minus_page_75_ms = `current CI held key` - `75ms page.keyboard hold`,
@@ -5638,7 +5644,10 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 			full_minus_locator_type_100_ms = `current CI held key` - `100ms locator.type hold`,
 			full_minus_locator_press_50_ms = `current CI held key` - `50ms locator.press hold`,
 			full_minus_locator_press_75_ms = `current CI held key` - `75ms locator.press hold`,
-			full_minus_locator_press_100_ms = `current CI held key` - `100ms locator.press hold`
+			full_minus_locator_press_100_ms = `current CI held key` - `100ms locator.press hold`,
+			full_minus_locator_press_no_wait_after_50_ms = `current CI held key` - `50ms locator.press noWaitAfter hold`,
+			full_minus_locator_press_no_wait_after_75_ms = `current CI held key` - `75ms locator.press noWaitAfter hold`,
+			full_minus_locator_press_no_wait_after_100_ms = `current CI held key` - `100ms locator.press noWaitAfter hold`
 		)
 	write_csv(ci_fresh_code_path_paired_differences, ci_fresh_code_path_paired_difference_path)
 
@@ -5646,7 +5655,7 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 		filter(delay_ms %in% c(250, 500, 1000), input_api != "page.keyboard.type") %>%
 		mutate(
 			delay_label = factor(paste0(delay_ms, "ms"), levels = c("250ms", "500ms", "1000ms")),
-			input_api = factor(input_api, levels = c("tap", "page.keyboard", "locator.type", "locator.press"))
+			input_api = factor(input_api, levels = c("tap", "page.keyboard", "locator.type", "locator.press", "locator.press noWaitAfter"))
 		)
 	ci_fresh_code_path_current_plot <- ci_fresh_code_path_summary %>%
 		filter(delay_ms %in% c(250, 500, 1000), input_api == "page.keyboard.type") %>%
@@ -5679,12 +5688,12 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 			facet_wrap(vars(delay_label), nrow = 1) +
 			scale_x_continuous(breaks = c(0, 50, 75, 100)) +
 			scale_color_brewer(type = "qual", palette = "Set2", name = "Input API") +
-				scale_shape_manual(
-					values = c(16, 17, 15, 3, 8),
-					name = "Input API"
-				) +
+			scale_shape_manual(
+				values = c(16, 17, 15, 3, 8),
+				name = "Input API"
+			) +
 			labs(
-				title = "Fresh-editor code-path controls move the slow band across APIs",
+				title = "Fresh-editor code-path controls move the slow band across API checkpoints",
 				subtitle = "CI-comparable fresh saved/reopened setup; dashed line is current full-delay hold p50; points are p50 and bars are p10-p90",
 				x = "Requested key hold before post-keyup wait (ms)",
 				y = "Latency, keydown + keypress + keyup (ms)"
