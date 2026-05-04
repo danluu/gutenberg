@@ -1754,6 +1754,7 @@ test.describe( 'Typing delay benchmark', () => {
 			previousSnapshot,
 			changedSnapshot,
 			targetBoundingBox,
+			characterBoundingBox,
 			viewportSize
 		) {
 			if (
@@ -1839,25 +1840,49 @@ test.describe( 'Typing delay benchmark', () => {
 					};
 				}
 
-				const scaleX = width / viewportSize.width;
-				const scaleY = height / viewportSize.height;
-				const targetMinX = targetBoundingBox.x * scaleX;
-				const targetMinY = targetBoundingBox.y * scaleY;
-				const targetMaxX =
-					( targetBoundingBox.x + targetBoundingBox.width ) * scaleX;
-				const targetMaxY =
-					( targetBoundingBox.y + targetBoundingBox.height ) * scaleY;
-				const overlapMinX = Math.max( minX, targetMinX );
-				const overlapMinY = Math.max( minY, targetMinY );
-				const overlapMaxX = Math.min( maxX, targetMaxX );
-				const overlapMaxY = Math.min( maxY, targetMaxY );
-				const overlapWidth = Math.max( 0, overlapMaxX - overlapMinX );
-				const overlapHeight = Math.max( 0, overlapMaxY - overlapMinY );
 				const changedBoxArea =
 					( maxX - minX + 1 ) * ( maxY - minY + 1 );
-				const overlapArea = overlapWidth * overlapHeight;
 				const centerX = ( minX + maxX ) / 2;
 				const centerY = ( minY + maxY ) / 2;
+				const scaleX = width / viewportSize.width;
+				const scaleY = height / viewportSize.height;
+				const overlapMetricsForBox = ( box ) => {
+					if ( ! box ) {
+						return undefined;
+					}
+
+					const boxMinX = box.x * scaleX;
+					const boxMinY = box.y * scaleY;
+					const boxMaxX = ( box.x + box.width ) * scaleX;
+					const boxMaxY = ( box.y + box.height ) * scaleY;
+					const overlapMinX = Math.max( minX, boxMinX );
+					const overlapMinY = Math.max( minY, boxMinY );
+					const overlapMaxX = Math.min( maxX, boxMaxX );
+					const overlapMaxY = Math.min( maxY, boxMaxY );
+					const overlapWidth = Math.max(
+						0,
+						overlapMaxX - overlapMinX
+					);
+					const overlapHeight = Math.max(
+						0,
+						overlapMaxY - overlapMinY
+					);
+					const overlapArea = overlapWidth * overlapHeight;
+
+					return {
+						overlapArea,
+						overlapRatio: overlapArea / changedBoxArea,
+						overlaps: overlapArea > 0,
+						centerInBox:
+							centerX >= boxMinX &&
+							centerX <= boxMaxX &&
+							centerY >= boxMinY &&
+							centerY <= boxMaxY,
+					};
+				};
+				const targetOverlap = overlapMetricsForBox( targetBoundingBox );
+				const characterOverlap =
+					overlapMetricsForBox( characterBoundingBox );
 
 				return {
 					screenshotDiffImageWidth: width,
@@ -1870,15 +1895,21 @@ test.describe( 'Typing delay benchmark', () => {
 					screenshotChangedMaxX: maxX,
 					screenshotChangedMaxY: maxY,
 					screenshotChangedBoxArea: changedBoxArea,
-					screenshotChangedBoxOverlapTargetArea: overlapArea,
+					screenshotChangedBoxOverlapTargetArea:
+						targetOverlap.overlapArea,
 					screenshotChangedBoxOverlapTargetRatio:
-						overlapArea / changedBoxArea,
-					screenshotChangedBoxOverlapsTarget: overlapArea > 0,
+						targetOverlap.overlapRatio,
+					screenshotChangedBoxOverlapsTarget: targetOverlap.overlaps,
 					screenshotChangedBoxCenterInTarget:
-						centerX >= targetMinX &&
-						centerX <= targetMaxX &&
-						centerY >= targetMinY &&
-						centerY <= targetMaxY,
+						targetOverlap.centerInBox,
+					screenshotChangedBoxOverlapCharacterArea:
+						characterOverlap?.overlapArea,
+					screenshotChangedBoxOverlapCharacterRatio:
+						characterOverlap?.overlapRatio,
+					screenshotChangedBoxOverlapsCharacter:
+						characterOverlap?.overlaps,
+					screenshotChangedBoxCenterInCharacter:
+						characterOverlap?.centerInBox,
 				};
 			} catch ( error ) {
 				return {
@@ -3394,7 +3425,7 @@ setInterval(() => {}, 2147483647);
 			};
 		}
 
-		async function screenshotTargetBoundingBox() {
+		async function screenshotTargetLocator() {
 			if ( ! traceScreenshots ) {
 				return null;
 			}
@@ -3403,18 +3434,149 @@ setInterval(() => {}, 2147483647);
 				.boundingBox()
 				.catch( () => null );
 			if ( paragraphBox ) {
-				return paragraphBox;
+				return paragraph;
 			}
 
 			if ( ! canvas ) {
 				return null;
 			}
 
-			return await canvas
-				.locator( '[contenteditable="true"]' )
-				.last()
-				.boundingBox()
+			return canvas.locator( '[contenteditable="true"]' ).last();
+		}
+
+		async function screenshotTargetBoundingBox() {
+			const target = await screenshotTargetLocator();
+			return await target?.boundingBox().catch( () => null );
+		}
+
+		function screenshotContentEditableLocator() {
+			if ( ! traceScreenshotPixels ) {
+				return null;
+			}
+
+			if ( canvas ) {
+				return canvas.locator( '[contenteditable="true"]' ).last();
+			}
+
+			return paragraph;
+		}
+
+		async function screenshotCharacterTextLength() {
+			if ( ! traceScreenshotPixels ) {
+				return null;
+			}
+
+			const target = screenshotContentEditableLocator();
+			return await target
+				?.evaluate( ( element ) => element.textContent.length )
 				.catch( () => null );
+		}
+
+		async function screenshotCharacterBoundingBoxes(
+			startCharacterIndex,
+			count
+		) {
+			if (
+				! traceScreenshotPixels ||
+				startCharacterIndex === null ||
+				startCharacterIndex === undefined
+			) {
+				return [];
+			}
+
+			const target = screenshotContentEditableLocator();
+			return (
+				( await target
+					?.evaluate(
+						(
+							element,
+							{
+								count: characterCount,
+								startCharacterIndex: firstCharacterIndex,
+							}
+						) => {
+							const document = element.ownerDocument;
+							const window = document.defaultView;
+							const frameElement = window.frameElement;
+							const frameRect = frameElement
+								? frameElement.getBoundingClientRect()
+								: { left: 0, top: 0 };
+							const textNodes = [];
+							const walker = document.createTreeWalker(
+								element,
+								window.NodeFilter.SHOW_TEXT
+							);
+							let node = walker.nextNode();
+							while ( node ) {
+								textNodes.push( node );
+								node = walker.nextNode();
+							}
+
+							function endpointForIndex(
+								characterIndex,
+								preferNextAtBoundary
+							) {
+								let remaining = characterIndex;
+								for ( const textNode of textNodes ) {
+									if (
+										remaining < textNode.length ||
+										( remaining === textNode.length &&
+											! preferNextAtBoundary )
+									) {
+										return {
+											node: textNode,
+											offset: remaining,
+										};
+									}
+									remaining -= textNode.length;
+								}
+
+								const lastNode =
+									textNodes[ textNodes.length - 1 ];
+								if ( ! lastNode ) {
+									return null;
+								}
+
+								return {
+									node: lastNode,
+									offset: lastNode.length,
+								};
+							}
+
+							const boxes = [];
+							for ( let i = 0; i < characterCount; i++ ) {
+								const characterIndex = firstCharacterIndex + i;
+								const start = endpointForIndex(
+									characterIndex,
+									true
+								);
+								const end = endpointForIndex(
+									characterIndex + 1,
+									false
+								);
+								if ( ! start || ! end ) {
+									boxes.push( null );
+									continue;
+								}
+
+								const range = document.createRange();
+								range.setStart( start.node, start.offset );
+								range.setEnd( end.node, end.offset );
+								const rect = range.getBoundingClientRect();
+								boxes.push( {
+									x: rect.left + frameRect.left,
+									y: rect.top + frameRect.top,
+									width: rect.width,
+									height: rect.height,
+								} );
+							}
+
+							return boxes;
+						},
+						{ count, startCharacterIndex }
+					)
+					.catch( () => [] ) ) || []
+			);
 		}
 
 		async function runPreTypingWarmup() {
@@ -3493,6 +3655,8 @@ setInterval(() => {}, 2147483647);
 				const viewportSize = traceScreenshots
 					? page.viewportSize()
 					: null;
+				const textLengthBeforeRun =
+					await screenshotCharacterTextLength();
 				const runStartedAtEpochMs = Date.now();
 				const runStartedAtBrowserNowMs = await page.evaluate( () =>
 					performance.now()
@@ -3607,6 +3771,18 @@ setInterval(() => {}, 2147483647);
 				if ( useBrowserTrace ) {
 					await metrics.stopTracing();
 				}
+				const textLengthAfterRun =
+					await screenshotCharacterTextLength();
+				const firstTypedCharacterIndex =
+					textLengthAfterRun === null ||
+					textLengthAfterRun === undefined
+						? null
+						: textLengthAfterRun - sampleCount;
+				const characterBoundingBoxes =
+					await screenshotCharacterBoundingBoxes(
+						firstTypedCharacterIndex,
+						sampleCount
+					);
 				if ( traceVisualLatency ) {
 					await page.evaluate(
 						() =>
@@ -3912,6 +4088,7 @@ setInterval(() => {}, 2147483647);
 							previousSnapshot,
 							changedSnapshot,
 							targetBoundingBox,
+							characterBoundingBoxes[ sampleIndex ],
 							viewportSize
 						);
 					const isThrowaway = sampleIndex < throwawayPerDelay;
@@ -3955,6 +4132,21 @@ setInterval(() => {}, 2147483647);
 							keyGroup.keydownEvents[ 0 ].timestampMs,
 						keypressTimestampMs: keypress.timestampMs,
 						keyupTimestampMs: keyup.timestampMs,
+						textLengthBeforeRun,
+						textLengthAfterRun,
+						typedCharacterTextIndex:
+							firstTypedCharacterIndex === null ||
+							firstTypedCharacterIndex === undefined
+								? undefined
+								: firstTypedCharacterIndex + sampleIndex,
+						typedCharacterBoxX:
+							characterBoundingBoxes[ sampleIndex ]?.x,
+						typedCharacterBoxY:
+							characterBoundingBoxes[ sampleIndex ]?.y,
+						typedCharacterBoxWidth:
+							characterBoundingBoxes[ sampleIndex ]?.width,
+						typedCharacterBoxHeight:
+							characterBoundingBoxes[ sampleIndex ]?.height,
 						visualWindowName: visualLatencyEvent?.windowName,
 						visualInputWindowName:
 							visualLatencyEvent?.inputWindowName,

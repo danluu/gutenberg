@@ -355,11 +355,12 @@ The short version:
     disconfirms "render trace bookkeeping only."
 -   A follow-up trace-screenshot pixel localization check decodes the previous
     and first changed trace screenshots, diffs the pixels, and checks whether the
-    changed-pixel box overlaps the target text box. Across 48 retained samples
-    at `990ms`, `1000ms`, and `1300ms`, every decoded changed screenshot
-    overlapped the target and every changed-pixel box center landed inside it.
-    This does not OCR the character or calibrate presentation, but it rules out
-    the changed-screenshot endpoint being unrelated viewport activity.
+    changed-pixel box overlaps the target text box and the DOM range for the
+    exact typed `x`. Across 48 retained samples at `990ms`, `1000ms`, and
+    `1300ms`, every decoded changed screenshot overlapped the target and every
+    changed-pixel box overlapped the exact typed-character range. This does not
+    OCR the character or calibrate presentation, but it rules out the
+    changed-screenshot endpoint being unrelated viewport activity.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -630,7 +631,8 @@ The R script derives:
 -   `data/typing-delay-screenshot-trace-*.csv`: opt-in Chromium trace-screenshot
     samples and summaries for first changed screenshot after keydown.
 -   `data/typing-delay-screenshot-pixel-*.csv`: opt-in pixel localization
-    samples and summaries for changed trace screenshots.
+    samples and summaries for changed trace screenshots, target-box overlap, and
+    typed-character DOM range overlap.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 
@@ -4484,12 +4486,13 @@ external screen observation.
 
 The screenshot-trace result above still had one avoidable ambiguity: a changed
 trace screenshot hash proves that Chromium's screenshot stream changed, but does
-not prove that the changed pixels are in the edited paragraph. I added an opt-in
-`BENCHMARK_TRACE_SCREENSHOT_PIXELS=1` check for that narrower question. For each
-retained key, it decodes the previous trace screenshot and the first changed
-trace screenshot, computes a simple RGB pixel diff, finds the changed-pixel
-bounding box, and maps the editor target textbox into screenshot coordinates.
-The benchmark still writes only derived numbers, not raw screenshot images.
+not prove that the changed pixels are in the edited paragraph or near the typed
+character. I added an opt-in `BENCHMARK_TRACE_SCREENSHOT_PIXELS=1` check for that
+narrower question. For each retained key, it decodes the previous trace
+screenshot and the first changed trace screenshot, computes a simple RGB pixel
+diff, finds the changed-pixel bounding box, and maps the editor target textbox
+into screenshot coordinates. The benchmark still writes only derived numbers,
+not raw screenshot images.
 
 One setup bug fell out of this check. The original target locator matched the
 inserted block by its "Empty block" accessible name. After the first delay group
@@ -4500,21 +4503,32 @@ matches; in this setup, that is the inserted benchmark paragraph.
 
 ![Screenshot pixel localization](figures/112-screenshot-pixel-overlap.png)
 
-| Input mode | Delay | Decoded | Changed box overlaps target | Changed box center in target | Changed pixels p50 | Changed-box overlap ratio p50 |
-| ---------- | ----: | ------: | --------------------------: | ---------------------------: | -----------------: | ----------------------------: |
-| key held during delay |  `990ms` | `8/8` | `8/8` | `8/8` | `23` | `0.740` |
-| key held during delay | `1000ms` | `8/8` | `8/8` | `8/8` | `23` | `0.741` |
-| key held during delay | `1300ms` | `8/8` | `8/8` | `8/8` | `31` | `0.745` |
-| complete keypress then wait |  `990ms` | `8/8` | `8/8` | `8/8` | `32.5` | `0.745` |
-| complete keypress then wait | `1000ms` | `8/8` | `8/8` | `8/8` | `31` | `0.741` |
-| complete keypress then wait | `1300ms` | `8/8` | `8/8` | `8/8` | `31` | `0.745` |
+The next check maps each retained key to the DOM `Range` for the exact inserted
+`x` character. The first physical key in the run is still the throwaway sample;
+that matters because the first insertion also removes placeholder/sentinel text.
+The retained samples below are the steady-state inserted `x` characters.
 
-This closes the "unrelated screenshot hash" caveat for these Chromium runs. The
-first changed screenshot after keydown is localized to the edited text box in
-both input modes and at the relevant delays. It is still not OCR, compositor
-presentation timing, or high-speed-camera validation; the remaining caveat is
-calibrated presentation, not whether the trace screenshot change is in the
-editor target.
+![Screenshot character localization](figures/113-screenshot-character-overlap.png)
+
+| Input mode | Delay | Decoded | Target overlap | Typed `x` overlap | Typed `x` center | Changed pixels p50 | Typed `x` overlap ratio p50 |
+| ---------- | ----: | ------: | -------------: | ----------------: | ---------------: | -----------------: | --------------------------: |
+| key held during delay |  `990ms` | `8/8` | `8/8` | `8/8` | `6/8` | `23` | `0.482` |
+| key held during delay | `1000ms` | `8/8` | `8/8` | `8/8` | `5/8` | `23` | `0.491` |
+| key held during delay | `1300ms` | `8/8` | `8/8` | `8/8` | `6/8` | `31` | `0.452` |
+| complete keypress then wait |  `990ms` | `8/8` | `8/8` | `8/8` | `6/8` | `32.5` | `0.465` |
+| complete keypress then wait | `1000ms` | `8/8` | `8/8` | `8/8` | `6/8` | `31` | `0.549` |
+| complete keypress then wait | `1300ms` | `8/8` | `8/8` | `8/8` | `6/8` | `31` | `0.452` |
+
+This closes the "unrelated screenshot hash" caveat for these Chromium runs and
+tightens the previous target-box check. The first changed screenshot after
+keydown is localized to the edited text box and overlaps the exact typed `x`
+range in both input modes and at the relevant delays. The center of the changed
+box is less robust because the diff box can include caret and antialiasing
+movement as well as glyph pixels, so the safer assertion is overlap, not center.
+This is still not OCR, compositor presentation timing, or high-speed-camera
+validation; the remaining caveat is calibrated presentation and semantic
+recognition, not whether the trace screenshot change is in the editor target or
+near the typed character.
 
 ## Trace Grouping Bug Avoided
 
@@ -4569,9 +4583,9 @@ Known problems:
     render trace probe reaches Chromium `Paint` / `DrawFrame` trace events. The
     screenshot trace probe reaches changed Chromium trace snapshots. The pixel
     localization check confirms those changed screenshots change inside the
-    target textbox, but they are still not compositor presentation timestamps,
-    high-speed-camera pixels, or semantic proof that the exact typed character is
-    visible.
+    target textbox and overlap the DOM range for the exact typed `x`, but they
+    are still not compositor presentation timestamps, high-speed-camera pixels,
+    or OCR-level proof that the exact glyph was presented to the user.
 -   **Synthetic keyboard input is not real keyboard input.** Playwright's
     `page.keyboard.type()` is useful, but it is not a hardware-to-screen pipeline.
 -   **There are now multiple delay modes.** This is useful for diagnosis, but any
@@ -4721,11 +4735,11 @@ about `35ms` / `34ms` to `18ms`. That disconfirms "EventDispatch trace
 accounting only", "JS/RAF proxy only", and "render-event bookkeeping only"
 theories. What remains open is calibrated input-to-screen: Chrome trace
 screenshots are not compositor presentation timestamps, high-speed-camera
-pixels, or semantic proof that the newly typed character is visible. The
-follow-up pixel localization check narrows that caveat: the changed trace
-screenshot pixels are in the target textbox for every decoded retained sample,
-so the remaining gap is presentation calibration and semantic OCR, not unrelated
-screenshot noise.
+pixels, or OCR. The follow-up pixel localization check narrows that caveat: the
+changed trace screenshot pixels are in the target textbox and overlap the DOM
+range for the exact typed `x` for every decoded retained sample, so the remaining
+gap is presentation calibration and glyph recognition, not unrelated screenshot
+noise.
 
 ## Recommendations
 
@@ -4845,9 +4859,11 @@ The key runs used in this report were:
 -   `screenshot_between_keys`: complete keypress, then wait at `990ms`,
     `1000ms`, and `1300ms`, with the same trace-screenshot probe.
 -   `screenshot_pixel_keyhold`: normal Playwright key-hold delay at `990ms`,
-    `1000ms`, and `1300ms`, with opt-in changed-screenshot pixel localization.
+    `1000ms`, and `1300ms`, with opt-in changed-screenshot pixel and typed
+    character localization.
 -   `screenshot_pixel_between_keys`: complete keypress, then wait at `990ms`,
-    `1000ms`, and `1300ms`, with the same pixel localization probe.
+    `1000ms`, and `1300ms`, with the same pixel and character localization
+    probe.
 -   `taskpolicy_tier_sweep`: `taskpolicy -l 0..5` and `taskpolicy -t 0..5`
     background CPU controls with a `1250ms` no-op timer and `1300ms` held-key
     delay.

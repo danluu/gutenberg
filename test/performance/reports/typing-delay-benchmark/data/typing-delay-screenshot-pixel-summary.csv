@@ -1,7 +1,7 @@
-input_mode,delay_mode,delay_ms,retained_n,decoded_n,decode_failed_n,overlap_target_n,center_in_target_n,latency_p50_ms,screenshot_first_changed_after_keydown_p50_ms,screenshot_changed_pixel_count_p50,screenshot_changed_box_overlap_target_ratio_p50
-complete keypress then wait,between-keys,990,8,8,0,8,8,14.292,22.856000065803528,32.5,0.7453703703703703
-complete keypress then wait,between-keys,1000,8,8,0,8,8,15.008000000000001,23.814000010490417,31,0.7407407407407407
-complete keypress then wait,between-keys,1300,8,8,0,8,8,16.9385,26.75349998474121,31,0.7453703703703703
-key held during delay,keyboard,990,8,8,0,8,8,25.573,36.077500104904175,23,0.7395833333333333
-key held during delay,keyboard,1000,8,8,0,8,8,15.9815,24.618000030517578,23,0.7409523809523809
-key held during delay,keyboard,1300,8,8,0,8,8,25.1895,35.87950003147125,31,0.7453703703703703
+input_mode,delay_mode,delay_ms,retained_n,decoded_n,decode_failed_n,overlap_target_n,center_in_target_n,overlap_character_n,center_in_character_n,latency_p50_ms,screenshot_first_changed_after_keydown_p50_ms,screenshot_changed_pixel_count_p50,screenshot_changed_box_overlap_target_ratio_p50,screenshot_changed_box_overlap_character_ratio_p50,typed_character_box_width_p50,typed_character_box_height_p50
+complete keypress then wait,between-keys,990,8,8,0,8,8,8,6,14.555499999999999,23.554499864578247,32.5,0.7453703703703703,0.4649419151706474,9.7890625,23
+complete keypress then wait,between-keys,1000,8,8,0,8,8,8,6,15.119,23.89049994945526,31,0.7407407407407407,0.5486964355280368,9.7890625,23
+complete keypress then wait,between-keys,1300,8,8,0,8,8,8,6,16.930999999999997,26.917500019073486,31,0.7453703703703703,0.45247183375888544,9.7890625,23
+key held during delay,keyboard,990,8,8,0,8,8,8,6,25.8505,36.318000078201294,23,0.7395833333333333,0.48208403322431836,9.7890625,23
+key held during delay,keyboard,1000,8,8,0,8,8,8,5,16.982,25.593999981880188,23,0.7409523809523809,0.49053768233647477,9.7890625,23
+key held during delay,keyboard,1300,8,8,0,8,8,8,6,25.7675,36.77649998664856,31,0.7453703703703703,0.45247183375888544,9.7890625,23

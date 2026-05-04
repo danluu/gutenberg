@@ -3624,11 +3624,21 @@ read_screenshot_pixel_runs <- function() {
 				round,
 				delay_sample_index = delaySampleIndex,
 				latency_ms = latencyMs,
+				text_length_before_run = column_or(records, "textLengthBeforeRun", NA_real_),
+				text_length_after_run = column_or(records, "textLengthAfterRun", NA_real_),
+				typed_character_text_index = column_or(records, "typedCharacterTextIndex", NA_real_),
+				typed_character_box_x = column_or(records, "typedCharacterBoxX", NA_real_),
+				typed_character_box_y = column_or(records, "typedCharacterBoxY", NA_real_),
+				typed_character_box_width = column_or(records, "typedCharacterBoxWidth", NA_real_),
+				typed_character_box_height = column_or(records, "typedCharacterBoxHeight", NA_real_),
 				screenshot_first_changed_after_keydown_ms = column_or(records, "screenshotFirstChangedAfterKeydownMs", NA_real_),
 				screenshot_changed_pixel_count = column_or(records, "screenshotChangedPixelCount", NA_real_),
 				screenshot_changed_box_overlap_target_ratio = column_or(records, "screenshotChangedBoxOverlapTargetRatio", NA_real_),
 				screenshot_changed_box_overlaps_target = column_or(records, "screenshotChangedBoxOverlapsTarget", NA),
 				screenshot_changed_box_center_in_target = column_or(records, "screenshotChangedBoxCenterInTarget", NA),
+				screenshot_changed_box_overlap_character_ratio = column_or(records, "screenshotChangedBoxOverlapCharacterRatio", NA_real_),
+				screenshot_changed_box_overlaps_character = column_or(records, "screenshotChangedBoxOverlapsCharacter", NA),
+				screenshot_changed_box_center_in_character = column_or(records, "screenshotChangedBoxCenterInCharacter", NA),
 				screenshot_pixel_diff_failed = column_or(records, "screenshotPixelDiffFailed", FALSE),
 				screenshot_pixel_diff_error = column_or(records, "screenshotPixelDiffError", NA_character_)
 			)
@@ -3654,10 +3664,15 @@ if (!is.null(screenshot_pixel_samples_from_artifacts)) {
 			decode_failed_n = sum(screenshot_pixel_diff_failed %in% TRUE, na.rm = TRUE),
 			overlap_target_n = sum(screenshot_changed_box_overlaps_target %in% TRUE, na.rm = TRUE),
 			center_in_target_n = sum(screenshot_changed_box_center_in_target %in% TRUE, na.rm = TRUE),
+			overlap_character_n = sum(screenshot_changed_box_overlaps_character %in% TRUE, na.rm = TRUE),
+			center_in_character_n = sum(screenshot_changed_box_center_in_character %in% TRUE, na.rm = TRUE),
 			latency_p50_ms = quant(latency_ms, 0.5),
 			screenshot_first_changed_after_keydown_p50_ms = quant(screenshot_first_changed_after_keydown_ms, 0.5),
 			screenshot_changed_pixel_count_p50 = quant(screenshot_changed_pixel_count, 0.5),
 			screenshot_changed_box_overlap_target_ratio_p50 = quant(screenshot_changed_box_overlap_target_ratio, 0.5),
+			screenshot_changed_box_overlap_character_ratio_p50 = quant(screenshot_changed_box_overlap_character_ratio, 0.5),
+			typed_character_box_width_p50 = quant(typed_character_box_width, 0.5),
+			typed_character_box_height_p50 = quant(typed_character_box_height, 0.5),
 			.groups = "drop"
 		)
 	write_csv(screenshot_pixel_summary, screenshot_pixel_summary_path)
@@ -3716,6 +3731,50 @@ if (file.exists(screenshot_pixel_samples_path) && file.exists(screenshot_pixel_s
 		"112-screenshot-pixel-overlap.png",
 		width = 11.5,
 		height = 7.4
+	)
+
+	screenshot_character_plot <- screenshot_pixel_samples %>%
+		select(
+			input_mode,
+			delay_label,
+			`changed-box overlap ratio with typed x` = screenshot_changed_box_overlap_character_ratio
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		)
+
+	save_plot(
+		ggplot(screenshot_character_plot, aes(delay_label, value, color = input_mode, shape = input_mode)) +
+			geom_point(
+				position = position_jitter(width = 0.09, height = 0, seed = 113),
+				size = 2.1,
+				alpha = 0.65
+			) +
+			stat_summary(
+				aes(group = input_mode),
+				fun = median,
+				geom = "point",
+				shape = 95,
+				size = 7,
+				position = position_dodge(width = 0.35),
+				color = brewer_color("Set1", 1),
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_wrap(vars(input_mode), nrow = 1) +
+			labs(
+				title = "Changed pixels overlap the exact typed-character range",
+				subtitle = "Red ticks are medians; DOM range for the inserted x, 8 retained samples per delay and input mode",
+				x = "Delay",
+				y = "Changed-box overlap ratio with typed x",
+				color = "Input mode",
+				shape = "Input mode"
+			),
+		"113-screenshot-character-overlap.png",
+		width = 11.5,
+		height = 5.4
 	)
 }
 
