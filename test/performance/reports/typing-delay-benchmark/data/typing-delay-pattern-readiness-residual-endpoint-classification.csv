@@ -1,0 +1,12 @@
+phase,resource_endpoint,resource_entries,total_duration_ms,median_duration_ms,total_transfer_size,endpoint_role,source_contract
+wait,categories,100,3773.399999856949,38.35000002384186,95700,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,navigation,20,472.89999985694885,23.950000047683716,118970,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,category taxonomy,10,245.6999998092651,25.200000047683716,23650,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,navigation fallback,10,242.80000042915344,24.09999990463257,29250,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,pages,10,233.90000009536743,23.34999990463257,17490,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,post type,10,254.4000005722046,25.65000009536743,27370,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,users,10,250.60000014305115,25.100000023841854,28256,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,menus,8,172.60000014305115,21.450000047683716,2416,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+wait,template parts,8,206.90000009536743,26.049999952316284,18928,background setup moved by wait,"Useful as readiness telemetry, but not a clean pattern-specific product predicate."
+measurement,posts,61,3499.6000006198883,52.10000014305115,518793,measured preview workload,Keep inside the measured interval; these entries belong to preview rendering after the Design / Transform click.
+measurement,categories,9,357.19999980926514,39.80000019073486,8613,measured support tail,Keep inside the measured interval unless a source-specific preview contract is added.

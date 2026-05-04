@@ -3187,6 +3187,8 @@ site_pattern_predicate_validation_samples_path <- file.path(data_dir, "typing-de
 site_pattern_predicate_validation_runs_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-runs.csv")
 site_pattern_predicate_validation_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-summary.csv")
 site_pattern_predicate_validation_resource_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-resources.csv")
+site_pattern_residual_endpoint_classification_path <- file.path(data_dir, "typing-delay-pattern-readiness-residual-endpoint-classification.csv")
+site_pattern_residual_source_signal_audit_path <- file.path(data_dir, "typing-delay-pattern-readiness-residual-source-signal-audit.csv")
 post_pattern_wait_matrix_samples_path <- file.path(data_dir, "typing-delay-post-pattern-wait-matrix-samples.csv")
 post_pattern_wait_matrix_runs_path <- file.path(data_dir, "typing-delay-post-pattern-wait-matrix-runs.csv")
 post_pattern_wait_matrix_summary_path <- file.path(data_dir, "typing-delay-post-pattern-wait-matrix-summary.csv")
@@ -3670,9 +3672,193 @@ if (!is.null(site_pattern_resource_detail)) {
 		width = 10,
 		height = 6.5
 	)
-}
+	}
 
-if (file.exists(site_pattern_alternating_wait_path)) {
+	if (
+		file.exists(site_pattern_predicate_validation_summary_path) &&
+		file.exists(site_pattern_predicate_validation_resource_path)
+	) {
+		site_pattern_predicate_summary_existing <- read_csv(
+			site_pattern_predicate_validation_summary_path,
+			show_col_types = FALSE
+		)
+		site_pattern_resource_existing <- read_csv(
+			site_pattern_predicate_validation_resource_path,
+			show_col_types = FALSE
+		)
+
+		metric_value <- function(condition_name, column_name) {
+			value <- site_pattern_predicate_summary_existing %>%
+				filter(condition == condition_name) %>%
+				pull(all_of(column_name))
+			if (length(value) == 0 || !is.finite(value[[1]])) {
+				return(NA_real_)
+			}
+			value[[1]]
+		}
+
+		fixed_0_q50 <- metric_value("fixed 0ms", "median_run_p50_ms")
+		fixed_500_q50 <- metric_value("fixed 500ms", "median_run_p50_ms")
+		fixed_1000_q50 <- metric_value("fixed 1000ms", "median_run_p50_ms")
+		pure_predicate_q50 <- metric_value("block-pattern predicate", "median_run_p50_ms")
+		quiet_predicate_q50 <- metric_value("predicate + resource quiet", "median_run_p50_ms")
+		pure_predicate_wait_resources <- metric_value("block-pattern predicate", "median_wait_resource_delta")
+		pure_predicate_measurement_resources <- metric_value("block-pattern predicate", "median_measurement_resource_delta")
+		quiet_predicate_wait_resources <- metric_value("predicate + resource quiet", "median_wait_resource_delta")
+		quiet_predicate_measurement_resources <- metric_value("predicate + resource quiet", "median_measurement_resource_delta")
+		quiet_predicate_wait_ms <- metric_value("predicate + resource quiet", "median_readiness_wait_ms")
+
+		site_pattern_residual_endpoint_classification <- site_pattern_resource_existing %>%
+			mutate(
+				endpoint_role = case_when(
+					phase == "measurement" & resource_endpoint == "posts" ~ "measured preview workload",
+					phase == "measurement" ~ "measured support tail",
+					phase == "wait" ~ "background setup moved by wait",
+					TRUE ~ "other"
+				),
+				source_contract = case_when(
+					endpoint_role == "measured preview workload" ~ "Keep inside the measured interval; these entries belong to preview rendering after the Design / Transform click.",
+					endpoint_role == "measured support tail" ~ "Keep inside the measured interval unless a source-specific preview contract is added.",
+					endpoint_role == "background setup moved by wait" ~ "Useful as readiness telemetry, but not a clean pattern-specific product predicate.",
+					TRUE ~ "Diagnostic only."
+				),
+				endpoint_role = factor(
+					endpoint_role,
+					levels = c(
+						"background setup moved by wait",
+						"measured preview workload",
+						"measured support tail",
+						"other"
+					)
+				),
+				phase = factor(phase, levels = c("wait", "measurement"))
+			) %>%
+			arrange(phase, desc(resource_entries), resource_endpoint)
+
+		write_csv(
+			site_pattern_residual_endpoint_classification,
+			site_pattern_residual_endpoint_classification_path
+		)
+
+		site_pattern_residual_endpoint_rollup <- site_pattern_residual_endpoint_classification %>%
+			group_by(endpoint_role, phase) %>%
+			summarise(
+				resource_entries = sum(resource_entries),
+				total_duration_ms = sum(total_duration_ms),
+				total_transfer_size = sum(total_transfer_size),
+				.groups = "drop"
+			) %>%
+			mutate(
+				endpoint_role = fct_reorder(endpoint_role, resource_entries, .fun = sum)
+			)
+
+		save_plot(
+			ggplot(site_pattern_residual_endpoint_rollup, aes(endpoint_role, resource_entries, fill = phase)) +
+				geom_col(alpha = 0.92, position = position_dodge(width = 0.72), width = 0.62) +
+				coord_flip() +
+				scale_fill_brewer(type = "qual", palette = "Set2", name = "Phase") +
+				labs(
+					title = "Resource quiet moves broad setup, not only pattern data",
+					subtitle = "Endpoint role classification from the diagnostic resource-quiet run",
+					x = NULL,
+					y = "Resource entries"
+				) +
+				theme(legend.position = "bottom"),
+			"176-site-pattern-residual-endpoint-classification.png",
+			width = 10.5,
+			height = 6.5
+		)
+
+		site_pattern_residual_source_signal_audit <- tribble(
+			~candidate_signal, ~signal_class, ~source_reference, ~source_evidence, ~local_validation, ~decision, ~risk_if_used_alone, ~source_specificity_score, ~ci_readiness_score, ~risk_score,
+			"`getBlockPatterns` resolution", "semantic but insufficient", "packages/editor/src/components/post-transform-panel/hooks.js:98-124; packages/core-data/src/resolvers.js:893-898", "The Transform / Design template list reads editor settings patterns plus `coreStore.getBlockPatterns()`, filters compatible template patterns, and parses their content.", sprintf("The pure predicate waited %.2fms at the median, moved %.1f resource entries before timing, left %.1f inside measurement, and reported %.1fms q50.", metric_value("block-pattern predicate", "median_readiness_wait_ms"), pure_predicate_wait_resources, pure_predicate_measurement_resources, pure_predicate_q50), "Keep as the semantic first check, but do not use it alone as the replacement wait.", "It starts the measured click while the broader editor setup tail is still inside the measurement.", 5, 2, 5,
+			"Compatible non-empty pattern list", "semantic but insufficient", "test/performance/specs/site-editor.spec.js:192-260", "The benchmark predicate mirrors `filterPatterns()` by checking compatible template patterns before the Design / Transform click.", "Every retained pure-predicate sample found 4 compatible patterns, but q50 stayed closer to fixed 0ms than to the settled fixed-wait band.", "Use as a correctness guard for the candidate predicate, not as a timing boundary.", "A non-empty list proves the UI has pattern choices, not that adjacent setup requests have drained.", 5, 2, 4,
+			"`getBlockPatternCategories` / `getUserPatternCategories`", "broad settings", "packages/editor/src/components/provider/use-block-editor-settings.js:218-265; packages/core-data/src/resolvers.js:900-933", "The editor provider resolves category settings for the broader block editor configuration.", "Moved categories dominate the wait-side resource detail, but this Transform / Design template list is built from compatible patterns, not category tabs.", "Optional telemetry only unless CI proves category readiness predicts the boundary.", "Waiting on categories can preserve old sleep semantics but is not source-specific to the measured template list.", 3, 2, 3,
+			"Resource quiet window", "engineering guardrail", "test/performance/specs/site-editor.spec.js:119-165; test/performance/specs/site-editor.spec.js:668-730", "The opt-in guard waits after the semantic predicate until resource counts are quiet before starting the measured click.", sprintf("The local guard waited %.1fms, moved %.1f resources before timing, left %.1f inside measurement, and reported %.1fms q50.", quiet_predicate_wait_ms, quiet_predicate_wait_resources, quiet_predicate_measurement_resources, quiet_predicate_q50), "Best predicate-shaped engineering candidate, but only with timeout/fallback and endpoint telemetry.", "It can become an opaque, host-dependent sleep unless the report preserves endpoint and fallback data.", 2, 4, 4,
+			"Fixed `500ms`", "fixed fallback", "test/performance/specs/site-editor.spec.js:138-165", "A shorter fixed wait preserves the current before-click measurement boundary without pretending to be source-specific.", sprintf("The local exact sweep put fixed 500ms at %.1fms versus %.1fms for fixed 1000ms and %.1fms for fixed 0ms.", fixed_500_q50, fixed_1000_q50, fixed_0_q50), "Best local fixed fallback if the predicate-shaped guard is rejected or does not validate on CI.", "Still a sleep; it should not be sold as readiness semantics.", 1, 3, 3,
+			"Preview canvases and `core/pattern` replacement", "invalid pre-wait", "test/performance/specs/site-editor.spec.js:690-724", "The current metric starts before the Design / Transform click and then waits for preview canvases and `core/pattern` replacement.", "The diagnostic resource detail shows the measured interval still contains preview-driven posts and support resources.", "Never pre-wait these in a replacement predicate unless the metric is deliberately redefined.", "It removes the workload the metric currently measures.", 5, 1, 5,
+			"Broad REST setup endpoint drain", "not a single source signal", "typing-delay-pattern-readiness-predicate-validation-resources.csv", "The moved wait-side endpoints include categories, navigation, post type, users, taxonomies, navigation fallback, pages, template parts, and menus.", "The resource-quiet run moved 186 wait-side resource entries, while the measured interval still had 70 entries, mostly posts.", "Use endpoint grouping as validation telemetry and a falsification signal, not as a product predicate.", "It can accidentally preserve unrelated setup timing and hide real preview latency changes.", 2, 4, 4
+		) %>%
+			mutate(
+				signal_class = factor(
+					signal_class,
+					levels = c(
+						"semantic but insufficient",
+						"broad settings",
+						"engineering guardrail",
+						"fixed fallback",
+						"invalid pre-wait",
+						"not a single source signal"
+					)
+				),
+				candidate_wrapped = case_when(
+					candidate_signal == "Resource quiet window" ~ "Resource quiet\nwindow",
+					candidate_signal == "Broad REST setup endpoint drain" ~ "Broad REST\nsetup drain",
+					candidate_signal == "`getBlockPatterns` resolution" ~ "`getBlockPatterns`\nresolution",
+					candidate_signal == "Compatible non-empty pattern list" ~ "Compatible\nnon-empty pattern\nlist",
+					TRUE ~ str_wrap(candidate_signal, 18)
+				),
+				plot_x = source_specificity_score + case_when(
+					candidate_signal == "`getBlockPatterns` resolution" ~ -0.16,
+					candidate_signal == "Compatible non-empty pattern list" ~ 0.16,
+					candidate_signal == "Resource quiet window" ~ -0.2,
+					candidate_signal == "Broad REST setup endpoint drain" ~ 0.2,
+					TRUE ~ 0
+				),
+				plot_y = ci_readiness_score + case_when(
+					candidate_signal == "`getBlockPatterns` resolution" ~ 0.12,
+					candidate_signal == "Compatible non-empty pattern list" ~ -0.12,
+					candidate_signal == "Resource quiet window" ~ 0.12,
+					candidate_signal == "Broad REST setup endpoint drain" ~ -0.12,
+					TRUE ~ 0
+				)
+			)
+
+		write_csv(
+			site_pattern_residual_source_signal_audit,
+			site_pattern_residual_source_signal_audit_path
+		)
+
+		save_plot(
+			ggplot(
+				site_pattern_residual_source_signal_audit,
+				aes(plot_x, plot_y, color = signal_class, size = risk_score)
+			) +
+				geom_point(alpha = 0.9) +
+				geom_text(
+					aes(label = candidate_wrapped),
+					color = "grey20",
+					size = 3.0,
+					lineheight = 0.9,
+					nudge_y = 0.18,
+					show.legend = FALSE
+				) +
+				scale_x_continuous(
+					breaks = 1:5,
+					limits = c(0.6, 5.35),
+					labels = c("1" = "sleep", "2" = "guardrail", "3" = "broad", "4" = "near", "5" = "source")
+				) +
+				scale_y_continuous(
+					breaks = 1:5,
+					limits = c(0.65, 4.55),
+					labels = c("1" = "reject", "2" = "weak", "3" = "fallback", "4" = "validate", "5" = "ready")
+				) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Signal class") +
+				scale_size_area(max_size = 7, breaks = c(3, 4, 5), name = "Risk if wrong") +
+				labs(
+					title = "No clean source-specific pattern readiness signal has been found",
+					subtitle = "The semantic pattern signal is insufficient; resource quiet is an engineering guardrail with telemetry",
+					x = "Source specificity",
+					y = "CI readiness"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"177-site-pattern-residual-source-signal-audit.png",
+			width = 12,
+			height = 7
+		)
+	}
+
+	if (file.exists(site_pattern_alternating_wait_path)) {
 	site_pattern_alternating_wait <- read_csv(site_pattern_alternating_wait_path, show_col_types = FALSE) %>%
 		mutate(
 			wait_label = factor(
@@ -18035,7 +18221,7 @@ save_plot(
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local 0ms candidate matrix.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, reported statistic, or non-local runner changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change. Validate the five interactive non-Typing 0ms candidates on CI/mac/container lanes before changing those sleeps.",
-	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract now has to be split by spec: Site Editor loadPatterns has an opt-in getBlockPatterns/resource-quiet predicate path and fixed 500ms is the best local fixed fallback, while a focused Post Editor loadPatterns matrix favors 0ms over the current fixed pre-inserter wait. A generic loadPatterns wait claim hides two different readiness contracts.", "Whether the Site Editor resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; separately, whether the Post Editor 0ms result is portable across CI/mac/container lanes without preview/canvas misses, first-iteration artifacts, or resource movement.", "Validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; validate Post Editor 0ms against 1000ms with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full loadPatterns wait savings.",
+	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract now has to be split by spec: Site Editor pure getBlockPatterns is rejected as a complete replacement, resource quiet is only an instrumented broad-REST guardrail, fixed 500ms is the best local fixed fallback, and the focused Post Editor loadPatterns matrix favors 0ms. A generic loadPatterns wait claim hides two different readiness contracts.", "Whether the Site Editor getBlockPatterns plus resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; separately, whether the Post Editor 0ms result is portable across CI/mac/container lanes without preview/canvas misses, first-iteration artifacts, or resource movement.", "Validate Site Editor getBlockPatterns plus resource quiet with timeout/fallback, endpoint groups, preview-work preservation, retained-count, q50 range, and environment telemetry; validate fixed 500ms as fallback; validate Post Editor 0ms against 1000ms with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full loadPatterns wait savings.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
 	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector and branch-aware compatibility audits narrow the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found. The branch-aware route must preserve dynamic store sets, registry-selector cross-store reads, parent registries, late store registration, render/subscription races, async queue cancellation, no-deps withSelect closures, generic stores, shallow-equality semantics, and public store-level subscribe semantics.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent and store-level subscribe notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes the branch-aware useSelect compatibility matrix plus marker-only source-span gates.",

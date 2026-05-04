@@ -746,6 +746,9 @@ The R script derives:
     validation contract for deciding whether `getBlockPatterns` plus resource
     quiet or fixed `500ms` can replace the current fixed pattern-loading wait in
     CI/mac/container lanes.
+-   `data/typing-delay-pattern-readiness-residual-*.csv`: residual audit of the
+    still-open Site Editor readiness signal question, separating semantic pattern
+    signals from broad REST setup endpoints and measured preview work.
 -   `data/typing-delay-pattern-loading-wait-scope-split-*.csv`: source-level
     split between Site Editor `loadPatterns`, Post Editor `loadPatterns`, and
     other non-Typing fixed sleeps that must not inherit the same predicate
@@ -2043,6 +2046,41 @@ telemetry. Fixed `500ms` is the fallback only if it validates in the same
 lanes. Fixed `1000ms` remains the conservative baseline if either replacement
 changes the q50 band, increases variance, times out often, or pre-waits the
 preview work that the metric is supposed to measure.
+
+I did one more source-signal audit because this is the part most likely to be
+misstated. `getBlockPatterns` is the semantic dependency for the Transform /
+Design template list, but the local validation shows it is not the timing
+boundary. The pure predicate was already resolved, moved `0` resource entries
+before timing, left about `25` inside the measurement, and reported `818.8ms`
+q50. The resource-quiet guard moved the timing boundary by waiting for broader
+editor REST setup to drain.
+
+![Site-editor pattern residual endpoint classification](figures/176-site-pattern-residual-endpoint-classification.png)
+
+![Site-editor pattern residual source signal audit](figures/177-site-pattern-residual-source-signal-audit.png)
+
+The endpoint split is the important caveat. The resource-quiet diagnostic moved
+`186` wait-side resource entries, dominated by categories, navigation, post
+type, users, taxonomies, navigation fallback, pages, template parts, and menus.
+The measured interval still had `70` entries, mostly posts, which is consistent
+with preview rendering after the Design / Transform click. That means resource
+quiet is an engineering guardrail with useful telemetry, not a clean product
+predicate. The honest implementation contract is:
+
+| Candidate signal | Source specificity | Decision |
+| ---------------- | ------------------ | -------- |
+| `getBlockPatterns` resolution plus compatible non-empty list | source-specific, but insufficient | keep as the semantic first check; not enough to replace the sleep alone |
+| Pattern category readiness | broad editor settings | optional telemetry only unless CI proves it predicts the same boundary |
+| Resource quiet window | broad guardrail | validate only with timeout/fallback, endpoint groups, and preview-work checks |
+| Fixed `500ms` | fixed fallback | best local sleep fallback if the predicate-shaped guard fails validation |
+| Preview canvases / `core/pattern` replacement | measured workload | never pre-wait these unless the metric is intentionally redefined |
+
+So the open Site Editor question is now narrower: there is no clean
+source-specific readiness signal in the evidence so far. Either validate
+`getBlockPatterns` plus resource quiet as an explicitly instrumented guardrail,
+or use fixed `500ms` as the local fixed fallback, or keep fixed `1000ms` as the
+compatibility baseline. Do not describe resource quiet as "the pattern predicate"
+without the endpoint and fallback telemetry.
 
 I then checked whether this conclusion applies to all `loadPatterns` results.
 It does not. The reporter uses the same metric name for Post Editor and Site
@@ -8523,7 +8561,7 @@ The high-level split is:
 | Question | Current answer | Next useful work |
 | -------- | -------------- | ---------------- |
 | Typing startup wait | change-trigger contract closes the operational question: current Typing has `0ms` extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local `0ms` candidate matrix | do not add a Typing startup wait under the current metric; reopen only on a trigger change; validate the five interactive non-Typing `0ms` candidates on CI/mac/container lanes before changing those sleeps; the wait-removal ledger counts these five rows as `110s` of the conservative `142s` local candidate saving |
-| Pattern-loading wait | CI validation contract has to stay split by spec: Site Editor still needs predicate/fixed-`500ms` validation, while the focused Post Editor matrix favors `0ms` over the current fixed pre-inserter wait; combined with the interaction rows, the conservative local wait-removal envelope is `142s` per two-branch comparison and the predicate envelope is about `146s` | validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; validate Post Editor `0ms` against `1000ms` with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full wait savings |
+| Pattern-loading wait | CI validation contract has to stay split by spec: Site Editor pure `getBlockPatterns` is rejected as a complete replacement, resource quiet is only an instrumented broad-REST guardrail, fixed `500ms` is the best local sleep fallback, and the focused Post Editor matrix favors `0ms`; combined with the interaction rows, the conservative local wait-removal envelope is `142s` per two-branch comparison and the predicate envelope is about `146s` | validate Site Editor `getBlockPatterns` plus resource quiet with timeout/fallback, endpoint groups, preview-work preservation, retained-count, q50 range, and environment telemetry; validate fixed `500ms` as fallback; validate Post Editor `0ms` against `1000ms` with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full wait savings |
 | Input API phase boundary | CI helper decision contract closes the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match, ordinary `locator.press()` is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition |
 | Low-risk selector guards | the pattern-override selected-only patch is implemented locally and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry, with `ControlsWithStoreSubscription` still gated to one selected controls entry; the deeper source blueprint shows the next provider prototype is only a narrow latest-attribute-action fast path unless it adds private revisions/affected sets, and the inner-blocks prototype must preserve layout/settings inheritance plus `useNestedSettingsUpdate` side effects | prototype `BlockListBlockProvider` first with public-filter, edited-block, selection, structure, editability, settings, visibility, and binding gates; prototype `useInnerBlocksProps` after that with root/drop-zone, identity/root, layout/default-layout, nested-settings, and controlled-inner-block gates; run aggregate before/after p50 only after behavior gates and source spans pass |
 | Store subscriber partition | public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private `useBlockSync` side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware `@wordpress/data` subscriptions are the only compatibility-preserving fanout route found | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates |
