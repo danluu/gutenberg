@@ -18586,6 +18586,76 @@ write_csv(
 	file.path(data_dir, "typing-delay-workload-replay-schema-contract-audit.csv")
 )
 
+workload_replay_strata_coverage_audit <- tribble(
+	~workload_stratum, ~why_required, ~minimum_event_examples, ~required_assertions, ~fixed_x_coverage, ~synthetic_readiness_score, ~product_claim_blocker_score, ~first_valid_claim, ~plot_label,
+	"Ordinary text bursts",
+	"Closest realistic version of the fixed-x typing path, but with complete-keypress/input semantics and human-like gaps.",
+	"short word bursts; paragraph continuation; idle-then-type; mixed short and long inter-key gaps",
+	"text delta, caret position, undo level, EventDispatch/source spans, visual endpoint",
+	"partial",
+	5, 2, "synthetic source attribution, recorded validation for product ranking", "text bursts",
+	"Correction and backspace",
+	"Exercises RichText deletion, selection/caret recovery, undo grouping, and different selector invalidations from pure insertion.",
+	"single backspace; selected-text replacement; word correction; undo/redo around correction",
+	"text hash, selection/caret before/after, undo level, source spans, visual endpoint",
+	"missing",
+	4, 4, "covered-stratum patch acceptance after behavior gates", "correction",
+	"Selection and navigation",
+	"Selector-guard and BlockListItems risks include selection, visibility, focus, and caret state.",
+	"arrow navigation; mouse click between blocks; select all in paragraph; block boundary navigation",
+	"selected block ids, caret/focus, visible block list, appender state, source spans",
+	"missing",
+	4, 4, "covered-stratum patch acceptance after behavior gates", "selection",
+	"Paste and transform",
+	"Real editing often enters through paste/transform paths with structural deltas and resource side effects.",
+	"plain-text paste; rich paste; transform paragraph to heading/list; multi-block paste",
+	"serialized block-tree hash, inserted/transformed block ids, selection recovery, resource markers",
+	"missing",
+	3, 5, "synthetic first, recorded before product ranking", "paste",
+	"Block insert, remove, and reorder",
+	"High-fanout block-list selectors can be correct for text but stale for structure, appender, template lock, or visibility.",
+	"insert block; remove block; drag/reorder; nested block insertion; template-locked edit attempt",
+	"block-tree hash, appender visibility, template lock/editing mode, selected block recovery",
+	"missing",
+	3, 5, "synthetic behavior gate before broad selector claims", "structure",
+	"IME and composition",
+	"Composition changes event ordering and text deltas; ordinary keypress replay cannot stand in for it.",
+	"compositionstart/update/end; multi-character input; replacement during composition",
+	"composition boundaries, inputType, text delta, caret state, source spans",
+	"missing",
+	2, 5, "recorded or browser-native pilot required", "IME",
+	"Long-session idle return",
+	"Startup-wait and CPU/QoS results show idle/system state changes first-input and repeated-key behavior.",
+	"idle after editing; autosave pending; return to existing draft; first key after long idle",
+	"session age, idle gap, autosave/REST markers, pending async markers, first-three-event distribution",
+	"partial for first-input only",
+	3, 5, "recorded or long synthetic session before product claim", "idle return",
+	"Media and pattern-heavy editing",
+	"Pattern waits, preview canvases, media/resource work, and render endpoints have different readiness and measurement boundaries.",
+	"insert pattern; transform pattern; edit media caption; pattern preview interaction",
+	"resource markers, preview/render endpoint, block-tree hash, visible result, source spans",
+	"missing",
+	3, 5, "synthetic first, CI/container validation before wait or product claims", "media/pattern",
+	"Plugin-heavy or P2-like side effects",
+	"The original report context mentioned non-vanilla lag; external subscribers, REST work, and plugin UI can dominate owner rankings.",
+	"plugin sidebar update; mention/autocomplete; collaborative or P2-like input; external data-store side effect",
+	"plugin/theme set, network/resource markers, external-store owner spans, visible plugin state",
+	"missing",
+	1, 5, "recorded plugin pilot required for product ranking", "plugin"
+) %>%
+	mutate(
+		fixed_x_coverage = factor(
+			fixed_x_coverage,
+			levels = c("partial", "partial for first-input only", "missing")
+		),
+		workload_stratum = factor(workload_stratum, levels = workload_stratum)
+	)
+
+write_csv(
+	workload_replay_strata_coverage_audit,
+	file.path(data_dir, "typing-delay-workload-replay-strata-coverage-audit.csv")
+)
+
 workload_replay_implementation_audit <- tribble(
 	~implementation_piece, ~source_surface, ~existing_capability, ~required_change, ~why_required, ~shortcut_to_avoid, ~reuse_score, ~risk_score, ~first_phase,
 	"Raw result transport",
@@ -18764,6 +18834,51 @@ save_plot(
 	"167-workload-replay-mvp-plan.png",
 	width = 12,
 	height = 6.5
+)
+
+save_plot(
+	ggplot(
+		workload_replay_strata_coverage_audit,
+		aes(
+			synthetic_readiness_score,
+			fct_rev(workload_stratum),
+			color = fixed_x_coverage,
+			shape = fixed_x_coverage,
+			size = product_claim_blocker_score
+		)
+	) +
+		geom_point(alpha = 0.94) +
+		geom_text(
+			aes(label = plot_label),
+			nudge_x = 0.1,
+			size = 2.8,
+			show.legend = FALSE,
+			check_overlap = TRUE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+		scale_shape_manual(
+			values = c(
+				"partial" = 16,
+				"partial for first-input only" = 17,
+				"missing" = 4
+			),
+			drop = FALSE
+		) +
+		scale_size_continuous(range = c(2.8, 6), breaks = 1:5) +
+		scale_x_continuous(breaks = 1:5, limits = c(0.8, 5.8)) +
+		labs(
+			title = "Fixed-x typing covers only one workload stratum well",
+			subtitle = "Higher x means easier to start synthetically; point size is the blocker for product-latency claims without recorded histories",
+			x = "synthetic replay readiness (1 = recorded pilot needed, 5 = easy synthetic start)",
+			y = NULL,
+			color = "Fixed-x coverage",
+			shape = "Fixed-x coverage",
+			size = "product-claim blocker"
+		) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"186-workload-strata-coverage-gate.png",
+	width = 12.5,
+	height = 7.6
 )
 
 portability_validation_contract_audit <- tribble(

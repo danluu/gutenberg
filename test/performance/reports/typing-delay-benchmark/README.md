@@ -987,6 +987,10 @@ The R script derives:
 -   `data/typing-delay-workload-replay-schema-contract-audit.csv`: concrete
     recording, replay, stratum, instrumentation, and acceptance schema for
     representative workload replay.
+-   `data/typing-delay-workload-replay-strata-coverage-audit.csv`: workload
+    strata gate showing which histories are covered by the fixed-`x` stressor,
+    which can start synthetically, and which require recorded sessions before
+    product-latency claims.
 -   `data/typing-delay-workload-replay-implementation-*.csv` and
     `data/typing-delay-workload-replay-mvp-plan.csv`: source-level audit of how
     representative replay should plug into the current Playwright performance
@@ -8563,6 +8567,34 @@ The minimum useful strata are no longer ambiguous:
 | Long-session idle return | preserve session age, idle gap, autosave state, and pending async work markers |
 | Plugin-heavy/P2-like side effects | record plugin/theme set, plugin-visible state changes, network/resource markers, and owner spans |
 
+I also split those strata by what the current fixed-`x` benchmark actually
+covers. This is the important product-claim gate: the fixed stressor is useful
+for ordinary text insertion source attribution, and it has partial first-input
+idle coverage, but most real editing strata are missing.
+
+![Workload strata coverage gate](figures/186-workload-strata-coverage-gate.png)
+
+| Workload stratum | Fixed-`x` coverage | First useful claim |
+| ---------------- | ------------------ | ------------------ |
+| Ordinary text bursts | partial | synthetic source attribution, recorded validation for product ranking |
+| Correction/backspace | missing | covered-stratum patch acceptance after behavior gates |
+| Selection/navigation | missing | covered-stratum patch acceptance after behavior gates |
+| Paste/transform | missing | synthetic first, recorded before product ranking |
+| Block insert/remove/reorder | missing | synthetic behavior gate before broad selector claims |
+| IME/composition | missing | recorded or browser-native pilot required |
+| Long-session idle return | partial for first input only | recorded or long synthetic session before product claim |
+| Media/pattern-heavy editing | missing | synthetic first, CI/container validation before wait or product claims |
+| Plugin-heavy/P2-like side effects | missing | recorded plugin pilot required for product ranking |
+
+That closes a common shortcut. A selector or subscriber patch can be evaluated
+against fixed-`x` insertion as an artifact/source-boundary patch, but it cannot be
+called a general product-latency win until the affected strata either improve or
+stay neutral with passing behavior assertions. The first synthetic replay should
+start with ordinary text, correction, selection, paste, and block-structure
+strata because they are implementable with current helpers. IME, long-session
+idle return, and plugin-heavy/P2-like rows need recorded or much more specialized
+pilots before they can support product-ranking language.
+
 Every replay sample should attach the same source attribution that made the
 fixed stressor useful: RichText spans, Redux/useSelect owner metadata,
 EventDispatch slices, async queue markers, and at least one visual or behavior
@@ -8751,7 +8783,7 @@ The high-level split is:
 | Chromium runtime checkpoint | harness-gap, falsification, and protocol-sidecar audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
 | CPU/QoS mechanism | local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but a root run without retained-key/helper/renderer/collector joins would still only prove class-level correlation | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split |
 | Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
-| Human/plugin workload | workload schema audit now has a source-level implementation plan: the current harness can reuse raw attachments, the custom reporter, Metrics tracing, fixture loaders, editor helpers, and `pressKeys`, but it still needs an event-record sidecar, manifest-driven executor, assertion packs, and an opt-in recorder before product-latency ranking is valid | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; do not treat another fixed-x q50 array as representative replay |
+| Human/plugin workload | workload schema plus strata-coverage audits now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion only partially covers ordinary text bursts and first-input idle return, while correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata are missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, and plugin-heavy/P2-like histories |
 | Portability of absolute numbers | portability runbook and CI workflow-boundary audits now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed and published, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and I found no in-repo numeric performance fail threshold | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |
 
 This is the practical answer to "what is still open?" The main causal story for
