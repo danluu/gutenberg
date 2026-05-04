@@ -1106,6 +1106,13 @@ The R script derives:
     scores used for the reopen-trigger heatmap.
 -   `data/typing-delay-open-question-reopen-trigger-summary.csv`: rollup of
     primary reopen-trigger classes by current claim status.
+-   `data/typing-delay-open-question-outcome-decision-matrix.csv`: pass/fail/mixed
+    outcome rules for the remaining open-question artifacts.
+-   `data/typing-delay-open-question-outcome-decision-long.csv`: long-form
+    decision-impact, artifact-burden, and ambiguity-risk scores used for the
+    outcome-decision heatmap.
+-   `data/typing-delay-open-question-outcome-decision-summary.csv`: rollup of
+    outcome-decision artifacts by claim lane and artifact class.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9701,6 +9708,32 @@ absolutely require a small exact-spec recheck of the benchmark artifact. But
 mechanism, workload, display, and policy unknowns should not reopen the local
 cliff explanation; they should only block or narrow claims that depend on those
 missing observers.
+
+The outcome-decision matrix is the last anti-rationalization guard for this set
+of open questions. It defines what a pass, fail, or mixed result means before the
+next artifact is collected. That matters because the highest-pressure rows are
+also the easiest to over-interpret: store partition, pass/fail policy, product
+workload, and pattern readiness can all produce partial evidence that would be
+tempting to call a weak pass.
+
+![Open question outcome decision matrix](figures/230-open-question-outcome-decision-matrix.png)
+
+![Open question outcome pressure](figures/231-open-question-outcome-pressure.png)
+
+| Claim | Pass means | Fail means | Mixed means |
+| ----- | ---------- | ---------- | ----------- |
+| Benchmark artifact recheck | keep the local held-key cliff and held-key/tap metric split | reopen only the changed measurement trigger | split by helper, browser, trace placement, throwaway policy, or statistic |
+| Typing startup wait | do not add a startup wait for retained q50 | block wait removal or split first-input from retained q50 | keep the policy only for passing lanes and report first-input separately |
+| Pattern wait replacement | reduce or replace the wait only for the passing spec/lane/fallback policy | keep the current wait or fixed fallback for the failing lane | split Site Editor, Post Editor, predicate, and fixed-sleep claims |
+| Source prototypes | cite a source optimization only after behavior, source-span, and aggregate gates pass | reject or re-scope the patch before citing aggregate timing | ship or discuss only the owner whose gates passed |
+| Runtime and CPU/QoS mechanism names | name only the joined runtime/counter field that separates retained-key classes | keep the result empirical | name the passing field and leave the rest unresolved |
+| Product/display claims | widen only to passing strata or external endpoints | keep fixed-`x` or Chromium-internal wording | state the deepest passing stratum or endpoint |
+| CI pass/fail prediction | predict pass/fail only under documented policy | report q50 movement as evidence but not a gate | separate repository artifact production from external dashboard/reviewer policy |
+
+This turns the remaining open questions into predeclared decision rules. A mixed
+artifact should narrow the scope of the claim, not become a compromise
+conclusion. A failed mechanism or display artifact should not weaken the local
+benchmark result; it only blocks the broader mechanism or display wording.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

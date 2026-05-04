@@ -23944,6 +23944,135 @@ save_plot(
 	height = 7.8
 )
 
+open_question_outcome_decision_matrix <- tribble(
+	~claim, ~lane, ~artifact, ~decision_impact, ~artifact_burden, ~ambiguity_risk, ~pass_meaning, ~fail_meaning, ~mixed_meaning, ~decisive_observation, ~invalid_shortcut,
+	"Benchmark artifact recheck", "Benchmark artifact", "Exact-spec helper/browser/statistic control", 5, 1, 1, "Continue to state the local held-key cliff and held-key/tap metric split.", "Reopen only the changed measurement trigger and restate the benchmark boundary.", "Split the result by helper, browser, trace placement, throwaway policy, or reported statistic.", "Matched held-key, tap, and control rows preserve the known qualitative ordering.", "Using mechanism uncertainty to reopen unchanged metric semantics.",
+	"Typing startup wait", "CI/readiness", "Compact Performance Tests topology artifact", 4, 3, 3, "Do not add a Typing startup wait for retained q50.", "Block wait removal or split first-input from retained-q50 metrics.", "Keep current wait policy only for passing lanes and make first-input a separate metric.", "Raw retained rows preserve local ordering, retained counts, failures, first-key tails, and resources.", "A stable local q50 without CI failure/resource metadata.",
+	"Pattern wait replacement", "CI/readiness", "Per-spec readiness/resource artifact", 4, 3, 4, "Replace or reduce the sleep only for the passing spec/lane/fallback policy.", "Keep the current wait or fixed fallback for the failing spec/lane.", "Split Site Editor, Post Editor, predicate, and fixed-sleep claims.", "Readiness, resource quiet, preview/canvas behavior, and retained q50 all pass in target topology.", "Calling getBlockPatterns or fixed 500ms safe from aggregate q50 alone.",
+	"Low-risk selector guard", "Source/code", "Behavior-gated source prototype", 4, 3, 3, "Cite the source optimization after behavior gates, source-span collapse, and aggregate movement all pass.", "Reject or re-scope the patch before citing aggregate timing.", "Ship or discuss only the owner whose behavior/source gates passed.", "Behavior fixtures pass and the targeted source span/fanout collapses before aggregate p50 is interpreted.", "Treating listener-count or p50 movement as semantic safety.",
+	"Store subscriber partition", "Source/code", "Compatibility plus fanout-collapse prototype", 5, 4, 4, "Proceed only if public semantics and persistence-selector compatibility survive.", "Keep root notification semantics or narrow to a private side channel without a fanout claim.", "Restrict the claim to compatible selector classes and leave public subscribers unchanged.", "Public subscribe, persistence selector, cross-store, async, and marker-only fanout gates all pass.", "Breaking documented subscriber behavior for a marker-only win.",
+	"Runtime mechanism name", "Sidecar/mechanism", "Trace-off protocol sidecar", 3, 5, 4, "Name only the joined runtime field that separates fast and slow retained keys.", "Keep the checkpoint result empirical and do not name V8/scheduler state.", "Report the narrow separated field and leave the rest as unresolved runtime state.", "A trace-off sidecar preserves ordering and joins a differentiating runtime state to retained keys.", "More JS delay rows or trace-on snapshots without a stable sidecar.",
+	"CPU/QoS mechanism name", "CPU/QoS", "Sidecar plus root powermetrics bundle", 3, 5, 4, "Name only counters that separate retained classes without perturbing ordering.", "Downgrade to empirical CPU-state sensitivity.", "Name the passing counter family and keep other system mechanisms open.", "Joined frequency, residency, QoS, wait, cache, or power counters separate fast/slow classes.", "Calling aggregate latency classes P-core, frequency, or QoS causes.",
+	"Product workload generalization", "Claim expansion", "Workload replay strata", 4, 4, 4, "Generalize only to strata that reproduce the fixed-x owner/effect pattern.", "Keep fixed-x as benchmark/source evidence and reject product-wide wording.", "Report per-stratum claims and preserve fixed-x as a control.", "Replay assertions pass and per-stratum source spans/endpoints match the claimed product behavior.", "One aggregate product-latency number without replay assertions.",
+	"External presentation claim", "Claim expansion", "Calibrated external endpoint ladder", 3, 5, 4, "Widen only to external endpoints that preserve the internal endpoint ordering.", "Keep claims scoped to Chromium-internal visual propagation.", "State the deepest endpoint that agrees and leave display/hardware timing open.", "OCR, compositor/present, or camera endpoints join to retained keys and preserve ordering.", "Treating screenshots, Paint, or DrawFrame as hardware display latency.",
+	"Absolute q50 portability", "External policy", "Real topology portability artifact", 4, 3, 4, "Use CI artifacts for absolute numbers and variance claims within the passing topology.", "Keep local q50 as local ordering only.", "Scope q50 portability by runner/browser/container lane.", "Raw CI q25/q50/q75/cnt, per-run order, first-key tails, failures, and environment metadata agree.", "Local macOS q50 movement as a CI threshold surrogate.",
+	"CI pass/fail prediction", "External policy", "Policy join against archived CI artifacts", 4, 4, 5, "Predict pass/fail only under the documented threshold and noisy-metric policy.", "Report q50 movement as evidence but not a gate.", "Separate repository artifact production from external dashboard/reviewer policy.", "Documented dashboard or reviewer rules join to archived raw q50/base-q50 artifacts.", "Repository-local q50 display as a pass/fail rule."
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		claim_label = str_wrap(claim, width = 28),
+		artifact_label = str_wrap(artifact, width = 30),
+		decision_pressure = decision_impact * ambiguity_risk,
+		net_actionability = decision_impact + ambiguity_risk - artifact_burden,
+		outcome_class = case_when(
+			artifact_burden >= 5 ~ "new observer required",
+			artifact_burden >= 4 ~ "prototype or policy artifact",
+			artifact_burden >= 3 ~ "target topology artifact",
+			TRUE ~ "small trigger check"
+		),
+		outcome_class = factor(
+			outcome_class,
+			levels = c("small trigger check", "target topology artifact", "prototype or policy artifact", "new observer required")
+		)
+	)
+
+open_question_outcome_decision_long <- open_question_outcome_decision_matrix %>%
+	select(claim, claim_label, lane, decision_impact, artifact_burden, ambiguity_risk) %>%
+	pivot_longer(
+		cols = c(decision_impact, artifact_burden, ambiguity_risk),
+		names_to = "dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		dimension = recode(
+			dimension,
+			decision_impact = "decision impact",
+			artifact_burden = "artifact burden",
+			ambiguity_risk = "ambiguity risk"
+		),
+		dimension = factor(dimension, levels = c("decision impact", "artifact burden", "ambiguity risk")),
+		claim_label = fct_reorder(claim_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_outcome_decision_summary <- open_question_outcome_decision_matrix %>%
+	count(lane, outcome_class, name = "claims") %>%
+	group_by(lane) %>%
+	mutate(lane_claims = sum(claims)) %>%
+	ungroup()
+
+write_csv(
+	open_question_outcome_decision_matrix %>%
+		select(
+			claim,
+			lane,
+			artifact,
+			decision_impact,
+			artifact_burden,
+			ambiguity_risk,
+			decision_pressure,
+			net_actionability,
+			outcome_class,
+			pass_meaning,
+			fail_meaning,
+			mixed_meaning,
+			decisive_observation,
+			invalid_shortcut
+		),
+	file.path(data_dir, "typing-delay-open-question-outcome-decision-matrix.csv")
+)
+
+write_csv(
+	open_question_outcome_decision_long,
+	file.path(data_dir, "typing-delay-open-question-outcome-decision-long.csv")
+)
+
+write_csv(
+	open_question_outcome_decision_summary,
+	file.path(data_dir, "typing-delay-open-question-outcome-decision-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_outcome_decision_long,
+		aes(dimension, claim_label, fill = score)
+	) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.9, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Score") +
+		labs(
+			title = "Open questions need outcome rules before the next artifact is run",
+			subtitle = "A mixed result should narrow the claim, not become a weak pass",
+			x = "Decision dimension",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"230-open-question-outcome-decision-matrix.png",
+	width = 12.8,
+	height = 8.0
+)
+
+save_plot(
+	ggplot(
+		open_question_outcome_decision_matrix %>%
+			mutate(claim_label = fct_reorder(claim_label, decision_pressure)),
+		aes(decision_pressure, claim_label, fill = outcome_class)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Next artifact") +
+		labs(
+			title = "High-pressure open questions are not all near-term actions",
+			subtitle = "Pressure is highest where a broad claim would be ambiguous without a new artifact",
+			x = "Decision pressure",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"231-open-question-outcome-pressure.png",
+	width = 12.4,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

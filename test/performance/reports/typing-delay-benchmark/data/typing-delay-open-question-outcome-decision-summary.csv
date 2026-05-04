@@ -1,0 +1,11 @@
+lane,outcome_class,claims,lane_claims
+Benchmark artifact,small trigger check,1,1
+CI/readiness,target topology artifact,2,2
+Source/code,target topology artifact,1,2
+Source/code,prototype or policy artifact,1,2
+Sidecar/mechanism,new observer required,1,1
+CPU/QoS,new observer required,1,1
+Claim expansion,prototype or policy artifact,1,2
+Claim expansion,new observer required,1,2
+External policy,target topology artifact,1,2
+External policy,prototype or policy artifact,1,2

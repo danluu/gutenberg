@@ -1,0 +1,37 @@
+claim,claim_label,lane,dimension,score
+Benchmark artifact recheck,Benchmark artifact recheck,Benchmark artifact,decision impact,5
+Benchmark artifact recheck,Benchmark artifact recheck,Benchmark artifact,artifact burden,1
+Benchmark artifact recheck,Benchmark artifact recheck,Benchmark artifact,ambiguity risk,1
+Typing startup wait,Typing startup wait,CI/readiness,decision impact,4
+Typing startup wait,Typing startup wait,CI/readiness,artifact burden,3
+Typing startup wait,Typing startup wait,CI/readiness,ambiguity risk,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,decision impact,4
+Pattern wait replacement,Pattern wait replacement,CI/readiness,artifact burden,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,ambiguity risk,4
+Low-risk selector guard,Low-risk selector guard,Source/code,decision impact,4
+Low-risk selector guard,Low-risk selector guard,Source/code,artifact burden,3
+Low-risk selector guard,Low-risk selector guard,Source/code,ambiguity risk,3
+Store subscriber partition,Store subscriber partition,Source/code,decision impact,5
+Store subscriber partition,Store subscriber partition,Source/code,artifact burden,4
+Store subscriber partition,Store subscriber partition,Source/code,ambiguity risk,4
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,decision impact,3
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,artifact burden,5
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,ambiguity risk,4
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,decision impact,3
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,artifact burden,5
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,ambiguity risk,4
+Product workload generalization,"Product workload
+generalization",Claim expansion,decision impact,4
+Product workload generalization,"Product workload
+generalization",Claim expansion,artifact burden,4
+Product workload generalization,"Product workload
+generalization",Claim expansion,ambiguity risk,4
+External presentation claim,External presentation claim,Claim expansion,decision impact,3
+External presentation claim,External presentation claim,Claim expansion,artifact burden,5
+External presentation claim,External presentation claim,Claim expansion,ambiguity risk,4
+Absolute q50 portability,Absolute q50 portability,External policy,decision impact,4
+Absolute q50 portability,Absolute q50 portability,External policy,artifact burden,3
+Absolute q50 portability,Absolute q50 portability,External policy,ambiguity risk,4
+CI pass/fail prediction,CI pass/fail prediction,External policy,decision impact,4
+CI pass/fail prediction,CI pass/fail prediction,External policy,artifact burden,4
+CI pass/fail prediction,CI pass/fail prediction,External policy,ambiguity risk,5
