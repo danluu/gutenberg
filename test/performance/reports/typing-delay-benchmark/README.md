@@ -330,6 +330,12 @@ The short version:
 -   A marker-plus-input cycle check in the trace-heavy run confirms the same
     accounting story: the normal marker has a lower next-input slice than no-op,
     but a higher marker-plus-input cycle cost.
+-   A new opt-in visual proxy records keydown, `input`, mutation, next RAF, and
+    second RAF in the editor canvas. It is not a calibrated paint timestamp, but
+    it answers whether the cliff is purely a trace-slice artifact. It is not:
+    key-held `1000ms` drops from `33.0ms` / `31.9ms` keydown-to-second-RAF at
+    `990ms` / `1300ms` to `20.4ms`, while complete-keypress-then-wait stays low
+    at `11.9-13.5ms`.
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -394,6 +400,8 @@ run:
 -   event-listener invocation tracing;
 -   source-level RichText span tracing;
 -   source-level data registry / `useSelect` span tracing;
+-   opt-in visual-latency proxy tracing for keydown, `input`, mutation, next RAF,
+    and second RAF in the editor canvas;
 -   alternate delay modes:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
@@ -583,6 +591,9 @@ The R script derives:
     the marker-intervention span runs.
 -   `data/typing-delay-marker-path-*.csv`: source-level `useBlockSync()` parent
     path samples and summaries for the marker intervention runs.
+-   `data/typing-delay-visual-latency-*.csv`: opt-in visual proxy samples and
+    summaries for keydown-to-input and keydown/input-to-RAF timing in the editor
+    canvas.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -4262,6 +4273,54 @@ Selected p50s:
 | thousand paragraphs      |  `990ms` | `13.798ms` |
 | thousand paragraphs      | `1010ms` |  `5.551ms` |
 
+## Input-To-Frame Proxy
+
+The most user-facing open question was whether the trace/listener/EventDispatch
+shape says anything about the visual path. I added an opt-in
+`BENCHMARK_TRACE_VISUAL_LATENCY=1` probe that records, per synthetic key:
+
+-   parent-frame keydown on the editor iframe;
+-   editor-canvas `input`;
+-   first DOM mutation observed in the editor canvas;
+-   the next `requestAnimationFrame` after input; and
+-   the second `requestAnimationFrame` after input.
+
+This is still not a calibrated paint timestamp. RAF callbacks run before a
+browser paint, and the second RAF is only a practical browser-frame proxy. It is
+also still synthetic Playwright input. But it is a better endpoint than
+EventDispatch alone because it crosses the editor-canvas input and frame
+scheduling boundary.
+
+I ran the visual proxy on the same large-post setup for the two important input
+modes, using `990ms`, `1000ms`, and `1300ms`, with 3 rounds and 8 retained
+samples per delay.
+
+![Visual latency summary](figures/105-visual-latency-summary.png)
+
+![Visual latency distribution](figures/106-visual-latency-distribution.png)
+
+| Input mode | Delay | EventDispatch p50 | keydown-to-input p50 | keydown-to-second-RAF p50 |
+| ---------- | ----: | ----------------: | -------------------: | ------------------------: |
+| key held during delay | `990ms` | `25.3ms` | `4.4ms` | `33.0ms` |
+| key held during delay | `1000ms` | `13.8ms` | `1.5ms` | `20.4ms` |
+| key held during delay | `1300ms` | `24.8ms` | `4.5ms` | `31.9ms` |
+| complete keypress then wait | `990ms` | `10.5ms` | `1.0ms` | `11.9ms` |
+| complete keypress then wait | `1000ms` | `10.4ms` | `1.0ms` | `12.8ms` |
+| complete keypress then wait | `1300ms` | `12.0ms` | `1.1ms` | `13.5ms` |
+
+This disconfirms the strongest "Chrome EventDispatch accounting only" reading.
+The `1000ms` key-hold drop is visible not only in the trace slice, but also in
+the editor-canvas input-to-frame proxy: keydown-to-second-RAF drops by about
+`12-13ms` at `1000ms` compared with `990ms` and `1300ms`. The complete-keypress
+then wait mode does not show that cliff and stays close to `12-14ms` in the
+same proxy.
+
+The honest caveat is that this still does not prove what a user sees on screen.
+It narrows the gap: the anomaly reaches the browser-frame scheduling boundary,
+but a real input-to-paint metric would need Chrome paint/compositor events,
+DOM/layout/paint instrumentation, screenshots/pixel observation, or camera-style
+calibration.
+
 ## Trace Grouping Bug Avoided
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
@@ -4310,9 +4369,9 @@ metric.
 
 Known problems:
 
--   **It still measures trace-event handler duration, not input-to-paint.** The
-    user-visible latency question needs a DOM/layout/paint or screen-observation
-    endpoint.
+-   **It still does not have a calibrated input-to-paint endpoint.** The new visual
+    proxy reaches editor-canvas input, mutation, and RAF boundaries, but it is not
+    a paint/compositor timestamp or a screen-observation measurement.
 -   **Synthetic keyboard input is not real keyboard input.** Playwright's
     `page.keyboard.type()` is useful, but it is not a hardware-to-screen pipeline.
 -   **There are now multiple delay modes.** This is useful for diagnosis, but any
@@ -4448,10 +4507,13 @@ input path, not one bad selector or one browser trace accounting quirk. Proving
 that final layer would need hardware/browser-level instrumentation, not another
 small variation of the JS benchmark.
 
-The most user-facing open question is still input-to-paint. This report mostly
-measures trace/listener/event slices. That is good for attribution, but it does
-not say how much of the measured difference reaches the screen, especially after
-layout/paint/compositing and React rendering.
+The most user-facing open question is narrower now. The new visual proxy shows
+that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:
+keydown-to-second-RAF falls from about `33ms` / `32ms` at `990ms` / `1300ms` to
+`20ms` at `1000ms`. That disconfirms the strongest "EventDispatch trace
+accounting only" theory. What remains open is calibrated input-to-paint: RAF is a
+frame proxy, not a compositor/pixel timestamp, so a final user-visible answer
+still needs paint/compositor instrumentation or screen-observation calibration.
 
 ## Recommendations
 
@@ -4500,8 +4562,9 @@ For investigation:
     undo, and block insertion.
 -   Keep the native baseline and add more minimal editor-like baselines to
     estimate browser/editor overhead.
--   Add input-to-paint instrumentation, or calibrate with high-speed camera data
-    for bench runs.
+-   Extend the visual proxy to a calibrated input-to-paint endpoint, or calibrate
+    it with paint/compositor traces, screenshots, or high-speed camera data for
+    benchmark runs.
 -   Repeat source-level attribution on Safari and Firefox if comparable tooling
     is available.
 -   Repeat with plugin-heavy editor setups if long-session lag is suspected there.
@@ -4557,6 +4620,10 @@ The key runs used in this report were:
     browser, timer, and listener trace at `990ms`, `1000ms`, and `1010ms`.
 -   `mode_trace_keyhold`: paired trace for normal Playwright key-hold delay.
 -   `mode_trace_between_keys`: paired trace for complete keypress, then wait.
+-   `visual_keyhold`: normal Playwright key-hold delay at `990ms`, `1000ms`,
+    and `1300ms`, with opt-in keydown/input/mutation/RAF visual proxy tracing.
+-   `visual_between_keys`: complete keypress, then wait at `990ms`, `1000ms`,
+    and `1300ms`, with the same visual proxy tracing.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer
     and normal Playwright key-hold delay.
 -   `native_between_keys_timer`: native `contenteditable` with a `1000ms` input

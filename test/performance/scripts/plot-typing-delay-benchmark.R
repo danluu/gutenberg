@@ -2984,6 +2984,200 @@ if (file.exists(site_pattern_short_wait_runs_path) && file.exists(site_pattern_s
 	)
 }
 
+visual_latency_samples_path <- file.path(data_dir, "typing-delay-visual-latency-samples.csv")
+visual_latency_summary_path <- file.path(data_dir, "typing-delay-visual-latency-summary.csv")
+
+read_visual_latency_runs <- function() {
+	raw_specs <- tribble(
+		~input_mode, ~delay_mode, ~json_dir,
+		"key held during delay", "keyboard", file.path(repo_root, "test/performance/artifacts/typing-delay-visual-keyhold"),
+		"complete keypress then wait", "between-keys", file.path(repo_root, "test/performance/artifacts/typing-delay-visual-between-keys")
+	) %>%
+		filter(dir.exists(json_dir))
+
+	if (nrow(raw_specs) == 0) {
+		return(NULL)
+	}
+
+	rows <- list()
+	for (i in seq_len(nrow(raw_specs))) {
+		spec <- raw_specs[i, ]
+		json_files <- list.files(spec$json_dir, pattern = "^typing-delay-benchmark-.*\\.json$", full.names = TRUE)
+		if (length(json_files) == 0) {
+			next
+		}
+		raw <- fromJSON(json_files[[1]], flatten = TRUE)
+		if (is.null(raw$records)) {
+			next
+		}
+
+		rows[[length(rows) + 1]] <- as_tibble(raw$records) %>%
+			filter(!isThrowaway) %>%
+			transmute(
+				input_mode = spec$input_mode,
+				delay_mode = spec$delay_mode,
+				delay_ms = delayMs,
+				round,
+				delay_sample_index = delaySampleIndex,
+				latency_ms = latencyMs,
+				keypress_ms = keypressMs,
+				keydown_ms = keydownMs,
+				keyup_ms = keyupMs,
+				visual_window_name = visualWindowName,
+				visual_input_window_name = visualInputWindowName,
+				visual_mutation_window_name = visualMutationWindowName,
+				visual_keydown_to_input_ms = visualKeydownToInputMs,
+				visual_keydown_to_first_mutation_ms = visualKeydownToFirstMutationMs,
+				visual_input_to_first_raf_ms = visualInputToFirstRafMs,
+				visual_input_to_second_raf_ms = visualInputToSecondRafMs,
+				visual_keydown_to_first_raf_ms = visualKeydownToFirstRafAfterInputMs,
+				visual_keydown_to_second_raf_ms = visualKeydownToSecondRafAfterInputMs
+			)
+	}
+
+	if (length(rows) == 0) {
+		return(NULL)
+	}
+
+	bind_rows(rows)
+}
+
+visual_latency_samples_from_artifacts <- read_visual_latency_runs()
+if (!is.null(visual_latency_samples_from_artifacts)) {
+	visual_latency_samples <- visual_latency_samples_from_artifacts
+	write_csv(visual_latency_samples, visual_latency_samples_path)
+
+	visual_latency_summary <- visual_latency_samples %>%
+		group_by(input_mode, delay_mode, delay_ms) %>%
+		summarise(
+			retained_n = n(),
+			latency_p50_ms = quant(latency_ms, 0.5),
+			latency_p90_ms = quant(latency_ms, 0.9),
+			latency_sd_ms = sd(latency_ms),
+			keypress_p50_ms = quant(keypress_ms, 0.5),
+			visual_keydown_to_input_p50_ms = quant(visual_keydown_to_input_ms, 0.5),
+			visual_keydown_to_first_mutation_p50_ms = quant(visual_keydown_to_first_mutation_ms, 0.5),
+			visual_input_to_first_raf_p50_ms = quant(visual_input_to_first_raf_ms, 0.5),
+			visual_input_to_second_raf_p50_ms = quant(visual_input_to_second_raf_ms, 0.5),
+			visual_keydown_to_first_raf_p50_ms = quant(visual_keydown_to_first_raf_ms, 0.5),
+			visual_keydown_to_second_raf_p50_ms = quant(visual_keydown_to_second_raf_ms, 0.5),
+			visual_keydown_to_second_raf_p90_ms = quant(visual_keydown_to_second_raf_ms, 0.9),
+			visual_keydown_to_second_raf_sd_ms = sd(visual_keydown_to_second_raf_ms),
+			missing_visual_input = sum(is.na(visual_keydown_to_input_ms)),
+			missing_visual_second_raf = sum(is.na(visual_keydown_to_second_raf_ms)),
+			.groups = "drop"
+		)
+	write_csv(visual_latency_summary, visual_latency_summary_path)
+}
+
+if (file.exists(visual_latency_samples_path) && file.exists(visual_latency_summary_path)) {
+	visual_latency_samples <- read_csv(visual_latency_samples_path, show_col_types = FALSE) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms"))
+		)
+	visual_latency_summary <- read_csv(visual_latency_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			)
+		)
+
+	visual_latency_summary_plot <- visual_latency_summary %>%
+		transmute(
+			input_mode,
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms")),
+			`EventDispatch trace latency` = latency_p50_ms,
+			`keypress trace slice` = keypress_p50_ms,
+			`keydown to input event` = visual_keydown_to_input_p50_ms,
+			`keydown to next RAF after input` = visual_keydown_to_first_raf_p50_ms,
+			`keydown to second RAF after input` = visual_keydown_to_second_raf_p50_ms
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"EventDispatch trace latency",
+					"keypress trace slice",
+					"keydown to input event",
+					"keydown to next RAF after input",
+					"keydown to second RAF after input"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(visual_latency_summary_plot, aes(delay_label, value, color = input_mode, shape = input_mode)) +
+			geom_point(size = 3.0, alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "The 1000ms key-hold drop appears in the next-frame proxy too",
+				subtitle = "Opt-in visual proxy records input, mutation, next RAF, and second RAF; 24 retained samples per point",
+				x = "Delay",
+				y = "p50 duration",
+				color = "Input mode",
+				shape = "Input mode"
+			),
+		"105-visual-latency-summary.png",
+		width = 9.6,
+		height = 10.8
+	)
+
+	visual_latency_distribution_plot <- visual_latency_samples %>%
+		select(
+			input_mode,
+			delay_label,
+			`EventDispatch trace latency` = latency_ms,
+			`keydown to second RAF after input` = visual_keydown_to_second_raf_ms
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		)
+
+	save_plot(
+		ggplot(visual_latency_distribution_plot, aes(delay_label, value, color = input_mode)) +
+			geom_point(
+				position = position_jitter(width = 0.09, height = 0, seed = 53),
+				size = 1.8,
+				alpha = 0.55
+			) +
+			stat_summary(
+				aes(group = input_mode),
+				fun = median,
+				geom = "point",
+				shape = 95,
+				size = 7,
+				position = position_dodge(width = 0.35),
+				color = brewer_color("Set1", 1),
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_grid(metric ~ input_mode, scales = "free_y") +
+			labs(
+				title = "Visual proxy preserves the key-hold shape across samples",
+				subtitle = "Red ticks are medians; the second-RAF metric is a browser-frame proxy, not a calibrated paint timestamp",
+				x = "Delay",
+				y = NULL,
+				color = "Input mode"
+			),
+		"106-visual-latency-distribution.png",
+		width = 11.5,
+		height = 7.8
+	)
+}
+
 if (file.exists(ci_dense_n50_summary_path)) {
 	ci_held_key_delay_runtime_reliability <- read_csv(ci_dense_n50_summary_path, show_col_types = FALSE) %>%
 		transmute(

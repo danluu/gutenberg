@@ -93,6 +93,9 @@ const traceSchedulers =
 const traceGapEvents =
 	process.env.BENCHMARK_TRACE_GAP_EVENTS === '1' ||
 	process.env.BENCHMARK_TRACE_GAP_EVENTS === 'true';
+const traceVisualLatency =
+	process.env.BENCHMARK_TRACE_VISUAL_LATENCY === '1' ||
+	process.env.BENCHMARK_TRACE_VISUAL_LATENCY === 'true';
 const freshEditorPerDelay =
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === '1' ||
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === 'true';
@@ -581,6 +584,269 @@ function installDataSpanTracing() {
 	} );
 	window.setInterval( installInChildFrames, 50 );
 	window.__typingBenchmarkDataSpanFrameObserverInstalled = true;
+}
+
+function installVisualLatencyTracing() {
+	if ( window.__typingBenchmarkVisualLatencyTracingInstalled ) {
+		window.__typingBenchmarkVisualLatencyEvents =
+			window.__typingBenchmarkVisualLatencyEvents || [];
+		return;
+	}
+
+	window.__typingBenchmarkVisualLatencyEvents = [];
+	let nextId = 0;
+	const pendingRecords = [];
+	window.__typingBenchmarkResetVisualLatencyTracing = () => {
+		window.__typingBenchmarkVisualLatencyEvents = [];
+		pendingRecords.length = 0;
+		nextId = 0;
+	};
+
+	function now() {
+		return performance.now();
+	}
+
+	function targetLabel( target ) {
+		if ( target === window ) {
+			return 'window';
+		}
+		if ( target === document ) {
+			return 'document';
+		}
+		if ( target?.nodeType !== Node.ELEMENT_NODE ) {
+			return target?.constructor?.name || String( target );
+		}
+		const id = target.id ? `#${ target.id }` : '';
+		const className =
+			typeof target.className === 'string' && target.className
+				? `.${ target.className
+						.trim()
+						.split( /\s+/ )
+						.slice( 0, 3 )
+						.join( '.' ) }`
+				: '';
+		const role = target.getAttribute?.( 'role' )
+			? `[role="${ target.getAttribute( 'role' ) }"]`
+			: '';
+		return `${ target.tagName.toLowerCase() }${ id }${ className }${ role }`;
+	}
+
+	function textLength( target ) {
+		if ( typeof target?.value === 'string' ) {
+			return target.value.length;
+		}
+		return target?.textContent?.length ?? null;
+	}
+
+	function latestRecord() {
+		for ( let i = pendingRecords.length - 1; i >= 0; i-- ) {
+			const record = pendingRecords[ i ];
+			if ( ! record.inputAtMs || ! record.firstRafAfterInputAtMs ) {
+				return record;
+			}
+		}
+		return null;
+	}
+
+	function scheduleInputRafs( record, schedulerWindow = window ) {
+		if ( record.inputRafScheduled ) {
+			return;
+		}
+		record.inputRafScheduled = true;
+		schedulerWindow.requestAnimationFrame( ( timestamp ) => {
+			record.firstRafAfterInputAtMs = now();
+			record.firstRafAfterInputTimestampMs = timestamp;
+			schedulerWindow.requestAnimationFrame( ( secondTimestamp ) => {
+				record.secondRafAfterInputAtMs = now();
+				record.secondRafAfterInputTimestampMs = secondTimestamp;
+			} );
+		} );
+	}
+
+	function scheduleMutationRafs( record, schedulerWindow = window ) {
+		if ( record.mutationRafScheduled ) {
+			return;
+		}
+		record.mutationRafScheduled = true;
+		schedulerWindow.requestAnimationFrame( ( timestamp ) => {
+			record.firstRafAfterMutationAtMs = now();
+			record.firstRafAfterMutationTimestampMs = timestamp;
+			schedulerWindow.requestAnimationFrame( ( secondTimestamp ) => {
+				record.secondRafAfterMutationAtMs = now();
+				record.secondRafAfterMutationTimestampMs = secondTimestamp;
+			} );
+		} );
+	}
+
+	function installChildDocumentProbes( childWindow, frameName ) {
+		const childDocument = childWindow.document;
+		if (
+			! childDocument ||
+			childDocument.__typingBenchmarkVisualLatencyParentProbeInstalled
+		) {
+			return;
+		}
+		childDocument.__typingBenchmarkVisualLatencyParentProbeInstalled = true;
+
+		childDocument.addEventListener(
+			'beforeinput',
+			( event ) => {
+				const record = latestRecord();
+				if ( ! record ) {
+					return;
+				}
+				record.beforeinputAtMs = now();
+				record.beforeinputWindowName = frameName;
+				record.inputType = event.inputType;
+				record.inputData = event.data;
+				record.targetTextLengthAtBeforeInput = textLength(
+					event.target
+				);
+			},
+			true
+		);
+
+		childDocument.addEventListener(
+			'input',
+			( event ) => {
+				const record = latestRecord();
+				if ( ! record ) {
+					return;
+				}
+				record.inputAtMs = now();
+				record.inputWindowName = frameName;
+				record.inputTargetLabel = targetLabel( event.target );
+				record.targetTextLengthAtInput = textLength( event.target );
+				scheduleInputRafs( record, childWindow );
+			},
+			true
+		);
+
+		new childWindow.MutationObserver( ( mutations ) => {
+			const record = latestRecord();
+			if ( ! record ) {
+				return;
+			}
+			if ( ! record.firstMutationAtMs ) {
+				record.firstMutationAtMs = now();
+				record.mutationWindowName = frameName;
+			}
+			record.mutationBatchCount = ( record.mutationBatchCount || 0 ) + 1;
+			record.mutationRecordCount =
+				( record.mutationRecordCount || 0 ) + mutations.length;
+			scheduleMutationRafs( record, childWindow );
+		} ).observe( childDocument, {
+			childList: true,
+			characterData: true,
+			subtree: true,
+		} );
+	}
+
+	document.addEventListener(
+		'keydown',
+		( event ) => {
+			if ( event.key !== 'x' && event.key !== 'X' ) {
+				return;
+			}
+			const record = {
+				id: ++nextId,
+				key: event.key,
+				code: event.code,
+				keydownAtMs: now(),
+				targetLabel: targetLabel( event.target ),
+				targetTextLengthAtKeydown: textLength( event.target ),
+			};
+			pendingRecords.push( record );
+			window.__typingBenchmarkVisualLatencyEvents.push( record );
+		},
+		true
+	);
+
+	document.addEventListener(
+		'beforeinput',
+		( event ) => {
+			const record = latestRecord();
+			if ( ! record ) {
+				return;
+			}
+			record.beforeinputAtMs = now();
+			record.inputType = event.inputType;
+			record.inputData = event.data;
+			record.targetTextLengthAtBeforeInput = textLength( event.target );
+		},
+		true
+	);
+
+	document.addEventListener(
+		'input',
+		( event ) => {
+			const record = latestRecord();
+			if ( ! record ) {
+				return;
+			}
+			record.inputAtMs = now();
+			record.inputTargetLabel = targetLabel( event.target );
+			record.targetTextLengthAtInput = textLength( event.target );
+			scheduleInputRafs( record );
+		},
+		true
+	);
+
+	new MutationObserver( ( mutations ) => {
+		const record = latestRecord();
+		if ( ! record ) {
+			return;
+		}
+		if ( ! record.firstMutationAtMs ) {
+			record.firstMutationAtMs = now();
+		}
+		record.mutationBatchCount = ( record.mutationBatchCount || 0 ) + 1;
+		record.mutationRecordCount =
+			( record.mutationRecordCount || 0 ) + mutations.length;
+		scheduleMutationRafs( record );
+	} ).observe( document, {
+		childList: true,
+		characterData: true,
+		subtree: true,
+	} );
+
+	window.__typingBenchmarkVisualLatencyTracingInstalled = true;
+
+	if ( window.__typingBenchmarkVisualLatencyFrameObserverInstalled ) {
+		return;
+	}
+
+	const installerSource = `(${ installVisualLatencyTracing.toString() })()`;
+
+	function installInChildFrames() {
+		for ( const iframe of document.querySelectorAll( 'iframe' ) ) {
+			try {
+				const childWindow = iframe.contentWindow;
+				if (
+					childWindow &&
+					! childWindow.__typingBenchmarkVisualLatencyTracingInstalled
+				) {
+					childWindow.eval( installerSource );
+				}
+				if ( childWindow ) {
+					installChildDocumentProbes(
+						childWindow,
+						iframe.name || iframe.id || 'iframe'
+					);
+				}
+			} catch {
+				// Cross-origin or not-yet-ready frames are irrelevant here.
+			}
+		}
+	}
+
+	installInChildFrames();
+	new MutationObserver( installInChildFrames ).observe( document, {
+		childList: true,
+		subtree: true,
+	} );
+	window.setInterval( installInChildFrames, 50 );
+	window.__typingBenchmarkVisualLatencyFrameObserverInstalled = true;
 }
 
 if ( delayStepMs <= 0 ) {
@@ -1181,6 +1447,94 @@ test.describe( 'Typing delay benchmark', () => {
 					currentWindow.__typingBenchmarkDataSpanEvents = [];
 				}
 			} );
+		}
+
+		async function setupVisualLatencyTracingInitScript() {
+			if ( ! traceVisualLatency ) {
+				return;
+			}
+
+			await page.addInitScript( installVisualLatencyTracing );
+			await page
+				.evaluate( installVisualLatencyTracing )
+				.catch( () => undefined );
+		}
+
+		async function setupVisualLatencyTracingInCurrentContext() {
+			if ( ! traceVisualLatency ) {
+				return;
+			}
+
+			for ( const frame of page.frames() ) {
+				await frame
+					.evaluate( installVisualLatencyTracing )
+					.catch( () => undefined );
+			}
+		}
+
+		async function resetVisualLatencyTracing() {
+			if ( ! traceVisualLatency ) {
+				return;
+			}
+
+			await Promise.all(
+				page.frames().map( ( frame ) =>
+					frame
+						.evaluate( () => {
+							if (
+								window.__typingBenchmarkResetVisualLatencyTracing
+							) {
+								window.__typingBenchmarkResetVisualLatencyTracing();
+							} else {
+								window.__typingBenchmarkVisualLatencyEvents =
+									[];
+							}
+						} )
+						.catch( () => undefined )
+				)
+			);
+		}
+
+		async function collectVisualLatencyEvents( startMs, stopMs ) {
+			if ( ! traceVisualLatency ) {
+				return undefined;
+			}
+
+			const frames = page.frames();
+			const groups = await Promise.all(
+				frames.map( async ( frame ) => ( {
+					name:
+						frame === page.mainFrame()
+							? 'parent'
+							: frame.name() || 'iframe',
+					events: await frame
+						.evaluate(
+							( {
+								startMs: collectionStartMs,
+								stopMs: collectionStopMs,
+							} ) =>
+								(
+									window.__typingBenchmarkVisualLatencyEvents ||
+									[]
+								).filter(
+									( event ) =>
+										event.keydownAtMs >=
+											collectionStartMs - 5 &&
+										event.keydownAtMs <=
+											collectionStopMs + 100
+								),
+							{ startMs, stopMs }
+						)
+						.catch( () => [] ),
+				} ) )
+			);
+
+			return groups.flatMap( ( { name, events } ) =>
+				events.map( ( event ) => ( {
+					...event,
+					windowName: name,
+				} ) )
+			);
 		}
 
 		async function setupPersistenceTracing() {
@@ -2477,6 +2831,7 @@ setInterval(() => {}, 2147483647);
 				await setupEventListenerTracingInCurrentContext();
 				await setupRichTextSpanTracingInCurrentContext();
 				await setupDataSpanTracingInCurrentContext();
+				await setupVisualLatencyTracingInCurrentContext();
 				await setupTimerTracing();
 				await page.evaluate(
 					( { busyWaitMs } ) => {
@@ -2539,6 +2894,7 @@ setInterval(() => {}, 2147483647);
 				await resetEventListenerTracing();
 				await resetRichTextSpanTracing();
 				await resetDataSpanTracing();
+				await resetVisualLatencyTracing();
 				paragraph = page.getByRole( 'textbox', {
 					name: 'Typing benchmark target',
 				} );
@@ -2613,12 +2969,14 @@ setInterval(() => {}, 2147483647);
 			}
 			await setupRichTextSpanTracingInCurrentContext();
 			await setupDataSpanTracingInCurrentContext();
+			await setupVisualLatencyTracingInCurrentContext();
 			await setupTimerTracing();
 			await setupPersistenceTracing();
 			const dataTracingSetup = await setupDataTracing();
 			await resetEventListenerTracing();
 			await resetRichTextSpanTracing();
 			await resetDataSpanTracing();
+			await resetVisualLatencyTracing();
 
 			const setupReadyAtEpochMs = Date.now();
 			if ( settleAfterEditorSetupMs > 0 ) {
@@ -2683,6 +3041,7 @@ setInterval(() => {}, 2147483647);
 		await setupEventListenerTracingInitScript();
 		await setupRichTextSpanTracingInitScript();
 		await setupDataSpanTracingInitScript();
+		await setupVisualLatencyTracingInitScript();
 		if ( ! freshEditorPerDelay ) {
 			editorSetup = await setupEditor();
 		}
@@ -2825,12 +3184,26 @@ setInterval(() => {}, 2147483647);
 				if ( useBrowserTrace ) {
 					await metrics.stopTracing();
 				}
+				if ( traceVisualLatency ) {
+					await page.evaluate(
+						() =>
+							new Promise( ( resolve ) => {
+								window.requestAnimationFrame( () =>
+									window.requestAnimationFrame( resolve )
+								);
+							} )
+					);
+				}
 
 				const runStoppedAtBrowserNowMs = await page.evaluate( () =>
 					performance.now()
 				);
 				const runStoppedAtEpochMs = Date.now();
 				const eventListenerEvents = await collectEventListenerEvents(
+					runStartedAtBrowserNowMs,
+					runStoppedAtBrowserNowMs
+				);
+				const visualLatencyEvents = await collectVisualLatencyEvents(
 					runStartedAtBrowserNowMs,
 					runStoppedAtBrowserNowMs
 				);
@@ -2967,6 +3340,7 @@ setInterval(() => {}, 2147483647);
 								}
 						  )
 						: undefined,
+					visualLatencyEvents,
 					gapTraceEvents: traceGapEvents
 						? traceEventsForKeyGaps( metrics.trace )
 						: undefined,
@@ -3084,6 +3458,8 @@ setInterval(() => {}, 2147483647);
 					);
 					const keypress = keyGroup.keypress;
 					const keyup = keyGroup.keyup;
+					const visualLatencyEvent =
+						visualLatencyEvents?.[ sampleIndex ];
 					const isThrowaway = sampleIndex < throwawayPerDelay;
 					const delaySampleIndex =
 						retainedSamplesByDelay.get( delayMs );
@@ -3125,6 +3501,61 @@ setInterval(() => {}, 2147483647);
 							keyGroup.keydownEvents[ 0 ].timestampMs,
 						keypressTimestampMs: keypress.timestampMs,
 						keyupTimestampMs: keyup.timestampMs,
+						visualWindowName: visualLatencyEvent?.windowName,
+						visualInputWindowName:
+							visualLatencyEvent?.inputWindowName,
+						visualMutationWindowName:
+							visualLatencyEvent?.mutationWindowName,
+						visualKeydownAtMs: visualLatencyEvent?.keydownAtMs,
+						visualBeforeinputAtMs:
+							visualLatencyEvent?.beforeinputAtMs,
+						visualInputAtMs: visualLatencyEvent?.inputAtMs,
+						visualFirstMutationAtMs:
+							visualLatencyEvent?.firstMutationAtMs,
+						visualFirstRafAfterInputAtMs:
+							visualLatencyEvent?.firstRafAfterInputAtMs,
+						visualSecondRafAfterInputAtMs:
+							visualLatencyEvent?.secondRafAfterInputAtMs,
+						visualFirstRafAfterMutationAtMs:
+							visualLatencyEvent?.firstRafAfterMutationAtMs,
+						visualSecondRafAfterMutationAtMs:
+							visualLatencyEvent?.secondRafAfterMutationAtMs,
+						visualKeydownToInputMs:
+							visualLatencyEvent?.inputAtMs === undefined
+								? undefined
+								: visualLatencyEvent.inputAtMs -
+								  visualLatencyEvent.keydownAtMs,
+						visualInputToFirstRafMs:
+							visualLatencyEvent?.firstRafAfterInputAtMs ===
+								undefined ||
+							visualLatencyEvent?.inputAtMs === undefined
+								? undefined
+								: visualLatencyEvent.firstRafAfterInputAtMs -
+								  visualLatencyEvent.inputAtMs,
+						visualInputToSecondRafMs:
+							visualLatencyEvent?.secondRafAfterInputAtMs ===
+								undefined ||
+							visualLatencyEvent?.inputAtMs === undefined
+								? undefined
+								: visualLatencyEvent.secondRafAfterInputAtMs -
+								  visualLatencyEvent.inputAtMs,
+						visualKeydownToFirstRafAfterInputMs:
+							visualLatencyEvent?.firstRafAfterInputAtMs ===
+							undefined
+								? undefined
+								: visualLatencyEvent.firstRafAfterInputAtMs -
+								  visualLatencyEvent.keydownAtMs,
+						visualKeydownToSecondRafAfterInputMs:
+							visualLatencyEvent?.secondRafAfterInputAtMs ===
+							undefined
+								? undefined
+								: visualLatencyEvent.secondRafAfterInputAtMs -
+								  visualLatencyEvent.keydownAtMs,
+						visualKeydownToFirstMutationMs:
+							visualLatencyEvent?.firstMutationAtMs === undefined
+								? undefined
+								: visualLatencyEvent.firstMutationAtMs -
+								  visualLatencyEvent.keydownAtMs,
 					} );
 
 					globalTypedCharacterIndex++;
@@ -3204,6 +3635,7 @@ setInterval(() => {}, 2147483647);
 				traceRichTextSpans,
 				traceDataSpans,
 				traceAllDataSpans,
+				traceVisualLatency,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,
