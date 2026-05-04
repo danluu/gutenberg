@@ -21022,6 +21022,129 @@ save_plot(
 	height = 7.4
 )
 
+open_question_falsification_runbook <- tribble(
+	~short_label, ~domain, ~current_recommendation, ~falsifying_observation, ~required_artifact, ~decision_if_falsified, ~why_this_is_the_minimum_test, ~artifact_burden_score, ~recommendation_change_score, ~current_confidence_score, ~plot_label,
+	"Typing startup wait", "CI metric", "Do not add a Typing startup wait for the current retained-q50 metric.", "A paired real-topology run shows 0ms extra wait has consistently worse retained q50, q75/q90, CV, first-retained-key distribution, or failure rate than the current wait, and the effect survives randomized branch order.", "Performance Tests topology artifacts with raw retained samples, q25/q50/q75/cnt, per-run grouping, first-key distributions, elapsed time, failures, browser revision, runner image, and wp-env metadata.", "Keep or replace the startup wait with a readiness predicate, and report first-input/idle-return separately from retained typing q50.", "Only the real topology can test whether the local no-extra-wait result survives CI scheduling, container, browser, and artifact behavior.", 3, 3, 5, "startup",
+	"Pattern-loading wait", "CI runtime", "Do not remove the Site Editor wait from local evidence alone; validate Site predicate/fixed 500ms and the separate Post Editor 0ms result.", "Site Editor 0ms/500ms/predicate rows lose retained samples, move preview/canvas failures into the measured interval, increase q50 variance, or leave wait-side resource groups unresolved in CI/mac/container lanes.", "Paired interaction artifacts with retained counts, q25/q50/q75/cnt, mean/p90, preview/canvas/actionability counts, resource groups before first interaction, timeout/fallback logs, and per-spec labels.", "Keep the full wait for the affected spec, or ship a bounded readiness predicate with fallback instead of a blind removal.", "Local samples cannot reproduce CI resource timing or preview/canvas actionability failures.", 3, 4, 5, "patterns",
+	"Input API phase boundary", "metric definition", "Treat type() and pressSequentially as the same helper family when target/options match; reject locator.press as a proxy for the current metric.", "The exact suite settings show type() and pressSequentially diverge materially after target/options are matched, or a Playwright upgrade changes DOM event shape/hold semantics enough to move the retained q50 band.", "One exact-settings helper comparison with protocol/event records, DOM key events, retained q50 rows, and the same throwaway/reporting policy.", "Rebaseline the metric and thresholds for the chosen helper family; do not compare old and new helper-family numbers as the same metric.", "The only remaining risk is implementation drift in the helper path, not another broad API sweep.", 2, 4, 5, "input API",
+	"Low-risk selector guards", "source patch", "Patch only behavior-gated selector guards; do not infer selector safety from latency alone.", "The pattern override guard fails focused behavior tests, the source-span microscope does not collapse, or an aggregate before/after run shows no retained-q50 improvement after source spans pass.", "Focused unit tests plus source-span microscope for the guarded owner and an optional matched aggregate q50 run after behavior gates.", "Revert or narrow the guard and move to the next source candidate only after its own behavior gates.", "Timing can rank candidates, but only behavior and source spans can show that skipped selector work was actually unnecessary.", 2, 4, 5, "selector",
+	"Store subscriber partition", "data contract", "Do not change public store notification semantics for timing until a compatibility-preserving selector/branch-aware prototype exists.", "A prototype either fails public registry.subscribe/useSelect compatibility fixtures, misses dynamic/cross-store dependencies, or preserves behavior but does not collapse marker-only listener fanout.", "Branch-aware useSelect compatibility matrix, public subscriber plugin smoke tests, marker-only source-span listener counts, and matched no-patch artifacts.", "Keep root notification semantics, abandon the fanout win, or design an explicit API migration instead of a transparent optimization.", "This is a data-contract question; no number of current benchmark samples proves public subscription compatibility.", 4, 5, 5, "store",
+	"React render ownership", "source attribution", "Do not use React profiling to explain the 1000ms EventDispatch cliff; reserve it for secondary after-input/whole-cycle ownership after a source change.", "A matched profiled/unprofiled run shows React commit/render work starts inside the measured input window and accounts for the primary EventDispatch movement, or a React-only patch removes the cliff without changing store fanout.", "React profiler output joined to input-window/source-span boundaries, matched unprofiled rows, commit owners, async queue markers, and behavior endpoints.", "Reopen React as a primary causal path and rerank source work by commit ownership rather than store fanout.", "The current evidence closes React for cliff causality; only a joined input-window contradiction should reopen it.", 4, 4, 5, "React",
+	"Chromium runtime checkpoint", "browser mechanism", "Do not name a V8/task-queue/scheduler mechanism until a trace-off protocol sidecar joins command windows to retained key gaps.", "The protocol sidecar cannot reproduce the runtime-repeat dose response without perturbing row ordering, or trace-off scheduler/runtime fields do not separate slow ordinary waits from fast repeated-checkpoint rows.", "Protocol command sidecar with browser/driver clock sync, key-gap joins, raw/extractor schema, trace-off runtime-repeat rows, and observer-overhead controls.", "Drop the runtime-checkpoint mechanism claim or move the mechanism search to OS/browser counters that are actually joined per key.", "The missing variable is a browser/runtime state, not another delay row.", 5, 3, 4, "runtime",
+	"CPU/QoS mechanism", "system mechanism", "Keep the mechanism narrowed to ordinary/utility-QoS CPU state until sidecar plus root counters identify the lower layer.", "The sidecar alone changes class ordering, or powermetrics/trace rows show no frequency/residency/QoS/runnable-latency split while a browser-runtime sidecar explains the rows.", "Unprivileged helper/key-window/renderer/collector sidecar acceptance run, then compact manifest under root powermetrics and root trace only if powermetrics fails.", "Remove P-core/frequency/QoS/scheduler language and keep only the empirical CPU-state sensitivity claim.", "Aggregate latency cannot observe core residency, frequency, QoS placement, thermal state, cache, or runnable latency.", 5, 4, 4, "CPU/QoS",
+	"Calibrated presentation", "display endpoint", "Scope user-visible claims to Chromium-internal visual propagation unless external calibration agrees.", "An external presented-frame/OCR/template/camera endpoint shows no matching 1000ms drop, reverses the complete-keypress control, or adds a large tail that changes the qualitative conclusion.", "Per-retained-key calibration across EventDispatch, RAF, Paint/DrawFrame, changed screenshot, localized pixels, and external endpoint with observer controls.", "Restrict the report to internal Chromium endpoints and stop using the result as a hardware-display or semantic-glyph claim.", "Internal screenshots cannot calibrate the physical display endpoint by themselves.", 5, 3, 5, "display",
+	"Human/plugin workload", "product workload", "Do not rank real editor/product latency from fixed-x insertion alone.", "Replay strata for correction, selection, paste, structure, IME, media/pattern, long-session idle return, or plugin-heavy histories show different dominant owners, opposite patch effects, or behavior regressions hidden by fixed-x q50.", "Recorder/replayer artifacts with per-event context, assertions, source spans, visual/behavior endpoints, document/session metadata, and per-stratum q50/q75/tail summaries.", "Report per-stratum results and constrain any patch recommendation to strata where behavior and latency both pass.", "Fixed-x samples cannot represent missing event order, composition, plugin hooks, async work, or semantic assertions.", 4, 5, 4, "workload",
+	"Portability of absolute numbers", "threshold claim", "Use local numbers for semantics and triage, not CI pass/fail prediction.", "The compact manifest in real CI topology changes row ordering, variance, first-key behavior, or absolute q50 enough that local conclusions fail, or external dashboard/reviewer policy maps a locally-small movement to a real failure threshold.", "Compact CI-topology manifest with repeated paired runs, q25/q50/q75/cnt/raw arrays, CV, first-key distributions, branch order, elapsed time, environment metadata, and external threshold policy.", "Rebaseline the affected metric and treat threshold claims as CI-lane-specific.", "Local macOS p50 cannot encode Ubuntu runner, container, browser revision, and external threshold policy.", 3, 5, 4, "portability"
+) %>%
+	mutate(
+		domain = factor(
+			domain,
+			levels = c(
+				"CI metric",
+				"CI runtime",
+				"metric definition",
+				"source patch",
+				"data contract",
+				"source attribution",
+				"browser mechanism",
+				"system mechanism",
+				"display endpoint",
+				"product workload",
+				"threshold claim"
+			)
+		),
+		label_x = artifact_burden_score + case_when(
+			short_label == "Pattern-loading wait" ~ 0.12,
+			short_label == "Typing startup wait" ~ 0.12,
+			short_label == "Input API phase boundary" ~ 0.12,
+			short_label == "Low-risk selector guards" ~ 0.12,
+			short_label == "Store subscriber partition" ~ -0.82,
+			short_label == "React render ownership" ~ -0.78,
+			short_label == "Chromium runtime checkpoint" ~ -0.88,
+			short_label == "CPU/QoS mechanism" ~ -0.62,
+			short_label == "Calibrated presentation" ~ -0.42,
+			TRUE ~ 0.12
+		),
+		label_y = recommendation_change_score + case_when(
+			short_label == "Pattern-loading wait" ~ 0.10,
+			short_label == "Typing startup wait" ~ -0.12,
+			short_label == "Input API phase boundary" ~ -0.12,
+			short_label == "Low-risk selector guards" ~ 0.10,
+			short_label == "Store subscriber partition" ~ 0.12,
+			short_label == "React render ownership" ~ -0.10,
+			short_label == "Chromium runtime checkpoint" ~ -0.12,
+			short_label == "CPU/QoS mechanism" ~ 0.12,
+			short_label == "Calibrated presentation" ~ -0.34,
+			short_label == "Human/plugin workload" ~ 0.12,
+			short_label == "Portability of absolute numbers" ~ -0.12,
+			TRUE ~ 0
+		)
+	)
+
+write_csv(
+	open_question_falsification_runbook %>% select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-falsification-runbook.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_falsification_runbook,
+		aes(
+			artifact_burden_score,
+			recommendation_change_score,
+			color = domain,
+			shape = domain,
+			size = current_confidence_score
+		)
+	) +
+		geom_point(alpha = 0.92) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.75, 5.35),
+			labels = c("1" = "trivial", "2" = "small", "3" = "CI run", "4" = "prototype", "5" = "new observer")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(2.65, 5.35),
+			labels = c("1" = "none", "2" = "wording", "3" = "scope", "4" = "recommendation", "5" = "threshold/product")
+		) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Domain") +
+		scale_shape_manual(
+			values = c(
+				"CI metric" = 16,
+				"CI runtime" = 17,
+				"metric definition" = 15,
+				"source patch" = 18,
+				"data contract" = 3,
+				"source attribution" = 7,
+				"browser mechanism" = 8,
+				"system mechanism" = 4,
+				"display endpoint" = 6,
+				"product workload" = 9,
+				"threshold claim" = 10
+			),
+			name = "Domain"
+		) +
+		scale_size_area(max_size = 6.2, breaks = 3:5, name = "Current confidence") +
+		labs(
+			title = "Falsification gates show which observations would change recommendations",
+			subtitle = "High x means the falsifier needs a new observer or prototype; high y means the result could change a decision, not just wording",
+			x = "Artifact burden for a credible falsifier",
+			y = "Recommendation change if falsified"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"199-open-question-falsification-runbook.png",
+	width = 12.8,
+	height = 7.6
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

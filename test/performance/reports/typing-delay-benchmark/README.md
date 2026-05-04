@@ -1012,6 +1012,9 @@ The R script derives:
     separating questions that can still benefit from local resampling from
     questions blocked by topology validation, source prototypes, sidecars,
     privileged counters, external endpoints, or workload replay.
+-   `data/typing-delay-open-question-falsification-runbook.csv`: cross-question
+    falsification gate showing the observation, artifact, and decision change
+    required to overturn each remaining recommendation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9127,6 +9130,23 @@ not contain.
 | Code prototype | Selector guards, store subscriber partition | Confirm source-span collapse and aggregate p50 after behavior gates pass. | Prove selector invalidation safety or public `@wordpress/data` compatibility from timing data alone. |
 | Missing observer join | Chromium runtime checkpoint, CPU/QoS mechanism | Reproduce the dose response or class ordering as an acceptance control. | Name V8/task-queue/scheduler state, P-core residency, frequency, QoS placement, cache state, or runnable latency without sidecar/counter joins. |
 | External endpoint / workload gap | Calibrated presentation, human/plugin workload | Preserve the fixed-`x` artifact claim as a control. | Claim hardware-display timing, semantic first glyph timing, or representative product latency without external calibration or replay strata. |
+
+The falsification version of the same audit is stricter: for each recommendation,
+what observation would actually change the decision? This keeps "deeper
+analysis" from becoming unfalsifiable narrative. The high-cost rows are not
+waiting for more of the same latency samples; they need a different artifact
+with join keys and stop rules.
+
+![Open question falsification runbook](figures/199-open-question-falsification-runbook.png)
+
+| Recommendation area | Falsifier that would change the recommendation | Required artifact |
+| ------------------- | ---------------------------------------------- | ----------------- |
+| Typing startup wait | Real Performance Tests topology shows `0ms` extra wait is consistently worse than the current setup in retained q50, variance, first-retained-key distribution, or failures. | Paired raw CI artifacts with q25/q50/q75/cnt, per-run grouping, first-key distributions, elapsed time, failures, browser revision, runner image, and wp-env metadata. |
+| Pattern-loading wait | Site Editor candidates lose retained samples, move preview/canvas failures into measurement, increase variance, or leave wait-side resources unresolved across CI/mac/container lanes. | Per-spec interaction artifacts with resource groups, preview/canvas/actionability counts, timeout/fallback logs, and retained metric summaries. |
+| Input API phase boundary | Matched exact-suite `type()` and `pressSequentially()` diverge materially, or a Playwright update changes DOM event shape/hold semantics enough to move retained q50. | Exact-settings helper comparison with protocol/event records, DOM key events, retained q50, and the same throwaway/reporting policy. |
+| Selector/store source work | Behavior gates fail, source-span fanout does not collapse, public subscriber compatibility breaks, or aggregate q50 does not move after source spans pass. | Focused behavior tests, marker/source-span listener counts, compatibility fixtures, and matched aggregate artifacts only after behavior gates pass. |
+| Runtime and CPU/QoS mechanisms | Sidecar/protocol/counter rows cannot preserve class ordering or cannot join the differentiating state to retained keys. | Trace-off protocol sidecar for runtime questions; helper/key-window/renderer/collector sidecar plus root `powermetrics`/`trace` for CPU/QoS questions. |
+| Presentation and workload claims | External visual endpoints disagree with Chromium-internal endpoints, or replay strata show different owners/effects/regressions than fixed-`x`. | Per-retained-key external calibration, plus workload recorder/replayer artifacts with assertions, source spans, endpoints, and per-stratum summaries. |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
