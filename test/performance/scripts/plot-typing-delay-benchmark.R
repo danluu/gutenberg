@@ -21955,6 +21955,161 @@ save_plot(
 	height = 7.4
 )
 
+open_question_outcome_interpretation <- tribble(
+	~question, ~outcome_case, ~interpretation, ~next_action, ~next_action_class, ~decision_movement_score,
+	"CI topology / startup waits", "gate passes",
+	"Real topology preserves the local retained metric and resource placement.",
+	"Change wait policy only within the passed topology and keep first-key metrics separate.",
+	"act/close", 5.0,
+	"CI topology / startup waits", "mixed / partial",
+	"Ordering or q50 is stable, but first-key tails, failures, resource placement, or variance moves.",
+	"Narrow to the stable rows and add a first-key/resource-specific CI artifact before changing the broader wait policy.",
+	"narrow/rerun", 4.5,
+	"CI topology / startup waits", "gate fails",
+	"CI changes ordering, failures, variance, or resource timing enough to invalidate the local shortcut.",
+	"Do not change CI waits from local data; broaden the real-topology manifest.",
+	"expand observer", 5.0,
+	"Pattern-loading wait", "gate passes",
+	"Readiness predicate and resource quiet preserve behavior and retained samples.",
+	"Remove fixed sleeps only for the specs covered by the passing predicate.",
+	"act/close", 4.3,
+	"Pattern-loading wait", "mixed / partial",
+	"Some specs or lanes preserve behavior while preview/canvas/resource rows remain unstable.",
+	"Split the predicate by spec/lane and keep fixed sleeps where readiness is not proved.",
+	"narrow/rerun", 4.2,
+	"Pattern-loading wait", "gate fails",
+	"Hidden readiness work or failures enter the measured interval.",
+	"Keep the fixed sleep or design a new readiness predicate before claiming wait savings.",
+	"expand observer", 4.4,
+	"Selector/source guards", "gate passes",
+	"Behavior fixtures pass and source-span fanout collapses for the targeted owner.",
+	"Cite the source win and then run aggregate p50 as a secondary confirmation.",
+	"act/close", 4.5,
+	"Selector/source guards", "mixed / partial",
+	"Behavior passes but source spans do not collapse, or p50 moves without source evidence.",
+	"Treat the source hypothesis as unproved; narrow the owner or instrument a different span.",
+	"narrow/rerun", 4.1,
+	"Selector/source guards", "gate fails",
+	"Behavior changes or the guard breaks compatibility.",
+	"Reject the patch regardless of aggregate timing.",
+	"act/close", 4.8,
+	"Store subscriber partition", "gate passes",
+	"Compatibility fixtures pass and listener-count collapse is visible.",
+	"Continue only as a prototype after narrower source ownership is proved.",
+	"narrow/rerun", 3.8,
+	"Store subscriber partition", "mixed / partial",
+	"Listener count improves but one public subscription, race, or dynamic dependency fixture is unresolved.",
+	"Do not generalize the data-layer contract; add the missing compatibility fixture.",
+	"narrow/rerun", 4.4,
+	"Store subscriber partition", "gate fails",
+	"Public semantics or persistence-selector behavior changes.",
+	"Reject the partition approach for this report.",
+	"act/close", 4.8,
+	"Runtime mechanism", "gate passes",
+	"Trace-off sidecar preserves ordering and joins a differentiating runtime field.",
+	"Name only the joined runtime state and keep the claim tied to the sidecar configuration.",
+	"act/close", 3.5,
+	"Runtime mechanism", "mixed / partial",
+	"Sidecar preserves ordering but no field separates rows, or fields separate only under trace-on conditions.",
+	"Keep the benchmark explanation empirical; redesign the sidecar before naming Chromium internals.",
+	"expand observer", 3.8,
+	"Runtime mechanism", "gate fails",
+	"Observer placement perturbs ordering.",
+	"Discard the observer result and stop making runtime-mechanism claims from it.",
+	"keep scoped", 4.0,
+	"CPU/QoS mechanism", "gate passes",
+	"Counters separate fast and slow classes without changing row ordering.",
+	"Name only the separating counter family and preserve the empirical benchmark claim.",
+	"act/close", 3.6,
+	"CPU/QoS mechanism", "mixed / partial",
+	"Some counters correlate but do not separate classes or fail on part of the manifest.",
+	"Report sensitivity only; escalate to root trace only if a named system mechanism is required.",
+	"expand observer", 3.8,
+	"CPU/QoS mechanism", "gate fails",
+	"Powermetrics cannot separate classes.",
+	"Keep the conclusion empirical and do not name hardware or scheduler causes.",
+	"keep scoped", 4.0,
+	"Product workload", "gate passes",
+	"Covered replay strata preserve the same owner/effect pattern.",
+	"Generalize only to those covered strata.",
+	"act/close", 4.0,
+	"Product workload", "mixed / partial",
+	"Some strata match fixed-x while correction, selection, paste, IME, or plugin-heavy rows diverge.",
+	"Report per-stratum results and avoid one product-latency headline.",
+	"narrow/rerun", 4.4,
+	"Product workload", "gate fails",
+	"Replay strata show different owners or effects.",
+	"Keep fixed-x as a benchmark artifact, not representative product latency.",
+	"keep scoped", 4.6,
+	"Presentation endpoint", "gate passes",
+	"External display/glyph endpoint agrees with Chromium-internal endpoints.",
+	"Upgrade the visual claim only to the calibrated endpoint that passed.",
+	"act/close", 3.1,
+	"Presentation endpoint", "mixed / partial",
+	"External endpoint is joinable but orders rows differently from screenshots or paint.",
+	"Report both endpoints separately; do not collapse them into one latency number.",
+	"narrow/rerun", 3.5,
+	"Presentation endpoint", "gate fails",
+	"External endpoint cannot be joined without perturbing the benchmark.",
+	"Keep claims scoped to Chromium-internal visual propagation.",
+	"keep scoped", 3.7
+) %>%
+	left_join(
+		open_question_stop_rules %>%
+			mutate(question = as.character(question)) %>%
+			select(question, value_rank, close_now_class, value_of_information_score, plot_label),
+		by = "question"
+	) %>%
+	mutate(
+		outcome_case = factor(outcome_case, levels = c("gate passes", "mixed / partial", "gate fails")),
+		next_action_class = factor(
+			next_action_class,
+			levels = c("act/close", "narrow/rerun", "expand observer", "keep scoped")
+		),
+		plot_label = fct_reorder(plot_label, value_rank, .desc = TRUE)
+	)
+
+write_csv(
+	open_question_outcome_interpretation,
+	file.path(data_dir, "typing-delay-open-question-outcome-interpretation.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_outcome_interpretation,
+		aes(
+			outcome_case,
+			plot_label,
+			color = next_action_class,
+			shape = next_action_class,
+			size = decision_movement_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		scale_color_brewer(type = "qual", palette = "Set2", name = "Predeclared action") +
+		scale_shape_manual(
+			values = c(
+				"act/close" = 16,
+				"narrow/rerun" = 17,
+				"expand observer" = 15,
+				"keep scoped" = 18
+			),
+			name = "Predeclared action"
+		) +
+		scale_size_area(max_size = 7, breaks = 3:5, name = "Decision movement") +
+		labs(
+			title = "Mixed outcomes should narrow claims, not become weak passes",
+			subtitle = "Each point is the predeclared action for a pass, mixed, or fail result on an open-question artifact gate",
+			x = "Artifact outcome",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"207-open-question-outcome-interpretation.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

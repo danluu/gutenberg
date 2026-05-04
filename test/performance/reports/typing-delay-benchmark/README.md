@@ -1039,6 +1039,9 @@ The R script derives:
 -   `data/typing-delay-open-question-stop-rules.csv`: stop-rule matrix for the
     remaining open questions, mapping each one to the minimum closing evidence
     and the result that should force broader instrumentation.
+-   `data/typing-delay-open-question-outcome-interpretation.csv`: predeclared
+    outcome interpretation matrix for the remaining open questions, covering
+    pass, mixed, and fail cases for each artifact gate.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9296,6 +9299,26 @@ condition happens, do not explain it away with the existing aggregate p50 data.
 | CPU/QoS mechanism | sidecar plus `powermetrics` separates fast and slow classes by frequency, residency, QoS, power, or runnable state | counters do not separate rows, requiring root trace or an empirical-only conclusion |
 | Product workload | replay strata show the same owner/effect pattern for the product claim being made | correction, selection, paste, structure, IME, media/pattern, or plugin-heavy strata diverge |
 | Presentation endpoint | external glyph/display timing agrees with Chromium-internal screenshot/paint endpoints for retained keys | external endpoint ordering differs or cannot be joined without perturbing the benchmark |
+
+The outcome-interpretation matrix is the next anti-rationalization step. A
+mixed result is not a weak pass. It either narrows the scope of the decision or
+requires a different observer.
+
+![Open question outcome interpretation](figures/207-open-question-outcome-interpretation.png)
+
+| Outcome | Interpretation rule |
+| ------- | ------------------- |
+| Gate passes | close that question for the current report and act only within the artifact scope that passed |
+| Mixed / partial | narrow the claim or rerun a smaller manifest that isolates the failing dimension |
+| Gate fails | broaden instrumentation or keep the claim scoped; do not cite aggregate p50 as a substitute |
+
+For example, if the CI topology artifact preserves ordering but first-key tails
+move, the result does not validate a global wait-policy change. It validates only
+the rows whose retained metric is stable and forces a first-key-specific metric
+or mitigation. If selector behavior passes but source-span fanout does not
+collapse, the result is not a performance win; it is a rejected source
+hypothesis. If runtime or CPU/QoS observers fail to separate rows, the correct
+conclusion is empirical sensitivity, not a named scheduler or hardware cause.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
