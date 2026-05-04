@@ -19273,6 +19273,159 @@ if (all(file.exists(react_render_boundary_inputs))) {
 			file.path(data_dir, "typing-delay-react-residual-profiler-plan-audit.csv")
 		)
 
+		react_profiler_claim_ladder_audit <- tribble(
+			~claim, ~claim_order, ~current_evidence, ~allowed_claim, ~blocked_overclaim, ~required_next_evidence, ~evidence_score, ~profiler_burden_score, ~overclaim_risk_score, ~decision, ~plot_label,
+			"Cliff causality", 1,
+			paste0("EventDispatch movement is ", number(react_profiler_event_dispatch_ms, accuracy = 0.1), "ms against a ", number(keyheld_endpoint_drop_reference_ms, accuracy = 0.1), "ms minimum visual endpoint drop; post-EventDispatch visual/render tail is ", number(react_profiler_post_tail_ms, accuracy = 0.1), "ms."),
+			"React profiler is not needed to prove or disprove the 1000ms key-held cliff.",
+			"Use a large profiled commit to move the cause before the measured EventDispatch/input slice.",
+			"None for cliff causality; use existing input, visual, source-span, and idle-queue evidence.",
+			5, 1, 1, "closed for cliff", "cliff closed",
+			"renderQueue.add / idle drain", 2,
+			paste0("renderQueue.add moves by at most ", number(react_profiler_render_queue_ms, accuracy = 0.1), "ms, and the idle-drain chronology points the wrong way."),
+			"Treat async queue insertion and idle draining as secondary for this artifact.",
+			"Explain the fast band as idle queue work that drained before the current input.",
+			"Only profile after-input queue/commit cost in broader workloads or after source patches.",
+			5, 1, 2, "closed for cliff", "idle not cause",
+			"useSelect child phases", 3,
+			paste0("useSelect.reactListener moves by ", number(react_profiler_react_listener_ms, accuracy = 0.1), "ms, mapSelect by ", number(react_profiler_map_select_ms, accuracy = 0.1), "ms, and onChange by ", number(react_profiler_on_change_ms, accuracy = 0.1), "ms."),
+			"Use selector/source spans to size guard prototypes; do not treat child phases as the primary cliff cause.",
+			"Claim selector body or React external-store listener cost explains the 11-16ms endpoint drop.",
+			"After a guard prototype, profile residual selectors/components together with source spans.",
+			5, 2, 2, "bounded secondary", "useSelect bounded",
+			"Broad store-root fanout", 4,
+			paste0("rootSubscribe moves by ", number(react_profiler_root_subscribe_ms, accuracy = 0.1), "ms and Redux listener wrappers by ", number(react_profiler_listener_wrappers_ms, accuracy = 0.1), "ms."),
+			"Use source-owner/listener instrumentation before changing @wordpress/data or block-editor notification semantics.",
+			"Use React profiler commit owners alone to justify data notification contract changes.",
+			"Public subscriber fixtures, source spans, listener counts, and behavior gates before profiler output.",
+			4, 3, 4, "data contract first", "fanout first",
+			"After-input visual/render tail", 5,
+			paste0("Chrome render-event tail is at most ", number(react_profiler_chrome_tail_ms, accuracy = 0.1), "ms; trace-screenshot tail is ", number(react_profiler_post_tail_ms, accuracy = 0.1), "ms."),
+			"Profiler can rank secondary after-input owners after a concrete patch or replay workload exists.",
+			"Use after-input tail ownership to explain the primary 1000ms cliff.",
+			"Profiler runs joined to input windows, visual endpoints, async queue boundaries, and source IDs.",
+			4, 3, 3, "profile later", "after-input tail",
+			"Selector guard prototype follow-up", 6,
+			"Profiler becomes useful after a selector guard changes the fanout shape.",
+			"Run before/after profiler only after behavior/source gates pass.",
+			"Use profiler to prove semantic safety of a selector guard.",
+			"Behavior tests, source spans, per-key input windows, profiler build mode, and matched unprofiled rows.",
+			4, 4, 4, "triggered later", "after guards",
+			"Store notification prototype follow-up", 7,
+			"Data-layer semantics are a public contract; profiler sees downstream symptoms.",
+			"Profiler can check residual component owners after public API and behavior gates pass.",
+			"Use commit owner output to justify breaking isLastBlockChangePersistent or useSelect notification semantics.",
+			"Public subscriber fixtures, persistence-selector fixtures, marker source-span collapse, and behavior endpoints.",
+			4, 5, 5, "triggered later", "after store",
+			"Representative workload follow-up", 8,
+			"Fixed-x is an artifact workload; whole-cycle profiling needs replay strata.",
+			"Profile product workloads after replay schema, assertions, and per-stratum reporting exist.",
+			"Rank real product latency from fixed-x profiler output alone.",
+			"Replay histories/strata with behavior assertions, visual endpoints, source spans, and commit owners.",
+			3, 5, 4.5, "needs workload", "workload first",
+			"Profiler build/observer overhead", 9,
+			"Profiler mode can perturb timings and production/dev behavior.",
+			"Profiler claims must report build/profiling mode and preserve ordering against matched unprofiled rows.",
+			"Compare raw profiled absolute p50s directly to production or CI thresholds.",
+			"Trace/profiler overhead controls, matched unprofiled rows, and source-span ID joins.",
+			4, 4, 4.8, "observer gate", "overhead gate",
+			"Acceptable profiler claim", 10,
+			"Current evidence bounds React profiler usefulness to residual after-input or whole-cycle owner ranking.",
+			"Component ownership of secondary cost after a patch or replay workload.",
+			"Primary cause of the 1000ms cliff or threshold portability.",
+			"Joined profiler commits with input windows, async queue markers, source spans, behavior endpoints, and build mode.",
+			5, 4, 3, "allowed scope", "allowed scope"
+		) %>%
+			mutate(
+				decision = factor(
+					decision,
+					levels = c(
+						"closed for cliff",
+						"bounded secondary",
+						"data contract first",
+						"profile later",
+						"triggered later",
+						"needs workload",
+						"observer gate",
+						"allowed scope"
+					)
+				),
+				label_x = profiler_burden_score + case_when(
+					claim == "Cliff causality" ~ 0.22,
+					claim == "renderQueue.add / idle drain" ~ 0.22,
+					claim == "useSelect child phases" ~ 0.22,
+					claim == "Broad store-root fanout" ~ -0.82,
+					claim == "After-input visual/render tail" ~ 0.22,
+					claim == "Selector guard prototype follow-up" ~ -0.95,
+					claim == "Store notification prototype follow-up" ~ 0.12,
+					claim == "Representative workload follow-up" ~ -0.72,
+					claim == "Profiler build/observer overhead" ~ -0.58,
+					TRUE ~ 0.22
+				),
+				label_y = overclaim_risk_score + case_when(
+					claim == "Cliff causality" ~ 0.02,
+					claim == "renderQueue.add / idle drain" ~ 0.02,
+					claim == "useSelect child phases" ~ 0.02,
+					claim == "Broad store-root fanout" ~ 0.16,
+					claim == "After-input visual/render tail" ~ -0.10,
+					claim == "Selector guard prototype follow-up" ~ -0.20,
+					claim == "Store notification prototype follow-up" ~ 0.16,
+					claim == "Representative workload follow-up" ~ -0.24,
+					claim == "Profiler build/observer overhead" ~ -0.28,
+					TRUE ~ 0.06
+				)
+			)
+
+		write_csv(
+			react_profiler_claim_ladder_audit %>%
+				select(-label_x, -label_y),
+			file.path(data_dir, "typing-delay-react-profiler-claim-ladder-audit.csv")
+		)
+
+		save_plot(
+			ggplot(
+				react_profiler_claim_ladder_audit,
+				aes(
+					profiler_burden_score,
+					overclaim_risk_score,
+					color = decision,
+					shape = decision,
+					size = evidence_score
+				)
+			) +
+				geom_point(alpha = 0.92) +
+				geom_text(
+					aes(x = label_x, y = label_y, label = plot_label),
+					size = 3,
+					color = "grey20",
+					lineheight = 0.9,
+					show.legend = FALSE
+				) +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				scale_shape_manual(values = c(16, 17, 15, 18, 8, 7, 3, 4), drop = FALSE) +
+				scale_size_continuous(range = c(2.8, 5.4), breaks = 1:5) +
+				scale_x_continuous(breaks = 1:5, limits = c(0.75, 5.8)) +
+				scale_y_continuous(breaks = 1:5, limits = c(0.75, 5.35)) +
+				labs(
+					title = "React profiler is a residual ownership tool, not the cliff test",
+					subtitle = "Higher/right means higher burden or overclaim risk; point size is current evidence strength",
+					x = "Profiler evidence burden score",
+					y = "Overclaim risk score",
+					color = "Decision",
+					shape = "Decision",
+					size = "Current evidence"
+				) +
+				guides(
+					color = guide_legend(nrow = 3),
+					shape = guide_legend(nrow = 3),
+					size = guide_legend(order = 2)
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"195-react-profiler-claim-ladder.png",
+			width = 12.8,
+			height = 7.6
+		)
+
 		react_render_boundary_plot <- react_render_boundary_audit %>%
 			filter(claim != "priority queue drained before next input") %>%
 			mutate(
