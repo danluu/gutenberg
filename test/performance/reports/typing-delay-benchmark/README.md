@@ -740,6 +740,10 @@ The R script derives:
     validation contract for deciding whether `getBlockPatterns` plus resource
     quiet or fixed `500ms` can replace the current fixed pattern-loading wait in
     CI/mac/container lanes.
+-   `data/typing-delay-pattern-loading-wait-scope-split-*.csv`: source-level
+    split between Site Editor `loadPatterns`, Post Editor `loadPatterns`, and
+    other non-Typing fixed sleeps that must not inherit the same predicate
+    claim.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -1971,6 +1975,33 @@ telemetry. Fixed `500ms` is the fallback only if it validates in the same
 lanes. Fixed `1000ms` remains the conservative baseline if either replacement
 changes the q50 band, increases variance, times out often, or pre-waits the
 preview work that the metric is supposed to measure.
+
+I then checked whether this conclusion applies to all `loadPatterns` results.
+It does not. The reporter uses the same metric name for Post Editor and Site
+Editor, but the setup paths are different. Site Editor now has
+`waitForPatternReadiness()` with opt-in `block-patterns` and
+`block-patterns-resource-quiet` modes. Post Editor still has a plain fixed
+`MEASUREMENT_IDLE_WAIT_MS` before opening the inserter; it injects local
+`__experimentalAdditionalBlockPatterns` into editor settings and then measures
+clicking the local `Test` pattern category.
+
+![Pattern-loading wait scope split](figures/156-pattern-loading-wait-scope-split.png)
+
+| Row | Two-branch fixed-wait exposure | Current conclusion |
+| --- | -----------------------------: | ------------------ |
+| Site Editor `loadPatterns` | `20s` | predicate path exists; validate `getBlockPatterns` plus resource quiet and fixed `500ms` against fixed `1000ms` |
+| Post Editor `loadPatterns` | `22s` | separate validation required; Site Editor's REST-pattern predicate does not map cleanly to injected local patterns |
+| Combined `loadPatterns` name | `42s` | split reporting required; one metric name hides two readiness contracts |
+| Other non-Typing sleeps | `110s` | out of pattern scope; pattern-readiness evidence should not be used to remove these waits |
+
+That makes the open CI action more precise. Do not claim the full `42s`
+two-branch `loadPatterns` wait saving from the Site Editor predicate alone. The
+Site Editor candidate should be validated with readiness telemetry as above.
+Post Editor needs its own matrix, at minimum fixed `0ms`, `250ms`, `500ms`, and
+`1000ms`, plus any source-specific predicate for the inserter/pattern-tab
+state. That run should report retained q50, q50 sd, first-iteration behavior,
+preview/canvas misses, and resource movement. The other non-Typing sleeps are a
+third bucket and need metric-specific repeated runs.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark

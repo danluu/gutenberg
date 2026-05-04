@@ -16667,7 +16667,7 @@ write_csv(
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, or reported statistic changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor 0ms versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry.",
-	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract narrows the deployment choice: pure getBlockPatterns is rejected locally, getBlockPatterns plus resource quiet is the first replacement candidate, fixed 500ms is only a validated fallback, and fixed 1000ms remains the conservative baseline if either replacement changes the metric boundary.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Run the contract in CI/mac/container lanes with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry before changing the fixed wait.",
+	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract now has to be split by spec: Site Editor loadPatterns has an opt-in getBlockPatterns/resource-quiet predicate path and fixed 500ms is the best local fixed fallback, but Post Editor loadPatterns still has only a fixed pre-inserter wait and uses injected local patterns rather than the REST pattern resolver. A generic loadPatterns wait claim hides two different readiness contracts.", "Whether the Site Editor resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; separately, whether Post Editor loadPatterns can remove or reduce its 1000ms fixed wait without changing its local-pattern/inserter metric boundary.", "Validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; separately run Post Editor loadPatterns at 0/250/500/1000ms plus any source-specific inserter/pattern-tab readiness predicate before claiming full loadPatterns wait savings.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
 	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector and branch-aware compatibility audits narrow the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found. The branch-aware route must preserve dynamic store sets, registry-selector cross-store reads, parent registries, late store registration, render/subscription races, async queue cancellation, no-deps withSelect closures, generic stores, shallow-equality semantics, and public store-level subscribe semantics.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent and store-level subscribe notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes the branch-aware useSelect compatibility matrix plus marker-only source-span gates.",
@@ -17174,6 +17174,133 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 		write_csv(
 			pattern_readiness_ci_validation_contract_audit,
 			file.path(data_dir, "typing-delay-pattern-readiness-ci-validation-contract-audit.csv")
+		)
+
+		pattern_loading_wait_scope_split_audit <- tribble(
+			~spec_metric, ~source_reference, ~current_wait_surface, ~wait_occurrences_per_branch, ~retained_samples, ~two_branch_wait_s, ~readiness_mode_available, ~workload_shape, ~current_evidence, ~next_validation, ~risk_score, ~decision,
+			"site-editor loadPatterns",
+			"test/performance/specs/site-editor.spec.js:20-33,90-341,645-735",
+			"`waitForPatternReadiness()` before Design / Transform click; default mode is fixed 1000ms, opt-in modes are block-patterns and block-patterns-resource-quiet.",
+			10,
+			10,
+			20,
+			"implemented opt-in predicate",
+			"Fresh Site Editor visit per sample; waits before opening the measured Design / Transform panel; measured interval includes preview canvases and core/pattern replacement.",
+			"Pure getBlockPatterns is rejected locally; getBlockPatterns plus 100ms resource quiet waits about 301ms and matches the settled resource boundary; fixed 500ms is the best local fixed fallback.",
+			"Validate block-patterns-resource-quiet and fixed 500ms against fixed 1000ms on CI, macOS, and container lanes with readiness telemetry, resource movement, preview/canvas misses, q50 range, and q50 sd.",
+			4,
+			"predicate validation",
+			"post-editor loadPatterns",
+			"test/performance/specs/post-editor.spec.js:645-820",
+			"Fixed `MEASUREMENT_IDLE_WAIT_MS` before opening the global inserter on every iteration; no pattern-readiness predicate or readiness telemetry is wired here.",
+			11,
+			10,
+			22,
+			"not implemented",
+			"One editor instance with injected local `__experimentalAdditionalBlockPatterns`; waits before opening the inserter, then measures clicking the local Test pattern category and waiting for preview canvases' first blocks.",
+			"The Site Editor REST-pattern predicate does not map cleanly: the patterns are injected into editor settings, not fetched from the block-patterns REST resolver, and the fixed wait may be guarding inserter/sidebar/render setup instead.",
+			"Run a separate post-editor loadPatterns matrix for 0ms, 250ms, 500ms, and 1000ms plus any source-specific inserter/pattern-tab readiness predicate; report retained q50, q50 sd, preview/canvas misses, first-iteration behavior, and resource movement.",
+			5,
+			"separate validation required",
+			"shared metric name",
+			"test/performance/config/performance-reporter.ts:36,116",
+			"Both specs append to `results.loadPatterns`, and the reporter curates each suite by q25/q50/q75.",
+			21,
+			20,
+			42,
+			"metric-name collision",
+			"The same metric key hides two different setup/readiness contracts when discussing a generic 'pattern-loading wait'.",
+			"Combining the two without spec labels would overstate the portability of the Site Editor predicate and understate the remaining Post Editor validation.",
+			"Keep Site Editor and Post Editor rows separate in CI validation and runtime-savings claims.",
+			5,
+			"split reporting required",
+			"other non-Typing sleeps",
+			"test/performance/specs/post-editor.spec.js:361-640",
+			"Focus, List View, Inserter open/search/hover also use `MEASUREMENT_IDLE_WAIT_MS`, but they are not pattern-readiness waits.",
+			55,
+			60,
+			110,
+			"not pattern-related",
+			"Selection, list-view, and inserter interaction metrics need their own readiness or reliability checks.",
+			"Pattern-loading evidence should not be used to remove these sleeps.",
+			"Use the non-Typing wait screen and metric-specific repeated runs before changing these waits.",
+			3,
+			"out of pattern scope"
+		) %>%
+			mutate(
+				decision = factor(
+					decision,
+					levels = c(
+						"predicate validation",
+						"separate validation required",
+						"split reporting required",
+						"out of pattern scope"
+					)
+				)
+			)
+
+		write_csv(
+			pattern_loading_wait_scope_split_audit,
+			file.path(data_dir, "typing-delay-pattern-loading-wait-scope-split-audit.csv")
+		)
+
+		pattern_loading_wait_scope_split_summary <- pattern_loading_wait_scope_split_audit %>%
+			summarize(
+				site_editor_two_branch_wait_s = two_branch_wait_s[spec_metric == "site-editor loadPatterns"],
+				post_editor_two_branch_wait_s = two_branch_wait_s[spec_metric == "post-editor loadPatterns"],
+				combined_load_patterns_two_branch_wait_s = two_branch_wait_s[spec_metric == "shared metric name"],
+				other_nontyping_two_branch_wait_s = two_branch_wait_s[spec_metric == "other non-Typing sleeps"],
+				key_conclusion = "Pattern-loading wait is not one contract: Site Editor has an opt-in predicate path, while Post Editor loadPatterns still needs separate validation because it uses injected local patterns and a different setup boundary.",
+				recommended_next_step = "Validate Site Editor block-patterns-resource-quiet/fixed-500 against fixed-1000, and separately run Post Editor loadPatterns 0/250/500/1000 plus source-specific readiness checks before claiming the full loadPatterns wait savings.",
+				.groups = "drop"
+			)
+
+		write_csv(
+			pattern_loading_wait_scope_split_summary,
+			file.path(data_dir, "typing-delay-pattern-loading-wait-scope-split-summary.csv")
+		)
+
+		pattern_loading_wait_scope_split_plot <- pattern_loading_wait_scope_split_audit %>%
+			filter(spec_metric != "shared metric name") %>%
+			mutate(
+				spec_metric_wrapped = str_wrap(spec_metric, width = 28),
+				spec_metric_wrapped = fct_reorder(spec_metric_wrapped, two_branch_wait_s)
+			)
+
+		save_plot(
+			ggplot(
+				pattern_loading_wait_scope_split_plot,
+				aes(
+					two_branch_wait_s,
+					spec_metric_wrapped,
+					color = decision,
+					shape = decision,
+					size = risk_score
+				)
+			) +
+				geom_point(alpha = 0.92) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Decision") +
+				scale_shape_manual(
+					values = c(
+						"predicate validation" = 16,
+						"separate validation required" = 17,
+						"split reporting required" = 15,
+						"out of pattern scope" = 3
+					),
+					name = "Decision"
+				) +
+				scale_size_area(max_size = 7, breaks = 3:5, name = "Risk") +
+				scale_x_continuous(labels = label_number(suffix = "s")) +
+				labs(
+					title = "Pattern-loading wait must be split by spec",
+					subtitle = "Site Editor has a predicate path; Post Editor loadPatterns and other non-Typing sleeps need separate validation",
+					x = "Two-branch fixed-wait exposure at current 1000ms wait",
+					y = NULL
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"156-pattern-loading-wait-scope-split.png",
+			width = 12,
+			height = 5.8
 		)
 
 		save_plot(
