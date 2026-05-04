@@ -153,6 +153,8 @@ const supportedScenarios = [
 const supportedDelayModes = [
 	'keyboard',
 	'between-keys',
+	'keyboard-press-fixed-hold-then-wait',
+	'keyboard-locator-focus-fixed-hold-then-wait',
 	'fixed-hold-then-wait',
 	'locator-type-fixed-hold-then-wait',
 	'locator-press-fixed-hold-then-wait',
@@ -1481,6 +1483,8 @@ test.describe( 'Typing delay benchmark', () => {
 			! [
 				'keyboard',
 				'between-keys',
+				'keyboard-press-fixed-hold-then-wait',
+				'keyboard-locator-focus-fixed-hold-then-wait',
 				'fixed-hold-then-wait',
 				'locator-type-fixed-hold-then-wait',
 				'locator-press-fixed-hold-then-wait',
@@ -1489,9 +1493,12 @@ test.describe( 'Typing delay benchmark', () => {
 		) {
 			throw new Error(
 				'BENCHMARK_SETUP_STYLE=ci-post-editor-typing only supports ' +
-					'BENCHMARK_DELAY_MODE=keyboard, between-keys, fixed-hold-then-wait, ' +
-					'locator-type-fixed-hold-then-wait, locator-press-fixed-hold-then-wait, ' +
-					'or locator-press-no-wait-after-fixed-hold-then-wait.'
+					'BENCHMARK_DELAY_MODE=keyboard, between-keys, ' +
+					'keyboard-press-fixed-hold-then-wait, ' +
+					'keyboard-locator-focus-fixed-hold-then-wait, ' +
+					'fixed-hold-then-wait, locator-type-fixed-hold-then-wait, ' +
+					'locator-press-fixed-hold-then-wait, or ' +
+					'locator-press-no-wait-after-fixed-hold-then-wait.'
 			);
 		}
 
@@ -3829,6 +3836,51 @@ setInterval(() => {}, 2147483647);
 						if ( delayMs > 0 && i < sampleCount - 1 ) {
 							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
 							await page.waitForTimeout( delayMs );
+						}
+					}
+				} else if (
+					delayMode === 'keyboard-press-fixed-hold-then-wait'
+				) {
+					if ( setupStyle === 'ci-post-editor-typing' ) {
+						await canvas
+							.locator( '[contenteditable="true"]' )
+							.last()
+							.click();
+					}
+					const holdMs = Math.min( keyHoldMs, delayMs );
+					const postKeyupWaitMs = Math.max( delayMs - holdMs, 0 );
+					for ( let i = 0; i < sampleCount; i++ ) {
+						await page.keyboard.press( 'x', {
+							delay: holdMs,
+							timeout: Math.max( 30_000, holdMs * 4 ),
+						} );
+						if ( postKeyupWaitMs > 0 && i < sampleCount - 1 ) {
+							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+							await page.waitForTimeout( postKeyupWaitMs );
+						}
+					}
+				} else if (
+					delayMode === 'keyboard-locator-focus-fixed-hold-then-wait'
+				) {
+					const locatorFocusTarget =
+						setupStyle === 'ci-post-editor-typing'
+							? canvas
+									.locator( '[contenteditable="true"]' )
+									.last()
+							: paragraph;
+					await locatorFocusTarget.click();
+					const holdMs = Math.min( keyHoldMs, delayMs );
+					const postKeyupWaitMs = Math.max( delayMs - holdMs, 0 );
+					for ( let i = 0; i < sampleCount; i++ ) {
+						await locatorFocusTarget.focus( {
+							timeout: Math.max( 30_000, holdMs * 4 ),
+						} );
+						await page.keyboard.down( 'x' );
+						await sleepMs( holdMs );
+						await page.keyboard.up( 'x' );
+						if ( postKeyupWaitMs > 0 && i < sampleCount - 1 ) {
+							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+							await page.waitForTimeout( postKeyupWaitMs );
 						}
 					}
 				} else if ( delayMode === 'fixed-hold-then-wait' ) {

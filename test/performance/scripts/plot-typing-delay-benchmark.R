@@ -4739,6 +4739,11 @@ ci_fresh_code_path_summary_path <- file.path(data_dir, "typing-delay-ci-fresh-co
 ci_fresh_code_path_paired_difference_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-paired-differences.csv")
 ci_fresh_code_path_api_delta_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-api-deltas.csv")
 ci_fresh_code_path_predictor_audit_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-predictor-audit.csv")
+input_api_boundary_next_control_audit_path <- file.path(data_dir, "typing-delay-input-api-boundary-next-control-audit.csv")
+ci_keyboard_prelude_control_sample_path <- file.path(data_dir, "typing-delay-ci-keyboard-prelude-control-samples.csv")
+ci_keyboard_prelude_control_run_path <- file.path(data_dir, "typing-delay-ci-keyboard-prelude-control-runs.csv")
+ci_keyboard_prelude_control_summary_path <- file.path(data_dir, "typing-delay-ci-keyboard-prelude-control-summary.csv")
+ci_keyboard_prelude_control_delta_path <- file.path(data_dir, "typing-delay-ci-keyboard-prelude-control-deltas.csv")
 ci_hold_duration_artifact_dirs <- c(
 	`current CI held key` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-keyboard"),
 	`100ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-hold-100"),
@@ -5810,6 +5815,87 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 	)
 	write_csv(ci_fresh_code_path_predictor_audit, ci_fresh_code_path_predictor_audit_path)
 
+	input_api_boundary_next_control_audit <- tribble(
+		~open_question, ~current_answer, ~existing_evidence, ~remaining_unknown, ~next_control, ~decision,
+		"Does ordinary locator.press model pressSequentially?",
+		"No. pressSequentially belongs with locator.type, not ordinary locator.press.",
+		paste0(
+			"Source inspection shows locator.pressSequentially delegates to type(), while ordinary locator.press runs frame.press with a wait-for-signals epilogue. In the fresh matrix, removing that epilogue raises ordinary locator.press by median ",
+			format_fresh_ms(median(
+				(ci_fresh_code_path_runs %>% filter(input_mode == "50ms locator.press noWaitAfter hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)) -
+					(ci_fresh_code_path_runs %>% filter(input_mode == "50ms locator.press hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)),
+				na.rm = TRUE
+			)),
+			" at 50ms and ",
+			format_fresh_ms(median(
+				(ci_fresh_code_path_runs %>% filter(input_mode == "75ms locator.press noWaitAfter hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)) -
+					(ci_fresh_code_path_runs %>% filter(input_mode == "75ms locator.press hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)),
+				na.rm = TRUE
+			)),
+			" at 75ms."
+		),
+		"Only whether a future Playwright version changes this implementation.",
+		"No local benchmark needed unless the Playwright source changes.",
+		"Use locator.press only as a checkpoint control; compare pressSequentially against locator.type.",
+		"Can one realistic hold duration be chosen globally?",
+		"No. Hold duration is API-family-specific.",
+		paste0(
+			"At requested 50ms, page.keyboard is tap-like at 250ms (",
+			format_fresh_ms(fresh_delta_value("page.keyboard", 50, 250, "latency_minus_tap_p50_ms")),
+			" versus tap) while locator.type is slow (",
+			format_fresh_ms(fresh_delta_value("locator.type", 50, 250, "latency_minus_tap_p50_ms")),
+			"). At requested 100ms, page.keyboard remains slow at 500ms (",
+			format_fresh_ms(fresh_delta_value("page.keyboard", 100, 500, "latency_minus_tap_p50_ms")),
+			") while locator.type is tap-like (",
+			format_fresh_ms(fresh_delta_value("locator.type", 100, 500, "latency_minus_tap_p50_ms")),
+			")."
+		),
+		"Which hold is best inside a chosen final API path.",
+		"Interleave realistic holds only after choosing the input API path.",
+		"Do not tune a universal 50ms/75ms/100ms rule from mixed API data.",
+		"Does observed physical hold close the split?",
+		"No. Similar measured keydown-to-keyup bands land in different phases.",
+		paste0(
+			"page.keyboard 50ms is tap-like with a realized ",
+			format_fresh_ms(fresh_summary_value("page.keyboard", 50, 500, "observed_keydown_to_keyup_p50_ms")),
+			" hold at 500ms, locator.type 75ms is slow with a nearby ",
+			format_fresh_ms(fresh_summary_value("locator.type", 75, 500, "observed_keydown_to_keyup_p50_ms")),
+			" hold, and ordinary locator.press 100ms is tap-like at ",
+			format_fresh_ms(fresh_summary_value("locator.press", 100, 500, "observed_keydown_to_keyup_p50_ms")),
+			"."
+		),
+		"The browser/editor phase boundary that makes similar physical holds behave differently.",
+		"Do not add more hold-only controls; split the API path first.",
+		"Treat measured hold as a descriptor, not the causal variable.",
+		"Does configured post-keyup wait close the split?",
+		"No. The same post-keyup wait can land in different phases.",
+		paste0(
+			"At 500ms delay and requested 50ms hold, page.keyboard and locator.type both wait ",
+			format_fresh_ms(fresh_summary_value("page.keyboard", 50, 500, "post_keyup_wait_ms")),
+			" after keyup; page.keyboard is ",
+			format_fresh_ms(fresh_delta_value("page.keyboard", 50, 500, "latency_minus_tap_p50_ms")),
+			" versus tap while locator.type is ",
+			format_fresh_ms(fresh_delta_value("locator.type", 50, 500, "latency_minus_tap_p50_ms")),
+			"."
+		),
+		"Which automation/browser checkpoint, not elapsed wall-clock wait, moves the runtime state.",
+		"Keep post-keyup timing separate from Chromium-runtime checkpoint experiments.",
+		"Do not explain the input API boundary as ordinary wait length.",
+		"What still separates page.keyboard from locator.type?",
+		"Only this narrower boundary remains open.",
+		"locator.type and locator.press(noWaitAfter) match at 50ms/75ms, but page.keyboard has the opposite 50ms versus 100ms phase pattern under the matched fresh setup.",
+		"Whether the cause is explicit down/up timing, page.keyboard.press one-call timing, per-key locator focus/check work, or their interaction with the editor phase.",
+		"Run a compact split: page.keyboard.press('x', { delay: hold }) plus the same post-keyup wait, crossed with explicit page.keyboard down/up preceded by per-key locator focus/evaluate.",
+		"Run this only if the CI implementation choice depends on page.keyboard versus locator.type equivalence.",
+		"What would a CI switch to pressSequentially mean?",
+		"It would switch the benchmark to the locator.type family; it would not be equivalent to ordinary locator.press or to explicit page.keyboard down/up.",
+		"Source inspection and the noWaitAfter data both put pressSequentially/type on the locator-type side of the matrix.",
+		"The exact full-delay CI distribution after implementing the final helper.",
+		"After choosing the helper, run the exact CI settings once rather than proxying through locator.press.",
+		"Make the API choice explicit in the benchmark before interpreting hold-duration differences."
+	)
+	write_csv(input_api_boundary_next_control_audit, input_api_boundary_next_control_audit_path)
+
 	ci_fresh_code_path_plot <- ci_fresh_code_path_summary %>%
 		filter(delay_ms %in% c(250, 500, 1000), input_api != "page.keyboard.type") %>%
 		mutate(
@@ -5904,10 +5990,281 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 		"148-ci-fresh-code-path-phase-map.png",
 		width = 12.2,
 		height = 5.8
-	)
-}
+		)
+	}
 
-cliff_delay_levels <- derived$runs %>%
+	ci_keyboard_prelude_control_specs <- tribble(
+		~input_mode, ~input_api, ~requested_hold_ms, ~artifact_dir,
+		"50ms page.keyboard.press hold", "page.keyboard.press", 50, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-keyboard-press-50"),
+		"75ms page.keyboard.press hold", "page.keyboard.press", 75, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-keyboard-press-75"),
+		"100ms page.keyboard.press hold", "page.keyboard.press", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-keyboard-press-100"),
+		"50ms page.keyboard + locator.focus hold", "page.keyboard + locator.focus", 50, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-keyboard-locator-focus-50"),
+		"75ms page.keyboard + locator.focus hold", "page.keyboard + locator.focus", 75, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-keyboard-locator-focus-75"),
+		"100ms page.keyboard + locator.focus hold", "page.keyboard + locator.focus", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-fresh-codepath-keyboard-locator-focus-100")
+	) %>%
+		mutate(
+			json_path = map_chr(artifact_dir, function(artifact_dir) {
+				paths <- Sys.glob(file.path(artifact_dir, "typing-delay-benchmark-*.json"))
+				if (length(paths) == 0) {
+					return(NA_character_)
+				}
+				paths[[which.max(file.info(paths)$mtime)]]
+			})
+		)
+
+	if (all(!is.na(ci_keyboard_prelude_control_specs$json_path))) {
+		ci_keyboard_prelude_new_samples <- pmap_dfr(
+			ci_keyboard_prelude_control_specs,
+			function(input_mode, input_api, requested_hold_ms, artifact_dir, json_path) {
+				raw <- fromJSON(json_path, flatten = TRUE)
+				as_tibble(raw$records) %>%
+					transmute(
+						input_mode,
+						input_api,
+						requested_hold_ms = as.numeric(requested_hold_ms),
+						delay_mode = raw$metadata$delayMode,
+						json_path = sub(paste0(repo_root, "/"), "", json_path, fixed = TRUE),
+						delay_ms = delayMs,
+						round,
+						editor_setup_index = editorSetupIndex,
+						sample_index = sampleIndex,
+						is_throwaway = isThrowaway,
+						keydown_event_count = keydownEventCount,
+						latency_ms = latencyMs,
+						latency_all_keydowns_ms = latencyAllKeydownsMs,
+						keydown_ms = keydownMs,
+						keydown_all_ms = keydownAllMs,
+						keypress_ms = keypressMs,
+						keyup_ms = keyupMs,
+						keydown_timestamp_ms = keydownTimestampMs,
+						first_keydown_timestamp_ms = firstKeydownTimestampMs,
+						keypress_timestamp_ms = keypressTimestampMs,
+						keyup_timestamp_ms = keyupTimestampMs,
+						run_duration_ms = runStoppedAtEpochMs - runStartedAtEpochMs
+					)
+			}
+		) %>%
+			mutate(
+				effective_hold_ms = pmin(requested_hold_ms, delay_ms),
+				post_keyup_wait_ms = pmax(delay_ms - effective_hold_ms, 0),
+				observed_keydown_to_keyup_ms = keyup_timestamp_ms + keyup_ms - first_keydown_timestamp_ms,
+				keypress_to_keyup_gap_ms = keyup_timestamp_ms - (keypress_timestamp_ms + keypress_ms)
+			)
+
+		ci_keyboard_prelude_control_samples <- bind_rows(
+			ci_fresh_code_path_samples %>%
+				filter(
+					input_api %in% c(
+						"tap",
+						"page.keyboard",
+						"locator.type",
+						"locator.press noWaitAfter"
+					)
+				),
+			ci_keyboard_prelude_new_samples
+		) %>%
+			arrange(input_api, requested_hold_ms, delay_ms, round, sample_index)
+
+		write_csv(ci_keyboard_prelude_control_samples, ci_keyboard_prelude_control_sample_path)
+	} else if (file.exists(ci_keyboard_prelude_control_sample_path)) {
+		ci_keyboard_prelude_control_samples <- read_csv(ci_keyboard_prelude_control_sample_path, show_col_types = FALSE)
+	} else {
+		ci_keyboard_prelude_control_samples <- tibble()
+	}
+
+	if (nrow(ci_keyboard_prelude_control_samples) > 0) {
+		ci_keyboard_prelude_retained <- ci_keyboard_prelude_control_samples %>%
+			filter(!is_throwaway)
+
+		ci_keyboard_prelude_runs <- ci_keyboard_prelude_retained %>%
+			group_by(
+				input_mode,
+				input_api,
+				requested_hold_ms,
+				delay_mode,
+				json_path,
+				delay_ms,
+				round,
+				editor_setup_index
+			) %>%
+			summarize(
+				retained_n = n(),
+				reported_q50_ms = median(latency_ms),
+				keypress_q50_ms = median(keypress_ms),
+				observed_keydown_to_keyup_p50_ms = median(observed_keydown_to_keyup_ms),
+				keypress_to_keyup_gap_p50_ms = median(keypress_to_keyup_gap_ms),
+				run_duration_ms = first(run_duration_ms),
+				.groups = "drop"
+			)
+		write_csv(ci_keyboard_prelude_runs, ci_keyboard_prelude_control_run_path)
+
+		ci_keyboard_prelude_summary <- ci_keyboard_prelude_retained %>%
+			group_by(input_mode, input_api, requested_hold_ms, delay_mode, delay_ms) %>%
+			summarize(
+				retained_n = n(),
+				latency_p10_ms = quant(latency_ms, 0.1),
+				latency_p50_ms = median(latency_ms),
+				latency_p90_ms = quant(latency_ms, 0.9),
+				latency_mean_ms = mean(latency_ms),
+				latency_sd_ms = sd(latency_ms),
+				keypress_p50_ms = median(keypress_ms),
+				observed_keydown_to_keyup_p50_ms = median(observed_keydown_to_keyup_ms),
+				keypress_to_keyup_gap_p50_ms = median(keypress_to_keyup_gap_ms),
+				.groups = "drop"
+			) %>%
+			left_join(
+				ci_keyboard_prelude_runs %>%
+					group_by(input_mode, input_api, requested_hold_ms, delay_mode, delay_ms) %>%
+					summarize(
+						run_count = n(),
+						run_reported_q50_median_ms = median(reported_q50_ms),
+						run_reported_q50_sd_ms = sd(reported_q50_ms),
+						run_reported_q50_min_ms = min(reported_q50_ms),
+						run_reported_q50_max_ms = max(reported_q50_ms),
+						.groups = "drop"
+					),
+				by = c("input_mode", "input_api", "requested_hold_ms", "delay_mode", "delay_ms")
+			)
+		write_csv(ci_keyboard_prelude_summary, ci_keyboard_prelude_control_summary_path)
+
+		ci_keyboard_prelude_deltas <- ci_keyboard_prelude_summary %>%
+			filter(input_api != "tap") %>%
+			left_join(
+				ci_keyboard_prelude_summary %>%
+					filter(input_api == "tap") %>%
+					transmute(
+						delay_ms,
+						tap_latency_p50_ms = latency_p50_ms,
+						tap_keypress_p50_ms = keypress_p50_ms
+					),
+				by = "delay_ms"
+			) %>%
+			left_join(
+				ci_keyboard_prelude_summary %>%
+					filter(input_api == "locator.type") %>%
+					transmute(
+						requested_hold_ms,
+						delay_ms,
+						locator_type_latency_p50_ms = latency_p50_ms
+					),
+				by = c("requested_hold_ms", "delay_ms")
+			) %>%
+			left_join(
+				ci_keyboard_prelude_summary %>%
+					filter(input_api == "page.keyboard") %>%
+					transmute(
+						requested_hold_ms,
+						delay_ms,
+						page_keyboard_down_up_latency_p50_ms = latency_p50_ms
+					),
+				by = c("requested_hold_ms", "delay_ms")
+			) %>%
+			mutate(
+				latency_minus_tap_p50_ms = latency_p50_ms - tap_latency_p50_ms,
+				keypress_minus_tap_p50_ms = keypress_p50_ms - tap_keypress_p50_ms,
+				latency_minus_locator_type_p50_ms =
+					latency_p50_ms - locator_type_latency_p50_ms,
+				latency_minus_page_down_up_p50_ms =
+					latency_p50_ms - page_keyboard_down_up_latency_p50_ms,
+				phase_label = case_when(
+					latency_minus_tap_p50_ms >= 2.5 ~ "slow",
+					latency_minus_tap_p50_ms >= 1.25 ~ "mixed",
+					TRUE ~ "tap-like"
+				)
+			) %>%
+			arrange(delay_ms, input_api, requested_hold_ms)
+		write_csv(ci_keyboard_prelude_deltas, ci_keyboard_prelude_control_delta_path)
+
+		ci_keyboard_prelude_levels <- c(
+			"page.keyboard",
+			"page.keyboard.press",
+			"page.keyboard + locator.focus",
+			"locator.type",
+			"locator.press noWaitAfter"
+		)
+
+		ci_keyboard_prelude_plot <- ci_keyboard_prelude_summary %>%
+			filter(input_api != "tap") %>%
+			mutate(
+				delay_label = factor(paste0(delay_ms, "ms"), levels = c("250ms", "500ms", "1000ms")),
+				input_api = factor(input_api, levels = ci_keyboard_prelude_levels)
+			)
+
+		save_plot(
+			ggplot(
+				ci_keyboard_prelude_plot,
+				aes(requested_hold_ms, latency_p50_ms, color = input_api, shape = input_api)
+			) +
+				geom_linerange(
+					aes(ymin = latency_p10_ms, ymax = latency_p90_ms),
+					position = position_dodge(width = 7),
+					alpha = 0.55,
+					linewidth = 0.75
+				) +
+				geom_point(
+					position = position_dodge(width = 7),
+					size = 2.6,
+					alpha = 0.92
+				) +
+				facet_wrap(vars(delay_label), nrow = 1) +
+				scale_x_continuous(breaks = c(50, 75, 100)) +
+				scale_color_brewer(type = "qual", palette = "Set2", name = "Input path") +
+				scale_shape_manual(values = c(16, 17, 15, 3, 8), name = "Input path") +
+				labs(
+					title = "Page-keyboard one-call press and locator focus both change the short-hold phase",
+					subtitle = "CI-comparable fresh setup; points are p50 and bars are p10-p90 over retained EventDispatch samples",
+					x = "Requested key hold before post-keyup wait (ms)",
+					y = "Latency, keydown + keypress + keyup (ms)"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"151-ci-keyboard-prelude-control-p50.png",
+			width = 12.4,
+			height = 5.8
+		)
+
+		ci_keyboard_prelude_phase_map <- ci_keyboard_prelude_deltas %>%
+			filter(input_api %in% ci_keyboard_prelude_levels) %>%
+			mutate(
+				delay_label = factor(paste0(delay_ms, "ms"), levels = c("250ms", "500ms", "1000ms")),
+				input_api = factor(input_api, levels = ci_keyboard_prelude_levels),
+				hold_label = factor(paste0(requested_hold_ms, "ms"), levels = c("50ms", "75ms", "100ms")),
+				delta_label = sprintf("%+.1f", latency_minus_tap_p50_ms)
+			)
+
+		save_plot(
+			ggplot(
+				ci_keyboard_prelude_phase_map,
+				aes(hold_label, input_api, fill = latency_minus_tap_p50_ms)
+			) +
+				geom_tile(color = "white", linewidth = 0.45) +
+				geom_text(aes(label = delta_label), size = 3.1, color = brewer_color("Greys", 9, type = "seq", n = 9)) +
+				facet_wrap(vars(delay_label), nrow = 1) +
+				scale_fill_distiller(
+					type = "div",
+					palette = "RdYlBu",
+					direction = -1,
+					limits = c(-1, 6),
+					oob = squish,
+					name = "p50 - tap (ms)"
+				) +
+				labs(
+					title = "The remaining API split is mostly Playwright action phase, not physical hold duration",
+					subtitle = "Cells show p50 latency minus same-delay tap in fresh CI-comparable runs",
+					x = "Requested key hold before post-keyup wait",
+					y = "Input path"
+				) +
+				theme(
+					legend.position = "bottom",
+					panel.grid = element_blank(),
+					axis.text.x = element_text(angle = 0, hjust = 0.5)
+				),
+			"152-ci-keyboard-prelude-control-phase-map.png",
+			width = 12.5,
+			height = 6.2
+		)
+	}
+
+	cliff_delay_levels <- derived$runs %>%
 	filter(run_id == "cliff_actions") %>%
 	pull(delay_ms) %>%
 	unique() %>%
@@ -9237,10 +9594,10 @@ if (
 			)
 		)
 
-	cdp_boundary_theory_matrix <- tribble(
-		~candidate_theory, ~status, ~strongest_measurement, ~remaining_gap,
-		"Elapsed post-keyup time creates the fast path", "ruled out",
-		"Raw CDP ordinary waits from about 4ms through 5008ms stay around 21-24ms keypress p50.",
+		cdp_boundary_theory_matrix <- tribble(
+			~candidate_theory, ~status, ~strongest_measurement, ~remaining_gap,
+			"Elapsed post-keyup time creates the fast path", "ruled out",
+			"Raw CDP ordinary waits from about 4ms through 5008ms stay around 21-24ms keypress p50.",
 		"Does not identify which Chromium state runtime checkpoints alter.",
 		"DOM event payload or raw-CDP packet shape explains the slow path", "ruled out",
 		"Corrected raw-CDP packets and matched DOM key/input signatures still stay slow.",
@@ -9258,21 +9615,34 @@ if (
 		"Native contenteditable moves only about 0.3-0.4ms, while Gutenberg moves by several milliseconds.",
 		"Gutenberg fanout explains scale, but the browser/runtime trigger is still lower-level.",
 		"Exact Chromium internal mechanism is identified", "still open",
-		"No current trace includes the renderer scheduler/runtime state that changes across those checkpoints.",
-		"Needs Chromium tracing or lower-level runtime/scheduler instrumentation."
-	)
+			"No current trace includes the renderer scheduler/runtime state that changes across those checkpoints.",
+			"Needs Chromium tracing or lower-level runtime/scheduler instrumentation."
+		)
 
-	write_csv(
-		cdp_boundary_consolidated,
-		file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
-	)
-	write_csv(
-		cdp_boundary_theory_matrix,
-		file.path(data_dir, "typing-delay-cdp-boundary-theory-matrix.csv")
-	)
+		chromium_runtime_next_probe_audit <- tribble(
+			~open_question, ~current_answer, ~strongest_evidence, ~what_is_closed, ~remaining_unknown, ~next_probe, ~decision,
+			"Is the per-key fast path just elapsed post-keyup time?", "No.", "Raw CDP ordinary waits from about 4ms through 5008ms stay around 21-24ms keypress p50.", "Ordinary sleeping, queued-JS drain, and browser rest time are not sufficient explanations.", "None for this benchmark decision.", "No more ordinary-wait extensions unless a different browser build changes the result.", "closed",
+			"Is one generic renderer task, timer, or frame checkpoint enough?", "No.", "A single Runtime.evaluate, setTimeout(0), or RAF checkpoint improves only partway and does not reach the trace-on page.evaluate band.", "The missing boundary is narrower than task, timer, or frame progression.", "Which runtime/protocol side effect accumulates when checkpoints are repeated.", "Trace direct Runtime.evaluate and Runtime.callFunctionOn repeat grids with Chromium scheduler/runtime categories.", "partially closed",
+			"Do Playwright trace snapshots explain the full per-key fast path?", "Yes for the default trace-on performance configuration.", "With trace on, per-key keyboard.press and raw CDP plus page.evaluate are about 11.3ms; with trace off they are about 22.1ms and 17.4ms.", "Trace-on per-key Playwright actions are a measurement perturbation, not a human-typing model.", "Which snapshot subcommand or renderer state transition causes the speedup.", "Compare trace-on captureSnapshot windows with trace-off repeated Runtime.callFunctionOn windows in the same Chromium scheduler trace.", "supported",
+			"Can direct runtime checkpoints reproduce the trace-off residual?", "Yes, by dose response.", "Direct runtime calls move raw CDP from 21.5ms to about 15-16ms at x7 and about 13ms at x17.", "A unique Playwright utility-script or locator semantic action is not required.", "Whether the driver is V8 microtask state, renderer scheduler priority, input queue state, cache/frequency side effects, or a combination.", "Hold raw CDP input fixed, vary checkpoint count, and trace renderer scheduler/runtime state around the prior keyup and next keydown.", "next browser-level work",
+			"Is the checkpoint effect enough to explain Gutenberg-scale movement by itself?", "No.", "Native contenteditable moves only about 0.3-0.4ms while Gutenberg moves by several milliseconds.", "The browser/runtime trigger is real, but Gutenberg's data/RichText fanout supplies the scale.", "How much of the amplified cost survives realistic user/plugin workloads.", "Use real-workload replay for product lag; use Chromium tracing only for benchmark-artifact mechanism.", "split product from artifact"
+		)
 
-	save_plot(
-		ggplot(
+		write_csv(
+			cdp_boundary_consolidated,
+			file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
+		)
+		write_csv(
+			cdp_boundary_theory_matrix,
+			file.path(data_dir, "typing-delay-cdp-boundary-theory-matrix.csv")
+		)
+		write_csv(
+			chromium_runtime_next_probe_audit,
+			file.path(data_dir, "typing-delay-chromium-runtime-next-probe-audit.csv")
+		)
+
+		save_plot(
+			ggplot(
 			cdp_boundary_consolidated,
 			aes(keypress_p50_ms, condition_label, color = family, shape = family)
 		) +
@@ -10207,11 +10577,11 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			"No current JS/browser trace includes per-core residency, frequency, cache, or scheduler/QoS transition counters.",
 			"The honest current answer stops at a narrowed system-boundary hypothesis.",
 			"Needs hardware counters, OS scheduler/QoS traces, or browser traces with OS scheduling categories."
-		) %>%
-			mutate(
-				status = factor(
-					status,
-					levels = c(
+			) %>%
+				mutate(
+					status = factor(
+						status,
+						levels = c(
 						"ruled out",
 						"ruled out for large cliff",
 						"supported boundary",
@@ -10219,16 +10589,30 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					)
 				),
 				theory_order = row_number(),
-				candidate_theory_wrapped = str_wrap(candidate_theory, width = 42)
+					candidate_theory_wrapped = str_wrap(candidate_theory, width = 42)
+				)
+
+			cpu_qos_next_probe_audit <- tribble(
+				~open_question, ~current_answer, ~strongest_evidence, ~what_is_closed, ~remaining_unknown, ~next_probe, ~decision,
+				"Is the 1000ms timer callback or a nearby no-op task sufficient?", "No.", "Near-key no-CPU task controls have a median p50 of 24.3ms across six controls.", "Callback existence, worker lifetime, delayed task, IPC shape, and idle child lifetime do not produce the fast band.", "None for the system-level CPU/QoS claim.", "Do not add more no-CPU task variants unless they target a new concrete browser subsystem.", "closed",
+				"Is any external CPU burn sufficient?", "No.", "Continuous background/maintenance CPU controls have a median p50 of 24.2ms despite consuming CPU.", "Generic load and generic process activity are not enough.", "Which policy or hardware state makes ordinary/utility CPU visible to the foreground browser path.", "Measure ordinary, utility, background, and maintenance controls with OS scheduler/QoS and power counters.", "partially closed",
+				"Is ordinary/utility-QoS CPU activity sufficient locally?", "Yes, as a boundary result.", "Continuous ordinary/nice/utility controls have a median p50 of 9.7ms; taskpolicy -c utility is 9.4ms; taskpolicy -l/-t tiers stay 9.2-9.7ms.", "The split is not Unix nice and not taskpolicy machinery in general.", "Whether the causal layer is P-core residency, cluster frequency, cache warmth, scheduler priority, timer coalescing, or a combination.", "Run finite and continuous CPU controls with powermetrics/Instruments and browser scheduling traces.", "supported boundary",
+				"Do finite CPU duration and recency matter?", "Yes, descriptively.", "A two-term finite-burst model has R^2 = 0.71; longer work lowers p50 and larger end-to-keydown gaps raise p50.", "Duration and recency are real variables, not coincidental labels.", "The model does not identify the hardware mechanism and does not cover continuous QoS-clamped controls.", "Pair the finite-burst grid with per-core residency/frequency counters and process QoS state.", "supported boundary",
+				"Is the exact hardware or scheduler layer identified?", "No.", "No current JS/browser trace includes per-core residency, frequency, cache, or scheduler/QoS transition counters.", "The report can name the narrowed system boundary but not the lower-level causal component.", "Exact split between core residency, frequency, cache, QoS scheduling, timer coalescing, and browser scheduler state.", "Use OS/hardware counters first; use more JS benchmark rows only to reproduce a counter-backed hypothesis.", "still open",
+				"What should product optimization do with this?", "Keep it separate from source-level mitigations.", "Native/browser controls move less than 1ms while Gutenberg's broad input path moves by many milliseconds.", "System state modulates the path, but Gutenberg fanout supplies the scale.", "How real plugin/human workloads interact with the system state.", "Use workload replay for product lag and selector/subscriber prototypes for source mitigation; use OS counters for the benchmark artifact.", "split artifact from product"
 			)
 
-		write_csv(
-			system_mechanism_matrix,
-			file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
-		)
+			write_csv(
+				system_mechanism_matrix,
+				file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
+			)
+			write_csv(
+				cpu_qos_next_probe_audit,
+				file.path(data_dir, "typing-delay-cpu-qos-next-probe-audit.csv")
+			)
 
-		save_plot(
-			ggplot(
+			save_plot(
+				ggplot(
 				system_mechanism_matrix,
 				aes(
 					evidence_strength,
@@ -12741,8 +13125,8 @@ if (file.exists(marker_allspan_action_summary_path)) {
 		~design_option, ~design_family, ~preserves_persistence_semantics, ~avoids_ordinary_use_select_fanout, ~prototype_risk, ~prototype_order, ~estimated_scope_ms, ~estimated_scope_listener_count, ~source_evidence, ~design_note,
 		"Silence MARK_LAST_CHANGE_AS_PERSISTENT", "do not do this", "no", "yes", "invalid", "reject", current_marker_root_subscribe_p50_ms, current_marker_redux_listener_count_p50, "The marker currently wakes thousands of listeners, but useBlockSync reads isLastBlockChangePersistent() and uses the persistence transition to choose onChange vs onInput.", "This would make the benchmark fast by dropping a semantic signal the editor uses.",
 		"Local selector guards only", "local guard", "yes", "partial", "low-medium", "first local prototype", source_feasible_local_guard_ms, source_feasible_local_guard_count, "Hot audited useSelect owners mostly read settings, block identity, tree, or selection state, not text content or isPersistentChange; source feasibility removes the heading row until it has a shared signal.", "Good first patch class, but it does not fix the store-level wakeup contract.",
-		"Persistence-aware side channel for useBlockSync", "subscriber partition", "yes", "yes for persistence-only markers", "medium-high", "store-boundary prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The only observed semantic consumer of the marker transition in this path is useBlockSync; audited hot useSelect owners do not read blocks.isPersistentChange.", "Notify persistence-aware subscribers without invalidating ordinary block-editor useSelect subscribers.",
-		"Split persistence state from core/block-editor", "store partition", "yes if compatibility wrapper is kept", "yes for persistence-only markers", "high", "after side-channel prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The changed branch is only blocks.isPersistentChange, but public selectors expose it through the block-editor store.", "Could keep isLastBlockChangePersistent as a wrapper while storing/versioning persistence separately.",
+		"Persistence-aware side channel for useBlockSync", "subscriber partition", "yes", "yes for persistence-only markers", "medium-high", "store-boundary prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The only observed production consumer of the marker transition in this path is useBlockSync; audited hot useSelect owners do not read blocks.isPersistentChange.", "Notify persistence-aware subscribers without invalidating ordinary block-editor useSelect subscribers.",
+		"Split persistence state from core/block-editor", "store partition", "yes if public selector compatibility is addressed", "yes for persistence-only markers", "high", "after side-channel prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "The changed branch is only blocks.isPersistentChange, but isLastBlockChangePersistent is a documented public selector.", "Could keep isLastBlockChangePersistent as a wrapper while storing/versioning persistence separately, but public useSelect consumers need a notification answer.",
 		"Branch-aware useSelect subscriptions", "branch-aware notification", "yes", "yes if dependencies are correct", "very high", "research prototype", current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useSelect currently records active store names, not selector or state-branch dependencies; any root change invalidates the store subscriber.", "Most general design, but it changes the data subscription contract and needs broad compatibility tests.",
 		"ClientId-scoped text-attribute invalidation", "text-update partition", "yes", "partial for text updates", "medium-high", "second local prototype", 3.4975648467210574, 1436, "Only the edited BlockListBlockProvider needs the changed paragraph attributes; other block instances are checking identity/selection/tree state.", "Targets ordinary text updates rather than the persistence-only marker."
 	) %>%
@@ -12811,8 +13195,8 @@ if (file.exists(marker_allspan_action_summary_path)) {
 	store_boundary_source_feasibility <- tribble(
 		~design_option, ~source_feasibility, ~contract_surface_score, ~current_scope_ms, ~listener_scope, ~source_finding, ~compatibility_risk, ~revised_recommendation,
 		"Source-feasible local selector guards", "source-feasible local work", 1, source_feasible_local_guard_ms, source_feasible_local_guard_count, "Pattern override can be split by selected block; block-provider and inner-blocks guards need local invalidation prototypes; no data subscription contract change.", "Local stale UI risk only; covered by component behavior tests.", "Do before store-boundary work.",
-		"Persistence-aware useBlockSync side channel", "possible but contract-sensitive", 4, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useBlockSync is a global registry subscriber. The registry currently does not know which global subscribers read the persistence branch.", "Needs a new persistence-aware subscription path or explicit useBlockSync registration; external registry.subscribe plus isLastBlockChangePersistent consumers are compatibility risk.", "Research after local guards; prototype with compatibility audit.",
-		"Split persistence state out of block-editor root", "blocked without side channel", 5, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "Moving the flag avoids the block-editor root change only if selector and notification semantics are replaced.", "Direct consumers of isLastBlockChangePersistent can observe stale state or miss the transition unless a side channel exists.", "Do only after a side-channel design works.",
+		"Persistence-aware useBlockSync side channel", "possible but contract-sensitive", 3, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useBlockSync is a store-specific block-editor subscriber, so it can be migrated to an explicit persistence-aware path more locally than a global-registry subscriber could.", "Needs a new persistence-aware subscription path or explicit useBlockSync registration; the side channel can preserve useBlockSync, but not public isLastBlockChangePersistent useSelect consumers by itself.", "Research after local guards; prototype the side channel before changing public notification semantics.",
+		"Split persistence state out of block-editor root", "blocked without side channel", 5, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "Moving the flag avoids the block-editor root change only if selector and notification semantics are replaced.", "isLastBlockChangePersistent is documented as a public selector; external useSelect consumers can observe stale state or miss the transition unless compatibility is explicitly handled.", "Do only after a side-channel design and public-selector compatibility decision.",
 		"Branch-aware useSelect dependencies", "research only", 6, current_marker_root_subscribe_p50_ms, current_marker_use_select_count_p50, "useSelect records store names, not selector names, state branches, or dynamic selector dependencies.", "Broad data contract change; selectors can read conditionally and across stores.", "Treat as a separate data-layer research project.",
 		"Silence MARK_LAST_CHANGE_AS_PERSISTENT", "invalid", 7, current_marker_root_subscribe_p50_ms, current_marker_redux_listener_count_p50, "This removes the persistence transition that useBlockSync uses to convert a previous transient edit into parent onChange.", "Breaks editor semantics to make the benchmark faster.", "Reject."
 	) %>%
@@ -12854,12 +13238,108 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			.groups = "drop"
 		)
 
-	write_csv(
-		store_boundary_source_feasibility_summary,
-		file.path(data_dir, "typing-delay-store-boundary-source-feasibility-summary.csv")
-	)
+		write_csv(
+			store_boundary_source_feasibility_summary,
+			file.path(data_dir, "typing-delay-store-boundary-source-feasibility-summary.csv")
+		)
 
-	store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
+		store_boundary_contract_risk_audit <- tribble(
+			~contract_surface, ~source_reference, ~current_behavior, ~current_scope_ms, ~compatibility_risk_level, ~deeper_conclusion, ~prototype_implication,
+			"Persistent-change reducer branch",
+			"packages/block-editor/src/store/reducer.js:421-470",
+			"MARK_LAST_CHANGE_AS_PERSISTENT changes blocks.isPersistentChange and therefore changes the block-editor root state.",
+			current_marker_root_subscribe_p50_ms,
+			"low",
+			"The measured fanout is a real store-root invalidation, not timer-slot overhead.",
+			"Do not try to tune the marker timer; change the notification boundary or local subscribers.",
+			"useBlockSync subscription",
+			"packages/block-editor/src/components/provider/use-block-sync.js:351-532",
+			"useBlockSync subscribes to the block-editor store, reads isLastBlockChangePersistent(), and turns a previous transient edit into parent onChange when persistence flips true without a block-array identity change.",
+			current_marker_root_subscribe_p50_ms,
+			"medium",
+			"The side-channel target is narrower than previously stated: useBlockSync is not a no-store global registry subscriber, so an explicit persistence-aware store path can cover the known in-tree semantic consumer.",
+			"Prototype a private persistence-change subscription for useBlockSync while keeping the existing root notification at first to validate behavior.",
+			"Documented public selector",
+			"docs/reference-guides/data/data-core-block-editor.md:1135-1145; packages/block-editor/src/store/selectors.js:2895-2896",
+			"isLastBlockChangePersistent is documented and exported from the public block-editor store selector surface.",
+			current_marker_root_subscribe_p50_ms,
+			"high",
+			"Moving persistence out of the block-editor root can keep the selector return value correct but would make existing public useSelect consumers miss updates unless a compatibility notification remains.",
+			"Do not split the state branch for performance until the public-selector compatibility policy is explicit.",
+			"useSelect subscription model",
+			"packages/data/src/components/use-select/index.ts:132-235",
+			"useSelect tracks active store names and invalidates the cached selected value on any subscribed store change; it does not record selector names or state branches.",
+			current_marker_root_subscribe_p50_ms,
+			"high",
+			"Ordinary useSelect subscribers cannot opt out of persistence-only root changes without a broader branch-aware subscription contract.",
+			"Keep branch-aware useSelect as data-layer research, not the near-term benchmark patch.",
+			"Redux store listener fanout",
+			"packages/data/src/redux-store/index.ts:526-564",
+			"The wrapped Redux store calls every registered listener whenever the root state identity changes.",
+			current_marker_root_subscribe_p50_ms,
+			"medium-high",
+			"A branch-specific emitter would need to coexist with the public root listener set; replacing the root listener set would be a broad data contract change.",
+			"Prefer a narrow persistence side channel over changing createReduxStore subscription semantics first.",
+			"Direct in-tree selector consumers",
+			"rg isLastBlockChangePersistent() in packages/",
+			"The only production in-tree direct consumer found is useBlockSync; benchmark instrumentation also reads it.",
+			current_marker_root_subscribe_p50_ms,
+			"medium",
+			"In-tree migration looks manageable, but public API exposure keeps the compatibility question open.",
+			"Use in-tree consumer count to scope the prototype, not to claim the public contract is safe to change."
+		) %>%
+			mutate(
+				compatibility_risk_level = factor(
+					compatibility_risk_level,
+					levels = c("low", "medium", "medium-high", "high")
+				)
+			)
+
+		write_csv(
+			store_boundary_contract_risk_audit,
+			file.path(data_dir, "typing-delay-store-boundary-contract-risk-audit.csv")
+		)
+
+		store_boundary_side_channel_decision_audit <- tribble(
+			~proposal, ~source_fact, ~what_it_solves, ~what_it_does_not_solve, ~required_validation, ~decision,
+			"Add a private persistence-change side channel while keeping the root state update",
+			"useBlockSync currently subscribes to the block-editor store with registry.subscribe( listener, blockEditorStore ) and reads isLastBlockChangePersistent().",
+			"Creates a migration seam for the known in-tree semantic consumer and lets tests prove that the onInput to onChange handoff still works.",
+			"Does not reduce ordinary useSelect fanout because MARK_LAST_CHANGE_AS_PERSISTENT still changes blocks.isPersistentChange and therefore the block-editor root state.",
+			"useBlockSync tests for non-persistent onInput, persistent onChange, persistence flip after a previous block change with no block-array identity change, selection reporting, controlled inner blocks, fresh callbacks, and unmount cleanup.",
+			"Useful prototype seam, not a performance win by itself.",
+			"Move useBlockSync to the side channel and stop changing the block-editor root for persistence-only markers",
+			"The hot marker action changes only blocks.isPersistentChange; audited hot selectors do not read that branch.",
+			"Would preserve the known in-tree useBlockSync path and avoid waking thousands of ordinary block-editor useSelect subscribers for persistence-only markers.",
+			"Breaks public subscription semantics for isLastBlockChangePersistent consumers because useSelect and registry.subscribe are store-level, not selector-level.",
+			"Compatibility decision for public selector consumers; benchmark showing marker-only rootSubscribe/useSelect listener counts fall while useBlockSync still emits the same onChange/onInput sequence.",
+			"Blocked for a production performance change until the public selector contract is resolved.",
+			"Keep the selector value correct from an external persistence slot",
+			"The public selector is currently a pure state selector returning state.blocks.isPersistentChange.",
+			"Could make imperative select( blockEditorStore ).isLastBlockChangePersistent() return the latest value if the selector reads a separate slot.",
+			"Would not notify existing useSelect or store subscribers when only that external slot changes, and would weaken the state-selector contract.",
+			"Data-layer review before considering this; tests for direct select are not enough.",
+			"Do not use as the compatibility answer.",
+			"Add selector-aware or branch-aware subscriptions to @wordpress/data",
+			"useSelect records active store names and invalidates on any subscribed store change; the Redux wrapper calls every listener on root identity change.",
+			"Could preserve public isLastBlockChangePersistent useSelect notifications while letting unrelated block-editor selectors skip persistence-only changes.",
+			"Broad data-layer contract change with dynamic selector dependencies, cross-store reads, conditional selectors, and plugin compatibility risk.",
+			"Separate data-layer research prototype with selector dependency tests before applying to block-editor persistence.",
+			"Only complete compatibility route found, but not a near-term typing benchmark patch.",
+			"Do local selector guards before store partitioning",
+			"Pattern override has a clear selected-only split; provider and inner-blocks have local invalidation prototypes; none changes public data subscription semantics.",
+			"Reduces a source-feasible local envelope before taking on store-level compatibility risk.",
+			"Does not remove the full persistence-marker fanout.",
+			"Patch and measure pattern override first, then validate provider and inner-block invalidation keys.",
+			"Recommended near-term order."
+		)
+
+		write_csv(
+			store_boundary_side_channel_decision_audit,
+			file.path(data_dir, "typing-delay-store-boundary-side-channel-decision-audit.csv")
+		)
+
+		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
 		mutate(
 			plot_label = case_when(
 				design_option == "Source-feasible local selector guards" ~ "local guards",
@@ -12969,6 +13449,50 @@ if (file.exists(marker_allspan_action_summary_path)) {
 	write_csv(
 		first_patch_readiness_summary,
 		file.path(data_dir, "typing-delay-first-patch-readiness-summary.csv")
+	)
+
+	selector_guard_prototype_contract_audit <- tribble(
+		~candidate, ~source_anchor, ~current_scope, ~safe_skip_condition, ~invalidation_contract, ~test_contract, ~decision,
+		"Pattern override selected-only split",
+		"packages/editor/src/hooks/pattern-overrides.js:37-55",
+		"3.6ms / 1436 skippable listener calls",
+		"The support check reads getSettings().__experimentalBlockBindingsSupportedAttributes[ props.name ]; unselected blocks do not render pattern override controls, and a newly selected block can read the current setting on mount.",
+		"Move the support-check useSelect into a selected-only child mounted by props.isSelected, then mount ControlsWithStoreSubscription only for selected supported blocks. Add an export or helper seam for tests.",
+		"Selected supported block shows PatternOverridesControls, selected unsupported block does not, unselected supported block does not mount the support-check path, settings support changes update while selected, synced and unsynced pattern reset paths still work.",
+		"Implement first.",
+		"Heading shared anchor capability",
+		"packages/block-library/src/heading/edit.js:35-44",
+		"0.5ms / 202 listener calls, not counted in the source-feasible envelope",
+		"Only safe after a shared capability signal invalidates on generateAnchors setting changes and core/table-of-contents block-count changes; a per-heading component memo would miss global changes.",
+		"Introduce or reuse a shared canGenerateHeadingAnchors signal before removing each heading's store subscription.",
+		"Web coverage for generateAnchors toggles, table-of-contents insertion/removal, existing heading content, and heading content changes; native-only tests are not enough for this source path.",
+		"Do not include in the first patch.",
+		"Non-edited BlockListBlockProvider guard",
+		"packages/block-editor/src/components/block-list/block.js:560-741",
+		"3.5ms / 1436 skippable listener calls",
+		"Only the edited block needs the changed text attributes; non-edited blocks can skip text-only updates if their own attributes plus selection, variation, movement, overlay, section, settings, and identity signals are unchanged.",
+		"Prototype a memoized/block-scoped selected-props boundary; do not rely on component memo alone because useSelect still wakes on the store root change.",
+		"Edited block content updates, non-edited selection and multi-selection, variation changes, movement/removal, overlay/drag/highlight, content-only section state, template lock, and block identity replacement.",
+		"Prototype after pattern override.",
+		"useInnerBlocksProps structural guard",
+		"packages/block-editor/src/components/inner-blocks/index.js:194-248",
+		"1.1ms / 580 skippable listener calls",
+		"Text attributes do not affect the returned root/drop-zone/layout props unless block name, editing mode, parent/root, template lock, section root, block settings, layout, or zoom state changes.",
+		"Prototype a root/order/settings version boundary or memoized selector output for the useInnerBlocksProps data; a component-only memo is not enough.",
+		"Text insertion no-op, child insert/remove/reorder, zoom in/out, template lock changes, editing mode changes, layout changes, and root/section changes.",
+		"Prototype after pattern override.",
+		"BlockListItems structural/selection guard",
+		"packages/block-editor/src/components/block-list/index.js:195-259",
+		"5.3ms / 580 listener calls, uncounted until validation",
+		"Paragraph content attributes are not read, but the selector owns row order, selected ids, visible blocks, zoom state, preview mode, and appender eligibility.",
+		"Prototype a structural/selection/appender render key before counting any win.",
+		"Selection, multi-select, visible-list updates, appender eligibility, template/content-only mode, zoom, preview mode, insertion/removal/reorder, and selected-root flows.",
+		"Validation prototype only."
+	)
+
+	write_csv(
+		selector_guard_prototype_contract_audit,
+		file.path(data_dir, "typing-delay-selector-guard-prototype-contract-audit.csv")
 	)
 
 	first_patch_test_readiness_plot <- first_patch_test_readiness %>%
@@ -13974,15 +14498,47 @@ if (all(file.exists(react_render_boundary_inputs))) {
 		) %>%
 		arrange(desc(effect_p50_ms), evidence_layer, claim)
 
-	write_csv(
-		react_render_boundary_audit,
-		file.path(data_dir, "typing-delay-react-render-boundary-audit.csv")
-	)
+		write_csv(
+			react_render_boundary_audit,
+			file.path(data_dir, "typing-delay-react-render-boundary-audit.csv")
+		)
 
-	react_render_boundary_plot <- react_render_boundary_audit %>%
-		filter(claim != "priority queue drained before next input") %>%
-		mutate(
-			claim_plot = fct_reorder(claim_plot, effect_p50_ms)
+		react_boundary_value <- function(claim_name) {
+			values <- react_render_boundary_audit$effect_p50_ms[as.character(react_render_boundary_audit$claim) == claim_name]
+			if (length(values) == 0 || all(!is.finite(values))) {
+				return(NA_real_)
+			}
+			max(values, na.rm = TRUE)
+		}
+
+		react_profiler_event_dispatch_ms <- react_boundary_value("EventDispatch slice in visual probes")
+		react_profiler_post_tail_ms <- react_boundary_value("post-EventDispatch visual/render tail")
+		react_profiler_chrome_tail_ms <- react_boundary_value("post-EventDispatch Chrome render-event tail")
+		react_profiler_on_change_ms <- react_boundary_value("useSelect.onChange")
+		react_profiler_react_listener_ms <- react_boundary_value("useSelect.reactListener")
+		react_profiler_render_queue_ms <- react_boundary_value("renderQueue.add")
+		react_profiler_map_select_ms <- react_boundary_value("useSelect.mapSelect")
+		react_profiler_root_subscribe_ms <- react_boundary_value("rootSubscribe total")
+		react_profiler_listener_wrappers_ms <- react_boundary_value("Redux listener wrappers")
+
+		react_profiler_decision_audit <- tribble(
+			~question, ~current_answer, ~evidence, ~remaining_risk, ~next_profiler_target, ~priority,
+			"Can React render explain the key-held 1000ms cliff?", "No; the primary movement is already in the EventDispatch/input slice.", paste0("The EventDispatch slice movement is ", number(react_profiler_event_dispatch_ms, accuracy = 0.1), "ms against a ", number(keyheld_endpoint_drop_reference_ms, accuracy = 0.1), "ms minimum visual endpoint drop; the largest post-EventDispatch visual/render tail is ", number(react_profiler_post_tail_ms, accuracy = 0.1), "ms."), "Profiler overhead and production/dev differences could affect component ownership, but not the already-observed timing boundary.", "Do not use React profiler as the next test for cliff causality; use it only after input-boundary and subscriber work are separated.", "closed for cliff causality",
+			"Can renderQueue.add or idle draining explain the cliff?", "No; it is too small and the idle-drain chronology points the wrong way.", paste0("renderQueue.add moves by at most ", number(react_profiler_render_queue_ms, accuracy = 0.1), "ms, and the faster 1000ms idle probe had idle callbacks crossing the next input while the slower 1300ms probe drained before input."), "A larger real workload could make async queue ownership matter for product latency.", "Profile async commits after input in plugin-heavy or real editing histories, not this fixed-x cliff.", "secondary",
+			"Can useSelect selector work or the React external-store listener explain it?", "No; the child phases under the useSelect wrapper are much smaller than the endpoint movement.", paste0("useSelect.reactListener moves by ", number(react_profiler_react_listener_ms, accuracy = 0.1), "ms, mapSelect by ", number(react_profiler_map_select_ms, accuracy = 0.1), "ms, and the outer onChange wrapper by ", number(react_profiler_on_change_ms, accuracy = 0.1), "ms."), "Selector ownership still matters once a specific guard patch is being sized.", "After a guard prototype, profile the components/selectors still recomputing after the changed store notification.", "secondary",
+			"Where is the remaining input-side React/data work?", "Mostly in broad store-root subscriber fanout, not in React child rendering.", paste0("rootSubscribe moves by ", number(react_profiler_root_subscribe_ms, accuracy = 0.1), "ms and Redux listener wrappers by ", number(react_profiler_listener_wrappers_ms, accuracy = 0.1), "ms; resumed listener callbacks are not a common slow-path cause in the boundary audit."), "A store partition or persistence side channel has public selector compatibility risk.", "Use subscriber-count/source-owner instrumentation before changing @wordpress/data notification semantics.", "research after local guards",
+			"What should a React profiler run answer?", "Only ownership of smaller after-input or whole-cycle cost.", paste0("The Chrome render-event post-dispatch tail is at most ", number(react_profiler_chrome_tail_ms, accuracy = 0.1), "ms and the trace-screenshot tail is ", number(react_profiler_post_tail_ms, accuracy = 0.1), "ms, so profiler output can rank residual commits but should not decide the CI input API or startup wait."), "Profiler captures could still uncover a product optimization unrelated to the 1000ms artifact.", "Capture production-like commit owners after RichText input and after async queue flushes, with the key-held artifact treated as context rather than target.", "useful later"
+		)
+
+		write_csv(
+			react_profiler_decision_audit,
+			file.path(data_dir, "typing-delay-react-profiler-decision-audit.csv")
+		)
+
+		react_render_boundary_plot <- react_render_boundary_audit %>%
+			filter(claim != "priority queue drained before next input") %>%
+			mutate(
+				claim_plot = fct_reorder(claim_plot, effect_p50_ms)
 		)
 
 	save_plot(
@@ -14020,13 +14576,13 @@ if (all(file.exists(react_render_boundary_inputs))) {
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Current Typing has 0ms extra post-setup wait; repeated CI-comparable and exact-spec runs did not show retained-q50 stability gains from adding wait.", "Whether a different CI image shifts absolute numbers, not whether this local knob can speed up current Typing.", "No more Typing startup-wait runs unless the CI image or spec shape changes.",
-	"Pattern-loading wait", "CI engineering", 4, 3, 4, "validate before change", "Local exact short-wait data rejects 0/100ms, treats 250ms as only a predicate lower-bound signal, and makes 500ms the best fixed fallback; source audit says the valid semantic predicate is getBlockPatterns readiness before Design / Transform, with preview rendering still measured.", "Whether the getBlockPatterns predicate or 500ms fallback is stable across CI, macOS versions, and containers.", "Prototype the getBlockPatterns readiness predicate in the exact spec, with a timeout/fallback, then validate against 500ms and 1000ms in CI/mac/container.",
-	"Input API phase boundary", "CI engineering", 4, 2, 3, "targeted follow-up only", "The fresh matrix rejects requested hold, observed hold, post-keyup wait, and chronology as single predictors; locator.type and locator.press(noWaitAfter) are the same family at 50ms/75ms, while ordinary locator.press is tap-like because of the press epilogue.", "The smaller page.keyboard versus locator.type split: explicit down/up timing, per-key locator focus/check work, or their interaction with editor phase.", "Only run a compact page.keyboard.press plus per-key locator-focus/evaluate control if the CI implementation choice depends on this boundary.",
-	"Low-risk selector guards", "product optimization", 4, 3, 4, "prototype first", "Source feasibility leaves pattern override as the clear first local patch; heading is a shared/global signal problem, not a simple local guard.", "Actual behavior-test coverage and measured win after implementation.", "Implement the pattern-override selected-only split with focused behavior tests; then prototype non-edited block-provider and inner-block structural invalidation.",
-	"Store subscriber partition", "product optimization", 3, 4, 5, "research after local guards", "The marker changes only blocks.isPersistentChange; audited hot selectors do not read it, but useBlockSync needs the persistence transition.", "Whether @wordpress/data/core-block-editor can expose a persistence-aware side channel without breaking existing useSelect semantics.", "After local guards, prototype persistence-aware subscriber partitioning while preserving useBlockSync and isLastBlockChangePersistent consumers.",
-	"React render ownership", "product optimization", 5, 3, 2, "secondary optimization", "Boundary audit bounds renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering as secondary contributors.", "Which components own the smaller after-input or whole-cycle cost.", "Use React profiler only for after-input optimization ownership, not as the primary 1000ms-cliff mechanism.",
-	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Raw CDP ordinary waits stay slow even at 5s, while Runtime.evaluate/callFunctionOn checkpoints have a dose response and trace snapshots explain the full Playwright trace-on fast path.", "Which Chromium renderer/runtime scheduler state is changed by those checkpoints.", "Use Chromium scheduler/runtime trace categories and protocol-level checkpoint probes around Runtime.evaluate and captureSnapshot.",
-	"CPU/QoS mechanism", "system/browser", 3, 5, 3, "outside JS harness", "Finite CPU duration and end-to-keydown gap explain 71% of local p50 variation; ordinary/utility QoS activity can make the path fast while background/maintenance stays slow.", "Exact hardware or OS scheduler layer: core residency, frequency, cache state, QoS scheduling, or a mix.", "Run the finite-burst controls with powermetrics/Instruments/OS scheduler traces and browser scheduling categories.",
+	"Pattern-loading wait", "CI engineering", 4, 3, 4, "validate before change", "Local exact short-wait data rejects 0/100ms, treats 250ms as only a predicate lower-bound signal, and makes 500ms the best fixed fallback; source/prototype audit says the valid predicate is no-arg getBlockPatterns resolution plus a compatible merged pattern list before Design / Transform, with preview rendering still measured.", "Whether the getBlockPatterns predicate or 500ms fallback is stable across CI, macOS versions, containers, and source-path changes in the Transform/Design panel.", "Prototype the getBlockPatterns readiness predicate with timeout/fallback and telemetry, then validate against 500ms and 1000ms in CI/mac/container.",
+		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "The compact follow-up closes the CI-facing boundary: ordinary locator.press is not a pressSequentially proxy, page.keyboard.press and per-key locator.focus both move short holds into the slow band, and pressSequentially belongs to the locator.type family.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings.",
+	"Low-risk selector guards", "product optimization", 4, 2, 4, "patch first row", "The source/prototype contract audit leaves pattern override as the only immediate local split: move the support-check useSelect behind the existing selected-block gate. Heading needs a shared capability signal; provider, inner-blocks, and BlockListItems need invalidation prototypes.", "Measured win after the pattern-override patch, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes.",
+	"Store subscriber partition", "product optimization", 4, 4, 5, "research after local guards", "The side-channel decision audit bounds the blocker: a private useBlockSync persistence channel can preserve the known in-tree semantic consumer, but the 23.2ms fanout win requires stopping the block-editor root update, which would break public isLastBlockChangePersistent useSelect notifications under today's store-level subscription model.", "A public selector notification policy or a branch/selector-aware @wordpress/data subscription mechanism that can notify isLastBlockChangePersistent consumers without waking unrelated block-editor selectors.", "After local guards, prototype the useBlockSync side channel only as a migration seam; do not claim the fanout win without resolving public selector notification compatibility.",
+	"React render ownership", "product optimization", 5, 3, 2, "secondary optimization", "Boundary and profiler decision audits close React rendering for cliff causality; renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Which components own the smaller after-input or whole-cycle cost after selector/subscriber work is separated.", "Use React profiler only for after-input or whole-cycle commit ownership, not as the primary 1000ms-cliff mechanism.",
+	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Raw CDP ordinary waits stay slow even at 5s; Runtime.evaluate/callFunctionOn checkpoints have a dose response; trace snapshots explain the full Playwright trace-on fast path; native contenteditable proves the browser effect is real but too small for Gutenberg scale.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints.", "Use Chromium scheduler/runtime trace categories around captureSnapshot and repeated Runtime.evaluate/Runtime.callFunctionOn windows, not more JS-level typing runs.",
+	"CPU/QoS mechanism", "system/browser", 3, 5, 3, "outside JS harness", "Finite CPU duration and end-to-keydown gap explain 71% of local p50 variation; ordinary/utility QoS activity can make the path fast while background/maintenance stays slow; no-CPU tasks, generic CPU burn, and taskpolicy tiering are ruled out.", "Exact hardware or OS scheduler layer: core residency, frequency, cache state, QoS scheduling, timer coalescing, or a mix.", "Use OS scheduler, power, and hardware-counter traces before adding more JS benchmark rows.",
 	"Calibrated presentation", "user-facing measurement", 4, 5, 4, "external calibration", "Paint, DrawFrame, RAF, and localized changed trace screenshots all preserve the key-held 1000ms drop; post-dispatch rendering is too small for the main cliff.", "Display presentation timestamp and semantic glyph recognition outside Chromium trace screenshots.", "Calibrate with compositor presentation traces, OCR on screenshots, or high-speed camera data before claiming hardware-to-screen latency.",
 	"Human/plugin workload", "workload coverage", 2, 4, 4, "needs workload data", "The benchmark is a vanilla large-post fixed-x stressor; native/minimal controls prove the large cliff needs Gutenberg-scale work.", "Whether plugin-heavy, P2-like, long-session, composition, correction, selection, and navigation workloads expose different hot paths.", "Record representative human/plugin-heavy sessions and replay them with per-sample histories instead of fixed-delay x insertion.",
 	"Portability of absolute numbers", "methodology", 3, 3, 3, "validation run", "Fresh-editor, randomized, exact-spec, and containerized local runs cover several confounders, but the report is still one local machine family.", "How much the absolute p50/CV values move across CI hosts, containers, browser versions, and OS power policy.", "Repeat the compact score runs and key diagnostic controls on CI/mac/container/browser-version variants before changing thresholds."
@@ -14050,6 +14606,7 @@ open_question_next_instrumentation_matrix <- tribble(
 				"closed locally",
 				"validate before change",
 				"targeted follow-up only",
+				"patch first row",
 				"prototype first",
 				"research after local guards",
 				"secondary optimization",
@@ -14401,9 +14958,9 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 		file.path(data_dir, "typing-delay-pattern-readiness-predicate-candidates.csv")
 	)
 
-	pattern_readiness_source_predicate_audit <- tribble(
-		~predicate_component, ~classification, ~semantic_fit_score, ~measurement_boundary_risk_score, ~implementation_risk_score, ~evidence_strength_score, ~source_evidence, ~recommended_check,
-		"Block-pattern REST resolution", "primary predicate", 5, 1, 2, 5, "core-data getBlockPatterns resolves /wp/v2/block-patterns/patterns; PostTransformPanel useAvailablePatterns reads getBlockPatterns before the Design panel opens.", "Before the Design / Transform click, wait for core hasFinishedResolution('getBlockPatterns') and a non-empty compatible pattern list.",
+		pattern_readiness_source_predicate_audit <- tribble(
+			~predicate_component, ~classification, ~semantic_fit_score, ~measurement_boundary_risk_score, ~implementation_risk_score, ~evidence_strength_score, ~source_evidence, ~recommended_check,
+			"Block-pattern REST resolution", "primary predicate", 5, 1, 2, 5, "core-data getBlockPatterns resolves /wp/v2/block-patterns/patterns; PostTransformPanel useAvailablePatterns reads getBlockPatterns before the Design panel opens.", "Before the Design / Transform click, wait for core hasFinishedResolution('getBlockPatterns') and a non-empty compatible pattern list.",
 		"Design panel open event", "measurement start boundary", 5, 1, 1, 5, "site-editor.spec.js starts the timer before clicking Design / Transform, so the click and preview rendering are inside the measured interval.", "Keep this as the start of the measured user action, not as a readiness predicate.",
 		"Pattern preview canvases", "invalid pre-wait", 1, 5, 3, 5, "site-editor.spec.js waits for named option preview canvases after the click; BlockPatternsList renders BlockPreview.Async children only when the PanelBody is opened.", "Do not wait for preview canvases before starting the metric.",
 		"core/pattern placeholder replacement", "invalid pre-wait", 1, 5, 3, 5, "site-editor.spec.js waits until [data-type='core/pattern'] is gone after the click.", "Do not wait for placeholder replacement before starting the metric.",
@@ -14411,10 +14968,10 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 		"User pattern category resolution", "not needed for this path", 1, 1, 3, 3, "use-block-editor-settings also resolves getUserPatternCategories, but the current site-editor Transform/Design template path is theme/template-pattern based.", "Do not make this part of the primary predicate for this benchmark.",
 		"Resource quiet window", "diagnostic guardrail", 2, 3, 3, 4, "The local probe shows 19 wait-side resources before the q50 band settles, but resource counts are host- and cache-dependent.", "Use as an optional short guardrail after the semantic predicate or as validation telemetry.",
 		"Fixed 500ms sleep", "fallback", 2, 2, 1, 4, "The exact local sweep keeps the 1000ms q50 band and lowers q50 sd, but it is still a blind sleep.", "Use only as a fallback cap or after CI/mac/container validation.",
-		"Fixed 1000ms sleep", "current baseline", 1, 1, 1, 4, "Current benchmark behavior; preserves the existing boundary at the cost of 10s versus 500ms in the two-branch pattern metric.", "Keep until the semantic predicate or a validated shorter fixed wait replaces it."
-	) %>%
-		mutate(
-			predicate_component = factor(predicate_component, levels = predicate_component),
+			"Fixed 1000ms sleep", "current baseline", 1, 1, 1, 4, "Current benchmark behavior; preserves the existing boundary at the cost of 10s versus 500ms in the two-branch pattern metric.", "Keep until the semantic predicate or a validated shorter fixed wait replaces it."
+		) %>%
+			mutate(
+				predicate_component = factor(predicate_component, levels = predicate_component),
 			classification = factor(
 				classification,
 				levels = c(
@@ -14441,14 +14998,30 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 			)
 		)
 
-	write_csv(
-		pattern_readiness_source_predicate_audit,
-		file.path(data_dir, "typing-delay-pattern-readiness-source-predicate-audit.csv")
-	)
-
-	save_plot(
-		ggplot(
+		write_csv(
 			pattern_readiness_source_predicate_audit,
+			file.path(data_dir, "typing-delay-pattern-readiness-source-predicate-audit.csv")
+		)
+
+		pattern_readiness_prototype_audit <- tribble(
+			~prototype_step, ~classification, ~source_evidence, ~recommended_check, ~remaining_risk,
+			"Trigger the core-data resolver", "required", "core-data getBlockPatterns has a resolver that fetches /wp/v2/block-patterns/patterns and receive-dispatches blockPatterns.", "Before the measured click, call resolveSelect('core').getBlockPatterns() or otherwise trigger select('core').getBlockPatterns().", "If this is skipped, hasFinishedResolution can be false because the resolver was never requested in the current fresh editor sample.",
+			"Use the no-argument resolution key", "required", "The provider-side selectBlockPatternsKey checks hasFinishedResolution('getBlockPatterns') with no args.", "Check select('core').hasFinishedResolution('getBlockPatterns') for the no-argument selector.", "Passing an argument array would check a different resolution key.",
+			"Check a compatible non-empty pattern list", "primary predicate", "PostTransformPanel useAvailablePatterns merges editor settings blockPatterns with core getBlockPatterns, then filters by templateTypes or core/template-part/${area} while excluding core and pattern-directory sources.", "After resolution, read core/editor current post type/id and the edited entity record, merge settings and REST patterns, and require at least one compatible non-excluded pattern.", "A bare resolution-finished check can pass even if the current template has no compatible patterns or source filtering changes.",
+			"Preserve the measurement start boundary", "required", "site-editor.spec.js starts timing immediately before clicking Design / Transform and then waits for preview canvases and core/pattern replacement.", "Run the predicate before startTime, then keep startTime immediately before the Design / Transform click.", "Moving startTime after the click or after preview readiness would redefine the metric.",
+			"Do not pre-wait preview canvases or core/pattern replacement", "invalid pre-wait", "The spec waits for named option preview canvases and for [data-type='core/pattern'] removal after the click.", "Keep those waits after the click inside the measured interval.", "Pre-waiting them removes the actual workload the metric currently measures.",
+			"Use timeout and telemetry", "required guardrail", "The local data supports 500ms as a fixed fallback, while the current 1000ms sleep is the safe baseline.", "Prototype the predicate with a timeout/fallback and record predicate wait time, resolution status, compatible pattern count, and whether fallback was used.", "Without telemetry, CI regressions would look like metric noise rather than predicate misses.",
+			"Treat pattern categories as optional", "optional guardrail", "use-block-editor-settings resolves pattern categories for broader editor settings, but the measured Transform/Design template list is built from patterns and current template fields.", "Do not block the primary predicate on categories unless validation shows CI variance tied to category resolution.", "Category readiness can preserve broader setup semantics but is not required by the measured template list path."
+		)
+
+		write_csv(
+			pattern_readiness_prototype_audit,
+			file.path(data_dir, "typing-delay-pattern-readiness-prototype-audit.csv")
+		)
+
+		save_plot(
+			ggplot(
+				pattern_readiness_source_predicate_audit,
 			aes(
 				plot_x,
 				plot_y,

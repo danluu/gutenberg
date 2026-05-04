@@ -633,6 +633,9 @@ The R script derives:
 -   `data/typing-delay-cdp-boundary-*.csv`: consolidated CDP boundary evidence
     matrix across ordinary waits, runtime checkpoints, Playwright evaluation
     paths, trace snapshots, and the native control.
+-   `data/typing-delay-chromium-runtime-next-probe-audit.csv`: decision audit for
+    the remaining Chromium runtime checkpoint question and the next
+    browser-level probe that would resolve it.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -712,6 +715,9 @@ The R script derives:
     candidate matrix for replacing the blind pattern-loading sleep.
 -   `data/typing-delay-pattern-readiness-source-predicate-audit.csv`: source-audited
     readiness predicate matrix for the site-editor pattern-loading metric.
+-   `data/typing-delay-pattern-readiness-prototype-audit.csv`: implementation
+    audit for a `getBlockPatterns` readiness prototype, including resolver,
+    compatibility-list, timeout, and measurement-boundary checks.
 -   `data/typing-delay-pattern-readiness-risk-audit.csv`: per-run q50 range,
     bootstrap, and probe-hit risk audit for the remaining site-editor
     pattern-loading wait choices.
@@ -746,7 +752,11 @@ The R script derives:
     locator `press()` with `noWaitAfter` input paths at `50ms`, `75ms`, and
     `100ms` requested holds, including paired-differences and tap-relative API
     delta tables. The predictor-audit table records which simple explanations
-    still fail after the clean noWaitAfter rerun.
+    still fail after the clean noWaitAfter rerun; the boundary-next-control
+    audit turns those failures into the remaining compact control.
+-   `data/typing-delay-ci-keyboard-prelude-control-*.csv`: follow-up
+    CI-comparable fresh-editor controls for `page.keyboard.press()` and explicit
+    page-keyboard `down()` / `up()` with a per-key locator `focus()` prelude.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -805,6 +815,9 @@ The R script derives:
     p50 scope is counted now versus held for shared-signal or validation work.
 -   `data/typing-delay-first-patch-test-readiness*.csv`: source/test readiness
     matrix for the first local selector-guard patch candidates.
+-   `data/typing-delay-selector-guard-prototype-contract-audit.csv`: exact
+    source, invalidation, and behavior-test contract for the selector-guard
+    first patch and later prototypes.
 -   `data/typing-delay-blocklistitems-invalidation-*.csv`: source-level
     invalidation-key audit for the large but not-yet-counted `BlockListItems`
     selector guard candidate.
@@ -820,6 +833,12 @@ The R script derives:
     feasibility audit for store-boundary designs after accounting for
     `registry.subscribe`, store-specific `useSelect` subscriptions, and the
     corrected local selector-guard envelope.
+-   `data/typing-delay-store-boundary-contract-risk-audit.csv`: corrected
+    source/contract audit for the persistence side-channel idea, including the
+    public `isLastBlockChangePersistent()` selector compatibility risk.
+-   `data/typing-delay-store-boundary-side-channel-decision-audit.csv`: deeper
+    decision audit for which side-channel steps are migration seams, which can
+    reduce fanout, and which require public data-subscription compatibility work.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -858,6 +877,9 @@ The R script derives:
     bounds the remaining React/render caveat using visual endpoint
     decomposition, `useSelect` subphase deltas, paused listener-wrapper deltas,
     and priority-queue idle timing.
+-   `data/typing-delay-react-profiler-decision-audit.csv`: decision audit for
+    the React-profiler open question, separating closed cliff-causality claims
+    from later after-input ownership work.
 -   `data/typing-delay-open-question-next-instrumentation-matrix.csv`: ranked
     matrix of remaining questions, current answer strength, next-work cost, and
     recommended next instrumentation or prototype.
@@ -869,6 +891,9 @@ The R script derives:
     duration/proximity model coefficients and predictions.
 -   `data/typing-delay-system-mechanism-falsification-matrix.csv`: compact
     evidence matrix for the remaining system-level mechanism theories.
+-   `data/typing-delay-cpu-qos-next-probe-audit.csv`: decision audit for the
+    remaining CPU/QoS question, separating closed benchmark explanations from
+    OS/hardware counter work.
 -   `data/typing-delay-wall-clock-fixed-sample-*.csv`: audit of fixed-sample
     delay sweeps versus equal wall-clock sampling budgets.
 
@@ -1768,6 +1793,28 @@ currently measuring.
 | Resource quiet window | diagnostic guardrail | It explains the local boundary but is not a stable product contract. |
 | Fixed `500ms` | fallback | Best local fixed wait if the suite keeps a sleep, but still needs CI/mac/container validation. |
 
+The implementation-level open question is narrower than the fixed-wait table
+implies. A correct predicate should do more than poll a boolean:
+
+| Prototype step | Status | Reason |
+| -------------- | ------ | ------ |
+| Trigger the `core` resolver | required | `getBlockPatterns` has a resolver that fetches `/wp/v2/block-patterns/patterns`; a fresh editor sample may not have requested it yet. |
+| Use the no-argument resolution key | required | The provider-side block-pattern setting checks `hasFinishedResolution( 'getBlockPatterns' )` with no args, so the spec should check the same resolution key. |
+| Require a compatible non-empty pattern list | primary predicate | `useAvailablePatterns` merges editor settings patterns with REST patterns and filters by `templateTypes` or `core/template-part/${ area }`, while excluding core/directory sources. |
+| Keep `startTime` immediately before the click | required | Moving timing after the Design / Transform click would redefine the metric. |
+| Do not pre-wait preview canvases or `core/pattern` replacement | invalid | Those waits are the measured workload today. |
+| Add timeout and telemetry | required guardrail | The fallback choice should be visible in the result instead of being folded into q50 noise. |
+| Treat pattern categories as optional | optional guardrail | Broader editor settings resolve them, but this measured Transform/Design template list is built from patterns and current template fields. |
+
+The prototype shape should therefore be a pre-click wait with explicit telemetry,
+not a replacement for the measured post-click work. In the browser context that
+means roughly: call `wp.data.resolveSelect( 'core' ).getBlockPatterns()`, confirm
+`wp.data.select( 'core' ).hasFinishedResolution( 'getBlockPatterns' )`, read
+`core/editor`'s current post type/id and the edited entity record, merge
+`getEditorSettings()` patterns with `getBlockPatterns()`, and require at least one
+compatible non-excluded pattern. Then start the timer and click Design /
+Transform exactly where the current spec does.
+
 One more pass over the run-level q50s sharpens what is still open. The bootstrap
 intervals below resample reported run q50s, not individual retained samples, so
 they are a small-sample stability check rather than a host-portability proof.
@@ -2521,6 +2568,60 @@ separate explicit down/up timing from Playwright's per-key locator focus/check
 work. Until that control exists, the practical conclusion is to treat
 `pressSequentially()` as the `locator.type()` family and ordinary
 `locator.press()` as a checkpoint control only.
+
+The remaining-decision audit is now narrow enough to avoid another broad sweep.
+The derived table is in
+`data/typing-delay-input-api-boundary-next-control-audit.csv`; the important
+decisions are:
+
+| Open question | Current answer | Decision |
+| ------------- | -------------- | -------- |
+| Does ordinary `locator.press()` model `pressSequentially()`? | No. `pressSequentially()` delegates to `type()`, while ordinary `locator.press()` adds the wait-for-signals epilogue; removing that epilogue raises ordinary press by median `+3.4ms` at `50ms` and `+3.9ms` at `75ms`. | Use `locator.press()` only as a checkpoint control; compare `pressSequentially()` against `locator.type()`. |
+| Can one realistic hold duration be chosen globally? | No. At requested `50ms`, page-keyboard is tap-like at `250ms` while `locator.type()` is slow; at requested `100ms`, page-keyboard is slow at `500ms` while `locator.type()` is tap-like. | Pick the input API first, then interleave realistic holds inside that API family. |
+| Does observed physical hold close the split? | No. page-keyboard `50ms` is tap-like with a realized `97.7ms` hold at `500ms`, while `locator.type()` `75ms` is slow with a nearby `93.5ms` realized hold. | Treat measured hold as a descriptor, not the causal variable. |
+| Does configured post-keyup wait close the split? | No. At `500ms` delay and requested `50ms` hold, page-keyboard and `locator.type()` both wait `450.0ms` after keyup, but land in different phases. | Keep post-keyup timing separate from Chromium-runtime checkpoint experiments. |
+| What still separates page-keyboard from `locator.type()`? | Only this narrower boundary remains open: explicit down/up timing, one-call `page.keyboard.press()`, per-key locator focus/check work, or their interaction with the editor phase. | Run the compact `page.keyboard.press()` plus per-key locator-focus/evaluate split only if the CI implementation choice depends on this equivalence. |
+| What would a CI switch to `pressSequentially()` mean? | It would switch the benchmark to the `locator.type()` family, not to ordinary `locator.press()` or explicit page-keyboard down/up. | Run the exact CI settings once after choosing the final helper; do not proxy through `locator.press()`. |
+
+I then ran that compact control in the same CI-comparable fresh-editor setup:
+`BENCHMARK_SETUP_STYLE=ci-post-editor-typing`,
+`BENCHMARK_FRESH_EDITOR_PER_DELAY=1`, delays `250ms`, `500ms`, and `1000ms`, four
+rounds, 10 retained samples, and one throwaway sample per delay. The two new
+paths were:
+
+-   `page.keyboard.press( 'x', { delay: hold } )`, then wait for the remaining
+    post-keyup delay.
+-   `locator.focus()` before every explicit `page.keyboard.down()` /
+    `sleep( hold )` / `page.keyboard.up()`, then wait for the remaining
+    post-keyup delay.
+
+![CI keyboard prelude control p50](figures/151-ci-keyboard-prelude-control-p50.png)
+
+![CI keyboard prelude control phase map](figures/152-ci-keyboard-prelude-control-phase-map.png)
+
+The compact result closes the broad version of the question. `page.keyboard.press`
+is not equivalent to the explicit `down()` / `sleep()` / `up()` helper at short
+holds: at `50ms` it is tap-like at `250ms` (`+0.3ms` versus tap), but slow at
+`500ms` (`+3.4ms`) and `1000ms` (`+2.9ms`). At `75ms` and `100ms`, it is slow at
+all three delays (`+3.7ms` to `+5.5ms`). Adding a per-key locator `focus()` before
+explicit page-keyboard `down()` / `up()` also moves the path into the slow band:
+all nine `50ms` / `75ms` / `100ms` by delay cells are `+2.7ms` to `+3.8ms`
+versus tap.
+
+That means the remaining split is not physical hold duration, and it is not just
+"page keyboard" versus "locator" as a name. It is an action-order/runtime-state
+effect. Playwright's source lines up with the result: `keyboard.press()` does
+`down()`, then `progress.wait( delay )`, then `up()`, while the explicit benchmark
+helper uses a harness `setTimeout` between separate `down()` and `up()` calls.
+`locator.type()` does an element focus via Playwright's utility world and then
+calls `page.keyboard.type()`. A separate `locator.focus()` before each explicit
+page-keyboard keypress is enough to move the measured key event into the slow
+band, but it over-shoots `locator.type()` at `100ms` / `500ms` and `100ms` /
+`1000ms`, where `locator.type()` is tap-like. So the exact lower-level mechanism
+is still a Playwright/Chromium runtime scheduling detail, but the CI decision is
+no longer blocked on it: `pressSequentially()` delegates to `locator.type()`,
+ordinary `locator.press()` remains only a checkpoint control, and explicit
+page-keyboard `down()` / `up()` is a separate helper family.
 
 The reused-editor result is also not explained by text accumulation or
 within-round placement. These code-path probes reuse one editor, so each later
@@ -3888,6 +3989,17 @@ would need measurements outside this JS/browser harness: hardware counters,
 Darwin scheduler/QoS traces, or browser traces that include OS scheduling and
 power-state categories.
 
+The next-probe audit for this open question is:
+
+| CPU/QoS question | Current answer | What is closed | Remaining unknown | Next useful probe |
+| ---------------- | -------------- | -------------- | ----------------- | ----------------- |
+| Is the `1000ms` timer callback or a nearby no-op task sufficient? | no | near-key no-CPU controls stay slow at median p50 `24.3ms` | none for this system claim | stop adding no-CPU task variants unless they target a new concrete browser subsystem |
+| Is any external CPU burn sufficient? | no | background/maintenance-QoS CPU stays slow at median p50 `24.2ms` despite consuming CPU | which policy or hardware state makes ordinary/utility CPU visible to the foreground browser path | measure ordinary, utility, background, and maintenance controls with scheduler/QoS and power counters |
+| Is ordinary/utility-QoS CPU activity sufficient locally? | yes, as a boundary result | ordinary/nice/utility controls are low at median p50 `9.7ms`; utility is `9.4ms`; `taskpolicy -l/-t` tiers stay `9.2-9.7ms` | P-core residency, cluster frequency, cache warmth, scheduler priority, timer coalescing, or a mix | run finite and continuous CPU controls with `powermetrics`, Instruments, and browser scheduling traces |
+| Do finite CPU duration and recency matter? | yes, descriptively | two-term finite-burst model has `R^2 = 0.71` with the expected signs | model does not identify the hardware mechanism or cover continuous QoS-clamped controls | pair finite-burst grid with per-core residency/frequency counters and process QoS state |
+| Is the exact hardware or scheduler layer identified? | no | current JS/browser traces can only name the narrowed boundary | exact split between core residency, frequency, cache, QoS scheduling, timer coalescing, and browser scheduler state | use OS/hardware counters first; add JS rows only to test a counter-backed hypothesis |
+| What should product optimization do with this? | keep it separate from source-level mitigations | native/browser controls move less than `1ms`; Gutenberg fanout supplies the scale | how real plugin/human workloads interact with this system state | use workload replay for product lag and selector/subscriber prototypes for source mitigation |
+
 The CPU gap-decay sweep confirms the "recent" part:
 
 ![CPU gap decay](figures/53-worker-gap-decay.png)
@@ -4797,6 +4909,27 @@ guard envelope. That is smaller than the whole persistence marker fanout, but it
 is the only high-impact row that is both source-feasible and does not require a
 new invalidation contract.
 
+The source-level patch contract is now explicit. The derived audit is in
+`data/typing-delay-selector-guard-prototype-contract-audit.csv`; the important
+engineering split is:
+
+| Candidate | Why it can or cannot skip ordinary text updates | Required contract | Decision |
+| --------- | ----------------------------------------------- | ----------------- | -------- |
+| Pattern override selected-only split | `pattern-overrides.js` already renders controls only when `props.isSelected`, but the support-check `useSelect` runs before that gate for every `BlockEdit` wrapper. A newly selected block can read current settings on mount. | Move the support-check `useSelect` into a selected-only child, then mount `ControlsWithStoreSubscription` only for selected supported blocks; export the HOC or helper for focused tests. | Implement first. |
+| Heading shared anchor capability | The selector reads global `generateAnchors` settings and `core/table-of-contents` count; every heading must react to those global changes. | Add or reuse a shared capability signal before removing per-heading subscriptions, with web tests for setting toggles and table-of-contents insertion/removal. | Do not include in the first patch. |
+| Non-edited `BlockListBlockProvider` guard | Only the edited block needs the changed text attributes, but the selector also owns selection, variation, movement, overlay, section, settings, and identity props. | Prototype a memoized/block-scoped selected-props boundary; component memo alone is not enough because `useSelect` still wakes on the store-root change. | Prototype after pattern override. |
+| `useInnerBlocksProps` structural guard | Text attributes do not affect root/drop-zone/layout props unless block name, editing mode, parent/root, template lock, section root, block settings, layout, or zoom changes. | Prototype a root/order/settings version boundary or memoized selector output. | Prototype after pattern override. |
+| `BlockListItems` structural/selection guard | Paragraph content attributes are not read, but this selector owns row order, selected ids, visible blocks, zoom state, preview mode, and appender eligibility. | Prototype a structural/selection/appender render key and behavior tests before counting the `5.3ms` opportunity. | Validation prototype only. |
+
+This turns the selector-guard open question from "which low-risk guards?" into a
+patch sequence. The first patch is just the pattern override support check. The
+acceptance test is not a lower p50 by itself; it is that selected supported and
+unsupported blocks behave correctly, unselected blocks do not mount the support
+subscription, settings changes still update while selected, and synced/unsynced
+pattern controls keep their current behavior. The measured p50 win should be
+checked after that patch, but the source contract is already strong enough to
+write the patch.
+
 I then pushed on the largest uncounted selector row: `BlockListItems`. The source
 audit makes the split sharper. `BlockListItems` does not read paragraph content
 attributes at all. Its `Items` selector in
@@ -4927,7 +5060,7 @@ the store; it does not filter by branch.
 | Local selector guards only | yes | partial | low-medium | first local prototype |
 | ClientId-scoped text-attribute invalidation | yes | partial for text updates | medium-high | second local prototype |
 | Persistence-aware side channel for `useBlockSync` | yes | yes for persistence-only markers | medium-high | store-boundary prototype |
-| Split persistence state from `core/block-editor` | yes if compatibility wrapper is kept | yes for persistence-only markers | high | after side-channel prototype |
+| Split persistence state from `core/block-editor` | yes if public selector compatibility is addressed | yes for persistence-only markers | high | after side-channel prototype |
 | Branch-aware `useSelect` subscriptions | yes | yes if dependencies are correct | very high | research prototype |
 | Silence `MARK_LAST_CHANGE_AS_PERSISTENT` | no | yes | invalid | reject |
 
@@ -4941,35 +5074,74 @@ block-editor `useSelect` subscribers whose selected values cannot depend on
 but the store-boundary prototype should be evaluated as a subscriber-partition
 problem, not as a marker-removal problem.
 
-I then audited that subscriber-partition idea against the registry source. This
-adds a compatibility constraint that the earlier design table did not spell out.
-`useSelect` subscribes to specific stores through `registry.subscribe( onChange,
-storeName )`, so it is on the store emitter path. `useBlockSync` uses
-`registry.subscribe( listener )` with no store name, so it is on the global
-registry emitter path. The registry currently does not know which global
-subscribers read `isLastBlockChangePersistent()`, and `useSelect` currently
-knows only active store names, not selector names or state branches.
+I then re-audited that subscriber-partition idea against the current registry
+source. This corrects one earlier concern and exposes a sharper compatibility
+constraint. `useSelect` subscribes to specific stores through
+`registry.subscribe( onChange, storeName )`, so it is on the store emitter path.
+`useBlockSync` also subscribes to the block-editor store, not to the no-store
+global registry emitter: it calls `registry.subscribe( listener,
+blockEditorStore )`. That makes an explicit `useBlockSync` side channel more
+local than a global-registry migration would be. The hard part is now the public
+selector contract: `isLastBlockChangePersistent()` is documented on the
+`core/block-editor` selector surface, while `useSelect` currently knows only
+active store names, not selector names or state branches.
 
 ![Store-boundary source feasibility](figures/140-store-boundary-source-feasibility.png)
 
 | Design | Current p50 scope | Source finding | Compatibility risk | Revised recommendation |
 | ------ | ----------------: | -------------- | ------------------ | ---------------------- |
 | Source-feasible local selector guards | `8.2ms` / `3,452` listeners | Pattern override can be split by selected block; block-provider and inner-blocks need local invalidation prototypes; no data subscription contract change. | Local stale UI risk only; covered by component behavior tests. | Do before store-boundary work. |
-| Persistence-aware `useBlockSync` side channel | `23.2ms` / `4,498` `useSelect` listeners | `useBlockSync` is a global registry subscriber; the registry does not classify global subscribers by persistence-branch dependency. | Needs a new persistence-aware subscription path or explicit `useBlockSync` registration; external `registry.subscribe` plus `isLastBlockChangePersistent` consumers are compatibility risk. | Research after local guards, with compatibility audit. |
-| Split persistence state out of block-editor root | `23.2ms` / `4,498` listeners | Moving the flag avoids the block-editor root change only if selector and notification semantics are replaced. | Direct consumers can observe stale persistence state or miss the transition unless a side channel exists. | Do only after a side-channel design works. |
+| Persistence-aware `useBlockSync` side channel | `23.2ms` / `4,498` `useSelect` listeners | `useBlockSync` is a store-specific block-editor subscriber, so it can be migrated to an explicit persistence-aware path more locally than a global-registry subscriber could. | The side channel can preserve `useBlockSync`, but not public `isLastBlockChangePersistent()` `useSelect` consumers by itself. | Research after local guards; prototype the side channel before changing public notification semantics. |
+| Split persistence state out of block-editor root | `23.2ms` / `4,498` listeners | Moving the flag avoids the block-editor root change only if selector and notification semantics are replaced. | `isLastBlockChangePersistent()` is documented as a public selector; external consumers can observe stale state or miss the transition unless compatibility is explicitly handled. | Do only after a side-channel design and public-selector compatibility decision. |
 | Branch-aware `useSelect` dependencies | `23.2ms` / `4,498` listeners | `useSelect` records store names, not selector names, state branches, or dynamic selector dependencies. | Broad data contract change; selectors can read conditionally and across stores. | Treat as a separate data-layer research project. |
 | Silence `MARK_LAST_CHANGE_AS_PERSISTENT` | `23.2ms` / `4,501` listeners | Removes the persistence transition that `useBlockSync` uses to convert a previous transient edit into parent `onChange`. | Breaks editor semantics to make the benchmark faster. | Reject. |
 
 This tightens the ordering again. The store-boundary problem is real and larger
 than the source-feasible local guard envelope (`23.2ms` marker fanout versus
-`8.2ms` source-feasible local guards), but it is not the next patch. A correct
-store-boundary fix needs an explicit persistence-aware notification contract
-before it can stop invalidating ordinary `useSelect` subscribers. Without that,
-splitting the persistence flag out of the block-editor root would preserve the
-number in a selector while losing the notification semantics that make the
-selector useful. So the current engineering order is: local selected-only /
-local invalidation guards first; side-channel design second; branch-aware
-`useSelect` only as broader data-layer research.
+`8.2ms` source-feasible local guards), but it is not the next patch. The corrected
+source audit makes the side-channel prototype more plausible for Gutenberg's
+known in-tree semantic consumer: `useBlockSync` can move from a store-wide
+subscription to a persistence-specific one. It does not by itself solve the
+documented public selector contract. Splitting the persistence flag out of the
+block-editor root could preserve `isLastBlockChangePersistent()` as a value while
+making existing public `useSelect` consumers miss the transition. So the current
+engineering order is: local selected-only / local invalidation guards first;
+validate a `useBlockSync` persistence side channel second; decide the public
+selector notification contract before using that split for a performance win;
+branch-aware `useSelect` only as broader data-layer research.
+
+The corrected contract-risk audit is:
+
+| Contract surface | Deeper conclusion | Prototype implication |
+| ---------------- | ----------------- | --------------------- |
+| Persistent-change reducer branch | The measured fanout is a real store-root invalidation: `MARK_LAST_CHANGE_AS_PERSISTENT` changes `blocks.isPersistentChange`. | Do not tune the timer slot; change the notification boundary or local subscribers. |
+| `useBlockSync` subscription | The side-channel target is narrower than previously stated because `useBlockSync` is a store-specific subscriber and the only production in-tree direct consumer found. | Prototype a private persistence-change subscription for `useBlockSync` while keeping the existing root notification at first to validate behavior. |
+| Documented public selector | `isLastBlockChangePersistent()` is documented and exported from the public `core/block-editor` selector surface. | Do not split the state branch for performance until the public-selector compatibility policy is explicit. |
+| `useSelect` subscription model | `useSelect` tracks active store names, not selector names or state branches. | Keep branch-aware `useSelect` as data-layer research, not the near-term benchmark patch. |
+| Redux store listener fanout | The wrapped Redux store calls every registered listener whenever root state identity changes. | Prefer a narrow persistence side channel over changing `createReduxStore` subscription semantics first. |
+
+The side-channel decision audit makes the remaining compatibility issue
+explicit. The derived table is in
+`data/typing-delay-store-boundary-side-channel-decision-audit.csv`; the important
+rows are:
+
+| Proposal | What it solves | What it does not solve | Decision |
+| -------- | -------------- | ---------------------- | -------- |
+| Add a private persistence-change side channel while keeping the root state update | Creates a migration seam for `useBlockSync`, the known in-tree semantic consumer, and lets tests prove that the `onInput` / `onChange` handoff still works. | It does not reduce ordinary `useSelect` fanout because `MARK_LAST_CHANGE_AS_PERSISTENT` still changes `blocks.isPersistentChange` and the block-editor root state. | Useful prototype seam, not a performance win by itself. |
+| Move `useBlockSync` to the side channel and stop changing the block-editor root for persistence-only markers | Would preserve the known in-tree `useBlockSync` path and avoid waking thousands of ordinary block-editor `useSelect` subscribers. | It breaks public subscription semantics for `isLastBlockChangePersistent()` consumers because `useSelect` and `registry.subscribe` are store-level, not selector-level. | Blocked for a production performance change until the public selector contract is resolved. |
+| Keep the selector value correct from an external persistence slot | Could preserve imperative `select( blockEditorStore ).isLastBlockChangePersistent()` reads. | It would not notify existing `useSelect` or store subscribers when only that external slot changes, and it weakens the current pure state-selector contract. | Do not use as the compatibility answer. |
+| Add selector-aware or branch-aware subscriptions to `@wordpress/data` | Could preserve public `isLastBlockChangePersistent()` `useSelect` notifications while letting unrelated block-editor selectors skip persistence-only changes. | This is a broad data-layer contract change involving dynamic selector dependencies, cross-store reads, conditional selectors, and plugin compatibility. | Only complete compatibility route found, but not a near-term typing benchmark patch. |
+| Do local selector guards before store partitioning | Reduces a source-feasible local envelope without changing public data subscription semantics. | It does not remove the full persistence-marker fanout. | Recommended near-term order. |
+
+That closes the tempting but invalid shortcut: a private `useBlockSync` side
+channel is not enough to claim the `23.2ms` marker-fanout win. It is only the
+first half of the migration. To get the performance win, `MARK_LAST_CHANGE_AS_PERSISTENT`
+would need to stop changing the block-editor root state; to keep compatibility,
+public subscribers that select `isLastBlockChangePersistent()` would still need a
+notification. The current `@wordpress/data` subscription model cannot express
+"notify this selector but not unrelated block-editor selectors." So the
+store-boundary row remains research after local guards, with a precise blocker:
+public selector notification compatibility, not `useBlockSync` itself.
 
 The next split answers what "woken subscriber" means in the measured input
 slice. In `useSelect`, `onChange` either queues an async update through
@@ -6115,6 +6287,17 @@ introduced by the automation layer, amplified by Gutenberg's heavy input path.
 The exact Chromium internal state is still below this benchmark's DOM,
 Gutenberg, and Playwright-protocol instrumentation.
 
+The next-step audit is therefore much narrower than "run more Playwright
+typing":
+
+| Runtime checkpoint question | Current answer | What is closed | Remaining unknown | Next useful probe |
+| --------------------------- | -------------- | -------------- | ----------------- | ----------------- |
+| Is the per-key fast path just elapsed post-keyup time? | no | ordinary waits from about `4ms` through `5008ms` stay around `21-24ms` `keypress` p50 | none for this benchmark decision | stop extending ordinary-wait controls unless a new browser build changes the result |
+| Is one generic task, timer, or frame checkpoint enough? | no | one `Runtime.evaluate`, `setTimeout(0)`, or RAF checkpoint improves only partway | which runtime/protocol side effect accumulates when checkpoints repeat | trace direct `Runtime.evaluate` and `Runtime.callFunctionOn` repeat grids with Chromium scheduler/runtime categories |
+| Do Playwright trace snapshots explain the full per-key fast path? | yes for the default trace-on configuration | trace-on per-key Playwright actions are a measurement perturbation, not a human-typing model | which snapshot subcommand or renderer state transition causes the speedup | compare trace-on `captureSnapshot` windows with trace-off repeated runtime-call windows in the same browser trace |
+| Can direct runtime checkpoints reproduce the trace-off residual? | yes, by dose response | a unique Playwright utility-script or locator semantic action is not required | V8 microtask state, renderer scheduler priority, input queue state, cache/frequency side effects, or a mix | hold raw CDP input fixed, vary checkpoint count, and trace around prior `keyup` / next `keydown` |
+| Is the browser checkpoint enough to explain Gutenberg-scale movement by itself? | no | native `contenteditable` moves only `0.3-0.4ms` while Gutenberg moves by several milliseconds | how much survives real plugin/human workloads | split artifact mechanism from product-lag work: Chromium tracing for the former, replayed workload traces for the latter |
+
 ### Native Contenteditable Baseline
 
 The key-state traces show conditions that separate slow and fast Gutenberg
@@ -6749,6 +6932,23 @@ post-dispatch rendering as the primary reason the key-held `1000ms` point is
 ownership of secondary whole-cycle cost, not causality for the low-band
 EventDispatch/input result.
 
+The source boundary lines up with that measurement. `useSelect()` returns the
+`subscribe` / `getValue` pair that React consumes through `useSyncExternalStore`
+after subscribing only to the stores used by the selector; async subscribers go
+through `renderQueue.add()`, which is backed by the priority queue's idle
+callback path. The Redux store wrapper then fans out every effective store-root
+change to its listener set. In other words, a profiler can name the components
+that eventually commit, but it cannot turn the already-measured store-root
+notification fanout into post-input React rendering.
+
+| React-profiler question | Current answer | Evidence | Next useful use |
+| ----------------------- | -------------- | -------- | --------------- |
+| Can React rendering explain the key-held `1000ms` cliff? | no | the EventDispatch/input slice moves `13.8ms` against an `11.2ms` minimum visual endpoint drop; the largest post-EventDispatch visual/render tail is `2.3ms` | do not use profiler as the next cliff-causality test |
+| Can `renderQueue.add()` or idle draining explain it? | no | `renderQueue.add()` moves by at most `0.2ms`, and the faster `1000ms` probe had idle callbacks crossing the next input while the slower `1300ms` probe drained before input | profile async commits only for real after-input/product workloads |
+| Can `useSelect` selector work or React's external-store listener explain it? | no | `useSelect.reactListener` moves by `0.1ms`, `mapSelect` by `0.25ms`, and the outer `onChange` wrapper by `1.0ms` | after a guard patch, use profiler to rank the selectors/components still recomputing |
+| Where is the remaining input-side React/data work? | broad subscriber fanout | `rootSubscribe` moves by `3.1ms` and Redux listener wrappers by `3.0ms`; resumed listener callbacks are not a common slow-path cause | collect subscriber-owner counts before changing data notification semantics |
+| What should a profiler run answer? | ownership of smaller residual work | Chrome render-event tail is at most `0.8ms`; trace-screenshot tail is `2.3ms` | capture production-like commit owners after RichText input and after async queue flushes |
+
 ## Trace Grouping Bug Avoided
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
@@ -7074,14 +7274,15 @@ The store-contract audit narrows that engineering question. Silencing
 persistence transition to turn a previous transient block edit into the parent
 `onChange` path. Current `useSelect` subscribers also cannot opt out by branch:
 they subscribe to store names, and any block-editor root identity change
-invalidates the cached selected value. The source-feasibility follow-up adds
-the missing contract constraint: `useBlockSync` is currently a global registry
-subscriber, not a store-specific `useSelect` subscriber, and the registry does
-not classify global subscribers by state-branch dependency. So the credible
-store-boundary prototype first needs a persistence-aware notification contract
-or explicit `useBlockSync` side channel. Local selector guards remain the next
-patch class; a full branch-aware `useSelect` dependency system is broader
-data-layer research.
+invalidates the cached selected value. The corrected source-feasibility follow-up
+removes one overstatement: `useBlockSync` is a store-specific block-editor
+subscriber, not a no-store global registry subscriber. That makes a private
+`useBlockSync` persistence side channel more plausible, but it leaves the public
+selector contract open because `isLastBlockChangePersistent()` is documented and
+external `useSelect` consumers would otherwise miss a persistence-only
+transition. Local selector guards remain the next patch class; the side-channel
+prototype comes after that; a full branch-aware `useSelect` dependency system is
+broader data-layer research.
 
 The subscriber-outcome funnel closes another tempting explanation. The next
 input wakes the same `4544` `useSelect.onChange` callbacks across normal marker,
@@ -7150,13 +7351,13 @@ The high-level split is:
 | Question | Current answer | Next useful work |
 | -------- | -------------- | ---------------- |
 | Typing startup wait | locally closed; current Typing has no extra post-setup wait and added waits do not improve retained q50 stability | no more local startup-wait runs unless CI/spec shape changes |
-| Pattern-loading wait | bounded locally; `0/100ms` are rejected, `250ms` is only a predicate lower-bound signal, `500ms` is the best local fixed fallback, and source audit identifies `getBlockPatterns` readiness before Design / Transform as the valid semantic predicate | prototype that predicate with timeout/fallback, then validate against `500ms` and `1000ms` in CI/mac/container |
-| Input API phase boundary | bounded enough for CI choice; `pressSequentially()` belongs with `locator.type()`, and ordinary `locator.press()` is a checkpoint control | only run a compact `page.keyboard.press()` plus per-key locator-focus/evaluate split if the CI implementation depends on the page-keyboard versus `locator.type()` boundary |
-| Low-risk selector guards | bounded enough to prototype; source feasibility leaves pattern override as the first local patch, while heading needs a shared/global signal | implement the pattern-override selected-only split with focused behavior tests; then prototype block-provider and inner-block structural invalidation |
-| Store subscriber partition | partially bounded; promising but contract-sensitive | research after local guards, preserving `useBlockSync` and persistence consumers |
-| React render ownership | bounded as secondary, not primary cause | profiler only for after-input/whole-cycle ownership |
-| Chromium runtime checkpoint | bounded to automation/runtime state, not Gutenberg semantic state | Chromium scheduler/runtime tracing, outside this JS harness |
-| CPU/QoS mechanism | partially bounded to ordinary/utility-QoS CPU state interacting with Gutenberg's input path | OS scheduler/power/counter traces, outside this JS harness |
+| Pattern-loading wait | bounded locally; `0/100ms` are rejected, `250ms` is only a predicate lower-bound signal, `500ms` is the best local fixed fallback, and source/prototype audit identifies no-arg `getBlockPatterns` resolution plus a compatible merged pattern list before Design / Transform as the valid predicate | prototype that predicate with timeout/fallback and telemetry, then validate against `500ms` and `1000ms` in CI/mac/container |
+| Input API phase boundary | locally closed for the CI choice; `pressSequentially()` belongs with `locator.type()`, ordinary `locator.press()` is a checkpoint control, and the compact `page.keyboard.press()` / per-key locator-focus runs show the remaining split is action-order/runtime-state, not hold duration | no more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings |
+| Low-risk selector guards | bounded enough to patch the first row; source/prototype contract audit says pattern override is the only immediate local split, while heading, provider, inner-blocks, and `BlockListItems` need shared-signal or invalidation prototypes | implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes |
+| Store subscriber partition | bounded to a compatibility blocker; a private `useBlockSync` side channel is a useful migration seam, but the `23.2ms` fanout win requires stopping the root update, which would break public `isLastBlockChangePersistent()` `useSelect` notifications under today's store-level subscription model | research after local guards; prototype the side channel only as a seam, and do not claim the fanout win without a public selector notification policy or branch-aware data subscription |
+| React render ownership | closed for cliff causality; still useful for secondary ownership | profiler only for after-input/whole-cycle commits after selector/subscriber work is separated |
+| Chromium runtime checkpoint | closed for benchmark-level CI choice; exact browser state remains open below this harness | Chromium scheduler/runtime tracing around `captureSnapshot` and repeated runtime-call windows, outside this JS harness |
+| CPU/QoS mechanism | narrowed to ordinary/utility-QoS CPU state interacting with Gutenberg's input path; exact hardware/scheduler layer remains open | OS scheduler, power, and hardware-counter traces before adding more JS benchmark rows |
 | Calibrated presentation | bounded through Paint/DrawFrame/localized trace screenshots | compositor presentation timestamps, OCR, or high-speed camera |
 | Human/plugin workload | not covered by fixed `x` insertion | record/replay representative plugin-heavy and human editing histories |
 | Portability of absolute numbers | partially bounded by local fresh/randomized/container checks | compact validation on CI hosts, containers, browser versions, and OS power policy |
@@ -7210,9 +7411,9 @@ For investigation:
     values.
 -   The RichText `onInput` split is now deep enough for this artifact: direct DOM
     record creation, apply-record, serialization, and parent callbacks are small.
-    React render ownership is still useful for optimizing after-input/whole-cycle
-    work, but the boundary audit above says it should not be treated as the
-    primary cause of the `1000ms` cliff.
+    React render ownership is still useful for optimizing after-input or
+    whole-cycle work, but the boundary and profiler decision audits above say it
+    should not be treated as the primary cause of the `1000ms` cliff.
 -   For the block-list owner groups identified here, separate necessary
     text-input invalidations from broad block-tree invalidations. Start with the
     pattern-override selected-only split; then prototype non-edited
