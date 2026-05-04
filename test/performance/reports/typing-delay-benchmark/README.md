@@ -639,6 +639,9 @@ The R script derives:
 -   `data/typing-delay-chromium-runtime-trace-contract-audit.csv`: required
     browser/runtime trace contrasts for the remaining Chromium checkpoint
     mechanism.
+-   `data/typing-delay-chromium-runtime-trace-runbook-audit.csv`: concrete
+    Chromium runtime trace rows, trace channels, alignment points, and acceptance
+    gates for naming the lower-level browser mechanism.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -708,6 +711,10 @@ The R script derives:
 -   `data/typing-delay-ci-startup-wait-run-reliability.csv`: the
     CI-comparable start-wait curve summarized as the CI-reported per-run Typing
     q50, with run-to-run q50 variance and two-branch runtime deltas.
+-   `data/typing-delay-startup-wait-change-trigger-contract-audit.csv`:
+    operational contract for when the locally closed Typing startup-wait answer
+    should be reopened, including statistic, helper, trace-placement,
+    portability, and non-Typing metric triggers.
 -   `data/typing-delay-pattern-readiness-boundary-summary.csv`: joined
     site-editor pattern readiness-probe and exact short-wait summary that marks
     where the local readiness boundary appears.
@@ -729,6 +736,10 @@ The R script derives:
 -   `data/typing-delay-pattern-readiness-risk-audit.csv`: per-run q50 range,
     bootstrap, and probe-hit risk audit for the remaining site-editor
     pattern-loading wait choices.
+-   `data/typing-delay-pattern-readiness-ci-validation-contract-audit.csv`:
+    validation contract for deciding whether `getBlockPatterns` plus resource
+    quiet or fixed `500ms` can replace the current fixed pattern-loading wait in
+    CI/mac/container lanes.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -765,6 +776,10 @@ The R script derives:
 -   `data/typing-delay-ci-keyboard-prelude-control-*.csv`: follow-up
     CI-comparable fresh-editor controls for `page.keyboard.press()` and explicit
     page-keyboard `down()` / `up()` with a per-key locator `focus()` prelude.
+-   `data/typing-delay-input-api-ci-helper-decision-contract-audit.csv`: CI
+    helper decision contract that separates `type()` / `pressSequentially()`
+    equivalence, ordinary `locator.press()` checkpoint controls, exact-helper
+    validation, and Playwright-version drift.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -850,8 +865,13 @@ The R script derives:
 -   `data/typing-delay-public-selector-notification-contract-audit.csv`:
     public-selector compatibility contract for the remaining
     `isLastBlockChangePersistent()` notification blocker.
+-   `data/typing-delay-public-selector-notification-design-runbook-audit.csv`:
+    compatibility and fanout gates for any public-selector notification design.
 -   `data/typing-delay-pattern-override-first-patch-implementation-audit.csv`:
     exact implementation and test contract for the first selector-guard patch.
+-   `data/typing-delay-pattern-override-postpatch-source-span-*.csv`:
+    post-patch all-data-spans microscope showing the pattern-override support
+    HOC collapsed to selected-block scale after rebuilt assets.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -889,6 +909,9 @@ The R script derives:
 -   `data/typing-delay-presentation-calibration-contract-audit.csv`: decision
     contract for the remaining compositor/display/OCR calibration caveat after
     localized changed trace screenshots.
+-   `data/typing-delay-presentation-external-calibration-runbook-audit.csv`:
+    concrete runbook for widening the claim from Chromium internal visual
+    endpoints to compositor/display, semantic glyph, or camera-visible timing.
 -   `data/typing-delay-react-render-boundary-audit.csv`: derived join that
     bounds the remaining React/render caveat using visual endpoint
     decomposition, `useSelect` subphase deltas, paused listener-wrapper deltas,
@@ -1904,6 +1927,38 @@ candidate if the benchmark keeps a sleep, but the better change is a semantic
 `250ms` is useful as a lower-bound signal for such a predicate, not as a
 recommended blind replacement without CI/mac/container validation.
 
+### Pattern Readiness CI Validation Contract
+
+The remaining pattern-loading question is no longer whether the fixed `1000ms`
+sleep is doing work locally. It is. The unresolved decision is whether the suite
+can replace it without changing what the Loading Patterns metric measures on CI.
+The validation contract is in
+`data/typing-delay-pattern-readiness-ci-validation-contract-audit.csv`.
+
+| Validation question | Current local evidence | Pass condition | Fail action |
+| ------------------- | ---------------------- | -------------- | ----------- |
+| Can pure `getBlockPatterns` replace the fixed wait? | rejected locally: median predicate wait is `0.15ms`, moves `0` resources before the timer, leaves about `25` resources inside measurement, and stays close to fixed `0ms` | only reconsider if it reaches the settled q50 band and moves setup resources before the timer on another host | do not use pure `getBlockPatterns`; keep it only as the semantic first step before a guardrail |
+| Can `getBlockPatterns` plus resource quiet replace the sleep? | best predicate-shaped local candidate: waits about `301ms`, satisfies quiet in all `30` retained samples, moves `19` resources before the timer, leaves `7` inside measurement, and reports `734.6ms` median run q50 | CI/mac/container lanes overlap the fixed `1000ms` q50 band, do not increase run-to-run q50 sd, rarely fall back, and keep preview work inside measurement | use fixed `500ms` if it validates, otherwise keep fixed `1000ms` |
+| Is fixed `500ms` an acceptable fallback? | all exact q50s stay inside or below the `1000ms` empirical range, no run is above the `1000ms` max, bootstrap delta is `-29.6ms..+12.1ms`, and q50 sd is `0.62x` the baseline | every validation lane keeps fixed `500ms` inside the fixed `1000ms` q50 band with no preview/canvas misses and no extra variance warning | keep fixed `1000ms` as the conservative baseline |
+| Can resource quiet be the product predicate? | no; it mostly moves broader REST setup work: categories, navigation, post type, users, taxonomies, navigation fallback, pages, template parts, and menus | allowed only as an engineering guardrail after the semantic pattern predicate, with endpoint details reported | do not replace the fixed sleep with an opaque resource-count threshold |
+| Is a source-specific readiness signal available? | not from the current local evidence; the pure block-pattern predicate does not move the broader setup work that the fixed wait excludes | a source-level signal predicts the same resource-drain and q50 boundary as fixed `500ms` / `1000ms` without waiting for preview canvases | keep `getBlockPatterns` plus quiet as the candidate guardrail, or keep a fixed wait |
+| Does the validation preserve the metric definition? | the metric starts immediately before the Design / Transform click and measures preview canvases plus `core/pattern` replacement after that click | predicate completion happens before `startTime`, while preview-canvas and `core/pattern` waits remain after the click inside the measured interval | reject the replacement because it redefines the metric |
+
+The important telemetry is per-run and per-sample, not only the final p50:
+predicate wait time, `hasFinishedResolution` status, compatible pattern count,
+quiet elapsed time, timeout/fallback flag, active requests at measurement start,
+resources moved before the timer, resources left inside measurement, endpoint
+groups, retained counts, preview/canvas misses, browser revision, and wp-env or
+container metadata. Without that telemetry, a predicate miss would look like
+ordinary q50 noise.
+
+This also clarifies the fallback order. The first candidate is
+`getBlockPatterns` plus a short resource-quiet guard with visible timeout
+telemetry. Fixed `500ms` is the fallback only if it validates in the same
+lanes. Fixed `1000ms` remains the conservative baseline if either replacement
+changes the q50 band, increases variance, times out often, or pre-waits the
+preview work that the metric is supposed to measure.
+
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
 starts. Reducing that value changes the key-delay benchmark itself and crosses
@@ -2035,6 +2090,26 @@ non-Typing metrics that also use `PERFORMANCE_MEASUREMENT_IDLE_WAIT_MS`. The
 runtime math for those explicit sleeps is exact from the spec counts; their
 metric reliability still needs metric-specific repeated runs before changing the
 shared default.
+
+### Typing Startup-Wait Change Trigger Contract
+
+The Typing startup-wait result is locally closed, but not timeless. The useful
+follow-up is to define when that answer expires. The contract is in
+`data/typing-delay-startup-wait-change-trigger-contract-audit.csv`.
+
+| Trigger question | Current answer | Reopen trigger | Decision rule |
+| ---------------- | -------------- | -------------- | ------------- |
+| Should the current Typing metric add a post-setup wait? | no; current Typing has `0ms` extra post-setup wait, and CI-comparable plus exact post-editor runs show no retained-q50 stability win from `1s` or `60s` waits | Typing setup, helper family, trace placement, retained/throwaway policy, browser revision, or CI runner class changes enough to invalidate the exact-spec anchor | keep `0ms` unless the added wait improves retained-q50 stability or tail behavior by more than ordinary run-to-run spread while paying an acceptable runtime cost |
+| Does the first-character start-wait effect require changing retained q50? | no for the current statistic; first character and first retained key are slower, but startup wait does not remove that sequence shape | reported statistic changes from retained q50 to first-input, mean, p90/p95, or no-throwaway policy | do not use startup wait to hide first-input cost; report a first-input or tail metric if that is the product question |
+| Can Typing evidence remove waits from non-Typing metrics? | no; Typing uses `target.type()` / `paragraph.type()` and has no extra post-setup wait by default, while seven non-Typing metrics still pay explicit sleeps | a non-Typing sleep is being changed | require metric-specific 0ms-versus-current comparisons with retained counts, p50/mean/p90, failures, setup-resource movement, and two-branch runtime savings |
+| Does a CI image or runner change reopen the question? | only for absolute thresholds or when ordering changes; local wait curves and blocked order controls show no monotonic retained-q50 wait effect | compact CI lane changes retained-q50 ordering, run-to-run sd, first-key behavior, or timeout/failure shape with startup wait | do not add wait for absolute p50 drift alone; handle drift through threshold portability |
+| Does tracing placement change the decision? | no for the tested exact-spec placement; `60s` before trace, `0ms` before trace, and `60s` after tracing starts stayed in the same low band | `metrics.startTracing()`, trace categories, trace snapshots, or reporter extraction move relative to idle wait or `type()` | repeat before-trace and after-trace placements with the exact spec |
+| What is the fallback if a startup wait is reintroduced? | it is a metric-definition change with explicit runtime cost | reopened exact-spec validation shows a clear reliability win under a new setup | prefer a semantic readiness predicate or metric-specific fix over a blind fixed sleep |
+
+This keeps the earlier negative result from being overused. It is valid for the
+current retained Typing q50 and current helper shape. It is not a product
+first-input claim, it is not a non-Typing metric claim, and it is not a license
+to change thresholds on a new CI image without portability evidence.
 
 For the held-key Typing delay itself, reducing the delay saves wall time
 linearly but does not move the measurement monotonically. The graph below joins
@@ -2693,6 +2768,30 @@ is still a Playwright/Chromium runtime scheduling detail, but the CI decision is
 no longer blocked on it: `pressSequentially()` delegates to `locator.type()`,
 ordinary `locator.press()` remains only a checkpoint control, and explicit
 page-keyboard `down()` / `up()` is a separate helper family.
+
+### Input API CI Helper Decision Contract
+
+The remaining input-API question is now a decision-boundary issue, not a reason
+to keep sweeping mixed helper families. The contract is in
+`data/typing-delay-input-api-ci-helper-decision-contract-audit.csv`.
+
+| Decision question | Current evidence | Required validation | Claim scope |
+| ----------------- | ---------------- | ------------------- | ----------- |
+| What is the current CI helper family? | the real post-editor and site-editor Typing metrics call `target.type()` / `paragraph.type()` with the configured delay; `pressSequentially()` delegates to the same `type()` path, while `locator.press()` uses a different action wrapper | record exact helper name, Playwright version, delay option, retained/throwaway policy, fixture setup, and whether the target is a Locator or ElementHandle | CI helper identity |
+| Can ordinary `locator.press()` proxy for `pressSequentially()` or `target.type()`? | no; source inspection and `noWaitAfter` data both show ordinary `locator.press()` adds the wait-for-signals epilogue, and removing it raises `50ms` / `75ms` rows into the `locator.type()` band | label ordinary `locator.press()` only as checkpoint/control evidence | proxy rejected |
+| What validates a spelling switch from `type()` to `pressSequentially()`? | current Playwright aliases `pressSequentially()` to `type()`, so behavior should be unchanged when options and target objects are unchanged | one exact CI-settings comparison after the final helper spelling is chosen: same fixture, delay, retained/throwaway count, trace settings, browser revision, and start boundary | spelling-only change if passed |
+| What validates switching from page keyboard or explicit `down()` / `up()` to locator `type()` / `pressSequentially()`? | compact controls show page-keyboard, `page.keyboard.press()`, locator focus prelude, and `locator.type()` occupy different phase bands under the same requested holds | rerun the exact CI metric with the final helper, not a proxy; treat old/new as an API-family comparison | metric-definition change |
+| Can realistic hold duration be selected first? | no; `50ms` / `75ms` / `100ms` rows are API-family-specific | choose the helper first, then interleave `50ms`, `100ms`, and optionally `75ms` only inside that helper family | hold choice scoped |
+| What lower-level mechanism remains open? | `progress.wait()` versus harness `setTimeout`, utility-world focus/checkpoint work, trace snapshot/runtime state, and Chromium scheduler interaction | use the runtime trace runbook only if the browser mechanism matters; do not require it for the CI helper choice | mechanism optional |
+| What guards against Playwright version drift? | the conclusion depends on current Playwright source: `pressSequentially()` delegates to `type()`, and `locator.press()` uses the wait-for-signals action path | on Playwright upgrades, re-check source and rerun compact discriminator rows only if the implementation changed | upgrade guard |
+
+This gives a concrete answer for a future CI helper change. If the code is only
+rewritten from `type()` to `pressSequentially()` with the same target and
+options, the expected change is spelling-level, but it still deserves one exact
+CI-settings check. If the change moves between page-keyboard, explicit
+`down()` / `up()`, locator `type()`, or ordinary `locator.press()`, it is a
+metric-definition change. Ordinary `locator.press()` should not be used as a
+shortcut for either `type()` or `pressSequentially()`.
 
 The reused-editor result is also not explained by text accumulation or
 within-round placement. These code-path probes reuse one editor, so each later
@@ -4995,7 +5094,7 @@ feasibility correction. This is the current implementation order, not the older
 
 | Action | Current p50 scope | Counted source-feasible p50 | Current status |
 | ------ | ----------------: | --------------------------: | -------------- |
-| Pattern override selected-only split | `3.6ms` | `3.6ms` | implemented locally; measure source-span collapse |
+| Pattern override selected-only split | `3.6ms` | `3.6ms` | implemented locally; source-span collapse confirmed |
 | Non-edited `BlockListBlockProvider` guard | `3.5ms` | `3.5ms` | prototype local invalidation |
 | `useInnerBlocksProps` structural guard | `1.1ms` | `1.1ms` | prototype local invalidation |
 | Heading shared capability signal | `0.5ms` | `0.0ms` | not counted until a shared/global signal exists |
@@ -5022,7 +5121,7 @@ behavior directly.
 
 | Candidate | Current p50 scope | Test/prototype burden | Missing test surface | Recommended next |
 | --------- | ----------------: | --------------------- | -------------------- | ---------------- |
-| Pattern override selected-only split | `3.6ms` / `1,436` listeners | export/test seam added | selected supported block, selected unsupported block, unselected supported block, selection transition, selected settings support change, unsynced reset control | Measure source-span collapse after rebuild. |
+| Pattern override selected-only split | `3.6ms` / `1,436` listeners | export/test seam added | selected supported block, selected unsupported block, unselected supported block, selection transition, selected settings support change, unsynced reset control | Source-span collapse confirmed; move to provider and inner-block prototypes. |
 | Heading shared anchor capability | `0.5ms` / `202` listeners | broad tests plus shared signal design | web tests for `generateAnchors` setting changes and table-of-contents insertion/removal | Design signal before optimizing. |
 | Non-edited `BlockListBlockProvider` guard | `3.5ms` / `1,436` listeners | local invalidation prototype | edited block update; non-edited selection, variation, movement/removal, overlay, template mode, block identity | Prototype after pattern override. |
 | `useInnerBlocksProps` structural guard | `1.1ms` / `580` listeners | local invalidation prototype | text insertion; child insert/remove/reorder; zoom; template lock; editing mode; layout/root changes | Prototype after pattern override. |
@@ -5041,7 +5140,7 @@ engineering split is:
 
 | Candidate | Why it can or cannot skip ordinary text updates | Required contract | Decision |
 | --------- | ----------------------------------------------- | ----------------- | -------- |
-| Pattern override selected-only split | `pattern-overrides.js` already rendered controls only when `props.isSelected`, but the support-check `useSelect` ran before that gate for every `BlockEdit` wrapper. A newly selected block can read current settings on mount. | The patch moves the support-check `useSelect` into a selected-only child, then mounts `ControlsWithStoreSubscription` only for selected supported blocks; the HOC is exported for focused tests. | Implemented locally; measure next. |
+| Pattern override selected-only split | `pattern-overrides.js` already rendered controls only when `props.isSelected`, but the support-check `useSelect` ran before that gate for every `BlockEdit` wrapper. A newly selected block can read current settings on mount. | The patch moves the support-check `useSelect` into a selected-only child, then mounts `ControlsWithStoreSubscription` only for selected supported blocks; the HOC is exported for focused tests. | Implemented locally; post-patch source-span microscope confirms selected-block-scale mount count. |
 | Heading shared anchor capability | The selector reads global `generateAnchors` settings and `core/table-of-contents` count; every heading must react to those global changes. | Add or reuse a shared capability signal before removing per-heading subscriptions, with web tests for setting toggles and table-of-contents insertion/removal. | Do not include in the first patch. |
 | Non-edited `BlockListBlockProvider` guard | Only the edited block needs the changed text attributes, but the selector also owns selection, variation, movement, overlay, section, settings, and identity props. | Prototype a memoized/block-scoped selected-props boundary; component memo alone is not enough because `useSelect` still wakes on the store-root change. | Prototype after pattern override. |
 | `useInnerBlocksProps` structural guard | Text attributes do not affect root/drop-zone/layout props unless block name, editing mode, parent/root, template lock, section root, block settings, layout, or zoom changes. | Prototype a root/order/settings version boundary or memoized selector output. | Prototype after pattern override. |
@@ -5094,8 +5193,43 @@ store-backed controls path, selected supported blocks still show pattern
 override controls, selection transition reads current settings, selected support
 settings can update, and the unsynced reset control still stays behind the
 selected supported path. The remaining uncertainty is empirical, not
-architectural: how much of the audited `3.6ms` / `1,436` listener-call scope
-disappears in a rebuilt source-span run.
+architectural: the rebuilt source-span microscope shows the support-check mount
+fanout collapsed. Aggregate before/after p50 remains a separate confirmation
+run if the patch needs a production magnitude claim.
+
+### Pattern Override Post-Patch Source-Span Check
+
+I rebuilt the performance assets with `npm run build -- --skip-types` and ran a
+compact all-data-spans microscope on the large-post paragraph workload at the
+`1000ms` keyboard delay. The successful run used
+`BENCHMARK_SETUP_STYLE=benchmark-live-editor`,
+`BENCHMARK_TRACE_DATA_SPANS=1`, `BENCHMARK_TRACE_ALL_DATA_SPANS=1`,
+`BENCHMARK_USE_BROWSER_TRACE=0`, one round, and three typed samples. The raw
+artifact is `87MB`, so this is a source-span fanout check, not an aggregate p50
+replacement.
+
+![Pattern override post-patch source span collapse](figures/150-pattern-override-postpatch-source-span-collapse.png)
+
+| Row | Evidence | Count | Source-span detail |
+| --- | -------- | ----: | ------------------ |
+| Pre-patch support HOC | audited marker-window listener calls | `1,437` | `packages/editor/src/hooks/pattern-overrides.js:40`, about `3.6ms` p50 scope |
+| Post-patch selected support check | mounted `useSelect` metadata entries | `1` | `useSelectId=14695`, `6` `useSelect.onChange` events and `0.60ms` total span time over the three-sample microscope |
+| Post-patch selected controls subscription | mounted `useSelect` metadata entries | `1` | `useSelectId=14697`, `9` `useSelect.updateValue` events and no measured listener fanout in the microscope |
+
+This confirms the source-level fanout claim for the first selector-guard patch:
+the editor-side `__experimentalBlockBindingsSupportedAttributes` support check
+is no longer mounted for every `BlockEdit` wrapper. The broader block-editor
+binding UI still has many support-attribute selectors; those are separate
+`block-editor` owners and are not the pattern-override HOC row.
+
+Two harness caveats are worth keeping in the report. A CI-style
+`BENCHMARK_SETUP_STYLE=ci-post-editor-typing` run with `locator.type()` failed
+after text entry because the target locator was
+`getByRole( 'document', { name: /Empty block/i } )`; once text is typed, that
+accessible name changes and the delayed locator target can go stale. A larger
+33-key all-data-spans run reached the typing step but failed at JSON
+serialization with `RangeError: Invalid string length`. All-spans diagnostics
+therefore need microscope-sized runs or a streaming/summarized output path.
 
 I then pushed on the largest uncounted selector row: `BlockListItems`. The source
 audit makes the split sharper. `BlockListItems` does not read paragraph content
@@ -5345,6 +5479,25 @@ stricter conclusion: a private side channel is a useful migration seam but not a
 performance win. The performance win starts only when
 `MARK_LAST_CHANGE_AS_PERSISTENT` stops changing the block-editor root; that is
 also exactly where public selector notification compatibility must be solved.
+
+The deeper design runbook separates the possible compatibility answers:
+
+| Design path | Compatibility result | Fanout result | Decision |
+| ----------- | -------------------- | ------------- | -------- |
+| Keep the root state update and root notification | existing `useSelect` and `registry.subscribe` consumers keep waking correctly | ordinary `useSelect` fanout remains in the high-fanout band | compatible no-win path |
+| Add a private `useBlockSync` persistence side channel while keeping the root update | validates the known in-tree `onInput` / `onChange` handoff, selection payloads, controlled inner blocks, fresh callbacks, and cleanup | no fanout claim, because the root still changes | behavior seam only |
+| Move persistence to an external slot | imperative `select( blockEditorStore ).isLastBlockChangePersistent()` can be made correct | subscribed consumers miss the transition unless another notification path exists | reject as complete answer |
+| Stop the root update after only migrating `useBlockSync` | preserves the known in-tree consumer | breaks public subscribed selector semantics | unsafe performance shortcut |
+| Add selector-aware or branch-aware data subscriptions | can wake `isLastBlockChangePersistent()` consumers while skipping unrelated block-editor selectors | only compatibility-preserving route found for the `23.2ms` fanout win | data-layer prototype, not a near-term benchmark patch |
+
+That makes the acceptance gate stricter than "does `useBlockSync` still work?"
+A store-partition performance claim needs both sides: subscribed public selector
+fixtures must observe the same persistence-only transition as today, and the
+marker-only source-span run must show rootSubscribe / `useSelect.onChange`
+fanout collapsing for unrelated selectors while persistence-specific subscribers
+still wake. If public `registry.subscribe( listener, blockEditorStore )`
+semantics are narrowed, that is a separate API/deprecation decision; it should
+not be hidden inside a typing benchmark patch.
 
 The next split answers what "woken subscriber" means in the measured input
 slice. In `useSelect`, `onChange` either queues an async update through
@@ -6532,6 +6685,25 @@ browser state, the next work is below this benchmark's DOM/React/data
 instrumentation. It needs browser/runtime tracing around the already-identified
 contrasts, not more Gutenberg delay points.
 
+The deeper runtime trace runbook makes the lower-level work falsifiable:
+
+| Runtime trace surface | Required rows | Acceptance gate |
+| --------------------- | ------------- | --------------- |
+| Wait versus checkpoint | raw CDP held-key `wait 16ms`, `1000ms`, `5000ms`, `Runtime.evaluate` `x7/x17`, `Runtime.callFunctionOn` `x7/x17`, and raw `x0` | runtime rows must share a scheduler, V8, microtask, queue, or input-priority state absent from ordinary waits and tracking the lower `EventDispatch` duration |
+| Checkpoint dose response | `Runtime.evaluate` and `Runtime.callFunctionOn` `x0/x1/x3/x7/x17` with identical payloads and input path | a trace-state metric should move monotonically or stepwise with repeat count and match the p50 dose response |
+| Trace snapshot perturbation | trace-on `keyboard.press()` and raw CDP plus `page.evaluate()`, matched against trace-off runtime-repeat rows and a separate low-overhead protocol log | the fast trace-on band should align with `captureSnapshot` or related snapshot protocol work; otherwise the observer setup is not isolated |
+| Playwright utility residual | direct `Runtime.callFunctionOn`, `page.evaluate()`, `page.evaluateHandle()`, `locator.evaluate()`, and editor-frame locator evaluation under trace off | only explain the residual if extra command, utility-script, execution-context, handle-lifecycle, or scheduler-state markers account for the p50 gap |
+| Native scale control | the same wait/checkpoint subset in Gutenberg large-post and native `contenteditable` timer scenarios | browser state may match, but Gutenberg source spans must account for the multi-millisecond scale difference |
+
+Each retained sample needs the browser trace state aligned with the existing key
+and source spans: run id, sample index, retained/throwaway flag, browser
+revision, trace categories, protocol commands, task/queue/V8 slices,
+`EventDispatch` timing, source-span ids, environment metadata, and observer
+configuration. Until the same trace-state variable predicts the primary
+wait/checkpoint contrast, the dose response, the trace-snapshot perturbation, and
+the native scale control, the exact Chromium mechanism remains unnamed even
+though the benchmark-level CI decision is closed.
+
 ### Native Contenteditable Baseline
 
 The key-state traces show conditions that separate slow and fast Gutenberg
@@ -7155,6 +7327,32 @@ Chromium trace screenshots and that the endpoint movement is mostly already in
 the input/`EventDispatch` span. It is not enough to claim calibrated
 hardware-to-screen latency or semantic first-visible-glyph time.
 
+### External Presentation Calibration Runbook
+
+The external-calibration follow-up should not be another free-form visual probe.
+The current internal endpoint stack already answers whether the `1000ms`
+held-key shape survives past JavaScript and Chromium render bookkeeping. The
+deeper open question is narrower: what evidence would be needed before the
+report can claim presented-frame, recognized-glyph, or camera-visible timing?
+
+The runbook is in
+`data/typing-delay-presentation-external-calibration-runbook-audit.csv`.
+
+| Validation lane | Endpoint measured | Required controls | Success gate | Claim boundary |
+| --------------- | ----------------- | ----------------- | ------------ | -------------- |
+| Compositor/presentation trace | keydown through `EventDispatch`, `Paint` / `DrawFrame`, compositor submit, swap/present, and any available displayed-frame timestamp | same `990ms`, `1000ms`, and `1300ms` key-held rows plus matching complete-keypress rows, with browser revision, trace categories, refresh rate, and retained-sample IDs | the presented-frame endpoint preserves the key-held `1000ms` drop while complete-keypress stays flat; any added compositor/display tail is reported separately | needed only before claiming compositor/display presentation timing |
+| Semantic glyph recognition | first frame where OCR, template match, or image recognition identifies the newly inserted glyph in a DOM-range or textbox crop | same retained samples as the screenshot-pixel probe; require target-box and typed-range overlap | recognized-glyph timing keeps the key-held `1000ms` drop and matches localized changed-pixel ordering within the declared tolerance | needed only before claiming semantic first-visible-glyph timing |
+| Trace observer control | visual endpoint rows with and without trace screenshots, heavy render categories, and external instrumentation | pair observer-on and observer-off rows at the same delay/mode and compare p50 ordering, retained counts, and first-key behavior | the drop persists without relying on the observer that supplies the endpoint; observer overhead is reported as a separate offset | required before using trace screenshots or external capture as causal evidence |
+| High-speed camera/display lane | camera-visible glyph or display transition timestamp aligned to keydown or a visual trigger | same delay/mode rows plus a calibration flash or equivalent marker; record camera fps, shutter/exposure, display refresh, and panel mode | camera-visible glyph timing preserves the key-held `1000ms` drop and gives a stable additive display tail relative to compositor/presented-frame timing | needed only before claiming hardware/display timing |
+| Decision gate | joined per-sample table across keydown, `EventDispatch`, RAF, `Paint` / `DrawFrame`, changed screenshot, localized pixels, and any external endpoint | retain the CI p50 discard/window rules, input-mode controls, and per-sample source IDs | the external endpoint confirms the same qualitative shape as the internal endpoint stack, with any extra tail smaller than or clearly separable from the `EventDispatch`-driven drop | defines when the report may widen beyond Chromium internal visual propagation |
+
+If the external endpoint disagrees, that does not invalidate the current
+internal-browser result. It narrows the wording to the deepest endpoint that
+passed and makes the disagreement the next open question. The important guard is
+that the endpoint must be joined per sample; comparing a camera/OCR run against a
+separate internal trace run would not decompose the `EventDispatch` slice from
+the presentation tail.
+
 ### React/Render Boundary Audit
 
 I then joined the visual endpoint decomposition with the nested `useSelect`
@@ -7749,15 +7947,15 @@ The high-level split is:
 
 | Question | Current answer | Next useful work |
 | -------- | -------------- | ---------------- |
-| Typing startup wait | locally closed; current Typing has no extra post-setup wait and added waits do not improve retained q50 stability | no more local startup-wait runs unless CI/spec shape changes |
-| Pattern-loading wait | pure `getBlockPatterns` readiness is locally rejected; it was already true, waited only `0.15ms`, moved `0` resources before the timer, and stayed in the slow band. `getBlockPatterns` plus a `100ms` resource-quiet guard moved the same `19` setup resources as fixed `500ms` / `1000ms` and matched the settled q50 band | do not switch to pure `getBlockPatterns`; validate `getBlockPatterns` plus resource quiet with timeout/fallback telemetry against fixed `500ms` and `1000ms` in CI/mac/container |
-| Input API phase boundary | locally closed for the CI choice; `pressSequentially()` belongs with `locator.type()`, ordinary `locator.press()` is a checkpoint control, and the compact `page.keyboard.press()` / per-key locator-focus runs show the remaining split is action-order/runtime-state, not hold duration | no more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings |
-| Low-risk selector guards | the pattern-override selected-only patch is implemented locally: only the support-check `useSelect` moved behind the existing selected-block gate, `ControlsWithStoreSubscription` stayed gated, and focused unit coverage now covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths; heading, provider, inner-blocks, `BlockListItems`, and store partitioning remain separate prototypes | measure the pattern-override listener-count collapse in a compact source-span run before moving to provider and inner-block prototypes |
-| Store subscriber partition | public-selector notification audit closes the local blocker: a private `useBlockSync` side channel can preserve the only production in-tree direct consumer found, but the `23.2ms` fanout win requires stopping the block-editor root update, which would make existing public `isLastBlockChangePersistent()` `useSelect` consumers miss the persistence-only transition | research after local guards; prototype the side channel only as a behavior seam, and do not claim the fanout win until the public selector notification contract has a tested compatibility design |
+| Typing startup wait | change-trigger contract closes the operational question: current Typing has `0ms` extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation | do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor `0ms` versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry |
+| Pattern-loading wait | CI validation contract narrows the deployment choice: pure `getBlockPatterns` is rejected locally, `getBlockPatterns` plus resource quiet is the first replacement candidate, fixed `500ms` is only a validated fallback, and fixed `1000ms` remains the conservative baseline if either replacement changes the metric boundary | run the contract in CI/mac/container lanes with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry before changing the fixed wait |
+| Input API phase boundary | CI helper decision contract closes the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match, ordinary `locator.press()` is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition |
+| Low-risk selector guards | the pattern-override selected-only patch is implemented locally and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry, with `ControlsWithStoreSubscription` still gated to one selected controls entry; focused unit coverage covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths | move to the non-edited `BlockListBlockProvider` and `useInnerBlocksProps` prototypes; run aggregate before/after p50 only if a production magnitude claim is needed |
+| Store subscriber partition | public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private `useBlockSync` side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware `@wordpress/data` subscriptions are the only compatibility-preserving fanout route found | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
-| Chromium runtime checkpoint | closed for benchmark-level CI choice; trace-contract audit says ordinary waits, generic task/frame checkpoints, Playwright utility semantics, and browser-only scale are all bounded; exact browser state remains open below this harness | browser/runtime tracing around matched raw-CDP wait, repeated `Runtime.evaluate` / `Runtime.callFunctionOn`, and trace-on `captureSnapshot` windows; do not add more JS-level delay rows |
+| Chromium runtime checkpoint | runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated `Runtime.evaluate` / `Runtime.callFunctionOn` rows are the dose-response control, trace-on `captureSnapshot` rows isolate the perturbation, and native rows bound browser-only scale | run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows |
 | CPU/QoS mechanism | counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this harness | run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows |
-| Calibrated presentation | presentation-calibration audit closes the internal-browser claim: the key-held `1000ms` drop reaches RAF, `Paint`, `DrawFrame`, first changed trace screenshot, and localized typed-character pixels; post-`EventDispatch` tail is secondary | compositor presentation traces, OCR/image recognition, or high-speed camera only if the report needs hardware-to-screen or semantic glyph timing |
+| Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
 | Human/plugin workload | workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency | build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims |
 | Portability of absolute numbers | portability runbook audit separates threshold lanes from causal lanes: use exact Playwright-bundled Chromium on CI plus a comparable local/container lane, compact mechanism rows, environment metadata, and expansion triggers before changing absolute p50/CV claims | run the portability runbook first: compact mechanism rows with per-run p50/CV/order/first-key metadata on CI Chromium and one comparable lane; expand only when ordering, variance, timer, or visual endpoint behavior changes |
 

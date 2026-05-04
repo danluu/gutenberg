@@ -1,0 +1,2 @@
+pre_patch_support_hoc_listener_calls,post_patch_support_metadata_entries,post_patch_controls_metadata_entries,source_scale_collapse_ratio,post_patch_support_use_select_on_change_events,post_patch_support_total_duration_ms,artifact_caveat
+1437,1,1,1437,6,0.600001,"This is a compact all-data-spans microscope, not an aggregate p50 replacement; the CI-style locator run failed because the Empty block accessible-name target changed after typing, and the 33-key all-spans run exceeded JSON serialization limits."
