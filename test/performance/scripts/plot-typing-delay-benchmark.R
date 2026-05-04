@@ -9434,6 +9434,130 @@ if (file.exists(redux_listener_owner_summary_path)) {
 	)
 }
 
+marker_allspan_action_summary_path <- file.path(data_dir, "typing-delay-marker-allspan-action-summary.csv")
+
+if (file.exists(marker_allspan_action_summary_path)) {
+	marker_state_fanout_summary <- read_csv(marker_allspan_action_summary_path, show_col_types = FALSE) %>%
+		filter(
+			(
+				intervention == "normal marker" &
+					action_name == "__unstableMarkLastChangeAsPersistent"
+			) |
+				(
+					intervention == "raw unknown action" &
+						action_name == "__unstableMarkLastChangeAsPersistent"
+				) |
+				(
+					intervention == "mark next not persistent" &
+						action_name %in% c(
+							"__unstableMarkNextChangeAsNotPersistent",
+							"__unstableMarkLastChangeAsPersistent"
+						)
+				)
+		) %>%
+		mutate(
+			state_effect = case_when(
+				intervention == "normal marker" ~ "root changes: blocks.isPersistentChange",
+				intervention == "raw unknown action" ~ "root unchanged: unknown action ignored",
+				intervention == "mark next not persistent" & action_name == "__unstableMarkNextChangeAsNotPersistent" ~ "root unchanged: closure flag only",
+				intervention == "mark next not persistent" ~ "root unchanged: persistence already neutralized",
+				TRUE ~ "other"
+			),
+			reads_changed_branch = "no audited hot owner reads blocks.isPersistentChange",
+			action_label = case_when(
+				intervention == "normal marker" ~ "normal marker",
+				intervention == "raw unknown action" ~ "raw unknown action",
+				action_name == "__unstableMarkNextChangeAsNotPersistent" ~ "mark-next action",
+				TRUE ~ "later marker after mark-next"
+			),
+			action_label = factor(
+				action_label,
+				levels = rev(c(
+					"normal marker",
+					"raw unknown action",
+					"mark-next action",
+					"later marker after mark-next"
+				))
+			)
+		) %>%
+		transmute(
+			action_label,
+			intervention,
+			action_name,
+			state_effect,
+			reads_changed_branch,
+			action_duration_p50_ms,
+			root_subscribe_duration_p50_ms,
+			redux_listener_count_p50,
+			use_select_on_change_count_p50,
+			use_select_on_store_change_count_p50,
+			use_select_react_listener_count_p50,
+			use_select_map_select_count_p50
+		)
+
+	write_csv(
+		marker_state_fanout_summary,
+		file.path(data_dir, "typing-delay-marker-state-fanout-summary.csv")
+	)
+
+	marker_state_fanout_plot <- marker_state_fanout_summary %>%
+		pivot_longer(
+			cols = c(
+				redux_listener_count_p50,
+				use_select_on_change_count_p50,
+				use_select_on_store_change_count_p50,
+				use_select_map_select_count_p50
+			),
+			names_to = "metric",
+			values_to = "count_p50"
+		) %>%
+		mutate(
+			metric = recode(
+				metric,
+				redux_listener_count_p50 = "Redux listener wrappers",
+				use_select_on_change_count_p50 = "useSelect.onChange",
+				use_select_on_store_change_count_p50 = "useSelect.onStoreChange",
+				use_select_map_select_count_p50 = "useSelect.mapSelect"
+			),
+			metric = factor(
+				metric,
+				levels = rev(c(
+					"Redux listener wrappers",
+					"useSelect.onChange",
+					"useSelect.onStoreChange",
+					"useSelect.mapSelect"
+				))
+			),
+			state_effect_plot = recode(
+				state_effect,
+				`root changes: blocks.isPersistentChange` = "root changes",
+				`root unchanged: unknown action ignored` = "root unchanged",
+				`root unchanged: closure flag only` = "closure flag only",
+				`root unchanged: persistence already neutralized` = "already neutralized"
+			)
+		)
+
+	save_plot(
+		ggplot(marker_state_fanout_plot, aes(count_p50, metric, color = state_effect_plot, shape = state_effect_plot)) +
+			geom_point(size = 3.2, alpha = 0.9, position = position_dodge(width = 0.45)) +
+			facet_wrap(vars(action_label), ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Set2") +
+			scale_shape_manual(values = c(16, 17, 15, 18), drop = FALSE) +
+			labs(
+				title = "One persistence-flag state change wakes thousands of unrelated subscribers",
+				subtitle = "Marker-window action summaries from the trace-all-data-spans run; controls with unchanged store root wake zero listeners",
+				x = "p50 callback count",
+				y = NULL,
+				color = "State effect",
+				shape = "State effect"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"117-marker-state-fanout-summary.png",
+		width = 11,
+		height = 8
+	)
+}
+
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
 	use_select_phase_accounting <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
 		filter(intervention %in% marker_allspan_core_interventions) %>%

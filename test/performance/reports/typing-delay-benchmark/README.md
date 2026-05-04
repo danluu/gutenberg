@@ -189,7 +189,11 @@ The short version:
     either should not change on a one-character paragraph text insertion or is
     only indirectly related. The only direct text-attribute read is the
     `BlockListBlockProvider` instance for the edited paragraph; the other
-    `~1436` block instances are still woken.
+    `~1436` block instances are still woken. The next source-level check makes
+    the invalidation boundary exact: the normal marker action changes
+    `blocks.isPersistentChange`, but none of the audited hot owner sites read
+    that flag. They wake because the store root changed, not because their
+    selected state depends on the changed branch.
 -   A dense timer-to-key gap scan adds another constraint. In the normal-marker
     and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
     low when the timer callback is roughly `40-100ms` before the next keydown,
@@ -704,6 +708,9 @@ The R script derives:
     source-audit matrix classifying whether each hot subscribed state category
     is directly relevant, indirectly relevant, probably unchanged, or not read
     during ordinary paragraph text insertion.
+-   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
+    control joining the action summaries with the exact store-root state effect
+    for normal marker, raw unknown action, and mark-next controls.
 -   `data/typing-delay-use-select-phase-accounting.csv`: trace-all-data-spans
     comparison of rootSubscribe, Redux listener wrappers, `useSelect.onChange`,
     and `useSelect.mapSelect`.
@@ -3488,6 +3495,43 @@ thousands of store-level subscribers whose selected state cannot change for a
 text-only attribute update, or to split text-update-sensitive state from
 block-tree/global invalidations.
 
+The next source check makes the mismatch exact. The marker action itself is just
+`{ type: 'MARK_LAST_CHANGE_AS_PERSISTENT' }`
+(`packages/block-editor/src/store/actions.js:1638-1640`). In
+`withPersistentBlockChange()`, that action returns a new block-editor state by
+setting `isPersistentChange` (`packages/block-editor/src/store/reducer.js:445-471`).
+It does not touch the block `attributes` map, block order, block names, block
+settings, selection, or visibility. The data store then decides whether to wake
+subscribers with a root object identity check: if `state !== lastState`, it
+iterates every listener (`packages/data/src/redux-store/index.ts:534-559`).
+
+![Marker state fanout summary](figures/117-marker-state-fanout-summary.png)
+
+Selected marker-window control rows:
+
+| Control | Store-root effect | Marker p50 | Redux listeners | `useSelect.onChange` |
+| ------- | ----------------- | ---------: | --------------: | -------------------: |
+| normal marker | root changes: `blocks.isPersistentChange` | `23.4ms` | `4,501` | `4,498` |
+| raw unknown action | root unchanged: action ignored | `0.6ms` | `0` | `0` |
+| mark-next action | root unchanged: closure flag only | `0.1ms` | `0` | `0` |
+| later marker after mark-next | root unchanged: persistence already neutralized | `0.2ms` | `0` | `0` |
+
+This answers the immediate "what branch causes the fanout?" question: a single
+persistence flag under `blocks` is enough to change the store root and wake the
+whole `core/block-editor` subscriber set. The audited hot subscribers do not
+read `blocks.isPersistentChange`; they are woken because `@wordpress/data` is
+coarse at the store-subscription boundary. The raw unknown action and mark-next
+controls are useful because they occupy the same timer slot but do not change the
+store root, and they wake zero subscribers.
+
+This also corrects the optimization target. It is not enough to say "make
+`BlockListBlockProvider` faster." The sharp mismatch is that a persistence-only
+state change fans out through subscriptions whose selected values are mostly
+about block tree, settings, selection, and block identity. Avoiding that requires
+finer-grained invalidation, store partitioning, or a way for `useSelect`
+subscribers to avoid invalidation when the changed state branch cannot affect
+their selected value.
+
 This supports a code-level theory:
 
 -   `useSelect` invalidates its cached value on store update before rerunning
@@ -5249,6 +5293,17 @@ The one direct content read is the edited paragraph's own
 prove their selected values did not change. The credible optimization target is
 therefore selective invalidation / subscription partitioning for text-only
 attribute updates, not callback-body tuning.
+
+The marker-state fanout control makes the store boundary even clearer. The
+normal marker changes only `blocks.isPersistentChange`; the audited hot owner
+sites do not read that flag. They wake because the `core/block-editor` store root
+object changed, and the Redux-store wrapper fans out to every listener on any
+effective root change. Controls that occupy the same timer slot but leave the
+root state unchanged wake zero Redux listeners. The remaining open question is
+therefore no longer "which hot selector reads the persistence flag?" None of the
+audited hot selectors does. The harder engineering question is whether
+`@wordpress/data` / `core/block-editor` can expose a narrower invalidation path
+for persistence-only or text-only changes.
 
 The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:

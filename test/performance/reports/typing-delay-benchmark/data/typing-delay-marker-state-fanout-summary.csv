@@ -1,0 +1,5 @@
+action_label,intervention,action_name,state_effect,reads_changed_branch,action_duration_p50_ms,root_subscribe_duration_p50_ms,redux_listener_count_p50,use_select_on_change_count_p50,use_select_on_store_change_count_p50,use_select_react_listener_count_p50,use_select_map_select_count_p50
+normal marker,normal marker,__unstableMarkLastChangeAsPersistent,root changes: blocks.isPersistentChange,no audited hot owner reads blocks.isPersistentChange,23.350000023841854,23.200000166893005,4501,4498,670,670,670
+raw unknown action,raw unknown action,__unstableMarkLastChangeAsPersistent,root unchanged: unknown action ignored,no audited hot owner reads blocks.isPersistentChange,0.5999999046325684,0,0,0,0,0,0
+mark-next action,mark next not persistent,__unstableMarkNextChangeAsNotPersistent,root unchanged: closure flag only,no audited hot owner reads blocks.isPersistentChange,0.10000002384185792,0,0,0,0,0,0
+later marker after mark-next,mark next not persistent,__unstableMarkLastChangeAsPersistent,root unchanged: persistence already neutralized,no audited hot owner reads blocks.isPersistentChange,0.15000009536743164,0,0,0,0,0,0
