@@ -1,0 +1,21 @@
+probe,input_mode,endpoint,p50_990_ms,p50_1000_ms,p50_1300_ms,slow_neighbor_mean_ms,drop_vs_slow_neighbors_ms
+visual proxy,key held during delay,EventDispatch trace latency,25.264000000000003,13.7755,24.764000000000003,25.014000000000003,11.238500000000004
+visual proxy,key held during delay,keydown to input event,4.3500001430511475,1.4500000476837158,4.549999952316284,4.450000047683716,3
+visual proxy,key held during delay,keydown to second RAF after input,33,20.399999976158146,31.899999976158146,32.44999998807907,12.050000011920925
+visual proxy,complete keypress then wait,EventDispatch trace latency,10.5235,10.3965,11.9515,11.2375,0.8410000000000011
+visual proxy,complete keypress then wait,keydown to input event,0.9500000476837158,1,1.0999999046325684,1.024999976158142,0.02499997615814209
+visual proxy,complete keypress then wait,keydown to second RAF after input,11.900000095367432,12.799999952316284,13.549999952316284,12.725000023841858,-0.07499992847442627
+Chrome render trace,key held during delay,EventDispatch trace latency,25.1085,12.7285,24.3605,24.734499999999997,12.005999999999997
+Chrome render trace,key held during delay,keydown to second RAF after input,32.949999928474426,19.949999928474423,31.5,32.22499996423721,12.27500003576279
+Chrome render trace,key held during delay,keydown to Paint trace event,25.750499963760376,13.11549997329712,24.892499923706055,25.321499943733215,12.205999970436096
+Chrome render trace,key held during delay,keydown to DrawFrame trace event,27.843999981880188,14.75600004196167,27.174499988555908,27.509249985218048,12.753249943256378
+Chrome render trace,complete keypress then wait,EventDispatch trace latency,10.1175,10.342,10.7275,10.4225,0.0804999999999989
+Chrome render trace,complete keypress then wait,keydown to second RAF after input,11.800000071525574,12.050000071525574,13.900000095367432,12.850000083446503,0.800000011920929
+Chrome render trace,complete keypress then wait,keydown to Paint trace event,10.66699993610382,10.94350004196167,11.33899998664856,11.00299996137619,0.059499919414520264
+Chrome render trace,complete keypress then wait,keydown to DrawFrame trace event,12.04550004005432,12.327499866485596,13.071499943733215,12.558499991893768,0.2310001254081726
+Chrome trace screenshot,key held during delay,EventDispatch trace latency,25.1025,10.8145,24.0825,24.5925,13.778
+Chrome trace screenshot,key held during delay,keydown to second RAF after input,32.299999952316284,16.700000047683716,31.25,31.774999976158142,15.074999928474426
+Chrome trace screenshot,key held during delay,keydown to first changed trace screenshot,34.755500078201294,18.429500102996823,33.700000047683716,34.227750062942505,15.798249959945682
+Chrome trace screenshot,complete keypress then wait,EventDispatch trace latency,9.97,9.78,11.7115,10.84075,1.0607500000000005
+Chrome trace screenshot,complete keypress then wait,keydown to second RAF after input,11.549999952316284,11.649999976158142,13.350000023841858,12.449999988079071,0.800000011920929
+Chrome trace screenshot,complete keypress then wait,keydown to first changed trace screenshot,17.261500000953674,16.867000102996826,19.85449993610382,18.557999968528748,1.6909998655319214

@@ -380,6 +380,12 @@ The short version:
     `1300ms` to `18.4ms`; complete-keypress-then-wait stays in the
     `16.9-19.9ms` band. This is still not high-speed-camera calibration, but it
     disconfirms "render trace bookkeeping only."
+-   A combined endpoint-drop analysis makes the visual-path evidence easier to
+    audit: in key-hold mode, the `1000ms` point is `~11-16ms` faster than the
+    mean of the `990ms` and `1300ms` slow neighbors across EventDispatch,
+    second RAF, `Paint`, `DrawFrame`, and first changed trace screenshot. In
+    complete-keypress-then-wait mode, the same calculation is roughly flat
+    (`~0-2ms`). This still does not calibrate display presentation.
 -   A follow-up trace-screenshot pixel localization check decodes the previous
     and first changed trace screenshots, diffs the pixels, and checks whether the
     changed-pixel box overlaps the target text box and the DOM range for the
@@ -698,6 +704,9 @@ The R script derives:
 -   `data/typing-delay-screenshot-pixel-*.csv`: opt-in pixel localization
     samples and summaries for changed trace screenshots, target-box overlap, and
     typed-character DOM range overlap.
+-   `data/typing-delay-visual-endpoint-drop-summary.csv`: derived
+    `1000ms`-versus-slow-neighbor drop summary across EventDispatch, RAF,
+    render-trace, and trace-screenshot endpoints.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 
@@ -4912,6 +4921,40 @@ validation; the remaining caveat is calibrated presentation and semantic
 recognition, not whether the trace screenshot change is in the editor target or
 near the typed character.
 
+### Visual Endpoint Drop Accounting
+
+The visual/render/screenshot probes above were run separately, and each tracing
+mode has different absolute overhead. The safer cross-probe comparison is
+therefore within each probe: compare the `1000ms` p50 with the mean of the two
+slow neighbors, `990ms` and `1300ms`.
+
+![Visual endpoint drop summary](figures/114-visual-endpoint-drop-summary.png)
+
+Selected `1000ms` drops versus the `990ms` / `1300ms` neighbor mean:
+
+| Probe | Endpoint | Key held | Complete keypress then wait |
+| ----- | -------- | -------: | --------------------------: |
+| visual proxy | EventDispatch | `11.2ms` | `0.8ms` |
+| visual proxy | keydown-to-input | `3.0ms` | `0.0ms` |
+| visual proxy | keydown-to-second-RAF | `12.1ms` | `-0.1ms` |
+| Chrome render trace | EventDispatch | `12.0ms` | `0.1ms` |
+| Chrome render trace | keydown-to-Paint | `12.2ms` | `0.1ms` |
+| Chrome render trace | keydown-to-DrawFrame | `12.8ms` | `0.2ms` |
+| Chrome trace screenshot | EventDispatch | `13.8ms` | `1.1ms` |
+| Chrome trace screenshot | keydown-to-second-RAF | `15.1ms` | `0.8ms` |
+| Chrome trace screenshot | keydown-to-first-changed-screenshot | `15.8ms` | `1.7ms` |
+
+This is the most compact current answer to the visual-path open question. The
+`1000ms` effect is not confined to Chrome's `EventDispatch` slice: in key-hold
+mode it survives as the endpoint moves through editor input, frame scheduling,
+Chrome render trace events, and the first changed trace screenshot. The
+complete-keypress-then-wait control stays roughly flat on the same calculation.
+
+The remaining caveat is now narrower, but still real. These probes do not
+calibrate compositor presentation or an external display; they show that the
+synthetic key-hold artifact propagates to Chromium's internal visual/render
+endpoints and to localized changed trace screenshots.
+
 ## Trace Grouping Bug Avoided
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
@@ -5121,7 +5164,10 @@ pixels, or OCR. The follow-up pixel localization check narrows that caveat: the
 changed trace screenshot pixels are in the target textbox and overlap the DOM
 range for the exact typed `x` for every decoded retained sample, so the remaining
 gap is presentation calibration and glyph recognition, not unrelated screenshot
-noise.
+noise. The combined endpoint-drop accounting makes the same point in one view:
+the key-hold `1000ms` point is `~11-16ms` faster than its `990ms` / `1300ms`
+neighbors across EventDispatch, second RAF, `Paint`, `DrawFrame`, and changed
+trace screenshot endpoints, while complete-keypress-then-wait is roughly flat.
 
 ## Recommendations
 

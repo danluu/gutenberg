@@ -3778,6 +3778,113 @@ if (file.exists(screenshot_pixel_samples_path) && file.exists(screenshot_pixel_s
 	)
 }
 
+visual_endpoint_drop_summary_path <- file.path(data_dir, "typing-delay-visual-endpoint-drop-summary.csv")
+if (
+	file.exists(visual_latency_summary_path) &&
+	file.exists(render_trace_summary_path) &&
+	file.exists(screenshot_trace_summary_path)
+) {
+	visual_endpoint_rows <- list(
+		read_csv(visual_latency_summary_path, show_col_types = FALSE) %>%
+			transmute(
+				probe = "visual proxy",
+				input_mode,
+				delay_ms,
+				`EventDispatch trace latency` = latency_p50_ms,
+				`keydown to input event` = visual_keydown_to_input_p50_ms,
+				`keydown to second RAF after input` = visual_keydown_to_second_raf_p50_ms
+			),
+		read_csv(render_trace_summary_path, show_col_types = FALSE) %>%
+			transmute(
+				probe = "Chrome render trace",
+				input_mode,
+				delay_ms,
+				`EventDispatch trace latency` = latency_p50_ms,
+				`keydown to second RAF after input` = visual_keydown_to_second_raf_p50_ms,
+				`keydown to Paint trace event` = render_first_paint_p50_ms,
+				`keydown to DrawFrame trace event` = render_first_draw_frame_p50_ms
+			),
+		read_csv(screenshot_trace_summary_path, show_col_types = FALSE) %>%
+			transmute(
+				probe = "Chrome trace screenshot",
+				input_mode,
+				delay_ms,
+				`EventDispatch trace latency` = latency_p50_ms,
+				`keydown to second RAF after input` = visual_keydown_to_second_raf_p50_ms,
+				`keydown to first changed trace screenshot` = screenshot_first_changed_after_keydown_p50_ms
+			)
+	) %>%
+		bind_rows() %>%
+		pivot_longer(
+			cols = -c(probe, input_mode, delay_ms),
+			names_to = "endpoint",
+			values_to = "p50_ms"
+		) %>%
+		filter(!is.na(p50_ms), delay_ms %in% c(990, 1000, 1300))
+
+	visual_endpoint_drop_summary <- visual_endpoint_rows %>%
+		group_by(probe, input_mode, endpoint) %>%
+		summarise(
+			p50_990_ms = p50_ms[delay_ms == 990][1],
+			p50_1000_ms = p50_ms[delay_ms == 1000][1],
+			p50_1300_ms = p50_ms[delay_ms == 1300][1],
+			slow_neighbor_mean_ms = mean(c(p50_990_ms, p50_1300_ms), na.rm = TRUE),
+			drop_vs_slow_neighbors_ms = slow_neighbor_mean_ms - p50_1000_ms,
+			.groups = "drop"
+		) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			),
+			probe = factor(
+				probe,
+				levels = c("visual proxy", "Chrome render trace", "Chrome trace screenshot")
+			),
+			endpoint = factor(
+				endpoint,
+				levels = c(
+					"EventDispatch trace latency",
+					"keydown to input event",
+					"keydown to second RAF after input",
+					"keydown to Paint trace event",
+					"keydown to DrawFrame trace event",
+					"keydown to first changed trace screenshot"
+				)
+			)
+		) %>%
+		arrange(probe, input_mode, endpoint)
+
+	write_csv(visual_endpoint_drop_summary, visual_endpoint_drop_summary_path)
+
+	save_plot(
+		ggplot(
+			visual_endpoint_drop_summary,
+			aes(drop_vs_slow_neighbors_ms, endpoint, color = input_mode, shape = input_mode)
+		) +
+			geom_vline(xintercept = 0, linewidth = 0.4, linetype = "dashed", color = "grey50") +
+			geom_point(
+				size = 3.2,
+				alpha = 0.9,
+				position = position_dodge(width = 0.45)
+			) +
+			facet_wrap(vars(probe), ncol = 1, scales = "free_y") +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "The 1000ms key-hold drop survives through visual endpoints",
+				subtitle = "Drop is mean(990ms, 1300ms) minus 1000ms p50 within each probe; trace screenshots are localized separately",
+				x = "1000ms drop versus slow neighbors, p50 (ms)",
+				y = NULL,
+				color = "Input mode",
+				shape = "Input mode"
+			) +
+			theme(legend.position = "bottom"),
+		"114-visual-endpoint-drop-summary.png",
+		width = 11,
+		height = 8.5
+	)
+}
+
 taskpolicy_tier_samples_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-samples.csv")
 taskpolicy_tier_summary_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-summary.csv")
 
