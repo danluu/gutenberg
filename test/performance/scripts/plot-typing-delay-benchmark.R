@@ -10049,6 +10049,98 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		width = 12,
 		height = 7
 	)
+
+	redux_owner_guard_candidate_rows <- tribble(
+		~source_site, ~guard_candidate, ~guard_kind, ~prototype_risk, ~prototype_priority, ~candidate_notes,
+		"(audited marker fanout total)", "Split persistence-only changes away from block-editor root notification", "store partition / branch-aware notification", "high", "prototype after local guards", "Would avoid waking block-tree subscribers for MARK_LAST_CHANGE_AS_PERSISTENT, but changes store subscription semantics and needs broad compatibility tests.",
+		"Pattern override support HOC", "Cache supported binding attributes by block name and settings version", "settings/name guard", "low-medium", "first local prototype", "The selector reads getSettings().__experimentalBlockBindingsSupportedAttributes and props.name, not content or selection.",
+		"BlockListBlockProvider useSelect", "Notify or recompute only the edited block for text-attribute-only updates", "clientId attribute guard", "medium-high", "second local prototype", "One instance reads the edited paragraph attributes; the other rendered blocks should not need the changed text value.",
+		"useInnerBlocksProps useSelect", "Guard on root/order/settings versions, not text attributes", "root structural guard", "medium", "second local prototype", "The selector reads wrapper/root block-list state and settings, not RichText content.",
+		"HeadingEdit anchor useSelect", "Guard on anchor-setting and table-of-contents block-count versions", "settings/count guard", "low", "first local prototype", "The hot selector computes whether heading anchors can be generated; paragraph text insertion should not change that.",
+		"BlockListItems useSelect", "Guard on block order, visible blocks, selected IDs, zoom/template/editing/appender versions", "selection/tree guard", "high", "validation prototype", "This selector does not read content attributes, but selection and appender behavior make it the riskiest large bucket.",
+		"Other mapped owners", "Audit remaining mapped owners before optimization", "unknown/mixed", "unknown", "defer", "The aggregate is smaller but mixed; do not optimize it blindly."
+	)
+
+	audited_total <- redux_owner_text_update_opportunity %>%
+		summarize(
+			source_site = "(audited marker fanout total)",
+			candidate_duration_p50_ms = sum(marker_before_input_listener_duration_p50_ms, na.rm = TRUE),
+			candidate_listener_count_p50 = sum(marker_before_input_listener_count_p50, na.rm = TRUE),
+			estimated_skippable_duration_p50_ms = sum(estimated_skippable_duration_p50_ms, na.rm = TRUE),
+			estimated_skippable_listener_count_p50 = sum(estimated_skippable_listener_count_p50, na.rm = TRUE),
+			.groups = "drop"
+		)
+
+	guard_source_rows <- redux_owner_text_update_opportunity %>%
+		transmute(
+			source_site,
+			candidate_duration_p50_ms = marker_before_input_listener_duration_p50_ms,
+			candidate_listener_count_p50 = marker_before_input_listener_count_p50,
+			estimated_skippable_duration_p50_ms,
+			estimated_skippable_listener_count_p50
+		)
+
+	redux_owner_guard_candidates <- redux_owner_guard_candidate_rows %>%
+		left_join(
+			bind_rows(audited_total, guard_source_rows),
+			by = "source_site"
+		) %>%
+		mutate(
+			prototype_risk = factor(
+				prototype_risk,
+				levels = c("low", "low-medium", "medium", "medium-high", "high", "unknown")
+			),
+			prototype_priority = factor(
+				prototype_priority,
+				levels = c(
+					"first local prototype",
+					"second local prototype",
+					"validation prototype",
+					"prototype after local guards",
+					"defer"
+				)
+			)
+		) %>%
+		arrange(prototype_priority, desc(candidate_duration_p50_ms))
+
+	write_csv(
+		redux_owner_guard_candidates,
+		file.path(data_dir, "typing-delay-redux-listener-guard-candidates.csv")
+	)
+
+	redux_owner_guard_plot <- redux_owner_guard_candidates %>%
+		mutate(
+			guard_candidate = fct_reorder(guard_candidate, candidate_duration_p50_ms),
+			plot_duration_p50_ms = if_else(
+				source_site == "(audited marker fanout total)",
+				estimated_skippable_duration_p50_ms,
+				candidate_duration_p50_ms
+			)
+		)
+
+	save_plot(
+		ggplot(redux_owner_guard_plot, aes(
+			plot_duration_p50_ms,
+			guard_candidate,
+			color = prototype_risk,
+			shape = prototype_priority,
+			size = candidate_listener_count_p50
+		)) +
+			geom_point(alpha = 0.92) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Prototype risk") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "p50 listener calls") +
+			labs(
+				title = "Concrete guard candidates for text-only editor updates",
+				subtitle = "Duration is source-row p50 exposure, except the total row uses estimated skippable p50 from the audited marker fanout",
+				x = "Candidate p50 exposure / estimated skippable time (ms)",
+				y = NULL,
+				shape = "Suggested next step"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"124-redux-listener-guard-candidates.png",
+		width = 12.5,
+		height = 7.4
+	)
 }
 
 marker_allspan_action_summary_path <- file.path(data_dir, "typing-delay-marker-allspan-action-summary.csv")

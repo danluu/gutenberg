@@ -738,6 +738,8 @@ The R script derives:
     triage estimating which audited Redux-listener fanout is likely skippable
     for ordinary text-only updates, versus selection/tree state that still needs
     validation.
+-   `data/typing-delay-redux-listener-guard-candidates.csv`: risk-ranked
+    concrete guard/prototype candidates for the audited text-update fanout.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
     control joining the action summaries with the exact store-root state effect
     for normal marker, raw unknown action, and mark-next controls.
@@ -3639,6 +3641,37 @@ waking non-edited `BlockListBlockProvider` instances for attribute-only changes;
 then separately test whether `BlockListItems` can be guarded by block-order and
 selection-version checks.
 
+I made that prototype order explicit in a guard-candidate matrix. The point is
+to separate "large possible exposure" from "safe first patch." The broad
+store-partition / branch-aware notification idea has the largest possible upside
+because it could avoid waking block-tree subscribers for persistence-only root
+changes, but it also changes subscription semantics. The first local prototypes
+should be narrower: cache or guard the pattern-override HOC by block name plus
+settings version, and guard `HeadingEdit`'s anchor selector by anchor settings
+plus table-of-contents block-count version.
+
+![Redux listener guard candidates](figures/124-redux-listener-guard-candidates.png)
+
+| Candidate | Exposure | Calls | Risk | Suggested next step |
+| --------- | -------: | ----: | ---- | ------------------- |
+| Split persistence-only changes away from block-editor root notification | `8.7ms` skippable of `15.3ms` audited | `3,655` skippable of `4,497` | high | prototype after local guards |
+| Cache supported binding attributes by block name and settings version | `3.6ms` | `1,437` | low-medium | first local prototype |
+| Guard on anchor-setting and table-of-contents block-count versions | `0.5ms` | `202` | low | first local prototype |
+| Notify or recompute only the edited block for text-attribute-only updates | `3.5ms` | `1,437` | medium-high | second local prototype |
+| Guard on root/order/settings versions, not text attributes | `1.1ms` | `580` | medium | second local prototype |
+| Guard on block order, visible blocks, selected IDs, zoom/template/editing/appender versions | `5.3ms` | `580` | high | validation prototype |
+| Audit remaining mapped owners before optimization | `1.3ms` | `261` | unknown | defer |
+
+That audit ranking changes the engineering recommendation. Do not start by
+removing `BlockListItems` wakeups just because they are large: that selector is
+selection/tree/appender-sensitive and needs behavior tests around selection,
+visibility, insertion, template lock, zoom, and content-only editing. A safer
+sequence is: first prototype the settings/name guards, then a clientId-specific
+attribute guard for non-edited `BlockListBlockProvider` instances, then validate
+a `BlockListItems` structural-version guard. Only after those local guards are
+understood should the broader store-partition or branch-aware subscriber
+notification design be considered.
+
 The next source check makes the mismatch exact. The marker action itself is just
 `{ type: 'MARK_LAST_CHANGE_AS_PERSISTENT' }`
 (`packages/block-editor/src/store/actions.js:1638-1640`). In
@@ -5543,20 +5576,27 @@ slow selector body. The new text-update opportunity triage quantifies the next
 product question: in the audited marker fanout, `8.7ms` p50 / `3,655` listener
 calls are likely skippable for ordinary text-only edits, while `5.3ms` /
 `580` `BlockListItems` calls remain a selection/tree-validation target rather
-than an obvious removal. The remaining product question is now which invalidation
-guard or store partition can skip those broad subscriptions without breaking
-block-list and selection behavior.
+than an obvious removal.
 
-The new selector-dependency matrix answers that one level deeper. The hottest
-per-`BlockEdit` and per-rendered-block rows line up with the fixture's `1,437`
-blocks, while the actual typed character changes one inserted paragraph. Most
-hot subscribed reads are not content reads at all: they are global settings,
-block-tree/order, block type/count, visibility/layout, or selection/caret state.
-The one direct content read is the edited paragraph's own
+The new selector-dependency matrix and guard-candidate pass answer that one
+level deeper. The hottest per-`BlockEdit` and per-rendered-block rows line up
+with the fixture's `1,437` blocks, while the actual typed character changes one
+inserted paragraph. Most hot subscribed reads are not content reads at all: they
+are global settings, block-tree/order, block type/count, visibility/layout, or
+selection/caret state. The one direct content read is the edited paragraph's own
 `BlockListBlockProvider`; the thousands of other block instances are woken to
 prove their selected values did not change. The credible optimization target is
 therefore selective invalidation / subscription partitioning for text-only
 attribute updates, not callback-body tuning.
+
+The remaining product question is no longer just "which invalidation guard?"
+The risk-ranked answer is: start with low-risk settings/name guards for the
+pattern-override HOC and `HeadingEdit` anchor selector; next test a
+clientId-specific attribute guard for non-edited `BlockListBlockProvider`
+instances; treat `BlockListItems` as a high-risk validation prototype because it
+is selection/tree/appender-sensitive; leave the broader store-partition or
+branch-aware notification design until after local guards prove the shape of the
+win.
 
 The marker-state fanout control makes the store boundary even clearer. The
 normal marker changes only `blocks.isPersistentChange`; the audited hot owner
