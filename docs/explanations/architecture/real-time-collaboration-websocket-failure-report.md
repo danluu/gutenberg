@@ -1,220 +1,222 @@
-# RTC WebSocket failure report
+# RTC WebSocket Collaboration Fix: PR Description Draft
 
-Date: 2026-05-02
-
-Latest follow-up: 2026-05-04
+Date: 2026-05-04
 
 Analysis branch:
-`codex/rtc-websocket-failure-analysis-report-20260502`
+[`codex/rtc-websocket-failure-analysis-report-20260502`](https://github.com/danluu/gutenberg/tree/codex/rtc-websocket-failure-analysis-report-20260502)
 
-Fix branch analyzed:
-`codex/rtc-websocket-e2e-explanation-20260502-pr` at
-`87a680ece2e8805693b34f10287f4115ce932e7e`
+Implementation branch:
+[`codex/rtc-websocket-e2e-explanation-20260502-pr`](https://github.com/danluu/gutenberg/tree/codex/rtc-websocket-e2e-explanation-20260502-pr)
 
-## Scope
+Important status correction: this draft should not claim that the current PR
+branch fixes five bugs against recent trunk plus all known fixes. That earlier
+claim mixed together:
 
-This report covers the two real WebSocket-specific RTC failures from the local
-WebSocket collaboration suite:
+- bugs already fixed by the known-fixes stack tracked around
+  [WordPress/gutenberg#77716](https://github.com/WordPress/gutenberg/issues/77716);
+- videos generated on older branches;
+- browser failures from a worktree whose source commits were present but whose
+  built Gutenberg assets were stale or missing.
 
--   #21: same-user unsaved title loss after reload.
--   #24: concurrent list item moves lose one user's move.
-
-The investigation used the handoff repros, the current known-fixes branch,
-natural-user Playwright repros, trace instrumentation, repeated focused browser
-runs, and non-Playwright unit coverage.
+Under the strict baseline of recent `origin/trunk` plus the known fixes, the
+only bug class with valid remaining browser evidence is concurrent list-item
+move loss. Even there, the current implementation branch should be treated as a
+candidate fix, not a fully validated final fix, because the built comparison
+worktree still reproduced the list-move loss once in ten repeats.
 
 ## Summary
 
-The failures were not Yjs convergence bugs. Yjs replicated the operations it was
-given. The failures came from Gutenberg converting stale or insufficiently
-rebased WordPress entity state into fresh Yjs operations.
+This branch adds a local RTC WebSocket e2e harness, natural-user Playwright
+repros, and candidate fixes for a WebSocket-specific collaboration failure where
+two users concurrently move different list items and one move can be lost.
 
-Follow-up validation on 2026-05-04 corrected one operational ambiguity: source
-commits alone are not enough for browser validation in these worktrees. The
-`/private/tmp/gutenberg-latest-known-ws-pr-combined` worktree contained the
-source changes but did not contain built `core-data`/`sync` plugin assets, so
-its browser failures were not valid evidence against the product fixes. A built
-comparison worktree, `/private/tmp/gutenberg-pr-combined-unit-compare`, served
-the sync/core-data fixes. There, the title reload repro passed 5/5, while the
-concurrent list-item move repro still failed 1/10. The title failure should be
-treated as likely fixed by the PR-style branch; concurrent list moves still need
-follow-up.
+The root cause is not a Yjs convergence bug. Yjs converges on the updates it is
+given. The problem is at the Gutenberg entity-store to Yjs boundary:
 
-For #21, a reload could receive the correct unsaved peer title, but a
-resolver-triggered CRDT persistence save was already in flight with the stale
-REST title. When the save response returned, `saveEntityRecord()` fed that stale
-server response back into `syncManager.update()` as a saved local edit. That
-turned the old title into a new collaborative Yjs update and broadcast it to the
-other tab.
+1. A joining WebSocket peer could be treated as ready before it had crossed a
+   real peer-state synchronization boundary.
+2. The local relay accepted joining peer state as room history instead of
+   maintaining an authoritative room `Y.Doc`.
+3. `blocks` changes are synced as a whole entity key, so a delayed local
+   editor-store notification can write an older whole-block order back into the
+   CRDT after a remote move has already arrived.
+4. Applying a delayed local reorder as an authoritative whole-array replacement
+   can erase the already-applied remote reorder.
 
-For #24, there were several layers:
+The branch changes the test WebSocket protocol so readiness means "snapshot or
+peer-state sync completed", not merely "socket opened". It also carries the
+pre-edit entity record into scheduled sync-manager updates so block reorders can
+be rebased over the current CRDT order instead of replacing it blindly.
 
--   The test WebSocket provider originally treated socket open as readiness and
-    allowed bootstrap state into room history before peer state was applied.
--   Remote whole-`blocks` updates were reconciled into the editor store while
-    delayed local editor-store callbacks could still write an old whole-`blocks`
-    value back into the CRDT.
--   A simple same-key suppression guard was too blunt. It could suppress a real
-    local move if a remote `blocks` update arrived between selection and the
-    delayed CRDT write.
--   Accepting that delayed local move as a raw whole-array replacement was also
-    wrong, because it could overwrite the already-applied remote move.
--   The final data loss was fixed by rebasing same-clientId block reorders over
-    the current CRDT order using the pre-edit block order as the base.
+## What Should Be Claimed As Fixed
 
-## Evidence
+Strictly, no five-bug claim should be made from the current evidence.
 
-The known-fixes branch made the two focused repros pass, but isolating the
-individual fixes showed different mechanisms:
+The bug this PR is aimed at is:
 
--   `573b567b8d4` (`Fix RTC title reload reconciliation`) fixed the title reload
-    repro but did not fix concurrent list moves.
--   The WebSocket protocol/readiness changes made the focused list-move repro pass
-    in short runs, but repeated focused runs still exposed list-move loss.
--   A later `--repeat-each=10` run found `19/20` passing with a Beta-only /
-    Epsilon-only list order. After adding a per-key reconciliation version guard,
-    another `--repeat-each=10` run still found Epsilon-loss failures. This showed
-    that stale-write filtering was necessary but not sufficient; the block reorder
-    itself needed a base-aware merge.
+**Concurrent list item moves can lose one user's move over the WebSocket RTC
+provider.**
 
-Trace logs from the deeper pass:
+Natural repro:
 
--   `/tmp/gutenberg-trace-title-summary.log`
--   `/tmp/gutenberg-trace-title-test.log`
--   `/tmp/gutenberg-trace-list-summary.log`
--   `/tmp/gutenberg-trace-list-test.log`
--   `/tmp/gutenberg-trace-ws-server.log`
+1. Create a list containing `Item Alpha`, `Item Beta`, `Item Gamma`,
+   `Item Delta`, `Item Epsilon`, and `Item Zeta`.
+2. Open the same post in two browser contexts.
+3. Browser A selects `Item Beta` and uses the normal block toolbar
+   `Move down` button.
+4. Browser B selects `Item Epsilon` and uses the normal block toolbar
+   `Move up` button.
+5. Expected final order includes both independent moves:
+   `Alpha, Gamma, Beta, Epsilon, Delta, Zeta`.
+6. Failing runs converge to only one move, for example:
+   `Alpha, Gamma, Beta, Delta, Epsilon, Zeta`.
 
-Headless repro videos:
+Current evidence:
 
--   `/tmp/gutenberg-ws-repro-videos/ws-same-user-title-reload-loss.mp4`
--   `/tmp/gutenberg-ws-repro-videos/ws-concurrent-list-item-move-loss.mp4`
+- historical annotated video:
+  `/private/tmp/gutenberg-ws-repro-videos/ws-concurrent-list-item-move-loss.mp4`
+- current-baseline-style built comparison failure:
+  `/private/tmp/gutenberg-pr-combined-unit-compare/test/e2e/artifacts/test-results/editor-collaboration-colla-fbe1f-oncurrently-move-list-items-chromium-repeat9/trace.zip`
+- failure screenshots:
+  `/private/tmp/gutenberg-pr-combined-unit-compare/test/e2e/artifacts/test-results/editor-collaboration-colla-fbe1f-oncurrently-move-list-items-chromium-repeat9/test-failed-1.png`
+  and
+  `/private/tmp/gutenberg-pr-combined-unit-compare/test/e2e/artifacts/test-results/editor-collaboration-colla-fbe1f-oncurrently-move-list-items-chromium-repeat9/test-failed-2.png`
 
-## Finding 1: WebSocket readiness was not a sync boundary
+The built comparison worktree was not exact current trunk: it was based on
+[`5d968eb9e7e6`](https://github.com/WordPress/gutenberg/commit/5d968eb9e7e6ee92cd50c90774b2d392e6ebf199)
+rather than
+[`eff36b477eb7`](https://github.com/WordPress/gutenberg/commit/eff36b477eb788b03171f4d4b181f2ec164bc423).
+It did, however, serve built `core-data` and `sync` assets with the relevant
+known-fixes and WebSocket fix commits. The later exact-current source worktree
+at local commit `aa48ddde13a7` had the source changes but not valid built
+browser assets, so browser failures from that worktree are not evidence.
 
-The original local WebSocket provider effectively said "connected" when the
-socket opened. A joining peer could send or flush local bootstrap state before
-it had applied existing room state. The relay also accepted joining state as
-room history without validating it against a room document.
+## Bugs Not To Claim For This PR
 
-That behavior made WebSocket-specific failures much more likely than the HTTP
-test setup. HTTP state was serialized through request/response persistence
-points. WebSocket state was live, unordered relative to editor bootstrap, and
-could let local REST/bootstrap state become room state.
+These videos are useful historical provenance, but they are not proof that those
+bugs still fail on recent trunk plus known fixes:
 
-The fixed relay now keeps a room `Y.Doc`, applies updates before storing or
-broadcasting them, sends snapshots to joiners, and asks existing peers for
-missing state using a Yjs state vector. The fixed provider resolves readiness
-only after snapshot or peer-state synchronization, discards queued bootstrap
-updates after remote state, and marks the Y.Doc when provider remote state has
-already been applied.
+- Same-user title reload loss:
+  `/private/tmp/gutenberg-ws-repro-videos/ws-same-user-title-reload-loss.mp4`
+  and
+  `/private/tmp/gutenberg-ws-repro-videos/ws-natural-same-user-title-reload-stale-writeback-loss.mp4`.
+  The direct fix is already in the known-fixes stack as `ad82e23fc02`
+  (`Fix RTC title reload reconciliation`); the pushed equivalent used in earlier
+  analysis is
+  [`8a7878eb3b7`](https://github.com/danluu/gutenberg/commit/8a7878eb3b76960be6d23bc93b270cb7a1d59539).
+  A built comparison run passed the title reload repro 5/5.
+- Duplicate table row content loss:
+  `/private/tmp/gutenberg-ws-other-repro-videos-20260504/table-duplicate-row-content-loss.mp4`.
+  That video was generated on
+  [`220392e83e96`](https://github.com/danluu/gutenberg/commit/220392e83e961a7a81ccd76435427d998cb3c6b0),
+  not recent trunk plus known fixes. The known-fixes stack contains table merge
+  fixes including `088e143412b` and `a7a8df9ef08`; pushed equivalents used in
+  earlier analysis include
+  [`5e624175833`](https://github.com/danluu/gutenberg/commit/5e624175833ba12b9ca73ba3b0dedfa35c18769a)
+  and
+  [`0474b537e1a`](https://github.com/danluu/gutenberg/commit/0474b537e1aa96c538cdb7984ac9f8e461a2a7e3).
+- Undo selection metadata applied to the wrong synced entity:
+  `/private/tmp/gutenberg-ws-other-repro-videos-20260504/rtc-undo-wrong-synced-entity-side-by-side-annotated.mp4`.
+  That video was also generated on `220392e83e96`. The known-fixes stack contains
+  [`b0891b76181`](https://github.com/danluu/gutenberg/commit/b0891b7618188de5f80d7564aef03c769aff76ed)
+  (`Scope undo metadata handlers to changed entity`) and its regression coverage.
+- Same-user content reload divergence was attempted and did not reproduce in the
+  saved result:
+  `/private/tmp/gutenberg-ws-repro-videos/ws-same-user-content-reload-divergence-result.json`.
+- Same-user excerpt reload divergence reproduced historically, but it has not
+  been validated as still failing against recent trunk plus known fixes.
 
-## Finding 2: #21 was a stale persistence-save echo
+Those bugs should be described as already-covered or historical unless a fresh,
+built, recent-baseline run proves otherwise.
 
-The title loss timeline was:
+## Where The Remaining Bug Came From
 
-1. Browser B reloads and initially has the REST title.
-2. Browser B receives Browser A's unsaved title through WebSocket state.
-3. A resolver-triggered CRDT persistence save, started earlier, still carries
-   the stale REST title.
-4. The REST save response returns with the stale title.
-5. `saveEntityRecord()` calls `syncManager.update()` with the full stale server
-   response and `{ isSave: true }`.
-6. The CRDT title changes from the unsaved title back to the stale initial title
-   and that update is broadcast to Browser A.
+The list-move bug is the intersection of several earlier RTC design choices.
+None of the upstream commits below is individually "bad" in isolation; the
+failure appears when WebSocket room membership, editor-store scheduling, and
+whole-key block syncing interact.
 
-The direct fix is not just provider readiness. CRDT-document persistence saves
-now pass `__unstableSkipSyncUpdate`, and `saveEntityRecord()` still writes the
-save marker but passes an empty change object to `syncManager.update()` for that
-save. This preserves save semantics without turning stale REST fields into a
-collaborative edit.
+[`b6989b74039b`](https://github.com/WordPress/gutenberg/commit/b6989b74039b4d6064ba296e77def8fa959ecd66)
+from
+[#72183](https://github.com/WordPress/gutenberg/pull/72183)
+refactored sync provider setup into `createSyncManager`. In the affected path,
+provider creation could happen before all record/state observers and persisted
+document handling had crossed a stable synchronization boundary.
 
-## Finding 3: #24 had both stale-write and rebase failures
+[`84019935998c`](https://github.com/WordPress/gutenberg/commit/84019935998c16f877e976ad85e84748355d7282)
+from
+[#72262](https://github.com/WordPress/gutenberg/pull/72262)
+improved post-entity CRDT merge logic. The remaining limitation is that block
+tree structure is still reconstructed from whole `blocks` arrays rather than
+operation-level moves.
 
-The list-move failure began as a stale whole-`blocks` echo:
+[`8a511c5cced5`](https://github.com/WordPress/gutenberg/commit/8a511c5cced55e1cbbf3cda39340f03f6d356950)
+from
+[#74562](https://github.com/WordPress/gutenberg/pull/74562)
+moved collaboration from an experiment to the default Gutenberg plugin
+experience, increasing the importance of the RTC lifecycle invariants.
 
-1. User B moves Epsilon up and sends a remote `blocks` update.
-2. User A receives that remote update while User A has a delayed local editor
-   update pending.
-3. If the delayed local update writes User A's old whole-`blocks` array into the
-   CRDT, it can erase User B's Epsilon move.
+[`001a2561482`](https://github.com/WordPress/gutenberg/commit/001a25614827c855e283ee0623a17762360ae591)
+from
+[#75437](https://github.com/WordPress/gutenberg/pull/75437)
+expanded RTC syncing to post content and the undefined `blocks` value. That made
+top-level post block order part of the synced entity state that can be affected
+by stale whole-key write-back.
 
-The first guard tracked remote keys while they were being reconciled into the
-editor store and filtered local non-save writes for those keys. That fixed the
-initial stale echo, but deeper repeated runs found two more issues:
+[`2a52cba6add4`](https://github.com/WordPress/gutenberg/commit/2a52cba6add49f42689f95b72b09b59e45ba2ff5)
+from
+[#75830](https://github.com/WordPress/gutenberg/pull/75830)
+and
+[`22e3d7f93663`](https://github.com/WordPress/gutenberg/commit/22e3d7f93663d1eab574e49f5840f7d8d7384ed1)
+from
+[#76311](https://github.com/WordPress/gutenberg/pull/76311)
+are part of the persisted CRDT document/meta path. That path is relevant because
+reload/bootstrap state can race with live provider state.
 
--   The guard had to be armed synchronously from Yjs observer events, before
-    `_updateEntityRecord()` awaited `getEditedRecord()`. Otherwise a delayed local
-    callback could slip through the await window.
--   The guard could suppress a real user move. In one failing interleaving, User
-    B's Epsilon move reached User A after User A selected Beta but before User A's
-    delayed Beta CRDT write ran. Suppressing all same-key writes during remote
-    reconciliation dropped the real Beta move.
+[`9c1211ed2b0`](https://github.com/danluu/gutenberg/commit/9c1211ed2b0ac8e0bc3cb4a908d06e7c5ff3863a)
+introduced the local WebSocket e2e suite and test relay. Its initial test relay
+accepted joining client state as room history and treated socket open as
+readiness. That made stale or independently initialized local state easier to
+turn into collaborative history.
 
-The next fix recorded a per-key remote reconciliation version. A local update
-captures the remote versions when it is scheduled. At execution time, same-key
-local writes are filtered only if the remote version advanced after scheduling.
-That distinguishes stale callbacks from local writes scheduled after remote
-reconciliation began.
+## Fix Strategy In This Branch
 
-Repeated runs then showed the remaining fundamental issue: a real local Beta
-move scheduled against the old list order still cannot be applied as an
-authoritative whole-array replacement after the Epsilon move has already changed
-the CRDT. The final fix passes the pre-edit entity record into the scheduled
-sync-manager update. `mergeCrdtBlocks()` uses that base block order to rebase
-same-clientId reorders over the current CRDT order.
+[`c72cbb4a0e8`](https://github.com/danluu/gutenberg/commit/c72cbb4a0e89f14bcb0a794be96a0ce916926760)
+(`Fix WebSocket collaboration bootstrap sync`) changes the test WebSocket
+provider and relay:
 
-For the failing list case:
+- the relay keeps a room `Y.Doc`;
+- incoming updates are applied before they are stored or broadcast;
+- joiners exchange Yjs state vectors instead of sending local bootstrap state as
+  authoritative room history;
+- existing peers can answer `sync-request` with missing state;
+- provider readiness waits for snapshot or peer-state synchronization;
+- queued local bootstrap updates are discarded when remote provider state has
+  already been applied.
 
--   Base order: `Alpha, Beta, Gamma, Delta, Epsilon, Zeta`
--   Remote current order after Epsilon: `Alpha, Beta, Gamma, Epsilon, Delta, Zeta`
--   Delayed local Beta move relative to base: `Alpha, Gamma, Beta, Delta, Epsilon, Zeta`
--   Rebased order: `Alpha, Gamma, Beta, Epsilon, Delta, Zeta`
+[`87a680ece2e`](https://github.com/danluu/gutenberg/commit/87a680ece2e8805693b34f10287f4115ce932e7e)
+(`Preserve rebased block fields in RTC merge`) changes the block merge path:
 
-## Implementation summary
+- scheduled sync-manager updates carry the pre-edit entity record as
+  `baseRecord`;
+- `mergeCrdtBlocks()` detects same-length reorders with the same unique
+  `clientId` set;
+- the incoming reorder is rebased over the current CRDT order using the base
+  order, instead of replacing the current order as a whole array.
 
-Transport and provider:
+For the representative failure:
 
--   `bin/rtc-test-ws-sync-server.mjs` stores room state in a `Y.Doc`, validates
-    updates by applying them, sends snapshots, broadcasts `sync-request`, and
-    ignores canonical empty Yjs update messages.
--   `packages/e2e-tests/plugins/rtc-websocket-provider/index.js` separates socket
-    open from synced readiness, applies snapshots before readiness, waits for peer
-    snapshots when needed, discards queued bootstrap messages after remote state,
-    and marks provider-applied remote state in Y.Doc metadata.
-
-Sync manager:
-
--   Observers are attached before provider creation so provider bootstrap updates
-    are not missed.
--   Persisted/local bootstrap state is skipped if the provider already applied
-    remote state.
--   Remote record keys are tracked synchronously from Yjs observer events.
--   Per-key remote reconciliation versions distinguish stale scheduled writes from
-    later local writes.
--   Scheduled updates carry the base edited record so block reorders can be
-    rebased.
-
-Core data:
-
--   CRDT persistence saves use `__unstableSkipSyncUpdate`.
--   `saveEntityRecord()` writes the CRDT save marker without applying stale REST
-    response fields when that flag is set.
--   `editEntityRecord()` passes the current edited record as `baseRecord` to the
-    sync manager.
-
-Block merge:
-
--   `mergeCrdtBlocks()` detects same-length, same-unique-clientId reorders.
--   When a base order is available, it rebases the incoming reorder over the
-    current Yjs order instead of treating the incoming `blocks` array as an
-    authoritative whole-array replacement.
--   If the block arrays do not have the same unique `clientId` set, the code falls
-    back to the existing merge behavior.
+- base order: `Alpha, Beta, Gamma, Delta, Epsilon, Zeta`
+- remote current order after Epsilon moves up:
+  `Alpha, Beta, Gamma, Epsilon, Delta, Zeta`
+- delayed local Beta move relative to base:
+  `Alpha, Gamma, Beta, Delta, Epsilon, Zeta`
+- desired rebased order:
+  `Alpha, Gamma, Beta, Epsilon, Delta, Zeta`
 
 ## Verification
 
-Commands run on the final fix head:
+Historical final verification on the implementation branch reported:
 
 ```bash
 npm run test:unit -- \
@@ -240,45 +242,26 @@ GUTENBERG_RTC_TEST_WS_PORT=18992 \
 npm run test:e2e:rtc-websocket -- --project=chromium \
 	test/e2e/specs/editor/collaboration/websocket/collaboration-same-user-title-reload-loss.spec.ts \
 	test/e2e/specs/editor/collaboration/websocket/collaboration-stress.spec.ts \
-	--grep "keeps an unsaved same-user title|two users concurrently move list items"
-```
-
-Result: `2 passed (29.5s)`.
-
-```bash
-WP_ENV_PORT=8893 WP_ENV_PHPMYADMIN_PORT=9003 \
-WP_BASE_URL=http://localhost:8893 \
-GUTENBERG_RTC_TEST_WS_PORT=18992 \
-npm run test:e2e:rtc-websocket -- --project=chromium \
-	test/e2e/specs/editor/collaboration/websocket/collaboration-same-user-title-reload-loss.spec.ts \
-	test/e2e/specs/editor/collaboration/websocket/collaboration-stress.spec.ts \
 	--grep "keeps an unsaved same-user title|two users concurrently move list items" \
 	--repeat-each=5
 ```
 
-Result: `10 passed (56.6s)`.
+Result: `10 passed`.
 
-## Remaining limits
+Follow-up validation corrected the scope of that result. The title reload repro
+passed 5/5 in a built comparison worktree, so it should not be treated as a
+remaining current-baseline bug. The list-move repro still failed 1/10 in that
+built comparison worktree, so this PR-description draft should not be used as a
+final production PR claim until the list-move repro is rerun successfully against
+an exact, freshly built recent-trunk-plus-known-fixes baseline.
 
-The block rebase is intentionally scoped. It handles reorders when the base,
-incoming, and current arrays have the same unique block `clientId` set. It does
-not make arbitrary same-key `blocks` edits commute. Concurrent insertions,
-deletions, and complex structural edits still need a real operation-level block
-CRDT or another per-block causal merge layer.
+## Remaining Risk
 
-Full `npm test`, full e2e, and PHP suites were not run. The verification focused
-on the two requested WebSocket failures and the non-Playwright core-data/sync
-paths that caused them.
+This branch is not a general operation-level block CRDT. It handles the observed
+same-clientId reorder shape, but concurrent insertions, deletions, nested
+structure changes, or mixed reorder-plus-content edits may still need a more
+explicit per-block operation model.
 
-## Branches
-
-Analysis report branch:
-`codex/rtc-websocket-failure-analysis-report-20260502`
-
-Final fix branch:
-`codex/rtc-websocket-e2e-explanation-20260502-pr`
-
-Bug repro branches preserved on `danluu`:
-
--   `try/ws-same-user-title-reload-loss`
--   `try/ws-concurrent-list-item-move-loss`
+Before opening a production PR, rerun the focused WebSocket list-move repro on a
+freshly built current trunk plus known-fixes branch, and only claim the bug as
+fixed if repeated runs no longer reproduce it.

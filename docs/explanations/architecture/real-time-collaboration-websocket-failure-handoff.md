@@ -18,9 +18,10 @@ Repository remote for preserved work:
 
 ## Current status
 
-The two requested WebSocket-specific RTC failures have been analyzed, reproduced,
-fixed on a PR-style branch, documented, and pushed to the `danluu` remote. No PR
-has been created.
+The two requested WebSocket-specific RTC failures have been analyzed,
+reproduced, documented, and pushed to the `danluu` remote. No PR has been
+created. The implementation branch should be treated as a candidate/follow-up
+branch, not as a fully validated production fix branch.
 
 Follow-up validation on 2026-05-04 found that browser results from
 `/private/tmp/gutenberg-latest-known-ws-pr-combined` should not be used as
@@ -28,9 +29,14 @@ product-fix evidence because that worktree/container did not have built
 `build/scripts/core-data` or `build/scripts/sync` assets. The built comparison
 worktree `/private/tmp/gutenberg-pr-combined-unit-compare` did serve the
 core-data/sync fixes: the title reload repro passed 5/5 there, while the
-concurrent list-item move repro still failed 1/10. Treat title as likely fixed
-by the current PR-style branch and list moves as still requiring follow-up
-validation/fix work.
+concurrent list-item move repro still failed 1/10. Treat title as already
+covered by the known-fixes stack, not as a current PR-branch claim. Treat list
+moves as the only current-baseline bug class with valid remaining browser
+evidence, and as still requiring follow-up validation/fix work.
+
+The report file has been rewritten as a PR-description-style draft with this
+scope correction. It explicitly rejects the earlier overclaim that five bugs
+were fixed by the current PR branch against recent trunk plus all known fixes.
 
 The failures were:
 
@@ -43,8 +49,8 @@ The analysis branch contains this handoff plus two supporting documents:
 -   `docs/explanations/architecture/real-time-collaboration-websocket-failure-report.md`
 
 Use the analysis file for the detailed trace-level reconstruction. Use the
-report for a shorter external summary. Use this handoff to continue the work
-operationally.
+report for a pasteable PR-description-style summary with caveats. Use this
+handoff to continue the work operationally.
 
 ## Branch map
 
