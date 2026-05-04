@@ -15944,6 +15944,217 @@ if (file.exists(marker_allspan_action_summary_path)) {
 					height = 7.2
 				)
 
+				store_subscriber_partition_prototype_gate_audit <- tribble(
+					~gate, ~lane_or_shortcut, ~current_evidence, ~required_fixture_or_trace, ~pass_condition, ~fail_condition, ~fanout_claim_score, ~compatibility_burden_score, ~implementation_scope_score, ~decision, ~plot_label,
+					"Current one-lane baseline",
+					"root store notification",
+					"The normal marker changes the block-editor root and wakes 4,501 Redux-store listeners at p50, including 4,498 useSelect.onChange callbacks.",
+					"Baseline marker-only source-span run with listener class counts.",
+					"Counts preserve the current composition before any prototype is judged.",
+					"Prototype comparison has no trusted before/after listener target.",
+					0,
+					1,
+					1,
+					"baseline",
+					"baseline",
+					"Public registry.subscribe fixture",
+					"public root lane",
+					"Plain registry.subscribe( listener, blockEditorStore ) has no selected value and is public store-level notification behavior.",
+					"A fixture registers a plain store subscriber and dispatches MARK_LAST_CHANGE_AS_PERSISTENT.",
+					"The plain subscriber still fires on the persistence marker, even if internal useSelect listeners are filtered.",
+					"The prototype silently narrows public root-store subscription semantics.",
+					0,
+					5,
+					3,
+					"must preserve",
+					"public subscribe",
+					"useBlockSync side-channel behavior",
+					"private persistence behavior path",
+					"useBlockSync is the known in-tree store-specific semantic consumer, but migrating it while keeping the root update does not reduce ordinary useSelect fanout.",
+					"Private persistence-change subscription fixture plus editor behavior coverage for onInput/onChange, selected block payloads, controlled inner blocks, fresh callbacks, and cleanup.",
+					"useBlockSync behavior matches the current root-store path while the root update remains enabled.",
+					"The side channel breaks the semantic handoff or is claimed as a fanout win before root/useSelect notification changes.",
+					1,
+					3,
+					3,
+					"behavior only",
+					"useBlockSync behavior",
+					"Persistence useSelect fixture",
+					"filtered internal useSelect lane",
+					"isLastBlockChangePersistent() is public; a compatibility-preserving filtered lane must still wake useSelect consumers of that selector.",
+					"A useSelect fixture selects isLastBlockChangePersistent() and records wake/recompute behavior across the marker.",
+					"The persistence-specific useSelect subscriber wakes and sees the same transition as today.",
+					"Public selector consumers miss the persistence-only transition.",
+					4,
+					5,
+					4,
+					"must preserve",
+					"persistence useSelect",
+					"Unrelated useSelect skip fixture",
+					"filtered internal useSelect lane",
+					"The local benchmark fanout is almost entirely unrelated block-editor useSelect callbacks that do not read blocks.isPersistentChange.",
+					"A block-editor useSelect fixture that reads unrelated block tree/selection data records wake, mapSelect, updateValue, and renderQueue behavior across the marker.",
+					"The unrelated fixture does not wake or recompute for a persistence-only marker.",
+					"The filtered lane still wakes unrelated block-editor selectors, so there is no 23.2ms fanout claim.",
+					5,
+					5,
+					5,
+					"fanout gate",
+					"unrelated useSelect",
+					"Dynamic and cross-store dependency fixtures",
+					"filtered internal useSelect lane",
+					"Existing useSelect semantics include dynamic store sets, conditional reads, registry selectors that read other stores, parent registries, and late store registration.",
+					"Extend the current useSelect/withSelect/registry tests with filtered-lane cases for conditional selectors, createRegistrySelector cross-store reads, parent registries, and late stores.",
+					"Dependency capture updates correctly without missing or over-filtering store changes.",
+					"The prototype passes the marker fixture but breaks established useSelect dependency semantics.",
+					4,
+					5,
+					5,
+					"compatibility gate",
+					"dynamic / cross-store",
+					"Race and async queue fixtures",
+					"filtered internal useSelect lane",
+					"useSelect has render-to-subscription race checks and async renderQueue cancellation paths.",
+					"Tests cover store changes between render and subscription install, async queue cancellation, unmount, mapSelect change, registry change, and async-to-sync transitions.",
+					"No filtered notification is missed or delivered after cancellation/unmount.",
+					"The prototype only works in the simple synchronous marker path.",
+					3,
+					5,
+					5,
+					"compatibility gate",
+					"race / async",
+					"Marker-only source-span collapse",
+					"measurement gate",
+					"Current p50 marker counts are 4,501 Redux listeners and 4,498 useSelect callbacks; only 3 observed store listeners are not useSelect in this workload.",
+					"Marker-only source-span run with listener class, useSelect owner, persistence-specific fixture, and public subscriber counts.",
+					"Unrelated useSelect.onChange and data.reduxStore.listener counts collapse while public subscribers and persistence-specific useSelect consumers still fire.",
+					"Behavior fixtures pass, but the measured listener fanout remains in the high-fanout band.",
+					5,
+					4,
+					4,
+					"measurement gate",
+					"source-span collapse",
+					"Plugin/public subscriber smoke",
+					"public root lane",
+					"The local benchmark observes only three non-useSelect store listeners, but plugins can add public root-store subscribers.",
+					"Smoke fixture with a plugin-like public store subscriber plus an unrelated useSelect subscriber in the same marker run.",
+					"The public subscriber still fires; unrelated useSelect remains filtered.",
+					"The prototype only works by assuming no external public subscribers.",
+					2,
+					4,
+					3,
+					"must preserve",
+					"plugin subscriber",
+					"External slot or stop-root shortcut",
+					"unsafe shortcut",
+					"Moving the persistence flag out of the root or stopping the root update can preserve direct reads only if another notification path exists.",
+					"Same public-subscribe and persistence-useSelect fixtures as above, plus imperative selector reads.",
+					"Direct reads and subscribed consumers both preserve current behavior without waking unrelated useSelect.",
+					"Only imperative reads work; subscribed consumers miss the transition.",
+					5,
+					5,
+					2,
+					"reject shortcut",
+					"external slot / stop root"
+				) %>%
+					mutate(
+						decision = factor(
+							decision,
+							levels = c(
+								"baseline",
+								"must preserve",
+								"behavior only",
+								"fanout gate",
+								"compatibility gate",
+								"measurement gate",
+								"reject shortcut"
+							)
+						),
+						label_x = fanout_claim_score + case_when(
+							gate == "Current one-lane baseline" ~ 0.28,
+							gate == "Public registry.subscribe fixture" ~ 0.34,
+							gate == "useBlockSync side-channel behavior" ~ 0.28,
+							gate == "Persistence useSelect fixture" ~ -0.58,
+							gate == "Unrelated useSelect skip fixture" ~ -0.55,
+							gate == "Dynamic and cross-store dependency fixtures" ~ -0.34,
+							gate == "Marker-only source-span collapse" ~ -0.48,
+							gate == "External slot or stop-root shortcut" ~ -0.08,
+							TRUE ~ 0.18
+						),
+						label_y = compatibility_burden_score + case_when(
+							gate == "Current one-lane baseline" ~ 0.22,
+							gate == "Public registry.subscribe fixture" ~ -0.22,
+							gate == "useBlockSync side-channel behavior" ~ 0.22,
+							gate == "Persistence useSelect fixture" ~ -0.05,
+							gate == "Unrelated useSelect skip fixture" ~ -0.18,
+							gate == "Dynamic and cross-store dependency fixtures" ~ 0.42,
+							gate == "Marker-only source-span collapse" ~ -0.22,
+							gate == "External slot or stop-root shortcut" ~ 0.36,
+							TRUE ~ 0.18
+						)
+					)
+
+				write_csv(
+					store_subscriber_partition_prototype_gate_audit,
+					file.path(data_dir, "typing-delay-store-subscriber-partition-prototype-gate-audit.csv")
+				)
+
+				save_plot(
+					ggplot(
+						store_subscriber_partition_prototype_gate_audit,
+						aes(
+							fanout_claim_score,
+							compatibility_burden_score,
+							color = decision,
+							shape = decision,
+							size = implementation_scope_score
+						)
+					) +
+						geom_point(alpha = 0.9) +
+						geom_text(
+							aes(label_x, label_y, label = str_wrap(plot_label, width = 12)),
+							size = 3,
+							color = "grey20",
+							lineheight = 0.9,
+							show.legend = FALSE
+						) +
+						scale_color_brewer(type = "qual", palette = "Dark2", name = "Gate decision") +
+						scale_shape_manual(
+							values = c(
+								"baseline" = 16,
+								"must preserve" = 15,
+								"behavior only" = 17,
+								"fanout gate" = 18,
+								"compatibility gate" = 7,
+								"measurement gate" = 8,
+								"reject shortcut" = 4
+							),
+							name = "Gate decision",
+							drop = FALSE
+						) +
+						scale_size_area(max_size = 7, breaks = 1:5, name = "Prototype scope") +
+						scale_x_continuous(
+							breaks = 0:5,
+							limits = c(-0.2, 5.35),
+							labels = c("0" = "none", "1" = "behavior", "2" = "small", "3" = "partial", "4" = "large", "5" = "full")
+						) +
+						scale_y_continuous(
+							breaks = 1:5,
+							limits = c(0.75, 5.45),
+							labels = c("1" = "baseline", "2" = "low", "3" = "behavior", "4" = "trace + public", "5" = "API/high")
+						) +
+						labs(
+							title = "Store-partition fanout claims need both compatibility and listener-collapse gates",
+							subtitle = "A useBlockSync side channel is behavior-only; the timing claim starts only with a filtered internal useSelect lane",
+							x = "Fanout claim supported if the gate passes",
+							y = "Compatibility burden"
+						) +
+						theme(legend.position = "bottom", legend.box = "vertical"),
+					"189-store-subscriber-partition-prototype-gates.png",
+					width = 12.5,
+					height = 7.4
+				)
+
 				pattern_override_first_patch_implementation_audit <- tribble(
 				~implementation_question, ~current_answer, ~source_evidence, ~required_patch_contract, ~required_test_contract, ~decision,
 			"What exactly should move?",

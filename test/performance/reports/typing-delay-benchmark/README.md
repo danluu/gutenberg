@@ -909,6 +909,10 @@ The R script derives:
     for the store-subscriber partition question, separating public root
     `registry.subscribe` semantics from a possible internal dependency-filtered
     `useSelect` lane.
+-   `data/typing-delay-store-subscriber-partition-prototype-gate-audit.csv`:
+    acceptance gates for a store-partition fanout claim, separating public
+    subscribe compatibility, the `useBlockSync` behavior-only path, filtered
+    `useSelect` fixtures, and marker-only listener-collapse evidence.
 -   `data/typing-delay-pattern-override-first-patch-implementation-audit.csv`:
     exact implementation and test contract for the first selector-guard patch.
 -   `data/typing-delay-pattern-override-postpatch-source-span-*.csv`:
@@ -6090,6 +6094,33 @@ source-span run shows `data.reduxStore.listener` and `useSelect.onChange` counts
 collapse for unrelated selectors. That is the compatibility-preserving version of
 the `23.2ms` fanout claim.
 
+I turned that into an explicit prototype gate because this is where an easy
+mistake would make the benchmark faster by breaking notification semantics. The
+derived audit is in
+`data/typing-delay-store-subscriber-partition-prototype-gate-audit.csv`.
+
+![Store subscriber partition prototype gates](figures/189-store-subscriber-partition-prototype-gates.png)
+
+| Gate | Required pass condition | Why it matters |
+| ---- | ----------------------- | -------------- |
+| Public `registry.subscribe` fixture | a plain `registry.subscribe( listener, blockEditorStore )` subscriber still fires on `MARK_LAST_CHANGE_AS_PERSISTENT` | keeps public root-store subscription semantics separate from the internal `useSelect` lane |
+| `useBlockSync` side-channel behavior | private persistence subscription preserves the current `onInput` / `onChange` handoff, selected-block payloads, controlled inner blocks, fresh callbacks, and cleanup while the root update remains enabled | validates the behavior-only path, but still makes no fanout claim |
+| Persistence `useSelect` fixture | a `useSelect` consumer of `isLastBlockChangePersistent()` still wakes and observes the same transition | preserves the documented public selector notification behavior |
+| Unrelated `useSelect` skip fixture | a block-editor `useSelect` consumer that reads unrelated block tree or selection data does not wake or recompute for the marker | this is where the `23.2ms` fanout win can start |
+| Dynamic / cross-store fixtures | conditional store reads, `createRegistrySelector()` cross-store reads, parent registries, and late stores keep current semantics | prevents a simple marker-only optimization from breaking the existing `useSelect` contract |
+| Race / async fixtures | render-to-subscription races, async queue cancellation, unmount, `mapSelect` changes, registry changes, and async-to-sync transitions keep working | covers the non-happy-path behavior already tested in `@wordpress/data` |
+| Marker-only source-span collapse | unrelated `useSelect.onChange` and Redux listener counts collapse while public subscribers and persistence-specific `useSelect` consumers still fire | converts compatibility fixtures into an actual timing claim |
+| Plugin/public subscriber smoke | a plugin-like public root-store subscriber still fires while unrelated internal `useSelect` stays filtered | avoids assuming the local benchmark's three non-`useSelect` listeners are the whole ecosystem |
+
+This narrows the store-subscriber open question. The next credible performance
+prototype is not "move the persistence flag somewhere else" and not "migrate
+`useBlockSync` and stop." It is an internal filtered `useSelect` lane that leaves
+plain public store subscribers alone, wakes persistence-specific `useSelect`
+consumers, and skips unrelated block-editor `useSelect` consumers. Anything
+short of the source-span collapse is a behavior-only prototype; anything that
+passes the collapse by dropping public notifications is an API change, not a
+benchmark fix.
+
 The next split answers what "woken subscriber" means in the measured input
 slice. In `useSelect`, `onChange` either queues an async update through
 `renderQueue.add()` or synchronously calls `onStoreChange()`
@@ -8834,7 +8865,7 @@ The high-level split is:
 | Pattern-loading wait | CI validation contract has to stay split by spec and by claim: Site Editor pure `getBlockPatterns` is rejected as a complete replacement, resource quiet is only an instrumented broad-REST guardrail, fixed `500ms` is the best local sleep fallback, source-specific readiness is still open, and preview/canvas pre-waits would redefine the metric; the focused Post Editor matrix separately favors `0ms`; combined with the interaction rows, the conservative local wait-removal envelope is `142s` per two-branch comparison and the predicate envelope is about `146s` | validate Site Editor `getBlockPatterns` plus resource quiet with timeout/fallback, endpoint groups, preview-work preservation, retained-count, q50 range, and environment telemetry; validate fixed `500ms` as fallback; keep Site Editor/Post Editor/combined `loadPatterns` rows split; validate Post Editor `0ms` against `1000ms` with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full wait savings |
 | Input API phase boundary | CI helper decision contract closes the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match, ordinary `locator.press()` is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition |
 | Low-risk selector guards | behavior-gate audit closes the first-patch question: the pattern-override selected-only patch is implemented locally, covered by focused unit tests, and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry; the provider row has only source evidence plus a partial `lastBlockAttributesChange` hint, and the inner-blocks row has one clean root/drop-zone slice but known layout/default-layout and side-effect blockers | prototype `BlockListBlockProvider` first as a narrow latest-attribute-action fast path with public-filter, edited-block, selection, structure, editability, settings, visibility, and binding gates; split `useInnerBlocksProps` into root/drop-zone versus full-hook work, preserving identity/root, layout/default-layout, nested-settings, and controlled-inner-block gates; run aggregate before/after p50 only after behavior gates and source spans pass |
-| Store subscriber partition | lane audit refines the compatibility path: the marker wakes `4,501` Redux-store listeners at p50 and `4,498` are `useSelect`, so the best fanout prototype is not an external persistence slot or narrowed public `registry.subscribe`; it is an internal dependency-filtered `useSelect` lane that preserves public root subscribe semantics while waking `isLastBlockChangePersistent()` consumers and skipping unrelated selectors | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; for a fanout claim, prototype the filtered internal `useSelect` lane with public `registry.subscribe` fixtures, persistence-selector `useSelect` fixtures, unrelated-selector skip fixtures, dynamic/cross-store/race/async gates, and marker-only source-span collapse |
+| Store subscriber partition | prototype-gate audit refines the compatibility path: the marker wakes `4,501` Redux-store listeners at p50 and `4,498` are `useSelect`, so the best fanout prototype is not an external persistence slot or narrowed public `registry.subscribe`; it is an internal dependency-filtered `useSelect` lane that preserves public root subscribe semantics, wakes `isLastBlockChangePersistent()` consumers, skips unrelated selectors, and proves listener-count collapse in a marker-only source-span run | after local guards, prototype the `useBlockSync` side channel only as a behavior-only path; for a fanout claim, require public `registry.subscribe` fixtures, persistence-selector `useSelect` fixtures, unrelated-selector skip fixtures, dynamic/cross-store/race/async gates, plugin/public subscriber smoke, and marker-only source-span collapse; do not claim timing from a side channel alone |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
 | Chromium runtime checkpoint | harness-gap, falsification, and protocol-sidecar audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
 | CPU/QoS mechanism | local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but a root run without retained-key/helper/renderer/collector joins would still only prove class-level correlation | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split |
