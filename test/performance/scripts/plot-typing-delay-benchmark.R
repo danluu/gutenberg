@@ -19760,6 +19760,189 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 			file.path(data_dir, "typing-delay-pattern-readiness-ci-validation-contract-audit.csv")
 		)
 
+		pattern_readiness_claim_ladder_audit <- tribble(
+			~claim_level, ~claim_order, ~supported_claim, ~current_local_answer, ~minimum_validation, ~overclaim_failure_mode, ~evidence_score, ~validation_burden_score, ~metric_boundary_risk_score, ~decision, ~plot_label,
+			"Fixed 1000ms compatibility boundary",
+			1,
+			"Safe compatibility baseline for the current metric.",
+			"Current fixed sleep is the conservative behavior and produces the settled local q50 band.",
+			"No extra validation needed to keep it; only needed as the comparison boundary for replacements.",
+			"Costly wait remains in CI, but it does not redefine the metric.",
+			5,
+			1,
+			1,
+			"baseline",
+			"1000ms baseline",
+			"Fixed 500ms fallback",
+			2,
+			"Best local fixed fallback, not a semantic readiness predicate.",
+			"All exact q50s stay inside or below the 1000ms range; no run exceeds the 1000ms max; q50 sd is 0.62x baseline.",
+			"CI, local macOS, and container lanes preserve q50 band, retained counts, preview/canvas success, resource boundary, and run-to-run q50 sd.",
+			"Overclaiming this as a source readiness signal would hide that it is still a sleep.",
+			4,
+			3,
+			2,
+			"local fallback",
+			"500ms fallback",
+			"getBlockPatterns semantic check",
+			3,
+			"Required semantic first check, but rejected as a complete timing replacement.",
+			"Pure predicate resolves in about 0.15ms, moves 0 resources before timing, leaves about 25 resources inside measurement, and stays near fixed 0ms.",
+			"Keep it before any guardrail; only reconsider as a complete replacement if another host shows it moving the same setup boundary.",
+			"Using it alone would claim source readiness while preserving the unsettled 0ms timing boundary.",
+			5,
+			2,
+			4,
+			"semantic check only",
+			"patterns only",
+			"getBlockPatterns plus resource quiet",
+			4,
+			"Best predicate-shaped guardrail candidate, explicitly not a pure product predicate.",
+			"Median wait is about 301ms, quiet succeeds in all 30 retained samples, 19 resources move before timing, 7 remain inside, and median run q50 is 734.6ms.",
+			"Validate with timeout/fallback telemetry, endpoint groups, active requests, resources before/during timing, q50 band, q50 sd, and preview-work preservation.",
+			"Calling resource quiet the pattern predicate would hide that it mostly drains broader editor REST setup.",
+			4,
+			4,
+			3,
+			"guardrail candidate",
+			"patterns + quiet",
+			"Source-specific readiness signal",
+			5,
+			"Still open research, not established by current evidence.",
+			"No local source signal has been shown to predict the same resource drain and settled q50 boundary without broad resource quiet.",
+			"Map moved endpoint groups to source-level resolvers/actions and show the signal predicts the boundary across CI/mac/container lanes.",
+			"Inferring a source signal from broad resource quiet would erase the actual dependency boundary.",
+			2,
+			5,
+			2,
+			"open research",
+			"source signal",
+			"Preview canvas or core/pattern pre-wait",
+			6,
+			"Invalid unless the benchmark intentionally changes what Loading Patterns means.",
+			"Preview canvases and core/pattern replacement happen after the measured click and are part of the current metric.",
+			"Only allowed under a new metric definition with a new name and side-by-side reporting.",
+			"Pre-waiting this work would remove the workload the metric is supposed to charge.",
+			5,
+			5,
+			5,
+			"invalid metric change",
+			"preview pre-wait",
+			"Post Editor 0ms loadPatterns",
+			7,
+			"Separate local candidate for the Post Editor path only.",
+			"Focused local matrix favors 0ms over 1000ms, but Post Editor uses injected local patterns and a different measurement path.",
+			"Validate q50, q50 sd, p90/mean, retained counts, first-iteration behavior, preview/canvas success, and source/resource telemetry in CI/mac/container lanes.",
+			"Combining it with Site Editor readiness would overstate one generic loadPatterns result.",
+			4,
+			3,
+			2,
+			"local fallback",
+			"post 0ms",
+			"Shared loadPatterns metric key",
+			8,
+			"Reporting boundary that must be split by spec.",
+			"Site Editor and Post Editor append to the same loadPatterns metric key even though their readiness contracts differ.",
+			"Report Site Editor, Post Editor, and combined views separately before claiming total wait savings.",
+			"One aggregate key can hide regressions or unsupported readiness claims in either spec.",
+			5,
+			3,
+			4,
+			"split reporting",
+			"split metric"
+		) %>%
+			mutate(
+				decision = factor(
+					decision,
+					levels = c(
+						"baseline",
+						"local fallback",
+						"semantic check only",
+						"guardrail candidate",
+						"open research",
+						"split reporting",
+						"invalid metric change"
+					)
+				),
+				plot_label = factor(plot_label, levels = plot_label),
+				plot_x = validation_burden_score + case_when(
+					claim_level == "Post Editor 0ms loadPatterns" ~ 0.16,
+					claim_level == "Fixed 500ms fallback" ~ -0.16,
+					claim_level == "Shared loadPatterns metric key" ~ 0.16,
+					claim_level == "getBlockPatterns semantic check" ~ -0.12,
+					TRUE ~ 0
+				),
+				plot_y = metric_boundary_risk_score + case_when(
+					claim_level == "Post Editor 0ms loadPatterns" ~ -0.12,
+					claim_level == "Fixed 500ms fallback" ~ 0.12,
+					claim_level == "Shared loadPatterns metric key" ~ 0.12,
+					claim_level == "getBlockPatterns semantic check" ~ -0.12,
+					TRUE ~ 0
+				)
+			)
+
+		write_csv(
+			pattern_readiness_claim_ladder_audit,
+			file.path(data_dir, "typing-delay-pattern-readiness-claim-ladder-audit.csv")
+		)
+
+		save_plot(
+			ggplot(
+				pattern_readiness_claim_ladder_audit,
+				aes(
+					plot_x,
+					plot_y,
+					color = decision,
+					shape = decision,
+					size = evidence_score
+				)
+			) +
+				geom_point(alpha = 0.9) +
+				geom_text(
+					aes(label = str_wrap(as.character(plot_label), width = 9)),
+					size = 3.1,
+					color = "grey20",
+					nudge_y = 0.24,
+					lineheight = 0.9,
+					show.legend = FALSE
+				) +
+				scale_x_continuous(
+					breaks = 1:5,
+					limits = c(0.55, 5.45),
+					labels = c("1" = "none", "2" = "low", "3" = "CI lane", "4" = "multi-lane", "5" = "source mapping")
+				) +
+				scale_y_continuous(
+					breaks = 1:5,
+					limits = c(0.65, 5.6),
+					labels = c("1" = "low", "2" = "sleep/fallback", "3" = "guardrail", "4" = "contract split", "5" = "redefines metric")
+				) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Allowed claim") +
+				scale_shape_manual(
+					values = c(
+						"baseline" = 16,
+						"local fallback" = 17,
+						"semantic check only" = 15,
+						"guardrail candidate" = 18,
+						"open research" = 1,
+						"split reporting" = 7,
+						"invalid metric change" = 4
+					),
+					name = "Allowed claim",
+					drop = FALSE
+				) +
+				scale_size_area(max_size = 8, breaks = 2:5, name = "Evidence strength") +
+				labs(
+					title = "Pattern-readiness evidence supports a guardrail, not a hidden metric change",
+					subtitle = "Claim ladder for replacing the Site/Post Editor loadPatterns fixed waits",
+					x = "Validation burden before changing CI behavior",
+					y = "Metric-boundary risk if overstated"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"188-pattern-readiness-claim-ladder.png",
+			width = 12.2,
+			height = 7.2
+		)
+
 		pattern_loading_wait_scope_split_audit <- tribble(
 			~spec_metric, ~source_reference, ~current_wait_surface, ~wait_occurrences_per_branch, ~retained_samples, ~two_branch_wait_s, ~readiness_mode_available, ~workload_shape, ~current_evidence, ~next_validation, ~risk_score, ~decision,
 			"site-editor loadPatterns",
