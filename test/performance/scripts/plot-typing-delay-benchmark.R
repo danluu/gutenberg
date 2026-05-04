@@ -8160,6 +8160,167 @@ if (file.exists(runtime_repeat_summary_path) && file.exists(native_runtime_repea
 	)
 }
 
+if (
+	file.exists(wait_vs_checkpoint_summary_path) &&
+	file.exists(playwright_trace_mode_summary_path) &&
+	file.exists(eval_path_summary_path) &&
+	file.exists(runtime_repeat_summary_path) &&
+	file.exists(native_runtime_repeat_summary_path)
+) {
+	wait_vs_checkpoint_for_boundary <- read_csv(wait_vs_checkpoint_summary_path, show_col_types = FALSE)
+	playwright_trace_for_boundary <- read_csv(playwright_trace_mode_summary_path, show_col_types = FALSE)
+	eval_path_for_boundary <- read_csv(eval_path_summary_path, show_col_types = FALSE)
+	runtime_repeat_for_boundary <- read_csv(runtime_repeat_summary_path, show_col_types = FALSE)
+	native_runtime_repeat_for_boundary <- read_csv(native_runtime_repeat_summary_path, show_col_types = FALSE)
+
+	cdp_boundary_consolidated <- bind_rows(
+		wait_vs_checkpoint_for_boundary %>%
+			filter(
+				mechanism == "explicit post-keyup wait only",
+				point_label %in% c("wait 0ms", "wait 16ms", "wait 1000ms", "wait 5000ms")
+			) %>%
+			transmute(
+				family = "ordinary wait",
+				family_order = 1,
+				condition_label = point_label,
+				n,
+				observed_gap_p50_ms = actual_post_keyup_gap_p50_ms,
+				keypress_p10_ms,
+				keypress_p50_ms,
+				keypress_p90_ms
+			),
+		wait_vs_checkpoint_for_boundary %>%
+			filter(
+				mechanism %in% c("Runtime.evaluate checkpoints", "Runtime.callFunctionOn checkpoints"),
+				point_label %in% c("x1", "x7", "x17")
+			) %>%
+			transmute(
+				family = "direct runtime checkpoints",
+				family_order = 2,
+				condition_label = paste0(
+					if_else(
+						mechanism == "Runtime.evaluate checkpoints",
+						"Runtime.evaluate ",
+						"Runtime.callFunctionOn "
+					),
+					point_label
+				),
+				n,
+				observed_gap_p50_ms = actual_post_keyup_gap_p50_ms,
+				keypress_p10_ms,
+				keypress_p50_ms,
+				keypress_p90_ms
+			),
+		eval_path_for_boundary %>%
+			filter(evaluation_path %in% c("page.evaluate", "main locator.evaluate", "frame locator.evaluate")) %>%
+			transmute(
+				family = "trace-off Playwright evaluation",
+				family_order = 3,
+				condition_label = evaluation_path,
+				n,
+				observed_gap_p50_ms = actual_post_keyup_gap_p50_ms,
+				keypress_p10_ms,
+				keypress_p50_ms,
+				keypress_p90_ms
+			),
+		playwright_trace_for_boundary %>%
+			filter(
+				(input_path == "raw CDP + page.evaluate" & trace_mode %in% c("off", "on")) |
+					(input_path == "per-key keyboard.press" & trace_mode %in% c("off", "on"))
+			) %>%
+			transmute(
+				family = "Playwright trace snapshot boundary",
+				family_order = 4,
+				condition_label = paste0(input_path, ", trace ", trace_mode),
+				n,
+				observed_gap_p50_ms = actual_post_keyup_gap_p50_ms,
+				keypress_p10_ms,
+				keypress_p50_ms,
+				keypress_p90_ms
+			)
+	) %>%
+		mutate(
+			condition_order = row_number(),
+			condition_label = factor(condition_label, levels = rev(condition_label)),
+			family = factor(
+				family,
+				levels = c(
+					"ordinary wait",
+					"direct runtime checkpoints",
+					"trace-off Playwright evaluation",
+					"Playwright trace snapshot boundary"
+				)
+			)
+		)
+
+	cdp_boundary_theory_matrix <- tribble(
+		~candidate_theory, ~status, ~strongest_measurement, ~remaining_gap,
+		"Elapsed post-keyup time creates the fast path", "ruled out",
+		"Raw CDP ordinary waits from about 4ms through 5008ms stay around 21-24ms keypress p50.",
+		"Does not identify which Chromium state runtime checkpoints alter.",
+		"DOM event payload or raw-CDP packet shape explains the slow path", "ruled out",
+		"Corrected raw-CDP packets and matched DOM key/input signatures still stay slow.",
+		"CDP/browser internals below DOM events remain possible.",
+		"One generic renderer checkpoint is enough", "ruled out",
+		"A single Runtime.evaluate, setTimeout(0), or RAF checkpoint improves only partway and does not reach page.evaluate with tracing.",
+		"Many checkpoints do have a dose response.",
+		"Playwright trace snapshots explain the full per-key fast path", "supported",
+		"With trace on, per-key press and page.evaluate are about 11.3ms; with trace off they are about 22.1ms and 17.4ms.",
+		"Trace snapshots are an automation artifact, not a user-typing mechanism.",
+		"Runtime checkpoint count changes the measured Gutenberg input slice", "supported",
+		"Direct runtime calls form a dose response: raw CDP is 21.5ms, x7 is about 15-16ms, and x17 is about 13ms.",
+		"Exact Chromium runtime/scheduler state is still below this JS harness.",
+		"Native/browser-only checkpoint effects explain the Gutenberg-scale artifact", "ruled out for scale",
+		"Native contenteditable moves only about 0.3-0.4ms, while Gutenberg moves by several milliseconds.",
+		"Gutenberg fanout explains scale, but the browser/runtime trigger is still lower-level.",
+		"Exact Chromium internal mechanism is identified", "still open",
+		"No current trace includes the renderer scheduler/runtime state that changes across those checkpoints.",
+		"Needs Chromium tracing or lower-level runtime/scheduler instrumentation."
+	)
+
+	write_csv(
+		cdp_boundary_consolidated,
+		file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
+	)
+	write_csv(
+		cdp_boundary_theory_matrix,
+		file.path(data_dir, "typing-delay-cdp-boundary-theory-matrix.csv")
+	)
+
+	save_plot(
+		ggplot(
+			cdp_boundary_consolidated,
+			aes(keypress_p50_ms, condition_label, color = family, shape = family)
+		) +
+			geom_point(size = 3.2, alpha = 0.92) +
+			geom_text(
+				aes(label = sprintf("%.1fms gap", observed_gap_p50_ms)),
+				nudge_x = 0.42,
+				size = 2.8,
+				show.legend = FALSE
+			) +
+			geom_vline(
+				xintercept = c(13, 22),
+				linetype = c("dotted", "dashed"),
+				color = brewer_color("Greys", 6, type = "seq", n = 9),
+				linewidth = 0.35
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_x_continuous(breaks = seq(10, 25, 2.5), limits = c(10, 26.5)) +
+			labs(
+				title = "Runtime checkpoints, not ordinary waits, move raw-CDP input toward the fast band",
+				subtitle = "1300ms held-key diagnostic runs; labels show observed previous-keyup to next-keydown gap p50",
+				x = "keypress EventDispatch duration, p50 (ms)",
+				y = NULL,
+				color = "Boundary",
+				shape = "Boundary"
+			),
+		"133-cdp-boundary-consolidated.png",
+		width = 12,
+		height = 8
+	)
+}
+
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")

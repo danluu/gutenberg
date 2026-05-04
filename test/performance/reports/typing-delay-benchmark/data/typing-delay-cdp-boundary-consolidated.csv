@@ -1,0 +1,18 @@
+family,family_order,condition_label,n,observed_gap_p50_ms,keypress_p10_ms,keypress_p50_ms,keypress_p90_ms,condition_order
+ordinary wait,1,wait 0ms,20,3.849999904632568,16.5716,21.388,22.8617,1
+ordinary wait,1,wait 16ms,20,21.549999952316284,15.8521,23.0895,25.2416,2
+ordinary wait,1,wait 1000ms,20,1007.75,22.208,23.856,24.384500000000003,3
+ordinary wait,1,wait 5000ms,12,5008.471499919891,21.0751,23.5805,25.196,4
+direct runtime checkpoints,2,Runtime.evaluate x1,36,4.346000075340271,16.814,19.707,22.6565,5
+direct runtime checkpoints,2,Runtime.evaluate x7,36,11.972500085830688,13.475,15.4135,18.53,6
+direct runtime checkpoints,2,Runtime.evaluate x17,36,18.379500031471252,12.1415,13.23,15.446,7
+direct runtime checkpoints,2,Runtime.callFunctionOn x1,36,5.153999924659729,14.5265,19.8735,23.278,8
+direct runtime checkpoints,2,Runtime.callFunctionOn x7,36,11.940500020980837,13.48,15.972,17.762,9
+direct runtime checkpoints,2,Runtime.callFunctionOn x17,36,19.16999983787537,12.3435,13.393,15.8565,10
+trace-off Playwright evaluation,3,page.evaluate,12,7.132500052452087,18.083,18.494999999999997,20.7021,11
+trace-off Playwright evaluation,3,main locator.evaluate,12,11.703499913215635,17.509900000000002,17.808,18.8942,12
+trace-off Playwright evaluation,3,frame locator.evaluate,12,15.438500046730042,17.4311,17.9205,18.5248,13
+Playwright trace snapshot boundary,4,"per-key keyboard.press, trace on",12,29.13950002193451,10.9006,11.2995,13.0813,14
+Playwright trace snapshot boundary,4,"per-key keyboard.press, trace off",12,4.302000164985657,19.9,22.077,23.7648,15
+Playwright trace snapshot boundary,4,"raw CDP + page.evaluate, trace on",12,29.269999980926514,10.9688,11.2635,13.3336,16
+Playwright trace snapshot boundary,4,"raw CDP + page.evaluate, trace off",12,6.889000058174133,15.1201,17.414,20.9199,17

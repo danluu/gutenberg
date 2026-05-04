@@ -1,0 +1,8 @@
+candidate_theory,status,strongest_measurement,remaining_gap
+Elapsed post-keyup time creates the fast path,ruled out,Raw CDP ordinary waits from about 4ms through 5008ms stay around 21-24ms keypress p50.,Does not identify which Chromium state runtime checkpoints alter.
+DOM event payload or raw-CDP packet shape explains the slow path,ruled out,Corrected raw-CDP packets and matched DOM key/input signatures still stay slow.,CDP/browser internals below DOM events remain possible.
+One generic renderer checkpoint is enough,ruled out,"A single Runtime.evaluate, setTimeout(0), or RAF checkpoint improves only partway and does not reach page.evaluate with tracing.",Many checkpoints do have a dose response.
+Playwright trace snapshots explain the full per-key fast path,supported,"With trace on, per-key press and page.evaluate are about 11.3ms; with trace off they are about 22.1ms and 17.4ms.","Trace snapshots are an automation artifact, not a user-typing mechanism."
+Runtime checkpoint count changes the measured Gutenberg input slice,supported,"Direct runtime calls form a dose response: raw CDP is 21.5ms, x7 is about 15-16ms, and x17 is about 13ms.",Exact Chromium runtime/scheduler state is still below this JS harness.
+Native/browser-only checkpoint effects explain the Gutenberg-scale artifact,ruled out for scale,"Native contenteditable moves only about 0.3-0.4ms, while Gutenberg moves by several milliseconds.","Gutenberg fanout explains scale, but the browser/runtime trigger is still lower-level."
+Exact Chromium internal mechanism is identified,still open,No current trace includes the renderer scheduler/runtime state that changes across those checkpoints.,Needs Chromium tracing or lower-level runtime/scheduler instrumentation.

@@ -611,6 +611,9 @@ The R script derives:
     traces that repeat direct CDP runtime checkpoints between raw CDP key events.
 -   `data/typing-delay-native-runtime-repeat-*.csv`: the same runtime-repeat
     trace-off dose-response in the native `contenteditable` scenario.
+-   `data/typing-delay-cdp-boundary-*.csv`: consolidated CDP boundary evidence
+    matrix across ordinary waits, runtime checkpoints, Playwright evaluation
+    paths, trace snapshots, and the native control.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -5009,6 +5012,43 @@ large-post run moves by about `2ms` with one checkpoint and roughly `8ms` at the
 largest repeat count. The automation/browser checkpoint is real, but Gutenberg's
 heavy input path amplifies it into the multi-millisecond benchmark artifact.
 
+### CDP Boundary Consolidation
+
+The raw-CDP and Playwright-evaluation checks were useful individually, but the
+open question is easier to see when they are put on one scale. The consolidated
+view keeps the held-key `1300ms` workload fixed and compares four between-key
+families: ordinary raw-CDP sleeps, direct runtime checkpoints, trace-off
+Playwright evaluation paths, and the default Playwright trace-snapshot path.
+
+![CDP boundary consolidated](figures/133-cdp-boundary-consolidated.png)
+
+The result closes the broad "maybe it is just a longer gap" explanation.
+Ordinary raw-CDP waiting stays slow: `wait 0ms`, `16ms`, `1000ms`, and `5000ms`
+have `keypress` p50s of `21.4ms`, `23.1ms`, `23.9ms`, and `23.6ms`. Direct
+runtime checkpoints move the next input in a dose response: `Runtime.evaluate`
+`x1`, `x7`, and `x17` are `19.7ms`, `15.4ms`, and `13.2ms`. Playwright trace
+snapshots are the largest automation boundary: per-key `keyboard.press()` is
+`22.1ms` with trace off and `11.3ms` with trace on; raw CDP plus
+`page.evaluate()` is `17.4ms` with trace off and `11.3ms` with trace on.
+
+The theory matrix is now:
+
+| Candidate theory | Current status | Strongest measurement |
+| ---------------- | -------------- | --------------------- |
+| Elapsed post-keyup time creates the fast path | ruled out | Ordinary raw-CDP waits from `4ms` through `5008ms` stay around `21-24ms`. |
+| DOM event payload or raw-CDP packet shape explains the slow path | ruled out | Corrected raw-CDP packets and matched DOM key/input signatures still stay slow. |
+| One generic renderer checkpoint is enough | ruled out | A single `Runtime.evaluate`, `setTimeout(0)`, or RAF checkpoint improves only partway. |
+| Playwright trace snapshots explain the full per-key fast path | supported | Trace-on per-key press and trace-on `page.evaluate()` are both about `11.3ms`; trace-off versions are much slower. |
+| Runtime checkpoint count changes the measured Gutenberg input slice | supported | Direct runtime calls form a dose response down to about `13ms` at `x17`. |
+| Native/browser-only checkpoint effects explain the Gutenberg-scale artifact | ruled out for scale | Native `contenteditable` moves only `0.3-0.4ms`; Gutenberg moves by several milliseconds. |
+| Exact Chromium internal mechanism is identified | still open | Current traces do not include the renderer scheduler/runtime state that changes across checkpoints. |
+
+So the remaining CDP boundary is not a Gutenberg semantic state transition and
+not ordinary elapsed time. It is a browser/runtime/protocol checkpoint effect
+introduced by the automation layer, amplified by Gutenberg's heavy input path.
+The exact Chromium internal state is still below this benchmark's DOM,
+Gutenberg, and Playwright-protocol instrumentation.
+
 ### Native Contenteditable Baseline
 
 The key-state traces show conditions that separate slow and fast Gutenberg
@@ -5834,6 +5874,15 @@ CPU load, taskpolicy tiering in general, or timer ordering alone. Proving the
 final layer would need hardware/browser-level instrumentation below this JS
 harness.
 
+The CDP/input-method boundary is also narrower now. Ordinary raw-CDP waits do
+not produce the fast path, even at a `5008ms` observed previous-keyup to
+next-keydown gap. Direct runtime checkpoints do produce a dose response, and
+Playwright trace snapshots explain the full fast per-key path in the default
+trace-enabled setup. The remaining CDP question is therefore below DOM event
+payloads and Gutenberg semantic state: which Chromium runtime/scheduler state is
+changed by those automation checkpoints. That is a measurement-boundary question,
+not a reason to treat per-key Playwright trace-on input as user typing.
+
 The source-audited owner pass closes a smaller open question about the broad
 Gutenberg side of that path. The dominant low-level Redux listener rows are
 per-rendered-block, per-`BlockEdit`, per-block-list, and per-inner-blocks
@@ -5993,11 +6042,10 @@ For investigation:
     JS callbacks. Timer, RAF, idle, data-action, key-flag, and DevTools timeline
     checks did not explain why a roughly `30-40ms` gap changes the next input
     path.
--   Compare the browser/renderer boundary crossed by Playwright per-key actions
-    and `page.evaluate()` against direct `Input.dispatchKeyEvent`. Raw CDP stays
-    slow even with long post-keyup gaps and DOM-equivalent events, while raw CDP
-    plus `page.evaluate()` is fast. The remaining difference is below the DOM
-    event sequence and ordinary JS callback traces.
+-   Treat Playwright per-key trace-on input as an automation checkpoint artifact,
+    not as human typing. The consolidated CDP boundary audit shows ordinary raw
+    CDP waits stay slow even at `5s`, while runtime checkpoints and Playwright
+    trace snapshots move the measured input slice.
 -   Replay recorded human typing sessions, including pauses, selection, deletion,
     undo, and block insertion.
 -   Keep the native baseline and add more minimal editor-like baselines to
