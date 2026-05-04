@@ -11012,8 +11012,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				"What should product optimization do with this?", "Keep it separate from source-level mitigations.", "Native/browser controls move less than 1ms while Gutenberg's broad input path moves by many milliseconds.", "System state modulates the path, but Gutenberg fanout supplies the scale.", "How real plugin/human workloads interact with the system state.", "Use workload replay for product lag and selector/subscriber prototypes for source mitigation; use OS counters for the benchmark artifact.", "split artifact from product"
 			)
 
-			cpu_qos_counter_contract_audit <- tribble(
-				~candidate_layer, ~why_it_remains_plausible, ~current_constraints, ~counter_or_trace_contract, ~would_support_if, ~would_weaken_if, ~decision,
+				cpu_qos_counter_contract_audit <- tribble(
+					~candidate_layer, ~why_it_remains_plausible, ~current_constraints, ~counter_or_trace_contract, ~would_support_if, ~would_weaken_if, ~decision,
 				"P-core or cluster frequency/residency",
 				"One ordinary or utility-QoS busy child is enough to move the no-op timer into the fast band, while background and maintenance QoS CPU remain slow despite consuming CPU.",
 				"Generic CPU load is ruled out, and adding more ordinary busy children is not monotonically better.",
@@ -11055,8 +11055,60 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				"Keep selector/subscriber prototypes and workload replay separate from OS-counter experiments; use the same source spans only to confirm product-scale amplification.",
 				"Source prototypes reduce the broad input work across both slow and fast system states.",
 				"Source changes only change the artifact under one system policy and regress behavior or workload replay.",
-				"separate artifact from product optimization"
-			)
+					"separate artifact from product optimization"
+				)
+
+				cpu_qos_counter_runset_contract_audit <- tribble(
+					~runset_question, ~current_answer, ~minimum_rows, ~current_local_result, ~required_counters, ~discriminates, ~acceptance_or_rejection_rule, ~decision,
+					"What is the minimum slow negative control?",
+					"A nearby callback, delayed task, worker lifetime, IPC shape, or idle child is not sufficient.",
+					"near-key marker no-op, delayed no-op, worker delay with no message, external delay with no message, and idle child plus no-op.",
+					"Near-key no-CPU task controls have median p50 24.3ms and min-max 22.2-24.6ms.",
+					"Confirm no helper CPU work; align helper lifetime, timer fire, next keydown enqueue, EventDispatch start/end, renderer wakeups, process QoS, core ID, frequency, and residency.",
+					"Callback/wakeup/no-CPU explanations versus CPU-state explanations.",
+					"Rows must stay slow while fast CPU rows show a counter delta; if they become fast with the same counters, the CPU-state explanation is too narrow.",
+					"negative control",
+					"What is the minimum fast continuous control?",
+					"Ordinary or utility-QoS CPU activity is sufficient locally.",
+					"ordinary external CPU, nice +20 CPU, taskpolicy -c utility CPU, and one representative taskpolicy -l/-t tier row.",
+					"Continuous ordinary/utility controls have median p50 9.7ms; taskpolicy -c utility is 9.4ms; taskpolicy -l/-t tiers are 9.2-9.7ms.",
+					"Capture helper effective QoS, helper CPU consumption, renderer runnable-to-running latency, renderer core ID, performance-cluster residency, frequency, package power, and EventDispatch source spans.",
+					"P-core/frequency/residency, ordinary/utility scheduler visibility, and foreground renderer scheduling improvements.",
+					"Fast rows should share a measurable OS or browser-scheduler state not present in slow no-CPU and background/maintenance rows; otherwise this boundary remains descriptive only.",
+					"fast policy control",
+					"What is the minimum slow continuous policy contrast?",
+					"CPU consumption alone is not enough when the helper is background or maintenance clamped.",
+					"taskpolicy -b CPU x1/x4/x8, taskpolicy -c background CPU, and taskpolicy -c maintenance CPU.",
+					"Continuous background/maintenance controls have median p50 24.2ms and min-max 24.0-24.7ms despite real CPU consumption.",
+					"Verify helper CPU consumption and effective QoS; capture renderer scheduling latency, helper/renderer core placement, performance-cluster residency, frequency, package power, and browser input-task priority.",
+					"Generic CPU load versus policy-visible CPU state.",
+					"If background/maintenance rows consume CPU but lack the fast rows' residency, frequency, scheduler, or browser-task state, the policy-sensitive mechanism is supported; if counters match fast rows while latency stays slow, look at browser or cache state.",
+					"policy contrast",
+					"How should finite CPU duration and recency be tested?",
+					"The finite-burst controls show a descriptive duration/proximity relationship, but not the lower-level cause.",
+					"20ms, 40ms, 80ms, and 150ms worker/external/prestarted CPU rows near keydown, plus 150ms rows at earlier end-to-keydown gaps.",
+					"The two-term finite-burst model has R^2 0.71; longer work lowers p50 and larger end-to-keydown gaps raise p50.",
+					"Record helper work start/end, work duration, work-end-to-keydown gap, per-core residency/frequency decay, renderer scheduling latency, cache/memory counters if available, and EventDispatch subspans.",
+					"Power/frequency decay, scheduler-state decay, cache warmth, or timer/wakeup latency.",
+					"A valid mechanism must explain both the continuous QoS split and the finite-burst decay; explaining only the decay is not enough to close the CPU/QoS question.",
+					"decay contract",
+					"How should OS counters be separated from Chromium scheduler state?",
+					"Current Chromium traces do not contain the scheduler/runtime state needed to split OS from browser mechanisms.",
+					"Run the no-CPU slow row, one ordinary/utility fast row, one background/maintenance slow row, one finite-burst fast row, and one stale finite-burst slow row with matching Chromium scheduler/runtime traces.",
+					"Browser/runtime checkpoints and CPU/QoS controls both show state below Gutenberg selectors, but current visual traces are render/screenshot oriented.",
+					"Add Chromium scheduler/task-queue categories, renderer main-thread task boundaries, input task priority, V8 slices, protocol markers, and existing Gutenberg source spans to the same key windows as the OS counters.",
+					"OS power/scheduler state versus Chromium input-task scheduling state.",
+					"Claim a browser-scheduler mechanism only if OS frequency/residency/QoS counters do not explain the split and Chromium queue/priority/task boundaries do; otherwise keep the mechanism at the OS-counter layer.",
+					"browser split gate",
+					"What report shape is required before changing the mechanism claim?",
+					"Aggregate p50 rows are not enough for the remaining mechanism layer.",
+					"All rows above, with per-sample records rather than only class medians.",
+					"Existing summaries identify the boundary classes but not the lower-level state.",
+					"For each sample, report run id, sample index, retained/throwaway status, key timing, EventDispatch timing, helper work timing, helper QoS, renderer QoS, core IDs, frequency/residency, power/thermal metadata, browser scheduler slices, source-span ids, and environment metadata.",
+					"Per-sample causal alignment versus aggregate coincidence.",
+					"Do not revise the CPU/QoS mechanism claim unless the same per-sample counter state predicts the fast/slow split across slow no-CPU, fast ordinary/utility, slow background/maintenance, and finite decay rows.",
+					"reporting gate"
+				)
 
 			write_csv(
 				system_mechanism_matrix,
@@ -11066,10 +11118,14 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				cpu_qos_next_probe_audit,
 				file.path(data_dir, "typing-delay-cpu-qos-next-probe-audit.csv")
 			)
-			write_csv(
-				cpu_qos_counter_contract_audit,
-				file.path(data_dir, "typing-delay-cpu-qos-counter-contract-audit.csv")
-			)
+				write_csv(
+					cpu_qos_counter_contract_audit,
+					file.path(data_dir, "typing-delay-cpu-qos-counter-contract-audit.csv")
+				)
+				write_csv(
+					cpu_qos_counter_runset_contract_audit,
+					file.path(data_dir, "typing-delay-cpu-qos-counter-runset-contract-audit.csv")
+				)
 
 			save_plot(
 				ggplot(
@@ -13838,6 +13894,57 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			file.path(data_dir, "typing-delay-public-selector-notification-contract-audit.csv")
 		)
 
+		pattern_override_first_patch_implementation_audit <- tribble(
+			~implementation_question, ~current_answer, ~source_evidence, ~required_patch_contract, ~required_test_contract, ~decision,
+			"What exactly should move?",
+			"The support-check useSelect is now behind the selected-block gate.",
+			"Before the patch, packages/editor/src/hooks/pattern-overrides.js called useSelect at the top of withPatternOverrideControls to read getSettings().__experimentalBlockBindingsSupportedAttributes[ props.name ], then rendered ControlsWithStoreSubscription only when props.isSelected && isSupportedBlock.",
+			"withPatternOverrideControls now renders a selected-only child only when props.isSelected. That child runs the support check and returns ControlsWithStoreSubscription only for supported selected blocks.",
+			"packages/editor/src/hooks/test/pattern-overrides.js asserts unselected supported blocks render BlockEdit without calling useSelect, while selected supported blocks still show PatternOverridesControls.",
+			"implemented",
+			"What should stay where it is?",
+			"ControlsWithStoreSubscription stays inside the selected/supported path.",
+			"The file already comments that ControlsWithStoreSubscription is split to avoid a store subscription on every block; it reads editorStore state, block editing mode, pattern source registration, synced/unsynced pattern state, and metadata bindings.",
+			"The patch does not hoist editorStore or blockEditingMode reads into the outer HOC; they remain behind both selected and supported gates.",
+			"The selected-unsupported test asserts one support-check useSelect call and no useBlockEditingMode call, so the store-backed controls path does not mount.",
+			"inner subscription still gated",
+			"Why is this safe for unselected blocks?",
+			"Unselected blocks already show no pattern override controls.",
+			"The current render condition is props.isSelected && isSupportedBlock; moving the support check into a child mounted by props.isSelected preserves the visible condition.",
+			"For unselected blocks, render only BlockEdit. When a block becomes selected, mount the child and read current settings at that time.",
+			"The selection-transition test renders unselected with no useSelect calls, then rerenders selected and verifies the controls appear.",
+			"selected-only gate covered",
+			"How should settings changes be handled?",
+			"Only selected blocks need live support-setting updates.",
+			"The support setting is read from block-editor settings and depends on props.name. An unselected block can read fresh settings when it is selected later.",
+			"The selected-only child keeps useSelect subscribed while selected, with props.name as dependency; no cache outlives block-name or settings changes.",
+			"The selected-settings test mutates __experimentalBlockBindingsSupportedAttributes and rerenders while selected, then verifies the support result toggles on.",
+			"settings path covered while selected",
+			"What is the least invasive test seam?",
+			"Export the HOC as a named export while keeping the side-effect filter registration unchanged.",
+			"packages/editor/src/hooks/index.js imports the hook module only for its addFilter side effect, and withPatternOverrideControls is currently not exported.",
+			"The patch exports withPatternOverrideControls directly and still passes that same HOC to addFilter( 'editor.BlockEdit', ... ).",
+			"Focused unit coverage now covers selected supported, selected unsupported, unselected supported, selection transition, settings change while selected, and the unsynced reset path.",
+			"named test seam added",
+			"What is not part of the first patch?",
+			"Do not bundle heading, BlockListBlockProvider, useInnerBlocksProps, BlockListItems, or store-partition changes.",
+			"Those rows need shared signals, local invalidation prototypes, validation prototypes, or public selector notification compatibility.",
+			"Keep the first patch small: source move, focused unit coverage, then measurement. Broader invalidation rows should wait until the first patch result is measured.",
+			"The patch should not change block-list selection, block identity, inner-block layout, heading anchor behavior, or persistence-marker notification semantics.",
+			"single-row patch only",
+			"How should success be measured?",
+			"Behavior tests now pass; source-span measurement is still the next empirical check.",
+			"The audited scope is about 3.6ms / 1436 skippable listener calls in the marker-window source audit, but runtime p50 can move with CI/system state.",
+			"After rebuilding performance assets, rerun the compact source-span measurement that reports pattern-override listener count and duration, plus the relevant typing score row.",
+			"Keep the patch if behavior remains unchanged and the pattern-override support-HOC listener count collapses to selected-block scale; treat aggregate p50 as confirmation, not the only acceptance criterion.",
+			"measure source-span collapse next"
+		)
+
+		write_csv(
+			pattern_override_first_patch_implementation_audit,
+			file.path(data_dir, "typing-delay-pattern-override-first-patch-implementation-audit.csv")
+		)
+
 		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
 		mutate(
 			plot_label = case_when(
@@ -13902,7 +14009,7 @@ if (file.exists(marker_allspan_action_summary_path)) {
 
 	first_patch_test_readiness <- tribble(
 		~candidate, ~source_site, ~current_scope_ms, ~listener_scope, ~source_feasibility, ~test_gap_score, ~implementation_seam, ~missing_test_surface, ~recommended_next,
-		"Pattern override selected-only split", "packages/editor/src/hooks/pattern-overrides.js", 3.5974944472395882, 1436, "clear local patch after adding test seam", 2, "The HOC is currently registered as a side-effect-only filter; export the HOC or a small support-check component for focused tests.", "Selected supported block, selected unsupported block, unselected supported block, settings support change, synced pattern controls, unsynced reset control.", "Implement first with focused unit coverage.",
+		"Pattern override selected-only split", "packages/editor/src/hooks/pattern-overrides.js", 3.5974944472395882, 1436, "implemented locally with export/test seam", 1, "withPatternOverrideControls is now exported for a focused HOC unit test while the same addFilter side effect remains in place.", "Selected supported block, selected unsupported block, unselected supported block, selection transition, selected settings support change, and unsynced reset control are covered.", "Measure source-span collapse after rebuild.",
 		"Heading shared anchor capability", "packages/block-library/src/heading/edit.js", 0.4999997615814209, 202, "needs shared signal", 4, "The per-heading useSelect is semantically needed until a shared generateAnchors/table-of-contents capability signal exists.", "Web tests for generateAnchors setting changes and table-of-contents insertion/removal; native tests exist but do not cover the web source path.", "Design signal before optimizing.",
 		"Non-edited BlockListBlockProvider guard", "packages/block-editor/src/components/block-list/block.js", 3.4975648467210574, 1436, "needs local invalidation prototype", 4, "The selector mixes attributes with selection, movement, overlay, variation, section, and identity state.", "Edited block update, non-edited selection, variation, movement/removal, overlay, template-mode, and block identity behavior.", "Prototype after pattern override.",
 		"useInnerBlocksProps structural guard", "packages/block-editor/src/components/inner-blocks/index.js", 1.1000003814697266, 580, "needs local invalidation prototype", 3, "Needs a root/order/settings version boundary rather than a component-only memo.", "Text insertion, child insertion/removal/reorder, zoom, template lock, editing mode, layout, and root changes.", "Prototype after pattern override.",
@@ -13912,7 +14019,7 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			source_feasibility = factor(
 				source_feasibility,
 				levels = c(
-					"clear local patch after adding test seam",
+					"implemented locally with export/test seam",
 					"needs shared signal",
 					"needs local invalidation prototype",
 					"validation prototype only"
@@ -13956,9 +14063,9 @@ if (file.exists(marker_allspan_action_summary_path)) {
 		"packages/editor/src/hooks/pattern-overrides.js:37-55",
 		"3.6ms / 1436 skippable listener calls",
 		"The support check reads getSettings().__experimentalBlockBindingsSupportedAttributes[ props.name ]; unselected blocks do not render pattern override controls, and a newly selected block can read the current setting on mount.",
-		"Move the support-check useSelect into a selected-only child mounted by props.isSelected, then mount ControlsWithStoreSubscription only for selected supported blocks. Add an export or helper seam for tests.",
-		"Selected supported block shows PatternOverridesControls, selected unsupported block does not, unselected supported block does not mount the support-check path, settings support changes update while selected, synced and unsynced pattern reset paths still work.",
-		"Implement first.",
+		"The patch moves the support-check useSelect into a selected-only child mounted by props.isSelected, then mounts ControlsWithStoreSubscription only for selected supported blocks. withPatternOverrideControls is exported as the focused test seam.",
+		"Focused unit coverage verifies selected supported, selected unsupported, unselected supported, selection transition, selected support-setting update, and unsynced reset behavior.",
+		"Implemented locally; measure source-span collapse next.",
 		"Heading shared anchor capability",
 		"packages/block-library/src/heading/edit.js:35-44",
 		"0.5ms / 202 listener calls, not counted in the source-feasible envelope",
@@ -15178,6 +15285,63 @@ write_csv(
 	file.path(data_dir, "typing-delay-human-plugin-workload-contract-audit.csv")
 )
 
+workload_replay_schema_contract_audit <- tribble(
+	~schema_question, ~current_answer, ~local_evidence, ~required_recording_fields, ~required_replay_or_reporting_contract, ~decision,
+	"What is the unit of replay?",
+	"Per editing event, not per delay bucket or averaged run.",
+	"The current artifact depends on event ordering, key state, timer state, source fanout, document scale, and system state; aggregating by delay would erase those causal inputs.",
+	"event_id, event_type, key_code_or_text_delta, input_type, is_composing, repeat, timestamp, inter_event_gap_ms, hold_ms_if_available, target_role, clientId, block_name, selection_anchor_focus, and pre/post text or structural delta hashes.",
+	"Replay the event sequence in order with recorded gaps where relevant; report metrics per event and per stratum before any aggregate score.",
+	"event history is the unit",
+	"What document/session context is mandatory?",
+	"Enough context to reconstruct the editor state that made the event slow.",
+	"Native, empty-post, and large-post controls show that absolute cost changes with fixture scale; listener totals are higher in the large-post path than the empty-post path.",
+	"editor_kind, post_type, document_shape, block_count, block_type_histogram, nested_depth, media/pattern counts, selected block context, plugin/theme set, viewport, browser revision, session_age, autosave/REST activity markers, and wp-env/host metadata.",
+	"Replay from saved fixtures or generated equivalent fixtures with the same structural strata; do not mix document shapes into one score.",
+	"document shape is a stratum",
+	"Which strata are the minimum useful set?",
+	"Text bursts alone are insufficient.",
+	"Selector-guard risks include selection/tree/appender/template surfaces; React profiler usefulness depends on after-input or whole-cycle ownership in real workflows.",
+	"ordinary text burst, correction/backspace, IME/composition, selection/caret navigation, long-session idle return, paste, transform, block insert/remove/reorder, media/pattern-heavy editing, and plugin-heavy/P2-like side effects.",
+	"Report owner rankings and endpoint deltas separately for each stratum; a win that appears only in fixed-x insertion is not a product ranking result.",
+	"stratify before ranking",
+	"How should text input be replayed?",
+	"Use human-like complete keypress/input semantics by default, with held-key only as an artifact control.",
+	"The CI input-helper analysis shows held-key Playwright delay is not a human typing model; 50ms/100ms hold controls exist for realistic hold sensitivity, while complete-keypress-then-wait is the safer human baseline.",
+	"recorded keydown/keypress/beforeinput/input/keyup order, inter-key gap, hold duration if available, repeat state, composition boundaries, and text delta.",
+	"Replay ordinary text with complete keypress or direct lower-level event sequences that preserve the recorded order; keep held-key delay as a labeled diagnostic control, not the default human replay.",
+	"do not replay humans as held keys",
+	"What instrumentation must be attached to replay?",
+	"Source spans plus visual/user-facing endpoints, not p50 alone.",
+	"Existing source audits find high-fanout selector/subscriber owners; visual endpoint probes show when EventDispatch movement reaches RAF, Paint, DrawFrame, and changed pixels.",
+	"source-span IDs, Redux/useSelect owner metadata, RichText spans, EventDispatch slices, RAF/render/screenshot or visual endpoint IDs, async queue markers, network/resource markers, and behavior assertion IDs.",
+	"Each replay sample must produce owner-ranked source costs and at least one visual or behavior endpoint so source wins cannot hide user-visible regressions.",
+	"source plus endpoint required",
+	"How should behavior be guarded?",
+	"Every replayed stratum needs assertions appropriate to its action class.",
+	"The first selector-guard patch is safe only with focused behavior tests; broader provider, inner-block, and BlockListItems guards can stale selection, appender, template, or structural UI.",
+	"pre/post serialized block tree hash, selection/caret state, visible block list, appender state, template lock/editing mode, undo level, pattern binding state, plugin-visible side effects, and accessibility-relevant focus state.",
+	"Treat a replay result as invalid if behavior assertions fail, even if latency improves.",
+	"behavior gates performance",
+	"What can be claimed before real histories exist?",
+	"Only benchmark-artifact decisions and narrowly tested source patches.",
+	"The fixed-x stressor explains the artifact and can guide first low-risk selector patches, but it cannot rank plugin-heavy or human editing latency.",
+	"existing fixed-x source spans, compact diagnostic controls, focused unit/e2e behavior tests, and optional synthetic document-shape strata.",
+	"Do not claim product latency ranking, plugin-heavy improvement, or real typing improvement until recorded/replayed histories cover the relevant strata.",
+	"scope claims to artifact",
+	"How should patch acceptance use replay?",
+	"Compare before/after by stratum and owner ranking, not a single scalar.",
+	"A patch can reduce one fixed-character path while leaving correction, selection, composition, plugin hooks, or async tails unchanged or worse.",
+	"per-stratum p50/p90, owner-rank deltas, visual endpoint deltas, behavior assertions, and sample counts for before/after runs.",
+	"Accept product claims only when the affected strata improve or stay neutral with passing behavior checks; report regressions separately rather than averaging them away.",
+	"stratum-level acceptance"
+)
+
+write_csv(
+	workload_replay_schema_contract_audit,
+	file.path(data_dir, "typing-delay-workload-replay-schema-contract-audit.csv")
+)
+
 portability_validation_contract_audit <- tribble(
 	~portability_question, ~current_local_answer, ~evidence_already_available, ~remaining_gap, ~validation_contract, ~decision,
 	"Are the absolute p50 values portable enough for thresholds?",
@@ -15229,19 +15393,84 @@ write_csv(
 	file.path(data_dir, "typing-delay-portability-validation-contract-audit.csv")
 )
 
+portability_validation_runbook_audit <- tribble(
+	~validation_question, ~current_answer, ~required_lanes, ~minimum_rows, ~required_metadata, ~expansion_trigger, ~allowed_claim, ~decision,
+	"What lanes are required before threshold changes?",
+	"At least one CI lane plus one comparable local or container lane; browser alternatives are causal checks, not threshold lanes.",
+	"Exact Playwright-bundled Chromium on CI, local host Chromium when available, same wp-env/container shape used by CI, and optional Firefox/WebKit timer-timeline lanes.",
+	"Compact discriminating row set only; do not start with the full dense sweep.",
+	"CPU model, core count, OS version, browser revision, Playwright version, wp-env/container limits, power mode, thermal pressure if available, process QoS, background load, and git/build identifiers.",
+	"Expand to the full dense sweep only if a compact row changes qualitative band, variance class, timer ordering, or visual endpoint direction.",
+	"May change absolute thresholds only after CI Chromium and at least one comparable lane preserve qualitative ordering and bound p50/CV movement.",
+	"threshold gate",
+	"Which score rows are the compact minimum?",
+	"Rows should exercise mechanisms, not cover every delay.",
+	"All threshold lanes; optional causal lanes use the subset with comparable metrics.",
+	"CI current held key, tap/complete-keypress baseline, 990/1000/1010/1300 held-key boundary, 50ms and 100ms hold controls, pattern 500ms and 1000ms readiness rows, runtime checkpoint controls, CPU/QoS controls, and visual endpoint controls.",
+	"For each score row, keep retained samples, throwaway count, per-run p50, p10/p90, CV, first-three-key distribution, sample order, and elapsed suite time.",
+	"Missing retained-sample policy, first-key behavior, or sample-order data invalidates threshold interpretation.",
+	"Can claim qualitative portability only when row ordering and regime labels match across lanes; cannot claim threshold portability from ordering alone.",
+	"compact minimum",
+	"How should startup/setup confounds be handled?",
+	"Local randomized/exact and fresh-editor checks bound setup locally but not on CI.",
+	"Repeat exact-spec randomized blocks on CI with fresh saved/reopened drafts and the current no-extra-wait Typing setup.",
+	"0ms, 1000ms, and 60000ms start-wait controls where feasible; otherwise a smaller exact-spec 0ms versus current-CI setup pair.",
+	"setupReady time, runStart time, first key timing, first-three-key distribution, retained/throwaway policy, resource counts moved before first key, and suite elapsed time.",
+	"If first-input behavior or retained run-p50 medians diverge outside local volatility, add CI-specific startup/setup diagnostics before changing thresholds.",
+	"May keep local measurement semantics if ordering holds; may not reuse local absolute p50 as a CI threshold.",
+	"setup gate",
+	"How should browser coverage be interpreted?",
+	"Only Playwright-bundled Chromium should set Chrome thresholds; Firefox/WebKit are causal portability checks.",
+	"Run Chrome threshold lane first; run Firefox/WebKit timer-timeline diagnostics only to verify timer ordering and broad mechanism direction.",
+	"990/1000/1010 timer timeline, listener/input spans where supported, and visual endpoint checks when available.",
+	"Browser engine, revision, trace categories, metric definitions, and whether spans are comparable to Chromium EventDispatch.",
+	"If Firefox/WebKit preserve timer ordering but not magnitudes, do not use their p50 values for Chromium thresholds; if timer ordering changes, reopen the causal story.",
+	"May cite causal portability across engines, not threshold equivalence.",
+	"browser scope",
+	"How should container and wp-env portability be separated?",
+	"The existing Columns fixture is not a host-versus-container isolation experiment.",
+	"Run the same compact row set inside the CI-like wp-env/container and on a comparable local host shape when possible.",
+	"Same post fixture and same input helper across host/container lanes; include a separate fixture-size control only after host/container comparison.",
+	"Docker resource limits, CPU/memory limits, storage backend, network mode, browser sandbox flags, wp-env config, and fixture hash.",
+	"If host/container ordering differs, split threshold and product claims by environment before adding new benchmark rows.",
+	"May set environment-specific thresholds only for environments with measured validation lanes.",
+	"environment gate",
+	"How should power and scheduler state affect validation?",
+	"It is threshold-critical metadata because CPU/QoS controls can move the same path between slow and fast bands.",
+	"Pair the compact row set with lightweight power/QoS metadata; pair suspicious rows with the CPU/QoS counter runset.",
+	"At minimum include one no-CPU slow row, one ordinary/utility fast row, one background/maintenance slow row, and one finite-burst decay row when investigating system drift.",
+	"Power mode, thermal pressure if available, process QoS, background CPU load, core/frequency/residency counters when available, and browser scheduler markers for suspicious rows.",
+	"If p50 movement correlates with power/QoS state, thresholds must be stratified or rerun under controlled state; do not average states together.",
+	"May explain drift as environment state only when metadata is present per sample or per run.",
+	"power gate",
+	"What can change before the runbook is executed?",
+	"Measurement semantics and low-risk source patches can proceed; absolute thresholds cannot.",
+	"Local source patches with behavior tests, artifact-scoping documentation, and compact diagnostic rows that do not assert new absolute thresholds.",
+	"No threshold-moving rows required before these local decisions, but record which local evidence each decision uses.",
+	"Patch identity, behavior-test result, benchmark helper semantics, and whether a claim is artifact, source, product, or threshold scoped.",
+	"If a change needs a numeric CI acceptance band, this runbook must run first.",
+	"May claim local causal or source-path evidence; may not claim portable p50/CV or move CI thresholds.",
+	"claim scope"
+)
+
+write_csv(
+	portability_validation_runbook_audit,
+	file.path(data_dir, "typing-delay-portability-validation-runbook-audit.csv")
+)
+
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Current Typing has 0ms extra post-setup wait; repeated CI-comparable and exact-spec runs did not show retained-q50 stability gains from adding wait.", "Whether a different CI image shifts absolute numbers, not whether this local knob can speed up current Typing.", "No more Typing startup-wait runs unless the CI image or spec shape changes.",
 	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "Pure getBlockPatterns readiness is rejected locally: it waited only 0.15ms, moved 0 resources before the timer, left about 25 resources inside measurement, and stayed in the slow band. getBlockPatterns plus a 100ms resource-quiet guard moved the same 19 setup resources as fixed 500/1000ms and matched the settled q50 band.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Do not switch to pure getBlockPatterns. Validate getBlockPatterns plus resource quiet with timeout/fallback telemetry against fixed 500ms and 1000ms in CI/mac/container.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "The compact follow-up closes the CI-facing boundary: ordinary locator.press is not a pressSequentially proxy, page.keyboard.press and per-key locator.focus both move short holds into the slow band, and pressSequentially belongs to the locator.type family.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings.",
-	"Low-risk selector guards", "product optimization", 4, 2, 4, "patch first row", "The source/prototype contract audit leaves pattern override as the only immediate local split: move the support-check useSelect behind the existing selected-block gate. Heading needs a shared capability signal; provider, inner-blocks, and BlockListItems need invalidation prototypes.", "Measured win after the pattern-override patch, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes.",
+	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row implemented", "The pattern-override selected-only patch is implemented locally: only the support-check useSelect moved behind the existing selected-block gate, ControlsWithStoreSubscription stayed gated, and focused unit coverage now covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths. Heading, provider, inner-blocks, BlockListItems, and store partitioning remain separate prototypes.", "Measured source-span and p50 win after rebuilding/running the pattern-override patch, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Measure the pattern-override listener-count collapse in a compact source-span run before moving to provider and inner-block prototypes.",
 	"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector notification audit closes the local blocker: a private useBlockSync side channel can preserve the only production in-tree direct consumer found, but the 23.2ms fanout win requires stopping the block-editor root update, which would make existing public isLastBlockChangePersistent useSelect consumers miss the persistence-only transition.", "The product/API policy for preserving or changing public selector notification semantics: selector/branch-aware @wordpress/data notifications, an explicit deprecation/compatibility path, or keeping the root notification.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until the public selector notification contract has a tested compatibility design.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
 	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "The trace-contract audit closes the local benchmark choice: ordinary waits, generic task/frame checkpoints, Playwright utility semantics, and browser-only scale are all bounded; exact browser state remains below this JS harness.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints.", "Trace matched raw-CDP ordinary waits, repeated Runtime.evaluate/Runtime.callFunctionOn windows, and trace-on captureSnapshot windows with browser/runtime instrumentation; do not add more JS-level delay rows.",
-	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "OS counter contract", "Counter-contract audit bounds the mechanism: near-key no-CPU tasks stay slow, finite CPU bursts are usually fast, continuous ordinary/utility CPU is fast, and background/maintenance CPU is slow; exact hardware/scheduler state remains below this JS harness.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Run the small discriminating CPU/QoS row set with OS scheduler, power, hardware-counter, and browser scheduler traces before adding more JS benchmark rows.",
+	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "OS counter contract", "Counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this JS harness.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows.",
 	"Calibrated presentation", "user-facing measurement", 5, 5, 4, "external calibration contract", "Presentation-calibration audit closes the internal-browser claim: the key-held 1000ms drop reaches RAF, Paint, DrawFrame, first changed trace screenshot, and localized typed-character pixels; post-EventDispatch tail is secondary.", "Compositor/display presentation timestamp and semantic first-visible-glyph recognition outside Chromium trace screenshots.", "Run compositor presentation traces, OCR/image recognition, or high-speed camera capture only if the report needs hardware-to-screen or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints.",
-	"Human/plugin workload", "workload coverage", 3, 4, 4, "replay contract", "Workload-contract audit bounds the current harness: the fixed-character large-post stressor is valid for artifact and source-boundary investigation, and native/empty/large controls prove Gutenberg-scale amplification, but it cannot rank realistic product latency alone.", "Which plugin-heavy, P2-like, long-session, composition, correction, selection, navigation, paste, transform, and structural-edit strata expose different hot owners or async tails.", "Record representative human/plugin-heavy histories and replay stratified samples with source spans, behavior assertions, and visual endpoints instead of relying on one averaged fixed-character curve.",
-	"Portability of absolute numbers", "methodology", 4, 3, 3, "validation contract", "Portability-validation audit separates causal portability from threshold portability: fresh/randomized/exact, dense n=50, container-fixture, and cross-browser timer-ordering runs preserve the main story locally, but absolute p50/CV remain one machine family.", "How compact score rows and key diagnostics move across CI runner classes, Playwright Chromium revisions, wp-env/container limits, OS/browser versions, and power/QoS state.", "Run the compact discriminating row set on CI and comparable mac/container/browser variants with environment metadata before changing thresholds or making absolute latency claims."
+	"Human/plugin workload", "workload coverage", 4, 4, 4, "replay contract", "Workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency.", "Actual recorded human/plugin-heavy histories and before/after replay results for P2-like, long-session, composition, correction, selection, paste, transform, structural-edit, media/pattern-heavy, and plugin side-effect strata.", "Build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims.",
+	"Portability of absolute numbers", "methodology", 4, 3, 3, "validation contract", "Portability runbook audit separates threshold lanes from causal lanes: use exact Playwright-bundled Chromium on CI plus a comparable local/container lane, compact mechanism rows, environment metadata, and expansion triggers before changing absolute p50/CV claims.", "How compact score rows and key diagnostics move across actual CI runner classes, Playwright Chromium revisions, wp-env/container limits, OS/browser versions, and power/QoS state.", "Run the portability runbook first: compact mechanism rows with per-run p50/CV/order/first-key metadata on CI Chromium and one comparable lane; expand only when ordering, variance, timer, or visual endpoint behavior changes."
 ) %>%
 	mutate(
 		category = factor(
@@ -15264,6 +15493,7 @@ open_question_next_instrumentation_matrix <- tribble(
 				"predicate validation",
 				"targeted follow-up only",
 				"patch first row",
+				"first row implemented",
 				"prototype first",
 				"research after local guards",
 				"secondary optimization",
@@ -15349,6 +15579,7 @@ save_plot(
 				"predicate validation" = 17,
 				"targeted follow-up only" = 13,
 				"patch first row" = 0,
+				"first row implemented" = 0,
 				"prototype first" = 15,
 				"research after local guards" = 3,
 				"secondary optimization" = 7,

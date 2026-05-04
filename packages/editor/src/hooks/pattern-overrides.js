@@ -34,30 +34,38 @@ const {
  *
  * @return {Component} Wrapped component.
  */
-const withPatternOverrideControls = createHigherOrderComponent(
+export const withPatternOverrideControls = createHigherOrderComponent(
 	( BlockEdit ) => ( props ) => {
-		const isSupportedBlock = useSelect(
-			( select ) => {
-				const { __experimentalBlockBindingsSupportedAttributes } =
-					select( blockEditorStore ).getSettings();
-				return !! __experimentalBlockBindingsSupportedAttributes?.[
-					props.name
-				];
-			},
-			[ props.name ]
-		);
-
 		return (
 			<>
 				<BlockEdit key="edit" { ...props } />
-				{ props.isSelected && isSupportedBlock && (
-					<ControlsWithStoreSubscription { ...props } />
+				{ props.isSelected && (
+					<SelectedPatternOverrideControls { ...props } />
 				) }
 			</>
 		);
 	},
 	'withPatternOverrideControls'
 );
+
+function SelectedPatternOverrideControls( props ) {
+	const isSupportedBlock = useSelect(
+		( select ) => {
+			const { __experimentalBlockBindingsSupportedAttributes } =
+				select( blockEditorStore ).getSettings();
+			return !! __experimentalBlockBindingsSupportedAttributes?.[
+				props.name
+			];
+		},
+		[ props.name ]
+	);
+
+	if ( ! isSupportedBlock ) {
+		return null;
+	}
+
+	return <ControlsWithStoreSubscription { ...props } />;
+}
 
 // Split into a separate component to avoid a store subscription
 // on every block.

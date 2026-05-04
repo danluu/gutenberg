@@ -850,6 +850,8 @@ The R script derives:
 -   `data/typing-delay-public-selector-notification-contract-audit.csv`:
     public-selector compatibility contract for the remaining
     `isLastBlockChangePersistent()` notification blocker.
+-   `data/typing-delay-pattern-override-first-patch-implementation-audit.csv`:
+    exact implementation and test contract for the first selector-guard patch.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -903,9 +905,15 @@ The R script derives:
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
+-   `data/typing-delay-workload-replay-schema-contract-audit.csv`: concrete
+    recording, replay, stratum, instrumentation, and acceptance schema for
+    representative workload replay.
 -   `data/typing-delay-portability-validation-contract-audit.csv`: decision
     contract for validating absolute p50/CV portability before threshold or
     absolute-latency changes.
+-   `data/typing-delay-portability-validation-runbook-audit.csv`: concrete
+    portability validation lanes, compact row families, metadata, expansion
+    triggers, and claim boundaries.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -920,6 +928,9 @@ The R script derives:
 -   `data/typing-delay-cpu-qos-counter-contract-audit.csv`: counter/trace
     contract for discriminating P-core/frequency, scheduler/QoS, cache,
     timer-wakeup, and browser-scheduler explanations.
+-   `data/typing-delay-cpu-qos-counter-runset-contract-audit.csv`: exact
+    CPU/QoS counter row set, required per-sample counters, and acceptance gates
+    for the remaining hardware/scheduler mechanism.
 -   `data/typing-delay-wall-clock-fixed-sample-*.csv`: audit of fixed-sample
     delay sweeps versus equal wall-clock sampling budgets.
 
@@ -4091,6 +4102,24 @@ existing Gutenberg source spans. A positive result should explain both the
 continuous QoS split and the finite-burst decay; explaining only one of those is
 not enough to close the mechanism.
 
+The deeper runset contract makes that small set explicit:
+
+| Counter row set | Required role | Current local result | Acceptance gate |
+| --------------- | ------------- | -------------------- | --------------- |
+| Near-key no-CPU tasks | slow negative control for callback, delayed-task, worker-lifetime, IPC-shape, and idle-child explanations | median p50 `24.3ms`, min-max `22.2-24.6ms` | must stay slow while fast CPU rows show a counter delta; if these become fast with the same counters, the CPU-state explanation is too narrow |
+| Continuous ordinary/utility CPU | fast policy-visible CPU control | ordinary/utility median p50 `9.7ms`; `taskpolicy -c utility` `9.4ms`; `taskpolicy -l/-t` tiers `9.2-9.7ms` | must share a measurable OS or browser-scheduler state not present in slow no-CPU and background/maintenance rows |
+| Continuous background/maintenance CPU | slow policy contrast despite real CPU consumption | median p50 `24.2ms`, min-max `24.0-24.7ms` | if CPU is consumed but the fast rows' residency, frequency, scheduler, or browser-task state is absent, the policy-sensitive mechanism is supported |
+| Finite CPU duration/proximity rows | decay check for power, scheduler, cache, or wakeup state | two-term finite-burst model has `R^2 = 0.71` | a mechanism must explain both the continuous QoS split and finite-burst decay, not just one side |
+| Matched Chromium scheduler trace rows | OS-vs-browser split | current visual traces do not include this scheduler/runtime state | claim a browser-scheduler mechanism only if OS frequency/residency/QoS counters do not explain the split and Chromium queue/priority/task boundaries do |
+
+Each retained sample in that runset needs per-sample alignment, not only class
+medians: run id, sample index, throwaway/retained status, key timing,
+`EventDispatch` timing, helper work timing, helper and renderer QoS, core IDs,
+frequency/residency, power or thermal metadata, browser scheduler slices, source
+span ids, and environment metadata. Without that per-sample record, the honest
+claim remains the current one: the benchmark has a narrowed CPU/QoS boundary, not
+an identified hardware or scheduler cause.
+
 The practical decision is unchanged but sharper. The system artifact should be
 studied with OS counters first. Product optimization should continue through
 selector/subscriber prototypes and workload replay, because the system state
@@ -4952,11 +4981,11 @@ audited marker window. Heading remains semantically low risk, but it is not a
 simple local selector guard. After this source audit, the conservative
 source-feasible envelope is `8.2ms`, or `94.2%` of the earlier `8.7ms`
 conservative estimate; the missing `0.5ms` is the heading selector until a
-shared/global anchor-capability signal exists. I did not find a focused web unit
-test for either source-site behavior in this audit; a patch should add selected
-supported/unsupported pattern override coverage and web coverage for
-`generateAnchors` plus table-of-contents insertion/removal before changing the
-heading path.
+shared/global anchor-capability signal exists. At the time of that audit there
+was no focused web unit test for either source-site behavior. The
+pattern-override patch now adds the focused HOC coverage; the heading path still
+needs web coverage for `generateAnchors` plus table-of-contents
+insertion/removal before it should change.
 
 I then re-ranked the current selector-guard action stack after that source
 feasibility correction. This is the current implementation order, not the older
@@ -4966,45 +4995,45 @@ feasibility correction. This is the current implementation order, not the older
 
 | Action | Current p50 scope | Counted source-feasible p50 | Current status |
 | ------ | ----------------: | --------------------------: | -------------- |
-| Pattern override selected-only split | `3.6ms` | `3.6ms` | implement first |
+| Pattern override selected-only split | `3.6ms` | `3.6ms` | implemented locally; measure source-span collapse |
 | Non-edited `BlockListBlockProvider` guard | `3.5ms` | `3.5ms` | prototype local invalidation |
 | `useInnerBlocksProps` structural guard | `1.1ms` | `1.1ms` | prototype local invalidation |
 | Heading shared capability signal | `0.5ms` | `0.0ms` | not counted until a shared/global signal exists |
 | `BlockListItems` structural/selection guard | `5.3ms` | `0.0ms` | not counted until behavior validation passes |
 
-This closes a small but important recommendation gap. The next local patch is
-not "pattern override plus heading"; it is pattern override first, with a test
-seam. The local guard envelope then comes from non-edited block-provider and
-inner-blocks invalidation prototypes. Heading is a shared-signal design problem,
-and `BlockListItems` is still a validation prototype even though both are real
+This closes a small but important recommendation gap. The first local patch is
+not "pattern override plus heading"; it is the pattern-override selected-only
+split. That patch is now implemented locally with a focused test seam. The local
+guard envelope then comes from non-edited block-provider and inner-blocks
+invalidation prototypes. Heading is a shared-signal design problem, and
+`BlockListItems` is still a validation prototype even though both are real
 ordinary-text opportunities.
 
-I then made the first-patch test gap explicit. The pattern-override HOC is
-currently registered as a side-effect-only filter from
-`packages/editor/src/hooks/index.js`; `withPatternOverrideControls` itself is
-not exported. That does not invalidate the patch, but it means the clean first
-patch should add a small test seam: export the HOC or split the selected-block
-support check into a focused component/helper that can be rendered in a unit
-test. The existing reducer tests cover pattern override editing modes, and
-there are toolbar/dropdown-adjacent tests, but I did not find a focused web test
-that asserts the pattern-override BlockEdit filter behavior.
+I then made the first-patch test gap explicit. Before this change, the
+pattern-override HOC was registered as a side-effect-only filter from
+`packages/editor/src/hooks/index.js`; `withPatternOverrideControls` itself was
+not exported. The patch adds the small test seam by exporting the HOC while
+leaving the same filter registration in place. The existing reducer tests cover
+pattern override editing modes, and there are toolbar/dropdown-adjacent tests;
+the new focused web unit test now asserts the pattern-override BlockEdit filter
+behavior directly.
 
 ![First patch test readiness](figures/141-first-patch-test-readiness.png)
 
 | Candidate | Current p50 scope | Test/prototype burden | Missing test surface | Recommended next |
 | --------- | ----------------: | --------------------- | -------------------- | ---------------- |
-| Pattern override selected-only split | `3.6ms` / `1,436` listeners | small export/test seam | selected supported block, selected unsupported block, unselected supported block, settings support change, synced pattern controls, unsynced reset control | Implement first with focused unit coverage. |
+| Pattern override selected-only split | `3.6ms` / `1,436` listeners | export/test seam added | selected supported block, selected unsupported block, unselected supported block, selection transition, selected settings support change, unsynced reset control | Measure source-span collapse after rebuild. |
 | Heading shared anchor capability | `0.5ms` / `202` listeners | broad tests plus shared signal design | web tests for `generateAnchors` setting changes and table-of-contents insertion/removal | Design signal before optimizing. |
 | Non-edited `BlockListBlockProvider` guard | `3.5ms` / `1,436` listeners | local invalidation prototype | edited block update; non-edited selection, variation, movement/removal, overlay, template mode, block identity | Prototype after pattern override. |
 | `useInnerBlocksProps` structural guard | `1.1ms` / `580` listeners | local invalidation prototype | text insertion; child insert/remove/reorder; zoom; template lock; editing mode; layout/root changes | Prototype after pattern override. |
 | `BlockListItems` structural/selection guard | `5.3ms` / `580` listeners | validate before counting | selection, visible list, appender, template lock, zoom, insert/remove/reorder, multi-select | Validate before counting a win. |
 
 This closes the immediate "is the first patch actually ready?" question. It is
-ready as a small patch only if the patch includes its own test seam. The expected
-local scope is `3.6ms`, which is `43.9%` of the `8.2ms` source-feasible local
-guard envelope. That is smaller than the whole persistence marker fanout, but it
-is the only high-impact row that is both source-feasible and does not require a
-new invalidation contract.
+ready as a small patch because it now includes its own test seam and focused
+behavior coverage. The expected local scope is `3.6ms`, which is `43.9%` of the
+`8.2ms` source-feasible local guard envelope. That is smaller than the whole
+persistence marker fanout, but it is the only high-impact row that is both
+source-feasible and does not require a new invalidation contract.
 
 The source-level patch contract is now explicit. The derived audit is in
 `data/typing-delay-selector-guard-prototype-contract-audit.csv`; the important
@@ -5012,7 +5041,7 @@ engineering split is:
 
 | Candidate | Why it can or cannot skip ordinary text updates | Required contract | Decision |
 | --------- | ----------------------------------------------- | ----------------- | -------- |
-| Pattern override selected-only split | `pattern-overrides.js` already renders controls only when `props.isSelected`, but the support-check `useSelect` runs before that gate for every `BlockEdit` wrapper. A newly selected block can read current settings on mount. | Move the support-check `useSelect` into a selected-only child, then mount `ControlsWithStoreSubscription` only for selected supported blocks; export the HOC or helper for focused tests. | Implement first. |
+| Pattern override selected-only split | `pattern-overrides.js` already rendered controls only when `props.isSelected`, but the support-check `useSelect` ran before that gate for every `BlockEdit` wrapper. A newly selected block can read current settings on mount. | The patch moves the support-check `useSelect` into a selected-only child, then mounts `ControlsWithStoreSubscription` only for selected supported blocks; the HOC is exported for focused tests. | Implemented locally; measure next. |
 | Heading shared anchor capability | The selector reads global `generateAnchors` settings and `core/table-of-contents` count; every heading must react to those global changes. | Add or reuse a shared capability signal before removing per-heading subscriptions, with web tests for setting toggles and table-of-contents insertion/removal. | Do not include in the first patch. |
 | Non-edited `BlockListBlockProvider` guard | Only the edited block needs the changed text attributes, but the selector also owns selection, variation, movement, overlay, section, settings, and identity props. | Prototype a memoized/block-scoped selected-props boundary; component memo alone is not enough because `useSelect` still wakes on the store-root change. | Prototype after pattern override. |
 | `useInnerBlocksProps` structural guard | Text attributes do not affect root/drop-zone/layout props unless block name, editing mode, parent/root, template lock, section root, block settings, layout, or zoom changes. | Prototype a root/order/settings version boundary or memoized selector output. | Prototype after pattern override. |
@@ -5023,9 +5052,50 @@ patch sequence. The first patch is just the pattern override support check. The
 acceptance test is not a lower p50 by itself; it is that selected supported and
 unsupported blocks behave correctly, unselected blocks do not mount the support
 subscription, settings changes still update while selected, and synced/unsynced
-pattern controls keep their current behavior. The measured p50 win should be
-checked after that patch, but the source contract is already strong enough to
-write the patch.
+pattern controls keep their current behavior. The patch now satisfies that
+behavior contract locally; the measured p50/source-span win should be checked
+after rebuilding the performance assets.
+
+The first-patch implementation audit makes the split exact. Before this patch,
+`packages/editor/src/hooks/pattern-overrides.js` had
+`withPatternOverrideControls` run the support-check `useSelect` for every
+`BlockEdit` wrapper:
+`getSettings().__experimentalBlockBindingsSupportedAttributes[ props.name ]`.
+Only after that check did it apply the already-selected visible condition,
+`props.isSelected && isSupportedBlock`. `ControlsWithStoreSubscription` was
+already behind that visible condition and already existed to avoid mounting its
+editor-store subscription on every block.
+
+I implemented that first patch locally. `withPatternOverrideControls` is now a
+named export for testing, and the outer HOC renders the support-check child only
+when `props.isSelected`. The selected-only child reads the current
+`__experimentalBlockBindingsSupportedAttributes` setting, returns `null` for
+unsupported selected blocks, and mounts `ControlsWithStoreSubscription` only for
+selected supported blocks.
+
+The patch contract is therefore narrow:
+
+| Implementation question | Answer | Required contract |
+| ----------------------- | ------ | ----------------- |
+| What exactly moved? | only the support-check `useSelect` | the outer HOC mounts a selected-only child only when `props.isSelected`; that child runs the support check and returns `ControlsWithStoreSubscription` only for supported selected blocks |
+| What stayed gated? | `ControlsWithStoreSubscription` | editor-store, block-editing-mode, pattern-source, synced/unsynced pattern, and metadata-binding reads remain inside the selected/supported path |
+| Why is this safe for unselected blocks? | unselected blocks already render no pattern override UI | when a block later becomes selected, it mounts the child and reads current settings then; there is no unselected subscription just to precompute support |
+| How are settings changes handled? | live only while selected | while selected, the support-check `useSelect` remains subscribed and dependent on `props.name`; settings or block-name changes recompute the support result |
+| What is the least invasive test seam? | named export without changing filter registration | export the HOC for `packages/editor/src/hooks/test/pattern-overrides.js`, while keeping the existing `addFilter( 'editor.BlockEdit', ... )` side effect |
+| What is not part of this patch? | every other selector row | do not bundle heading, `BlockListBlockProvider`, `useInnerBlocksProps`, `BlockListItems`, or store-partition changes |
+| How should success be measured? | behavior first, then source spans | unit coverage now passes; after rebuilding performance assets, rerun the compact source-span measurement and require the pattern-override support-HOC listener count to collapse to selected-block scale; use aggregate p50 as confirmation |
+
+This removes the last ambiguity from the "low-risk selector guards" row. It is
+not a cache-by-block-name patch and not a settings-version invalidation design.
+It is a mount-boundary patch: do not mount the support-check selector until the
+block is selected. The focused unit test now covers six cases: unselected blocks
+do not call `useSelect`, selected unsupported blocks do not mount the
+store-backed controls path, selected supported blocks still show pattern
+override controls, selection transition reads current settings, selected support
+settings can update, and the unsynced reset control still stays behind the
+selected supported path. The remaining uncertainty is empirical, not
+architectural: how much of the audited `3.6ms` / `1,436` listener-call scope
+disappears in a rebuilt source-span run.
 
 I then pushed on the largest uncounted selector row: `BlockListItems`. The source
 audit makes the split sharper. `BlockListItems` does not read paragraph content
@@ -7576,6 +7646,44 @@ editing, composition, correction, selection, navigation, or plugin-heavy
 workloads. Those need recorded histories and replayed samples, not another
 single averaged fixed-delay curve.
 
+The deeper replay-schema contract turns that into an implementation requirement.
+The unit of replay must be the editing event, not a delay bucket. Each event
+needs chronology and context: event type, key or text delta, input type,
+composition state, repeat state, inter-event gap, hold time if available, target
+role, clientId, block name, selection state, and pre/post text or structural
+delta hashes. The document and session are also part of the sample: editor kind,
+post type, block count and block-type histogram, nested depth, media/pattern
+counts, selected-block context, plugin/theme set, viewport, browser revision,
+session age, autosave/REST markers, and host/container metadata.
+
+The minimum useful strata are no longer ambiguous:
+
+| Replay surface | Required contract |
+| -------------- | ----------------- |
+| Ordinary text bursts | replay human-like complete keypress/input semantics by default; keep held-key delay only as an artifact control |
+| Correction/backspace | preserve text delta, selection/caret before and after, undo-level behavior, and source spans |
+| IME/composition | record composition boundaries and inputType; report separately from ordinary key bursts |
+| Selection/navigation | assert caret, selected block ids, focus, and visible block-list state |
+| Paste/transform | record structural deltas, inserted block types, transformed block ids, and resource/network side effects |
+| Block insert/remove/reorder | assert serialized block-tree hash, appender visibility, template lock, and selection recovery |
+| Media/pattern-heavy editing | record media/pattern counts, REST/resource markers, and preview/render endpoints |
+| Long-session idle return | preserve session age, idle gap, autosave state, and pending async work markers |
+| Plugin-heavy/P2-like side effects | record plugin/theme set, plugin-visible state changes, network/resource markers, and owner spans |
+
+Every replay sample should attach the same source attribution that made the
+fixed stressor useful: RichText spans, Redux/useSelect owner metadata,
+EventDispatch slices, async queue markers, and at least one visual or behavior
+endpoint. A replay result is invalid if behavior assertions fail, even if
+latency improves. A product claim also has to be per-stratum: a selector patch
+that improves fixed-character insertion but regresses selection, paste,
+composition, or plugin side effects is not a product-latency win that can be
+hidden by a single averaged p50.
+
+This raises the workload row from "unknown representative workload" to a
+specific schema. The remaining missing evidence is actual recorded or generated
+histories that satisfy the schema, plus before/after replay results for the
+strata relevant to a given patch.
+
 ### Portability Validation Contract
 
 The remaining portability question is not whether the local runs found the
@@ -7610,6 +7718,24 @@ does not justify moving CI thresholds or making absolute latency claims until
 the compact validation set has run across CI/mac/container/browser variants with
 environment metadata.
 
+The deeper validation runbook turns that into a threshold gate rather than a
+generic warning:
+
+| Validation surface | Required contract | Claim boundary |
+| ------------------ | ----------------- | -------------- |
+| Threshold lanes | run exact Playwright-bundled Chromium on CI plus at least one comparable local host or CI-like wp-env/container lane; Firefox/WebKit are causal lanes, not threshold lanes | absolute thresholds can move only after CI Chromium and a comparable lane preserve qualitative ordering and bound p50/CV movement |
+| Compact score rows | include current CI held key, tap/complete-keypress, `990ms` / `1000ms` / `1010ms` / `1300ms` held-key boundary, `50ms` / `100ms` hold controls, pattern `500ms` / `1000ms` readiness rows, runtime checkpoint controls, CPU/QoS controls, and visual endpoint controls | qualitative portability requires matching row ordering and regime labels; threshold portability needs the lane comparison too |
+| Startup/setup confounds | repeat exact-spec randomized blocks on CI with fresh saved/reopened drafts, first-three-key distributions, throwaway policy, resource counts moved before first key, and suite elapsed time | local no-extra-wait semantics can stand if ordering holds; local absolute p50 cannot become a CI threshold |
+| Browser coverage | validate threshold numbers on Playwright-bundled Chromium; use Firefox/WebKit timer-timeline diagnostics only for timer ordering and broad mechanism direction | cross-engine agreement is causal evidence, not Chrome threshold equivalence |
+| Container/wp-env coverage | run the same fixture and input helper inside the CI-like wp-env/container and, when possible, on a comparable host lane | host/container differences require environment-specific threshold or product claims |
+| Power and scheduler state | record power mode, thermal pressure if available, process QoS, background load, and suspicious-row OS/browser counters | p50 movement tied to power/QoS state must be stratified or rerun under controlled state, not averaged into one threshold |
+
+The expansion rule is also explicit. Start with the compact rows. Expand to a
+dense sweep only when a compact row changes qualitative band, variance class,
+timer ordering, or visual-endpoint direction. Before that runbook exists, the
+report can make local causal, source-path, and artifact-scope claims; it still
+cannot make portable p50/CV claims or move CI thresholds.
+
 ### Remaining Open Questions Matrix
 
 At this point, more runs of the same JS-level benchmark are not all equally
@@ -7626,14 +7752,14 @@ The high-level split is:
 | Typing startup wait | locally closed; current Typing has no extra post-setup wait and added waits do not improve retained q50 stability | no more local startup-wait runs unless CI/spec shape changes |
 | Pattern-loading wait | pure `getBlockPatterns` readiness is locally rejected; it was already true, waited only `0.15ms`, moved `0` resources before the timer, and stayed in the slow band. `getBlockPatterns` plus a `100ms` resource-quiet guard moved the same `19` setup resources as fixed `500ms` / `1000ms` and matched the settled q50 band | do not switch to pure `getBlockPatterns`; validate `getBlockPatterns` plus resource quiet with timeout/fallback telemetry against fixed `500ms` and `1000ms` in CI/mac/container |
 | Input API phase boundary | locally closed for the CI choice; `pressSequentially()` belongs with `locator.type()`, ordinary `locator.press()` is a checkpoint control, and the compact `page.keyboard.press()` / per-key locator-focus runs show the remaining split is action-order/runtime-state, not hold duration | no more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings |
-| Low-risk selector guards | bounded enough to patch the first row; source/prototype contract audit says pattern override is the only immediate local split, while heading, provider, inner-blocks, and `BlockListItems` need shared-signal or invalidation prototypes | implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes |
+| Low-risk selector guards | the pattern-override selected-only patch is implemented locally: only the support-check `useSelect` moved behind the existing selected-block gate, `ControlsWithStoreSubscription` stayed gated, and focused unit coverage now covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths; heading, provider, inner-blocks, `BlockListItems`, and store partitioning remain separate prototypes | measure the pattern-override listener-count collapse in a compact source-span run before moving to provider and inner-block prototypes |
 | Store subscriber partition | public-selector notification audit closes the local blocker: a private `useBlockSync` side channel can preserve the only production in-tree direct consumer found, but the `23.2ms` fanout win requires stopping the block-editor root update, which would make existing public `isLastBlockChangePersistent()` `useSelect` consumers miss the persistence-only transition | research after local guards; prototype the side channel only as a behavior seam, and do not claim the fanout win until the public selector notification contract has a tested compatibility design |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
 | Chromium runtime checkpoint | closed for benchmark-level CI choice; trace-contract audit says ordinary waits, generic task/frame checkpoints, Playwright utility semantics, and browser-only scale are all bounded; exact browser state remains open below this harness | browser/runtime tracing around matched raw-CDP wait, repeated `Runtime.evaluate` / `Runtime.callFunctionOn`, and trace-on `captureSnapshot` windows; do not add more JS-level delay rows |
-| CPU/QoS mechanism | counter-contract audit bounds the mechanism: near-key no-CPU tasks stay slow, finite CPU bursts are usually fast, continuous ordinary/utility CPU is fast, and background/maintenance CPU is slow; exact hardware/scheduler state remains below this harness | run the small discriminating CPU/QoS row set with OS scheduler, power, hardware-counter, and browser scheduler traces before adding more JS benchmark rows |
+| CPU/QoS mechanism | counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this harness | run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows |
 | Calibrated presentation | presentation-calibration audit closes the internal-browser claim: the key-held `1000ms` drop reaches RAF, `Paint`, `DrawFrame`, first changed trace screenshot, and localized typed-character pixels; post-`EventDispatch` tail is secondary | compositor presentation traces, OCR/image recognition, or high-speed camera only if the report needs hardware-to-screen or semantic glyph timing |
-| Human/plugin workload | workload-contract audit bounds the current harness: the fixed-character large-post stressor is valid for artifact/source-boundary investigation and native/empty/large controls prove Gutenberg-scale amplification, but it cannot rank realistic product latency alone | record representative human/plugin-heavy histories and replay stratified samples with source spans, behavior assertions, and visual endpoints |
-| Portability of absolute numbers | portability-validation audit separates causal portability from threshold portability: local fresh/randomized/exact, dense `n=50`, container-fixture, and cross-browser timer-ordering checks preserve the story, but p50/CV remain one machine family | compact discriminating row set on CI/mac/container/browser variants with environment metadata before thresholds |
+| Human/plugin workload | workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency | build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims |
+| Portability of absolute numbers | portability runbook audit separates threshold lanes from causal lanes: use exact Playwright-bundled Chromium on CI plus a comparable local/container lane, compact mechanism rows, environment metadata, and expansion triggers before changing absolute p50/CV claims | run the portability runbook first: compact mechanism rows with per-run p50/CV/order/first-key metadata on CI Chromium and one comparable lane; expand only when ordering, variance, timer, or visual endpoint behavior changes |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
