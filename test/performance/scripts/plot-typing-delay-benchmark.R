@@ -6977,6 +6977,7 @@ if (file.exists(runtime_repeat_summary_path)) {
 }
 
 input_path_summary_path <- file.path(data_dir, "typing-delay-input-path-summary.csv")
+cdp_long_gap_summary_path <- file.path(data_dir, "typing-delay-cdp-long-gap-summary.csv")
 wait_vs_checkpoint_summary_path <- file.path(data_dir, "typing-delay-wait-vs-checkpoint-summary.csv")
 if (file.exists(input_path_summary_path) && file.exists(runtime_repeat_summary_path)) {
 	explicit_wait_summary <- read_csv(input_path_summary_path, show_col_types = FALSE) %>%
@@ -6993,6 +6994,24 @@ if (file.exists(input_path_summary_path) && file.exists(runtime_repeat_summary_p
 			source_run_id = run_id,
 			json_path
 		)
+	if (file.exists(cdp_long_gap_summary_path)) {
+		explicit_wait_summary <- bind_rows(
+			explicit_wait_summary,
+			read_csv(cdp_long_gap_summary_path, show_col_types = FALSE) %>%
+				transmute(
+					mechanism = "explicit post-keyup wait only",
+					mechanism_order = 1,
+					point_label = paste0("wait ", requested_post_keyup_gap_ms, "ms"),
+					n,
+					actual_post_keyup_gap_p50_ms,
+					keypress_p10_ms,
+					keypress_p50_ms,
+					keypress_p90_ms,
+					source_run_id = run_id,
+					json_path
+				)
+		)
+	}
 
 	runtime_checkpoint_summary <- read_csv(runtime_repeat_summary_path, show_col_types = FALSE) %>%
 		filter(repeat_mode %in% c("Runtime.evaluate", "Runtime.callFunctionOn")) %>%
@@ -7049,11 +7068,11 @@ if (file.exists(input_path_summary_path) && file.exists(runtime_repeat_summary_p
 				size = 2.8,
 				show.legend = FALSE
 			) +
-			scale_x_log10(breaks = c(3, 5, 10, 20, 40, 100, 300, 1000)) +
+			scale_x_log10(breaks = c(3, 5, 10, 20, 40, 100, 300, 1000, 3000, 5000)) +
 			scale_color_brewer(type = "qual", palette = "Set1") +
 			labs(
 				title = "Waiting and runtime checkpoints are not equivalent",
-				subtitle = "Raw CDP 1300ms held-key input; explicit waits stay slow while runtime checkpoints shrink the next keypress slice",
+				subtitle = "Raw CDP 1300ms held-key input; explicit waits through 5s stay slow while runtime checkpoints shrink the next keypress slice",
 				x = "Observed previous keyup to next keydown, p50 (ms, log scale)",
 				y = "keypress EventDispatch duration, p50 (ms)",
 				color = "Between-key mechanism",

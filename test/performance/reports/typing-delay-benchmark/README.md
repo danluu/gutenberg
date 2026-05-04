@@ -145,8 +145,9 @@ The short version:
     browser/runtime checkpoints between keys can reproduce and exceed it. A
     combined decoupling plot makes the important negative control explicit:
     raw CDP plus ordinary post-keyup waits stays slow from about `4ms` through
-    `1008ms`, while runtime checkpoints become fast at much shorter observed
-    gaps.
+    `5008ms`, while runtime checkpoints become fast at much shorter observed
+    gaps. A `5s` ordinary sleep is still not equivalent to crossing the
+    renderer/runtime checkpoints inserted by the automation path.
 -   A native `contenteditable` control has the same direction but not the same
     scale. Repeating the same runtime checkpoints moves native `keypress` p50 by
     only about `0.3-0.4ms`, while the Gutenberg large-post path moves by multiple
@@ -653,6 +654,8 @@ The R script derives:
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
     that joins raw-CDP explicit post-keyup waits with the runtime-checkpoint
     dose response.
+-   `data/typing-delay-cdp-long-gap-*.csv`: focused raw-CDP ordinary-wait
+    controls at `2000ms` and `5000ms` post-keyup gaps.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -4351,6 +4354,12 @@ CDP explicit-gap controls answer that. They keep the same raw
 between-key runtime evaluation. I combined those controls with the runtime-repeat
 grid in one plot.
 
+I then extended the ordinary-wait side of this comparison with two focused raw
+CDP runs at `2000ms` and `5000ms` post-keyup waits. They use the same
+`1300ms` held-key input path, 12 retained samples plus one throwaway, and
+Playwright trace snapshots disabled. This tests the stronger "maybe the browser
+just needs longer to rest" version of the theory.
+
 ![Explicit wait vs runtime checkpoints](figures/25i-explicit-wait-vs-runtime-checkpoints.png)
 
 Selected p50s:
@@ -4361,6 +4370,8 @@ Selected p50s:
 | explicit post-keyup wait only | `wait 16ms` | `21.5ms` | `23.1ms` |
 | explicit post-keyup wait only | `wait 33ms` | `38.8ms` | `22.5ms` |
 | explicit post-keyup wait only | `wait 1000ms` | `1007.8ms` | `23.9ms` |
+| explicit post-keyup wait only | `wait 2000ms` | `2007.6ms` | `23.5ms` |
+| explicit post-keyup wait only | `wait 5000ms` | `5008.5ms` | `23.6ms` |
 | `Runtime.evaluate` checkpoints | `x1` | `4.3ms` | `19.7ms` |
 | `Runtime.evaluate` checkpoints | `x7` | `12.0ms` | `15.4ms` |
 | `Runtime.evaluate` checkpoints | `x17` | `18.4ms` | `13.2ms` |
@@ -4369,19 +4380,19 @@ Selected p50s:
 | `Runtime.callFunctionOn` checkpoints | `x17` | `19.2ms` | `13.4ms` |
 
 This is the cleanest negative control for the "post-keyup gap" explanation. If
-elapsed gap were sufficient, raw CDP plus `16ms`, `33ms`, or `1000ms` of ordinary
-waiting would move toward the low band. It does not; those rows stay around
-`22-24ms`. Runtime checkpoints move the next keypress lower at comparable or
-shorter observed gaps. The difference is therefore not elapsed time after
-`keyup`; it is crossing renderer/runtime/protocol checkpoints inserted by the
-automation path.
+elapsed gap were sufficient, raw CDP plus `16ms`, `33ms`, `1000ms`, `2000ms`,
+or `5000ms` of ordinary waiting would move toward the low band. It does not;
+those rows stay around `22-24ms`. Runtime checkpoints move the next keypress
+lower at comparable or much shorter observed gaps. The difference is therefore
+not elapsed time after `keyup`; it is crossing renderer/runtime/protocol
+checkpoints inserted by the automation path.
 
 That does not identify the exact Chromium internal state that changes at those
 checkpoints. It does remove a class of bad explanations: no amount of ordinary
-sleep in this raw-CDP path reproduced the fast path, so the fast path is not
-"the browser had time to rest" or "queued JavaScript drained during the gap."
-The remaining mechanism is browser/runtime scheduling below this benchmark's
-ordinary DOM and Gutenberg instrumentation.
+sleep in this raw-CDP path reproduced the fast path, even after `5s`, so the fast
+path is not "the browser had time to rest" or "queued JavaScript drained during
+the gap." The remaining mechanism is browser/runtime scheduling below this
+benchmark's ordinary DOM and Gutenberg instrumentation.
 
 ### Native Runtime Repeat Control
 
@@ -5318,6 +5329,8 @@ The key runs used in this report were:
 -   `runtime_repeat_*`: trace-off `1300ms` raw-CDP held-key traces repeating direct
     CDP `Runtime.evaluate` and `Runtime.callFunctionOn` checkpoints between
     characters at repeat counts `1`, `3`, `7`, `11`, and `17`.
+-   `cdp_long_gap_2000` and `cdp_long_gap_5000`: trace-off `1300ms` raw-CDP
+    held-key traces with ordinary post-keyup sleeps of `2000ms` and `5000ms`.
 -   `native_runtime_repeat_*`: the same trace-off runtime-repeat grid in the
     native `contenteditable` scenario.
 -   `marker_normal_targeted`: normal marker action at `990ms`, `1000ms`,
@@ -5590,6 +5603,12 @@ The compact `1510-1550ms` trough recheck CSVs were extracted with:
 
 ```sh
 Rscript test/performance/scripts/extract-typing-delay-1500-dip.R
+```
+
+The compact long raw-CDP ordinary-wait CSVs were extracted with:
+
+```sh
+Rscript test/performance/scripts/extract-typing-delay-cdp-long-gap.R
 ```
 
 ## References
