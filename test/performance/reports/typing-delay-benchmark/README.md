@@ -734,6 +734,10 @@ The R script derives:
     source-audit matrix classifying whether each hot subscribed state category
     is directly relevant, indirectly relevant, probably unchanged, or not read
     during ordinary paragraph text insertion.
+-   `data/typing-delay-redux-listener-text-update-opportunity*.csv`: source
+    triage estimating which audited Redux-listener fanout is likely skippable
+    for ordinary text-only updates, versus selection/tree state that still needs
+    validation.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
     control joining the action summaries with the exact store-root state effect
     for normal marker, raw unknown action, and mark-next controls.
@@ -3603,6 +3607,35 @@ thousands of store-level subscribers whose selected state cannot change for a
 text-only attribute update, or to split text-update-sensitive state from
 block-tree/global invalidations.
 
+I then turned that source audit into a conservative opportunity estimate. This
+is not a projected benchmark win; it is a triage of the normal marker-before-input
+fanout by whether an ordinary paragraph text update should be able to affect the
+selector's result.
+
+![Redux listener text-update opportunity](figures/122-redux-listener-text-update-opportunity.png)
+
+The audited top owner rows sum to `15.3ms` p50 and `4,497` listener calls in the
+normal marker-before-input window. Of that, `8.7ms` and `3,655` listener calls
+are in rows that are either clearly not text-content work or are
+`BlockListBlockProvider` instances other than the edited block. The large
+remaining validation bucket is `BlockListItems` at `5.3ms` / `580` calls: it does
+not read content attributes, but it does read selection, visible block list, and
+block-tree/editor state, so it needs a more careful prototype before calling it
+avoidable.
+
+| Triage bucket | p50 duration | Listener calls | Estimated skippable p50 |
+| ------------- | -----------: | -------------: | ----------------------: |
+| likely skippable for text-only edit | `5.2ms` | `2,219` | `5.2ms` |
+| mostly skippable except edited block | `3.5ms` | `1,437` | `3.5ms` |
+| needs selection/tree validation | `5.3ms` | `580` | `0.0ms` |
+| unknown/mixed | `1.3ms` | `261` | `0.0ms` |
+
+The practical next prototype is therefore sharper than "make useSelect faster":
+avoid waking per-`BlockEdit` pattern-override subscriptions on text edits; avoid
+waking non-edited `BlockListBlockProvider` instances for attribute-only changes;
+then separately test whether `BlockListItems` can be guarded by block-order and
+selection-version checks.
+
 The next source check makes the mismatch exact. The marker action itself is just
 `{ type: 'MARK_LAST_CHANGE_AS_PERSISTENT' }`
 (`packages/block-editor/src/store/actions.js:1638-1640`). In
@@ -5475,9 +5508,13 @@ subscriptions. In the normal marker-before-input window, the top audited sites
 account for `14.0ms` of `15.3ms` source-mapped listener time and thousands of
 listener calls, but their per-listener cost is only `~2-9us`. That means the
 Gutenberg part of the artifact is a coarse invalidation surface, not a single
-slow selector body. The remaining product question is which of those broad
-subscriptions can be made less sensitive to ordinary text updates without
-breaking block-list and selection behavior.
+slow selector body. The new text-update opportunity triage quantifies the next
+product question: in the audited marker fanout, `8.7ms` p50 / `3,655` listener
+calls are likely skippable for ordinary text-only edits, while `5.3ms` /
+`580` `BlockListItems` calls remain a selection/tree-validation target rather
+than an obvious removal. The remaining product question is now which invalidation
+guard or store partition can skip those broad subscriptions without breaking
+block-list and selection behavior.
 
 The new selector-dependency matrix answers that one level deeper. The hottest
 per-`BlockEdit` and per-rendered-block rows line up with the fixture's `1,437`

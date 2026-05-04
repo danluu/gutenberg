@@ -9850,6 +9850,101 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		width = 12,
 		height = 6.8
 	)
+
+	redux_owner_text_update_opportunity <- redux_owner_source_audit %>%
+		filter(source_site %in% redux_owner_source_audit_sites$source_site | source_site == "Other mapped owners") %>%
+		mutate(
+			text_update_bucket = case_when(
+				source_site == "BlockListItems useSelect" ~ "needs selection/tree validation",
+				source_site == "BlockListBlockProvider useSelect" ~ "mostly skippable except edited block",
+				source_site == "Other mapped owners" ~ "unknown/mixed",
+				TRUE ~ "likely skippable for text-only edit"
+			),
+			estimated_skippable_listener_count_p50 = case_when(
+				source_site == "BlockListBlockProvider useSelect" ~ pmax(marker_before_input_listener_count_p50 - 1, 0),
+				text_update_bucket == "likely skippable for text-only edit" ~ marker_before_input_listener_count_p50,
+				TRUE ~ 0
+			),
+			estimated_skippable_duration_p50_ms = case_when(
+				source_site == "BlockListBlockProvider useSelect" & marker_before_input_listener_count_p50 > 0 ~
+					marker_before_input_listener_duration_p50_ms *
+						estimated_skippable_listener_count_p50 /
+						marker_before_input_listener_count_p50,
+				text_update_bucket == "likely skippable for text-only edit" ~ marker_before_input_listener_duration_p50_ms,
+				TRUE ~ 0
+			),
+			estimated_kept_duration_p50_ms = marker_before_input_listener_duration_p50_ms - estimated_skippable_duration_p50_ms,
+			text_update_bucket = factor(
+				text_update_bucket,
+				levels = c(
+					"likely skippable for text-only edit",
+					"mostly skippable except edited block",
+					"needs selection/tree validation",
+					"unknown/mixed"
+				)
+			)
+		) %>%
+		select(
+			source_site,
+			subscription_scope,
+			text_update_bucket,
+			marker_before_input_listener_duration_p50_ms,
+			marker_before_input_listener_count_p50,
+			estimated_skippable_duration_p50_ms,
+			estimated_skippable_listener_count_p50,
+			estimated_kept_duration_p50_ms,
+			selector_audit
+		) %>%
+		arrange(desc(marker_before_input_listener_duration_p50_ms))
+
+	write_csv(
+		redux_owner_text_update_opportunity,
+		file.path(data_dir, "typing-delay-redux-listener-text-update-opportunity.csv")
+	)
+
+	redux_owner_text_update_bucket_summary <- redux_owner_text_update_opportunity %>%
+		group_by(text_update_bucket) %>%
+		summarize(
+			marker_before_input_listener_duration_p50_ms = sum(marker_before_input_listener_duration_p50_ms, na.rm = TRUE),
+			estimated_skippable_duration_p50_ms = sum(estimated_skippable_duration_p50_ms, na.rm = TRUE),
+			estimated_kept_duration_p50_ms = sum(estimated_kept_duration_p50_ms, na.rm = TRUE),
+			marker_before_input_listener_count_p50 = sum(marker_before_input_listener_count_p50, na.rm = TRUE),
+			estimated_skippable_listener_count_p50 = sum(estimated_skippable_listener_count_p50, na.rm = TRUE),
+			.groups = "drop"
+		)
+
+	write_csv(
+		redux_owner_text_update_bucket_summary,
+		file.path(data_dir, "typing-delay-redux-listener-text-update-opportunity-summary.csv")
+	)
+
+	redux_owner_text_update_plot <- redux_owner_text_update_opportunity %>%
+		mutate(
+			source_site = fct_reorder(source_site, marker_before_input_listener_duration_p50_ms),
+			text_update_bucket = fct_drop(text_update_bucket)
+		)
+
+	save_plot(
+		ggplot(redux_owner_text_update_plot, aes(
+			marker_before_input_listener_duration_p50_ms,
+			source_site,
+			color = text_update_bucket,
+			size = marker_before_input_listener_count_p50
+		)) +
+			geom_point(alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Text-only update triage") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "p50 listener calls") +
+			labs(
+				title = "Most audited marker fanout is not intrinsically text-content work",
+				subtitle = "Manual source triage of normal marker-before-input Redux listener owners; size is listener count",
+				x = "Redux listener duration, p50 (ms)",
+				y = NULL
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"122-redux-listener-text-update-opportunity.png",
+		width = 12,
+		height = 7
+	)
 }
 
 marker_allspan_action_summary_path <- file.path(data_dir, "typing-delay-marker-allspan-action-summary.csv")

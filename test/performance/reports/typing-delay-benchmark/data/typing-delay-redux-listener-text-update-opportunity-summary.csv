@@ -1,0 +1,5 @@
+text_update_bucket,marker_before_input_listener_duration_p50_ms,estimated_skippable_duration_p50_ms,estimated_kept_duration_p50_ms,marker_before_input_listener_count_p50,estimated_skippable_listener_count_p50
+likely skippable for text-only edit,5.199999809265137,5.199999809265137,0,2219,2219
+mostly skippable except edited block,3.500000476837158,3.4975648467210574,0.0024356301161008176,1437,1436
+needs selection/tree validation,5.299999952316284,0,5.299999952316284,580,0
+unknown/mixed,1.299999713897705,0,1.299999713897705,261,0
