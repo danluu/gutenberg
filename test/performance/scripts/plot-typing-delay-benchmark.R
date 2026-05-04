@@ -22736,6 +22736,166 @@ save_plot(
 	height = 6.6
 )
 
+open_question_evidence_debt_taxonomy <- tribble(
+	~requirement_label, ~evidence_family, ~family_order, ~closure_mode, ~close_when,
+	"raw samples", "sample/topology", 1, "collect in the target topology", "Raw retained rows exist in the topology where the decision will be made.",
+	"q25/q50/q75/cnt", "sample/topology", 1, "collect in the target topology", "Quartiles and retained counts can be recomputed from raw rows.",
+	"per-run order", "sample/topology", 1, "collect in the target topology", "Run order, branch order, and warmup phase are recorded.",
+	"first-key tails", "sample/topology", 1, "collect in the target topology", "Discarded and retained first-input behavior can be separated.",
+	"failures/actionability", "readiness/correctness", 2, "record interaction correctness", "Failures, retries, skipped rows, and actionability waits are joined to metric rows.",
+	"resource timing", "readiness/correctness", 2, "record readiness resources", "Resource groups and source-specific readiness are joined to metric rows.",
+	"env metadata", "portability metadata", 3, "join environment metadata", "Runner, browser, wp-env, CPU/container, and git/WP identifiers are attached.",
+	"behavior fixtures", "behavior/source safety", 4, "write behavior gates", "Behavior fixtures pass before timing is interpreted.",
+	"source spans", "behavior/source safety", 4, "rerun source-span microscope", "The targeted source owner collapses before aggregate timing is cited.",
+	"compat checks", "behavior/source safety", 4, "write compatibility gates", "Public API, plugin, dynamic dependency, and cross-store cases pass.",
+	"retained-key joins", "sidecar/joinability", 5, "build retained-key sidecar", "Stable key-window IDs and clock sync join sidecars to retained samples.",
+	"observer overhead", "sidecar/joinability", 5, "prove observer overhead", "Observer-on/off rows preserve class ordering and retained counts.",
+	"root counters", "system counters", 6, "collect root counters", "Frequency, residency, QoS, power, runnable latency, or cache counters are joined.",
+	"replay/external endpoint", "claim expansion", 7, "add replay/external endpoint", "Replay strata or calibrated visual/display endpoints are joined to retained keys."
+)
+
+open_question_evidence_debt <- open_question_evidence_readiness %>%
+	filter(current_status != "present") %>%
+	left_join(open_question_evidence_debt_taxonomy, by = "requirement_label") %>%
+	mutate(
+		debt_class = case_when(
+			requirement_level == "required" & current_status == "missing" ~ "required missing",
+			requirement_level == "required" & current_status == "partial" ~ "required partial",
+			requirement_level == "conditional" & current_status == "missing" ~ "conditional missing",
+			requirement_level == "conditional" & current_status == "partial" ~ "conditional partial",
+			TRUE ~ "other"
+		),
+		debt_weight = case_when(
+			requirement_level == "required" & current_status == "missing" ~ 4,
+			requirement_level == "required" & current_status == "partial" ~ 2,
+			requirement_level == "conditional" & current_status == "missing" ~ 2,
+			requirement_level == "conditional" & current_status == "partial" ~ 1,
+			TRUE ~ 0
+		),
+		debt_class = factor(
+			debt_class,
+			levels = c("required missing", "required partial", "conditional missing", "conditional partial", "other")
+		),
+		evidence_family = fct_reorder(evidence_family, family_order),
+		artifact_label = fct_reorder(artifact_label, artifact_order, .desc = TRUE)
+	)
+
+open_question_evidence_debt_summary <- open_question_evidence_debt %>%
+	group_by(evidence_family, family_order, closure_mode, close_when, debt_class) %>%
+	summarize(
+		cells = n(),
+		debt_weight = sum(debt_weight),
+		artifacts_blocked = n_distinct(artifact),
+		required_missing = sum(requirement_level == "required" & current_status == "missing"),
+		required_partial = sum(requirement_level == "required" & current_status == "partial"),
+		.groups = "drop"
+	) %>%
+	arrange(family_order, debt_class)
+
+open_question_evidence_debt_rollup <- open_question_evidence_debt %>%
+	group_by(evidence_family, family_order, closure_mode, close_when) %>%
+	summarize(
+		total_cells = n(),
+		total_debt_weight = sum(debt_weight),
+		artifacts_blocked = n_distinct(artifact),
+		required_missing = sum(requirement_level == "required" & current_status == "missing"),
+		required_partial = sum(requirement_level == "required" & current_status == "partial"),
+		conditional_missing = sum(requirement_level == "conditional" & current_status == "missing"),
+		conditional_partial = sum(requirement_level == "conditional" & current_status == "partial"),
+		missing_required_fields = paste(sort(unique(requirement_label[requirement_level == "required" & current_status == "missing"])), collapse = ", "),
+		partial_required_fields = paste(sort(unique(requirement_label[requirement_level == "required" & current_status == "partial"])), collapse = ", "),
+		.groups = "drop"
+	) %>%
+	arrange(family_order)
+
+open_question_evidence_debt_by_artifact <- open_question_evidence_debt %>%
+	group_by(artifact, artifact_order, artifact_label, evidence_family, family_order, current_status) %>%
+	summarize(
+		debt_weight = sum(debt_weight),
+		required_cells = sum(requirement_level == "required"),
+		conditional_cells = sum(requirement_level == "conditional"),
+		.groups = "drop"
+	) %>%
+	mutate(
+		evidence_family = fct_reorder(evidence_family, family_order),
+		artifact_label = fct_reorder(artifact_label, artifact_order, .desc = TRUE),
+		has_required = if_else(required_cells > 0, "has required blocker", "conditional only")
+	)
+
+write_csv(
+	open_question_evidence_debt %>%
+		select(
+			artifact,
+			artifact_order,
+			artifact_label,
+			requirement_label,
+			requirement_order,
+			requirement_level,
+			current_status,
+			evidence_family,
+			family_order,
+			closure_mode,
+			debt_class,
+			debt_weight,
+			current_evidence,
+			missing_for_closure,
+			close_when
+		),
+	file.path(data_dir, "typing-delay-open-question-evidence-debt.csv")
+)
+
+write_csv(
+	open_question_evidence_debt_rollup,
+	file.path(data_dir, "typing-delay-open-question-evidence-debt-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_evidence_debt_summary,
+		aes(evidence_family, debt_weight, fill = debt_class)
+	) +
+		geom_col(width = 0.72) +
+		coord_flip() +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Evidence debt") +
+		labs(
+			title = "Remaining evidence debt is mostly new observer and topology work",
+			subtitle = "Weights emphasize missing required fields over partial or conditional fields",
+			x = "Evidence family",
+			y = "Weighted blocker count"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"214-open-question-evidence-debt.png",
+	width = 11.4,
+	height = 6.6
+)
+
+save_plot(
+	ggplot(
+		open_question_evidence_debt_by_artifact,
+		aes(evidence_family, artifact_label, size = debt_weight, color = current_status, shape = has_required)
+	) +
+		geom_point(alpha = 0.86) +
+		scale_color_brewer(type = "qual", palette = "Set1", name = "Current evidence") +
+		scale_size_area(max_size = 9, name = "Debt weight") +
+		labs(
+			title = "Each open artifact is blocked by a different evidence family",
+			subtitle = "Bubble size weights required missing fields highest; shape distinguishes required blockers from conditional-only gaps",
+			x = "Evidence family",
+			y = "Artifact bundle",
+			shape = "Blocker type"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(
+			axis.text.x = element_text(angle = 30, hjust = 1),
+			legend.position = "bottom",
+			legend.box = "vertical"
+		),
+	"215-open-question-evidence-debt-by-artifact.png",
+	width = 12.8,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

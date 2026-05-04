@@ -1062,6 +1062,12 @@ The R script derives:
 -   `data/typing-delay-open-question-evidence-readiness-summary.csv`: rollup of
     missing, partial, and present required fields for each open-question artifact
     bundle.
+-   `data/typing-delay-open-question-evidence-debt.csv`: blocker-family view of
+    the remaining open-question evidence debt, separating sample/topology work
+    from behavior gates, sidecars, system counters, and claim-expansion
+    endpoints.
+-   `data/typing-delay-open-question-evidence-debt-summary.csv`: rollup of the
+    weighted blocker count by evidence family and closure mode.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9449,6 +9455,34 @@ metadata. Selector/source work needs behavior fixtures and source-span collapse
 before aggregate timing is interpretable. Runtime, CPU/QoS, display, and
 workload claims need new joined observers; more local q50 rows would mainly
 reduce noise around the wrong measurement.
+
+The evidence-debt rollup groups the missing and partial cells by the kind of
+work that can close them. This is where the answer becomes operational: "collect
+more samples" is only correct for sample/topology blockers, and even there the
+samples have to come from the decision topology. For the lower-level mechanism
+questions, the blocker is not sample count; it is the absence of a retained-key
+join, a sidecar overhead control, or a root/system observer.
+
+![Open question evidence debt](figures/214-open-question-evidence-debt.png)
+
+![Open question evidence debt by artifact](figures/215-open-question-evidence-debt-by-artifact.png)
+
+| Evidence family | What it means | Next closure action |
+| --------------- | ------------- | ------------------- |
+| Sample/topology | local rows are partial controls, not CI or product-lane closure evidence | collect raw retained rows, quartiles, run order, and first-key tails in the target topology |
+| Readiness/correctness | waits cannot be removed safely from q50 alone | join failures, actionability retries, resource quiet, and source-specific readiness to metric rows |
+| Portability metadata | absolute numbers and thresholds cannot travel without environment context | attach browser, runner, wp-env, CPU/container, and git/WP identifiers |
+| Behavior/source safety | source wins are not interpretable until behavior and source-span gates pass | run fixtures and source-span microscopes before citing aggregate p50 |
+| Sidecar/joinability | mechanism naming needs a per-retained-key join before counters or traces matter | build the key-window sidecar and prove observer overhead preserves class ordering |
+| System counters | CPU/QoS names are blocked on missing root counters | collect `powermetrics` or root trace counters only after sidecar acceptance |
+| Claim expansion | fixed-`x` and Chromium-internal endpoints cannot support product/display claims | add replay strata or calibrated external endpoints with retained-key joins |
+
+This narrows the next useful work again. The report can still use local samples
+as controls, but the open questions that would change a decision require one of
+three concrete artifact families: CI/readiness rows with full metadata, a
+behavior-gated source prototype, or a retained-key sidecar. Everything else is a
+claim-expansion project, not a prerequisite for explaining the current
+benchmark.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

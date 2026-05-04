@@ -1,0 +1,15 @@
+evidence_family,family_order,closure_mode,close_when,total_cells,total_debt_weight,artifacts_blocked,required_missing,required_partial,conditional_missing,conditional_partial,missing_required_fields,partial_required_fields
+sample/topology,1,collect in the target topology,Discarded and retained first-input behavior can be separated.,2,3,2,0,1,0,1,,first-key tails
+sample/topology,1,collect in the target topology,Quartiles and retained counts can be recomputed from raw rows.,6,8,6,0,2,0,4,,q25/q50/q75/cnt
+sample/topology,1,collect in the target topology,Raw retained rows exist in the topology where the decision will be made.,6,8,6,0,2,0,4,,raw samples
+sample/topology,1,collect in the target topology,"Run order, branch order, and warmup phase are recorded.",5,8,5,0,3,0,2,,per-run order
+readiness/correctness,2,record interaction correctness,"Failures, retries, skipped rows, and actionability waits are joined to metric rows.",2,4,2,0,2,0,0,,failures/actionability
+readiness/correctness,2,record readiness resources,Resource groups and source-specific readiness are joined to metric rows.,3,5,3,0,2,0,1,,resource timing
+portability metadata,3,join environment metadata,"Runner, browser, wp-env, CPU/container, and git/WP identifiers are attached.",4,16,4,4,0,0,0,env metadata,
+behavior/source safety,4,rerun source-span microscope,The targeted source owner collapses before aggregate timing is cited.,2,2,2,0,0,0,2,,
+behavior/source safety,4,write behavior gates,Behavior fixtures pass before timing is interpreted.,2,6,2,1,1,0,0,behavior fixtures,behavior fixtures
+behavior/source safety,4,write compatibility gates,"Public API, plugin, dynamic dependency, and cross-store cases pass.",1,2,1,0,1,0,0,,compat checks
+sidecar/joinability,5,build retained-key sidecar,Stable key-window IDs and clock sync join sidecars to retained samples.,3,12,3,3,0,0,0,retained-key joins,
+sidecar/joinability,5,prove observer overhead,Observer-on/off rows preserve class ordering and retained counts.,3,8,3,1,2,0,0,observer overhead,observer overhead
+system counters,6,collect root counters,"Frequency, residency, QoS, power, runnable latency, or cache counters are joined.",1,4,1,1,0,0,0,root counters,
+claim expansion,7,add replay/external endpoint,Replay strata or calibrated visual/display endpoints are joined to retained keys.,1,4,1,1,0,0,0,replay/external endpoint,
