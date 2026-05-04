@@ -819,6 +819,10 @@ The R script derives:
     helper decision contract that separates `type()` / `pressSequentially()`
     equivalence, ordinary `locator.press()` checkpoint controls, exact-helper
     validation, and Playwright-version drift.
+-   `data/typing-delay-input-api-helper-claim-ladder-audit.csv`: claim ladder
+    separating same-family helper spelling changes, rejected proxy controls,
+    API-family metric-definition changes, scoped hold-duration claims, optional
+    browser mechanism work, upgrade guards, and threshold continuity blockers.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -3067,6 +3071,35 @@ CI-settings check. If the change moves between page-keyboard, explicit
 `down()` / `up()`, locator `type()`, or ordinary `locator.press()`, it is a
 metric-definition change. Ordinary `locator.press()` should not be used as a
 shortcut for either `type()` or `pressSequentially()`.
+
+### Input API Helper Claim Ladder
+
+The helper question is now a claim-boundary problem. The same local data can
+support a spelling-level `type()` / `pressSequentially()` equivalence claim, a
+rejection of ordinary `locator.press()` as a proxy, and a metric-definition
+warning for page-keyboard or explicit `down()` / `up()` switches. It cannot
+support one universal human-hold threshold or threshold continuity across helper
+families.
+
+![Input API helper claim ladder](figures/194-input-api-helper-claim-ladder.png)
+
+| Claim | Current evidence | Boundary |
+| ----- | ---------------- | -------- |
+| Current CI helper identity | Typing uses `target.type()` / `paragraph.type()` with full-delay held-key semantics and one discarded sample | classify current CI as the `type()` / `pressSequentially()` family |
+| `type()` to `pressSequentially()` spelling | Playwright currently aliases `pressSequentially()` to `type()` | spelling-level only if the exact CI-settings check stays in band |
+| ordinary `locator.press()` proxy | rejected: `locator.press()` adds the wait-for-signals epilogue, and `noWaitAfter` moves `50ms` / `75ms` rows into the `locator.type()` band | use ordinary `locator.press()` only as a checkpoint/control row |
+| page-keyboard or explicit `down()` / `up()` switch | compact controls put these families in different phase bands under similar holds | metric-definition change; do not merge into old thresholds without the portability runbook |
+| realistic hold duration | `50ms` / `75ms` / `100ms` rows are API-family-specific | choose helper first, then interleave short holds inside that helper family |
+| observed hold or post-keyup wait | rejected as global causes: similar measured holds and identical post-keyup waits can land in different phases | use them as descriptors, not causal thresholds |
+| lower-level Playwright/Chromium mechanism | still open: `progress.wait()`, utility-world focus/checkpoint work, trace/runtime state, and scheduler effects | optional for mechanism naming; not required for the CI helper decision |
+| Playwright upgrade drift | conclusion depends on current source paths | re-check source and compact discriminator rows after helper internals change |
+| threshold continuity | only same-family changes that pass exact validation preserve threshold continuity | helper-family switches are new-metric events for dashboards |
+
+The operational rule is: pick the helper family first. A same-target,
+same-options `type()` to `pressSequentially()` rewrite gets one exact
+CI-settings confirmation. A switch to page-keyboard, explicit `down()` / `up()`,
+or ordinary `locator.press()` is a new benchmark definition. Only after that
+helper choice should realistic short holds be compared.
 
 The reused-editor result is also not explained by text accumulation or
 within-round placement. These code-path probes reuse one editor, so each later
@@ -9000,7 +9033,7 @@ The high-level split is:
 | -------- | -------------- | ---------------- |
 | Typing startup wait | change-trigger contract closes the operational question: current Typing has `0ms` extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local `0ms` candidate matrix | do not add a Typing startup wait under the current metric; reopen only on a trigger change; validate the five interactive non-Typing `0ms` candidates on CI/mac/container lanes before changing those sleeps; the wait-removal ledger counts these five rows as `110s` of the conservative `142s` local candidate saving |
 | Pattern-loading wait | CI validation contract has to stay split by spec and by claim: Site Editor pure `getBlockPatterns` is rejected as a complete replacement, resource quiet is only an instrumented broad-REST guardrail, fixed `500ms` is the best local sleep fallback, source-specific readiness is still open, and preview/canvas pre-waits would redefine the metric; the focused Post Editor matrix separately favors `0ms`; combined with the interaction rows, the conservative local wait-removal envelope is `142s` per two-branch comparison and the predicate envelope is about `146s` | validate Site Editor `getBlockPatterns` plus resource quiet with timeout/fallback, endpoint groups, preview-work preservation, retained-count, q50 range, and environment telemetry; validate fixed `500ms` as fallback; keep Site Editor/Post Editor/combined `loadPatterns` rows split; validate Post Editor `0ms` against `1000ms` with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full wait savings |
-| Input API phase boundary | CI helper decision contract closes the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match, ordinary `locator.press()` is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition |
+| Input API phase boundary | CI helper decision contract plus helper claim ladder close the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match and exact validation stays in band, ordinary `locator.press()` is only a rejected proxy/checkpoint control, helper-family switches are metric-definition changes, realistic hold choices must be scoped inside the selected helper, and lower-level Playwright/Chromium mechanism work is optional for CI helper choice | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition with threshold-portability validation; compare `50ms` / `75ms` / `100ms` holds only after the final helper family is chosen |
 | Low-risk selector guards | behavior-gate audit closes the first-patch question: the pattern-override selected-only patch is implemented locally, covered by focused unit tests, and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry; the provider row has only source evidence plus a partial `lastBlockAttributesChange` hint, and the inner-blocks row has one clean root/drop-zone slice but known layout/default-layout and side-effect blockers | prototype `BlockListBlockProvider` first as a narrow latest-attribute-action fast path with public-filter, edited-block, selection, structure, editability, settings, visibility, and binding gates; split `useInnerBlocksProps` into root/drop-zone versus full-hook work, preserving identity/root, layout/default-layout, nested-settings, and controlled-inner-block gates; run aggregate before/after p50 only after behavior gates and source spans pass |
 | Store subscriber partition | prototype-gate audit refines the compatibility path: the marker wakes `4,501` Redux-store listeners at p50 and `4,498` are `useSelect`, so the best fanout prototype is not an external persistence slot or narrowed public `registry.subscribe`; it is an internal dependency-filtered `useSelect` lane that preserves public root subscribe semantics, wakes `isLastBlockChangePersistent()` consumers, skips unrelated selectors, and proves listener-count collapse in a marker-only source-span run | after local guards, prototype the `useBlockSync` side channel only as a behavior-only path; for a fanout claim, require public `registry.subscribe` fixtures, persistence-selector `useSelect` fixtures, unrelated-selector skip fixtures, dynamic/cross-store/race/async gates, plugin/public subscriber smoke, and marker-only source-span collapse; do not claim timing from a side channel alone |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |

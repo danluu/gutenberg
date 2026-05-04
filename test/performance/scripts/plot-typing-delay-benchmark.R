@@ -7017,6 +7017,115 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 		file.path(data_dir, "typing-delay-input-api-ci-helper-decision-contract-audit.csv")
 	)
 
+	input_api_helper_claim_ladder_audit <- tribble(
+		~claim, ~claim_order, ~current_evidence, ~allowed_claim, ~blocked_overclaim, ~required_validation, ~evidence_score, ~metric_definition_drift_score, ~validation_burden_score, ~decision, ~plot_label,
+		"Current CI helper identity", 1,
+		"Post-editor and site-editor Typing use target.type()/paragraph.type() with the configured delay; the metric discards one key and retains ten samples.",
+		"Classify current CI as the type()/pressSequentially family with full-delay held-key semantics.",
+		"Treat current CI as tap, explicit down/up, or ordinary locator.press semantics.",
+		"Record helper name, target kind, Playwright version, delay, retained/throwaway policy, trace settings, and fixture setup in validation artifacts.",
+		5, 1, 1, "current identity", "current CI",
+		"type() to pressSequentially() spelling change", 2,
+		"Installed Playwright source aliases locator.pressSequentially() to type(); same target and options should stay in the same helper family.",
+		"Treat as a spelling-level helper change if an exact CI-settings check stays in band.",
+		"Skip validation entirely or infer equivalence after target/options/browser revision changed.",
+		"One exact CI-settings run with same fixture, delay, trace placement, browser revision, target kind, retained count, p50/p10-p90/CV, first-key behavior, and source-span ordering.",
+		4, 1, 2, "spelling check", "type spelling",
+		"Ordinary locator.press proxy", 3,
+		"Source inspection and noWaitAfter data show ordinary locator.press adds the wait-for-signals epilogue; removing it moves 50ms/75ms rows into the locator.type band.",
+		"Use locator.press only as a checkpoint/control row when explaining automation effects.",
+		"Infer pressSequentially or type() behavior from ordinary locator.press rows.",
+		"No further run unless Playwright changes locator.press or pressSequentially internals.",
+		5, 3, 1, "proxy rejected", "press proxy",
+		"Switch from page.keyboard or explicit down/up to locator type()", 4,
+		"Compact controls put page-keyboard, page.keyboard.press, explicit down/up with locator focus, locator.type, and locator.press/noWaitAfter in different phase bands under similar requested holds.",
+		"Treat the old/new comparison as an API-family and metric-definition change.",
+		"Merge old and new values into one unchanged threshold history.",
+		"Run the exact final CI metric and keep compact discriminator rows only as explanation; apply the threshold-portability runbook before threshold claims.",
+		5, 5, 4, "metric-definition change", "API family",
+		"Realistic hold duration choice", 5,
+		"50ms/75ms/100ms rows are API-family-specific: page-keyboard and locator.type cross different slow/tap-like phase boundaries.",
+		"Choose helper family first, then interleave realistic holds inside that helper family.",
+		"Pick one universal human-hold threshold from pooled API families.",
+		"Within the selected helper family, compare tap, current delay, 50ms, 100ms, and optionally 75ms with paired rounds.",
+		4, 4, 3, "scope after helper", "hold scoped",
+		"Observed physical hold threshold", 6,
+		"Similar measured keydown-to-keyup durations land in different phases across page.keyboard, locator.type, and locator.press.",
+		"Use observed hold as a descriptor and sanity check.",
+		"Use observed keydown-to-keyup duration as the global causal variable.",
+		"Do not add more hold-only rows until the helper path is fixed.",
+		4, 4, 1, "global rule rejected", "observed hold",
+		"Post-keyup wait threshold", 7,
+		"Rows with the same configured post-keyup wait can land in different phases; elapsed wait after keyup is not enough.",
+		"Keep post-keyup wait separate from Chromium-runtime checkpoint experiments.",
+		"Explain the input API boundary as ordinary elapsed wall-clock wait.",
+		"Only revisit as part of the runtime/checkpoint trace contract.",
+		4, 3, 1, "global rule rejected", "post-keyup wait",
+		"Lower-level Playwright/Chromium mechanism", 8,
+		"The remaining mechanism is progress.wait versus harness setTimeout, utility-world focus/checkpoint work, trace snapshot/runtime state, and Chromium scheduler interaction.",
+		"Leave the CI helper decision local unless the project needs the browser mechanism itself.",
+		"Block helper decisions on naming the exact browser/runtime state.",
+		"Use runtime sidecar and scheduler trace rows only if mechanism naming matters.",
+		3, 2, 5, "mechanism optional", "runtime mechanism",
+		"Playwright version drift", 9,
+		"The current conclusion depends on source paths: pressSequentially delegates to type(), and locator.press uses wait-for-signals.",
+		"Keep the helper-family classification only while those source paths remain true.",
+		"Reuse this decision after Playwright changes helper internals.",
+		"On Playwright upgrades, inspect source and rerun compact discriminator rows only if type/pressSequentially/press paths changed.",
+		4, 3, 3, "upgrade guard", "upgrade guard",
+		"Threshold continuity", 10,
+		"A helper-family switch changes what the metric samples, even if the fixture and delay count remain the same.",
+		"Treat thresholds and dashboards as continuous only for same-family changes that pass exact validation.",
+		"Compare q50 before/after a helper-family switch as if it were the same metric.",
+		"Run the compact CI portability/threshold contract before changing dashboards or acceptance bands.",
+		5, 5, 5, "threshold blocked", "threshold"
+	) %>%
+		mutate(
+			decision = factor(
+				decision,
+				levels = c(
+					"current identity",
+					"spelling check",
+					"proxy rejected",
+					"metric-definition change",
+					"scope after helper",
+					"global rule rejected",
+					"mechanism optional",
+					"upgrade guard",
+					"threshold blocked"
+				)
+			),
+			label_x = metric_definition_drift_score + case_when(
+				plot_label == "current CI" ~ 0.10,
+				plot_label == "type spelling" ~ 0.10,
+				plot_label == "press proxy" ~ -0.60,
+				plot_label == "API family" ~ -0.50,
+				plot_label == "hold scoped" ~ -0.40,
+				plot_label == "observed hold" ~ -0.38,
+				plot_label == "post-keyup wait" ~ 0.22,
+				plot_label == "runtime mechanism" ~ 0.10,
+				plot_label == "upgrade guard" ~ 0.12,
+				TRUE ~ 0.1
+			),
+			label_y = validation_burden_score + case_when(
+				plot_label == "current CI" ~ -0.20,
+				plot_label == "type spelling" ~ 0.20,
+				plot_label == "press proxy" ~ -0.22,
+				plot_label == "API family" ~ 0.22,
+				plot_label == "hold scoped" ~ 0.22,
+				plot_label == "observed hold" ~ 0.22,
+				plot_label == "post-keyup wait" ~ 0.28,
+				plot_label == "runtime mechanism" ~ -0.22,
+				plot_label == "upgrade guard" ~ 0.22,
+				TRUE ~ 0.1
+			)
+		)
+
+	write_csv(
+		input_api_helper_claim_ladder_audit %>% select(-label_x, -label_y),
+		file.path(data_dir, "typing-delay-input-api-helper-claim-ladder-audit.csv")
+	)
+
 	ci_fresh_code_path_plot <- ci_fresh_code_path_summary %>%
 		filter(delay_ms %in% c(250, 500, 1000), input_api != "page.keyboard.type") %>%
 		mutate(
@@ -7112,6 +7221,62 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 		width = 12.2,
 		height = 5.8
 		)
+
+	save_plot(
+		ggplot(
+			input_api_helper_claim_ladder_audit,
+			aes(
+				metric_definition_drift_score,
+				validation_burden_score,
+				color = decision,
+				shape = decision,
+				size = evidence_score
+			)
+		) +
+			geom_point(alpha = 0.93) +
+			geom_text(
+				aes(label_x, label_y, label = plot_label),
+				size = 3,
+				color = "grey20",
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Decision") +
+			scale_shape_manual(
+				values = c(
+					"current identity" = 16,
+					"spelling check" = 17,
+					"proxy rejected" = 4,
+					"metric-definition change" = 15,
+					"scope after helper" = 3,
+					"global rule rejected" = 7,
+					"mechanism optional" = 8,
+					"upgrade guard" = 18,
+					"threshold blocked" = 1
+				),
+				name = "Decision"
+			) +
+			scale_size_continuous(range = c(2.8, 6), breaks = 1:5, name = "Evidence strength") +
+			scale_x_continuous(
+				breaks = 1:5,
+				limits = c(0.7, 5.45),
+				labels = c("1" = "same family", "2" = "mechanism", "3" = "proxy", "4" = "hold scoped", "5" = "new metric")
+			) +
+			scale_y_continuous(
+				breaks = 1:5,
+				limits = c(0.7, 5.45),
+				labels = c("1" = "local rule", "2" = "exact check", "3" = "upgrade", "4" = "CI run", "5" = "threshold")
+			) +
+			labs(
+				title = "Input-helper changes split into spelling, proxy rejection, and new metrics",
+				subtitle = "Higher x means more metric-definition drift; higher y means more validation before using old thresholds",
+				x = "metric-definition drift",
+				y = "validation burden"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"194-input-api-helper-claim-ladder.png",
+		width = 12.5,
+		height = 7.4
+	)
 	}
 
 	ci_keyboard_prelude_control_specs <- tribble(
