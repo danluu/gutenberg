@@ -23573,6 +23573,210 @@ save_plot(
 	height = 7.4
 )
 
+open_question_decision_binding <- tribble(
+	~decision, ~lane, ~binding_state, ~decision_impact, ~evidence_sufficiency, ~open_question_leverage, ~next_artifact_burden, ~safe_current_action, ~what_can_still_change, ~unsafe_shortcut,
+	"1000ms held-key cliff explanation", "Benchmark artifact", "binds current conclusion", 5, 5, 1, 1, "State the local key-held benchmark boundary and the held-key/tap metric distinction.", "Only a helper, browser, trace-placement, throwaway-policy, or statistic change should reopen this.", "Treating mechanism-side open questions as reasons to doubt the local cliff.",
+	"Held key versus complete keypress", "Benchmark artifact", "binds current conclusion", 5, 5, 1, 1, "Keep these as separate metric families.", "A future helper-family change could define a new metric, not reinterpret the old one.", "Using a held key as a proxy for a tap plus an idle wait.",
+	"Typing startup wait", "CI/readiness", "binds current conclusion", 4, 5, 2, 2, "Do not add a Typing startup wait for the current retained-q50 metric.", "CI topology could change wait-removal actionability, but not the local conclusion.", "Adding a startup wait because the first input is slow while reporting retained q50.",
+	"Interactive non-Typing waits", "CI/readiness", "validate before change", 4, 3, 4, 3, "Treat local zero-wait rows as candidates only.", "CI/mac/container validation can accept, reject, or narrow the wait-removal envelope.", "Shipping wait removal from local q50 without failure and resource metadata.",
+	"Site Editor fixed 500ms pattern fallback", "CI/readiness", "validate before change", 4, 3, 4, 3, "Use it only as the best local fixed-sleep candidate.", "Topology, preview/canvas behavior, resources, and failures can keep the 1000ms fallback.", "Calling fixed 500ms safe because it matches local q50.",
+	"Pattern readiness predicate", "CI/readiness", "validate before change", 4, 2, 5, 4, "Treat getBlockPatterns plus resource quiet as a candidate guardrail.", "Source-specific readiness and fallback behavior can reject or split the predicate.", "Replacing the sleep with a partial predicate that moves setup work into measurement.",
+	"Low-risk selector guard", "Source/code", "prototype before source claim", 4, 3, 4, 3, "Prototype only behind behavior fixtures and source-span collapse.", "Behavior or compatibility fixtures can reject the patch even if p50 improves.", "Using aggregate p50 as proof that selector semantics are safe.",
+	"Store subscriber partition", "Source/code", "defer until prerequisite", 5, 3, 4, 4, "Run only after lower-burden selector guards and a compatibility matrix.", "A branch-aware subscription prototype can change source strategy.", "Changing public notification semantics because marker fanout is large.",
+	"Runtime mechanism name", "Sidecar/mechanism", "blocks broader claim", 3, 2, 5, 5, "Keep the runtime result empirical until a trace-off sidecar passes.", "A sidecar can name or reject a Chromium scheduler/runtime field.", "Naming V8 or scheduler state from aggregate latency rows.",
+	"CPU/QoS mechanism name", "CPU/QoS", "blocks broader claim", 3, 2, 5, 5, "Keep CPU/QoS as an empirical sensitivity until joined counters pass.", "Root counters can name or reject frequency, residency, QoS, cache, or runnable-latency explanations.", "Calling a latency class a P-core, frequency, or QoS mechanism without retained-key joins.",
+	"Product workload generalization", "Claim expansion", "blocks broader claim", 4, 2, 5, 4, "Keep fixed-x insertion as a benchmark/source control.", "Replay strata can show which product actions share or diverge from the fixed-x owner pattern.", "Claiming representative editor latency from fixed-x insertion alone.",
+	"External presentation claim", "Claim expansion", "blocks broader claim", 3, 2, 5, 5, "Scope visual timing to Chromium-internal endpoints.", "External endpoints can validate or narrow semantic glyph, present-frame, or display claims.", "Calling screenshot/paint timing hardware-display latency.",
+	"Absolute q50 portability", "External policy", "validate before change", 4, 3, 4, 3, "Use local q50 for local ordering, not CI threshold values.", "Real Performance Tests artifacts can change absolute and variance claims.", "Predicting CI stability from local macOS q50.",
+	"CI pass/fail prediction", "External policy", "policy gap", 4, 2, 5, 4, "Report q50 movement as evidence until policy is documented.", "Dashboard or reviewer policy can define a true pass/fail interpretation.", "Treating repository-local q50 movement as the pass/fail gate."
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		binding_state = factor(
+			binding_state,
+			levels = c(
+				"binds current conclusion",
+				"validate before change",
+				"prototype before source claim",
+				"defer until prerequisite",
+				"blocks broader claim",
+				"policy gap"
+			)
+		),
+		decision_label = str_wrap(decision, width = 24),
+		open_question_pressure = decision_impact * open_question_leverage * (6 - evidence_sufficiency) / 5,
+		credible_next_work = case_when(
+			next_artifact_burden <= 2 ~ "small trigger/topology check",
+			next_artifact_burden <= 3 ~ "focused validation artifact",
+			next_artifact_burden <= 4 ~ "prototype or replay artifact",
+			TRUE ~ "sidecar/counter/external endpoint"
+		),
+		credible_next_work = factor(
+			credible_next_work,
+			levels = c(
+				"small trigger/topology check",
+				"focused validation artifact",
+				"prototype or replay artifact",
+				"sidecar/counter/external endpoint"
+			)
+		),
+		plot_x = evidence_sufficiency + case_when(
+			decision == "Typing startup wait" ~ -0.05,
+			decision == "Held key versus complete keypress" ~ 0.05,
+			decision == "CPU/QoS mechanism name" ~ -0.05,
+			decision == "External presentation claim" ~ 0.05,
+			TRUE ~ 0
+		),
+		plot_y = decision_impact + case_when(
+			decision == "Held key versus complete keypress" ~ -0.05,
+			decision == "1000ms held-key cliff explanation" ~ 0.05,
+			decision == "Runtime mechanism name" ~ -0.05,
+			decision == "CPU/QoS mechanism name" ~ 0.05,
+			TRUE ~ 0
+		),
+		label_x = case_when(
+			decision == "1000ms held-key cliff explanation" ~ 4.92,
+			decision == "Held key versus complete keypress" ~ 4.90,
+			decision == "Typing startup wait" ~ 4.68,
+			decision == "Interactive non-Typing waits" ~ 3.13,
+			decision == "Site Editor fixed 500ms pattern fallback" ~ 3.05,
+			decision == "Pattern readiness predicate" ~ 2.18,
+			decision == "Low-risk selector guard" ~ 3.17,
+			decision == "Store subscriber partition" ~ 3.16,
+			decision == "Runtime mechanism name" ~ 2.14,
+			decision == "CPU/QoS mechanism name" ~ 2.30,
+			decision == "Product workload generalization" ~ 2.22,
+			decision == "External presentation claim" ~ 2.28,
+			decision == "Absolute q50 portability" ~ 3.22,
+			decision == "CI pass/fail prediction" ~ 2.26,
+			TRUE ~ plot_x
+		),
+		label_y = case_when(
+			decision == "1000ms held-key cliff explanation" ~ 5.34,
+			decision == "Held key versus complete keypress" ~ 4.64,
+			decision == "Typing startup wait" ~ 3.70,
+			decision == "Interactive non-Typing waits" ~ 4.26,
+			decision == "Site Editor fixed 500ms pattern fallback" ~ 3.70,
+			decision == "Pattern readiness predicate" ~ 4.36,
+			decision == "Low-risk selector guard" ~ 4.05,
+			decision == "Store subscriber partition" ~ 5.30,
+			decision == "Runtime mechanism name" ~ 2.67,
+			decision == "CPU/QoS mechanism name" ~ 3.30,
+			decision == "Product workload generalization" ~ 4.18,
+			decision == "External presentation claim" ~ 2.72,
+			decision == "Absolute q50 portability" ~ 3.78,
+			decision == "CI pass/fail prediction" ~ 3.78,
+			TRUE ~ plot_y
+		)
+	)
+
+open_question_decision_binding_summary <- open_question_decision_binding %>%
+	group_by(binding_state, credible_next_work) %>%
+	summarize(
+		decisions = n(),
+		max_pressure = max(open_question_pressure),
+		median_evidence_sufficiency = median(evidence_sufficiency),
+		.groups = "drop"
+	)
+
+write_csv(
+	open_question_decision_binding %>%
+		select(
+			decision,
+			lane,
+			binding_state,
+			decision_impact,
+			evidence_sufficiency,
+			open_question_leverage,
+			next_artifact_burden,
+			open_question_pressure,
+			credible_next_work,
+			safe_current_action,
+			what_can_still_change,
+			unsafe_shortcut
+		),
+	file.path(data_dir, "typing-delay-open-question-decision-binding.csv")
+)
+
+write_csv(
+	open_question_decision_binding_summary,
+	file.path(data_dir, "typing-delay-open-question-decision-binding-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_decision_binding,
+		aes(
+			plot_x,
+			plot_y,
+			color = binding_state,
+			shape = credible_next_work,
+			size = open_question_leverage
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = decision_label),
+			size = 2.85,
+			lineheight = 0.9,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Binding state") +
+		scale_shape_manual(
+			values = c(
+				"small trigger/topology check" = 16,
+				"focused validation artifact" = 17,
+				"prototype or replay artifact" = 15,
+				"sidecar/counter/external endpoint" = 18
+			),
+			name = "Credible next work"
+		) +
+		scale_size_continuous(range = c(2.8, 6), breaks = 1:5, name = "Open-question leverage") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.65, 5.35),
+			labels = c("1" = "weak", "2" = "blocked", "3" = "partial", "4" = "bounded", "5" = "strong")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(2.45, 5.45),
+			labels = c("1" = "low", "2" = "small", "3" = "scope", "4" = "CI/source", "5" = "core")
+		) +
+		labs(
+			title = "Open questions mostly bind wording, not the local benchmark explanation",
+			subtitle = "Only CI/readiness and source/prototype rows should change near-term recommendations",
+			x = "Current evidence sufficiency",
+			y = "Decision impact"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"226-open-question-decision-binding.png",
+	width = 12.8,
+	height = 7.6
+)
+
+save_plot(
+	ggplot(
+		open_question_decision_binding %>%
+			mutate(decision_label = fct_reorder(decision_label, open_question_pressure)),
+		aes(open_question_pressure, decision_label, fill = binding_state)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Binding state") +
+		labs(
+			title = "The highest-pressure open questions are broader-claim blockers",
+			subtitle = "Pressure combines decision impact, leverage of the unknown, and lack of current evidence",
+			x = "Open-question pressure",
+			y = "Decision"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"227-open-question-decision-pressure.png",
+	width = 12.2,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

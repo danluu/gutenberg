@@ -1093,6 +1093,12 @@ The R script derives:
     open-question claims.
 -   `data/typing-delay-open-question-gate-quality-long.csv`: long-form risk
     table used for plotting gate-quality risk by failure mode.
+-   `data/typing-delay-open-question-decision-binding.csv`: audit of which
+    remaining open questions can still change recommendations, which only block
+    broader claims, and which should reopen only after a measurement-trigger
+    change.
+-   `data/typing-delay-open-question-decision-binding-summary.csv`: rollup of
+    decision-binding rows by binding state and credible next artifact.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9635,6 +9641,32 @@ claim unless its own false-pass guardrail is satisfied. If the guardrail is
 missing, the result can still be useful as a diagnostic, but it should be routed
 through the failure-triage or escalation ladder instead of being promoted into a
 conclusion.
+
+The decision-binding audit asks a stricter question: what recommendation is an
+open question allowed to move? This matters because "still open" is not one
+bucket. Some unknowns can change a CI wait or source patch recommendation; other
+unknowns only block broader wording, such as naming a CPU/QoS mechanism,
+claiming product-wide workload coverage, or claiming hardware-display timing.
+
+![Open question decision binding](figures/226-open-question-decision-binding.png)
+
+![Open question decision pressure](figures/227-open-question-decision-pressure.png)
+
+| Decision row | Binding result |
+| ------------ | -------------- |
+| `1000ms` held-key cliff and held-key/tap distinction | binds the current benchmark conclusion; reopen only after a helper, browser, trace-placement, throwaway-policy, or statistic trigger changes |
+| Typing startup wait | binds the local retained-q50 recommendation: do not add a Typing startup wait under the current metric; CI topology can still affect wait-removal actionability |
+| Interactive non-Typing waits, Site Editor fixed `500ms`, and pattern-readiness predicate | remain real near-term CI/readiness questions; local q50 is a candidate signal, not shipping evidence |
+| Low-risk selector guard and store subscriber partition | can change source recommendations only after behavior fixtures, compatibility checks, and source-span collapse |
+| Runtime, CPU/QoS, display, and product-workload mechanism claims | block broader claims, but do not reopen the local benchmark-artifact explanation |
+| Absolute q50 portability and CI pass/fail prediction | require real Performance Tests artifacts and the external/dashboard/reviewer policy before q50 movement becomes a pass/fail prediction |
+
+That changes the practical ordering of any remaining work. The high-pressure
+rows are not "the current explanation is weak"; they are "do not expand the
+claim without the missing artifact." The only rows that should alter near-term
+engineering recommendations are CI/readiness validation and behavior-gated
+source prototypes. More mechanism, display, or workload work is valuable only if
+the report wants to make those broader claims.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

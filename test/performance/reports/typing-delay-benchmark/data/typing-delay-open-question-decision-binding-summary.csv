@@ -1,0 +1,9 @@
+binding_state,credible_next_work,decisions,max_pressure,median_evidence_sufficiency
+binds current conclusion,small trigger/topology check,3,1.6,5
+validate before change,focused validation artifact,3,9.6,3
+validate before change,prototype or replay artifact,1,16,2
+prototype before source claim,focused validation artifact,1,9.6,3
+defer until prerequisite,prototype or replay artifact,1,12,3
+blocks broader claim,prototype or replay artifact,1,16,2
+blocks broader claim,sidecar/counter/external endpoint,3,12,2
+policy gap,prototype or replay artifact,1,16,2
