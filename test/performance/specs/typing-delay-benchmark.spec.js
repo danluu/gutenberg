@@ -152,6 +152,7 @@ const supportedSetupStyles = [
 	'benchmark-live-editor',
 	'ci-post-editor-typing',
 ];
+const supportedTaskpolicyTiers = [ 0, 1, 2, 3, 4, 5 ];
 const supportedMarkPersistentInterventions = [
 	'normal',
 	'noop',
@@ -184,6 +185,13 @@ const supportedMarkPersistentInterventions = [
 	'external-background-taskpolicy-utility-cpu-noop',
 	'external-background-taskpolicy-qos-background-cpu-noop',
 	'external-background-taskpolicy-maintenance-cpu-noop',
+	...supportedTaskpolicyTiers.map(
+		( tier ) => `external-background-taskpolicy-latency-${ tier }-cpu-noop`
+	),
+	...supportedTaskpolicyTiers.map(
+		( tier ) =>
+			`external-background-taskpolicy-throughput-${ tier }-cpu-noop`
+	),
 	'external-background-idle-noop',
 	'delayed-noop-150',
 	'raw-unknown-action',
@@ -1736,6 +1744,24 @@ setInterval(() => {}, 2147483647);
 					'-e',
 					source,
 				];
+			} else if ( priorityMode.startsWith( 'taskpolicy-latency-' ) ) {
+				command = '/usr/sbin/taskpolicy';
+				args = [
+					'-l',
+					priorityMode.replace( 'taskpolicy-latency-', '' ),
+					process.execPath,
+					'-e',
+					source,
+				];
+			} else if ( priorityMode.startsWith( 'taskpolicy-throughput-' ) ) {
+				command = '/usr/sbin/taskpolicy';
+				args = [
+					'-t',
+					priorityMode.replace( 'taskpolicy-throughput-', '' ),
+					process.execPath,
+					'-e',
+					source,
+				];
 			}
 			externalBackgroundProcesses = Array.from( { length: count }, () => {
 				const child = spawn( command, args, { stdio: 'ignore' } );
@@ -1864,6 +1890,26 @@ setInterval(() => {}, 2147483647);
 					'cpu',
 					1,
 					'taskpolicy-qos-maintenance'
+				);
+			}
+			const latencyTierMatch = markPersistentIntervention.match(
+				/^external-background-taskpolicy-latency-(\d+)-cpu-noop$/
+			);
+			if ( latencyTierMatch ) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					1,
+					`taskpolicy-latency-${ latencyTierMatch[ 1 ] }`
+				);
+			}
+			const throughputTierMatch = markPersistentIntervention.match(
+				/^external-background-taskpolicy-throughput-(\d+)-cpu-noop$/
+			);
+			if ( throughputTierMatch ) {
+				ensureExternalBackgroundProcesses(
+					'cpu',
+					1,
+					`taskpolicy-throughput-${ throughputTierMatch[ 1 ] }`
 				);
 			}
 			if (
@@ -2315,6 +2361,12 @@ setInterval(() => {}, 2147483647);
 										'external-background-taskpolicy-qos-background-cpu-noop' ||
 									mode ===
 										'external-background-taskpolicy-maintenance-cpu-noop' ||
+									mode.startsWith(
+										'external-background-taskpolicy-latency-'
+									) ||
+									mode.startsWith(
+										'external-background-taskpolicy-throughput-'
+									) ||
 									mode === 'external-background-idle-noop'
 								) {
 									result = undefined;

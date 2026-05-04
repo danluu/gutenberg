@@ -235,6 +235,11 @@ The short version:
     is not "taskpolicy versus not taskpolicy"; it is closer to
     "ordinary/utility CPU affects the benchmark, background/maintenance CPU
     does not."
+-   A new `taskpolicy` tier sweep sharpens the negative side of that claim.
+    `taskpolicy -l 0..5` and `taskpolicy -t 0..5` background CPU children all
+    keep the no-op timer fast at `9.2-9.7ms`. That means the earlier slow rows
+    are not caused by taskpolicy tiering in general; the slow split is specific
+    to Darwin background priority and QoS background/maintenance clamps.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -410,6 +415,8 @@ run:
     and second RAF in the editor canvas;
 -   opt-in Chromium render-event tracing for keydown-to-`Layout`, `PrePaint`,
     `Paint`, `Layerize`, and `DrawFrame` timing;
+-   background CPU controls using `taskpolicy` QoS clamps, latency tiers, and
+    throughput tiers;
 -   alternate delay modes:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
@@ -605,6 +612,8 @@ The R script derives:
 -   `data/typing-delay-render-trace-*.csv`: opt-in Chromium render-trace samples
     and summaries for keydown-to-`Layout`, `PrePaint`, `Paint`, `Layerize`, and
     `DrawFrame` timing.
+-   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
+    `taskpolicy -t` throughput-tier background CPU controls.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -2624,6 +2633,38 @@ the machine state visible to the foreground browser/editor input path, while
 background/maintenance-QoS CPU activity is isolated or de-prioritized enough
 that it does not.
 
+I also swept the other `taskpolicy` scheduler knobs exposed by the local man
+page: latency tiers with `taskpolicy -l 0..5` and throughput tiers with
+`taskpolicy -t 0..5`. The setup is the same as the background CPU control: one
+busy child process runs continuously, Gutenberg's `1000ms` timer is rewritten to
+fire at `1250ms`, the timer callback is a zero-duration no-op, and the following
+key is held for `1300ms`.
+
+![Taskpolicy tier sweep](figures/109-taskpolicy-tier-sweep.png)
+
+| Policy | Tier | p50 | p10-p90 |
+| ------ | ---: | --: | ------: |
+| `taskpolicy -l` | `0` | `9.23ms` | `8.87-9.69ms` |
+| `taskpolicy -l` | `1` | `9.24ms` | `9.07-9.92ms` |
+| `taskpolicy -l` | `2` | `9.23ms` | `9.03-10.02ms` |
+| `taskpolicy -l` | `3` | `9.46ms` | `8.95-10.33ms` |
+| `taskpolicy -l` | `4` | `9.17ms` | `8.84-10.38ms` |
+| `taskpolicy -l` | `5` | `9.39ms` | `9.07-9.97ms` |
+| `taskpolicy -t` | `0` | `9.55ms` | `9.10-10.65ms` |
+| `taskpolicy -t` | `1` | `9.67ms` | `9.13-10.41ms` |
+| `taskpolicy -t` | `2` | `9.47ms` | `9.01-10.11ms` |
+| `taskpolicy -t` | `3` | `9.48ms` | `9.08-10.41ms` |
+| `taskpolicy -t` | `4` | `9.38ms` | `8.94-10.14ms` |
+| `taskpolicy -t` | `5` | `9.61ms` | `9.18-10.25ms` |
+
+All 12 tier settings are in the same fast band as ordinary CPU, `nice +20`, and
+`taskpolicy -c utility`. None behave like `taskpolicy -b`,
+`taskpolicy -c background`, or `taskpolicy -c maintenance`. That rules out a
+broader "taskpolicy latency/throughput tiering makes the CPU control slow"
+explanation. The supported statement is now narrower: on this machine, the slow
+background-CPU controls are specifically Darwin background priority and QoS
+background/maintenance clamps, not taskpolicy policy machinery in general.
+
 The CPU gap-decay sweep confirms the "recent" part:
 
 ![CPU gap decay](figures/53-worker-gap-decay.png)
@@ -4556,11 +4597,14 @@ The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,
 but recent ordinary/utility CPU activity can move that measured path between
 slow and fast bands without changing the DOM event payload or Gutenberg's coarse
-state at keydown. The remaining mechanism is below this benchmark's normal JS
-instrumentation: likely CPU/QoS/power-state interaction with a broad Gutenberg
-input path, not one bad selector or one browser trace accounting quirk. Proving
-that final layer would need hardware/browser-level instrumentation, not another
-small variation of the JS benchmark.
+state at keydown. The new `taskpolicy` tier sweep narrows the system side: all
+`-l 0..5` latency tiers and all `-t 0..5` throughput tiers stay fast, while
+Darwin background priority and QoS background/maintenance clamps stay slow. The
+remaining mechanism is below this benchmark's normal JS instrumentation: likely
+CPU/QoS/power-state interaction with a broad Gutenberg input path, not one bad
+selector, one browser trace accounting quirk, or taskpolicy tiering in general.
+Proving that final layer would need hardware/browser-level instrumentation, not
+another small variation of the JS benchmark.
 
 The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:
@@ -4686,6 +4730,9 @@ The key runs used in this report were:
     and `1300ms`, with opt-in Chromium render-event tracing.
 -   `render_between_keys`: complete keypress, then wait at `990ms`, `1000ms`,
     and `1300ms`, with the same render-event tracing.
+-   `taskpolicy_tier_sweep`: `taskpolicy -l 0..5` and `taskpolicy -t 0..5`
+    background CPU controls with a `1250ms` no-op timer and `1300ms` held-key
+    delay.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer
     and normal Playwright key-hold delay.
 -   `native_between_keys_timer`: native `contenteditable` with a `1000ms` input

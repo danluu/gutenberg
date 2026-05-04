@@ -3386,6 +3386,107 @@ if (file.exists(render_trace_samples_path) && file.exists(render_trace_summary_p
 	)
 }
 
+taskpolicy_tier_samples_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-samples.csv")
+taskpolicy_tier_summary_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-summary.csv")
+
+read_taskpolicy_tier_runs <- function() {
+	raw_base <- file.path(repo_root, "test/performance/artifacts/typing-delay-taskpolicy-tier")
+	if (!dir.exists(raw_base)) {
+		return(NULL)
+	}
+
+	run_dirs <- list.dirs(raw_base, recursive = FALSE, full.names = TRUE)
+	rows <- list()
+	for (json_dir in run_dirs) {
+		mode <- basename(json_dir)
+		match <- str_match(mode, "^external-background-taskpolicy-(latency|throughput)-(\\d+)-cpu-noop$")
+		if (is.na(match[1, 1])) {
+			next
+		}
+		json_files <- list.files(json_dir, pattern = "^typing-delay-benchmark-.*\\.json$", full.names = TRUE)
+		if (length(json_files) == 0) {
+			next
+		}
+		raw <- fromJSON(json_files[[1]], flatten = TRUE)
+		if (is.null(raw$records)) {
+			next
+		}
+
+		rows[[length(rows) + 1]] <- as_tibble(raw$records) %>%
+			filter(!isThrowaway) %>%
+			transmute(
+				family = match[1, 2],
+				tier = as.integer(match[1, 3]),
+				mode,
+				delay_ms = delayMs,
+				round,
+				delay_sample_index = delaySampleIndex,
+				latency_ms = latencyMs,
+				keypress_ms = keypressMs,
+				keydown_ms = keydownMs,
+				keyup_ms = keyupMs
+			)
+	}
+
+	if (length(rows) == 0) {
+		return(NULL)
+	}
+
+	bind_rows(rows)
+}
+
+taskpolicy_tier_samples_from_artifacts <- read_taskpolicy_tier_runs()
+if (!is.null(taskpolicy_tier_samples_from_artifacts)) {
+	taskpolicy_tier_samples <- taskpolicy_tier_samples_from_artifacts
+	write_csv(taskpolicy_tier_samples, taskpolicy_tier_samples_path)
+
+	taskpolicy_tier_summary <- taskpolicy_tier_samples %>%
+		group_by(family, tier, mode, delay_ms) %>%
+		summarise(
+			retained_n = n(),
+			latency_p10_ms = quant(latency_ms, 0.1),
+			latency_p50_ms = quant(latency_ms, 0.5),
+			latency_p90_ms = quant(latency_ms, 0.9),
+			latency_sd_ms = sd(latency_ms),
+			keypress_p50_ms = quant(keypress_ms, 0.5),
+			keydown_p50_ms = quant(keydown_ms, 0.5),
+			keyup_p50_ms = quant(keyup_ms, 0.5),
+			.groups = "drop"
+		)
+	write_csv(taskpolicy_tier_summary, taskpolicy_tier_summary_path)
+}
+
+if (file.exists(taskpolicy_tier_summary_path)) {
+	taskpolicy_tier_summary <- read_csv(taskpolicy_tier_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			family = factor(family, levels = c("latency", "throughput")),
+			family_label = fct_recode(
+				family,
+				`taskpolicy -l latency tier` = "latency",
+				`taskpolicy -t throughput tier` = "throughput"
+			)
+		)
+
+	save_plot(
+		ggplot(taskpolicy_tier_summary, aes(tier, latency_p50_ms, color = family_label, shape = family_label)) +
+			geom_linerange(aes(ymin = latency_p10_ms, ymax = latency_p90_ms), alpha = 0.45, linewidth = 0.9) +
+			geom_point(size = 3.2, alpha = 0.95) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_x_continuous(breaks = 0:5) +
+			labs(
+				title = "Taskpolicy latency and throughput tiers still keep the no-op timer fast",
+				subtitle = "1250ms no-op timer, 1300ms held key, one background CPU child; ranges are p10-p90 over 24 retained samples",
+				x = "Tier",
+				y = "Next EventDispatch duration (ms)",
+				color = "Policy",
+				shape = "Policy"
+			),
+		"109-taskpolicy-tier-sweep.png",
+		width = 9.4,
+		height = 6.4
+	)
+}
+
 if (file.exists(ci_dense_n50_summary_path)) {
 	ci_held_key_delay_runtime_reliability <- read_csv(ci_dense_n50_summary_path, show_col_types = FALSE) %>%
 		transmute(

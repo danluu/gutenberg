@@ -1,0 +1,13 @@
+family,tier,mode,delay_ms,retained_n,latency_p10_ms,latency_p50_ms,latency_p90_ms,latency_sd_ms,keypress_p50_ms,keydown_p50_ms,keyup_p50_ms
+latency,0,external-background-taskpolicy-latency-0-cpu-noop,1300,24,8.8723,9.2285,9.686,0.3333521443967519,8.9225,0.097,0.12
+latency,1,external-background-taskpolicy-latency-1-cpu-noop,1300,24,9.0688,9.238499999999998,9.921700000000001,0.35947484844793637,9.0155,0.0955,0.1225
+latency,2,external-background-taskpolicy-latency-2-cpu-noop,1300,24,9.0302,9.225000000000001,10.023600000000002,0.5571634146748816,8.987,0.101,0.1275
+latency,3,external-background-taskpolicy-latency-3-cpu-noop,1300,24,8.9532,9.464,10.3293,0.5485127123888505,9.227,0.0985,0.1245
+latency,4,external-background-taskpolicy-latency-4-cpu-noop,1300,24,8.842300000000002,9.1665,10.3751,0.6821656570772612,8.9025,0.099,0.1135
+latency,5,external-background-taskpolicy-latency-5-cpu-noop,1300,24,9.069899999999999,9.391,9.970699999999999,0.4107495071314093,9.1235,0.106,0.125
+throughput,0,external-background-taskpolicy-throughput-0-cpu-noop,1300,24,9.1031,9.549,10.6481,0.5806977795995815,9.2335,0.104,0.138
+throughput,1,external-background-taskpolicy-throughput-1-cpu-noop,1300,24,9.1289,9.6665,10.409299999999998,0.5071802966015826,9.339500000000001,0.1085,0.1435
+throughput,2,external-background-taskpolicy-throughput-2-cpu-noop,1300,24,9.014399999999998,9.474,10.1105,0.5626067676450403,9.219000000000001,0.105,0.139
+throughput,3,external-background-taskpolicy-throughput-3-cpu-noop,1300,24,9.0772,9.475000000000001,10.413900000000002,0.5294352593477128,9.2185,0.10600000000000001,0.138
+throughput,4,external-background-taskpolicy-throughput-4-cpu-noop,1300,24,8.9352,9.381,10.1361,0.46104333279003695,9.1345,0.10450000000000001,0.1355
+throughput,5,external-background-taskpolicy-throughput-5-cpu-noop,1300,24,9.1839,9.6095,10.2536,0.5315724400850474,9.3585,0.107,0.1395
