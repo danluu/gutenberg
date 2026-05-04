@@ -205,6 +205,13 @@ The short version:
     flush finish after that following input started, while all three `1300ms`
     intervals drained before the following input and were still in the slower
     retained-p50 band.
+-   A React/render-boundary audit now bounds that remaining caveat. The smallest
+    key-held visual endpoint drop is `11.2ms`. The largest post-EventDispatch
+    visual/render-tail movement is `2.3ms`, the Chrome render-event tail is
+    `0.8ms`, `renderQueue.add` moves by `0.2ms`, and the React external-store
+    listener moves by only `0.1ms` in the slow-control comparison. A React
+    profiler may still identify component ownership of after-input work, but it
+    is no longer a plausible primary explanation for the `1000ms` cliff.
 -   A dense timer-to-key gap scan adds another constraint. In the normal-marker
     and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
     low when the timer callback is roughly `40-100ms` before the next keydown,
@@ -792,6 +799,10 @@ The R script derives:
 -   `data/typing-delay-visual-endpoint-decomposition-summary.csv`: derived
     split of the `1000ms` visual-endpoint drop into the EventDispatch slice and
     the post-EventDispatch visual/render tail.
+-   `data/typing-delay-react-render-boundary-audit.csv`: derived join that
+    bounds the remaining React/render caveat using visual endpoint
+    decomposition, `useSelect` subphase deltas, paused listener-wrapper deltas,
+    and priority-queue idle timing.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -5678,6 +5689,37 @@ synthetic key-hold artifact propagates coherently, per retained key, to
 Chromium's internal visual/render endpoints and to localized changed trace
 screenshots.
 
+### React/Render Boundary Audit
+
+I then joined the visual endpoint decomposition with the nested `useSelect`
+subphase deltas, paused listener-wrapper deltas, and priority-queue idle probe.
+This answers a narrower version of the React-profiler open question: how much
+room is left for React/render child work to explain the `1000ms` cliff?
+
+![React/render boundary audit](figures/135-react-render-boundary-audit.png)
+
+The dashed line is the smallest key-held visual endpoint drop in the joined
+endpoint probes: `11.2ms`. Against that scale:
+
+| Layer or theory | Largest supporting p50 movement | Interpretation |
+| --------------- | ------------------------------: | -------------- |
+| EventDispatch slice in visual probes | `13.8ms` | the main endpoint movement is already in the measured input slice |
+| `rootSubscribe` / Redux listener wrappers | `3.1ms` / `3.0ms` | the remaining input-side accounting is mostly broad subscriber fanout |
+| post-EventDispatch visual/render tail | `2.3ms` | real, but too small to explain the endpoint cliff |
+| Chrome render-event tail only | `0.8ms` | Paint/DrawFrame/RAF tail movement is sub-millisecond in the render-trace probe |
+| `useSelect.onChange` wrapper | `1.0ms` | wrapper-level movement exists, but child phases below it do not grow enough |
+| `useSelect.reactListener` / `renderQueue.add` / `mapSelect` | `0.1ms` / `0.2ms` / `0.25ms` | too small for the primary cause |
+| priority queue drained before next input | wrong direction | the faster `1000ms` probe had idle flushes crossing the next input; the slower `1300ms` probe drained before input |
+
+That closes most of the React/render ambiguity for the cliff mechanism. A React
+profiler could still identify component owners for after-input work and would be
+useful for product optimization, but the current traces already rule out
+`renderQueue.add`, React's external-store listener, selector recomputation, or
+post-dispatch rendering as the primary reason the key-held `1000ms` point is
+`~11-16ms` faster than its slow neighbors. The remaining React question is
+ownership of secondary whole-cycle cost, not causality for the low-band
+EventDispatch/input result.
+
 ## Trace Grouping Bug Avoided
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
@@ -6007,6 +6049,13 @@ input. The remaining React-side open question is therefore about whole-cycle
 render ownership/cost after the measured input, not about selector counts,
 enqueue counts, or a drained-before-input idle queue.
 
+The React/render-boundary audit makes that sharper. The current evidence already
+bounds `renderQueue.add`, React's external-store listener, selector recompute,
+and post-EventDispatch rendering as secondary contributors. The useful remaining
+profiler question is "which components own the smaller after-input tail or
+secondary whole-cycle cost?", not "does React rendering explain the `1000ms`
+cliff?"
+
 The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:
 keydown-to-second-RAF falls from about `33ms` / `32ms` at `990ms` / `1300ms` to
@@ -6069,9 +6118,9 @@ For investigation:
     values.
 -   The RichText `onInput` split is now deep enough for this artifact: direct DOM
     record creation, apply-record, serialization, and parent callbacks are small.
-    Extend the existing `useSelect` owner traces from source-mapped hook
-    callbacks to React render ownership, so the components woken after the
-    `core/block-editor` fanout are identifiable.
+    React render ownership is still useful for optimizing after-input/whole-cycle
+    work, but the boundary audit above says it should not be treated as the
+    primary cause of the `1000ms` cliff.
 -   For the block-list owner groups identified here, separate necessary
     text-input invalidations from broad block-tree invalidations. Start with
     low-burden settings/name guards; do not start with `BlockListItems` despite

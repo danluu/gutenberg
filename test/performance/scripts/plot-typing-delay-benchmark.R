@@ -11897,4 +11897,296 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 	}
 }
 
+react_render_boundary_inputs <- c(
+	file.path(data_dir, "typing-delay-visual-endpoint-drop-summary.csv"),
+	file.path(data_dir, "typing-delay-visual-endpoint-decomposition-summary.csv"),
+	file.path(data_dir, "typing-delay-use-select-subphase-deltas.csv"),
+	file.path(data_dir, "typing-delay-listener-wrapper-deltas.csv"),
+	file.path(data_dir, "typing-delay-priority-queue-idle-summary.csv")
+)
+if (all(file.exists(react_render_boundary_inputs))) {
+	visual_endpoint_drop_summary_existing <- read_csv(
+		file.path(data_dir, "typing-delay-visual-endpoint-drop-summary.csv"),
+		show_col_types = FALSE
+	)
+	visual_endpoint_decomposition_existing <- read_csv(
+		file.path(data_dir, "typing-delay-visual-endpoint-decomposition-summary.csv"),
+		show_col_types = FALSE
+	)
+	use_select_subphase_deltas_existing <- read_csv(
+		file.path(data_dir, "typing-delay-use-select-subphase-deltas.csv"),
+		show_col_types = FALSE
+	)
+	listener_wrapper_deltas_existing <- read_csv(
+		file.path(data_dir, "typing-delay-listener-wrapper-deltas.csv"),
+		show_col_types = FALSE
+	)
+	priority_queue_idle_summary_existing <- read_csv(
+		file.path(data_dir, "typing-delay-priority-queue-idle-summary.csv"),
+		show_col_types = FALSE
+	)
+
+	keyheld_endpoint_drop_reference_ms <- visual_endpoint_drop_summary_existing %>%
+		filter(
+			input_mode == "key held during delay",
+			endpoint %in% c(
+				"EventDispatch trace latency",
+				"keydown to second RAF after input",
+				"keydown to Paint trace event",
+				"keydown to DrawFrame trace event",
+				"keydown to first changed trace screenshot"
+			)
+		) %>%
+		summarize(reference_ms = min(drop_vs_slow_neighbors_ms, na.rm = TRUE), .groups = "drop") %>%
+		pull(reference_ms)
+
+	if (length(keyheld_endpoint_drop_reference_ms) == 0 || !is.finite(keyheld_endpoint_drop_reference_ms)) {
+		keyheld_endpoint_drop_reference_ms <- NA_real_
+	}
+
+	visual_render_bound_rows <- visual_endpoint_decomposition_existing %>%
+		filter(input_mode == "key held during delay") %>%
+		summarize(
+			`EventDispatch slice in visual probes` = max(event_dispatch_drop_vs_slow_neighbors_ms, na.rm = TRUE),
+			`post-EventDispatch visual/render tail` = max(post_dispatch_drop_vs_slow_neighbors_ms, na.rm = TRUE),
+			`post-EventDispatch Chrome render-event tail` = max(
+				post_dispatch_drop_vs_slow_neighbors_ms[probe == "Chrome render trace"],
+				na.rm = TRUE
+			),
+			.groups = "drop"
+		) %>%
+		pivot_longer(everything(), names_to = "claim", values_to = "effect_p50_ms") %>%
+		mutate(
+			evidence_layer = case_when(
+				claim == "EventDispatch slice in visual probes" ~ "measured input",
+				TRUE ~ "post-input visual/render"
+			),
+			comparison = "mean(990ms, 1300ms) minus 1000ms, key held during delay",
+			status = case_when(
+				claim == "EventDispatch slice in visual probes" ~ "primary observed movement",
+				TRUE ~ "bounded secondary contributor"
+			),
+			interpretation = case_when(
+				claim == "EventDispatch slice in visual probes" ~ "The downstream endpoint speedup is already mostly present inside the measured input slice.",
+				claim == "post-EventDispatch Chrome render-event tail" ~ "Chrome Paint/DrawFrame/RAF tail movement is sub-millisecond in the render-trace probe.",
+				TRUE ~ "The largest post-dispatch tail movement is in the trace-screenshot probe and is still much smaller than the endpoint cliff."
+			)
+		)
+
+	use_select_bound_rows <- use_select_subphase_deltas_existing %>%
+		filter(metric %in% c(
+			"rootSubscribe total",
+			"Redux listener wrappers",
+			"useSelect.onChange",
+			"renderQueue.add",
+			"useSelect.onStoreChange",
+			"useSelect.reactListener",
+			"useSelect.updateValue",
+			"useSelect.mapSelect"
+		)) %>%
+		group_by(metric) %>%
+		summarize(
+			effect_p50_ms = max(delta_vs_normal_ms, na.rm = TRUE),
+			min_delta_p50_ms = min(delta_vs_normal_ms, na.rm = TRUE),
+			max_intervention = intervention[which.max(delta_vs_normal_ms)][1],
+			.groups = "drop"
+		) %>%
+		transmute(
+			claim = metric,
+			evidence_layer = case_when(
+				metric %in% c("rootSubscribe total", "Redux listener wrappers") ~ "input subscriber fanout",
+				metric == "renderQueue.add" ~ "async render queue",
+				metric == "useSelect.reactListener" ~ "React external-store listener",
+				metric %in% c("useSelect.updateValue", "useSelect.mapSelect", "useSelect.onStoreChange") ~ "selector/cache body",
+				TRUE ~ "useSelect wrapper"
+			),
+			comparison = paste0("largest p50 delta versus normal marker among slow timer controls; max in ", max_intervention),
+			effect_p50_ms = pmax(effect_p50_ms, 0),
+			status = case_when(
+				metric %in% c("rootSubscribe total", "Redux listener wrappers") ~ "visible residual accounting",
+				metric %in% c("renderQueue.add", "useSelect.reactListener", "useSelect.updateValue", "useSelect.mapSelect", "useSelect.onStoreChange") ~ "too small for primary cause",
+				TRUE ~ "bounded wrapper movement"
+			),
+			interpretation = case_when(
+				metric == "rootSubscribe total" ~ "The slow controls spend more p50 time in the same root-subscribe fanout shape.",
+				metric == "Redux listener wrappers" ~ "The shared slow-control movement is in thousands of paused listener wrappers, not in more listeners.",
+				metric == "useSelect.onChange" ~ "The outer useSelect wrapper moves, but child phases below it do not grow enough to explain the cliff.",
+				metric == "renderQueue.add" ~ "Async render-queue insertion changes by only tenths of a millisecond.",
+				metric == "useSelect.reactListener" ~ "React external-store listener duration is flat or lower in the slow controls.",
+				metric == "useSelect.onStoreChange" ~ "Synchronous onStoreChange duration is flat or lower in the slow controls.",
+				metric == "useSelect.updateValue" ~ "Selector cache update duration is flat or lower in the slow controls.",
+				metric == "useSelect.mapSelect" ~ "Selector-body recomputation is flat or lower in the slow controls.",
+				TRUE ~ "Bounded by nested span deltas."
+			)
+		)
+
+	listener_wrapper_bound_rows <- listener_wrapper_deltas_existing %>%
+		filter(metric %in% c(
+			"Redux wrapper outside emitter.emit",
+			"paused emitter.emit",
+			"emitter.notifyListeners",
+			"emitter.listener callbacks"
+		)) %>%
+		group_by(metric) %>%
+		summarize(
+			effect_p50_ms = max(delta_vs_normal_ms, na.rm = TRUE),
+			min_delta_p50_ms = min(delta_vs_normal_ms, na.rm = TRUE),
+			max_intervention = intervention[which.max(delta_vs_normal_ms)][1],
+			.groups = "drop"
+		) %>%
+		transmute(
+			claim = metric,
+			evidence_layer = case_when(
+				metric %in% c("Redux wrapper outside emitter.emit", "paused emitter.emit") ~ "paused wrapper accounting",
+				TRUE ~ "resumed listener phase"
+			),
+			comparison = paste0("largest p50 delta versus normal marker among slow timer controls; max in ", max_intervention),
+			effect_p50_ms = pmax(effect_p50_ms, 0),
+			status = case_when(
+				metric %in% c("Redux wrapper outside emitter.emit", "paused emitter.emit") ~ "visible residual accounting",
+				TRUE ~ "not common slow-path cause"
+			),
+			interpretation = case_when(
+				metric == "Redux wrapper outside emitter.emit" ~ "Part of the residual is wrapper overhead around the paused emitter call.",
+				metric == "paused emitter.emit" ~ "The paused emitter child contributes, but it only marks the emitter pending.",
+				metric == "emitter.notifyListeners" ~ "Resume/notify does not consistently grow in the slow controls.",
+				metric == "emitter.listener callbacks" ~ "Real resumed listener callbacks do not consistently grow in the slow controls.",
+				TRUE ~ "Bounded by nested wrapper deltas."
+			)
+		)
+
+	priority_idle_row <- priority_queue_idle_summary_existing %>%
+		summarize(
+			fast_crossing = intervals_with_idle_crossing_next_input[delay_ms == 1000][1],
+			fast_intervals = retained_intervals_with_next_input[delay_ms == 1000][1],
+			slow_crossing = intervals_with_idle_crossing_next_input[delay_ms == 1300][1],
+			slow_intervals = retained_intervals_with_next_input[delay_ms == 1300][1],
+			fast_latency = latency_all_retained_p50_ms[delay_ms == 1000][1],
+			slow_latency = latency_all_retained_p50_ms[delay_ms == 1300][1],
+			.groups = "drop"
+		) %>%
+		transmute(
+			claim = "priority queue drained before next input",
+			evidence_layer = "async render queue",
+			comparison = paste0(
+				"1000ms fast crossing ",
+				fast_crossing,
+				"/",
+				fast_intervals,
+				"; 1300ms slow crossing ",
+				slow_crossing,
+				"/",
+				slow_intervals
+			),
+			effect_p50_ms = 0,
+			status = "wrong direction",
+			interpretation = paste0(
+				"The faster 1000ms probe had idle flushes crossing the following input, while the slower 1300ms probe drained before input; retained p50s were ",
+				number(fast_latency, accuracy = 0.1),
+				"ms and ",
+				number(slow_latency, accuracy = 0.1),
+				"ms."
+			)
+		)
+
+	react_render_boundary_audit <- bind_rows(
+		visual_render_bound_rows,
+		use_select_bound_rows,
+		listener_wrapper_bound_rows,
+		priority_idle_row
+	) %>%
+		mutate(
+			cliff_reference_ms = keyheld_endpoint_drop_reference_ms,
+			share_of_min_keyheld_endpoint_drop = effect_p50_ms / cliff_reference_ms,
+			claim_plot = str_wrap(claim, 38),
+			plot_layer = case_when(
+				evidence_layer == "measured input" ~ "measured input",
+				evidence_layer %in% c("input subscriber fanout", "paused wrapper accounting") ~ "subscriber fanout / wrappers",
+				evidence_layer %in% c("useSelect wrapper", "selector/cache body", "React external-store listener", "async render queue") ~ "React/useSelect child layer",
+				evidence_layer == "resumed listener phase" ~ "resumed listener callbacks",
+				evidence_layer == "post-input visual/render" ~ "post-input visual tail",
+				TRUE ~ as.character(evidence_layer)
+			),
+			evidence_layer = factor(
+				evidence_layer,
+				levels = c(
+					"measured input",
+					"input subscriber fanout",
+					"paused wrapper accounting",
+					"useSelect wrapper",
+					"selector/cache body",
+					"React external-store listener",
+					"async render queue",
+					"resumed listener phase",
+					"post-input visual/render"
+				)
+			),
+			status = factor(
+				status,
+				levels = c(
+					"primary observed movement",
+					"visible residual accounting",
+					"bounded wrapper movement",
+					"bounded secondary contributor",
+					"too small for primary cause",
+					"not common slow-path cause",
+					"wrong direction"
+				)
+			),
+			plot_layer = factor(
+				plot_layer,
+				levels = c(
+					"measured input",
+					"subscriber fanout / wrappers",
+					"React/useSelect child layer",
+					"resumed listener callbacks",
+					"post-input visual tail"
+				)
+			)
+		) %>%
+		arrange(desc(effect_p50_ms), evidence_layer, claim)
+
+	write_csv(
+		react_render_boundary_audit,
+		file.path(data_dir, "typing-delay-react-render-boundary-audit.csv")
+	)
+
+	react_render_boundary_plot <- react_render_boundary_audit %>%
+		filter(claim != "priority queue drained before next input") %>%
+		mutate(
+			claim_plot = fct_reorder(claim_plot, effect_p50_ms)
+		)
+
+	save_plot(
+		ggplot(
+			react_render_boundary_plot,
+			aes(effect_p50_ms, claim_plot, fill = plot_layer)
+		) +
+			geom_col(width = 0.68, alpha = 0.92) +
+			geom_vline(
+				xintercept = keyheld_endpoint_drop_reference_ms,
+				linetype = "dashed",
+				linewidth = 0.45,
+				color = "grey35"
+			) +
+			scale_fill_brewer(type = "qual", palette = "Dark2", name = "Evidence layer") +
+			scale_x_continuous(labels = number_format(accuracy = 0.1)) +
+			labs(
+				title = "React/render child layers are too small to explain the key-held cliff",
+				subtitle = paste0(
+					"Bars are p50 movement from existing diagnostics; dashed line is the smallest key-held visual endpoint drop (",
+					number(keyheld_endpoint_drop_reference_ms, accuracy = 0.1),
+					"ms)"
+				),
+				x = "Largest observed p50 movement supporting that layer (ms)",
+				y = NULL
+			) +
+			guides(fill = guide_legend(nrow = 2)) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"135-react-render-boundary-audit.png",
+		width = 12.5,
+		height = 8.6
+	)
+}
+
 message("Wrote plots to: ", figure_dir)
