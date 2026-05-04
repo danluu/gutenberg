@@ -11829,10 +11829,128 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					"reporting gate"
 				)
 
-			write_csv(
-				system_mechanism_matrix,
-				file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
-			)
+					cpu_qos_local_counter_feasibility_audit <- tribble(
+						~counter_surface, ~local_probe_result, ~available_in_session, ~needs_root_or_setup, ~decisive_for, ~missing_or_risky, ~next_use, ~mechanism_value_score, ~collection_blocker_score, ~plot_label,
+						"`powermetrics` tasks/cpu_power",
+						"`/usr/bin/powermetrics` is present; help lists `tasks`, `cpu_power`, `thermal`, `sfi`, `--show-pstates`, `--show-cpu-qos`, `--show-process-qos`, `--show-process-qos-tiers`, `--show-process-amp`, `--show-process-ipc`, and plist output. A direct sample failed with `powermetrics must be invoked as the superuser`.",
+						"tool present, collection blocked",
+						"root required; current noninteractive sudo check returns exit 1",
+						"P-core/cluster frequency and residency, process QoS, process AMP cluster stats, cycles/instructions on ARM, thermal/power metadata.",
+						"Sampled rather than event-exact; per-thread information is limited; requires joining samples to per-key benchmark sidecar.",
+						"First counter lane: run compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows with 100ms plist samples and benchmark key-window markers.",
+						5, 4, "powermetrics",
+						"`trace record` system trace",
+						"`/usr/bin/trace` is present; plans expose `scheduling`, `cswitch-cycles-instrs`, `qos`, `sched-processor-selection`, and `thread-wakeup-sampling`. A one-second lightweight recording failed with `must be running as root (or under sudo) for system visibility`.",
+						"tool present, collection blocked",
+						"root required for system visibility",
+						"Runnable-to-running latency, scheduler placement, QoS, thread wakeups, context switches, processor selection, and trace files readable by Instruments/spindump.",
+						"Trace overhead must be checked; trace files need postprocessing and per-key notifications/markers.",
+						"Second counter lane: add `qos`, `sched-processor-selection`, and `thread-wakeup-sampling` to the same compact rows when powermetrics alone does not identify the split.",
+						5, 4, "trace",
+						"`xctrace` / Instruments",
+						"`/usr/bin/xctrace` is present, but `xctrace list instruments` fails because the active developer directory is Command Line Tools, not full Xcode.",
+						"binary present, Instruments unavailable",
+						"full Xcode developer directory required",
+						"Interactive Instruments templates and trace analysis, especially System Trace views.",
+						"Not usable from the current CLT-only setup; do not depend on it for unattended CI-style data collection.",
+						"Optional analysis lane after root trace files exist; not the primary collection mechanism in this repo branch.",
+						4, 5, "xctrace",
+						"`sample` / `spindump`",
+						"`/usr/bin/sample` and `/usr/sbin/spindump` are present.",
+						"available",
+						"may need elevated privileges for full-process/system captures",
+						"Stack attribution and gross CPU use while a run is active.",
+						"Does not directly report cluster residency, effective QoS transitions, or per-key scheduler decisions.",
+						"Use only as a fallback sanity check for renderer stacks, not as the deciding CPU/QoS mechanism observer.",
+						2, 2, "sample",
+						"Benchmark key-window sidecar",
+						"The current benchmark records key timing and helper modes, but not helper PID lifetimes, OS counter sample IDs, trace notification IDs, or per-key collector windows.",
+						"not yet implemented",
+						"code change required",
+						"Joining OS samples to retained keys without relying on aggregate medians.",
+						"Without this sidecar, powermetrics/trace rows can only support class-level correlations.",
+						"Add run id, retained sample id, helper PID, helper start/end, keydown/keyup/EventDispatch times, collector file names, and notification markers to each compact row.",
+						5, 3, "sidecar",
+						"Chromium scheduler/runtime trace",
+						"Current browser traces are render/screenshot oriented, but `Metrics.startTracing()` accepts options and the typing benchmark can already preserve selected gap trace events.",
+						"available with harness work",
+						"new trace category mode required",
+						"Browser input task queues, V8 slices, runtime checkpoints, and task boundaries after OS counters are controlled.",
+						"Cannot replace OS frequency/QoS counters; browser trace categories may perturb the path.",
+						"Run only after the OS-counter split is known, or alongside it in a matched compact row set with observer-effect controls.",
+						4, 3, "browser trace",
+						"Existing p50 summaries",
+						"Current CPU/QoS, finite CPU, native, visual, and source-span summaries already define the fast/slow boundary.",
+						"available",
+						"none",
+						"Boundary selection and regression guards.",
+						"Aggregates cannot name the hardware/scheduler mechanism.",
+						"Use to choose the compact counter rows and to check that counter instrumentation preserved the same class ordering.",
+						2, 1, "p50 rows"
+					) %>%
+						mutate(
+							available_in_session = factor(
+								available_in_session,
+								levels = c(
+									"available",
+									"available with harness work",
+									"not yet implemented",
+									"tool present, collection blocked",
+									"binary present, Instruments unavailable"
+								)
+							)
+						)
+
+					cpu_qos_counter_first_run_plan <- tribble(
+						~phase, ~phase_order, ~purpose, ~minimum_rows, ~collector, ~pass_condition, ~failure_or_expansion_trigger, ~implementation_status, ~plot_label,
+						"Add benchmark sidecar", 1,
+						"Make OS/browser samples joinable to retained keys instead of only class medians.",
+						"all compact rows",
+						"benchmark JSON/CSV sidecar",
+						"Every retained key has run id, sample id, helper PID, helper start/end, key timing, EventDispatch timing, and collector file names.",
+						"Any row cannot be joined by retained key or helper process.",
+						"code change", "sidecar",
+						"Root powermetrics triage", 2,
+						"Test whether frequency, cluster residency, process QoS, AMP counters, or thermal/power state already separates fast and slow classes.",
+						"near-key no-CPU slow; ordinary/utility fast; background/maintenance slow; fresh finite; stale finite",
+						"`sudo powermetrics -i 100 -f plist --samplers tasks,cpu_power,thermal,sfi --show-pstates --show-cpu-qos --show-process-qos --show-process-qos-tiers --show-process-amp --show-process-ipc --show-process-wait-times`",
+						"A per-sample counter state predicts the fast ordinary/utility rows and finite decay while absent from no-CPU and background/maintenance slow rows.",
+						"Counters do not separate the fast/slow rows, or sampling cadence misses the key windows.",
+						"blocked: root", "powermetrics",
+						"Root system trace split", 3,
+						"Discriminate Darwin scheduler/QoS placement and wakeup latency from frequency/residency explanations.",
+						"same compact rows plus one repeated confirmation run",
+						"`sudo trace record --plan default --add qos --add sched-processor-selection --add thread-wakeup-sampling`",
+						"Runnable latency, processor selection, QoS, or wakeup timing explains the class split after matching powermetrics state.",
+						"Trace overhead changes class ordering, or trace state also fails to separate rows.",
+						"blocked: root", "system trace",
+						"Chromium scheduler trace", 4,
+						"Check browser input-task queues only after OS counters do not explain the split.",
+						"one no-CPU slow; one ordinary/utility fast; one background/maintenance slow; one finite fresh/stale pair",
+						"CDP trace categories for scheduler/task queues, V8, runtime, and existing Gutenberg source spans",
+						"Browser queue/priority/task-boundary state predicts the residual after OS counters are controlled.",
+						"Browser trace perturbs the same mechanism or duplicates an OS-counter explanation.",
+						"harness work", "browser",
+						"Mechanism report gate", 5,
+						"Change the report only when the same per-key state predicts all discriminating rows.",
+						"all successful compact rows",
+						"joined per-key table",
+						"One named state variable explains no-CPU slow, ordinary/utility fast, background/maintenance slow, and finite decay rows.",
+						"Different row families need unrelated explanations or only aggregate medians agree.",
+						"not started", "report gate"
+					) %>%
+						mutate(
+							phase = factor(phase, levels = phase),
+							implementation_status = factor(
+								implementation_status,
+								levels = c("code change", "blocked: root", "harness work", "not started")
+							)
+						)
+
+				write_csv(
+					system_mechanism_matrix,
+					file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
+				)
 			write_csv(
 				cpu_qos_next_probe_audit,
 				file.path(data_dir, "typing-delay-cpu-qos-next-probe-audit.csv")
@@ -11841,10 +11959,18 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					cpu_qos_counter_contract_audit,
 					file.path(data_dir, "typing-delay-cpu-qos-counter-contract-audit.csv")
 				)
-				write_csv(
-					cpu_qos_counter_runset_contract_audit,
-					file.path(data_dir, "typing-delay-cpu-qos-counter-runset-contract-audit.csv")
-				)
+					write_csv(
+						cpu_qos_counter_runset_contract_audit,
+						file.path(data_dir, "typing-delay-cpu-qos-counter-runset-contract-audit.csv")
+					)
+					write_csv(
+						cpu_qos_local_counter_feasibility_audit,
+						file.path(data_dir, "typing-delay-cpu-qos-local-counter-feasibility-audit.csv")
+					)
+					write_csv(
+						cpu_qos_counter_first_run_plan,
+						file.path(data_dir, "typing-delay-cpu-qos-counter-first-run-plan.csv")
+					)
 
 			save_plot(
 				ggplot(
@@ -11873,11 +11999,71 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					color = "Status",
 					shape = "Status"
 				),
-			"129-system-mechanism-falsification-matrix.png",
-			width = 11.5,
-			height = 7.3
-		)
-	}
+				"129-system-mechanism-falsification-matrix.png",
+				width = 11.5,
+				height = 7.3
+			)
+
+				save_plot(
+					ggplot(
+						cpu_qos_local_counter_feasibility_audit,
+						aes(mechanism_value_score, collection_blocker_score, color = available_in_session, shape = available_in_session)
+					) +
+						geom_point(size = 3.7, alpha = 0.92) +
+						geom_text(
+							aes(label = plot_label),
+							nudge_x = 0.08,
+							nudge_y = 0.08,
+							size = 3,
+							show.legend = FALSE,
+							check_overlap = TRUE
+						) +
+						scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+						scale_shape_manual(values = c(16, 17, 15, 8, 4), drop = FALSE) +
+						scale_x_continuous(breaks = 1:5, limits = c(1, 5.7)) +
+						scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+						labs(
+							title = "CPU/QoS counters are available, but the decisive lanes are privileged",
+							subtitle = "Higher x means more useful for the mechanism; higher y means more local collection friction in this session",
+							x = "mechanism value (1 = weak, 5 = decisive)",
+							y = "collection blocker (1 = low, 5 = high)",
+							color = "Local state",
+							shape = "Local state"
+						),
+					"172-cpu-qos-counter-feasibility.png",
+					width = 12,
+					height = 7
+				)
+
+				save_plot(
+					ggplot(
+						cpu_qos_counter_first_run_plan,
+						aes(phase_order, phase, color = implementation_status, shape = implementation_status)
+					) +
+						geom_point(size = 4, alpha = 0.95) +
+						geom_text(
+							aes(label = plot_label),
+							nudge_x = 0.08,
+							size = 3,
+							show.legend = FALSE,
+							check_overlap = TRUE
+						) +
+						scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+						scale_shape_manual(values = c(16, 17, 15, 8), drop = FALSE) +
+						scale_x_continuous(breaks = 1:5, limits = c(0.8, 5.8)) +
+						labs(
+							title = "The next CPU/QoS run should be a compact counter ladder",
+							subtitle = "Do not add broad JS rows until the sidecar and privileged counter lanes can distinguish the remaining theories",
+							x = "collection phase",
+							y = NULL,
+							color = "Implementation state",
+							shape = "Implementation state"
+						),
+					"173-cpu-qos-counter-first-run-plan.png",
+					width = 12,
+					height = 6.8
+				)
+		}
 
 	if (file.exists(native_busy_wait_control_summary_path)) {
 		native_busy_wait_control <- read_csv(native_busy_wait_control_summary_path, show_col_types = FALSE) %>%
@@ -17701,8 +17887,8 @@ open_question_next_instrumentation_matrix <- tribble(
 	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector and branch-aware compatibility audits narrow the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found. The branch-aware route must preserve dynamic store sets, registry-selector cross-store reads, parent registries, late store registration, render/subscription races, async queue cancellation, no-deps withSelect closures, generic stores, shallow-equality semantics, and public store-level subscribe semantics.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent and store-level subscribe notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes the branch-aware useSelect compatibility matrix plus marker-only source-span gates.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
-		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated Runtime.evaluate/Runtime.callFunctionOn rows are the dose-response control, trace-on captureSnapshot rows isolate the perturbation, and native rows bound browser-only scale.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, EventDispatch, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows.",
-	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "OS counter contract", "Counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this JS harness.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows.",
+		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Harness-gap and falsification audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated Runtime.evaluate/Runtime.callFunctionOn remains the dose-response control, trace-on captureSnapshot remains the perturbation control, and the exact Chromium state is still unnamed.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Implement the runtime trace runbook with per-retained-key protocol-command timing, command counts, execution context/object lifecycle, scheduler/task-queue, V8/microtask, EventDispatch, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows.",
+	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "privileged counter ladder", "Local counter feasibility audit makes the remaining mechanism test executable: the compact row set is known, powermetrics and trace expose the needed power/QoS/scheduler surfaces on this M3 Max host, but both require root and the benchmark still needs a per-retained-key sidecar before the counters are joinable.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Add helper-PID/key-window/collector sidecar first, then run compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root powermetrics; add root trace only if frequency/residency/QoS counters do not explain the split; do not add more unprivileged JS benchmark rows.",
 	"Calibrated presentation", "user-facing measurement", 5, 5, 4, "external calibration contract", "External-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, Paint, DrawFrame, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same 990ms/1000ms/1300ms held-key and complete-keypress controls with observer-effect gates.", "Externally presented frame timestamp and semantic first-visible-glyph timing outside Chromium trace screenshots.", "Run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints.",
 	"Human/plugin workload", "workload coverage", 4, 4, 4, "replay contract", "Workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency.", "Actual recorded human/plugin-heavy histories and before/after replay results for P2-like, long-session, composition, correction, selection, paste, transform, structural-edit, media/pattern-heavy, and plugin side-effect strata.", "Build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims.",
 	"Portability of absolute numbers", "methodology", 4, 3, 3, "validation contract", "Portability runbook audit separates threshold lanes from causal lanes: use exact Playwright-bundled Chromium on CI plus a comparable local/container lane, compact mechanism rows, environment metadata, and expansion triggers before changing absolute p50/CV claims.", "How compact score rows and key diagnostics move across actual CI runner classes, Playwright Chromium revisions, wp-env/container limits, OS/browser versions, and power/QoS state.", "Run the portability runbook first: compact mechanism rows with per-run p50/CV/order/first-key metadata on CI Chromium and one comparable lane; expand only when ordering, variance, timer, or visual endpoint behavior changes."
@@ -17736,13 +17922,14 @@ open_question_next_instrumentation_matrix <- tribble(
 				"validation run",
 				"validation contract",
 				"needs workload data",
-				"external calibration",
-				"external calibration contract",
-				"OS counter contract",
-				"replay contract",
-				"outside JS harness"
-			)
-		),
+					"external calibration",
+					"external calibration contract",
+					"OS counter contract",
+					"privileged counter ladder",
+					"replay contract",
+					"outside JS harness"
+				)
+			),
 		short_label_wrapped = str_wrap(short_label, 18),
 		evidence_band = case_when(
 			current_answer_strength >= 5 ~ "strong local answer",

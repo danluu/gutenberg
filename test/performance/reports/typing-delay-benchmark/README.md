@@ -1000,6 +1000,11 @@ The R script derives:
 -   `data/typing-delay-cpu-qos-counter-runset-contract-audit.csv`: exact
     CPU/QoS counter row set, required per-sample counters, and acceptance gates
     for the remaining hardware/scheduler mechanism.
+-   `data/typing-delay-cpu-qos-local-counter-feasibility-audit.csv`: local
+    availability audit for `powermetrics`, `trace`, `xctrace`, stack samplers,
+    browser traces, and the missing benchmark sidecar.
+-   `data/typing-delay-cpu-qos-counter-first-run-plan.csv`: compact execution
+    ladder for the first counter-backed CPU/QoS run.
 -   `data/typing-delay-wall-clock-fixed-sample-*.csv`: audit of fixed-sample
     delay sweeps versus equal wall-clock sampling budgets.
 
@@ -4372,6 +4377,53 @@ studied with OS counters first. Product optimization should continue through
 selector/subscriber prototypes and workload replay, because the system state
 modulates the path but Gutenberg's broad input fanout supplies the user-visible
 scale.
+
+### CPU/QoS Local Counter Feasibility Audit
+
+I also checked whether the remaining CPU/QoS mechanism can be resolved from this
+Codex session without changing privileges. The local machine is Apple Silicon
+(`Apple M3 Max`) on macOS `26.4.1` / Darwin `25.4.0`, with `10` performance and
+`4` efficiency cores reported by `hw.perflevel0.physicalcpu` and
+`hw.perflevel1.physicalcpu`. That is exactly the kind of host where
+cluster-residency, frequency, effective QoS, and scheduler-placement hypotheses
+are plausible. But the decisive observers are privileged.
+
+![CPU/QoS counter feasibility](figures/172-cpu-qos-counter-feasibility.png)
+
+The local tool audit is:
+
+| Counter surface | Local result | What it can decide | Blocker |
+| --------------- | ------------ | ------------------ | ------- |
+| `powermetrics` tasks / `cpu_power` | `/usr/bin/powermetrics` is present and exposes `tasks`, `cpu_power`, `thermal`, `sfi`, `--show-pstates`, `--show-cpu-qos`, `--show-process-qos`, `--show-process-qos-tiers`, `--show-process-amp`, `--show-process-ipc`, process wait times, and plist output. A direct sample failed with `powermetrics must be invoked as the superuser`. | Performance-cluster residency/frequency, process QoS, AMP cluster stats, ARM cycles/instructions, power/thermal metadata. | Requires root; noninteractive `sudo` is not available in this session. |
+| `trace record` system trace | `/usr/bin/trace` is present. Plans expose `scheduling`, `cswitch-cycles-instrs`, `qos`, `sched-processor-selection`, and `thread-wakeup-sampling`. A one-second recording failed with `must be running as root (or under sudo) for system visibility`. | Runnable-to-running latency, scheduler placement, QoS, thread wakeups, context switches, processor selection. | Requires root for system visibility. |
+| `xctrace` / Instruments | `/usr/bin/xctrace` is present, but `xctrace list instruments` fails because the active developer directory is Command Line Tools, not full Xcode. | Interactive Instruments analysis of System Trace files. | Needs full Xcode configured with `xcode-select`; not a good unattended collector here. |
+| `sample` / `spindump` | Both tools are present. | Stack attribution and coarse CPU sanity checks. | Not decisive for cluster residency, effective QoS transitions, or per-key scheduler decisions. |
+| Browser trace categories | The benchmark can already start tracing with custom options, but current typing traces are render/screenshot oriented. | Browser input queue, V8, runtime, and task-boundary state after OS counters are controlled. | Needs a new runtime/scheduler category mode and observer-effect checks. |
+| Benchmark key-window sidecar | Current artifacts record key timing and helper modes, but not helper PID lifetimes, collector filenames, notification IDs, or OS-counter sample IDs. | Per-retained-key joins between benchmark events and OS/browser counters. | Requires a harness change before privileged counters are useful. |
+
+This changes the next step from "run more CPU controls" to "make the counter
+run joinable." The compact rows are already selected. What is missing is a
+sidecar that gives every retained key a stable join key across benchmark output,
+helper process lifetime, `powermetrics` samples, and `trace` events.
+
+![CPU/QoS counter first run plan](figures/173-cpu-qos-counter-first-run-plan.png)
+
+The first executable counter ladder should be:
+
+| Phase | Purpose | Minimum rows | Collector | Gate |
+| ----- | ------- | ------------ | --------- | ---- |
+| Add benchmark sidecar | Join OS/browser samples to retained keys. | all compact rows | benchmark JSON/CSV sidecar | each retained key has run id, sample id, helper PID, helper start/end, key timing, `EventDispatch` timing, and collector filenames |
+| Root `powermetrics` triage | Test whether frequency, cluster residency, process QoS, AMP counters, or thermal/power state separates rows. | near-key no-CPU slow; ordinary/utility fast; background/maintenance slow; fresh finite; stale finite | `sudo powermetrics -i 100 -f plist --samplers tasks,cpu_power,thermal,sfi --show-pstates --show-cpu-qos --show-process-qos --show-process-qos-tiers --show-process-amp --show-process-ipc --show-process-wait-times` | one per-sample counter state predicts fast ordinary/utility rows and finite decay while absent from no-CPU and background/maintenance slow rows |
+| Root system trace split | Discriminate Darwin scheduler/QoS placement and wakeup latency from frequency/residency explanations. | same compact rows plus one confirmation run | `sudo trace record --plan default --add qos --add sched-processor-selection --add thread-wakeup-sampling` | runnable latency, processor selection, QoS, or wakeup timing explains the split after matching `powermetrics` state |
+| Chromium scheduler trace | Check browser input queues only after OS counters do not explain the split. | one no-CPU slow; one ordinary/utility fast; one background/maintenance slow; one finite fresh/stale pair | CDP trace categories for scheduler/task queues, V8, runtime, and Gutenberg source spans | browser queue/priority/task-boundary state predicts residual latency after OS counters are controlled |
+| Mechanism report gate | Change the report only when one state variable predicts every discriminating row. | all successful compact rows | joined per-key table | no-CPU slow, ordinary/utility fast, background/maintenance slow, and finite decay all follow the same recorded state |
+
+That is the deepest current answer I can support locally. The CPU/QoS boundary is
+real and already useful as a benchmark-methodology warning, but the exact
+hardware/scheduler mechanism cannot be named from the current unprivileged
+session. The next credible run starts with a sidecar plus root `powermetrics`;
+if that fails to separate the rows, add root `trace`; only then should browser
+scheduler traces or cache/memory explanations be elevated.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -8001,6 +8053,13 @@ Chromium state. The remaining credible theories require per-retained-key
 protocol-command timing plus scheduler/runtime/V8 or OS-counter state aligned to
 the existing `EventDispatch` and Gutenberg source spans.
 
+The CPU/QoS open item now has the same kind of executable boundary. The compact
+counter row set was already identified; the new feasibility audit shows the
+decisive local observers are `powermetrics` and `trace`, both present but blocked
+without root in this session. The next useful work is therefore a benchmark
+sidecar plus privileged counter collection, not another unprivileged JS delay or
+CPU-control sweep.
+
 The Post Editor `loadPatterns` follow-up splits that exception in two. The Site
 Editor result does not apply directly because Post Editor injects local patterns
 into editor settings and measures the local `Test` category. In the focused Post
@@ -8425,7 +8484,7 @@ The high-level split is:
 | Store subscriber partition | public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private `useBlockSync` side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware `@wordpress/data` subscriptions are the only compatibility-preserving fanout route found | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
 | Chromium runtime checkpoint | harness-gap and falsification audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement the runtime trace runbook with per-retained-key protocol-command timing, command counts, execution context/object lifecycle, scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
-| CPU/QoS mechanism | counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this harness | run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows |
+| CPU/QoS mechanism | local counter feasibility audit makes the remaining mechanism test executable: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but both require root and the benchmark still needs a per-retained-key sidecar before the counters are joinable; exact hardware/scheduler state remains unnamed | add helper-PID/key-window/collector sidecar first, then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split; do not add more unprivileged JS benchmark rows |
 | Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
 | Human/plugin workload | workload schema audit now has a source-level implementation plan: the current harness can reuse raw attachments, the custom reporter, Metrics tracing, fixture loaders, editor helpers, and `pressKeys`, but it still needs an event-record sidecar, manifest-driven executor, assertion packs, and an opt-in recorder before product-latency ranking is valid | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; do not treat another fixed-x q50 array as representative replay |
 | Portability of absolute numbers | portability runbook audit now has an executable compact manifest: three threshold-score rows, two deployment-score rows, and three causal diagnostics, with local effect sizes and known intentional-wait costs; the known threshold-score wait cost is `774.5s` and the known deployment-score wait cost is `162.0s` in a two-branch-style comparison | run that compact manifest on CI Chromium and one comparable lane before moving thresholds; expand only when a row changes ordering, variance class, timer/runtime behavior, or visual endpoint direction |
