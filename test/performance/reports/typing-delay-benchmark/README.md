@@ -1099,6 +1099,13 @@ The R script derives:
     change.
 -   `data/typing-delay-open-question-decision-binding-summary.csv`: rollup of
     decision-binding rows by binding state and credible next artifact.
+-   `data/typing-delay-open-question-reopen-triggers.csv`: per-claim trigger
+    audit showing which future changes can invalidate or narrow current
+    conclusions.
+-   `data/typing-delay-open-question-reopen-trigger-long.csv`: long-form trigger
+    scores used for the reopen-trigger heatmap.
+-   `data/typing-delay-open-question-reopen-trigger-summary.csv`: rollup of
+    primary reopen-trigger classes by current claim status.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9667,6 +9674,33 @@ claim without the missing artifact." The only rows that should alter near-term
 engineering recommendations are CI/readiness validation and behavior-gated
 source prototypes. More mechanism, display, or workload work is valuable only if
 the report wants to make those broader claims.
+
+The reopen-trigger audit is the staleness version of the same rule. It asks what
+future change would make the current analysis stale enough to rerun. The answer
+is deliberately asymmetric: closed local benchmark claims have narrow triggers,
+while broader CI/source/mechanism/product/display claims have wider trigger
+surfaces because they are waiting for new artifacts.
+
+![Open question reopen trigger heatmap](figures/228-open-question-reopen-trigger-heatmap.png)
+
+![Open question reopen trigger surface](figures/229-open-question-reopen-trigger-surface.png)
+
+| Claim | Reopen trigger | Do not reopen for |
+| ----- | -------------- | ----------------- |
+| `1000ms` held-key cliff | helper family, browser/runtime, trace placement, throwaway policy, or reported statistic changes | more local samples under unchanged helper/browser/statistic settings |
+| Held-key versus tap split | the suite changes helper family or key action semantics | lower-level mechanism uncertainty below the already observed helper behavior |
+| Typing startup wait | CI topology changes retained ordering, first-key tails, failures, or resource timing | the discarded first key being slow while the reported metric remains retained q50 |
+| Wait-removal candidates | target CI/mac/container lanes lose samples or move failures/resources into measurement | local zero-wait q50 alone |
+| Source prototypes | behavior fixtures, compatibility checks, or source-span collapse fail | aggregate p50 movement before source and behavior gates pass |
+| Runtime and CPU/QoS mechanism names | sidecar/counter collection fails to join retained keys or perturbs ordering | more JS delay rows without joined runtime or system state |
+| Product/display/generalization claims | replay strata or external endpoints disagree, fail assertions, or cannot be joined | fixed-`x` rows or Chromium-internal endpoints alone |
+| Pass/fail prediction | dashboard or reviewer policy defines thresholds or noisy-metric handling | repository-local q50 display without threshold policy |
+
+This is the guard against analysis churn. A future browser or helper update can
+absolutely require a small exact-spec recheck of the benchmark artifact. But
+mechanism, workload, display, and policy unknowns should not reopen the local
+cliff explanation; they should only block or narrow claims that depend on those
+missing observers.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

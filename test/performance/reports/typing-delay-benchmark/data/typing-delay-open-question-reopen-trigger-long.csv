@@ -1,0 +1,134 @@
+claim,claim_label,lane,current_status,trigger_type,trigger_score
+1000ms held-key cliff,1000ms held-key cliff,Benchmark artifact,closed under current metric,helper/API,5
+1000ms held-key cliff,1000ms held-key cliff,Benchmark artifact,closed under current metric,browser/runtime,4
+1000ms held-key cliff,1000ms held-key cliff,Benchmark artifact,closed under current metric,instrumentation,4
+1000ms held-key cliff,1000ms held-key cliff,Benchmark artifact,closed under current metric,aggregation/statistic,4
+1000ms held-key cliff,1000ms held-key cliff,Benchmark artifact,closed under current metric,CI/topology,2
+1000ms held-key cliff,1000ms held-key cliff,Benchmark artifact,closed under current metric,source/behavior,1
+1000ms held-key cliff,1000ms held-key cliff,Benchmark artifact,closed under current metric,external policy,1
+Held key versus tap metric split,"Held key versus tap
+metric split",Benchmark artifact,closed under current metric,helper/API,5
+Held key versus tap metric split,"Held key versus tap
+metric split",Benchmark artifact,closed under current metric,browser/runtime,3
+Held key versus tap metric split,"Held key versus tap
+metric split",Benchmark artifact,closed under current metric,instrumentation,2
+Held key versus tap metric split,"Held key versus tap
+metric split",Benchmark artifact,closed under current metric,aggregation/statistic,3
+Held key versus tap metric split,"Held key versus tap
+metric split",Benchmark artifact,closed under current metric,CI/topology,1
+Held key versus tap metric split,"Held key versus tap
+metric split",Benchmark artifact,closed under current metric,source/behavior,1
+Held key versus tap metric split,"Held key versus tap
+metric split",Benchmark artifact,closed under current metric,external policy,1
+Typing startup wait recommendation,"Typing startup wait
+recommendation",CI/readiness,"closed locally, topology-sensitive for CI action",helper/API,2
+Typing startup wait recommendation,"Typing startup wait
+recommendation",CI/readiness,"closed locally, topology-sensitive for CI action",browser/runtime,2
+Typing startup wait recommendation,"Typing startup wait
+recommendation",CI/readiness,"closed locally, topology-sensitive for CI action",instrumentation,2
+Typing startup wait recommendation,"Typing startup wait
+recommendation",CI/readiness,"closed locally, topology-sensitive for CI action",aggregation/statistic,4
+Typing startup wait recommendation,"Typing startup wait
+recommendation",CI/readiness,"closed locally, topology-sensitive for CI action",CI/topology,5
+Typing startup wait recommendation,"Typing startup wait
+recommendation",CI/readiness,"closed locally, topology-sensitive for CI action",source/behavior,1
+Typing startup wait recommendation,"Typing startup wait
+recommendation",CI/readiness,"closed locally, topology-sensitive for CI action",external policy,1
+Interactive non-Typing wait removal,"Interactive non-Typing
+wait removal",CI/readiness,candidate only,helper/API,1
+Interactive non-Typing wait removal,"Interactive non-Typing
+wait removal",CI/readiness,candidate only,browser/runtime,2
+Interactive non-Typing wait removal,"Interactive non-Typing
+wait removal",CI/readiness,candidate only,instrumentation,2
+Interactive non-Typing wait removal,"Interactive non-Typing
+wait removal",CI/readiness,candidate only,aggregation/statistic,3
+Interactive non-Typing wait removal,"Interactive non-Typing
+wait removal",CI/readiness,candidate only,CI/topology,5
+Interactive non-Typing wait removal,"Interactive non-Typing
+wait removal",CI/readiness,candidate only,source/behavior,2
+Interactive non-Typing wait removal,"Interactive non-Typing
+wait removal",CI/readiness,candidate only,external policy,1
+Pattern wait replacement,Pattern wait replacement,CI/readiness,candidate only,helper/API,1
+Pattern wait replacement,Pattern wait replacement,CI/readiness,candidate only,browser/runtime,2
+Pattern wait replacement,Pattern wait replacement,CI/readiness,candidate only,instrumentation,2
+Pattern wait replacement,Pattern wait replacement,CI/readiness,candidate only,aggregation/statistic,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,candidate only,CI/topology,5
+Pattern wait replacement,Pattern wait replacement,CI/readiness,candidate only,source/behavior,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,candidate only,external policy,1
+Low-risk selector guard,Low-risk selector guard,Source/code,prototype-gated,helper/API,1
+Low-risk selector guard,Low-risk selector guard,Source/code,prototype-gated,browser/runtime,1
+Low-risk selector guard,Low-risk selector guard,Source/code,prototype-gated,instrumentation,3
+Low-risk selector guard,Low-risk selector guard,Source/code,prototype-gated,aggregation/statistic,3
+Low-risk selector guard,Low-risk selector guard,Source/code,prototype-gated,CI/topology,2
+Low-risk selector guard,Low-risk selector guard,Source/code,prototype-gated,source/behavior,5
+Low-risk selector guard,Low-risk selector guard,Source/code,prototype-gated,external policy,1
+Store subscriber partition,"Store subscriber
+partition",Source/code,defer until prerequisite,helper/API,1
+Store subscriber partition,"Store subscriber
+partition",Source/code,defer until prerequisite,browser/runtime,1
+Store subscriber partition,"Store subscriber
+partition",Source/code,defer until prerequisite,instrumentation,3
+Store subscriber partition,"Store subscriber
+partition",Source/code,defer until prerequisite,aggregation/statistic,3
+Store subscriber partition,"Store subscriber
+partition",Source/code,defer until prerequisite,CI/topology,2
+Store subscriber partition,"Store subscriber
+partition",Source/code,defer until prerequisite,source/behavior,5
+Store subscriber partition,"Store subscriber
+partition",Source/code,defer until prerequisite,external policy,2
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,blocked broader claim,helper/API,2
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,blocked broader claim,browser/runtime,5
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,blocked broader claim,instrumentation,5
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,blocked broader claim,aggregation/statistic,2
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,blocked broader claim,CI/topology,2
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,blocked broader claim,source/behavior,1
+Runtime mechanism name,Runtime mechanism name,Sidecar/mechanism,blocked broader claim,external policy,1
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,blocked broader claim,helper/API,1
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,blocked broader claim,browser/runtime,4
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,blocked broader claim,instrumentation,5
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,blocked broader claim,aggregation/statistic,2
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,blocked broader claim,CI/topology,4
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,blocked broader claim,source/behavior,1
+CPU/QoS mechanism name,CPU/QoS mechanism name,CPU/QoS,blocked broader claim,external policy,1
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked broader claim,helper/API,1
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked broader claim,browser/runtime,1
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked broader claim,instrumentation,3
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked broader claim,aggregation/statistic,3
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked broader claim,CI/topology,2
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked broader claim,source/behavior,3
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked broader claim,external policy,1
+External presentation claim,"External presentation
+claim",Claim expansion,blocked broader claim,helper/API,1
+External presentation claim,"External presentation
+claim",Claim expansion,blocked broader claim,browser/runtime,3
+External presentation claim,"External presentation
+claim",Claim expansion,blocked broader claim,instrumentation,5
+External presentation claim,"External presentation
+claim",Claim expansion,blocked broader claim,aggregation/statistic,2
+External presentation claim,"External presentation
+claim",Claim expansion,blocked broader claim,CI/topology,2
+External presentation claim,"External presentation
+claim",Claim expansion,blocked broader claim,source/behavior,1
+External presentation claim,"External presentation
+claim",Claim expansion,blocked broader claim,external policy,1
+Absolute q50 portability,Absolute q50 portability,External policy,topology validation needed,helper/API,1
+Absolute q50 portability,Absolute q50 portability,External policy,topology validation needed,browser/runtime,3
+Absolute q50 portability,Absolute q50 portability,External policy,topology validation needed,instrumentation,2
+Absolute q50 portability,Absolute q50 portability,External policy,topology validation needed,aggregation/statistic,5
+Absolute q50 portability,Absolute q50 portability,External policy,topology validation needed,CI/topology,5
+Absolute q50 portability,Absolute q50 portability,External policy,topology validation needed,source/behavior,1
+Absolute q50 portability,Absolute q50 portability,External policy,topology validation needed,external policy,4
+CI pass/fail prediction,CI pass/fail prediction,External policy,policy gap,helper/API,1
+CI pass/fail prediction,CI pass/fail prediction,External policy,policy gap,browser/runtime,1
+CI pass/fail prediction,CI pass/fail prediction,External policy,policy gap,instrumentation,1
+CI pass/fail prediction,CI pass/fail prediction,External policy,policy gap,aggregation/statistic,3
+CI pass/fail prediction,CI pass/fail prediction,External policy,policy gap,CI/topology,4
+CI pass/fail prediction,CI pass/fail prediction,External policy,policy gap,source/behavior,1
+CI pass/fail prediction,CI pass/fail prediction,External policy,policy gap,external policy,5

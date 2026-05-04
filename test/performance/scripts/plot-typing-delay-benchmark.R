@@ -23777,6 +23777,173 @@ save_plot(
 	height = 7.8
 )
 
+open_question_reopen_triggers <- tribble(
+	~claim, ~lane, ~current_status, ~helper_api_trigger, ~browser_runtime_trigger, ~instrumentation_trigger, ~aggregation_trigger, ~ci_topology_trigger, ~source_behavior_trigger, ~external_policy_trigger, ~primary_reopen_trigger, ~minimal_recheck, ~do_not_reopen_for,
+	"1000ms held-key cliff", "Benchmark artifact", "closed under current metric", 5, 4, 4, 4, 2, 1, 1, "helper family, browser/runtime, trace placement, throwaway policy, or reported statistic changes", "one exact-spec held-key/tap/control rerun with raw per-key rows", "additional local samples under unchanged helper/browser/statistic settings",
+	"Held key versus tap metric split", "Benchmark artifact", "closed under current metric", 5, 3, 2, 3, 1, 1, 1, "the suite changes helper family or key action semantics", "matched helper-family comparison with DOM key events and retained rows", "mechanism uncertainty below the already observed helper behavior",
+	"Typing startup wait recommendation", "CI/readiness", "closed locally, topology-sensitive for CI action", 2, 2, 2, 4, 5, 1, 1, "CI topology changes retained ordering, first-key tails, failures, or resource timing", "compact Performance Tests topology artifact with raw retained rows and first-key slices", "first discarded key being slow while the reported metric remains retained q50",
+	"Interactive non-Typing wait removal", "CI/readiness", "candidate only", 1, 2, 2, 3, 5, 2, 1, "candidate zero-wait rows lose samples or move failures/resources into measurement on target lanes", "paired CI/mac/container validation with failures, actionability, resources, and elapsed time", "local zero-wait q50 alone",
+	"Pattern wait replacement", "CI/readiness", "candidate only", 1, 2, 2, 3, 5, 3, 1, "predicate or fixed 500ms fails preview/canvas/resource/fallback checks in target topology", "per-spec readiness/resource artifact with fallback and endpoint-group logs", "matching local q50 without readiness and failure evidence",
+	"Low-risk selector guard", "Source/code", "prototype-gated", 1, 1, 3, 3, 2, 5, 1, "behavior fixtures, compatibility checks, or source-span collapse fail", "behavior-gated source prototype plus marker/source-span microscope", "aggregate p50 movement before source and behavior gates pass",
+	"Store subscriber partition", "Source/code", "defer until prerequisite", 1, 1, 3, 3, 2, 5, 2, "public subscriber compatibility or branch-aware selector matrix fails", "compatibility matrix plus marker-only listener fanout artifact", "root listener count alone",
+	"Runtime mechanism name", "Sidecar/mechanism", "blocked broader claim", 2, 5, 5, 2, 2, 1, 1, "trace-off sidecar cannot preserve ordering or join differentiating runtime fields", "accepted key-window protocol sidecar before tracing categories are interpreted", "more JS delay rows without joined runtime state",
+	"CPU/QoS mechanism name", "CPU/QoS", "blocked broader claim", 1, 4, 5, 2, 4, 1, 1, "sidecar/counter collection perturbs ordering or counters do not separate retained classes", "sidecar-on/off controls plus root powermetrics joined to retained keys", "aggregate latency classes without system counters",
+	"Product workload generalization", "Claim expansion", "blocked broader claim", 1, 1, 3, 3, 2, 3, 1, "replay strata diverge from fixed-x owner/effect pattern or assertions fail", "synthetic and recorded workload replay with per-stratum assertions and source spans", "fixed-x benchmark rows alone",
+	"External presentation claim", "Claim expansion", "blocked broader claim", 1, 3, 5, 2, 2, 1, 1, "external endpoint ordering differs from Chromium-internal endpoints or cannot be joined", "calibrated OCR/present/camera endpoint joined to retained keys with observer controls", "Chromium screenshot/paint agreement alone",
+	"Absolute q50 portability", "External policy", "topology validation needed", 1, 3, 2, 5, 5, 1, 4, "real Performance Tests topology changes absolute numbers, variance, or published q50 interpretation", "raw CI artifacts with q25/q50/q75/cnt, per-run order, and environment metadata", "local macOS q50 movement",
+	"CI pass/fail prediction", "External policy", "policy gap", 1, 1, 1, 3, 4, 1, 5, "dashboard or reviewer policy defines thresholds or noisy-metric handling", "policy join against archived raw CI artifacts and published q50 fields", "repository-local q50 display without threshold policy"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		claim_label = str_wrap(claim, width = 25),
+		current_status = factor(
+			current_status,
+			levels = c(
+				"closed under current metric",
+				"closed locally, topology-sensitive for CI action",
+				"candidate only",
+				"prototype-gated",
+				"defer until prerequisite",
+				"blocked broader claim",
+				"topology validation needed",
+				"policy gap"
+			)
+		),
+		reopen_pressure = pmax(helper_api_trigger, browser_runtime_trigger, instrumentation_trigger, aggregation_trigger, ci_topology_trigger, source_behavior_trigger, external_policy_trigger),
+		total_trigger_surface = helper_api_trigger + browser_runtime_trigger + instrumentation_trigger + aggregation_trigger + ci_topology_trigger + source_behavior_trigger + external_policy_trigger,
+		primary_trigger_class = case_when(
+			ci_topology_trigger >= reopen_pressure ~ "CI/topology",
+			source_behavior_trigger >= reopen_pressure ~ "source/behavior",
+			instrumentation_trigger >= reopen_pressure ~ "instrumentation",
+			helper_api_trigger >= reopen_pressure ~ "helper/API",
+			external_policy_trigger >= reopen_pressure ~ "external policy",
+			browser_runtime_trigger >= reopen_pressure ~ "browser/runtime",
+			TRUE ~ "aggregation/statistic"
+		),
+		primary_trigger_class = factor(
+			primary_trigger_class,
+			levels = c("helper/API", "browser/runtime", "instrumentation", "aggregation/statistic", "CI/topology", "source/behavior", "external policy")
+		)
+	)
+
+open_question_reopen_trigger_long <- open_question_reopen_triggers %>%
+	select(
+		claim,
+		claim_label,
+		lane,
+		current_status,
+		helper_api_trigger,
+		browser_runtime_trigger,
+		instrumentation_trigger,
+		aggregation_trigger,
+		ci_topology_trigger,
+		source_behavior_trigger,
+		external_policy_trigger
+	) %>%
+	pivot_longer(
+		cols = ends_with("_trigger"),
+		names_to = "trigger_type",
+		values_to = "trigger_score"
+	) %>%
+	mutate(
+		trigger_type = recode(
+			trigger_type,
+			helper_api_trigger = "helper/API",
+			browser_runtime_trigger = "browser/runtime",
+			instrumentation_trigger = "instrumentation",
+			aggregation_trigger = "aggregation/statistic",
+			ci_topology_trigger = "CI/topology",
+			source_behavior_trigger = "source/behavior",
+			external_policy_trigger = "external policy"
+		),
+		trigger_type = factor(
+			trigger_type,
+			levels = c("helper/API", "browser/runtime", "instrumentation", "aggregation/statistic", "CI/topology", "source/behavior", "external policy")
+		),
+		claim_label = fct_reorder(claim_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_reopen_trigger_summary <- open_question_reopen_triggers %>%
+	count(current_status, primary_trigger_class, name = "claims") %>%
+	group_by(current_status) %>%
+	mutate(status_claims = sum(claims)) %>%
+	ungroup()
+
+write_csv(
+	open_question_reopen_triggers %>%
+		select(
+			claim,
+			lane,
+			current_status,
+			helper_api_trigger,
+			browser_runtime_trigger,
+			instrumentation_trigger,
+			aggregation_trigger,
+			ci_topology_trigger,
+			source_behavior_trigger,
+			external_policy_trigger,
+			reopen_pressure,
+			total_trigger_surface,
+			primary_trigger_class,
+			primary_reopen_trigger,
+			minimal_recheck,
+			do_not_reopen_for
+		),
+	file.path(data_dir, "typing-delay-open-question-reopen-triggers.csv")
+)
+
+write_csv(
+	open_question_reopen_trigger_long,
+	file.path(data_dir, "typing-delay-open-question-reopen-trigger-long.csv")
+)
+
+write_csv(
+	open_question_reopen_trigger_summary,
+	file.path(data_dir, "typing-delay-open-question-reopen-trigger-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_reopen_trigger_long,
+		aes(trigger_type, claim_label, fill = trigger_score)
+	) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = trigger_score), size = 2.9, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Reopen score") +
+		labs(
+			title = "Reopen triggers are narrow for closed benchmark claims and broad for expanded claims",
+			subtitle = "Higher scores mean that trigger class can invalidate the current recommendation or wording",
+			x = "Trigger class",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"228-open-question-reopen-trigger-heatmap.png",
+	width = 13.2,
+	height = 8.2
+)
+
+save_plot(
+	ggplot(
+		open_question_reopen_triggers %>%
+			mutate(claim_label = fct_reorder(claim_label, total_trigger_surface)),
+		aes(total_trigger_surface, claim_label, fill = primary_trigger_class)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Primary trigger") +
+		labs(
+			title = "Claims needing new observers have the widest reopen surface",
+			subtitle = "Closed local benchmark claims have low reopen surface unless the measurement definition changes",
+			x = "Total reopen-trigger surface",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"229-open-question-reopen-trigger-surface.png",
+	width = 12.2,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

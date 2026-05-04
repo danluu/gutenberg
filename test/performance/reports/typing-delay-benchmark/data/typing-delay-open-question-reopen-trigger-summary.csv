@@ -1,0 +1,10 @@
+current_status,primary_trigger_class,claims,status_claims
+closed under current metric,helper/API,2,2
+"closed locally, topology-sensitive for CI action",CI/topology,1,1
+candidate only,CI/topology,2,2
+prototype-gated,source/behavior,1,1
+defer until prerequisite,source/behavior,1,1
+blocked broader claim,instrumentation,3,4
+blocked broader claim,source/behavior,1,4
+topology validation needed,CI/topology,1,1
+policy gap,external policy,1,1
