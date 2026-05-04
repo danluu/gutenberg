@@ -4727,6 +4727,11 @@ ci_hold_duration_sample_position_path <- file.path(data_dir, "typing-delay-ci-ho
 ci_hold_duration_paired_difference_path <- file.path(data_dir, "typing-delay-ci-hold-duration-paired-differences.csv")
 ci_hold_duration_throwaway_sensitivity_path <- file.path(data_dir, "typing-delay-ci-hold-duration-throwaway-sensitivity.csv")
 ci_hold_duration_order_diagnostics_path <- file.path(data_dir, "typing-delay-ci-hold-duration-order-diagnostics.csv")
+ci_hold_duration_keydown_sensitivity_path <- file.path(data_dir, "typing-delay-ci-hold-duration-keydown-sensitivity.csv")
+ci_hold_duration_pooled_run_summary_path <- file.path(data_dir, "typing-delay-ci-hold-duration-pooled-run-summary.csv")
+ci_code_path_sample_path <- file.path(data_dir, "typing-delay-ci-code-path-samples.csv")
+ci_code_path_run_path <- file.path(data_dir, "typing-delay-ci-code-path-runs.csv")
+ci_code_path_summary_path <- file.path(data_dir, "typing-delay-ci-code-path-summary.csv")
 ci_hold_duration_artifact_dirs <- c(
 	`current CI held key` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-keyboard"),
 	`100ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-hold-100"),
@@ -4767,7 +4772,9 @@ if (all(!is.na(ci_hold_duration_json_paths))) {
 				is_throwaway = isThrowaway,
 				keydown_event_count = keydownEventCount,
 				latency_ms = latencyMs,
+				latency_all_keydowns_ms = latencyAllKeydownsMs,
 				keydown_ms = keydownMs,
+				keydown_all_ms = keydownAllMs,
 				keypress_ms = keypressMs,
 				keyup_ms = keyupMs,
 				run_duration_ms = runStoppedAtEpochMs - runStartedAtEpochMs
@@ -4931,6 +4938,27 @@ if (nrow(ci_hold_duration_samples) > 0) {
 		)
 	write_csv(ci_hold_duration_summary, ci_hold_duration_summary_path)
 
+	ci_hold_duration_pooled_run_summary <- ci_hold_duration_summary %>%
+		filter(delay_ms %in% c(250, 500, 1000)) %>%
+		select(input_mode, delay_ms, pooled_p50_ms = latency_p50_ms) %>%
+		left_join(
+			ci_hold_duration_runs %>%
+				filter(delay_ms %in% c(250, 500, 1000)) %>%
+				group_by(input_mode, delay_ms) %>%
+				summarize(
+					median_run_q50_ms = median(reported_q50_ms),
+					mean_run_q50_ms = mean(reported_q50_ms),
+					run_q50_sd_ms = sd(reported_q50_ms),
+					.groups = "drop"
+				),
+			by = c("input_mode", "delay_ms")
+		) %>%
+		mutate(
+			pooled_minus_median_run_ms = pooled_p50_ms - median_run_q50_ms,
+			pooled_minus_mean_run_ms = pooled_p50_ms - mean_run_q50_ms
+		)
+	write_csv(ci_hold_duration_pooled_run_summary, ci_hold_duration_pooled_run_summary_path)
+
 	ci_hold_duration_paired_differences <- ci_hold_duration_runs %>%
 		filter(delay_ms %in% c(100, 250, 500, 1000)) %>%
 		select(delay_ms, round, input_mode, reported_q50_ms) %>%
@@ -4964,6 +4992,23 @@ if (nrow(ci_hold_duration_samples) > 0) {
 		)
 	write_csv(ci_hold_duration_throwaway_sensitivity, ci_hold_duration_throwaway_sensitivity_path)
 
+	ci_hold_duration_keydown_sensitivity <- ci_hold_duration_retained %>%
+		filter(delay_ms %in% c(250, 500, 1000)) %>%
+		group_by(input_mode, delay_ms) %>%
+		summarize(
+			sample_count = n(),
+			keydown_event_counts = paste(sort(unique(keydown_event_count)), collapse = ";"),
+			last_keydown_p50_ms = median(keydown_ms),
+			all_keydowns_p50_ms = median(keydown_all_ms),
+			extra_keydown_p50_ms = median(keydown_all_ms - keydown_ms),
+			latency_p50_ms = median(latency_ms),
+			latency_all_keydowns_p50_ms = median(latency_all_keydowns_ms),
+			all_keydowns_minus_standard_p50_ms =
+				latency_all_keydowns_p50_ms - latency_p50_ms,
+			.groups = "drop"
+		)
+	write_csv(ci_hold_duration_keydown_sensitivity, ci_hold_duration_keydown_sensitivity_path)
+
 	if (nrow(ci_hold_duration_delay_summaries) > 0) {
 		ci_hold_duration_order_diagnostics <- ci_hold_duration_runs %>%
 			filter(delay_ms %in% c(250, 500, 1000)) %>%
@@ -4979,6 +5024,10 @@ if (nrow(ci_hold_duration_samples) > 0) {
 					"editor_setup_index"
 				)
 			) %>%
+			arrange(input_mode, round, editor_setup_index) %>%
+			group_by(input_mode, round) %>%
+			mutate(round_position = row_number()) %>%
+			ungroup() %>%
 			group_by(input_mode, delay_ms) %>%
 			mutate(
 				mode_delay_median_q50_ms = median(reported_q50_ms),
@@ -5225,6 +5274,171 @@ if (nrow(ci_hold_duration_samples) > 0) {
 			theme(legend.position = "bottom", legend.box = "vertical"),
 		"143-ci-key-hold-duration-round-q50.png",
 		width = 11.8,
+		height = 5.8
+	)
+}
+
+ci_code_path_specs <- tribble(
+	~input_mode, ~input_api, ~requested_hold_ms, ~artifact_dir,
+	"tap then wait", "tap", 0, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-codepath-between-keys"),
+	"50ms page.keyboard hold", "page.keyboard", 50, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-codepath-hold-50"),
+	"100ms page.keyboard hold", "page.keyboard", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-codepath-hold-100"),
+	"50ms locator.type hold", "locator.type", 50, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-codepath-locator-type-50"),
+	"100ms locator.type hold", "locator.type", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-locator-type-100"),
+	"50ms locator.press hold", "locator.press", 50, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-codepath-locator-press-50"),
+	"75ms locator.press hold", "locator.press", 75, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-codepath-locator-press-75"),
+	"100ms locator.press hold", "locator.press", 100, file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-locator-press-100")
+) %>%
+	mutate(
+		json_path = map_chr(artifact_dir, function(artifact_dir) {
+			paths <- Sys.glob(file.path(artifact_dir, "typing-delay-benchmark-*.json"))
+			if (length(paths) == 0) {
+				return(NA_character_)
+			}
+			paths[[which.max(file.info(paths)$mtime)]]
+		})
+	)
+
+if (all(!is.na(ci_code_path_specs$json_path))) {
+	ci_code_path_samples <- pmap_dfr(
+		ci_code_path_specs,
+		function(input_mode, input_api, requested_hold_ms, artifact_dir, json_path) {
+			raw <- fromJSON(json_path, flatten = TRUE)
+			as_tibble(raw$records) %>%
+				transmute(
+					input_mode,
+					input_api,
+					requested_hold_ms = as.numeric(requested_hold_ms),
+					delay_mode = raw$metadata$delayMode,
+					json_path = sub(paste0(repo_root, "/"), "", json_path, fixed = TRUE),
+					delay_ms = delayMs,
+					round,
+					editor_setup_index = editorSetupIndex,
+					sample_index = sampleIndex,
+					is_throwaway = isThrowaway,
+					keydown_event_count = keydownEventCount,
+					latency_ms = latencyMs,
+					latency_all_keydowns_ms = latencyAllKeydownsMs,
+					keydown_ms = keydownMs,
+					keydown_all_ms = keydownAllMs,
+					keypress_ms = keypressMs,
+					keyup_ms = keyupMs,
+					keydown_timestamp_ms = keydownTimestampMs,
+					first_keydown_timestamp_ms = firstKeydownTimestampMs,
+					keypress_timestamp_ms = keypressTimestampMs,
+					keyup_timestamp_ms = keyupTimestampMs,
+					run_duration_ms = runStoppedAtEpochMs - runStartedAtEpochMs
+				)
+		}
+	) %>%
+		mutate(
+			effective_hold_ms = pmin(requested_hold_ms, delay_ms),
+			post_keyup_wait_ms = pmax(delay_ms - effective_hold_ms, 0),
+			observed_keydown_to_keyup_ms = keyup_timestamp_ms + keyup_ms - first_keydown_timestamp_ms,
+			keypress_to_keyup_gap_ms = keyup_timestamp_ms - (keypress_timestamp_ms + keypress_ms)
+		)
+	write_csv(ci_code_path_samples, ci_code_path_sample_path)
+} else if (file.exists(ci_code_path_sample_path)) {
+	ci_code_path_samples <- read_csv(ci_code_path_sample_path, show_col_types = FALSE)
+} else {
+	ci_code_path_samples <- tibble()
+}
+
+if (nrow(ci_code_path_samples) > 0) {
+	ci_code_path_retained <- ci_code_path_samples %>% filter(!is_throwaway)
+
+	ci_code_path_runs <- ci_code_path_retained %>%
+		group_by(
+			input_mode,
+			input_api,
+			requested_hold_ms,
+			delay_mode,
+			json_path,
+			delay_ms,
+			round,
+			editor_setup_index
+		) %>%
+		summarize(
+			retained_n = n(),
+			reported_q50_ms = median(latency_ms),
+			keypress_q50_ms = median(keypress_ms),
+			observed_keydown_to_keyup_p50_ms = median(observed_keydown_to_keyup_ms),
+			keypress_to_keyup_gap_p50_ms = median(keypress_to_keyup_gap_ms),
+			run_duration_ms = first(run_duration_ms),
+			.groups = "drop"
+		)
+	write_csv(ci_code_path_runs, ci_code_path_run_path)
+
+	ci_code_path_summary <- ci_code_path_retained %>%
+		group_by(input_mode, input_api, requested_hold_ms, delay_mode, delay_ms) %>%
+		summarize(
+			retained_n = n(),
+			latency_p10_ms = quant(latency_ms, 0.1),
+			latency_p50_ms = median(latency_ms),
+			latency_p90_ms = quant(latency_ms, 0.9),
+			latency_mean_ms = mean(latency_ms),
+			latency_sd_ms = sd(latency_ms),
+			keydown_p50_ms = median(keydown_ms),
+			keypress_p50_ms = median(keypress_ms),
+			keyup_p50_ms = median(keyup_ms),
+			observed_keydown_to_keyup_p50_ms = median(observed_keydown_to_keyup_ms),
+			keypress_to_keyup_gap_p50_ms = median(keypress_to_keyup_gap_ms),
+			.groups = "drop"
+		) %>%
+		left_join(
+			ci_code_path_runs %>%
+				group_by(input_mode, input_api, requested_hold_ms, delay_mode, delay_ms) %>%
+				summarize(
+					run_count = n(),
+					run_reported_q50_median_ms = median(reported_q50_ms),
+					run_reported_q50_sd_ms = sd(reported_q50_ms),
+					run_reported_q50_min_ms = min(reported_q50_ms),
+					run_reported_q50_max_ms = max(reported_q50_ms),
+					.groups = "drop"
+				),
+			by = c("input_mode", "input_api", "requested_hold_ms", "delay_mode", "delay_ms")
+		)
+	write_csv(ci_code_path_summary, ci_code_path_summary_path)
+
+	ci_code_path_plot <- ci_code_path_summary %>%
+		filter(delay_ms %in% c(100, 250, 500, 1000)) %>%
+		mutate(
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("100ms", "250ms", "500ms", "1000ms")),
+			input_api = factor(input_api, levels = c("tap", "page.keyboard", "locator.type", "locator.press"))
+		)
+
+	save_plot(
+		ggplot(
+			ci_code_path_plot,
+			aes(requested_hold_ms, latency_p50_ms, color = input_api, shape = input_api)
+		) +
+			geom_linerange(
+				aes(ymin = latency_p10_ms, ymax = latency_p90_ms),
+				position = position_dodge(width = 7),
+				alpha = 0.6,
+				linewidth = 0.8
+			) +
+			geom_point(
+				position = position_dodge(width = 7),
+				size = 2.7,
+				alpha = 0.92
+			) +
+			facet_wrap(vars(delay_label), nrow = 1) +
+			scale_x_continuous(breaks = c(0, 50, 75, 100)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Input API") +
+			scale_shape_manual(
+				values = c(16, 17, 15, 3),
+				name = "Input API"
+			) +
+			labs(
+				title = "The 100ms locator and page-keyboard fixed holds are tap-like; 50ms is a separate slow boundary",
+				subtitle = "Reused-editor stable-target code-path controls; points are p50, vertical bars are p10-p90; 40 retained samples per mode and delay",
+				x = "Requested key hold before post-keyup wait (ms)",
+				y = "Latency, keydown + keypress + keyup (ms)"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"146-ci-key-code-path-hold-boundary.png",
+		width = 12.4,
 		height = 5.8
 	)
 }
