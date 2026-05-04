@@ -794,6 +794,9 @@ The R script derives:
     feasibility correction for those selector guards, separating locally
     removable subscriptions from guards that need shared signals or broader
     invalidation support.
+-   `data/typing-delay-selector-guard-current-action-stack.csv`: current
+    source-feasibility-adjusted selector-guard action order, including which
+    p50 scope is counted now versus held for shared-signal or validation work.
 -   `data/typing-delay-first-patch-test-readiness*.csv`: source/test readiness
     matrix for the first local selector-guard patch candidates.
 -   `data/typing-delay-blocklistitems-invalidation-*.csv`: source-level
@@ -4666,6 +4669,27 @@ supported/unsupported pattern override coverage and web coverage for
 `generateAnchors` plus table-of-contents insertion/removal before changing the
 heading path.
 
+I then re-ranked the current selector-guard action stack after that source
+feasibility correction. This is the current implementation order, not the older
+"low-risk guards" shorthand:
+
+![Selector guard current action stack](figures/149-selector-guard-current-action-stack.png)
+
+| Action | Current p50 scope | Counted source-feasible p50 | Current status |
+| ------ | ----------------: | --------------------------: | -------------- |
+| Pattern override selected-only split | `3.6ms` | `3.6ms` | implement first |
+| Non-edited `BlockListBlockProvider` guard | `3.5ms` | `3.5ms` | prototype local invalidation |
+| `useInnerBlocksProps` structural guard | `1.1ms` | `1.1ms` | prototype local invalidation |
+| Heading shared capability signal | `0.5ms` | `0.0ms` | not counted until a shared/global signal exists |
+| `BlockListItems` structural/selection guard | `5.3ms` | `0.0ms` | not counted until behavior validation passes |
+
+This closes a small but important recommendation gap. The next local patch is
+not "pattern override plus heading"; it is pattern override first, with a test
+seam. The local guard envelope then comes from non-edited block-provider and
+inner-blocks invalidation prototypes. Heading is a shared-signal design problem,
+and `BlockListItems` is still a validation prototype even though both are real
+ordinary-text opportunities.
+
 I then made the first-patch test gap explicit. The pattern-override HOC is
 currently registered as a side-effect-only filter from
 `packages/editor/src/hooks/index.js`; `withPatternOverrideControls` itself is
@@ -6920,34 +6944,29 @@ therefore selective invalidation / subscription partitioning for text-only
 attribute updates, not callback-body tuning.
 
 The remaining product question is no longer just "which invalidation guard?"
-The risk-ranked answer is: start with low-risk settings/name guards for the
-pattern-override HOC and `HeadingEdit` anchor selector; next test a
-clientId-specific attribute guard for non-edited `BlockListBlockProvider`
-instances; treat `BlockListItems` as a high-risk validation prototype because it
-is selection/tree/appender-sensitive; leave the broader store-partition or
+The source-feasibility-adjusted answer is: start with the pattern-override
+selected-only split; next test clientId-specific attribute invalidation for
+non-edited `BlockListBlockProvider` instances and a root/order/settings boundary
+for `useInnerBlocksProps`; treat `HeadingEdit` as a shared-signal design problem;
+treat `BlockListItems` as a high-risk validation prototype because it is
+selection/tree/appender-sensitive; leave the broader store-partition or
 branch-aware notification design until after local guards prove the shape of the
 win.
 
 The validation-burden matrix makes that ordering less hand-wavy. The largest
 single local bucket, `BlockListItems`, is not the first patch because a stale
 selector there can affect selection, appender, template-lock, zoom, and visible
-block-list behavior. The safer first patches are the pattern-override
-settings/name guard and the `HeadingEdit` anchor/TOC-count guard: both have
-clear stale-state tests and do not depend on the edited paragraph's content.
-The implementation frontier adds the cumulative payoff: those first two guards
-cover `4.1ms`, or `47.1%` of the conservative skippable marker-window p50, with
-a combined validation-burden score of `3`. The second local guards bring the
-conservative local envelope to `8.7ms`; `BlockListItems` could lift the local
-envelope to `14.0ms`, but only after structural/selection behavior validation.
-The source-feasibility audit sharpens that again: the pattern-override
-selected-only split is the clear first patch (`~3.6ms`), while the heading
-selector should not be counted until there is a shared/global anchor-capability
-signal. The conservative source-feasible local envelope is therefore `8.2ms`,
-not the full `8.7ms`, before validating `BlockListItems`. The first-patch test
-readiness audit adds one practical requirement: the pattern-override patch
-should export or split a focused test seam for the side-effect HOC, then cover
-selected supported/unsupported blocks, unselected supported blocks, settings
-support changes, synced controls, and unsynced reset controls.
+block-list behavior. The source-feasibility audit supersedes the earlier
+"pattern override plus heading" shorthand: the pattern-override selected-only
+split is the clear first patch (`~3.6ms`), while the heading selector should not
+be counted until there is a shared/global anchor-capability signal. The
+source-feasible local stack then adds non-edited `BlockListBlockProvider` and
+`useInnerBlocksProps` invalidation prototypes for a conservative `8.2ms` local
+envelope before validating `BlockListItems`. The first-patch test readiness audit
+adds one practical requirement: the pattern-override patch should export or split
+a focused test seam for the side-effect HOC, then cover selected
+supported/unsupported blocks, unselected supported blocks, settings support
+changes, synced controls, and unsynced reset controls.
 The broad store-partition design remains plausible but high risk because it
 overlaps that local-guard envelope and must keep the persistence transition
 visible to `useBlockSync` and direct `isLastBlockChangePersistent` consumers.
@@ -7052,7 +7071,7 @@ The high-level split is:
 | -------- | -------------- | ---------------- |
 | Typing startup wait | locally closed; current Typing has no extra post-setup wait and added waits do not improve retained q50 stability | no more local startup-wait runs unless CI/spec shape changes |
 | Pattern-loading wait | bounded locally; `500ms` matches the `1000ms` q50 band while `0ms` changes the measured work | CI/mac/container validation or an explicit readiness predicate |
-| Low-risk selector guards | bounded enough to prototype | implement pattern-override and `HeadingEdit` guards with behavior tests |
+| Low-risk selector guards | bounded enough to prototype; source feasibility leaves pattern override as the first local patch, while heading needs a shared/global signal | implement the pattern-override selected-only split with focused behavior tests; then prototype block-provider and inner-block structural invalidation |
 | Store subscriber partition | partially bounded; promising but contract-sensitive | research after local guards, preserving `useBlockSync` and persistence consumers |
 | React render ownership | bounded as secondary, not primary cause | profiler only for after-input/whole-cycle ownership |
 | Chromium runtime checkpoint | bounded to automation/runtime state, not Gutenberg semantic state | Chromium scheduler/runtime tracing, outside this JS harness |
@@ -7112,10 +7131,12 @@ For investigation:
     work, but the boundary audit above says it should not be treated as the
     primary cause of the `1000ms` cliff.
 -   For the block-list owner groups identified here, separate necessary
-    text-input invalidations from broad block-tree invalidations. Start with
-    low-burden settings/name guards; do not start with `BlockListItems` despite
-    its larger exposure until selection, visible-list, appender, zoom,
-    template-lock, and structural tests pass.
+    text-input invalidations from broad block-tree invalidations. Start with the
+    pattern-override selected-only split; then prototype non-edited
+    `BlockListBlockProvider` and `useInnerBlocksProps` invalidation boundaries.
+    Do not start with `BlockListItems` despite its larger exposure until
+    selection, visible-list, appender, zoom, template-lock, and structural tests
+    pass.
 -   Keep instrumenting around the post-keyup interval, but focus below ordinary
     JS callbacks. Timer, RAF, idle, data-action, key-flag, and DevTools timeline
     checks did not explain why a roughly `30-40ms` gap changes the next input

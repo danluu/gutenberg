@@ -12219,6 +12219,133 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		height = 7.4
 	)
 
+	selector_guard_current_action_stack <- selector_guard_source_feasibility %>%
+		mutate(
+			action_order = case_when(
+				source_site == "Pattern override support HOC" ~ 1,
+				source_site == "BlockListBlockProvider useSelect" ~ 2,
+				source_site == "useInnerBlocksProps useSelect" ~ 3,
+				source_site == "HeadingEdit anchor useSelect" ~ 4,
+				source_site == "BlockListItems useSelect" ~ 5,
+				TRUE ~ 99
+			),
+			action_label = case_when(
+				source_site == "Pattern override support HOC" ~ "1. pattern override selected-only split",
+				source_site == "BlockListBlockProvider useSelect" ~ "2. non-edited block provider guard",
+				source_site == "useInnerBlocksProps useSelect" ~ "3. inner-blocks structural guard",
+				source_site == "HeadingEdit anchor useSelect" ~ "4. heading shared capability signal",
+				source_site == "BlockListItems useSelect" ~ "5. BlockListItems validation prototype",
+				TRUE ~ as.character(source_site)
+			),
+			action_status = case_when(
+				source_site == "Pattern override support HOC" ~ "implement first",
+				source_site %in% c("BlockListBlockProvider useSelect", "useInnerBlocksProps useSelect") ~ "prototype local invalidation",
+				source_site == "HeadingEdit anchor useSelect" ~ "needs shared signal",
+				source_site == "BlockListItems useSelect" ~ "validate before counting",
+				TRUE ~ "defer"
+			),
+			source_counted_skippable_ms = conservative_source_audited_skippable_ms,
+			not_yet_counted_ms = pmax(candidate_duration_p50_ms - source_counted_skippable_ms, 0),
+			current_scope_ms = candidate_duration_p50_ms
+		) %>%
+		arrange(action_order) %>%
+		mutate(
+			cumulative_source_counted_skippable_ms = cumsum(source_counted_skippable_ms),
+			cumulative_possible_after_validation_ms = cumulative_source_counted_skippable_ms + cumsum(not_yet_counted_ms),
+			action_status = factor(
+				action_status,
+				levels = c(
+					"implement first",
+					"prototype local invalidation",
+					"needs shared signal",
+					"validate before counting",
+					"defer"
+				)
+			),
+			action_label = factor(action_label, levels = rev(action_label))
+		) %>%
+		select(
+			action_order,
+			action_label,
+			source_site,
+			action_status,
+			source_feasibility,
+			current_scope_ms,
+			source_counted_skippable_ms,
+			not_yet_counted_ms,
+			candidate_listener_count_p50,
+			after_source_audit_conservative_calls,
+			cumulative_source_counted_skippable_ms,
+			cumulative_possible_after_validation_ms,
+			revised_first_patch_decision,
+			source_finding,
+			test_gap
+		)
+
+	write_csv(
+		selector_guard_current_action_stack,
+		file.path(data_dir, "typing-delay-selector-guard-current-action-stack.csv")
+	)
+
+	selector_guard_current_action_plot <- selector_guard_current_action_stack %>%
+		pivot_longer(
+			cols = c(source_counted_skippable_ms, not_yet_counted_ms),
+			names_to = "scope_component",
+			values_to = "component_ms"
+		) %>%
+		filter(component_ms > 0) %>%
+		mutate(
+			scope_component = recode(
+				scope_component,
+				source_counted_skippable_ms = "source-feasible counted",
+				not_yet_counted_ms = "not counted yet"
+			),
+			scope_component = factor(
+				scope_component,
+				levels = c("source-feasible counted", "not counted yet")
+			)
+		)
+
+	selector_guard_current_action_labels <- selector_guard_current_action_stack %>%
+		mutate(
+			label_x = current_scope_ms + 0.16,
+			label = case_when(
+				source_counted_skippable_ms > 0 ~ paste0(number(source_counted_skippable_ms, accuracy = 0.1), "ms counted"),
+				TRUE ~ paste0(number(current_scope_ms, accuracy = 0.1), "ms not counted")
+			)
+		)
+
+	save_plot(
+		ggplot(
+			selector_guard_current_action_plot,
+			aes(component_ms, action_label, fill = scope_component)
+		) +
+			geom_col(width = 0.64, alpha = 0.92) +
+			geom_text(
+				data = selector_guard_current_action_labels,
+				aes(label_x, action_label, label = label),
+				inherit.aes = FALSE,
+				hjust = 0,
+				size = 3.1,
+				color = "grey20"
+			) +
+			scale_fill_brewer(type = "qual", palette = "Set2", name = "Current status") +
+			scale_x_continuous(
+				labels = label_number(suffix = "ms"),
+				expand = expansion(mult = c(0, 0.2))
+			) +
+			labs(
+				title = "Current selector-guard action stack after source feasibility",
+				subtitle = "Heading and BlockListItems stay uncounted until a shared signal or validation prototype exists",
+				x = "Current audited p50 scope",
+				y = NULL
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"149-selector-guard-current-action-stack.png",
+		width = 12.2,
+		height = 6.8
+	)
+
 	redux_owner_other_breakdown <- redux_listener_owner_source_summary %>%
 		anti_join(
 			redux_owner_source_audit_sites,
@@ -13776,7 +13903,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Current Typing has 0ms extra post-setup wait; repeated CI-comparable and exact-spec runs did not show retained-q50 stability gains from adding wait.", "Whether a different CI image shifts absolute numbers, not whether this local knob can speed up current Typing.", "No more Typing startup-wait runs unless the CI image or spec shape changes.",
 	"Pattern-loading wait", "CI engineering", 4, 3, 4, "validate before change", "Local exact short-wait data says 500ms preserves the 1000ms q50 band while saving wall time; 0ms moves resource work into the measured interval.", "Whether 500ms or a readiness predicate is stable across CI, macOS versions, and containers.", "Prototype an explicit pattern-readiness predicate or validate 500ms in CI/mac/container before changing the shared wait.",
-	"Low-risk selector guards", "product optimization", 4, 3, 4, "prototype first", "Source audit and validation matrix identify pattern-override settings/name and HeadingEdit anchor/TOC guards as low-burden first patches.", "Actual behavior-test coverage and measured win after implementation.", "Implement the low-burden guards with text insertion, setting toggle, block-name, pattern override, and TOC insertion/removal tests.",
+	"Low-risk selector guards", "product optimization", 4, 3, 4, "prototype first", "Source feasibility leaves pattern override as the clear first local patch; heading is a shared/global signal problem, not a simple local guard.", "Actual behavior-test coverage and measured win after implementation.", "Implement the pattern-override selected-only split with focused behavior tests; then prototype non-edited block-provider and inner-block structural invalidation.",
 	"Store subscriber partition", "product optimization", 3, 4, 5, "research after local guards", "The marker changes only blocks.isPersistentChange; audited hot selectors do not read it, but useBlockSync needs the persistence transition.", "Whether @wordpress/data/core-block-editor can expose a persistence-aware side channel without breaking existing useSelect semantics.", "After local guards, prototype persistence-aware subscriber partitioning while preserving useBlockSync and isLastBlockChangePersistent consumers.",
 	"React render ownership", "product optimization", 5, 3, 2, "secondary optimization", "Boundary audit bounds renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering as secondary contributors.", "Which components own the smaller after-input or whole-cycle cost.", "Use React profiler only for after-input optimization ownership, not as the primary 1000ms-cliff mechanism.",
 	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Raw CDP ordinary waits stay slow even at 5s, while Runtime.evaluate/callFunctionOn checkpoints have a dose response and trace snapshots explain the full Playwright trace-on fast path.", "Which Chromium renderer/runtime scheduler state is changed by those checkpoints.", "Use Chromium scheduler/runtime trace categories and protocol-level checkpoint probes around Runtime.evaluate and captureSnapshot.",
