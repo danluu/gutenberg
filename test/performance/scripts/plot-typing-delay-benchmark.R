@@ -21510,6 +21510,110 @@ save_plot(
 	height = 7.4
 )
 
+open_question_execution_runbook <- tribble(
+	~runbook_item, ~priority_order, ~lane, ~first_artifact, ~acceptance_gate, ~stop_or_expand_rule, ~premature_work_to_avoid, ~artifact_burden_score, ~decision_unblock_score, ~observer_risk_score, ~plot_label,
+	"Compact CI topology validation", 1, "start now",
+	"A real Performance Tests topology artifact containing raw retained samples, q25/q50/q75/cnt, first-key distributions, failures, resources, runner/browser/wp-env metadata, and per-run order.",
+	"Local row ordering is preserved, retained counts/failures do not regress, and candidate wait changes do not move resources or first-key tails into the measured interval.",
+	"If ordering, variance, failures, or resource movement changes, expand the manifest before changing waits or thresholds.",
+	"Changing waits or thresholds from local p50.",
+	3, 5, 5, "CI topology",
+	"Behavior-gated selector guard", 2, "start now",
+	"Focused behavior fixtures plus a source-span microscope for the next hot owner.",
+	"Behavior passes first, then source-span fanout collapses for the targeted owner.",
+	"If behavior or source spans fail, do not run or cite aggregate p50; narrow the guard or move to another owner.",
+	"Citing aggregate p50 before behavior and source-span evidence pass.",
+	2, 4, 4, "selector",
+	"Shared retained-key sidecar schema", 3, "sidecar first",
+	"Unprivileged key-window/helper/renderer/collector/command schema with clock sync and no root collectors.",
+	"Every retained q50-contributing key joins to the expected helper, renderer, command, and collector placeholder rows without changing class ordering.",
+	"If join coverage or class ordering fails, do not run root counters or browser trace categories.",
+	"Running root counters or browser trace before join coverage and observer overhead are accepted.",
+	4, 5, 5, "sidecar schema",
+	"CPU/QoS counter run", 4, "after sidecar",
+	"Compact manifest under root powermetrics after sidecar acceptance.",
+	"Frequency/residency/QoS/power state separates ordinary/utility fast rows from no-CPU and background/maintenance rows.",
+	"If powermetrics cannot separate rows, escalate to root trace; if trace also fails, keep only empirical CPU-state sensitivity.",
+	"Naming hardware or scheduler causes from aggregate latency rows.",
+	5, 4, 5, "CPU/QoS",
+	"Trace-off protocol sidecar", 5, "after sidecar",
+	"Runtime command sidecar joined to retained key gaps and runtime-repeat controls.",
+	"Repeated runtime checkpoints reproduce the dose response without observer perturbation and expose joinable runtime/scheduler fields.",
+	"If the sidecar perturbs ordering or fields do not separate rows, stop naming Chromium internals.",
+	"Adding more delay rows or trace-on-only explanations before trace-off joins exist.",
+	5, 4, 4, "runtime"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("start now", "sidecar first", "after sidecar")),
+		label_x = artifact_burden_score + case_when(
+			plot_label == "selector" ~ 0.18,
+			plot_label == "CI topology" ~ 0.18,
+			plot_label == "sidecar schema" ~ -0.22,
+			plot_label == "CPU/QoS" ~ 0.12,
+			TRUE ~ 0.12
+		),
+		label_y = decision_unblock_score + case_when(
+			plot_label == "selector" ~ 0.18,
+			plot_label == "CI topology" ~ -0.24,
+			plot_label == "sidecar schema" ~ 0.22,
+			plot_label == "CPU/QoS" ~ -0.22,
+			TRUE ~ 0.18
+		)
+	)
+
+write_csv(
+	open_question_execution_runbook %>%
+		select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-execution-runbook.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_execution_runbook,
+		aes(
+			artifact_burden_score,
+			decision_unblock_score,
+			color = lane,
+			shape = lane,
+			size = observer_risk_score
+		)
+	) +
+		geom_point(alpha = 0.92) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Lane") +
+		scale_shape_manual(
+			values = c("start now" = 16, "sidecar first" = 17, "after sidecar" = 15),
+			name = "Lane"
+		) +
+		scale_size_area(max_size = 6.2, breaks = 2:5, name = "Observer risk") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.6, 5.35),
+			labels = c("1" = "small", "2" = "local", "3" = "CI", "4" = "sidecar", "5" = "root/trace")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(2.6, 5.35),
+			labels = c("1" = "low", "2" = "scope", "3" = "claim", "4" = "mechanism", "5" = "decision")
+		) +
+		labs(
+			title = "Top open questions need artifact gates before broader claims",
+			subtitle = "CI topology and selector behavior can start now; runtime and CPU/QoS mechanism work is sidecar-gated",
+			x = "Artifact burden",
+			y = "Decision unblocked"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"203-open-question-execution-runbook.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

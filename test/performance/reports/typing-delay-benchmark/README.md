@@ -1026,6 +1026,9 @@ The R script derives:
     scoring scenarios for the next-action priority scorecard.
 -   `data/typing-delay-open-question-priority-sensitivity-summary.csv`: rank
     stability summary across priority scoring scenarios.
+-   `data/typing-delay-open-question-execution-runbook.csv`: executable
+    runbook for the highest-priority remaining open questions, with artifact
+    shape, acceptance gate, stop/expand rule, and premature-work guard.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9212,6 +9215,19 @@ The result is stable enough for the near-term choice:
 | Shared retained-key sidecar | Middle-ranked unless the formula explicitly favors mechanism unblocking, where it moves up. This matches the dependency map: design it after the first two actions, before root counters or browser tracing. |
 | CPU/QoS, runtime sidecar, workload replay, display calibration | Valuable only behind their prerequisites or claim expansion; their lower rank is caused by artifact burden, not because the questions are unimportant. |
 | Broad local startup/API sweeps | Bottom-ranked under every scoring scenario unless a trigger changes. |
+
+The next step is to turn that ranking into executable gates. The top actions
+need concrete artifacts, not another generic request for more samples.
+
+![Open question execution runbook](figures/203-open-question-execution-runbook.png)
+
+| Runbook item | First artifact | Acceptance gate | Stop or expand rule |
+| ------------ | -------------- | --------------- | ------------------- |
+| Compact CI topology validation | A real Performance Tests topology artifact containing raw retained samples, q25/q50/q75/cnt, first-key distributions, failures, resources, runner/browser/wp-env metadata, and per-run order. | Local row ordering is preserved, retained counts/failures do not regress, and candidate wait changes do not move resources or first-key tails into the measured interval. | If ordering, variance, failures, or resource movement changes, expand the manifest before changing waits or thresholds. |
+| Behavior-gated selector guard | Focused behavior fixtures plus a source-span microscope for the next hot owner. | Behavior passes first, then source-span fanout collapses for the targeted owner. | If behavior or source spans fail, do not run or cite aggregate p50; narrow the guard or move to another owner. |
+| Shared retained-key sidecar schema | Unprivileged key-window/helper/renderer/collector/command schema with clock sync and no root collectors. | Every retained q50-contributing key joins to the expected helper, renderer, command, and collector placeholder rows without changing class ordering. | If join coverage or class ordering fails, do not run root counters or browser trace categories. |
+| CPU/QoS counter run | Compact manifest under root `powermetrics` after sidecar acceptance. | Frequency/residency/QoS/power state separates ordinary/utility fast rows from no-CPU and background/maintenance rows. | If `powermetrics` cannot separate rows, escalate to root `trace`; if trace also fails, keep only empirical CPU-state sensitivity. |
+| Trace-off protocol sidecar | Runtime command sidecar joined to retained key gaps and runtime-repeat controls. | Repeated runtime checkpoints reproduce the dose response without observer perturbation and expose joinable runtime/scheduler fields. | If the sidecar perturbs ordering or fields do not separate rows, stop naming Chromium internals. |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
