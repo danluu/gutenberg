@@ -14341,7 +14341,264 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			height = 5.6
 		)
 
-			store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
+		postpatch_residual_owner_audit <- tribble(
+			~source_owner, ~source_path, ~source_line, ~metadata_count, ~data_span_events, ~use_select_on_change_events, ~use_select_map_select_events, ~use_select_update_value_events, ~use_select_render_queue_add_events, ~redux_store_listener_events, ~total_duration_ms, ~residual_priority, ~interpretation, ~recommended_next_step,
+			"BlockListBlockProvider selected props",
+			"packages/block-editor/src/components/block-list/block.js",
+			562,
+			1437,
+			59467,
+			8622,
+			6253,
+			6262,
+			8580,
+			12933,
+			301.5,
+			"hot local prototype",
+			"Largest residual post-patch typed-window owner in the microscope; it still mixes text attributes with selection, movement, overlay, variation, section, settings, and identity state.",
+			"Prototype a block-scoped selected-props boundary and prove non-edited text updates do not stale selection, movement, overlay, variation, template, or identity behavior.",
+			"BlockListItems structural list",
+			"packages/block-editor/src/components/block-list/index.js",
+			195,
+			580,
+			24363,
+			3480,
+			3480,
+			3483,
+			0,
+			5220,
+			128.1,
+			"hot validation prototype",
+			"Hot residual structural owner; content attributes are not read, but the selector owns row order, selected ids, visible blocks, zoom, preview mode, and appender eligibility.",
+			"Build a structural/selection/appender render-key prototype with broad behavior assertions before counting the win.",
+			"useInnerBlocksProps structural props",
+			"packages/block-editor/src/components/inner-blocks/index.js",
+			194,
+			580,
+			23973,
+			3480,
+			2523,
+			2526,
+			3438,
+			5220,
+			66.3,
+			"hot local prototype",
+			"Hot residual owner whose ordinary text update path should not need root/drop-zone/layout props unless root, order, settings, editing mode, layout, or zoom changes.",
+			"Prototype a root/order/settings boundary and test text insertion, child insertion/removal/reorder, zoom, template lock, editing mode, layout, and root changes.",
+			"useSettings block settings",
+			"packages/block-editor/src/components/use-settings/index.js",
+			29,
+			58,
+			2418,
+			348,
+			261,
+			285,
+			306,
+			522,
+			13.1,
+			"moderate follow-up",
+			"Moderate residual owner with lower mount count; likely tied to per-block settings reads.",
+			"Defer until the larger block-list and inner-block boundaries are understood.",
+			"HeadingEdit anchor capability",
+			"packages/block-library/src/heading/edit.js",
+			35,
+			202,
+			8340,
+			1212,
+			873,
+			873,
+			1212,
+			1818,
+			12.2,
+			"shared signal required",
+			"Still hot enough to notice, but every heading must observe global generateAnchors and table-of-contents capability changes.",
+			"Do not apply a local memo; design a shared/global capability signal first.",
+			"Layout block-gap hook",
+			"packages/block-editor/src/hooks/layout.js",
+			439,
+			1437,
+			3813,
+			546,
+			405,
+			414,
+			546,
+			819,
+			5.4,
+			"high mount low hotness",
+			"Mounted at per-block scale but much colder than the top block-list owners in this typed-window microscope.",
+			"Do not prioritize before the hotter residual rows unless a layout-specific benchmark makes it hot.",
+			"Block bindings supported attributes hook",
+			"packages/block-editor/src/hooks/block-bindings.js",
+			45,
+			1,
+			102,
+			15,
+			15,
+			15,
+			0,
+			21,
+			4.1,
+			"single selected owner",
+			"A separate selected block-editor binding hook, not the pattern-override HOC fanout; it is one mounted owner in this run.",
+			"Keep separate from the pattern-override fanout claim.",
+			"Layout root-padding alignment hook",
+			"packages/block-editor/src/hooks/layout.js",
+			83,
+			1438,
+			12,
+			0,
+			0,
+			12,
+			0,
+			0,
+			0,
+			"cold high mount",
+			"Very high mount count but effectively no typed-window listener cost in this microscope.",
+			"Do not rank by mount count alone.",
+			"BlockEdit all binding sources",
+			"packages/block-editor/src/components/block-edit/edit.js",
+			64,
+			1437,
+			9,
+			0,
+			0,
+			9,
+			0,
+			0,
+			0,
+			"cold high mount",
+			"Per-block mounted binding-source read with no hot typed-window fanout in this run.",
+			"Leave as a secondary source audit item.",
+			"RichText binding UI support",
+			"packages/block-editor/src/components/rich-text/index.js",
+			172,
+			1234,
+			12,
+			0,
+			0,
+			12,
+			0,
+			0,
+			0,
+			"cold high mount",
+			"Broader block-editor binding UI support-attribute row remains mounted, but it is not hot in this ordinary text microscope.",
+			"Do not confuse this with the now-collapsed pattern-override HOC row."
+		) %>%
+			mutate(
+				residual_priority = factor(
+					residual_priority,
+					levels = c(
+						"hot local prototype",
+						"hot validation prototype",
+						"shared signal required",
+						"moderate follow-up",
+						"high mount low hotness",
+						"single selected owner",
+						"cold high mount"
+					)
+				)
+			)
+
+		write_csv(
+			postpatch_residual_owner_audit,
+			file.path(data_dir, "typing-delay-postpatch-residual-owner-audit.csv")
+		)
+
+		postpatch_residual_owner_summary <- postpatch_residual_owner_audit %>%
+			summarize(
+				hot_local_prototype_total_ms = sum(total_duration_ms[residual_priority == "hot local prototype"]),
+				hot_validation_prototype_total_ms = sum(total_duration_ms[residual_priority == "hot validation prototype"]),
+				cold_high_mount_metadata_count = sum(metadata_count[residual_priority == "cold high mount"]),
+				cold_high_mount_total_ms = sum(total_duration_ms[residual_priority == "cold high mount"]),
+				top_owner = source_owner[which.max(total_duration_ms)],
+				top_owner_total_ms = max(total_duration_ms),
+				next_local_prototype = "BlockListBlockProvider first, then useInnerBlocksProps; keep BlockListItems as a validation prototype and do not chase cold high-mount rows first.",
+				.groups = "drop"
+			)
+
+		write_csv(
+			postpatch_residual_owner_summary,
+			file.path(data_dir, "typing-delay-postpatch-residual-owner-summary.csv")
+		)
+
+		postpatch_residual_owner_plot <- postpatch_residual_owner_audit %>%
+			mutate(
+				plot_duration_ms = pmax(total_duration_ms, 0.05),
+				owner_label = case_when(
+					source_owner == "BlockListBlockProvider selected props" ~ "provider",
+					source_owner == "BlockListItems structural list" ~ "BlockListItems",
+					source_owner == "useInnerBlocksProps structural props" ~ "inner blocks",
+					source_owner == "HeadingEdit anchor capability" ~ "heading",
+					source_owner == "Layout block-gap hook" ~ "layout gap",
+					source_owner == "Layout root-padding alignment hook" ~ "root padding",
+					source_owner == "BlockEdit all binding sources" ~ "bindings sources",
+					source_owner == "RichText binding UI support" ~ "RichText bindings",
+					source_owner == "useSettings block settings" ~ "settings",
+					source_owner == "Block bindings supported attributes hook" ~ "selected binding",
+					TRUE ~ source_owner
+				),
+				label_y = metadata_count * case_when(
+					source_owner == "Layout root-padding alignment hook" ~ 1.11,
+					source_owner == "BlockEdit all binding sources" ~ 0.99,
+					source_owner == "RichText binding UI support" ~ 0.86,
+					source_owner == "BlockListItems structural list" ~ 1.13,
+					source_owner == "useInnerBlocksProps structural props" ~ 0.87,
+					TRUE ~ 1.04
+				)
+			)
+
+		save_plot(
+			ggplot(
+				postpatch_residual_owner_plot,
+				aes(
+					plot_duration_ms,
+					metadata_count,
+					color = residual_priority,
+					shape = residual_priority
+				)
+			) +
+				geom_point(size = 3.8, alpha = 0.9) +
+				geom_text(
+					aes(y = label_y, label = owner_label),
+					size = 3.1,
+					color = "grey20",
+					show.legend = FALSE
+				) +
+				scale_color_brewer(type = "qual", palette = "Set1", name = "Residual priority") +
+				scale_shape_manual(
+					values = c(
+						"hot local prototype" = 16,
+						"hot validation prototype" = 17,
+						"shared signal required" = 15,
+						"moderate follow-up" = 3,
+						"high mount low hotness" = 7,
+						"single selected owner" = 8,
+						"cold high mount" = 4
+					),
+					name = "Residual priority"
+				) +
+				scale_x_log10(
+					breaks = c(0.05, 0.1, 1, 10, 100, 300),
+					labels = c("<0.1", "0.1", "1", "10", "100", "300"),
+					limits = c(0.04, 430)
+				) +
+				scale_y_log10(
+					breaks = c(1, 10, 100, 1000),
+					labels = label_number()
+				) +
+				labs(
+					title = "Post-patch residual fanout is hot in block-list owners, not every mounted row",
+					subtitle = "Source-map audit of the three-sample all-data-spans microscope; totals are diagnostic, not aggregate p50",
+					x = "Total source-span duration in microscope, ms (log scale)",
+					y = "Mounted useSelect metadata entries (log scale)"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"151-postpatch-residual-owner-fanout.png",
+			width = 12,
+			height = 7
+		)
+
+		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
 		mutate(
 			plot_label = case_when(
 				design_option == "Source-feasible local selector guards" ~ "local guards",
@@ -15860,7 +16117,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, or reported statistic changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor 0ms versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry.",
 	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract narrows the deployment choice: pure getBlockPatterns is rejected locally, getBlockPatterns plus resource quiet is the first replacement candidate, fixed 500ms is only a validated fallback, and fixed 1000ms remains the conservative baseline if either replacement changes the metric boundary.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Run the contract in CI/mac/container lanes with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry before changing the fixed wait.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
-	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. Focused unit coverage covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths.", "Aggregate before/after p50 for that patch if a production magnitude claim is needed, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Move to the non-edited BlockListBlockProvider and useInnerBlocksProps prototypes; run aggregate p50 only as confirmation if needed.",
+	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps, while several other per-block rows are cold high-mount rows.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Prototype BlockListBlockProvider first, then useInnerBlocksProps; keep BlockListItems as a validation prototype and do not prioritize cold high-mount rows without a hot benchmark window.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
 		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated Runtime.evaluate/Runtime.callFunctionOn rows are the dose-response control, trace-on captureSnapshot rows isolate the perturbation, and native rows bound browser-only scale.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, EventDispatch, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows.",

@@ -872,6 +872,9 @@ The R script derives:
 -   `data/typing-delay-pattern-override-postpatch-source-span-*.csv`:
     post-patch all-data-spans microscope showing the pattern-override support
     HOC collapsed to selected-block scale after rebuilt assets.
+-   `data/typing-delay-postpatch-residual-owner-*.csv`: source-map-resolved
+    residual `useSelect` owner audit from the post-patch all-data-spans
+    microscope, separating hot block-list owners from cold high-mount rows.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -5230,6 +5233,32 @@ accessible name changes and the delayed locator target can go stale. A larger
 33-key all-data-spans run reached the typing step but failed at JSON
 serialization with `RangeError: Invalid string length`. All-spans diagnostics
 therefore need microscope-sized runs or a streaming/summarized output path.
+
+I also used the same artifact plus source maps to ask the next question: after
+the pattern-override row collapses, what is still hot? The answer is not "all
+per-block selectors". Several rows are mounted at per-block scale but are cold
+in this typed window. The hot residual rows are still the block-list owners.
+
+![Post-patch residual owner fanout](figures/151-postpatch-residual-owner-fanout.png)
+
+| Residual owner | Metadata entries | Source-span events | Total span time | Interpretation |
+| -------------- | ---------------: | -----------------: | --------------: | -------------- |
+| `BlockListBlockProvider` selected props | `1,437` | `59,467` | `301.5ms` | largest residual post-patch owner; still mixes text attributes with selection, movement, overlay, variation, section, settings, and identity state |
+| `BlockListItems` structural list | `580` | `24,363` | `128.1ms` | hot structural owner; content attributes are not read, but it owns row order, selected ids, visible blocks, zoom, preview mode, and appender eligibility |
+| `useInnerBlocksProps` structural props | `580` | `23,973` | `66.3ms` | hot structural owner; ordinary text updates should not need root/drop-zone/layout props unless root, order, settings, editing mode, layout, or zoom changes |
+| `useSettings` block settings | `58` | `2,418` | `13.1ms` | moderate residual owner; defer until larger boundaries are understood |
+| `HeadingEdit` anchor capability | `202` | `8,340` | `12.2ms` | real but not a local memo row; headings must observe global `generateAnchors` and table-of-contents capability |
+| Layout block-gap hook | `1,437` | `3,813` | `5.4ms` | high mount count, low typed-window hotness |
+| Layout root-padding hook | `1,438` | `12` | `0.0ms` | cold high-mount row; mount count alone is not enough to rank it |
+| BlockEdit binding sources | `1,437` | `9` | `0.0ms` | cold high-mount row in this ordinary text microscope |
+| RichText binding UI support | `1,234` | `12` | `0.0ms` | separate from the pattern-override HOC and cold in this run |
+
+This makes the next selector-guard step stricter. The next local prototype
+should be `BlockListBlockProvider`, followed by `useInnerBlocksProps`.
+`BlockListItems` is still a validation prototype because stale row order,
+selection, visibility, zoom, preview, or appender state would be user-visible.
+The cold high-mount rows should not be prioritized just because they have large
+mount counts; they need a benchmark window where they are actually hot.
 
 I then pushed on the largest uncounted selector row: `BlockListItems`. The source
 audit makes the split sharper. `BlockListItems` does not read paragraph content

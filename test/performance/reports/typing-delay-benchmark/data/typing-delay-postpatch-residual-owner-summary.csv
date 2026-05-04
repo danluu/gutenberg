@@ -1,0 +1,2 @@
+hot_local_prototype_total_ms,hot_validation_prototype_total_ms,cold_high_mount_metadata_count,cold_high_mount_total_ms,top_owner,top_owner_total_ms,next_local_prototype
+367.8,128.1,4109,0,BlockListBlockProvider selected props,301.5,"BlockListBlockProvider first, then useInnerBlocksProps; keep BlockListItems as a validation prototype and do not chase cold high-mount rows first."
