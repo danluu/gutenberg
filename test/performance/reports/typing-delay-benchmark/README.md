@@ -124,6 +124,15 @@ The short version:
     `100s` instead of `110s` over two branches and reports `11.0ms` q50 with
     `0.42ms` run-to-run q50 sd, versus `17.3ms` q50 and `3.01ms` run-to-run q50
     sd for the held-key run in this paired check.
+-   Realistic fixed key holds remain much closer to tap mode than to the current
+    full-delay hold, but the exact `50ms` versus `100ms` ranking is still a
+    harness/code-path question. A completed fresh-editor code-path matrix shows
+    different boundaries by API: page-keyboard `50ms` is tap-like while
+    page-keyboard `75ms` / `100ms` are slow; `locator.type()` `50ms` / `75ms`
+    are slow; `locator.press()` `50ms` / `75ms` / `100ms` are tap-like.
+    Because `locator.pressSequentially()` delegates to `locator.type()`, it
+    should be treated as the `locator.type()` family, not the `locator.press()`
+    family.
 -   A native `contenteditable` baseline with the same one-second input timer does
     not reproduce Gutenberg's key-hold plateau. That means "timer fired while key
     was held" is not sufficient by itself; Gutenberg editor work is required.
@@ -723,6 +732,11 @@ The R script derives:
 -   `data/typing-delay-ci-code-path-*.csv`: reused-editor stable-target controls
     comparing tap, page-keyboard fixed hold, locator `type()`, and locator
     `press()` input paths at `50ms`, `75ms`, and `100ms` requested holds.
+-   `data/typing-delay-ci-fresh-code-path-*.csv`: matched fresh-editor
+    stable-target controls for current CI held key, tap-then-wait,
+    page-keyboard fixed hold, locator `type()`, and locator `press()` input
+    paths at `50ms`, `75ms`, and `100ms` requested holds, including a
+    paired-differences table by round.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -1914,8 +1928,8 @@ ordering by regime, not the exact p50 height of a single point.
 | Open question | Current evidence | What would settle it |
 | ------------- | ---------------- | -------------------- |
 | Does a realistic short hold reproduce the full-hold artifact? | No. `50ms` / `100ms` holds are much closer to tap mode than to full hold at `250ms` and `500ms`. | A repeat blocked sweep would tighten the size estimate, but is unlikely to reverse the regime conclusion. |
-| Is `50ms` better than `100ms`? | Not settled. `100ms` is higher at `250ms` and `500ms`, but lower at `1000ms`; run-to-run effects are comparable to the differences. Earlier compatible artifacts and reused-editor stable-target controls both strengthen that caution, and the stable-target controls actually flip the ordering. A `75ms` locator-press control is tap-like, so the reused-editor `50ms` bump is not a monotonic hold-duration curve. | Repeat with more rounds, or randomize/interleave hold durations within each delay. |
-| Is fixed `100ms` hold identical to current CI at `100ms` delay? | Not exactly. Both have `100ms` effective hold and no post-keyup wait, but the code paths differ: current CI uses the one-call `type()` path, while fixed hold uses explicit `keyboard.down()` / wait / `keyboard.up()`. A reused-editor fixed-hold control that clicks the stable contenteditable target before page-keyboard actions makes `100ms` fixed hold tap-like, so some earlier fixed-hold overhead was harness-target sensitive. Locator `type()` and locator `press()` probes are also tap-like and differ by only `0.1-0.3ms` at the aggregate p50, but those probes reused the same editor instead of using the CI-comparable fresh-editor setup. | Run the full matched fresh-editor code-path sweep, including current CI one-call `type()` and locator modes, or add a Playwright-level helper that keeps the one-call `type()` path while splitting hold time from post-keyup wait. |
+| Is `50ms` better than `100ms`? | Not settled globally. The answer now depends on the Playwright entry point: in the matched fresh matrix, page-keyboard `50ms` is tap-like and below page-keyboard `100ms`, `locator.type()` `50ms` is above `locator.type()` `100ms` at `500ms` / `1000ms`, and `locator.press()` has no meaningful `50ms` / `100ms` split. | Interleave hold durations within each API/delay, and treat the result as API-specific rather than one human-hold-duration ranking. |
+| Is fixed `100ms` hold identical to current CI at `100ms` delay? | No. Both have a nominal `100ms` hold and no explicit post-keyup wait at `100ms` delay, but the code paths differ: current CI uses one-call `page.keyboard.type()`, page fixed hold uses explicit `keyboard.down()` / wait / `keyboard.up()`, locator type uses `locator.type()`, and locator press uses `locator.press()`. The matched fresh matrix shows these families separate by multiple milliseconds under the same requested holds. | A Playwright-level helper that preserves the one-call `type()` path while separately controlling hold and post-keyup wait would be needed for a true decomposition. |
 | Are setup/order effects contaminating the graph? | Yes enough to be visible, but they do not create the full-hold conclusion. Round 2 was low for several `250ms` / `500ms` points, and full-hold `1000ms` had one retained `303ms` outlier. P50 survives better than CV, but the run-to-run q50 sd should be read alongside p50. | Interleave modes, clean posts between delay runs, or report median-of-run-medians with more rounds. |
 | Does realistic hold materially reduce CI runtime at `1000ms`? | Only modestly. At `1000ms`, tap is `100s`, `50ms` hold is `100.5s`, `100ms` hold is `101s`, and current full hold is `110s` in the two-branch Typing model. | Runtime savings require reducing the configured key-to-key delay; hold realism mostly changes the measured regime. |
 
@@ -2068,9 +2082,25 @@ also above tap at the discriminator delays, but noisier: `15.1ms` at `250ms`,
 is not only a page-keyboard down/up artifact. The page-keyboard path adds about
 `1.1ms` over locator type at `250ms` / `500ms`, but essentially nothing at
 `1000ms`; locator press is close to locator type at `250ms` / `500ms` and about
-`1ms` lower at `1000ms`. Until the fresh-editor rerun is done, the safest
-reading is that `50ms` / `100ms` ordering is a harness/phase question, not a
-stable human-hold-duration result.
+`1ms` lower at `1000ms`. On its own, the reused-editor control says that
+`50ms` / `100ms` ordering is a harness/phase question, not a stable
+human-hold-duration result.
+
+Normalizing the same controls by API makes the remaining split more precise.
+Holding the input API fixed, the reused-editor `50ms`-minus-`100ms` gap at
+`250ms` / `500ms` / `1000ms` is tightly clustered: `3.4-4.0ms` for
+`locator.press`, `3.8-4.2ms` for `locator.type`, and `3.9-4.2ms` for
+page-keyboard. The matching `keypress` gaps are essentially the same
+(`3.4-4.1ms`). Holding the requested hold fixed and changing APIs is smaller and
+less stable. For requested `50ms`, page-keyboard is `1.2ms` above locator type
+at `250ms` / `500ms`, `3.3ms` above it at `100ms`, and slightly below it at
+`1000ms`; locator type is within `0.1ms` of locator press at `250ms` / `500ms`
+and about `1.0ms` above it at `1000ms`. For requested `100ms`, page-keyboard is
+only `0.8-1.0ms` above locator type at `250ms` / `500ms` and essentially tied at
+`100ms`. So the best current decomposition is "a shared requested-`50ms` phase
+visible across APIs, plus a smaller API-specific offset that determines how soon
+that phase appears on the delay axis." It is not just a fixed page-keyboard tax,
+and it is not just locator `type()` versus `press()`.
 
 A `75ms` locator-press probe makes that phase reading sharper, with the usual
 caveat that it is another separate reused-editor run rather than an interleaved
@@ -2085,6 +2115,26 @@ with a median gap of `3.5ms`; by retained sample position, `50ms` is above
 the median gap is only `0.5ms`. That is not a monotonic hold-duration curve. It
 looks more like a narrow requested-hold/code-path phase where `50ms` is bad and
 `75-100ms` has already crossed back into the tap-like band.
+
+The exact `75ms` boundary is still not settled, though. Its aggregate p50 is
+tap-like, but at `250ms` it has one high round (`15.5ms`) and a wide p10-p90
+range (`11.0-16.1ms`). The `50ms` locator-press run has the mirror-image
+problem: it is high in most rounds, but its last round is low at all three
+`250ms` / `500ms` / `1000ms` delays (`11.5ms`, `11.5ms`, and `9.9ms`). The
+stronger statement is cross-API: at those three delays, `50ms` is above `100ms`
+in `12/12` page-keyboard round comparisons, `12/12` locator-type comparisons,
+and `11/12` locator-press comparisons, with median gaps of `4.2ms`, `4.0ms`,
+and `3.8ms`. That makes the reused-editor `50ms` band hard to dismiss as one
+bad artifact, but the exact transition between `50ms` and `75ms` still needs an
+interleaved run.
+
+The artifact chronology also rules out the simplest time-drift explanation. The
+tap run started after the `100ms` locator and page-keyboard controls, then the
+three `50ms` controls ran, and the `75ms` locator-press control ran later still.
+If the machine or browser were just monotonically warming up or slowing down,
+the latest `75ms` run should not have returned to the tap-like band. A
+time-local slowdown across the consecutive `50ms` block is still possible; the
+matched fresh-editor matrix below checks that concern directly.
 
 ![CI key code-path hold boundary](figures/146-ci-key-code-path-hold-boundary.png)
 
@@ -2102,9 +2152,35 @@ in `12/12` round-paired q50 comparisons and `29/30` sample-position medians.
 Locator-press `50ms` is above tap in `9/12` round-paired q50 comparisons, with
 median round-paired deltas of `2.2ms`, `2.3ms`, and `2.8ms` at `250ms`,
 `500ms`, and `1000ms`. Patched `100ms` has mixed signs (`4/12` round-paired q50s
-above tap). So the current open question is no longer "is the reused-editor
-`50ms` bump just noise?" It is "does that bump survive the fresh-editor CI
+above tap). This makes the reused-editor question more precise: not "is the
+`50ms` bump just noise?", but "does that bump survive the fresh-editor CI
 setup?"
+
+Splitting the doubled-keydown shape gives one more boundary. The slow phase is
+visible in the keydown metadata, but it is far too small to explain the result.
+For locator-press `50ms` minus `100ms` at `250ms` / `500ms` / `1000ms`, the
+latency gaps are `4.0ms`, `4.0ms`, and `3.4ms`; the `keypress` gaps are
+`3.9ms`, `3.9ms`, and `3.4ms`. The first keydown dispatch is only
+`0.12-0.19ms` higher, the last keydown dispatch only `0.02ms` higher, and the
+gap between the two keydown dispatch starts only `0.11-0.16ms` higher. Locator
+type and page keyboard show the same scale: first-keydown deltas of about
+`0.18-0.22ms` and last-keydown deltas of about `0.03-0.04ms`, versus
+`3.8-4.2ms` total latency gaps. That means the doubled-keydown artifact is a
+useful marker of the same phase, but it is not the mechanism producing the slow
+band.
+
+The distribution shape differs by input API. At `250ms` / `500ms` / `1000ms`,
+page-keyboard `50ms` is almost a full distribution shift: `115/120` retained
+samples are above the same-API `100ms` p90. Locator type is also mostly shifted
+(`96/120` above the `100ms` p90), though with more overlap at `250ms`.
+Locator press is the mixed case: only `91/120` retained samples are above the
+same-API `100ms` p90 and `29/120` remain in the fast band. That overlap is not
+randomly sprinkled; in the locator-press `50ms` run, rounds 0-2 are mostly slow
+while round 3 is mostly fast (`250ms`: `1/10` above the `100ms` p90; `500ms`:
+`3/10`; `1000ms`: `2/10`). This explains why locator press has low p10s and
+high p50s, while page keyboard and locator type look more like stable shifted
+distributions. The safest interpretation is that locator press is the noisiest
+probe of the phase, not that the broader `50ms` band is only a tail artifact.
 
 The timestamp data also show why these should be read as requested-mode labels,
 not literal physical hold durations. In the reused-editor controls, requested
@@ -2117,9 +2193,91 @@ not a clean human `50ms` versus `100ms` physical-hold comparison. The observed
 post-keyup gap alone also does not explain it: tap mode has larger post-keyup
 gaps than `50ms` hold at the same requested key-to-key delays and remains lower,
 while locator `75ms` and `100ms` have shorter post-keyup gaps than locator
-`50ms` and are also lower. The next fresh-editor run should therefore record and
-report observed down-to-up duration and observed post-keyup gap alongside the
-requested hold setting.
+`50ms` and are also lower. The fresh-editor matrix below therefore records
+observed down-to-up duration and observed post-keyup gap alongside the requested
+hold setting.
+
+The observed-hold bands make the requested-versus-realized distinction concrete.
+Requested `50ms` does not mean the same physical hold across APIs: locator
+actions realize about `63-67ms`, while page-keyboard realizes about
+`101-108ms`. But realized hold still does not rank the rows. The `60-70ms`
+observed-hold band contains both fast locator rows (`10.6-11.6ms` at `100ms`
+delay) and slow locator rows (`13.6-15.3ms` at longer delays). The
+`100-115ms` band is even more direct: page-keyboard `50ms` at `100ms` /
+`250ms` / `500ms` has observed holds of `103-109ms` and p50s of
+`15.0-16.5ms`, while locator `100ms` has observed holds of `111-113ms` and p50s
+of only `9.5-11.5ms`. So future runs should treat "requested hold" and
+"observed hold" as separate factors. A physically realistic target should be
+reported by observed hold, but the current artifact is not explained by observed
+hold alone.
+
+A single timestamp-threshold model does not fit the reused-editor code-path
+controls either. At `250ms` / `500ms` / `1000ms`, locator-press `50ms` is slow
+with a `51ms` keypress-to-keyup gap, but locator-press `75ms` is tap-like with a
+`76-77ms` gap. Page-keyboard `50ms` is still slow with an even larger
+`86-92ms` keypress-to-keyup gap, while page-keyboard `100ms` is tap-like with a
+`132-137ms` gap. Across non-tap code-path controls, round-level Spearman
+correlations go the opposite direction from a simple "longer hold is slower"
+story: latency versus requested hold is `-0.73`, latency versus observed
+keydown-to-keyup is `-0.36`, and latency versus keypress-to-keyup gap is
+`-0.46`. Those negative correlations mainly reflect the `50ms` / `100ms` split,
+not a causal model, but they do rule out treating observed physical hold length
+as the direct predictor. The live question is a narrower input-API/phase
+interaction after `keypress`, not just "how many milliseconds was the key held?"
+
+The delay axis narrows it again. `50ms` locator press is not broadly slow at
+every key-to-key delay: at the `100ms` delay point it is `0.25ms` below tap, with
+only `2/4` round-paired q50s above tap. It becomes the slow band only at the
+discriminator delays, where the tap-relative p50 deltas are `+2.7ms`, `+2.6ms`,
+and `+2.9ms` at `250ms` / `500ms` / `1000ms`. Locator type has the same shape
+but less cleanly: it is only `+0.8ms` at `100ms`, then `+2.8ms`, `+2.7ms`, and
+`+3.9ms`. Page keyboard is different: it is already `+4.1ms` at `100ms` and
+stays around `+3.8-4.0ms` at the longer delays. So the current open question is
+not just "why is requested `50ms` slow?" It is "why do locator actions need a
+longer configured key-to-key delay before the `50ms` phase becomes slow, while
+page-keyboard actions hit the slow phase by `100ms`?"
+
+That delay-axis split is not a retained-sample-position artifact. For
+locator-press `50ms`, the `100ms` delay row is split almost evenly by retained
+position: only `5/10` sample-position medians are above tap, with a median
+tap-relative delta of `+0.02ms`. At `250ms`, `500ms`, and `1000ms`, the same
+comparison is positive in `9/10`, `10/10`, and `9/10` sample positions, with
+median deltas of `+2.5ms`, `+2.0ms`, and `+2.7ms`. Splitting each delay run
+into retained positions `1-3` versus `4-10` gives the same answer: at `100ms`
+the medians are only `+0.34ms` and `-0.00ms`, while at `250ms+` both bands stay
+around `+1.9ms` to `+3.0ms`. So the locator delay threshold is not because only
+the first retained keys or only the later retained keys are slow. It affects the
+whole retained run once the configured delay is long enough.
+
+Observed key-to-key timing gives a more precise version of that threshold, but
+still not a universal one. For locator-press `50ms`, the observed
+keydown-to-keyup duration is essentially the same at `100ms` and longer delays
+(`63-67ms`), but the following key arrives much later once the configured delay
+reaches `250ms`: observed keyup-to-next-keydown is `86ms` at the `100ms` delay
+point, then `251ms`, `500ms`, and `1017ms` at `250ms` / `500ms` / `1000ms`.
+Locator type shows the same pattern (`87ms`, then `253ms`, `498ms`, `1022ms`).
+That explains why the locator split tracks configured delay even though the
+observed hold itself does not change. But it is not a standalone
+post-keyup-gap threshold: page-keyboard `50ms` is already slow at `100ms` delay
+with a shorter observed keyup-to-next-keydown gap (`77ms`), while page-keyboard
+`100ms` is tap-like at the same configured delay with only a `12ms` gap. The
+surviving model therefore has to include both the input API and the cycle shape:
+locator actions need the longer post-keyup idle before the `50ms` phase appears,
+whereas page-keyboard actions can enter that phase much earlier.
+
+Even keydown-to-next-keydown cycle time is not the direct predictor. Within the
+same locator-press API and the same configured delay, the cycle times are nearly
+identical across requested holds while latency changes sharply: at `250ms`, the
+`50ms` / `75ms` / `100ms` locator-press cycles are `315ms`, `313ms`, and
+`314ms`, but their p50s are `15.1ms`, `11.9ms`, and `11.2ms`; at `500ms`, the
+cycles are `565ms`, `558ms`, and `557ms`, but p50s are `15.2ms`, `11.7ms`, and
+`11.2ms`; at `1000ms`, cycles are `1083ms`, `1081ms`, and `1079ms`, but p50s
+are `13.6ms`, `10.3ms`, and `10.2ms`. Page keyboard has the same kind of
+counterexample: at `250ms`, `50ms` and `100ms` page-keyboard cycles differ by
+only `12ms` (`349ms` versus `337ms`), while latency differs by `4.3ms`. The
+cycle needs to be long enough for the locator `50ms` band to show up, but once
+inside a given cycle band, requested hold/API still determines whether the slow
+path is taken.
 
 Comparing these reused-editor controls to the plotted fresh-editor sweep shows
 why that matched rerun matters. This is not a clean fresh-versus-reused A/B: the
@@ -2138,6 +2296,96 @@ delays. The requested-mode observed hold/gap bands are similar enough across
 fresh and reused runs that they do not predict this family-level flip on their
 own. The remaining variable is some setup-state, target, refocus, or
 instrumentation interaction rather than the measured down/up/gap medians alone.
+
+A completed fresh-editor stable-target matrix now sharpens that into an API
+boundary rather than a generic fresh/reused boundary. This matrix uses the same
+fresh saved/reopened Typing setup as the CI-comparable runs
+(`BENCHMARK_FRESH_EDITOR_PER_DELAY=1`), the stable contenteditable target, four
+rounds, ten retained samples plus one throwaway per delay, and the
+`250ms` / `500ms` / `1000ms` discriminator delays. The p50 matrix is:
+
+| Fresh code path | `250ms` | `500ms` | `1000ms` |
+| --------------- | ------: | ------: | -------: |
+| tap then wait | `12.6ms` | `13.1ms` | `11.9ms` |
+| current CI held key | `17.5ms` | `20.0ms` | `12.0ms` |
+| page-keyboard `50ms` hold | `12.6ms` | `12.7ms` | `13.0ms` |
+| page-keyboard `75ms` hold | `17.0ms` | `16.9ms` | `15.7ms` |
+| page-keyboard `100ms` hold | `17.1ms` | `17.3ms` | `15.6ms` |
+| `locator.type()` `50ms` hold | `16.0ms` | `15.9ms` | `15.9ms` |
+| `locator.type()` `75ms` hold | `15.9ms` | `15.7ms` | `15.2ms` |
+| `locator.type()` `100ms` hold | `15.9ms` | `12.0ms` | `12.0ms` |
+| `locator.press()` `50ms` hold | `11.5ms` | `12.3ms` | `10.8ms` |
+| `locator.press()` `75ms` hold | `12.9ms` | `11.9ms` | `11.1ms` |
+| `locator.press()` `100ms` hold | `13.1ms` | `12.0ms` | `10.5ms` |
+
+![Fresh CI code-path hold boundary](figures/147-ci-fresh-code-path-hold-boundary.png)
+
+This closes one open question and opens a narrower one. The reused-editor
+page-keyboard `50ms` slow band does not survive the matched fresh page-keyboard
+setup: fresh page-keyboard `50ms` is tap-like at `250ms` / `500ms` and only
+`1.1ms` above tap at `1000ms`. But the fresh sweep does not make the whole
+`50ms` question disappear. Fresh `locator.type()` `50ms` is still `2.8-4.1ms`
+above tap, and fresh `locator.type()` `75ms` is also `2.5-3.3ms` above tap.
+Fresh `locator.press()` is the opposite: `50ms`, `75ms`, and `100ms` are all
+tap-like, with aggregate p50s at or below tap except for `75ms` / `100ms` at
+`250ms`, where they are only `0.4-0.5ms` above tap.
+
+The sign checks match the aggregate split. Across the three discriminator delays
+and four rounds, page-keyboard `50ms` is below page-keyboard `100ms` in `11/12`
+round-paired comparisons and in all `30/30` retained sample-position medians.
+For `locator.type()`, `50ms` is above `100ms` in `11/12` round comparisons and
+`26/30` sample-position medians. For `locator.press()`, the same comparison is
+mixed (`7/12` rounds and `18/30` sample-position medians above `100ms`), with a
+median round-paired gap of only `0.15ms`. All modes still have the same event
+shape: `11` key groups, `22` keydown dispatches, `11` keypress dispatches, and
+`11` keyup dispatches per run. The movement is again in the `keypress` slice.
+
+Observed physical hold still does not explain the boundary. Fresh page-keyboard
+`50ms` realizes about `95-98ms` down-to-up and is tap-like, while fresh
+`locator.type()` `50ms` realizes only `67-68ms` and is slow. Fresh
+`locator.press()` `100ms` realizes `113-116ms` and is tap-like, while
+page-keyboard `75ms` realizes `132-138ms` and is slow. The simple predictor is
+therefore not requested hold, observed hold, or post-keyup wait. It is the
+Playwright entry point plus where that entry point lands relative to the
+editor/browser phase.
+
+The fresh chronology weakens a simple time-drift explanation. The run order was
+current held key, tap, page-keyboard `50ms` / `75ms` / `100ms`,
+`locator.type()` `50ms` / `75ms` / `100ms`, and then `locator.press()`
+`50ms` / `75ms` / `100ms`. If later runs were just globally slower, the final
+`locator.press()` block should not have returned to the tap-like band. If
+earlier runs were just globally faster, the initial current-CI held-key run
+should not have been slow at `250ms` / `500ms`. The remaining open question is
+therefore specifically why `locator.type()` and page-keyboard fixed hold cross
+different phase boundaries, while `locator.press()` stays tap-like under the
+same fresh setup. Because Playwright's `pressSequentially()` delegates to
+`type()`, the fresh data says it belongs with the `locator.type()` family, not
+with the `locator.press()` family.
+
+Reading the local Playwright implementation explains why `locator.press()` should
+not be used as a stand-in for `pressSequentially()`. On the client side,
+`Locator.pressSequentially()` is literally `return await this.type(text,
+options)`, while `Locator.press()` calls `frame.press(...)`. On the server side,
+`elementHandle._type()` focuses the target and calls `page.keyboard.type(...)`;
+for a US-keyboard character such as `x`, `keyboard.type()` immediately delegates
+to `keyboard.press(char, { delay })`. So `locator.type('x', { delay })` and
+`locator.press('x', { delay })` share the same low-level keydown / delay / keyup
+routine for the character itself.
+
+The difference is around that routine. `elementHandle._press()` wraps focus plus
+`keyboard.press()` in `frameManager.waitForSignalsCreatedBy(...)`, while
+`elementHandle._type()` does not. With Chromium, that wrapper runs
+`inputActionEpilogue()`, which sends a `Page.enable` CDP command, waits for
+signal barriers, and then waits for the next task before returning. That is
+therefore an automation checkpoint after each key, before the benchmark's
+explicit post-keyup wait. The fresh data fit that code-path split: the
+`locator.press()` family is tap-like even at `50ms`, while `locator.type()` /
+`pressSequentially()` is not. The next isolating control is straightforward:
+compare fresh `locator.press('x', { delay, noWaitAfter: true })` against
+ordinary `locator.press()` and `locator.type()` at the same holds. If the
+`noWaitAfter` variant moves toward `locator.type()`, the wait-for-signals
+epilogue is the likely source of the tap-like `locator.press()` behavior; if it
+stays tap-like, the remaining difference is below that wrapper.
 
 The reused-editor result is also not explained by text accumulation or
 within-round placement. These code-path probes reuse one editor, so each later
@@ -2162,9 +2410,41 @@ removes the preceding `0ms` / `100ms` delay runs and halves the per-delay sample
 count. In the non-traced locator-press run, the same first two rounds at
 `250ms` / `500ms` / `1000ms` are still high (`15.2ms`, `15.6ms`, `14.0ms` in
 round 0 and `15.1ms`, `15.3ms`, `14.0ms` in round 1). It does show that the
-code-path probe is sensitive to surrounding benchmark shape and/or tracing, so a
-fresh-editor answer needs one matched matrix rather than stitching together
-controls with different delay sets and instrumentation.
+code-path probe is sensitive to surrounding benchmark shape and/or tracing. The
+fresh-editor matrix above answers the untraced setup question; the traced
+locator-press question would need its own matched trace on/off matrix rather
+than stitching together controls with different delay sets and instrumentation.
+
+Matching the non-traced run down to the traced run's sample shape sharpens that
+caution. If the non-traced locator-press runs are restricted to the first two
+rounds and first five retained samples per delay, `50ms` still reports
+`15.1ms`, `15.4ms`, and `14.2ms` at `250ms` / `500ms` / `1000ms`, while traced
+`50ms` reports `11.6ms`, `11.9ms`, and `10.9ms`. The same matched comparison for
+`100ms` barely moves: non-traced `100ms` is `11.6ms`, `11.4ms`, and `10.2ms`,
+versus traced `100ms` at `11.7ms`, `11.4ms`, and `10.9ms`. So the traced
+contradiction is not caused by using five retained samples instead of ten. It is
+specifically a `50ms` collapse under the traced/reduced-delay-set shape: trace
+minus non-trace is about `-3.6ms`, `-3.5ms`, and `-3.2ms` for `50ms`, but only
+`+0.1ms`, `-0.0ms`, and `+0.7ms` for `100ms`. The remaining split is therefore
+between tracing itself, removing the `0ms` / `100ms` delay prelude, or their
+interaction. A cheap isolating control would be a `2 x 2` locator-press `50ms`
+matrix: trace on/off crossed with the full five-delay set versus the reduced
+three-delay set, keeping rounds and retained sample count fixed.
+
+The non-traced run's own order weakens the simplest "removed `0ms` / `100ms`
+prelude" explanation. In the full five-delay locator-press `50ms` run, the
+shuffled round starts with `250ms` and `500ms`, and both are still high
+(`15.6ms` and `15.4ms`); its later `1000ms` row, after a `0ms` run, is also
+still above tap (`13.2ms`). The final ascending round has the `0ms` / `100ms`
+prelude again, but it is the low round (`11.5ms`, `11.5ms`, and `9.9ms` at
+`250ms` / `500ms` / `1000ms`). That late-run recovery is also not a generic
+`50ms` warmup effect: locator-type `50ms` remains high in the final round
+(`15.7ms`, `15.2ms`, `14.2ms`), and page-keyboard `50ms` remains high too
+(`16.6ms`, `16.5ms`, `14.8ms`). Within the non-traced `50ms` controls, q50
+versus elapsed time has Spearman `-0.61` for locator press, but only `-0.11` for
+locator type and `+0.07` for page keyboard. So the remaining trace/open-order
+question is locator-press-specific; it is not explained by ordinary run position
+or by simply having typed through the `0ms` and `100ms` delay runs first.
 
 ![CI key-hold paired differences](figures/145-ci-key-hold-duration-paired-differences.png)
 
@@ -2251,18 +2531,13 @@ whole delay run
 A/B would need a Playwright-level helper that uses the same one-call `type()`
 path while separating down-to-up hold time from keyup-to-next-key wait.
 
-The remaining matched rerun is narrower in purpose, but not in setup. The
-stable-target page-keyboard and locator controls above are reused-editor
-code-path probes. The CI-comparable answer still needs a fresh-editor matrix:
-current CI `keyboard`, stable-target `between-keys`, stable-target
-`fixed-hold-then-wait` at `50ms` and `100ms`,
-`locator-type-fixed-hold-then-wait`, and `locator-press-fixed-hold-then-wait`,
-all with `BENCHMARK_FRESH_EDITOR_PER_DELAY=1`, the same
-`BENCHMARK_SETUP_STYLE=ci-post-editor-typing`, seed/order, rounds, samples, and
-post-run cleanup. The decision metric should be run-paired q50 deltas at
-`250ms` and `500ms`, plus the keydown-sensitivity summary; `1000ms` is secondary
-because the current data show weak separation and higher outlier sensitivity
-there.
+The matched rerun above is now complete. It answers the fresh/reused concern but
+does not give an exact code-path decomposition of current CI, because the
+families still differ under the same setup: current CI uses one `type()` call,
+page fixed hold uses explicit keyboard down/up, locator type uses element
+`type()`, and locator press uses element `press()`. The remaining exact A/B is a
+Playwright-helper problem: keep the one-call `type()` path, but separately
+control down-to-up hold time and keyup-to-next-key wait.
 
 ![CI held-key versus tap runtime/reliability](figures/96-ci-key-mode-runtime-reliability.png)
 
