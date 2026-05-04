@@ -4724,6 +4724,9 @@ ci_hold_duration_leave_one_path <- file.path(data_dir, "typing-delay-ci-hold-dur
 ci_hold_duration_leave_one_summary_path <- file.path(data_dir, "typing-delay-ci-hold-duration-leave-one-round-summary.csv")
 ci_hold_duration_event_shape_path <- file.path(data_dir, "typing-delay-ci-hold-duration-event-shape.csv")
 ci_hold_duration_sample_position_path <- file.path(data_dir, "typing-delay-ci-hold-duration-sample-position.csv")
+ci_hold_duration_paired_difference_path <- file.path(data_dir, "typing-delay-ci-hold-duration-paired-differences.csv")
+ci_hold_duration_throwaway_sensitivity_path <- file.path(data_dir, "typing-delay-ci-hold-duration-throwaway-sensitivity.csv")
+ci_hold_duration_order_diagnostics_path <- file.path(data_dir, "typing-delay-ci-hold-duration-order-diagnostics.csv")
 ci_hold_duration_artifact_dirs <- c(
 	`current CI held key` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-keyboard"),
 	`100ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-hold-100"),
@@ -4788,6 +4791,31 @@ if (all(!is.na(ci_hold_duration_json_paths))) {
 	ci_hold_duration_samples <- read_csv(ci_hold_duration_sample_path, show_col_types = FALSE)
 } else {
 	ci_hold_duration_samples <- tibble()
+}
+
+if (all(!is.na(ci_hold_duration_json_paths))) {
+	ci_hold_duration_delay_summaries <- imap_dfr(ci_hold_duration_json_paths, function(json_path, input_mode) {
+		raw <- fromJSON(json_path, flatten = TRUE)
+		requested_hold_ms <- case_when(
+			raw$metadata$delayMode == "keyboard" ~ NA_real_,
+			raw$metadata$delayMode == "between-keys" ~ 0,
+			TRUE ~ as.numeric(raw$metadata$keyHoldMs %||% NA_real_)
+		)
+		as_tibble(raw$delayRunSummaries) %>%
+			transmute(
+				input_mode,
+				delay_mode = raw$metadata$delayMode,
+				requested_hold_ms = requested_hold_ms,
+				json_path = sub(paste0(repo_root, "/"), "", json_path, fixed = TRUE),
+				delay_ms = delayMs,
+				round,
+				editor_setup_index = editorSetupIndex,
+				setup_work_ms = editorSetupReadyAtEpochMs - editorSetupWorkStartedAtEpochMs,
+				setup_total_ms = editorSetupStoppedAtEpochMs - editorSetupStartedAtEpochMs
+			)
+	})
+} else {
+	ci_hold_duration_delay_summaries <- tibble()
 }
 
 if (nrow(ci_hold_duration_samples) > 0) {
@@ -4903,6 +4931,66 @@ if (nrow(ci_hold_duration_samples) > 0) {
 		)
 	write_csv(ci_hold_duration_summary, ci_hold_duration_summary_path)
 
+	ci_hold_duration_paired_differences <- ci_hold_duration_runs %>%
+		filter(delay_ms %in% c(100, 250, 500, 1000)) %>%
+		select(delay_ms, round, input_mode, reported_q50_ms) %>%
+		pivot_wider(names_from = input_mode, values_from = reported_q50_ms) %>%
+		transmute(
+			delay_ms,
+			round,
+			current_ci_held_key_q50_ms = `current CI held key`,
+			tap_then_wait_q50_ms = `tap then wait`,
+			hold_50_q50_ms = `50ms hold then wait`,
+			hold_100_q50_ms = `100ms hold then wait`,
+			full_minus_tap_ms = `current CI held key` - `tap then wait`,
+			full_minus_50_ms = `current CI held key` - `50ms hold then wait`,
+			full_minus_100_ms = `current CI held key` - `100ms hold then wait`,
+			hold_100_minus_50_ms = `100ms hold then wait` - `50ms hold then wait`,
+			hold_50_minus_tap_ms = `50ms hold then wait` - `tap then wait`,
+			hold_100_minus_tap_ms = `100ms hold then wait` - `tap then wait`
+		)
+	write_csv(ci_hold_duration_paired_differences, ci_hold_duration_paired_difference_path)
+
+	ci_hold_duration_throwaway_sensitivity <- ci_hold_duration_samples %>%
+		filter(delay_ms %in% c(250, 500, 1000)) %>%
+		cross_join(tibble(throwaway_n = c(0, 1, 2, 3, 5))) %>%
+		filter(sample_index >= throwaway_n) %>%
+		group_by(throwaway_n, delay_ms, input_mode) %>%
+		summarize(
+			sample_count = n(),
+			latency_p50_ms = median(latency_ms),
+			keypress_p50_ms = median(keypress_ms),
+			.groups = "drop"
+		)
+	write_csv(ci_hold_duration_throwaway_sensitivity, ci_hold_duration_throwaway_sensitivity_path)
+
+	if (nrow(ci_hold_duration_delay_summaries) > 0) {
+		ci_hold_duration_order_diagnostics <- ci_hold_duration_runs %>%
+			filter(delay_ms %in% c(250, 500, 1000)) %>%
+			left_join(
+				ci_hold_duration_delay_summaries,
+				by = c(
+					"input_mode",
+					"delay_mode",
+					"requested_hold_ms",
+					"json_path",
+					"delay_ms",
+					"round",
+					"editor_setup_index"
+				)
+			) %>%
+			group_by(input_mode, delay_ms) %>%
+			mutate(
+				mode_delay_median_q50_ms = median(reported_q50_ms),
+				q50_residual_ms = reported_q50_ms - mode_delay_median_q50_ms,
+				q50_rank_low_to_high = rank(reported_q50_ms, ties.method = "average"),
+				setup_work_rank_low_to_high = rank(setup_work_ms, ties.method = "average"),
+				run_duration_rank_low_to_high = rank(run_duration_ms, ties.method = "average")
+			) %>%
+			ungroup()
+		write_csv(ci_hold_duration_order_diagnostics, ci_hold_duration_order_diagnostics_path)
+	}
+
 	ci_hold_duration_runtime <- ci_hold_duration_summary %>%
 		mutate(
 			typing_metrics_per_branch = 5,
@@ -4946,6 +5034,93 @@ if (nrow(ci_hold_duration_samples) > 0) {
 		"95b-ci-key-hold-duration-p50-comparison.png",
 		width = 10.2,
 		height = 5.9
+	)
+
+	ci_hold_duration_throwaway_plot <- ci_hold_duration_throwaway_sensitivity %>%
+		mutate(
+			input_mode = factor(input_mode, levels = ci_hold_duration_levels),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("250ms", "500ms", "1000ms"))
+		)
+
+	save_plot(
+		ggplot(
+			ci_hold_duration_throwaway_plot,
+			aes(throwaway_n, latency_p50_ms, color = input_mode, shape = input_mode)
+		) +
+			geom_point(
+				position = position_dodge(width = 0.42),
+				size = 2.6,
+				alpha = 0.92
+			) +
+			facet_wrap(vars(delay_label), nrow = 1) +
+			scale_x_continuous(breaks = sort(unique(ci_hold_duration_throwaway_plot$throwaway_n))) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Input mode") +
+			scale_shape_manual(
+				values = c(16, 17, 15, 3),
+				name = "Input mode"
+			) +
+			labs(
+				title = "The full-hold result does not depend on discarding exactly one sample",
+				subtitle = "Each point recomputes the aggregate p50 after dropping the first N samples from each delay run",
+				x = "Thrown-away samples per delay run",
+				y = "Aggregate p50 latency (ms)"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"144-ci-key-hold-duration-throwaway-sensitivity.png",
+		width = 11.8,
+		height = 5.8
+	)
+
+	ci_hold_duration_paired_difference_plot <- ci_hold_duration_paired_differences %>%
+		filter(delay_ms %in% c(250, 500, 1000)) %>%
+		select(delay_ms, round, full_minus_tap_ms, full_minus_50_ms, full_minus_100_ms) %>%
+		pivot_longer(
+			cols = starts_with("full_minus"),
+			names_to = "comparison",
+			values_to = "full_hold_delta_ms"
+		) %>%
+		mutate(
+			comparison = recode(
+				comparison,
+				full_minus_tap_ms = "full hold - tap",
+				full_minus_50_ms = "full hold - 50ms hold",
+				full_minus_100_ms = "full hold - 100ms hold"
+			),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("250ms", "500ms", "1000ms"))
+		)
+
+	save_plot(
+		ggplot(
+			ci_hold_duration_paired_difference_plot,
+			aes(round, full_hold_delta_ms, color = comparison, shape = comparison)
+		) +
+			geom_hline(
+				yintercept = 0,
+				linetype = "dashed",
+				color = brewer_color("Greys", 7, type = "seq", n = 9)
+			) +
+			geom_point(
+				position = position_dodge(width = 0.38),
+				size = 2.7,
+				alpha = 0.92
+			) +
+			facet_wrap(vars(delay_label), nrow = 1) +
+			scale_x_continuous(breaks = sort(unique(ci_hold_duration_paired_difference_plot$round))) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Paired comparison") +
+			scale_shape_manual(
+				values = c(16, 17, 15),
+				name = "Paired comparison"
+			) +
+			labs(
+				title = "Full-delay hold is reliably slower at 250ms and 500ms, but not cleanly at 1000ms",
+				subtitle = "Each point is a paired run q50 difference; positive means current CI full hold is slower",
+				x = "Round",
+				y = "Full-hold q50 minus comparison q50 (ms)"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"145-ci-key-hold-duration-paired-differences.png",
+		width = 11.8,
+		height = 5.8
 	)
 
 	ci_hold_duration_round_robustness <- ci_hold_duration_runs %>%

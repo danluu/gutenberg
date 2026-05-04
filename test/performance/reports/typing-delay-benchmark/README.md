@@ -716,8 +716,9 @@ The R script derives:
     runtime deltas.
 -   `data/typing-delay-ci-hold-duration-*.csv`: same paired CI-comparable
     settings, adding fixed `50ms` and `100ms` key holds followed by the
-    remaining post-keyup wait, plus event-shape, sample-position, round-level
-    robustness, sign-check, and leave-one-round sensitivity summaries.
+    remaining post-keyup wait, plus event-shape, sample-position,
+    paired-difference, throwaway sensitivity, order-diagnostic, sign-check, and
+    leave-one-round summaries.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -1972,19 +1973,69 @@ sample-position policy relevant to the exact p50, but it does not remove the
 full-hold effect: the slower retained samples are what push the `250ms` /
 `500ms` full-hold medians above tap and short-hold modes.
 
+Recomputing the aggregate p50 with different throwaway policies gives a stronger
+version of that statement. Using `0`, `1`, `2`, `3`, or `5` thrown-away samples
+per delay, the `250ms` full-hold point stays `6.8-7.5ms` above tap,
+`5.7-7.0ms` above `50ms` hold, and `4.2-4.9ms` above `100ms` hold. At `500ms`,
+the corresponding ranges are `6.0-6.7ms`, `5.1-5.9ms`, and `3.3-4.0ms`. So the
+current one-throwaway policy affects the exact p50, but the `250ms` / `500ms`
+full-hold conclusion does not depend on that one-sample cutoff.
+
+![CI key-hold throwaway sensitivity](figures/144-ci-key-hold-duration-throwaway-sensitivity.png)
+
+The `50ms` versus `100ms` question is the part that remains genuinely weak.
+Across the `250ms` and `500ms` run-paired q50s, `100ms` hold is above `50ms`
+hold in `7/8` comparisons with a median difference of `1.8ms`. That is
+directionally suggestive, but with only eight paired comparisons the two-sided
+sign-test p-value is `0.070`. It also reverses at `1000ms`: across the throwaway
+sensitivity table, `100ms` hold is `0.8-1.1ms` below `50ms` hold. This supports
+"full-delay hold is a different regime" more strongly than "100ms is reliably
+slower than 50ms".
+
+![CI key-hold paired differences](figures/145-ci-key-hold-duration-paired-differences.png)
+
+The low shuffled round looks like a shared run-condition problem, not a missing
+event or an ordinary setup-duration effect. For the `250ms` / `500ms`
+discriminator rows, round 2 has negative mode-delay residuals in `7/8`
+mode/delay cells and an average residual of about `-3.1ms`. But setup duration
+does not explain it cleanly: the round-2 current-CI `250ms` / `500ms` setups were
+the fastest in their mode/delay groups, the `100ms` fixed-hold `250ms` /
+`500ms` setups were also the fastest while their q50s stayed near normal, and
+the `50ms` fixed-hold `250ms` setup was the slowest while its q50 was the
+lowest. The remaining explanation is some unmeasured environmental or ordering
+state, which is why the blocked rerun should be read with paired differences and
+sensitivity checks rather than a single plotted point.
+
 The remaining experimental gap is code-path equivalence, not hold realism. A
-better follow-up would add a `locator-press-fixed-hold-then-wait` mode that uses
-the paragraph locator's press path with a fixed `delay` for the hold, then waits
-for the remainder before the next key. Local Playwright `1.58.2` source shows
-why this is the next useful check: `locator.pressSequentially()` delegates to
-`type()` in `playwright-core/lib/client/locator.js`;
+`locator-press-fixed-hold-then-wait` mode would improve on the explicit
+`page.keyboard.down()` / `up()` fixed-hold implementation by keeping the action
+element-targeted while still separating hold time from post-keyup wait. Local
+Playwright `1.58.2` source shows why it is relevant:
+`locator.pressSequentially()` delegates to
+`type()` ([locator.ts](https://github.com/microsoft/playwright/blob/v1.58.2/packages/playwright-core/src/client/locator.ts#L354-L360));
 element `type()` focuses the element and calls `page.keyboard.type()`, element
 `press()` focuses the element and calls `page.keyboard.press()`
-in `playwright-core/lib/server/dom.js`; and keyboard `type()` loops through
-US-keyboard characters by calling `keyboard.press(char, { delay })` in
-`playwright-core/lib/server/input.js`. A locator-press mode would therefore stay
-on the same element-targeted press path as closely as possible while still
-separating key hold from post-keyup wait.
+([dom.ts](https://github.com/microsoft/playwright/blob/v1.58.2/packages/playwright-core/src/server/dom.ts#L694-L723));
+and keyboard `type()` loops through US-keyboard characters by calling
+`keyboard.press(char, { delay })`
+([input.ts](https://github.com/microsoft/playwright/blob/v1.58.2/packages/playwright-core/src/server/input.ts#L91-L105)).
+A locator-press mode would therefore test whether the remaining difference is
+caused by using a page-level keyboard action rather than an element-targeted
+action.
+
+There is one more nuance in that follow-up. `locator.press()` is closer than
+explicit `page.keyboard.down()` / `up()` because it keeps the action
+element-targeted, but it is not identical to current CI `type()`: Playwright
+wraps element `press()` in `waitForSignalsCreatedBy()`, while element `type()`
+does not. The closest implementable no-Playwright-patch check is probably
+`paragraph.type( 'x', { delay: holdMs } )` once per character, followed by the
+post-keyup wait. That preserves the locator `type()` entry point, but still
+differs from current CI because current CI makes one
+`paragraph.type( 'x'.repeat( sampleCount ), { delay: delayMs } )` call for the
+whole delay run
+([spec](../../specs/typing-delay-benchmark.spec.js#L4046-L4053)). A truly exact
+A/B would need a Playwright-level helper that uses the same one-call `type()`
+path while separating down-to-up hold time from keyup-to-next-key wait.
 
 ![CI held-key versus tap runtime/reliability](figures/96-ci-key-mode-runtime-reliability.png)
 
