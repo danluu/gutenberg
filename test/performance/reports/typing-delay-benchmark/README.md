@@ -126,10 +126,11 @@ The short version:
     calls is not explained by DOM key event payloads, key repeat/composition,
     exact raw-CDP packet shape, or elapsed post-keyup time. Raw CDP stays slow
     even with long post-keyup gaps, while raw CDP plus a no-op `page.evaluate()`
-    between keys flips to the fast path. A follow-up shows direct CDP
-    `Runtime.evaluate` checkpoints, including an awaited timer and RAF, improve
-    only partway; they do not reproduce the Playwright `page.evaluate()` fast
-    band.
+    between keys flips to the fast path under the default Playwright trace
+    setting. A follow-up with `--trace=off` shows that the full fast path is
+    mostly a Playwright trace-snapshot artifact: per-key `keyboard.press()`
+    becomes slow again when trace snapshots are disabled, and protocol logs show
+    `captureSnapshot` evaluations between keys when tracing is enabled.
 -   Event-listener timing narrows the visible Gutenberg work to editor-canvas
     input handling. The dominant measured callback is registered from
     `rich-text`; source-map lookup identifies it as the `onInput` path in
@@ -515,6 +516,9 @@ The R script derives:
     observed post-keyup gap from Playwright's higher-level keyboard helpers.
 -   `data/typing-delay-cdp-checkpoint-*.csv`: raw-CDP follow-up traces comparing
     direct `Runtime.evaluate` checkpoints with Playwright `page.evaluate()`.
+-   `data/typing-delay-playwright-trace-mode-*.csv`: follow-up traces comparing
+    per-key Playwright calls and `page.evaluate()` with Playwright tracing on and
+    off.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -4019,7 +4023,8 @@ cause. Playwright `down/up` is fast at an observed `16.3ms` gap, while raw CDP
 is slow at an observed `21.6ms` gap. Raw CDP is still slow after a `1007.8ms`
 gap, so merely waiting longer after `keyup` does not produce the fast path.
 
-The no-op evaluation probes add one more boundary:
+The no-op evaluation probes initially appeared to add one more boundary under
+the default Playwright trace setting:
 
 -   Raw CDP plus `page.evaluate( () => undefined )` between keys becomes as fast
     as the per-key Playwright paths.
@@ -4034,19 +4039,24 @@ between raw CDP keys is also sufficient to flip the next Gutenberg input to the
 fast distribution. A bare runtime evaluation on the same CDP session only
 partially reproduces it.
 
-The current model is therefore:
+The trace-mode follow-up below refines this: the full fast path is mostly from
+Playwright's trace snapshotter, not from `page.evaluate()` alone. The current
+model is therefore:
 
 1. The slow path does not require the multi-character Playwright
    `keyboard.type()` helper. Raw CDP long-held key events reproduce most of it.
-2. The fast path does not require the `keyboard.press()` wrapper specifically.
-   One-character `keyboard.type()` calls, explicit `keyboard.down()` /
-   `keyboard.up()` calls, and raw CDP plus `page.evaluate()` are all faster.
-3. The fast path is not caused by the elapsed post-keyup gap, by DOM event
+2. The previously observed per-key fast path is not intrinsic to
+   `keyboard.press()`. With Playwright tracing disabled, per-key
+   `keyboard.press()` becomes slow again; with tracing enabled, Playwright's
+   snapshotter inserts extra page evaluations between characters.
+3. `page.evaluate()` alone still improves raw CDP partway when tracing is
+   disabled, but it does not reproduce the full low-latency band.
+4. The fast path is not caused by the elapsed post-keyup gap, by DOM event
    payload differences, by key repeat/composition state, or by the exact CDP
    keyup packet shape.
-4. The remaining boundary is below the ordinary JS scheduler/data-action traces:
-   crossing a Playwright/page-evaluation boundary between keys appears to force a
-   renderer or editor checkpoint that changes the next RichText/data fanout path.
+5. The remaining boundary is below the ordinary JS scheduler/data-action traces:
+   Playwright trace snapshots and, to a smaller extent, Playwright's page
+   evaluation/action path change the next RichText/data fanout measurement.
 
 ### Raw-CDP Checkpoint Follow-Up
 
@@ -4084,11 +4094,61 @@ selection, or the protocol scheduling around that path. The benchmark-level
 recommendation is unchanged, because all of these are synthetic-input
 implementation details rather than user typing behavior.
 
+### Playwright Trace Snapshot Follow-Up
+
+The CDP checkpoint result still left one concrete open question: why did
+Playwright `page.evaluate()` and per-key Playwright calls look so much faster
+than raw CDP? The protocol logs show a concrete difference that was not part of
+Gutenberg at all.
+
+With the performance config's default Playwright setting
+`trace: 'retain-on-failure'`, protocol logging shows Playwright trace snapshots
+between one keyup and the next keydown:
+
+| Mode | Protocol commands between previous `keyup` and next `keydown` |
+| ---- | ------------------------------------------------------------- |
+| multi-character `keyboard.type()`, trace on | no command between `keyup` and next `keydown` |
+| per-key `keyboard.press()`, trace on | `captureSnapshot`, `captureSnapshot`, `captureSnapshot`, `captureSnapshot` |
+| per-key `keyboard.press()`, `--trace=off` | no command between `keyup` and next `keydown` |
+| raw CDP plus `page.evaluate()`, trace on | `captureSnapshot`, `captureSnapshot`, `Runtime.callFunctionOn( () => undefined )`, `captureSnapshot`, `captureSnapshot` |
+| raw CDP plus `page.evaluate()`, `--trace=off` | `Runtime.callFunctionOn( () => undefined )` |
+
+The timing follows that protocol difference:
+
+![Playwright trace-mode comparison](figures/25c-playwright-trace-mode.png)
+
+| Input path | Playwright trace | Retained samples | Observed post-keyup gap p50 | `keypress` p50 | `keypress` p10-p90 |
+| ---------- | ---------------- | ---------------: | --------------------------: | -------------: | ------------------: |
+| multi-character `keyboard.type()` | off | `12` |  `1.5ms` | `23.9ms` | `22.1-25.2ms` |
+| per-key `keyboard.press()` | on | `12` | `29.1ms` | `11.3ms` | `10.9-13.1ms` |
+| per-key `keyboard.press()` | off | `12` |  `4.3ms` | `22.1ms` | `19.9-23.8ms` |
+| raw CDP | off | `12` |  `2.8ms` | `20.9ms` | `18.4-24.3ms` |
+| raw CDP plus `page.evaluate()` | on | `12` | `29.3ms` | `11.3ms` | `11.0-13.3ms` |
+| raw CDP plus `page.evaluate()` | off | `12` |  `6.9ms` | `17.4ms` | `15.1-20.9ms` |
+
+This changes the interpretation of the earlier per-key-call and
+`page.evaluate()` diagnostics. The full low-latency band is not evidence that a
+human-like per-key action is inherently cheaper, and it is not evidence that a
+plain `page.evaluate()` boundary is sufficient. It is mostly a Playwright trace
+snapshot effect. The remaining trace-off `page.evaluate()` improvement
+(`20.9ms` raw CDP to `17.4ms`) is real but smaller; that is the part still
+attributable to Playwright's page evaluation/action path rather than the trace
+snapshotter.
+
+This also explains why changing the benchmark input method can accidentally
+change what is being measured. A single multi-character `keyboard.type()` call
+does not insert Playwright trace snapshots between characters. Per-key
+Playwright actions do. With trace snapshots enabled, a per-key rewrite can move
+work/checkpoints between characters and make the next `EventDispatch` slice look
+much faster for reasons unrelated to user typing.
+
 That means the safe benchmark fix is unchanged: do not use a synthetic key-hold
 delay as a proxy for typing pauses. Use a complete keypress and then wait, or
-replay recorded human typing. For root cause, the next useful probe is below the
-DOM event layer: compare the execution contexts and protocol command sequence
-used by Playwright `page.evaluate()` against raw CDP `Runtime.evaluate`.
+replay recorded human typing, and disable or account for Playwright trace
+snapshots when comparing per-key Playwright calls with one multi-character
+Playwright action. For root cause, the next useful probe is the smaller
+trace-off gap between raw CDP and `page.evaluate()`, not the much larger
+trace-on gap.
 
 ### Native Contenteditable Baseline
 
@@ -4978,6 +5038,13 @@ The key runs used in this report were:
     `cdp_checkpoint_page_evaluate`: direct `Input.dispatchKeyEvent` key-hold
     traces at `1300ms` comparing no checkpoint, direct CDP runtime checkpoints,
     and Playwright `page.evaluate()` between characters.
+-   `playwright_trace_keyboard_multichar_off`,
+    `playwright_trace_keyboard_press_on`,
+    `playwright_trace_keyboard_press_off`, `playwright_trace_raw_cdp_off`,
+    `playwright_trace_page_evaluate_on`, and
+    `playwright_trace_page_evaluate_off`: `1300ms` held-key traces comparing
+    Playwright trace snapshots on/off for multi-character `keyboard.type()`,
+    per-key `keyboard.press()`, raw CDP, and raw CDP plus `page.evaluate()`.
 -   `marker_normal_targeted`: normal marker action at `990ms`, `1000ms`,
     `1010ms`, and `1300ms`, with timer/action tracing.
 -   `marker_noop_targeted`: same delays and counts, but the bound
@@ -5209,6 +5276,12 @@ The compact input-path CSVs were extracted with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-input-path.js
+```
+
+The compact Playwright trace-mode CSVs were extracted with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-playwright-trace-mode.js
 ```
 
 The compact marker-intervention CSVs were extracted with:

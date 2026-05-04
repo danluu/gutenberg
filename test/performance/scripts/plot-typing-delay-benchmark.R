@@ -6697,6 +6697,87 @@ if (file.exists(cdp_checkpoint_summary_path)) {
 	)
 }
 
+playwright_trace_mode_summary_path <- file.path(data_dir, "typing-delay-playwright-trace-mode-summary.csv")
+if (file.exists(playwright_trace_mode_summary_path)) {
+	playwright_trace_mode_summary <- read_csv(playwright_trace_mode_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			input_path = factor(
+				input_path,
+				levels = c(
+					"multi-character keyboard.type",
+					"per-key keyboard.press",
+					"raw CDP",
+					"raw CDP + page.evaluate"
+				)
+			),
+			trace_mode = factor(trace_mode, levels = c("off", "on")),
+			point_label = case_when(
+				input_path == "multi-character keyboard.type" ~ "multi-key type, trace off",
+				input_path == "per-key keyboard.press" & trace_mode == "off" ~ "press/key, trace off",
+				input_path == "per-key keyboard.press" & trace_mode == "on" ~ "press/key, trace on",
+				input_path == "raw CDP" ~ "raw CDP, trace off",
+				input_path == "raw CDP + page.evaluate" & trace_mode == "off" ~ "page.evaluate, trace off",
+				input_path == "raw CDP + page.evaluate" & trace_mode == "on" ~ "page.evaluate, trace on",
+				TRUE ~ paste(input_path, trace_mode)
+			),
+			label_x = case_when(
+				point_label == "multi-key type, trace off" ~ actual_post_keyup_gap_p50_ms * 1.8,
+				point_label == "press/key, trace off" ~ actual_post_keyup_gap_p50_ms * 1.25,
+				point_label == "raw CDP, trace off" ~ actual_post_keyup_gap_p50_ms * 1.45,
+				point_label == "page.evaluate, trace off" ~ actual_post_keyup_gap_p50_ms * 1.12,
+				point_label == "press/key, trace on" ~ actual_post_keyup_gap_p50_ms * 1.03,
+				point_label == "page.evaluate, trace on" ~ actual_post_keyup_gap_p50_ms * 1.03,
+				TRUE ~ actual_post_keyup_gap_p50_ms
+			),
+			label_y = case_when(
+				point_label == "multi-key type, trace off" ~ keypress_p50_ms + 0.55,
+				point_label == "press/key, trace off" ~ keypress_p50_ms - 0.35,
+				point_label == "raw CDP, trace off" ~ keypress_p50_ms - 0.75,
+				point_label == "page.evaluate, trace off" ~ keypress_p50_ms + 0.55,
+				point_label == "press/key, trace on" ~ keypress_p50_ms - 0.45,
+				point_label == "page.evaluate, trace on" ~ keypress_p50_ms + 0.45,
+				TRUE ~ keypress_p50_ms
+			)
+		)
+
+	save_plot(
+		ggplot(
+			playwright_trace_mode_summary,
+			aes(
+				actual_post_keyup_gap_p50_ms,
+				keypress_p50_ms,
+				color = trace_mode,
+				shape = input_path
+			)
+		) +
+			geom_point(size = 3.3, alpha = 0.92) +
+			geom_errorbar(
+				aes(ymin = keypress_p10_ms, ymax = keypress_p90_ms),
+				width = 0.16,
+				alpha = 0.45
+			) +
+			geom_text(
+				aes(label_x, label_y, label = point_label),
+				size = 3.1,
+				check_overlap = FALSE,
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Set1") +
+			labs(
+				title = "Playwright trace snapshots explain the per-key fast path",
+				subtitle = "1300ms held-key input; vertical bars show p10-p90 keypress dispatch",
+				x = "Observed previous keyup to next keydown, p50 (ms)",
+				y = "keypress EventDispatch duration (ms)",
+				color = "Playwright trace",
+				shape = "Input path"
+			) +
+			theme(legend.position = "bottom"),
+		"25c-playwright-trace-mode.png",
+		width = 11,
+		height = 6.5
+	)
+}
+
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
 marker_paired_summary_path <- file.path(data_dir, "typing-delay-marker-paired-summary.csv")
