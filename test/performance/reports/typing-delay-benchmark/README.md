@@ -678,6 +678,9 @@ The R script derives:
 -   `data/typing-delay-ci-startup-wait-run-reliability.csv`: the
     CI-comparable start-wait curve summarized as the CI-reported per-run Typing
     q50, with run-to-run q50 variance and two-branch runtime deltas.
+-   `data/typing-delay-pattern-readiness-boundary-summary.csv`: joined
+    site-editor pattern readiness-probe and exact short-wait summary that marks
+    where the local readiness boundary appears.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -1577,6 +1580,47 @@ pattern previews. If this stays a fixed sleep, `500ms` is the best local
 candidate from this exact run: it saves `10s` for this metric in a two-branch
 comparison and had lower run-to-run q50 sd than `1000ms`. `250ms` saved `15s`
 and matched the `1000ms` median, but it had higher q50 volatility in this sample.
+
+I then joined the exact short-wait sweep to the readiness-probe samples to make
+that engineering decision more concrete. The probe boundary is deliberately
+count-based and diagnostic: it marks a sample as "settled" when the pre-measure
+wait has reached the resource plateau, active requests at measurement start are
+zero, and the number of resources added during measurement has dropped to the
+low plateau. That is not a production predicate, but it tests whether the
+short-wait q50 boundary lines up with readiness work moving out of the measured
+interval.
+
+![Site-editor pattern readiness boundary](figures/127-site-pattern-readiness-boundary.png)
+
+| Wait | Probe boundary hit rate | Median active requests at start | Median resources during measurement | Exact median q50 | Exact q50 sd | Two-branch saved vs `1000ms` |
+| ---: | ----------------------: | ------------------------------: | ----------------------------------: | ---------------: | -----------: | ---------------------------: |
+| `0ms` | `0%` | `1.0` | `23.0` | `876.1ms` | `27.6ms` | `20s` |
+| `100ms` | `0%` | `4.0` | `18.0` | `826.5ms` | `28.7ms` | `18s` |
+| `250ms` | `100%` | `0.0` | `7.5` | `731.2ms` | `35.6ms` | `15s` |
+| `500ms` | `100%` | `0.0` | `7.0` | `720.0ms` | `17.2ms` | `10s` |
+| `1000ms` | `100%` | `0.0` | `7.0` | `730.3ms` | `27.6ms` | `0s` |
+
+That lines up with the exact metric: `0ms` and `100ms` do not hit the readiness
+boundary and report slower q50s; `250ms`, `500ms`, and `1000ms` hit it and report
+the same q50 band. The remaining design choice is therefore not "is `1000ms`
+necessary locally?" It is not. The choice is whether to replace the blind sleep
+with an explicit state predicate, or accept a shorter fixed sleep with validation
+outside this machine.
+
+The spec detail matters. In the current site-editor `Loading Patterns` test,
+`MEASUREMENT_IDLE_WAIT_MS` happens before clicking the Design / Transform action
+(`test/performance/specs/site-editor.spec.js`). The measured interval then waits
+for the named pattern preview canvases to render and for `core/pattern`
+placeholders to be replaced. A replacement predicate should preserve that
+measurement boundary: wait for background pattern data/readiness before the user
+action, but do not pre-wait for the four preview canvases, because those previews
+are the measured workload. The source-side predicate should be based on
+Gutenberg state, for example `core` pattern and category resolution
+(`getBlockPatterns`, `getBlockPatternCategories`, and
+`hasFinishedResolution( 'getBlockPatterns' )`), plus a short network/resource
+quiet window if CI needs to preserve the current "after background readiness"
+semantics. The probe's "19 resources" threshold is evidence for the local
+boundary, not a value to bake into the benchmark.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
@@ -5597,7 +5641,13 @@ metric's explicit wait, and `250ms` also matched the q50 band but with higher
 run-to-run q50 sd. The remaining question is now an engineering change, not a
 diagnosis question: replace the blind sleep with an explicit readiness predicate
 for pattern loading, or validate a fixed `500ms` wait in CI/mac/container runs
-before changing the shared constant.
+before changing the shared constant. The readiness-boundary join makes that
+engineering choice sharper: the local diagnostic boundary is crossed by `250ms`
+and not by `0ms` or `100ms`; exact q50 follows the same split. The predicate
+should not be the probe's resource count. It should preserve the current
+measurement boundary by waiting for background pattern data/readiness before the
+Design / Transform click, while leaving the preview-canvas rendering inside the
+measured interval.
 
 The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,

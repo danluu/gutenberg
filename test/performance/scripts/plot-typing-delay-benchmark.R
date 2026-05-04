@@ -2735,7 +2735,9 @@ if (file.exists(nontyping_wait_screen_summary_path) && file.exists(nontyping_wai
 }
 
 site_pattern_alternating_wait_path <- file.path(data_dir, "typing-delay-site-pattern-alternating-wait-summary.csv")
+site_pattern_readiness_probe_samples_path <- file.path(data_dir, "typing-delay-pattern-readiness-probe-samples.csv")
 site_pattern_readiness_probe_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-probe-summary.csv")
+site_pattern_readiness_boundary_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv")
 site_pattern_short_wait_runs_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-runs.csv")
 site_pattern_short_wait_summary_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
 
@@ -2889,6 +2891,117 @@ if (file.exists(site_pattern_readiness_probe_summary_path)) {
 		"102-site-pattern-readiness-probe.png",
 		width = 9.8,
 		height = 7.2
+	)
+}
+
+if (
+	file.exists(site_pattern_readiness_probe_samples_path) &&
+	file.exists(site_pattern_readiness_probe_summary_path) &&
+	file.exists(site_pattern_short_wait_summary_path)
+) {
+	site_pattern_readiness_probe_samples <- read_csv(site_pattern_readiness_probe_samples_path, show_col_types = FALSE)
+	site_pattern_readiness_probe <- read_csv(site_pattern_readiness_probe_summary_path, show_col_types = FALSE)
+	site_pattern_short_wait_summary <- read_csv(site_pattern_short_wait_summary_path, show_col_types = FALSE)
+
+	site_pattern_readiness_boundary <- site_pattern_readiness_probe_samples %>%
+		mutate(
+			wait_resource_plateau = wait_resource_delta >= 18,
+			no_active_requests_at_start = activeRequestsAtStart == 0,
+			low_measurement_resources = measurement_resource_delta <= 8,
+			readiness_boundary_hit = wait_resource_plateau &
+				no_active_requests_at_start &
+				low_measurement_resources
+		) %>%
+		group_by(waitMs) %>%
+		summarize(
+			probe_samples = n(),
+			readiness_boundary_hit_rate = mean(readiness_boundary_hit),
+			wait_resource_plateau_rate = mean(wait_resource_plateau),
+			no_active_requests_at_start_rate = mean(no_active_requests_at_start),
+			low_measurement_resources_rate = mean(low_measurement_resources),
+			median_active_requests_at_start = median(activeRequestsAtStart, na.rm = TRUE),
+			median_wait_xhr_or_fetch_started = median(wait_xhr_or_fetch_started, na.rm = TRUE),
+			median_wait_resource_delta = median(wait_resource_delta, na.rm = TRUE),
+			median_measurement_resource_delta = median(measurement_resource_delta, na.rm = TRUE),
+			median_measurement_requests_started = median(measurement_requests_started, na.rm = TRUE),
+			probe_duration_median_ms = median(durationMs, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		left_join(
+			site_pattern_short_wait_summary %>%
+				transmute(
+					waitMs = measurement_idle_wait_ms,
+					exact_runs,
+					exact_median_reported_q50_ms = median_reported_q50_ms,
+					exact_run_to_run_q50_sd_ms = run_to_run_q50_sd_ms,
+					two_branch_saved_vs_1000ms_s
+				),
+			by = "waitMs"
+		) %>%
+		left_join(
+			site_pattern_readiness_probe %>%
+				transmute(
+					waitMs,
+					probe_median_duration_ms = median_duration_ms,
+					probe_median_measurement_long_task_duration_delta_ms =
+						median_measurement_long_task_duration_delta_ms
+				),
+			by = "waitMs"
+		) %>%
+		mutate(
+			readiness_interpretation = case_when(
+				readiness_boundary_hit_rate == 0 ~ "not settled in probe",
+				readiness_boundary_hit_rate < 1 ~ "partially settled in probe",
+				TRUE ~ "settled in probe"
+			)
+		) %>%
+		arrange(waitMs)
+
+	write_csv(site_pattern_readiness_boundary, site_pattern_readiness_boundary_summary_path)
+
+	site_pattern_readiness_boundary_plot <- site_pattern_readiness_boundary %>%
+		transmute(
+			waitMs,
+			`exact reported q50 (ms)` = exact_median_reported_q50_ms,
+			`probe readiness-boundary hit rate (%)` = 100 * readiness_boundary_hit_rate,
+			`probe active requests at measurement start` = median_active_requests_at_start,
+			`probe resources added during measurement` = median_measurement_resource_delta,
+			`two-branch wait saved vs 1000ms (s)` = two_branch_saved_vs_1000ms_s
+		) %>%
+		pivot_longer(
+			cols = -waitMs,
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		filter(!is.na(value)) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"exact reported q50 (ms)",
+					"probe readiness-boundary hit rate (%)",
+					"probe active requests at measurement start",
+					"probe resources added during measurement",
+					"two-branch wait saved vs 1000ms (s)"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(site_pattern_readiness_boundary_plot, aes(waitMs, value, color = metric, shape = metric)) +
+			geom_point(size = 2.8, alpha = 0.9, show.legend = FALSE) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_x_continuous(breaks = sort(unique(site_pattern_readiness_boundary$waitMs))) +
+			labs(
+				title = "The site-editor pattern readiness boundary is near 250ms locally",
+				subtitle = "Count-based probe signals are diagnostic; exact q50 comes from the existing Loading Patterns spec shape",
+				x = "MEASUREMENT_IDLE_WAIT_MS",
+				y = NULL
+			),
+		"127-site-pattern-readiness-boundary.png",
+		width = 10.5,
+		height = 9.5
 	)
 }
 

@@ -1,0 +1,9 @@
+waitMs,probe_samples,readiness_boundary_hit_rate,wait_resource_plateau_rate,no_active_requests_at_start_rate,low_measurement_resources_rate,median_active_requests_at_start,median_wait_xhr_or_fetch_started,median_wait_resource_delta,median_measurement_resource_delta,median_measurement_requests_started,probe_duration_median_ms,exact_runs,exact_median_reported_q50_ms,exact_run_to_run_q50_sd_ms,two_branch_saved_vs_1000ms_s,probe_median_duration_ms,probe_median_measurement_long_task_duration_delta_ms,readiness_interpretation
+0,4,0,0,0,0,1,4,3,23,73.5,783.5500000715256,4,876.1206354999995,27.55189339242313,20,783.5500000715256,244,not settled in probe
+100,4,0,0,0,0,4,11.5,8,18,66.5,810.3500000238419,4,826.4873434999995,28.721775286907132,18,810.3500000238419,312,not settled in probe
+250,4,1,1,1,1,0,19,19,7.5,59.5,783.9499999284744,10,731.2117084999998,35.62108209121355,15,783.9499999284744,276,settled in probe
+500,4,1,1,1,1,0,19,19,7,59,717.7999999523163,10,719.9900105000002,17.15286928360537,10,717.7999999523163,247.5,settled in probe
+750,4,1,1,1,1,0,19,19,7,59,730.6000000238419,4,753.8270625000005,20.092654499933875,5,730.6000000238419,276,settled in probe
+1000,4,1,1,1,1,0,19,19,7,59,743.0500000715256,10,730.3201355000006,27.619500629149822,0,743.0500000715256,295.5,settled in probe
+1500,4,1,1,1,1,0,19,19,8,60,797.8999999761581,NA,NA,NA,NA,797.8999999761581,252.5,settled in probe
+2000,4,0.5,1,0.5,1,0.5,19,19,8,60,816.5500000715256,NA,NA,NA,NA,816.5500000715256,344.5,partially settled in probe
