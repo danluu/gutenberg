@@ -770,6 +770,8 @@ The R script derives:
     feasibility correction for those selector guards, separating locally
     removable subscriptions from guards that need shared signals or broader
     invalidation support.
+-   `data/typing-delay-first-patch-test-readiness*.csv`: source/test readiness
+    matrix for the first local selector-guard patch candidates.
 -   `data/typing-delay-redux-listener-other-owner-*.csv`: residual breakdown
     of the `Other mapped owners` bucket from the source audit.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
@@ -3960,6 +3962,33 @@ supported/unsupported pattern override coverage and web coverage for
 `generateAnchors` plus table-of-contents insertion/removal before changing the
 heading path.
 
+I then made the first-patch test gap explicit. The pattern-override HOC is
+currently registered as a side-effect-only filter from
+`packages/editor/src/hooks/index.js`; `withPatternOverrideControls` itself is
+not exported. That does not invalidate the patch, but it means the clean first
+patch should add a small test seam: export the HOC or split the selected-block
+support check into a focused component/helper that can be rendered in a unit
+test. The existing reducer tests cover pattern override editing modes, and
+there are toolbar/dropdown-adjacent tests, but I did not find a focused web test
+that asserts the pattern-override BlockEdit filter behavior.
+
+![First patch test readiness](figures/141-first-patch-test-readiness.png)
+
+| Candidate | Current p50 scope | Test/prototype burden | Missing test surface | Recommended next |
+| --------- | ----------------: | --------------------- | -------------------- | ---------------- |
+| Pattern override selected-only split | `3.6ms` / `1,436` listeners | small export/test seam | selected supported block, selected unsupported block, unselected supported block, settings support change, synced pattern controls, unsynced reset control | Implement first with focused unit coverage. |
+| Heading shared anchor capability | `0.5ms` / `202` listeners | broad tests plus shared signal design | web tests for `generateAnchors` setting changes and table-of-contents insertion/removal | Design signal before optimizing. |
+| Non-edited `BlockListBlockProvider` guard | `3.5ms` / `1,436` listeners | local invalidation prototype | edited block update; non-edited selection, variation, movement/removal, overlay, template mode, block identity | Prototype after pattern override. |
+| `useInnerBlocksProps` structural guard | `1.1ms` / `580` listeners | local invalidation prototype | text insertion; child insert/remove/reorder; zoom; template lock; editing mode; layout/root changes | Prototype after pattern override. |
+| `BlockListItems` structural/selection guard | `5.3ms` / `580` listeners | validate before counting | selection, visible list, appender, template lock, zoom, insert/remove/reorder, multi-select | Validate before counting a win. |
+
+This closes the immediate "is the first patch actually ready?" question. It is
+ready as a small patch only if the patch includes its own test seam. The expected
+local scope is `3.6ms`, which is `43.9%` of the `8.2ms` source-feasible local
+guard envelope. That is smaller than the whole persistence marker fanout, but it
+is the only high-impact row that is both source-feasible and does not require a
+new invalidation contract.
+
 I also broke down the residual `Other mapped owners` row so that it is not a
 black box. That row is small: `1.3ms` p50 across `62` source-mapped sites and
 `261` p50 listener calls. The nonzero p50 cost is split between
@@ -6164,7 +6193,11 @@ The source-feasibility audit sharpens that again: the pattern-override
 selected-only split is the clear first patch (`~3.6ms`), while the heading
 selector should not be counted until there is a shared/global anchor-capability
 signal. The conservative source-feasible local envelope is therefore `8.2ms`,
-not the full `8.7ms`, before validating `BlockListItems`.
+not the full `8.7ms`, before validating `BlockListItems`. The first-patch test
+readiness audit adds one practical requirement: the pattern-override patch
+should export or split a focused test seam for the side-effect HOC, then cover
+selected supported/unsupported blocks, unselected supported blocks, settings
+support changes, synced controls, and unsynced reset controls.
 The broad store-partition design remains plausible but high risk because it
 overlaps that local-guard envelope and must keep the persistence transition
 visible to `useBlockSync` and direct `isLastBlockChangePersistent` consumers.

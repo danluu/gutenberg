@@ -11809,6 +11809,116 @@ if (file.exists(marker_allspan_action_summary_path)) {
 		width = 12,
 		height = 7.4
 	)
+
+	first_patch_test_readiness <- tribble(
+		~candidate, ~source_site, ~current_scope_ms, ~listener_scope, ~source_feasibility, ~test_gap_score, ~implementation_seam, ~missing_test_surface, ~recommended_next,
+		"Pattern override selected-only split", "packages/editor/src/hooks/pattern-overrides.js", 3.5974944472395882, 1436, "clear local patch after adding test seam", 2, "The HOC is currently registered as a side-effect-only filter; export the HOC or a small support-check component for focused tests.", "Selected supported block, selected unsupported block, unselected supported block, settings support change, synced pattern controls, unsynced reset control.", "Implement first with focused unit coverage.",
+		"Heading shared anchor capability", "packages/block-library/src/heading/edit.js", 0.4999997615814209, 202, "needs shared signal", 4, "The per-heading useSelect is semantically needed until a shared generateAnchors/table-of-contents capability signal exists.", "Web tests for generateAnchors setting changes and table-of-contents insertion/removal; native tests exist but do not cover the web source path.", "Design signal before optimizing.",
+		"Non-edited BlockListBlockProvider guard", "packages/block-editor/src/components/block-list/block.js", 3.4975648467210574, 1436, "needs local invalidation prototype", 4, "The selector mixes attributes with selection, movement, overlay, variation, section, and identity state.", "Edited block update, non-edited selection, variation, movement/removal, overlay, template-mode, and block identity behavior.", "Prototype after pattern override.",
+		"useInnerBlocksProps structural guard", "packages/block-editor/src/components/inner-blocks/index.js", 1.1000003814697266, 580, "needs local invalidation prototype", 3, "Needs a root/order/settings version boundary rather than a component-only memo.", "Text insertion, child insertion/removal/reorder, zoom, template lock, editing mode, layout, and root changes.", "Prototype after pattern override.",
+		"BlockListItems structural/selection guard", "packages/block-editor/src/components/block-list/index.js", 5.299999952316284, 580, "validation prototype only", 5, "Large surface but owns selection, visible list, appender, template, zoom, and structural behavior.", "Selection, visible block list, appender, template lock, zoom, insertion/removal/reorder, and multi-select flows.", "Validate before counting a win."
+	) %>%
+		mutate(
+			source_feasibility = factor(
+				source_feasibility,
+				levels = c(
+					"clear local patch after adding test seam",
+					"needs shared signal",
+					"needs local invalidation prototype",
+					"validation prototype only"
+				)
+			),
+			candidate = factor(
+				candidate,
+				levels = c(
+					"Pattern override selected-only split",
+					"Heading shared anchor capability",
+					"Non-edited BlockListBlockProvider guard",
+					"useInnerBlocksProps structural guard",
+					"BlockListItems structural/selection guard"
+				)
+			)
+		)
+
+	write_csv(
+		first_patch_test_readiness,
+		file.path(data_dir, "typing-delay-first-patch-test-readiness.csv")
+	)
+
+	first_patch_readiness_summary <- first_patch_test_readiness %>%
+		summarize(
+			clear_first_patch_scope_ms = current_scope_ms[candidate == "Pattern override selected-only split"],
+			clear_first_patch_listener_scope = listener_scope[candidate == "Pattern override selected-only split"],
+			source_feasible_local_guard_ms = source_feasible_local_guard_ms,
+			clear_first_patch_share_of_source_feasible_local_pct = 100 * clear_first_patch_scope_ms / source_feasible_local_guard_ms,
+			test_gap_score = test_gap_score[candidate == "Pattern override selected-only split"],
+			.groups = "drop"
+		)
+
+	write_csv(
+		first_patch_readiness_summary,
+		file.path(data_dir, "typing-delay-first-patch-readiness-summary.csv")
+	)
+
+	first_patch_test_readiness_plot <- first_patch_test_readiness %>%
+		mutate(
+			plot_label = case_when(
+				candidate == "Pattern override selected-only split" ~ "pattern split",
+				candidate == "Heading shared anchor capability" ~ "heading signal",
+				candidate == "Non-edited BlockListBlockProvider guard" ~ "block provider",
+				candidate == "useInnerBlocksProps structural guard" ~ "inner blocks",
+				candidate == "BlockListItems structural/selection guard" ~ "BlockListItems",
+				TRUE ~ as.character(candidate)
+			),
+			label_x = case_when(
+				candidate == "BlockListItems structural/selection guard" ~ current_scope_ms - 0.15,
+				candidate == "Heading shared anchor capability" ~ current_scope_ms + 0.55,
+				TRUE ~ current_scope_ms + 0.14
+			),
+			label_y = case_when(
+				candidate == "Pattern override selected-only split" ~ test_gap_score + 0.22,
+				candidate == "Non-edited BlockListBlockProvider guard" ~ test_gap_score - 0.22,
+				TRUE ~ test_gap_score + 0.2
+			)
+		)
+
+	save_plot(
+		ggplot(
+			first_patch_test_readiness_plot,
+			aes(
+				current_scope_ms,
+				test_gap_score,
+				color = source_feasibility,
+				shape = source_feasibility,
+				size = listener_scope
+			)
+		) +
+			geom_point(alpha = 0.92) +
+			geom_text(
+				aes(label_x, label_y, label = plot_label),
+				size = 3.1,
+				color = "grey20",
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Source/test readiness") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "listener scope") +
+			scale_x_continuous(labels = label_number(suffix = "ms")) +
+			scale_y_continuous(
+				breaks = 1:5,
+				labels = c("covered", "small seam", "prototype", "broad tests", "validate first"),
+				limits = c(1.5, 5.4)
+			) +
+			labs(
+				title = "Pattern override is the only source-feasible first patch",
+				subtitle = "It still needs a focused export/test seam before changing the side-effect HOC",
+				x = "Current audited p50 scope",
+				y = "Test gap / prototype burden"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"141-first-patch-test-readiness.png",
+		width = 12,
+		height = 7.4
+	)
 }
 
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
