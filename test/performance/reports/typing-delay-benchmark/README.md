@@ -847,6 +847,9 @@ The R script derives:
 -   `data/typing-delay-store-boundary-side-channel-decision-audit.csv`: deeper
     decision audit for which side-channel steps are migration seams, which can
     reduce fanout, and which require public data-subscription compatibility work.
+-   `data/typing-delay-public-selector-notification-contract-audit.csv`:
+    public-selector compatibility contract for the remaining
+    `isLastBlockChangePersistent()` notification blocker.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -5237,6 +5240,42 @@ notification. The current `@wordpress/data` subscription model cannot express
 store-boundary row remains research after local guards, with a precise blocker:
 public selector notification compatibility, not `useBlockSync` itself.
 
+The public-selector notification audit makes that last blocker more concrete.
+The public selector is not just an in-tree implementation detail:
+`isLastBlockChangePersistent()` is documented in the `core/block-editor` data
+reference, returns `state.blocks.isPersistentChange`, and is selected by
+`useBlockSync` through a store-specific block-editor subscription. Source search
+finds no other production in-tree direct consumer, which makes a private
+`useBlockSync` side channel plausible as a behavior seam. It does not make the
+performance split safe.
+
+The reason is the notification contract. `useSelect` records active store names,
+then subscribes to each store through `registry.subscribe( onChange, storeName )`.
+When the wrapped Redux store root identity changes, it calls every registered
+store listener. There is no selector name, state branch, or dependency key in
+that path that can say "notify `isLastBlockChangePersistent()` consumers, but do
+not notify unrelated block-editor selectors." Moving persistence to an external
+slot can keep an imperative
+`select( blockEditorStore ).isLastBlockChangePersistent()` read correct, but it
+would not wake existing `useSelect` or store subscribers when only that slot
+changes.
+
+The compatibility contract is therefore:
+
+| Contract question | Current answer | Required contract |
+| ----------------- | -------------- | ----------------- |
+| What is the exact blocker? | public notification semantics for `isLastBlockChangePersistent()`, not the in-tree `useBlockSync` consumer | either keep root notification, introduce selector/branch-aware public notifications, or explicitly change/deprecate the public notification contract with compatibility tests |
+| Can `useBlockSync` be migrated safely by itself? | probably, as a behavior-preserving seam | prototype a private persistence-change subscription while still changing the root state; cover `onInput` / `onChange`, persistence flip after a previous block change, selection payloads, controlled inner blocks, fresh callbacks, and cleanup |
+| Can an external persistence slot preserve compatibility? | only for direct reads | subscribed `useSelect` / `registry.subscribe` consumers need an explicit notification answer, not just a correct selector return value |
+| Can `@wordpress/data` currently notify only this selector? | no | a complete compatibility route requires selector-aware or branch-aware subscriptions, with tests for dynamic selector dependencies, conditional reads, cross-store reads, and plugin compatibility |
+| What is the near-term product order? | local guards first | patch and measure pattern override first; prototype non-edited block-provider and inner-block invalidation next; use the side channel only after those prove the source-level shape |
+
+That changes the store-partition row from "maybe migrate `useBlockSync`" to a
+stricter conclusion: a private side channel is a useful migration seam but not a
+performance win. The performance win starts only when
+`MARK_LAST_CHANGE_AS_PERSISTENT` stops changing the block-editor root; that is
+also exactly where public selector notification compatibility must be solved.
+
 The next split answers what "woken subscriber" means in the measured input
 slice. In `useSelect`, `onChange` either queues an async update through
 `renderQueue.add()` or synchronously calls `onStoreChange()`
@@ -7588,7 +7627,7 @@ The high-level split is:
 | Pattern-loading wait | pure `getBlockPatterns` readiness is locally rejected; it was already true, waited only `0.15ms`, moved `0` resources before the timer, and stayed in the slow band. `getBlockPatterns` plus a `100ms` resource-quiet guard moved the same `19` setup resources as fixed `500ms` / `1000ms` and matched the settled q50 band | do not switch to pure `getBlockPatterns`; validate `getBlockPatterns` plus resource quiet with timeout/fallback telemetry against fixed `500ms` and `1000ms` in CI/mac/container |
 | Input API phase boundary | locally closed for the CI choice; `pressSequentially()` belongs with `locator.type()`, ordinary `locator.press()` is a checkpoint control, and the compact `page.keyboard.press()` / per-key locator-focus runs show the remaining split is action-order/runtime-state, not hold duration | no more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings |
 | Low-risk selector guards | bounded enough to patch the first row; source/prototype contract audit says pattern override is the only immediate local split, while heading, provider, inner-blocks, and `BlockListItems` need shared-signal or invalidation prototypes | implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes |
-| Store subscriber partition | bounded to a compatibility blocker; a private `useBlockSync` side channel is a useful migration seam, but the `23.2ms` fanout win requires stopping the root update, which would break public `isLastBlockChangePersistent()` `useSelect` notifications under today's store-level subscription model | research after local guards; prototype the side channel only as a seam, and do not claim the fanout win without a public selector notification policy or branch-aware data subscription |
+| Store subscriber partition | public-selector notification audit closes the local blocker: a private `useBlockSync` side channel can preserve the only production in-tree direct consumer found, but the `23.2ms` fanout win requires stopping the block-editor root update, which would make existing public `isLastBlockChangePersistent()` `useSelect` consumers miss the persistence-only transition | research after local guards; prototype the side channel only as a behavior seam, and do not claim the fanout win until the public selector notification contract has a tested compatibility design |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
 | Chromium runtime checkpoint | closed for benchmark-level CI choice; trace-contract audit says ordinary waits, generic task/frame checkpoints, Playwright utility semantics, and browser-only scale are all bounded; exact browser state remains open below this harness | browser/runtime tracing around matched raw-CDP wait, repeated `Runtime.evaluate` / `Runtime.callFunctionOn`, and trace-on `captureSnapshot` windows; do not add more JS-level delay rows |
 | CPU/QoS mechanism | counter-contract audit bounds the mechanism: near-key no-CPU tasks stay slow, finite CPU bursts are usually fast, continuous ordinary/utility CPU is fast, and background/maintenance CPU is slow; exact hardware/scheduler state remains below this harness | run the small discriminating CPU/QoS row set with OS scheduler, power, hardware-counter, and browser scheduler traces before adding more JS benchmark rows |

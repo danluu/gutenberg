@@ -13799,6 +13799,45 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			file.path(data_dir, "typing-delay-store-boundary-side-channel-decision-audit.csv")
 		)
 
+		public_selector_notification_contract_audit <- tribble(
+			~contract_question, ~current_answer, ~source_evidence, ~why_private_side_channel_is_not_enough, ~required_compatibility_contract, ~decision,
+			"What is the exact public compatibility blocker?",
+			"Public notification semantics for isLastBlockChangePersistent(), not the in-tree useBlockSync consumer.",
+			"isLastBlockChangePersistent() is documented as a core/block-editor selector and currently returns state.blocks.isPersistentChange; useSelect subscribes by store name and invalidates on any subscribed store change.",
+			"A private persistence side channel can keep useBlockSync correct, but if MARK_LAST_CHANGE_AS_PERSISTENT stops changing the block-editor root, existing public useSelect consumers of isLastBlockChangePersistent() will not be notified.",
+			"Either keep root notification, introduce selector/branch-aware public notifications, or explicitly change/deprecate the public notification contract with compatibility tests.",
+			"public selector contract blocks performance win",
+			"Can useBlockSync be migrated safely by itself?",
+			"Probably yes as a behavior-preserving migration seam.",
+			"useBlockSync is the only production in-tree direct consumer found by source search, and it already reads isLastBlockChangePersistent() from a store-specific registry subscription.",
+			"The migration preserves the known in-tree semantic consumer but does not remove fanout unless the root state stops changing afterward.",
+			"Prototype a private persistence-change subscription while still changing the root state; tests must cover onInput/onChange handoff, persistence flip after a previous block change, selection payloads, controlled inner blocks, fresh callbacks, and cleanup.",
+			"side channel is a seam",
+			"Can an external persistence slot preserve the selector?",
+			"Only for imperative reads, not subscribed public reads.",
+			"The selector could be rewritten to return an external slot, but current useSelect listeners are notified by store changes, not by selector-specific invalidation.",
+			"Existing useSelect or registry.subscribe consumers would miss a persistence-only transition if the block-editor root remains unchanged.",
+			"Do not treat direct select() correctness as compatibility; subscribed useSelect/registry consumers need an explicit notification answer.",
+			"direct reads are insufficient",
+			"Can @wordpress/data currently notify only this selector?",
+			"No.",
+			"useSelect records active store names from registry.__unstableMarkListeningStores() and calls registry.subscribe(onChange, storeName); the Redux wrapper calls all listeners on root identity changes.",
+			"There is no selector name, branch path, or dependency key available to notify isLastBlockChangePersistent() consumers while skipping unrelated block-editor selectors.",
+			"A complete compatibility route requires selector-aware or branch-aware subscriptions, with tests for dynamic selector dependencies, conditional reads, cross-store reads, and plugin compatibility.",
+			"data-layer research required",
+			"What is the near-term product order?",
+			"Local selector guards first, then side-channel seam, then public notification design.",
+			"The source-feasible local guard envelope is about 8.2ms and does not change public data subscription semantics; the full marker fanout is about 23.2ms but is blocked by public notifications.",
+			"Going straight to store partitioning risks breaking public subscribers for a benchmark win that local guards can partially address first.",
+			"Patch and measure pattern override first; prototype non-edited block-provider and inner-block invalidation next; use the side channel only after those prove the source-level shape.",
+			"local guards remain first"
+		)
+
+		write_csv(
+			public_selector_notification_contract_audit,
+			file.path(data_dir, "typing-delay-public-selector-notification-contract-audit.csv")
+		)
+
 		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
 		mutate(
 			plot_label = case_when(
@@ -15196,7 +15235,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "Pure getBlockPatterns readiness is rejected locally: it waited only 0.15ms, moved 0 resources before the timer, left about 25 resources inside measurement, and stayed in the slow band. getBlockPatterns plus a 100ms resource-quiet guard moved the same 19 setup resources as fixed 500/1000ms and matched the settled q50 band.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Do not switch to pure getBlockPatterns. Validate getBlockPatterns plus resource quiet with timeout/fallback telemetry against fixed 500ms and 1000ms in CI/mac/container.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "The compact follow-up closes the CI-facing boundary: ordinary locator.press is not a pressSequentially proxy, page.keyboard.press and per-key locator.focus both move short holds into the slow band, and pressSequentially belongs to the locator.type family.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings.",
 	"Low-risk selector guards", "product optimization", 4, 2, 4, "patch first row", "The source/prototype contract audit leaves pattern override as the only immediate local split: move the support-check useSelect behind the existing selected-block gate. Heading needs a shared capability signal; provider, inner-blocks, and BlockListItems need invalidation prototypes.", "Measured win after the pattern-override patch, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes.",
-	"Store subscriber partition", "product optimization", 4, 4, 5, "research after local guards", "The side-channel decision audit bounds the blocker: a private useBlockSync persistence channel can preserve the known in-tree semantic consumer, but the 23.2ms fanout win requires stopping the block-editor root update, which would break public isLastBlockChangePersistent useSelect notifications under today's store-level subscription model.", "A public selector notification policy or a branch/selector-aware @wordpress/data subscription mechanism that can notify isLastBlockChangePersistent consumers without waking unrelated block-editor selectors.", "After local guards, prototype the useBlockSync side channel only as a migration seam; do not claim the fanout win without resolving public selector notification compatibility.",
+	"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector notification audit closes the local blocker: a private useBlockSync side channel can preserve the only production in-tree direct consumer found, but the 23.2ms fanout win requires stopping the block-editor root update, which would make existing public isLastBlockChangePersistent useSelect consumers miss the persistence-only transition.", "The product/API policy for preserving or changing public selector notification semantics: selector/branch-aware @wordpress/data notifications, an explicit deprecation/compatibility path, or keeping the root notification.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until the public selector notification contract has a tested compatibility design.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
 	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "The trace-contract audit closes the local benchmark choice: ordinary waits, generic task/frame checkpoints, Playwright utility semantics, and browser-only scale are all bounded; exact browser state remains below this JS harness.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints.", "Trace matched raw-CDP ordinary waits, repeated Runtime.evaluate/Runtime.callFunctionOn windows, and trace-on captureSnapshot windows with browser/runtime instrumentation; do not add more JS-level delay rows.",
 	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "OS counter contract", "Counter-contract audit bounds the mechanism: near-key no-CPU tasks stay slow, finite CPU bursts are usually fast, continuous ordinary/utility CPU is fast, and background/maintenance CPU is slow; exact hardware/scheduler state remains below this JS harness.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Run the small discriminating CPU/QoS row set with OS scheduler, power, hardware-counter, and browser scheduler traces before adding more JS benchmark rows.",
