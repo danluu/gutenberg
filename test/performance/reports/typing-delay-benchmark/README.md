@@ -1083,6 +1083,11 @@ The R script derives:
     rerun to use, and what conclusion not to draw.
 -   `data/typing-delay-open-question-failure-triage-summary.csv`: rollup of
     failure modes by closure manifest and failure class.
+-   `data/typing-delay-open-question-escalation-ladder.csv`: outcome ladder for
+    open-question gates, showing what claim is allowed, what remains blocked,
+    and which narrower artifact is next after each pass/fail/mixed result.
+-   `data/typing-delay-open-question-escalation-summary.csv`: rollup of
+    escalation outcomes by claim lane and outcome class.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9574,6 +9579,31 @@ them. Source failures reject or re-scope the patch before aggregate timing is
 used. Sidecar and counter failures block mechanism names. Replay or display
 failures narrow product/display claims instead of weakening the benchmark
 artifact claim.
+
+The escalation ladder is the execution version of the same rule. Passing a gate
+closes only the claim that gate was designed to close. Failing a gate triggers a
+narrower artifact or narrows the claim; it does not reopen the local benchmark
+artifact unless the measurement trigger itself changes.
+
+![Open question escalation ladder](figures/222-open-question-escalation-ladder.png)
+
+![Open question escalation summary](figures/223-open-question-escalation-summary.png)
+
+| Lane | Pass result | Fail or mixed result |
+| ---- | ----------- | -------------------- |
+| Benchmark artifact | state the local key-held cliff and held-key/tap metric distinction | rerun only the changed helper, browser, trace, or statistic control |
+| CI/readiness | discuss CI wait policy only within the passing topology/spec/lane | block CI wait changes, split first-input metrics, or keep/narrow pattern waits |
+| Source/code | cite source optimization after behavior gates and source-span collapse | reject the patch, re-scope the owner, or treat timing as unexplained |
+| Sidecar/mechanism | unlock runtime or CPU/QoS observers after sidecar acceptance | redesign join IDs, clock sync, renderer identity, or observer overhead controls |
+| CPU/QoS | name only system fields that separate fast and slow retained-key classes | keep empirical sensitivity only, change collectors, or downgrade mechanism claims |
+| Claim expansion | state only the passing product stratum or display endpoint | scope product/display claims and preserve fixed-`x` as a benchmark control |
+| External policy | predict pass/fail only under the documented threshold policy | report q50 as an artifact number without pass/fail prediction |
+
+This is the shortest operational answer to the remaining open questions: the
+local benchmark explanation is not waiting on every lane. CI policy, source
+changes, mechanism names, product/display generalization, and pass/fail
+prediction each have their own escalation path. The report should move down only
+the path needed for the claim being made.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

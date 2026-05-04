@@ -23321,6 +23321,146 @@ save_plot(
 	height = 7.2
 )
 
+open_question_escalation_ladder <- tribble(
+	~lane, ~lane_order, ~trigger, ~trigger_order, ~outcome_class, ~current_action, ~allowed_claim, ~blocked_claim, ~next_artifact, ~stop_or_expand,
+	"Benchmark artifact", 1, "current local artifact unchanged", 1, "close local claim", "state the benchmark-path result", "the key-held cliff and held-key versus tap distinction are local benchmark facts", "product-wide latency, display latency, or named system mechanism", "none unless helper, browser, trace placement, or reported statistic changes", "stop for local benchmark semantics",
+	"Benchmark artifact", 1, "helper/browser/trace/statistic changes", 2, "reopen local control", "rerun the exact local controls before reusing old wording", "only claims reproduced under the new trigger", "old local wording under changed measurement semantics", "small local trigger-control manifest", "expand only the changed trigger",
+	"CI/readiness", 2, "CI topology manifest passes", 3, "close decision claim", "allow CI wait-policy discussion within the passing topology", "local ordering and retained-q50 stability port to that CI topology", "external pass/fail prediction without threshold policy", "external policy join if pass/fail is being claimed", "stop for wait-policy topology",
+	"CI/readiness", 2, "CI topology ordering or failures differ", 4, "block action", "block CI wait changes and isolate topology/order/failure cause", "local artifact remains local", "CI wait removal is safe", "narrow CI topology or actionability manifest", "expand inside CI topology only",
+	"CI/readiness", 2, "first-key tails differ", 5, "narrow metric", "split first-input or idle-return statistic from retained typing q50", "retained q50 describes retained sequence only", "retained q50 covers idle-return user experience", "first-key-only manifest", "expand metric definition",
+	"CI/readiness", 2, "pattern readiness passes", 6, "close decision claim", "allow the specific predicate or fallback wait for the passing spec/lane", "pattern wait can change in the validated spec/lane", "global wait removal for untested specs/lanes", "none for passing lane; CI topology if policy changes", "stop within lane",
+	"CI/readiness", 2, "pattern readiness fails", 7, "block action", "keep, narrow, or fall back to fixed wait", "q50 was not sufficient for readiness", "predicate-based wait removal is safe", "per-spec readiness or fallback-wait manifest", "expand within pattern lane",
+	"Source/code", 3, "behavior fixtures and source spans pass", 8, "close source claim", "cite the targeted source optimization and then cite aggregate timing", "the targeted owner is safe and source-relevant", "broader store-partition compatibility", "store-partition fixtures only if broadening the source claim", "stop for targeted owner",
+	"Source/code", 3, "behavior fixture fails", 9, "reject action", "reject or redesign the source patch before timing discussion", "the failed fixture identifies a semantic blocker", "p50/source-span win is safe", "single-owner behavior fixture with timing disabled", "expand source safety only",
+	"Source/code", 3, "source span does not collapse", 10, "narrow source claim", "re-scope the owner or selector dependency", "aggregate timing is not tied to this owner", "this source patch explains the timing movement", "marker-only source-span microscope", "expand source ownership",
+	"Sidecar/mechanism", 4, "sidecar acceptance passes", 11, "unlock observer", "run runtime and CPU/QoS observers against joined retained-key windows", "mechanism observers are now interpretable if they preserve ordering", "mechanism is named before counters/runtime fields separate classes", "runtime sidecar or CPU/QoS counter manifest", "advance to mechanism observer",
+	"Sidecar/mechanism", 4, "sidecar join or overhead fails", 12, "block observer", "redesign sidecar, clock sync, renderer identity, or overhead controls", "the failed sidecar is not a passive observer", "unjoinable fields can name a mechanism", "sidecar schema debug or overhead A/B manifest", "expand sidecar engineering",
+	"Sidecar/mechanism", 4, "runtime sidecar separates state", 13, "close mechanism subclaim", "name only the runtime state that joins to retained keys", "runtime state is associated with the measured split", "CPU/QoS or product cause is implied", "CPU/QoS counters only if system naming is needed", "stop for runtime subclaim",
+	"Sidecar/mechanism", 4, "runtime sidecar does not separate state", 14, "narrow mechanism claim", "keep the runtime checkpoint result empirical", "runtime checkpoint sensitivity exists without a named state", "specific V8/scheduler cause is proved", "CPU/QoS or lower observer only if still needed", "stop or move down observer stack",
+	"CPU/QoS", 5, "root counters separate classes", 15, "close mechanism claim", "name the system fields that separate fast and slow classes", "a system-level state is joined to the retained-key split", "Gutenberg source mitigation follows automatically", "source/product artifact if mitigation is being claimed", "stop for system mechanism",
+	"CPU/QoS", 5, "root counters fail or perturb ordering", 16, "narrow mechanism claim", "keep only empirical CPU-state sensitivity or change collector", "the system mechanism is unproven under this observer", "latency classes alone prove frequency/QoS/cache/runnable cause", "root trace fallback or counter-overhead A/B", "expand observer only if mechanism name is required",
+	"Claim expansion", 6, "replay/display endpoint passes", 17, "close expanded claim", "state the product stratum or display endpoint claim that passed", "the expanded claim is valid for the passing stratum/endpoint", "global product or hardware-display claim", "additional strata/endpoints only if broadening", "stop within stratum/endpoint",
+	"Claim expansion", 6, "replay/display endpoint fails", 18, "narrow expanded claim", "scope by stratum or endpoint and preserve the fixed-x artifact claim", "the fixed-x artifact remains a control", "fixed-x proves product/display latency", "stratum-specific replay or endpoint calibration manifest", "expand claim boundary only",
+	"External policy", 7, "threshold policy is joined", 19, "close policy claim", "predict pass/fail only under the documented policy and artifact shape", "q50 movement has policy meaning in that external system", "policy-free q50 is a pass/fail gate", "none unless policy changes", "stop for policy version",
+	"External policy", 7, "threshold policy is unavailable", 20, "block policy claim", "report q50 as an artifact number and avoid pass/fail prediction", "repository code still has no numeric q50 gate", "local q50 predicts pass/fail", "policy discovery or CodeVitals/reviewer join", "expand external-policy discovery"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		outcome_class = factor(
+			outcome_class,
+			levels = c(
+				"close local claim",
+				"reopen local control",
+				"close decision claim",
+				"block action",
+				"narrow metric",
+				"close source claim",
+				"reject action",
+				"narrow source claim",
+				"unlock observer",
+				"block observer",
+				"close mechanism subclaim",
+				"narrow mechanism claim",
+				"close mechanism claim",
+				"close expanded claim",
+				"narrow expanded claim",
+				"close policy claim",
+				"block policy claim"
+			)
+		),
+		trigger_label = str_wrap(trigger, width = 34),
+		trigger_label = fct_reorder(trigger_label, trigger_order, .desc = TRUE),
+		lane_label = fct_reorder(as.character(lane), lane_order),
+		outcome_group = case_when(
+			str_detect(as.character(outcome_class), "^close") ~ "close claim",
+			str_detect(as.character(outcome_class), "^block|^reject") ~ "block action",
+			str_detect(as.character(outcome_class), "^narrow|^downgrade") ~ "narrow scope",
+			str_detect(as.character(outcome_class), "^unlock") ~ "advance observer",
+			str_detect(as.character(outcome_class), "^reopen") ~ "reopen control",
+			TRUE ~ "other"
+		),
+		outcome_group = factor(
+			outcome_group,
+			levels = c("close claim", "block action", "narrow scope", "advance observer", "reopen control", "other")
+		),
+		is_stop = str_detect(stop_or_expand, "^stop")
+	)
+
+open_question_escalation_summary <- open_question_escalation_ladder %>%
+	count(lane, outcome_group, is_stop, name = "outcomes") %>%
+	group_by(lane) %>%
+	mutate(lane_outcomes = sum(outcomes)) %>%
+	ungroup()
+
+write_csv(
+	open_question_escalation_ladder %>%
+		select(
+			lane,
+			lane_order,
+			trigger,
+			trigger_order,
+			outcome_class,
+			current_action,
+			allowed_claim,
+			blocked_claim,
+			next_artifact,
+			stop_or_expand,
+			outcome_group,
+			is_stop
+		),
+	file.path(data_dir, "typing-delay-open-question-escalation-ladder.csv")
+)
+
+write_csv(
+	open_question_escalation_summary,
+	file.path(data_dir, "typing-delay-open-question-escalation-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_escalation_ladder,
+		aes(trigger_order, lane, color = outcome_group, shape = is_stop)
+	) +
+		geom_point(size = 4.8, alpha = 0.9) +
+		geom_text(aes(label = trigger_order), color = "white", size = 2.8, fontface = "bold") +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Outcome") +
+		scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 17), name = "Stops here") +
+		scale_x_continuous(breaks = seq(1, 20, by = 1)) +
+		labs(
+			title = "Open-question escalation ladder keeps claims scoped after each result",
+			subtitle = "Circles stop within the current scope; triangles trigger a narrower artifact or observer",
+			x = "Escalation step",
+			y = "Claim lane"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"222-open-question-escalation-ladder.png",
+	width = 13.2,
+	height = 7.2
+)
+
+save_plot(
+	ggplot(
+		open_question_escalation_summary,
+		aes(lane, outcomes, fill = outcome_group)
+	) +
+		geom_col(width = 0.72) +
+		coord_flip() +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Outcome") +
+		scale_y_continuous(breaks = scales::breaks_width(1)) +
+		labs(
+			title = "Most remaining outcomes either close a narrow claim or force a narrower artifact",
+			subtitle = "The ladder prevents failed gates from reopening already-supported benchmark claims",
+			x = "Claim lane",
+			y = "Number of escalation outcomes"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"223-open-question-escalation-summary.png",
+	width = 11.8,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

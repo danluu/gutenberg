@@ -1,0 +1,19 @@
+lane,outcome_group,is_stop,outcomes,lane_outcomes
+Benchmark artifact,close claim,TRUE,1,2
+Benchmark artifact,reopen control,FALSE,1,2
+CI/readiness,close claim,TRUE,2,5
+CI/readiness,block action,FALSE,2,5
+CI/readiness,narrow scope,FALSE,1,5
+Source/code,close claim,TRUE,1,3
+Source/code,block action,FALSE,1,3
+Source/code,narrow scope,FALSE,1,3
+Sidecar/mechanism,close claim,TRUE,1,4
+Sidecar/mechanism,block action,FALSE,1,4
+Sidecar/mechanism,narrow scope,TRUE,1,4
+Sidecar/mechanism,advance observer,FALSE,1,4
+CPU/QoS,close claim,TRUE,1,2
+CPU/QoS,narrow scope,FALSE,1,2
+Claim expansion,close claim,TRUE,1,2
+Claim expansion,narrow scope,FALSE,1,2
+External policy,close claim,TRUE,1,2
+External policy,block action,FALSE,1,2
