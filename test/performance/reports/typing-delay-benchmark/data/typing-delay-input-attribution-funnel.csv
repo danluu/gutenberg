@@ -1,0 +1,289 @@
+mode_label,span_scenario_label,delayMs,stage,median_ms,measurement_family,case_label
+"Complete keypress, then wait",empty post,990,RichText onInput total,3.200000047683716,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,990,RichText registry.batch,3,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,990,RichText non-batch overhead,0.20000004768371582,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,990,RichText direct callbacks,0.19999980926513672,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,990,RichText batch remainder,2.799999952316284,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1000,RichText onInput total,2.8999998569488525,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1000,RichText registry.batch,2.799999952316284,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1000,RichText non-batch overhead,0.09999990463256836,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1000,RichText direct callbacks,0.19999980926513672,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1000,RichText batch remainder,2.5999999046325684,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1200,RichText onInput total,2.8999998569488525,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1200,RichText registry.batch,2.5999999046325684,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1200,RichText non-batch overhead,0.2999999523162842,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1200,RichText direct callbacks,0.09999990463256836,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1200,RichText batch remainder,2.5,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1300,RichText onInput total,2.799999952316284,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,RichText registry.batch,2.700000047683716,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,RichText non-batch overhead,0.09999990463256836,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,RichText direct callbacks,0.19999980926513672,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,RichText batch remainder,2.500000238418579,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1550,RichText onInput total,2.8000001907348633,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1550,RichText registry.batch,2.700000047683716,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1550,RichText non-batch overhead,0.10000014305114746,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1550,RichText direct callbacks,0.20000004768371582,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,1550,RichText batch remainder,2.5,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,2000,RichText onInput total,2.8999998569488525,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,2000,RichText registry.batch,2.799999952316284,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,2000,RichText non-batch overhead,0.09999990463256836,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,2000,RichText direct callbacks,0.19999980926513672,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,2000,RichText batch remainder,2.6000001430511475,RichText instrumentation,NA
+Playwright delay: key held down,empty post,990,RichText onInput total,5.700000047683716,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,RichText registry.batch,5.400000095367432,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,RichText non-batch overhead,0.2999999523162842,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,RichText direct callbacks,0.2999999523162842,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,RichText batch remainder,5.1000001430511475,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,1000,RichText onInput total,4.900000095367432,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,RichText registry.batch,4.5,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,RichText non-batch overhead,0.40000009536743164,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,RichText direct callbacks,0.20000004768371582,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,RichText batch remainder,4.200000047683716,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1200,RichText onInput total,5.299999952316284,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1200,RichText registry.batch,5.200000047683716,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1200,RichText non-batch overhead,0.09999990463256836,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1200,RichText direct callbacks,0.20000004768371582,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1200,RichText batch remainder,4.900000095367432,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1300,RichText onInput total,5.599999904632568,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,RichText registry.batch,5.299999952316284,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,RichText non-batch overhead,0.2999999523162842,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,RichText direct callbacks,0.2999999523162842,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,RichText batch remainder,5,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1550,RichText onInput total,3.1000001430511475,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1550,RichText registry.batch,3,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1550,RichText non-batch overhead,0.10000014305114746,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1550,RichText direct callbacks,0.19999980926513672,RichText instrumentation,NA
+Playwright delay: key held down,empty post,1550,RichText batch remainder,2.8999998569488525,RichText instrumentation,NA
+Playwright delay: key held down,empty post,2000,RichText onInput total,5.599999904632568,RichText instrumentation,NA
+Playwright delay: key held down,empty post,2000,RichText registry.batch,5.3999998569488525,RichText instrumentation,NA
+Playwright delay: key held down,empty post,2000,RichText non-batch overhead,0.20000004768371582,RichText instrumentation,NA
+Playwright delay: key held down,empty post,2000,RichText direct callbacks,0.3000001907348633,RichText instrumentation,NA
+Playwright delay: key held down,empty post,2000,RichText batch remainder,5.099999904632568,RichText instrumentation,NA
+"Complete keypress, then wait",large post,990,RichText onInput total,6.6000001430511475,RichText instrumentation,NA
+"Complete keypress, then wait",large post,990,RichText registry.batch,6.5,RichText instrumentation,NA
+"Complete keypress, then wait",large post,990,RichText non-batch overhead,0.10000014305114746,RichText instrumentation,NA
+"Complete keypress, then wait",large post,990,RichText direct callbacks,0.6999998092651367,RichText instrumentation,NA
+"Complete keypress, then wait",large post,990,RichText batch remainder,5.800000190734863,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1000,RichText onInput total,6,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1000,RichText registry.batch,5.8999998569488525,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1000,RichText non-batch overhead,0.10000014305114746,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1000,RichText direct callbacks,0.5000002384185791,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1000,RichText batch remainder,5.300000190734863,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1200,RichText onInput total,7.200000047683716,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1200,RichText registry.batch,7.1000001430511475,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1200,RichText non-batch overhead,0.09999990463256836,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1200,RichText direct callbacks,0.7000000476837158,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1200,RichText batch remainder,6.3999998569488525,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1300,RichText onInput total,7.1000001430511475,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,RichText registry.batch,7.1000001430511475,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,RichText non-batch overhead,0,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,RichText direct callbacks,0.7000000476837158,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,RichText batch remainder,6.300000190734863,RichText instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1550,RichText onInput total,7,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1550,RichText registry.batch,6.799999952316284,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1550,RichText non-batch overhead,0.20000004768371582,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1550,RichText direct callbacks,0.7000000476837158,RichText instrumentation,NA
+"Complete keypress, then wait",large post,1550,RichText batch remainder,6.199999809265137,RichText instrumentation,NA
+"Complete keypress, then wait",large post,2000,RichText onInput total,6.700000047683716,RichText instrumentation,NA
+"Complete keypress, then wait",large post,2000,RichText registry.batch,6.5,RichText instrumentation,NA
+"Complete keypress, then wait",large post,2000,RichText non-batch overhead,0.20000004768371582,RichText instrumentation,NA
+"Complete keypress, then wait",large post,2000,RichText direct callbacks,0.7000000476837158,RichText instrumentation,NA
+"Complete keypress, then wait",large post,2000,RichText batch remainder,5.700000047683716,RichText instrumentation,NA
+Playwright delay: key held down,large post,990,RichText onInput total,10.899999856948853,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,RichText registry.batch,10.5,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,RichText non-batch overhead,0.39999985694885254,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,RichText direct callbacks,1.9000000953674316,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,RichText batch remainder,8.5,RichText instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,1000,RichText onInput total,6.599999904632568,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,RichText registry.batch,6.5,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,RichText non-batch overhead,0.09999990463256836,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,RichText direct callbacks,0.7000000476837158,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,RichText batch remainder,5.799999952316284,RichText instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1200,RichText onInput total,9.100000143051147,RichText instrumentation,NA
+Playwright delay: key held down,large post,1200,RichText registry.batch,8.700000047683716,RichText instrumentation,NA
+Playwright delay: key held down,large post,1200,RichText non-batch overhead,0.40000009536743164,RichText instrumentation,NA
+Playwright delay: key held down,large post,1200,RichText direct callbacks,1.499999761581421,RichText instrumentation,NA
+Playwright delay: key held down,large post,1200,RichText batch remainder,7.1000001430511475,RichText instrumentation,NA
+Playwright delay: key held down,large post,1300,RichText onInput total,10.200000047683716,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,RichText registry.batch,9.599999904632568,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,RichText non-batch overhead,0.6000001430511475,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,RichText direct callbacks,1.7000000476837158,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,RichText batch remainder,7.8999998569488525,RichText instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1550,RichText onInput total,8.399999856948853,RichText instrumentation,NA
+Playwright delay: key held down,large post,1550,RichText registry.batch,8.100000143051147,RichText instrumentation,NA
+Playwright delay: key held down,large post,1550,RichText non-batch overhead,0.2999997138977051,RichText instrumentation,NA
+Playwright delay: key held down,large post,1550,RichText direct callbacks,0.8999998569488525,RichText instrumentation,NA
+Playwright delay: key held down,large post,1550,RichText batch remainder,7.1000001430511475,RichText instrumentation,NA
+Playwright delay: key held down,large post,2000,RichText onInput total,10,RichText instrumentation,NA
+Playwright delay: key held down,large post,2000,RichText registry.batch,9.700000047683716,RichText instrumentation,NA
+Playwright delay: key held down,large post,2000,RichText non-batch overhead,0.2999999523162842,RichText instrumentation,NA
+Playwright delay: key held down,large post,2000,RichText direct callbacks,1.5,RichText instrumentation,NA
+Playwright delay: key held down,large post,2000,RichText batch remainder,8.200000047683716,RichText instrumentation,NA
+"Complete keypress, then wait",empty post,990,React external-store listener,2.0999999046325684,Data instrumentation,NA
+"Complete keypress, then wait",empty post,990,Data batch callback,0.4500000476837158,Data instrumentation,NA
+"Complete keypress, then wait",empty post,990,core/block-editor subscribers,2.5999999046325684,Data instrumentation,NA
+"Complete keypress, then wait",empty post,990,Data registry.batch total,4.599999904632568,Data instrumentation,NA
+"Complete keypress, then wait",empty post,990,core/block-editor resume,2.8499999046325684,Data instrumentation,NA
+"Complete keypress, then wait",empty post,990,useSelect.mapSelect,1.8999998569488523,Data instrumentation,NA
+"Complete keypress, then wait",empty post,990,useSelect.onChange,2.249999761581421,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1000,React external-store listener,1.850000262260437,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1000,Data batch callback,0.34999990463256836,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1000,core/block-editor subscribers,2.450000047683716,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1000,Data registry.batch total,4.350000023841858,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1000,core/block-editor resume,2.6999999284744263,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1000,useSelect.mapSelect,1.6000003814697266,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1000,useSelect.onChange,2.000000238418579,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1200,React external-store listener,2.149999976158142,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1200,Data batch callback,0.4499998092651367,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1200,core/block-editor subscribers,2.75,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1200,Data registry.batch total,4.899999976158142,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1200,core/block-editor resume,3,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1200,useSelect.mapSelect,1.950000047683716,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1200,useSelect.onChange,2.3000000715255737,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1300,React external-store listener,2.0500000715255737,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,Data batch callback,0.5000001192092896,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,core/block-editor subscribers,2.75,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,Data registry.batch total,5.050000190734863,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,core/block-editor resume,3.0500000715255737,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,useSelect.mapSelect,1.6000001430511477,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1300,useSelect.onChange,2.200000166893006,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",empty post,1550,React external-store listener,2.249999761581421,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1550,Data batch callback,0.4000000953674317,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1550,core/block-editor subscribers,2.75,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1550,Data registry.batch total,4.900000095367432,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1550,core/block-editor resume,3.049999952316284,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1550,useSelect.mapSelect,1.899999976158142,Data instrumentation,NA
+"Complete keypress, then wait",empty post,1550,useSelect.onChange,2.4000000953674316,Data instrumentation,NA
+"Complete keypress, then wait",empty post,2000,React external-store listener,1.6499998569488523,Data instrumentation,NA
+"Complete keypress, then wait",empty post,2000,Data batch callback,0.3500000238418579,Data instrumentation,NA
+"Complete keypress, then wait",empty post,2000,core/block-editor subscribers,2.049999833106994,Data instrumentation,NA
+"Complete keypress, then wait",empty post,2000,Data registry.batch total,3.950000047683716,Data instrumentation,NA
+"Complete keypress, then wait",empty post,2000,core/block-editor resume,2.350000023841858,Data instrumentation,NA
+"Complete keypress, then wait",empty post,2000,useSelect.mapSelect,1.499999761581421,Data instrumentation,NA
+"Complete keypress, then wait",empty post,2000,useSelect.onChange,1.799999713897705,Data instrumentation,NA
+Playwright delay: key held down,empty post,990,React external-store listener,3.9499999284744263,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,Data batch callback,1.0499999523162842,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,core/block-editor subscribers,4.950000047683716,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,Data registry.batch total,9.400000095367432,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,core/block-editor resume,5.700000047683716,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,useSelect.mapSelect,3.299999833106994,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,990,useSelect.onChange,4.099999904632568,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,empty post,1000,React external-store listener,2.949999690055847,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,Data batch callback,0.6499999761581421,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,core/block-editor subscribers,3.6999998092651367,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,Data registry.batch total,6.949999928474426,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,core/block-editor resume,4.099999904632568,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,useSelect.mapSelect,2.399999737739563,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1000,useSelect.onChange,3.1499998569488525,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,empty post,1200,React external-store listener,3.950000047683716,Data instrumentation,NA
+Playwright delay: key held down,empty post,1200,Data batch callback,0.8999998569488525,Data instrumentation,NA
+Playwright delay: key held down,empty post,1200,core/block-editor subscribers,4.950000047683716,Data instrumentation,NA
+Playwright delay: key held down,empty post,1200,Data registry.batch total,9.100000023841858,Data instrumentation,NA
+Playwright delay: key held down,empty post,1200,core/block-editor resume,5.550000071525574,Data instrumentation,NA
+Playwright delay: key held down,empty post,1200,useSelect.mapSelect,3.650000095367432,Data instrumentation,NA
+Playwright delay: key held down,empty post,1200,useSelect.onChange,4.1499998569488525,Data instrumentation,NA
+Playwright delay: key held down,empty post,1300,React external-store listener,3.850000023841858,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,Data batch callback,0.6499999761581421,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,core/block-editor subscribers,4.5000001192092896,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,Data registry.batch total,8.050000071525574,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,core/block-editor resume,4.950000047683716,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,useSelect.mapSelect,3.3000001907348633,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1300,useSelect.onChange,4.100000023841858,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,empty post,1550,React external-store listener,2.4499999284744263,Data instrumentation,NA
+Playwright delay: key held down,empty post,1550,Data batch callback,0.5000001192092896,Data instrumentation,NA
+Playwright delay: key held down,empty post,1550,core/block-editor subscribers,3.149999976158142,Data instrumentation,NA
+Playwright delay: key held down,empty post,1550,Data registry.batch total,5.650000095367432,Data instrumentation,NA
+Playwright delay: key held down,empty post,1550,core/block-editor resume,3.4499999284744263,Data instrumentation,NA
+Playwright delay: key held down,empty post,1550,useSelect.mapSelect,2.0000001192092896,Data instrumentation,NA
+Playwright delay: key held down,empty post,1550,useSelect.onChange,2.7499998807907104,Data instrumentation,NA
+Playwright delay: key held down,empty post,2000,React external-store listener,3.5999999046325684,Data instrumentation,NA
+Playwright delay: key held down,empty post,2000,Data batch callback,0.7000000476837158,Data instrumentation,NA
+Playwright delay: key held down,empty post,2000,core/block-editor subscribers,4.549999952316284,Data instrumentation,NA
+Playwright delay: key held down,empty post,2000,Data registry.batch total,8.399999976158142,Data instrumentation,NA
+Playwright delay: key held down,empty post,2000,core/block-editor resume,5.199999928474426,Data instrumentation,NA
+Playwright delay: key held down,empty post,2000,useSelect.mapSelect,2.899999976158142,Data instrumentation,NA
+Playwright delay: key held down,empty post,2000,useSelect.onChange,3.7499998807907104,Data instrumentation,NA
+"Complete keypress, then wait",large post,990,React external-store listener,2.6999999284744263,Data instrumentation,NA
+"Complete keypress, then wait",large post,990,Data batch callback,3.200000047683716,Data instrumentation,NA
+"Complete keypress, then wait",large post,990,core/block-editor subscribers,8.200000286102295,Data instrumentation,NA
+"Complete keypress, then wait",large post,990,Data registry.batch total,13.600000023841858,Data instrumentation,NA
+"Complete keypress, then wait",large post,990,core/block-editor resume,9.599999904632568,Data instrumentation,NA
+"Complete keypress, then wait",large post,990,useSelect.mapSelect,2.1999999284744263,Data instrumentation,NA
+"Complete keypress, then wait",large post,990,useSelect.onChange,5.450000166893005,Data instrumentation,NA
+"Complete keypress, then wait",large post,1000,React external-store listener,2.9000003337860107,Data instrumentation,NA
+"Complete keypress, then wait",large post,1000,Data batch callback,2.9000000953674316,Data instrumentation,NA
+"Complete keypress, then wait",large post,1000,core/block-editor subscribers,7.4000004529953,Data instrumentation,NA
+"Complete keypress, then wait",large post,1000,Data registry.batch total,12.399999976158142,Data instrumentation,NA
+"Complete keypress, then wait",large post,1000,core/block-editor resume,8.849999904632568,Data instrumentation,NA
+"Complete keypress, then wait",large post,1000,useSelect.mapSelect,2.100000262260437,Data instrumentation,NA
+"Complete keypress, then wait",large post,1000,useSelect.onChange,5.000000476837158,Data instrumentation,NA
+"Complete keypress, then wait",large post,1200,React external-store listener,3.4999996423721313,Data instrumentation,NA
+"Complete keypress, then wait",large post,1200,Data batch callback,3.549999952316284,Data instrumentation,NA
+"Complete keypress, then wait",large post,1200,core/block-editor subscribers,9.25,Data instrumentation,NA
+"Complete keypress, then wait",large post,1200,Data registry.batch total,15.200000047683716,Data instrumentation,NA
+"Complete keypress, then wait",large post,1200,core/block-editor resume,10.800000071525574,Data instrumentation,NA
+"Complete keypress, then wait",large post,1200,useSelect.mapSelect,2.2999993562698364,Data instrumentation,NA
+"Complete keypress, then wait",large post,1200,useSelect.onChange,6.149999499320984,Data instrumentation,NA
+"Complete keypress, then wait",large post,1300,React external-store listener,3.550000548362732,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,Data batch callback,3.649999976158142,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,core/block-editor subscribers,8.74999988079071,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,Data registry.batch total,15.349999904632568,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,core/block-editor resume,10.850000023841858,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,useSelect.mapSelect,2.6000001430511475,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1300,useSelect.onChange,5.7499998807907104,Data instrumentation,"tap then wait, 1300ms"
+"Complete keypress, then wait",large post,1550,React external-store listener,3.500000238418579,Data instrumentation,NA
+"Complete keypress, then wait",large post,1550,Data batch callback,3.450000047683716,Data instrumentation,NA
+"Complete keypress, then wait",large post,1550,core/block-editor subscribers,8.750000357627869,Data instrumentation,NA
+"Complete keypress, then wait",large post,1550,Data registry.batch total,14.699999928474426,Data instrumentation,NA
+"Complete keypress, then wait",large post,1550,core/block-editor resume,10.299999952316284,Data instrumentation,NA
+"Complete keypress, then wait",large post,1550,useSelect.mapSelect,2.5000003576278687,Data instrumentation,NA
+"Complete keypress, then wait",large post,1550,useSelect.onChange,5.900000095367432,Data instrumentation,NA
+"Complete keypress, then wait",large post,2000,React external-store listener,3.2000008821487427,Data instrumentation,NA
+"Complete keypress, then wait",large post,2000,Data batch callback,3.3000000715255737,Data instrumentation,NA
+"Complete keypress, then wait",large post,2000,core/block-editor subscribers,8.650000929832458,Data instrumentation,NA
+"Complete keypress, then wait",large post,2000,Data registry.batch total,14.50000011920929,Data instrumentation,NA
+"Complete keypress, then wait",large post,2000,core/block-editor resume,10.350000023841858,Data instrumentation,NA
+"Complete keypress, then wait",large post,2000,useSelect.mapSelect,2.250000476837158,Data instrumentation,NA
+"Complete keypress, then wait",large post,2000,useSelect.onChange,5.600000739097595,Data instrumentation,NA
+Playwright delay: key held down,large post,990,React external-store listener,4.949999928474426,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,Data batch callback,6.5,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,core/block-editor subscribers,12.6500004529953,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,Data registry.batch total,23.399999976158146,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,core/block-editor resume,15.399999976158142,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,useSelect.mapSelect,3.6000003814697266,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,990,useSelect.onChange,7.800000071525574,Data instrumentation,"key held, 990ms"
+Playwright delay: key held down,large post,1000,React external-store listener,3.500000476837158,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,Data batch callback,3.4499998092651367,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,core/block-editor subscribers,8.450000166893005,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,Data registry.batch total,14.24999988079071,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,core/block-editor resume,9.949999928474426,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,useSelect.mapSelect,2.8000000715255737,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1000,useSelect.onChange,5.7500001192092896,Data instrumentation,"key held, 1000ms"
+Playwright delay: key held down,large post,1200,React external-store listener,4.499999761581421,Data instrumentation,NA
+Playwright delay: key held down,large post,1200,Data batch callback,6.600000023841858,Data instrumentation,NA
+Playwright delay: key held down,large post,1200,core/block-editor subscribers,12.650000095367432,Data instrumentation,NA
+Playwright delay: key held down,large post,1200,Data registry.batch total,23.399999976158146,Data instrumentation,NA
+Playwright delay: key held down,large post,1200,core/block-editor resume,15.350000023841858,Data instrumentation,NA
+Playwright delay: key held down,large post,1200,useSelect.mapSelect,3.4499999284744263,Data instrumentation,NA
+Playwright delay: key held down,large post,1200,useSelect.onChange,7.700000882148743,Data instrumentation,NA
+Playwright delay: key held down,large post,1300,React external-store listener,4.449999690055847,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,Data batch callback,6.649999737739563,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,core/block-editor subscribers,12.65000021457672,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,Data registry.batch total,23.700000047683716,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,core/block-editor resume,15.450000047683716,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,useSelect.mapSelect,3.1500000953674316,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1300,useSelect.onChange,7.899999380111694,Data instrumentation,"key held, 1300ms"
+Playwright delay: key held down,large post,1550,React external-store listener,4.500000357627869,Data instrumentation,NA
+Playwright delay: key held down,large post,1550,Data batch callback,4.950000047683716,Data instrumentation,NA
+Playwright delay: key held down,large post,1550,core/block-editor subscribers,11.90000021457672,Data instrumentation,NA
+Playwright delay: key held down,large post,1550,Data registry.batch total,20.100000023841854,Data instrumentation,NA
+Playwright delay: key held down,large post,1550,core/block-editor resume,14,Data instrumentation,NA
+Playwright delay: key held down,large post,1550,useSelect.mapSelect,3.4000004529953003,Data instrumentation,NA
+Playwright delay: key held down,large post,1550,useSelect.onChange,7.5000001192092896,Data instrumentation,NA
+Playwright delay: key held down,large post,2000,React external-store listener,4.199999451637268,Data instrumentation,NA
+Playwright delay: key held down,large post,2000,Data batch callback,5.149999976158142,Data instrumentation,NA
+Playwright delay: key held down,large post,2000,core/block-editor subscribers,10.250000596046448,Data instrumentation,NA
+Playwright delay: key held down,large post,2000,Data registry.batch total,19.200000047683716,Data instrumentation,NA
+Playwright delay: key held down,large post,2000,core/block-editor resume,12.899999976158142,Data instrumentation,NA
+Playwright delay: key held down,large post,2000,useSelect.mapSelect,3,Data instrumentation,NA
+Playwright delay: key held down,large post,2000,useSelect.onChange,6.850000023841858,Data instrumentation,NA

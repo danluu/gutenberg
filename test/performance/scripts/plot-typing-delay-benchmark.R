@@ -7106,6 +7106,171 @@ if (
 	)
 }
 
+rich_text_span_summary_path <- file.path(data_dir, "typing-delay-rich-text-span-summary.csv")
+rich_text_batch_summary_path <- file.path(data_dir, "typing-delay-rich-text-batch-summary.csv")
+data_batch_summary_path <- file.path(data_dir, "typing-delay-data-batch-summary.csv")
+
+if (
+	file.exists(rich_text_span_summary_path) &&
+	file.exists(rich_text_batch_summary_path) &&
+	file.exists(data_batch_summary_path)
+) {
+	rich_text_span_funnel <- read_csv(rich_text_span_summary_path, show_col_types = FALSE) %>%
+		filter(
+			name %in% c(
+				"rich-text.onInput.total",
+				"rich-text.handleChange.registryBatch"
+			)
+		) %>%
+		select(run_id, mode_label, span_scenario_label, delayMs, name, median_ms) %>%
+		pivot_wider(names_from = name, values_from = median_ms)
+
+	rich_text_batch_funnel <- read_csv(rich_text_batch_summary_path, show_col_types = FALSE)
+
+	rich_text_funnel <- rich_text_span_funnel %>%
+		left_join(
+			rich_text_batch_funnel,
+			by = c("run_id", "mode_label", "span_scenario_label", "delayMs")
+		) %>%
+		transmute(
+			mode_label,
+			span_scenario_label,
+			delayMs,
+			`RichText onInput total` = `rich-text.onInput.total`,
+			`RichText registry.batch` = `rich-text.handleChange.registryBatch`,
+			`RichText non-batch overhead` = pmax(
+				`rich-text.onInput.total` - `rich-text.handleChange.registryBatch`,
+				0
+			),
+			`RichText direct callbacks` = selection_change_median_ms + on_change_median_ms,
+			`RichText batch remainder` = batch_remainder_median_ms
+		) %>%
+		pivot_longer(
+			cols = starts_with("RichText"),
+			names_to = "stage",
+			values_to = "median_ms"
+		) %>%
+		mutate(measurement_family = "RichText instrumentation")
+
+	data_funnel <- read_csv(data_batch_summary_path, show_col_types = FALSE) %>%
+		filter(
+			component %in% c(
+				"registry.batch total",
+				"batch callback",
+				"resume core/block-editor",
+				"core/block-editor subscribers",
+				"React external-store listener",
+				"useSelect onChange",
+				"useSelect mapSelect"
+			)
+		) %>%
+		transmute(
+			mode_label,
+			span_scenario_label,
+			delayMs,
+			stage = recode(
+				component,
+				`registry.batch total` = "Data registry.batch total",
+				`batch callback` = "Data batch callback",
+				`resume core/block-editor` = "core/block-editor resume",
+				`core/block-editor subscribers` = "core/block-editor subscribers",
+				`React external-store listener` = "React external-store listener",
+				`useSelect onChange` = "useSelect.onChange",
+				`useSelect mapSelect` = "useSelect.mapSelect"
+			),
+			median_ms,
+			measurement_family = "Data instrumentation"
+		)
+
+	input_attribution_funnel <- bind_rows(rich_text_funnel, data_funnel) %>%
+		mutate(
+			stage = factor(
+				stage,
+				levels = rev(c(
+					"RichText onInput total",
+					"RichText registry.batch",
+					"RichText non-batch overhead",
+					"RichText direct callbacks",
+					"RichText batch remainder",
+					"Data registry.batch total",
+					"Data batch callback",
+					"core/block-editor resume",
+					"core/block-editor subscribers",
+					"useSelect.onChange",
+					"useSelect.mapSelect",
+					"React external-store listener"
+				))
+			),
+			mode_label = factor(
+				mode_label,
+				levels = c(
+					"Playwright delay: key held down",
+					"Complete keypress, then wait"
+				)
+			),
+			case_label = case_when(
+				mode_label == "Playwright delay: key held down" ~ paste0("key held, ", delayMs, "ms"),
+				mode_label == "Complete keypress, then wait" ~ paste0("tap then wait, ", delayMs, "ms"),
+				TRUE ~ paste0(mode_label, ", ", delayMs, "ms")
+			),
+			case_label = factor(
+				case_label,
+				levels = c(
+					"key held, 990ms",
+					"key held, 1000ms",
+					"key held, 1300ms",
+					"tap then wait, 1300ms"
+				)
+			)
+		)
+
+	write_csv(
+		input_attribution_funnel,
+		file.path(data_dir, "typing-delay-input-attribution-funnel.csv")
+	)
+
+	input_attribution_funnel_plot <- input_attribution_funnel %>%
+		filter(
+			span_scenario_label == "large post",
+			!is.na(case_label),
+			stage %in% rev(c(
+				"RichText onInput total",
+				"RichText registry.batch",
+				"RichText non-batch overhead",
+				"RichText batch remainder",
+				"Data registry.batch total",
+				"core/block-editor resume",
+				"core/block-editor subscribers",
+				"useSelect.onChange",
+				"useSelect.mapSelect"
+			))
+		)
+
+	save_plot(
+		ggplot(
+			input_attribution_funnel_plot,
+			aes(median_ms, stage, color = case_label, shape = measurement_family)
+		) +
+			geom_point(size = 3.1, alpha = 0.92, position = position_dodge(width = 0.55)) +
+			scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`RichText instrumentation` = 16,
+				`Data instrumentation` = 17
+			), drop = FALSE) +
+			labs(
+				title = "The split RichText path points into data fanout, not DOM text work",
+				subtitle = "Large-post diagnostic traces; RichText and data spans are separate instrumentation runs and are not additive",
+				x = "Median duration (ms)",
+				y = NULL,
+				color = "Case",
+				shape = "Instrumentation"
+			),
+		"132-input-attribution-funnel.png",
+		width = 11,
+		height = 7.5
+	)
+}
+
 use_select_owner_summary_path <- file.path(data_dir, "typing-delay-use-select-owner-summary.csv")
 if (file.exists(use_select_owner_summary_path)) {
 	use_select_owner_summary <- read_csv(use_select_owner_summary_path, show_col_types = FALSE) %>%

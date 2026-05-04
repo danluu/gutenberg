@@ -588,6 +588,8 @@ The R script derives:
     batch breakdown.
 -   `data/typing-delay-data-store-resume-summary.csv`: per-store resume timing
     for input-matched data batches.
+-   `data/typing-delay-input-attribution-funnel.csv`: compact RichText-to-data
+    attribution funnel for the already split input path.
 -   `data/typing-delay-use-select-owner-summary.csv`: source-mapped owner
     summary for the targeted `useSelect` attribution traces.
 -   `data/typing-delay-causality-*.csv`: targeted traces that separate
@@ -5231,6 +5233,38 @@ was too broad. The expensive store is not an even spread across the registry:
 `core/block-editor` is the dominant resume in the input-matched batches. Other
 stores are small in this workload.
 
+### Input Attribution Funnel
+
+The old open item "split `RichText` `onInput`" is now closed for the current
+instrumented runs. The useful remaining caveat is that the RichText and data
+spans come from separate instrumentation passes, so the absolute values should
+be read as an attribution funnel, not as additive parts from one identical run.
+
+![Input attribution funnel](figures/132-input-attribution-funnel.png)
+
+For the large-post key-held `1300ms` case, direct non-batch RichText overhead is
+only `0.6ms`: `onInput` is `10.2ms` and `registry.batch` is `9.6ms`. The direct
+RichText callbacks are also small; the RichText batch remainder is `7.9ms`. The
+separate data-span run points into the same lower layer: data `registry.batch`
+is `23.7ms`, `core/block-editor` resume is `15.5ms`, block-editor subscriber
+fanout is `12.7ms`, and `useSelect.onChange` is `7.9ms`.
+
+Selected large-post medians:
+
+| Case | RichText `onInput` | RichText batch remainder | Data batch | `core/block-editor` resume | `useSelect.onChange` | `mapSelect` |
+| ---- | -----------------: | -----------------------: | ---------: | -------------------------: | -------------------: | ----------: |
+| key held, `990ms` | `10.9ms` | `8.5ms` | `23.4ms` | `15.4ms` | `7.8ms` | `3.6ms` |
+| key held, `1000ms` | `6.6ms` | `5.8ms` | `14.2ms` | `10.0ms` | `5.8ms` | `2.8ms` |
+| key held, `1300ms` | `10.2ms` | `7.9ms` | `23.7ms` | `15.5ms` | `7.9ms` | `3.2ms` |
+| tap then wait, `1300ms` | `7.1ms` | `6.3ms` | `15.3ms` | `10.9ms` | `5.8ms` | `2.6ms` |
+
+This refines the recommendation. There is no longer much value in further
+splitting DOM record creation, apply-record, serialization, or direct
+`onChange`/`onInput` callbacks for this artifact. The next unexplained layer is
+React/render ownership after the `useSelect` and external-store listener path,
+plus product work on which block-list subscriptions need to wake for an ordinary
+text-only attribute update.
+
 ### useSelect Owner Attribution
 
 The previous data-span pass stopped at "subscriber fanout." I added one more
@@ -5813,6 +5847,16 @@ calls are likely skippable for ordinary text-only edits, while `5.3ms` /
 `580` `BlockListItems` calls remain a selection/tree-validation target rather
 than an obvious removal.
 
+The older RichText-split open item is closed by the existing instrumented runs
+and the new funnel view. Direct non-batch RichText work is sub-millisecond in
+the large-post key-held cases (`0.1-0.6ms` at `990ms`, `1000ms`, and `1300ms`).
+The cost sits behind `registry.batch`, then inside `core/block-editor` resume,
+block-editor subscriber fanout, and `useSelect.onChange`. The remaining
+React-side question is not DOM record creation, apply-record, serialization, or
+the direct parent callback; it is render ownership after the external-store /
+`useSelect` path and which subscriptions can avoid waking on ordinary text-only
+updates.
+
 The new selector-dependency matrix and guard-candidate pass answer that one
 level deeper. The hottest per-`BlockEdit` and per-rendered-block rows line up
 with the fixture's `1,437` blocks, while the actual typed character changes one
@@ -5938,11 +5982,11 @@ For investigation:
     take about `111m`.
 -   Run fresh browser contexts and fresh posts for each delay when comparing delay
     values.
--   Split the RichText `onInput` callback into source-level timing spans for
-    `createRecord`, `applyRecord`, serialization, data dispatch, and render.
--   Extend the `useSelect` owner traces from source-mapped hook callbacks to
-    React render ownership, so the components woken by the `core/block-editor`
-    fanout are identifiable.
+-   The RichText `onInput` split is now deep enough for this artifact: direct DOM
+    record creation, apply-record, serialization, and parent callbacks are small.
+    Extend the existing `useSelect` owner traces from source-mapped hook
+    callbacks to React render ownership, so the components woken after the
+    `core/block-editor` fanout are identifiable.
 -   For the block-list owner groups identified here, separate necessary
     text-input invalidations from broad block-tree invalidations.
 -   Keep instrumenting around the post-keyup interval, but focus below ordinary
