@@ -1,0 +1,18 @@
+manifest,manifest_order,manifest_label,lane,evidence_family,family_order,total_debt_weight,required_missing,required_partial,coverage_weight,new_observer_level
+CI topology retained-metric manifest,1,1. CI topology retained-metric manifest,decision,sample/topology,1,27,0,8,27,topology run
+CI topology retained-metric manifest,1,1. CI topology retained-metric manifest,decision,readiness/correctness,2,9,0,4,9,topology run
+CI topology retained-metric manifest,1,1. CI topology retained-metric manifest,decision,portability metadata,3,16,4,0,16,topology run
+Pattern readiness/resource manifest,2,2. Pattern readiness/resource manifest,decision,sample/topology,1,27,0,8,27,topology plus readiness probes
+Pattern readiness/resource manifest,2,2. Pattern readiness/resource manifest,decision,readiness/correctness,2,9,0,4,9,topology plus readiness probes
+Pattern readiness/resource manifest,2,2. Pattern readiness/resource manifest,decision,portability metadata,3,16,4,0,16,topology plus readiness probes
+Behavior-gated source prototype manifest,3,3. Behavior-gated source prototype manifest,source,behavior/source safety,4,10,1,2,10,code prototype
+Behavior-gated source prototype manifest,3,3. Behavior-gated source prototype manifest,source,sample/topology,1,27,0,8,27,code prototype
+Retained-key sidecar acceptance manifest,4,4. Retained-key sidecar acceptance manifest,mechanism prerequisite,sidecar/joinability,5,20,4,2,20,sidecar
+Retained-key sidecar acceptance manifest,4,4. Retained-key sidecar acceptance manifest,mechanism prerequisite,sample/topology,1,27,0,8,27,sidecar
+Retained-key sidecar acceptance manifest,4,4. Retained-key sidecar acceptance manifest,mechanism prerequisite,portability metadata,3,16,4,0,16,sidecar
+CPU/QoS counter manifest,5,5. CPU/QoS counter manifest,mechanism,system counters,6,4,1,0,4,root counters
+CPU/QoS counter manifest,5,5. CPU/QoS counter manifest,mechanism,sidecar/joinability,5,20,4,2,20,root counters
+CPU/QoS counter manifest,5,5. CPU/QoS counter manifest,mechanism,portability metadata,3,16,4,0,16,root counters
+Workload/display expansion manifest,6,6. Workload/display expansion manifest,claim expansion,claim expansion,7,4,1,0,4,replay or external observer
+Workload/display expansion manifest,6,6. Workload/display expansion manifest,claim expansion,behavior/source safety,4,10,1,2,10,replay or external observer
+Workload/display expansion manifest,6,6. Workload/display expansion manifest,claim expansion,sidecar/joinability,5,20,4,2,20,replay or external observer

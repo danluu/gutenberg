@@ -1068,6 +1068,11 @@ The R script derives:
     endpoints.
 -   `data/typing-delay-open-question-evidence-debt-summary.csv`: rollup of the
     weighted blocker count by evidence family and closure mode.
+-   `data/typing-delay-open-question-closure-manifests.csv`: concrete closure
+    manifests for each remaining artifact family, including required archives,
+    close/expand conditions, dependencies, and claims unlocked.
+-   `data/typing-delay-open-question-closure-manifest-families.csv`: mapping
+    from closure manifests to the evidence-debt families each one covers.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9483,6 +9488,30 @@ three concrete artifact families: CI/readiness rows with full metadata, a
 behavior-gated source prototype, or a retained-key sidecar. Everything else is a
 claim-expansion project, not a prerequisite for explaining the current
 benchmark.
+
+The closure-manifest view turns those blocker families into executable
+artifacts. Each row has a close condition and an expand condition; without those
+predeclared outcomes, another run would be easy to rationalize after the fact.
+
+![Open question closure manifests](figures/216-open-question-closure-manifests.png)
+
+![Open question closure manifest coverage](figures/217-open-question-closure-manifest-coverage.png)
+
+| Closure manifest | Closes only if | Expands if |
+| ---------------- | -------------- | ---------- |
+| CI topology retained-metric manifest | real Performance Tests topology preserves local ordering, retained counts, failures, first-key tails, and resource placement | ordering changes, retained counts move, first-key tails widen, failures appear, or resources enter the measured window |
+| Pattern readiness/resource manifest | source-specific readiness and resource quiet preserve preview/canvas behavior, retained counts, q50 range, and failures across lanes | readiness misses resources, preview/canvas failures move into measurement, or fixed-wait fallback is more reliable |
+| Behavior-gated source prototype manifest | behavior and compatibility fixtures pass, source-span fanout collapses, and aggregate timing moves in the same direction | behavior changes, public API compatibility breaks, source spans do not collapse, or timing moves without source evidence |
+| Retained-key sidecar acceptance manifest | every retained key joins to sidecar rows and sidecar-on/off controls preserve class ordering, retained counts, and q summaries | join coverage fails, clocks drift, renderer identity is ambiguous, or sidecar collection changes ordering |
+| CPU/QoS counter manifest | joined counters separate fast and slow classes while sidecar controls preserve ordering | counters do not separate classes, collection perturbs ordering, or root trace is required but unavailable |
+| Workload/display expansion manifest | replay strata or external endpoints preserve the fixed-`x` causal shape and add no observer-ordering reversal | representative strata diverge, external endpoints disagree, assertions fail, or observer collection changes ordering |
+
+This is the current closure protocol. The next action should be chosen by the
+claim being made: CI wait changes need the CI topology and pattern-readiness
+manifests; source optimization needs the behavior-gated prototype; mechanism
+naming needs sidecar acceptance before root counters; product or hardware-display
+claims need replay or external endpoints. A run that does not archive the fields
+listed in its manifest should not be used to close the question.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

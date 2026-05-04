@@ -22896,6 +22896,146 @@ save_plot(
 	height = 7.2
 )
 
+open_question_closure_manifests <- tribble(
+	~manifest, ~manifest_order, ~lane, ~evidence_families, ~primary_questions, ~must_archive, ~close_condition, ~expand_condition, ~claims_unlocked, ~depends_on, ~decision_leverage, ~execution_cost, ~new_observer_level,
+	"CI topology retained-metric manifest", 1, "decision", "sample/topology; readiness/correctness; portability metadata", "Typing startup wait; absolute CI portability; first-key reliability", "raw retained rows; q25/q50/q75/cnt; per-run and branch order; first-key tails; failures/actionability; resource groups; runner/browser/wp-env/CPU/container/git metadata", "Real Performance Tests topology preserves local ordering, retained counts, failures, first-key tails, and resource placement.", "Ordering changes, retained counts move, first-key tails widen, failures appear, or resource timing enters the measured window.", "CI wait-policy and local-to-CI stability claims", "none", 5, 3, "topology run",
+	"Pattern readiness/resource manifest", 2, "decision", "sample/topology; readiness/correctness; portability metadata", "Site/Post Editor pattern-loading wait removal", "per-spec raw retained rows; q summaries; preview/canvas/actionability counts; resource quiet groups; readiness predicate logs; timeout/fallback logs; lane metadata", "Source-specific readiness and resource quiet preserve preview/canvas behavior, retained counts, q50 range, and failures across lanes.", "Readiness predicate misses resources, preview/canvas failures move into measurement, or fixed-wait fallback beats predicate reliability.", "Pattern-wait removal or fallback choice", "CI topology retained-metric manifest if changing CI waits", 5, 3, "topology plus readiness probes",
+	"Behavior-gated source prototype manifest", 3, "source", "behavior/source safety; sample/topology", "Selector/source guards; store-partition prerequisite", "behavior fixtures; compatibility fixtures; before/after source spans; listener fanout counts; matched aggregate rows only after gates pass", "Behavior and compatibility fixtures pass, targeted source-span fanout collapses, and aggregate timing moves in the same direction.", "Behavior changes, public API compatibility breaks, source spans do not collapse, or aggregate timing moves without source evidence.", "Source optimization claim for the targeted owner", "none", 4, 2, "code prototype",
+	"Retained-key sidecar acceptance manifest", 4, "mechanism prerequisite", "sidecar/joinability; sample/topology; portability metadata", "Chromium runtime checkpoint; CPU/QoS mechanism prerequisite", "key-window IDs; browser/driver clock sync; helper policy; renderer identity; command identity; EventDispatch timing; collector windows; sidecar-on/off rows", "Every retained key joins to sidecar rows and sidecar-on/off controls preserve class ordering, retained counts, and q summaries.", "Join coverage fails, clocks drift, renderer identity is ambiguous, or sidecar collection changes class ordering.", "Permission to run mechanism observers and interpret joined fields", "none", 4, 4, "sidecar",
+	"CPU/QoS counter manifest", 5, "mechanism", "system counters; sidecar/joinability; portability metadata", "P-core/frequency/QoS/cache/runnable-latency mechanism naming", "accepted sidecar; root `powermetrics` or root trace counters; CPU model; frequency/residency/QoS/power/runnable/cache fields; matched no-CPU/ordinary/background/fresh/stale rows", "Joined counters separate fast and slow classes while sidecar controls preserve ordering.", "Counters do not separate classes, collection perturbs ordering, or root trace is required but unavailable.", "Named CPU/QoS/system mechanism claim", "Retained-key sidecar acceptance manifest", 3, 5, "root counters",
+	"Workload/display expansion manifest", 6, "claim expansion", "claim expansion; behavior/source safety; sidecar/joinability", "Human/plugin workload; calibrated presentation/display claims", "replay strata or external endpoints; behavior/visual assertions; per-stratum retained rows; external endpoint calibration; retained-key joins; observer-on/off controls", "Replay strata or external endpoints preserve the fixed-`x` causal shape and add no observer-ordering reversal.", "Representative strata diverge, external endpoints disagree, assertions fail, or observer collection changes ordering.", "Product-latency or hardware/display-scope claim", "Retained-key sidecar acceptance manifest for joined endpoints", 2, 5, "replay or external observer"
+) %>%
+	mutate(
+		manifest_label = paste0(manifest_order, ". ", manifest),
+		lane = factor(lane, levels = c("decision", "source", "mechanism prerequisite", "mechanism", "claim expansion")),
+		manifest_label = fct_reorder(manifest_label, manifest_order, .desc = TRUE),
+		net_priority = decision_leverage / execution_cost,
+		new_observer_level = factor(
+			new_observer_level,
+			levels = c("topology run", "topology plus readiness probes", "code prototype", "sidecar", "root counters", "replay or external observer")
+		)
+	)
+
+open_question_evidence_debt_family_rollup <- open_question_evidence_debt_rollup %>%
+	group_by(evidence_family, family_order) %>%
+	summarize(
+		total_debt_weight = sum(total_debt_weight),
+		required_missing = sum(required_missing),
+		required_partial = sum(required_partial),
+		.groups = "drop"
+	)
+
+open_question_closure_manifest_families <- open_question_closure_manifests %>%
+	separate_rows(evidence_families, sep = ";\\s*") %>%
+	left_join(
+		open_question_evidence_debt_family_rollup,
+		by = c("evidence_families" = "evidence_family")
+	) %>%
+	mutate(
+		evidence_family = evidence_families,
+		family_order = coalesce(family_order, 99),
+		total_debt_weight = coalesce(total_debt_weight, 0),
+		coverage_weight = total_debt_weight,
+		evidence_family = fct_reorder(evidence_family, family_order),
+		manifest_label = fct_reorder(manifest_label, manifest_order, .desc = TRUE)
+	)
+
+open_question_closure_manifest_rollup <- open_question_closure_manifest_families %>%
+	group_by(
+		manifest,
+		manifest_order,
+		manifest_label,
+		lane,
+		primary_questions,
+		must_archive,
+		close_condition,
+		expand_condition,
+		claims_unlocked,
+		depends_on,
+		decision_leverage,
+		execution_cost,
+		net_priority,
+		new_observer_level
+	) %>%
+	summarize(
+		evidence_families_covered = paste(evidence_family, collapse = "; "),
+		debt_weight_covered = sum(coverage_weight, na.rm = TRUE),
+		required_missing_covered = sum(required_missing, na.rm = TRUE),
+		required_partial_covered = sum(required_partial, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(manifest_order)
+
+write_csv(
+	open_question_closure_manifest_rollup,
+	file.path(data_dir, "typing-delay-open-question-closure-manifests.csv")
+)
+
+write_csv(
+	open_question_closure_manifest_families %>%
+		select(
+			manifest,
+			manifest_order,
+			manifest_label,
+			lane,
+			evidence_family,
+			family_order,
+			total_debt_weight,
+			required_missing,
+			required_partial,
+			coverage_weight,
+			new_observer_level
+		),
+	file.path(data_dir, "typing-delay-open-question-closure-manifest-families.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_closure_manifest_rollup,
+		aes(execution_cost, decision_leverage, size = debt_weight_covered, color = lane, label = manifest_order)
+	) +
+		geom_point(alpha = 0.86) +
+		geom_text(color = "white", size = 3.4, fontface = "bold") +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Lane") +
+		scale_size_area(max_size = 12, name = "Evidence debt covered") +
+		scale_x_continuous(breaks = 1:5, limits = c(1.6, 5.4)) +
+		scale_y_continuous(breaks = 1:5, limits = c(1.6, 5.4)) +
+		labs(
+			title = "Closure manifests separate decision work from claim expansion",
+			subtitle = "Highest-leverage next artifacts are CI/readiness topology rows and behavior-gated source work",
+			x = "Execution cost",
+			y = "Decision leverage"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"216-open-question-closure-manifests.png",
+	width = 10.8,
+	height = 7
+)
+
+save_plot(
+	ggplot(
+		open_question_closure_manifest_families,
+		aes(evidence_family, manifest_label, fill = total_debt_weight)
+	) +
+		geom_tile(color = "white", linewidth = 0.45) +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Debt covered") +
+		labs(
+			title = "Each closure manifest covers a different blocker family",
+			subtitle = "Blank cells are not needed by that manifest; darker cells cover larger remaining evidence debt",
+			x = "Evidence family",
+			y = "Closure manifest"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(
+			axis.text.x = element_text(angle = 30, hjust = 1),
+			legend.position = "bottom"
+		),
+	"217-open-question-closure-manifest-coverage.png",
+	width = 12.8,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
