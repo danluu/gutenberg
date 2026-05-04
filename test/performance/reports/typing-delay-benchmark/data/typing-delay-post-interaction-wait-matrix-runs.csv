@@ -1,0 +1,81 @@
+run_set,run_source,local_run,spec,metric,metric_label,measurement_idle_wait_ms,retained_samples,p10_ms,p50_ms,p90_ms,mean_ms,sd_ms,wait_label
+nontyping-wait-screen,original four-run screen,1,post-editor,focus,post-editor / focus,0,10,19.1488,19.929499999999997,22.6706,20.5421,1.5592453623467992,0ms
+nontyping-wait-screen,original four-run screen,2,post-editor,focus,post-editor / focus,0,10,20.3537,20.6945,23.665899999999997,21.7998,2.995527288030162,0ms
+nontyping-wait-screen,original four-run screen,3,post-editor,focus,post-editor / focus,0,10,19.283500000000004,19.938,22.289900000000003,20.5391,1.422453549329468,0ms
+nontyping-wait-screen,original four-run screen,4,post-editor,focus,post-editor / focus,0,10,19.3132,19.975,22.734,20.4965,1.4543935926090368,0ms
+nontyping-wait-screen,original four-run screen,1,post-editor,focus,post-editor / focus,1000,10,28.131,29.2795,31.5679,29.7393,1.976987666459589,1000ms
+nontyping-wait-screen,original four-run screen,2,post-editor,focus,post-editor / focus,1000,10,28.4565,29.1395,36.03909999999999,32.1739,6.9231180266633565,1000ms
+nontyping-wait-screen,original four-run screen,3,post-editor,focus,post-editor / focus,1000,10,22.0768,24.6665,29.806,25.4825,3.0156791477579667,1000ms
+nontyping-wait-screen,original four-run screen,4,post-editor,focus,post-editor / focus,1000,10,23.063,26.228,29.7211,26.2485,3.08426977671467,1000ms
+nontyping-wait-screen,original four-run screen,1,post-editor,inserterHover,post-editor / inserterHover,0,20,2.2745999999999995,2.4795,2.6319999999999997,2.4903,0.17312578329672698,0ms
+nontyping-wait-screen,original four-run screen,2,post-editor,inserterHover,post-editor / inserterHover,0,20,2.3966999999999996,2.678,2.9345,2.7196,0.2978431943507399,0ms
+nontyping-wait-screen,original four-run screen,3,post-editor,inserterHover,post-editor / inserterHover,0,20,2.5027999999999997,2.6624999999999996,2.8408,2.66095,0.14278304300028438,0ms
+nontyping-wait-screen,original four-run screen,4,post-editor,inserterHover,post-editor / inserterHover,0,20,2.3235,2.5010000000000003,2.8009,2.5509999999999997,0.2527896983244123,0ms
+nontyping-wait-screen,original four-run screen,1,post-editor,inserterHover,post-editor / inserterHover,1000,20,4.309100000000001,4.9115,5.728900000000001,4.97605,0.7715193810029388,1000ms
+nontyping-wait-screen,original four-run screen,2,post-editor,inserterHover,post-editor / inserterHover,1000,20,3.2182000000000004,3.8985,4.979100000000001,3.9347,0.6464809273858622,1000ms
+nontyping-wait-screen,original four-run screen,3,post-editor,inserterHover,post-editor / inserterHover,1000,20,3.0870999999999995,3.774,4.1341,3.6974,0.43061490917059536,1000ms
+nontyping-wait-screen,original four-run screen,4,post-editor,inserterHover,post-editor / inserterHover,1000,20,2.8176,3.407,3.8108,3.42645,0.45807819086632834,1000ms
+nontyping-wait-screen,original four-run screen,1,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.2051,7.6945,8.6777,7.8771,0.7040609900980012,0ms
+nontyping-wait-screen,original four-run screen,2,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.434,7.901999999999999,8.7193,8.0371,0.6769528869213212,0ms
+nontyping-wait-screen,original four-run screen,3,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.3273,7.8295,8.7645,8.0093,0.7307481782392617,0ms
+nontyping-wait-screen,original four-run screen,4,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.262,7.6745,8.8553,7.976,0.8063351936040274,0ms
+nontyping-wait-screen,original four-run screen,1,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,13.5317,14.2575,16.7887,14.6025,1.245573072034627,1000ms
+nontyping-wait-screen,original four-run screen,2,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,13.6807,14.2395,15.4563,14.6146,1.0685445137090823,1000ms
+nontyping-wait-screen,original four-run screen,3,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,9.7004,11.0845,13.235,11.4658,1.684304393181021,1000ms
+nontyping-wait-screen,original four-run screen,4,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,10.7268,11.7615,12.7129,11.6535,1.0214043980933527,1000ms
+nontyping-wait-screen,original four-run screen,1,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.1388,2.3484999999999996,2.6747999999999994,2.3868,0.2524576092029005,0ms
+nontyping-wait-screen,original four-run screen,2,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.0867,2.27,2.705,2.3791,0.34058689542220105,0ms
+nontyping-wait-screen,original four-run screen,3,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.2073,2.308,2.6317,2.3716,0.20040192946509605,0ms
+nontyping-wait-screen,original four-run screen,4,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.2826999999999997,2.4965,2.6914999999999996,2.5053,0.24404236881692856,0ms
+nontyping-wait-screen,original four-run screen,1,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,4.4994,4.7364999999999995,5.225099999999999,4.7832,0.3235562118430462,1000ms
+nontyping-wait-screen,original four-run screen,2,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,2.6024,4.397500000000001,5.3317,4.0754,1.2146729966904215,1000ms
+nontyping-wait-screen,original four-run screen,3,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,3.2657999999999996,3.5120000000000005,3.7612999999999994,3.5847,0.4499229687155098,1000ms
+nontyping-wait-screen,original four-run screen,4,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,3.0648000000000004,3.2715,3.7024,3.3673,0.3004578173388071,1000ms
+nontyping-wait-screen,original four-run screen,1,post-editor,listViewOpen,post-editor / listViewOpen,0,10,32.3123,32.959,34.2937,33.2581,1.246908038130943,0ms
+nontyping-wait-screen,original four-run screen,2,post-editor,listViewOpen,post-editor / listViewOpen,0,10,32.284800000000004,33.016,34.2539,33.204299999999996,0.9682489406713092,0ms
+nontyping-wait-screen,original four-run screen,3,post-editor,listViewOpen,post-editor / listViewOpen,0,10,32.111,33.4955,34.6748,33.4571,1.2007487895290825,0ms
+nontyping-wait-screen,original four-run screen,4,post-editor,listViewOpen,post-editor / listViewOpen,0,10,32.309000000000005,33.1335,34.327799999999996,33.4077,1.140099318285717,0ms
+nontyping-wait-screen,original four-run screen,1,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,46.5351,48.8045,50.7445,48.5776,2.2399334414714693,1000ms
+nontyping-wait-screen,original four-run screen,2,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,46.0685,47.5085,51.08449999999999,48.3334,2.6060128847639175,1000ms
+nontyping-wait-screen,original four-run screen,3,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,38.7309,41.2835,44.77459999999999,42.059,4.188922852794818,1000ms
+nontyping-wait-screen,original four-run screen,4,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,38.4066,41.1395,44.1938,41.4582,3.1988984492929564,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,focus,post-editor / focus,0,10,19.6181,20.4985,21.9454,20.6466,0.981153425537741,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,focus,post-editor / focus,0,10,20.0141,20.7425,22.1354,21.052500000000002,1.1847262459225665,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,focus,post-editor / focus,0,10,20.0555,20.532,22.1866,20.9236,0.9599692356181699,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,focus,post-editor / focus,0,10,19.191300000000002,19.945999999999998,22.8672,20.616,1.7164018565980792,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,inserterHover,post-editor / inserterHover,0,20,1.6216,1.7915,1.9528999999999999,1.7792999999999999,0.1441892396890464,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,inserterHover,post-editor / inserterHover,0,20,1.7294,1.8135,1.999,1.8361,0.1252369963834884,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,inserterHover,post-editor / inserterHover,0,20,1.6572999999999998,1.7785,1.9788999999999999,1.7972,0.12466232284392144,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,inserterHover,post-editor / inserterHover,0,20,1.7591,1.8255,2.0239000000000003,1.8693,0.14415236821904076,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.434800000000001,7.9325,9.5397,8.1841,0.8681958880344919,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.3939,7.817,9.590300000000001,8.1316,0.888467244440922,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.2585999999999995,7.8075,9.2758,8.0101,0.8545334594580446,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,inserterOpen,post-editor / inserterOpen,0,10,7.3812,7.597,8.5403,7.8183,0.501439272937855,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.1208,2.4510000000000005,2.6081999999999996,2.4248,0.3212367766409485,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.1508000000000003,2.3760000000000003,2.6405000000000003,2.3956,0.19072970985722765,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.1879,2.303,2.6551,2.3968,0.26604961943216543,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,inserterSearch,post-editor / inserterSearch,0,10,2.2927999999999997,2.4044999999999996,2.543,2.4074999999999998,0.10681890178136914,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,listViewOpen,post-editor / listViewOpen,0,10,29.069200000000002,30.22,33.0464,30.5954,1.6772014521550807,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,listViewOpen,post-editor / listViewOpen,0,10,29.064799999999998,30.0415,32.282300000000006,30.3975,1.4818479641612659,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,listViewOpen,post-editor / listViewOpen,0,10,29.3691,30.360999999999997,32.0841,30.6545,1.5629098395834184,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,listViewOpen,post-editor / listViewOpen,0,10,28.9803,30.2875,31.6103,30.3363,1.351095526682782,0ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,focus,post-editor / focus,1000,10,27.708199999999998,29.9145,34.00939999999999,30.2624,3.2563454362214075,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,focus,post-editor / focus,1000,10,28.2017,29.5065,33.2943,30.2377,2.220040943065891,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,focus,post-editor / focus,1000,10,27.6219,30.133000000000003,32.8769,30.113500000000002,2.1150912903859886,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,focus,post-editor / focus,1000,10,28.6047,30,32.8005,30.352999999999998,1.9270155970077434,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,inserterHover,post-editor / inserterHover,1000,20,2.8179,3.3114999999999997,3.6516,3.29665,0.37071755101637555,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,inserterHover,post-editor / inserterHover,1000,20,2.9448999999999996,3.3265000000000002,3.8977,3.37795,0.4448853755389371,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,inserterHover,post-editor / inserterHover,1000,20,2.8806,3.34,3.708,3.2835,0.36191064614000196,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,inserterHover,post-editor / inserterHover,1000,20,2.7555,3.276,3.6953,3.27785,0.6606663522137088,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,12.8706,14.165,15.042,14.1076,0.9335417862456222,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,13.5727,14.0525,15.5749,14.6445,1.4274332247468218,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,13.5937,14.428,16.324499999999997,14.8905,1.5751842396649631,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,inserterOpen,post-editor / inserterOpen,1000,10,13.2388,14.345500000000001,15.0274,14.2907,0.7523443434432873,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,4.4935,4.7745,5.0661000000000005,4.7395000000000005,0.3430293962135997,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,4.6062,4.896999999999999,5.4834,5.0145,0.4178915994476183,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,4.382099999999999,4.677,4.998100000000001,4.7055,0.27788696742860547,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,inserterSearch,post-editor / inserterSearch,1000,10,4.4335,4.702999999999999,5.0601,4.7537,0.24780460492537698,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,1,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,44.7708,46.326499999999996,51.0419,47.2773,2.645611798599501,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,2,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,45.9597,47.3,49.5,47.7365,2.1998080345541275,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,3,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,45.3653,47.421,52.791199999999996,48.1937,4.042969097361767,1000ms
+post-interaction-wait-matrix-1777896298,fresh grouped interaction block,4,post-editor,listViewOpen,post-editor / listViewOpen,1000,10,45.136300000000006,47.885999999999996,51.6864,48.6924,4.940419419891841,1000ms

@@ -747,6 +747,10 @@ The R script derives:
 -   `data/typing-delay-post-pattern-wait-matrix-*.csv`: focused Post Editor
     `loadPatterns` wait matrix at `0ms`, `250ms`, `500ms`, and `1000ms`, using
     the exact spec path with 8 runs per wait and 10 retained samples per run.
+-   `data/typing-delay-post-interaction-wait-matrix-*.csv`: interaction-only
+    Post Editor wait matrix for focus, List View open, inserter open/search,
+    and inserter hover, combining the original four-run screen with four fresh
+    grouped runs per wait.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -1691,6 +1695,33 @@ change riskier than an interaction-only change. The next useful experiment is no
 longer "does any non-Typing metric care?" but "are pattern-load metrics measuring
 real readiness work that the explicit wait hides, and what failure/regression
 rate does CI see if only interaction metrics remove the wait?"
+
+I then made the interaction-only answer less dependent on the original four-run
+screen. I ran four fresh grouped `post-editor.spec.js` invocations at `0ms` and
+four at `1000ms`, covering only Selecting blocks, persistent List View open,
+Inserter open, Inserter search, and Inserter hover. Combining those with the
+original screen gives eight runs per wait for each of the five interaction
+metrics. All 8 grouped invocations passed.
+
+![Post Editor interaction wait q50](figures/159-post-interaction-wait-matrix-q50.png)
+
+![Post Editor interaction wait deltas](figures/160-post-interaction-wait-deltas.png)
+
+| Metric | `0ms` q50 | `1000ms` q50 | q50 delta | `0ms` q50 sd | `1000ms` q50 sd | Two-branch wait saved |
+| ------ | --------: | -----------: | --------: | -----------: | --------------: | --------------------: |
+| focus | `20.2ms` | `29.4ms` | `-9.2ms` | `0.37ms` | `2.03ms` | `22s` |
+| listViewOpen | `31.7ms` | `47.4ms` | `-15.7ms` | `1.57ms` | `3.01ms` | `22s` |
+| inserterOpen | `7.8ms` | `14.2ms` | `-6.4ms` | `0.12ms` | `1.32ms` | `22s` |
+| inserterSearch | `2.4ms` | `4.7ms` | `-2.3ms` | `0.08ms` | `0.62ms` | `22s` |
+| inserterHover | `2.2ms` | `3.4ms` | `-1.2ms` | `0.42ms` | `0.56ms` | `22s` |
+
+That closes the local interaction-metric part of the non-Typing wait question.
+For these five metrics, `0ms` is the local candidate: it is lower on q50, mean,
+p90, and run-to-run q50 sd. The remaining gate is portability and failures, not
+local diagnosis. Before changing CI, run the same `0ms` versus `1000ms`
+interaction matrix on CI/mac/container lanes and check retained counts,
+timeouts, missing UI/actionability failures, q50/mean/p90, and total elapsed
+suite time. Pattern loading should stay on the separate readiness path.
 
 I followed that with three checks on the site-editor pattern-load exception. First,
 I ran the exact existing `Site Editor Performance > Loading Patterns` spec in
@@ -7818,6 +7849,14 @@ Editor matrix, `0ms` had a lower median run q50 than `1000ms` (`345.6ms` versus
 Post Editor `0ms` the local candidate, while Site Editor still needs the
 predicate or fixed-`500ms` validation path.
 
+The latest interaction-only follow-up closes the remaining local piece of the
+non-Typing wait question. Combining the original four-run screen with four fresh
+grouped runs gives eight runs per wait for focus, list view open, inserter open,
+inserter search, and inserter hover. Every one of those metrics is lower at
+`0ms` on q50, mean, p90, and run-to-run q50 sd. The open part is now
+portability/failure validation for those five interaction metrics, not another
+local diagnosis run.
+
 The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,
 but recent ordinary/utility CPU activity can move that measured path between
@@ -8143,7 +8182,7 @@ The high-level split is:
 
 | Question | Current answer | Next useful work |
 | -------- | -------------- | ---------------- |
-| Typing startup wait | change-trigger contract closes the operational question: current Typing has `0ms` extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation | do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor `0ms` versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry |
+| Typing startup wait | change-trigger contract closes the operational question: current Typing has `0ms` extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local `0ms` candidate matrix | do not add a Typing startup wait under the current metric; reopen only on a trigger change; validate the five interactive non-Typing `0ms` candidates on CI/mac/container lanes before changing those sleeps |
 | Pattern-loading wait | CI validation contract has to stay split by spec: Site Editor still needs predicate/fixed-`500ms` validation, while the focused Post Editor matrix favors `0ms` over the current fixed pre-inserter wait | validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; validate Post Editor `0ms` against `1000ms` with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full `loadPatterns` wait savings |
 | Input API phase boundary | CI helper decision contract closes the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match, ordinary `locator.press()` is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition |
 | Low-risk selector guards | the pattern-override selected-only patch is implemented locally and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry, with `ControlsWithStoreSubscription` still gated to one selected controls entry; focused unit coverage covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths | move to the non-edited `BlockListBlockProvider` and `useInnerBlocksProps` prototypes; run aggregate before/after p50 only if a production magnitude claim is needed |

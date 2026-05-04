@@ -2751,10 +2751,10 @@ startup_wait_change_trigger_contract_audit <- tribble(
 	"statistic scoped",
 	"Can Typing evidence remove waits from non-Typing metrics?",
 	"No.",
-	"Typing uses target.type()/paragraph.type() and has no extra post-setup wait by default, while seven non-Typing post/site editor metrics still pay explicit MEASUREMENT_IDLE_WAIT_MS sleeps.",
-	"Each non-Typing metric needs its own repeated wait-control or readiness-predicate validation before changing its sleep.",
-	"Run metric-specific 0ms versus current-wait comparisons with retained counts, p50/mean/p90, missing-element/canvas failures, setup resource movement, and two-branch runtime savings.",
-	"Do not infer non-Typing reliability from Typing startup-wait runs.",
+	"Typing uses target.type()/paragraph.type() and has no extra post-setup wait by default. The five interactive Post Editor non-Typing metrics now have their own local eight-run 0ms-versus-1000ms matrix; pattern-loading metrics remain separate readiness cases.",
+	"Changing a non-Typing metric outside the five interaction metrics, or moving the interaction change from local evidence to CI behavior.",
+	"For focus, listViewOpen, inserterOpen, inserterSearch, and inserterHover, validate 0ms against 1000ms on CI/mac/container lanes with retained counts, p50/mean/p90, failures, and two-branch runtime savings. For pattern metrics, use the pattern-specific readiness validation.",
+	"0ms is the local candidate for the five interaction metrics; do not infer that result to pattern-loading or other future non-Typing metrics.",
 	"metric-specific validation",
 	"Does a CI image or runner change reopen the startup wait question?",
 	"Only for absolute thresholds or when ordering changes.",
@@ -2845,6 +2845,92 @@ if (file.exists(nontyping_focus_wait_pilot_path)) {
 
 nontyping_wait_screen_summary_path <- file.path(data_dir, "typing-delay-nontyping-wait-screen-summary.csv")
 nontyping_wait_screen_by_metric_path <- file.path(data_dir, "typing-delay-nontyping-wait-screen-by-metric.csv")
+post_interaction_wait_matrix_fresh_samples_path <- file.path(data_dir, "typing-delay-post-interaction-wait-matrix-fresh-samples.csv")
+post_interaction_wait_matrix_runs_path <- file.path(data_dir, "typing-delay-post-interaction-wait-matrix-runs.csv")
+post_interaction_wait_matrix_summary_path <- file.path(data_dir, "typing-delay-post-interaction-wait-matrix-summary.csv")
+post_interaction_wait_matrix_deltas_path <- file.path(data_dir, "typing-delay-post-interaction-wait-matrix-deltas.csv")
+
+post_interaction_metrics <- c("focus", "listViewOpen", "inserterOpen", "inserterSearch", "inserterHover")
+read_post_interaction_wait_matrix <- function() {
+	artifact_root <- file.path(repo_root, "test/performance/artifacts")
+	if (!dir.exists(artifact_root)) {
+		return(NULL)
+	}
+
+	raw_dirs <- list.dirs(artifact_root, recursive = FALSE, full.names = TRUE) %>%
+		keep(~ str_detect(basename(.x), "^post-interaction-wait-matrix-[0-9]+$"))
+	if (length(raw_dirs) == 0) {
+		return(NULL)
+	}
+
+	sample_rows <- list()
+	run_rows <- list()
+	for (raw_dir in raw_dirs) {
+		run_set <- basename(raw_dir)
+		run_dirs <- list.dirs(raw_dir, recursive = FALSE, full.names = TRUE)
+		for (run_dir in run_dirs) {
+			run_name <- basename(run_dir)
+			match <- str_match(run_name, "^wait-([0-9]+)-run-([0-9]+)$")
+			if (is.na(match[1, 1])) {
+				next
+			}
+			json_files <- list.files(run_dir, pattern = "^post-editor-results-.*\\.json$", full.names = TRUE)
+			if (length(json_files) == 0) {
+				next
+			}
+
+			raw <- fromJSON(json_files[[1]], flatten = TRUE)
+			measurement_idle_wait_ms <- as.integer(raw$metadata$measurementIdleWaitMs %||% match[1, 2])
+			local_run <- as.integer(match[1, 3])
+			for (metric in post_interaction_metrics) {
+				values <- as.numeric(raw$results[[metric]])
+				if (length(values) == 0) {
+					next
+				}
+
+				sample_rows[[length(sample_rows) + 1]] <- tibble(
+					run_set = run_set,
+					run_source = "fresh grouped interaction block",
+					local_run = local_run,
+					spec = "post-editor",
+					metric = metric,
+					metric_label = paste("post-editor", metric, sep = " / "),
+					measurement_idle_wait_ms = measurement_idle_wait_ms,
+					sample_index = seq_along(values),
+					latency_ms = values
+				)
+
+				run_rows[[length(run_rows) + 1]] <- tibble(
+					run_set = run_set,
+					run_source = "fresh grouped interaction block",
+					local_run = local_run,
+					spec = "post-editor",
+					metric = metric,
+					metric_label = paste("post-editor", metric, sep = " / "),
+					measurement_idle_wait_ms = measurement_idle_wait_ms,
+					retained_samples = length(values),
+					p10_ms = quant(values, 0.1),
+					p50_ms = quant(values, 0.5),
+					p90_ms = quant(values, 0.9),
+					mean_ms = mean(values),
+					sd_ms = sd(values)
+				)
+			}
+		}
+	}
+
+	if (length(run_rows) == 0) {
+		return(NULL)
+	}
+
+	list(
+		samples = bind_rows(sample_rows) %>%
+			arrange(measurement_idle_wait_ms, metric, local_run, sample_index),
+		runs = bind_rows(run_rows) %>%
+			arrange(measurement_idle_wait_ms, metric, local_run)
+	)
+}
+
 if (file.exists(nontyping_wait_screen_summary_path) && file.exists(nontyping_wait_screen_by_metric_path)) {
 	nontyping_metric_order <- c(
 		"post-editor / focus",
@@ -2926,6 +3012,168 @@ if (file.exists(nontyping_wait_screen_summary_path) && file.exists(nontyping_wai
 		width = 10,
 		height = 8
 	)
+
+	post_interaction_fresh <- read_post_interaction_wait_matrix()
+	post_interaction_historical_runs <- nontyping_wait_screen %>%
+		filter(spec == "post-editor", metric %in% post_interaction_metrics) %>%
+		transmute(
+			run_set = "nontyping-wait-screen",
+			run_source = "original four-run screen",
+			local_run = run,
+			spec,
+			metric,
+			metric_label = as.character(metric_label),
+			measurement_idle_wait_ms,
+			retained_samples,
+			p10_ms,
+			p50_ms,
+			p90_ms,
+			mean_ms,
+			sd_ms
+		)
+	post_interaction_fresh_runs <- if (!is.null(post_interaction_fresh)) {
+		write_csv(post_interaction_fresh$samples, post_interaction_wait_matrix_fresh_samples_path)
+		post_interaction_fresh$runs
+	} else {
+		NULL
+	}
+
+	post_interaction_runs <- bind_rows(
+		post_interaction_historical_runs,
+		post_interaction_fresh_runs
+	) %>%
+		mutate(
+			wait_label = factor(
+				paste0(measurement_idle_wait_ms, "ms"),
+				levels = c("0ms", "1000ms")
+			),
+			metric_label = factor(metric_label, levels = nontyping_metric_order),
+			run_source = factor(
+				run_source,
+				levels = c("original four-run screen", "fresh grouped interaction block")
+			)
+		)
+
+	if (nrow(post_interaction_runs) > 0) {
+		write_csv(post_interaction_runs, post_interaction_wait_matrix_runs_path)
+
+		post_interaction_summary <- post_interaction_runs %>%
+			group_by(spec, metric, metric_label, measurement_idle_wait_ms) %>%
+			summarise(
+				runs = n(),
+				retained_samples_per_run = median(retained_samples),
+				total_retained_samples = sum(retained_samples),
+				median_run_q50_ms = median(p50_ms, na.rm = TRUE),
+				mean_run_q50_ms = mean(p50_ms, na.rm = TRUE),
+				run_to_run_q50_sd_ms = sd(p50_ms, na.rm = TRUE),
+				median_run_mean_ms = median(mean_ms, na.rm = TRUE),
+				median_run_p90_ms = median(p90_ms, na.rm = TRUE),
+				median_within_run_sd_ms = median(sd_ms, na.rm = TRUE),
+				min_run_q50_ms = min(p50_ms, na.rm = TRUE),
+				max_run_q50_ms = max(p50_ms, na.rm = TRUE),
+				.groups = "drop"
+			) %>%
+			mutate(
+				two_branch_explicit_wait_s = 22 * measurement_idle_wait_ms / 1000,
+				two_branch_saved_vs_1000ms_s = 22 * (1000 - measurement_idle_wait_ms) / 1000
+			)
+		write_csv(post_interaction_summary, post_interaction_wait_matrix_summary_path)
+
+		post_interaction_deltas <- post_interaction_summary %>%
+			select(
+				spec,
+				metric,
+				metric_label,
+				measurement_idle_wait_ms,
+				median_run_q50_ms,
+				run_to_run_q50_sd_ms,
+				median_run_mean_ms,
+				median_run_p90_ms
+			) %>%
+			pivot_wider(
+				names_from = measurement_idle_wait_ms,
+				values_from = c(
+					median_run_q50_ms,
+					run_to_run_q50_sd_ms,
+					median_run_mean_ms,
+					median_run_p90_ms
+				),
+				names_sep = "_"
+			) %>%
+			mutate(
+				median_q50_delta_0_minus_1000_ms = median_run_q50_ms_0 - median_run_q50_ms_1000,
+				q50_sd_delta_0_minus_1000_ms = run_to_run_q50_sd_ms_0 - run_to_run_q50_sd_ms_1000,
+				mean_delta_0_minus_1000_ms = median_run_mean_ms_0 - median_run_mean_ms_1000,
+				p90_delta_0_minus_1000_ms = median_run_p90_ms_0 - median_run_p90_ms_1000,
+				two_branch_saved_if_zero_wait_s = 22,
+				local_decision = if_else(
+					median_q50_delta_0_minus_1000_ms < 0 & q50_sd_delta_0_minus_1000_ms < 0,
+					"0ms wins locally",
+					"needs more validation"
+				)
+			)
+		write_csv(post_interaction_deltas, post_interaction_wait_matrix_deltas_path)
+
+		save_plot(
+			ggplot(post_interaction_runs, aes(wait_label, p50_ms, color = wait_label, shape = run_source)) +
+				geom_point(
+					position = position_jitter(width = 0.09, height = 0, seed = 29),
+					size = 2.2,
+					alpha = 0.78
+				) +
+				stat_summary(aes(group = wait_label), fun = median, geom = "crossbar", width = 0.45, linewidth = 0.35, color = "grey20", show.legend = FALSE) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Wait") +
+				scale_shape_manual(values = c(16, 17), name = "Run block") +
+				facet_wrap(vars(metric_label), ncol = 2, scales = "free_y") +
+				labs(
+					title = "Post-editor interaction metrics stay faster with the fixed wait removed",
+					subtitle = "Original four-run screen plus four fresh grouped runs; black bars are medians",
+					x = "Wait before each interaction",
+					y = "Reported q50"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"159-post-interaction-wait-matrix-q50.png",
+			width = 10.5,
+			height = 8.2
+		)
+
+		post_interaction_delta_plot <- post_interaction_deltas %>%
+			select(
+				metric_label,
+				`reported q50 delta` = median_q50_delta_0_minus_1000_ms,
+				`run-to-run q50 sd delta` = q50_sd_delta_0_minus_1000_ms,
+				`reported p90 delta` = p90_delta_0_minus_1000_ms
+			) %>%
+			pivot_longer(
+				cols = -metric_label,
+				names_to = "statistic",
+				values_to = "delta_ms"
+			) %>%
+			mutate(
+				statistic = factor(
+					statistic,
+					levels = c("reported q50 delta", "reported p90 delta", "run-to-run q50 sd delta")
+				)
+			)
+
+		save_plot(
+			ggplot(post_interaction_delta_plot, aes(delta_ms, metric_label, color = statistic, shape = statistic)) +
+				geom_vline(xintercept = 0, color = "grey50", linetype = "dashed", linewidth = 0.35) +
+				geom_point(size = 2.8, alpha = 0.9) +
+				scale_color_brewer(type = "qual", palette = "Set2", name = "0ms minus 1000ms") +
+				scale_shape_manual(values = c(16, 17, 15), name = "0ms minus 1000ms") +
+				labs(
+					title = "Removing the wait improves interaction q50 and volatility locally",
+					subtitle = "Negative deltas mean the 0ms wait is lower; each point summarizes eight runs per wait",
+					x = "Delta in milliseconds",
+					y = NULL
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"160-post-interaction-wait-deltas.png",
+			width = 10.5,
+			height = 6.4
+		)
+	}
 }
 
 site_pattern_alternating_wait_path <- file.path(data_dir, "typing-delay-site-pattern-alternating-wait-summary.csv")
@@ -16743,7 +16991,7 @@ write_csv(
 
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
-	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, or reported statistic changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor 0ms versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry.",
+	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local 0ms candidate matrix.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, reported statistic, or non-local runner changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change. Validate the five interactive non-Typing 0ms candidates on CI/mac/container lanes before changing those sleeps.",
 	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract now has to be split by spec: Site Editor loadPatterns has an opt-in getBlockPatterns/resource-quiet predicate path and fixed 500ms is the best local fixed fallback, while a focused Post Editor loadPatterns matrix favors 0ms over the current fixed pre-inserter wait. A generic loadPatterns wait claim hides two different readiness contracts.", "Whether the Site Editor resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; separately, whether the Post Editor 0ms result is portable across CI/mac/container lanes without preview/canvas misses, first-iteration artifacts, or resource movement.", "Validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; validate Post Editor 0ms against 1000ms with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full loadPatterns wait savings.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
 	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
@@ -17298,9 +17546,9 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 			60,
 			110,
 			"not pattern-related",
-			"Selection, list-view, and inserter interaction metrics need their own readiness or reliability checks.",
+			"Selection, list-view, and inserter interaction metrics now have a local eight-run 0ms-versus-1000ms matrix; all five are faster and less volatile at 0ms locally.",
 			"Pattern-loading evidence should not be used to remove these sleeps.",
-			"Use the non-Typing wait screen and metric-specific repeated runs before changing these waits.",
+			"Validate the five interaction-metric 0ms candidates on CI/mac/container lanes before changing these waits.",
 			3,
 			"out of pattern scope"
 		) %>%
