@@ -1027,6 +1027,10 @@ The R script derives:
 -   `data/typing-delay-portability-threshold-semantics-audit.csv`: decision audit
     separating local measurement-semantics claims from CI threshold readiness,
     q50-only dashboard limits, and external pass/fail policy.
+-   `data/typing-delay-ci-q50-consumer-claim-ladder-audit.csv`: source-backed
+    ladder of every q50 consumer found in the repository workflow, separating
+    artifact production, display/upload consumers, actual workflow pass/fail,
+    and still-external threshold policy.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -8900,6 +8904,34 @@ builds, and archived raw/curated JSON artifacts.
 | Publishing | curated artifacts store q25/q50/q75/cnt, the summary prints q50 with quartile percentages, and `bin/log-performance-results.js` publishes q50/base q50 | q50 compatibility is required, but q50 alone cannot answer reliability or variance |
 | Failure semantics | the repo script computes percent change for display, but I found no in-repo numeric performance fail threshold | GitHub pass/fail is test/script success here; any numeric pass/fail claim needs the external dashboard or reviewer policy |
 
+### CI q50 Consumer Claim Ladder
+
+The remaining ambiguity is not whether q50 is used. It is. The repo has several
+q50 consumers: the Playwright performance reporter curates q50, the plugin
+performance command prints q50 and branch percent change, workflow artifacts
+archive q50 plus raw arrays, and the trunk publisher sends q50/base-q50 values
+to CodeVitals. The audit did not find a repository path where a q50 delta becomes
+an automatic numeric failure.
+
+![CI q50 consumer claim ladder](figures/192-ci-q50-consumer-claim-ladder.png)
+
+| Surface | q50 role | Pass/fail role |
+| ------- | -------- | -------------- |
+| Playwright performance reporter | computes `q25`, `q50`, `q75`, and `cnt`; writes raw and curated per-suite artifacts | artifact producer, not a branch comparison or gate |
+| Plugin performance command | recomputes quartiles from raw round files, prints q50, and computes `% Change` from branch q50s | display comparison; no q50 threshold throws or exits nonzero |
+| GitHub artifact upload | archives raw and curated performance results after a successful comparison step | evidence archive; it preserves volatility inputs but does not evaluate them |
+| CodeVitals publisher | on trunk pushes, sends q50 and base q50 for each metric to `codevitals.run` | external consumer; repository code does not show dashboard threshold rules |
+| GitHub workflow status | setup/build/wp-env/Playwright success, artifact steps, publisher step, and the 60-minute timeout determine the visible Actions result | actual in-repo pass/fail path; no numeric q50 gate found |
+| External reviewer/dashboard policy | may consume summary, CodeVitals, or artifacts | not inferable from the repo; must be documented before predicting pass/fail from q50 |
+| Reliability analysis | needs raw samples, q25/q75/cnt, per-run grouping, first-key distributions, elapsed time, and environment metadata | cannot be reconstructed from CodeVitals q50 alone |
+| Future numeric threshold | would need q50 deltas plus volatility and environment metadata | requires a new repo gate or a documented external policy |
+
+So the precise answer is: q50 determines the displayed and uploaded performance
+number, and it is the compatibility target for dashboards. It does not currently
+determine repository pass/fail by itself. A reliability claim needs the archived
+raw/curated artifacts and per-run sidecars; a pass/fail prediction additionally
+needs the external dashboard or reviewer threshold policy.
+
 That changes the next useful portability run. The compact manifest should be run
 through the real Performance Tests topology, or an equivalent reusable workflow,
 and it should archive raw and curated artifacts with environment metadata. The
@@ -8940,7 +8972,7 @@ The high-level split is:
 | CPU/QoS mechanism | claim-ladder plus local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the benchmark boundary is proved, no-op/timer/generic-CPU explanations are ruled out, finite decay is descriptive, and P-core/frequency, Darwin scheduler/QoS, cache/memory, and Chromium scheduler claims all require observers not present in the current JS/browser table | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split; keep source/product mitigation claims separate from the system-mechanism claim |
 | Calibrated presentation | external-calibration runbook plus claim ladder closes the wording boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels; semantic glyph, presented-frame, camera-visible, and hardware/display claims are explicitly blocked until joined external observers preserve the same key-held shape and complete-keypress control | keep claims scoped to Chromium internal visual propagation unless the report needs hardware/display or semantic glyph timing; if it does, run the external calibration ladder with OCR/template matching, compositor/present timestamps, or camera/display capture joined per retained key |
 | Human/plugin workload | workload schema plus strata-coverage audits now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion only partially covers ordinary text bursts and first-input idle return, while correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata are missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, and plugin-heavy/P2-like histories |
-| Portability of absolute numbers | portability runbook and CI workflow-boundary audits now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed and published, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and I found no in-repo numeric performance fail threshold | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |
+| Portability of absolute numbers | portability runbook, CI workflow-boundary audit, and q50-consumer ladder now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed, archived, and uploaded, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and the visible in-repo pass/fail path is command/workflow success rather than a numeric q50 gate | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

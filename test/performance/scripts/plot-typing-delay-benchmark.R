@@ -19812,6 +19812,161 @@ save_plot(
 	height = 7
 )
 
+ci_q50_consumer_claim_ladder_audit <- tribble(
+	~consumer_surface, ~surface_order, ~source_reference, ~what_reads_or_writes_q50, ~what_it_decides_in_repo, ~what_it_does_not_decide, ~evidence_needed_for_stronger_claim, ~q50_consumption_score, ~pass_fail_authority_score, ~reliability_context_score, ~decision, ~plot_label,
+	"Playwright performance reporter", 1,
+	"test/performance/config/performance-reporter.ts:96-127; test/performance/config/performance-reporter.ts:171-188; test/performance/config/performance-reporter.ts:205-221",
+	"curateResults() computes q25/q50/q75/cnt for every metric with samples; the local non-CI reporter prints q50 plus quartile percentages.",
+	"Produces raw and curated per-suite artifacts, and local stdout when not running under CI.",
+	"Does not compare branches, upload dashboard data, or impose a numeric regression threshold.",
+	"Keep raw arrays and curated q25/q50/q75/cnt; add per-run grouping and first-key metadata for reliability claims.",
+	5, 1, 4, "artifact producer", "reporter",
+	"Performance command summary", 2,
+	"bin/plugin/commands/performance.js:493-632",
+	"The perf command reads raw round files, recomputes q25/q50/q75/cnt, prints q50 with quartile percentages, and computes percent change from branch q50s.",
+	"Displays the branch comparison in stdout and summary.md.",
+	"Does not throw or set a nonzero exit status from the percent-change value.",
+	"Document any external review rule that consumes summary.md before claiming q50 pass/fail behavior.",
+	5, 2, 3, "display comparison", "summary",
+	"GitHub artifact upload", 3,
+	".github/workflows/performance.yml:96-107",
+	"The workflow uploads *.performance-results.raw.json and *.performance-results.json after the comparison step succeeds.",
+	"Preserves q50, q25, q75, cnt, and raw sample arrays for later audit.",
+	"Does not itself evaluate a numeric threshold, and only runs on success().",
+	"Use archived raw and curated artifacts for repeated paired runs, CV, sample-order, and first-key analysis.",
+	4, 1, 5, "evidence archive", "artifacts",
+	"CodeVitals publisher", 4,
+	"bin/log-performance-results.js:42-73; .github/workflows/performance.yml:109-116",
+	"On trunk pushes, log-performance-results sends each metric's q50 and base q50 to codevitals.run.",
+	"Publishes q50/base-q50 data to an external service after the workflow comparison step.",
+	"The repository code does not show CodeVitals threshold rules, and the script does not convert a q50 delta into an in-repo regression failure.",
+	"Join any CodeVitals/dashboard threshold policy and alert history to the same metric artifacts before predicting pass/fail from q50.",
+	5, 3, 1, "external consumer", "CodeVitals",
+	"GitHub workflow status", 5,
+	".github/workflows/performance.yml:31-119",
+	"The workflow status is driven by setup, build, wp-env, Playwright command success, artifact steps, publisher step, failure artifacts, and the 60-minute timeout.",
+	"Determines the visible GitHub Actions pass/fail state.",
+	"Does not contain an in-repo numeric q50 threshold check.",
+	"To make q50 a gate, add or document a step that compares q50 deltas against a threshold and exits nonzero.",
+	2, 5, 2, "actual gate", "workflow status",
+	"External reviewer or dashboard policy", 6,
+	"outside this repository unless documented in workflow, dashboard, or team policy",
+	"May read summary.md, CodeVitals, or artifacts and decide whether a PR needs attention.",
+	"Can influence human review or an external dashboard status if such a policy exists.",
+	"Not discoverable from the repository paths audited here; cannot be inferred from local benchmark data.",
+	"Document threshold bands, noisy-metric handling, required rounds, ignored metrics, and escalation rules.",
+	3, 4, 1, "policy gap", "external policy",
+	"Reliability and volatility analysis", 7,
+	"raw artifacts plus benchmark-specific sidecars in this report",
+	"Needs q50 plus q25/q75/cnt, raw samples, per-run grouping, sample order, first-key distributions, elapsed time, and environment metadata.",
+	"Can decide whether a q50 movement is stable enough to trust.",
+	"Cannot be reconstructed from CodeVitals q50 alone.",
+	"Archive compact-manifest raw files and compute paired-run q50, mean, p90, CV, first-key, and failure/timeout rates.",
+	4, 2, 5, "reliability gate", "reliability",
+	"Numeric threshold change", 8,
+	"requires a future repository step or documented external policy",
+	"Would consume q50 deltas plus volatility and environment metadata.",
+	"Would decide whether a performance change blocks a PR or release.",
+	"Not supported by the current repository workflow alone.",
+	"Run compact CI validation, define threshold policy, publish volatility context, then implement or document the gate.",
+	3, 5, 5, "future threshold", "threshold"
+) %>%
+	mutate(
+		decision = factor(
+			decision,
+			levels = c(
+				"artifact producer",
+				"display comparison",
+				"evidence archive",
+				"external consumer",
+				"actual gate",
+				"policy gap",
+				"reliability gate",
+				"future threshold"
+			)
+		),
+		label_x = q50_consumption_score + case_when(
+			plot_label == "reporter" ~ -0.40,
+			plot_label == "summary" ~ -0.36,
+			plot_label == "artifacts" ~ 0.12,
+			plot_label == "CodeVitals" ~ -0.52,
+			plot_label == "workflow status" ~ 0.14,
+			plot_label == "external policy" ~ -0.36,
+			plot_label == "reliability" ~ -0.35,
+			TRUE ~ 0.1
+		),
+		label_y = pass_fail_authority_score + case_when(
+			plot_label == "reporter" ~ -0.18,
+			plot_label == "summary" ~ 0.22,
+			plot_label == "artifacts" ~ -0.18,
+			plot_label == "CodeVitals" ~ 0.25,
+			plot_label == "workflow status" ~ 0.20,
+			plot_label == "external policy" ~ 0.22,
+			plot_label == "reliability" ~ -0.22,
+			TRUE ~ 0.1
+		)
+	)
+
+write_csv(
+	ci_q50_consumer_claim_ladder_audit %>% select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-ci-q50-consumer-claim-ladder-audit.csv")
+)
+
+save_plot(
+	ggplot(
+		ci_q50_consumer_claim_ladder_audit,
+		aes(
+			q50_consumption_score,
+			pass_fail_authority_score,
+			color = decision,
+			shape = decision,
+			size = reliability_context_score
+		)
+	) +
+		geom_point(alpha = 0.93) +
+		geom_text(
+			aes(label_x, label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Decision") +
+		scale_shape_manual(
+			values = c(
+				"artifact producer" = 16,
+				"display comparison" = 17,
+				"evidence archive" = 15,
+				"external consumer" = 8,
+				"actual gate" = 18,
+				"policy gap" = 4,
+				"reliability gate" = 3,
+				"future threshold" = 7
+			),
+			name = "Decision"
+		) +
+		scale_size_continuous(range = c(2.8, 6), breaks = 1:5, name = "Reliability context") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.6, 5.35),
+			labels = c("1" = "none", "2" = "status only", "3" = "policy", "4" = "artifacts", "5" = "q50 path")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(0.7, 5.45),
+			labels = c("1" = "none", "2" = "display", "3" = "external", "4" = "policy", "5" = "gate")
+		) +
+		labs(
+			title = "q50 is consumed for reporting, but repository pass/fail is command success",
+			subtitle = "Higher x means a stronger q50 data path; higher y means more authority to decide pass/fail or thresholds",
+			x = "q50 consumption in the repository workflow",
+			y = "pass/fail or threshold authority"
+		) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"192-ci-q50-consumer-claim-ladder.png",
+	width = 12.5,
+	height = 7.4
+)
+
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local 0ms candidate matrix.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, reported statistic, or non-local runner changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change. Validate the five interactive non-Typing 0ms candidates on CI/mac/container lanes before changing those sleeps.",
