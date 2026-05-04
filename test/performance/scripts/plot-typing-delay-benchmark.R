@@ -3779,6 +3779,8 @@ if (file.exists(screenshot_pixel_samples_path) && file.exists(screenshot_pixel_s
 }
 
 visual_endpoint_drop_summary_path <- file.path(data_dir, "typing-delay-visual-endpoint-drop-summary.csv")
+visual_endpoint_alignment_samples_path <- file.path(data_dir, "typing-delay-visual-endpoint-alignment-samples.csv")
+visual_endpoint_alignment_summary_path <- file.path(data_dir, "typing-delay-visual-endpoint-alignment-summary.csv")
 if (
 	file.exists(visual_latency_summary_path) &&
 	file.exists(render_trace_summary_path) &&
@@ -3882,6 +3884,108 @@ if (
 		"114-visual-endpoint-drop-summary.png",
 		width = 11,
 		height = 8.5
+	)
+}
+
+if (file.exists(render_trace_samples_path) && file.exists(screenshot_trace_samples_path)) {
+	visual_endpoint_alignment_samples <- bind_rows(
+		read_csv(render_trace_samples_path, show_col_types = FALSE) %>%
+			transmute(
+				probe = "Chrome render trace",
+				input_mode,
+				delay_ms,
+				round,
+				delay_sample_index,
+				event_dispatch_ms = latency_ms,
+				`second RAF after input` = visual_keydown_to_second_raf_ms,
+				`Paint trace event` = render_first_paint_ms,
+				`DrawFrame trace event` = render_first_draw_frame_ms
+			),
+		read_csv(screenshot_trace_samples_path, show_col_types = FALSE) %>%
+			transmute(
+				probe = "Chrome trace screenshot",
+				input_mode,
+				delay_ms,
+				round,
+				delay_sample_index,
+				event_dispatch_ms = latency_ms,
+				`second RAF after input` = visual_keydown_to_second_raf_ms,
+				`first changed trace screenshot` = screenshot_first_changed_after_keydown_ms
+			)
+	) %>%
+		pivot_longer(
+			cols = -c(probe, input_mode, delay_ms, round, delay_sample_index, event_dispatch_ms),
+			names_to = "endpoint",
+			values_to = "endpoint_ms"
+		) %>%
+		filter(!is.na(endpoint_ms), delay_ms %in% c(990, 1000, 1300)) %>%
+		mutate(
+			endpoint_minus_event_dispatch_ms = endpoint_ms - event_dispatch_ms,
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms")),
+			input_mode = factor(input_mode, levels = c("key held during delay", "complete keypress then wait")),
+			probe = factor(probe, levels = c("Chrome render trace", "Chrome trace screenshot"))
+		)
+
+	write_csv(visual_endpoint_alignment_samples, visual_endpoint_alignment_samples_path)
+
+	visual_endpoint_alignment_summary <- visual_endpoint_alignment_samples %>%
+		group_by(probe, input_mode, endpoint, delay_ms) %>%
+		summarize(
+			retained_n = n(),
+			event_dispatch_p50_ms = median(event_dispatch_ms, na.rm = TRUE),
+			endpoint_p50_ms = median(endpoint_ms, na.rm = TRUE),
+			endpoint_minus_event_dispatch_p10_ms = quant(endpoint_minus_event_dispatch_ms, 0.1),
+			endpoint_minus_event_dispatch_p50_ms = median(endpoint_minus_event_dispatch_ms, na.rm = TRUE),
+			endpoint_minus_event_dispatch_p90_ms = quant(endpoint_minus_event_dispatch_ms, 0.9),
+			event_endpoint_correlation = if (
+				n() >= 3 &&
+					sd(event_dispatch_ms, na.rm = TRUE) > 0 &&
+					sd(endpoint_ms, na.rm = TRUE) > 0
+			) {
+				cor(event_dispatch_ms, endpoint_ms, use = "complete.obs")
+			} else {
+				NA_real_
+			},
+			endpoint_at_or_after_event_dispatch_count = sum(endpoint_ms >= event_dispatch_ms, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		arrange(probe, input_mode, endpoint, delay_ms)
+
+	write_csv(visual_endpoint_alignment_summary, visual_endpoint_alignment_summary_path)
+
+	visual_endpoint_alignment_plot <- visual_endpoint_alignment_samples %>%
+		filter(input_mode == "key held during delay") %>%
+		mutate(
+			endpoint = factor(
+				endpoint,
+				levels = c(
+					"second RAF after input",
+					"Paint trace event",
+					"DrawFrame trace event",
+					"first changed trace screenshot"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(visual_endpoint_alignment_plot, aes(event_dispatch_ms, endpoint_ms, color = delay_label)) +
+			geom_abline(slope = 1, intercept = 0, linetype = "dashed", linewidth = 0.35, color = "grey50") +
+			geom_point(alpha = 0.78, size = 2.2) +
+			facet_grid(probe ~ endpoint, scales = "free") +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Delay") +
+			labs(
+				title = "Render and screenshot endpoints track the key-held EventDispatch drop per sample",
+				subtitle = "Each point is one retained key; dashed line is endpoint time equal to EventDispatch latency",
+				x = "EventDispatch trace latency (ms)",
+				y = "Endpoint latency from keydown (ms)"
+			) +
+			theme(
+				legend.position = "bottom",
+				axis.text.x = element_text(angle = 25, hjust = 1)
+			),
+		"123-visual-endpoint-alignment.png",
+		width = 13,
+		height = 7.4
 	)
 }
 

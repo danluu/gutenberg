@@ -769,6 +769,9 @@ The R script derives:
 -   `data/typing-delay-visual-endpoint-drop-summary.csv`: derived
     `1000ms`-versus-slow-neighbor drop summary across EventDispatch, RAF,
     render-trace, and trace-screenshot endpoints.
+-   `data/typing-delay-visual-endpoint-alignment-*.csv`: per-sample alignment
+    and correlation between EventDispatch latency and RAF/render/screenshot
+    endpoints in the Chromium visual probes.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -5287,6 +5290,33 @@ Selected `1000ms` drops versus the `990ms` / `1300ms` neighbor mean:
 | Chrome trace screenshot | keydown-to-second-RAF | `15.1ms` | `0.8ms` |
 | Chrome trace screenshot | keydown-to-first-changed-screenshot | `15.8ms` | `1.7ms` |
 
+I also checked that the endpoint agreement is not just a median artifact. Within
+the render and screenshot probes, each retained key has both the EventDispatch
+latency and the downstream endpoint timestamp, so we can compare them per sample.
+
+![Visual endpoint alignment](figures/123-visual-endpoint-alignment.png)
+
+For key-held samples, the downstream endpoints track the EventDispatch movement
+strongly:
+
+| Probe | Endpoint | Delay | Correlation with EventDispatch | Median endpoint minus EventDispatch |
+| ----- | -------- | ----: | -----------------------------: | ----------------------------------: |
+| Chrome render trace | Paint | `990ms` | `0.996` | `+0.7ms` |
+| Chrome render trace | Paint | `1000ms` | `0.990` | `+0.4ms` |
+| Chrome render trace | Paint | `1300ms` | `0.993` | `+0.5ms` |
+| Chrome render trace | DrawFrame | `990ms` | `0.989` | `+2.7ms` |
+| Chrome render trace | DrawFrame | `1000ms` | `0.987` | `+2.1ms` |
+| Chrome trace screenshot | first changed screenshot | `990ms` | `0.986` | `+9.6ms` |
+| Chrome trace screenshot | first changed screenshot | `1000ms` | `0.981` | `+7.4ms` |
+| Chrome trace screenshot | first changed screenshot | `1300ms` | `0.939` | `+9.8ms` |
+
+Every retained key-held render/screenshot endpoint was at or after the
+EventDispatch slice for the same key. The offsets are endpoint-specific, but
+within each endpoint they are narrow enough that the `1000ms` low band remains
+visible per sample, not only after aggregating medians. The complete-keypress
+control is less informative for RAF because frame scheduling adds quantization,
+but Paint and changed-screenshot endpoints still track EventDispatch closely.
+
 This is the most compact current answer to the visual-path open question. The
 `1000ms` effect is not confined to Chrome's `EventDispatch` slice: in key-hold
 mode it survives as the endpoint moves through editor input, frame scheduling,
@@ -5295,8 +5325,9 @@ complete-keypress-then-wait control stays roughly flat on the same calculation.
 
 The remaining caveat is now narrower, but still real. These probes do not
 calibrate compositor presentation or an external display; they show that the
-synthetic key-hold artifact propagates to Chromium's internal visual/render
-endpoints and to localized changed trace screenshots.
+synthetic key-hold artifact propagates coherently, per retained key, to
+Chromium's internal visual/render endpoints and to localized changed trace
+screenshots.
 
 ## Trace Grouping Bug Avoided
 
@@ -5569,10 +5600,14 @@ pixels, or OCR. The follow-up pixel localization check narrows that caveat: the
 changed trace screenshot pixels are in the target textbox and overlap the DOM
 range for the exact typed `x` for every decoded retained sample, so the remaining
 gap is presentation calibration and glyph recognition, not unrelated screenshot
-noise. The combined endpoint-drop accounting makes the same point in one view:
-the key-hold `1000ms` point is `~11-16ms` faster than its `990ms` / `1300ms`
-neighbors across EventDispatch, second RAF, `Paint`, `DrawFrame`, and changed
-trace screenshot endpoints, while complete-keypress-then-wait is roughly flat.
+noise. The new per-sample endpoint alignment check strengthens that: for
+key-held samples, Paint, DrawFrame, and first-changed-screenshot endpoints
+correlate with EventDispatch at about `0.94-0.996`, and every retained endpoint
+is at or after its same-key EventDispatch slice. The combined endpoint-drop
+accounting makes the same point in one view: the key-hold `1000ms` point is
+`~11-16ms` faster than its `990ms` / `1300ms` neighbors across EventDispatch,
+second RAF, `Paint`, `DrawFrame`, and changed trace screenshot endpoints, while
+complete-keypress-then-wait is roughly flat.
 
 ## Recommendations
 

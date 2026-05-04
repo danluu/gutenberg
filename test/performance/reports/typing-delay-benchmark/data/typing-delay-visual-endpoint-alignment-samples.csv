@@ -1,0 +1,721 @@
+probe,input_mode,delay_ms,round,delay_sample_index,event_dispatch_ms,endpoint,endpoint_ms,endpoint_minus_event_dispatch_ms,delay_label
+Chrome render trace,key held during delay,990,0,0,25.434,second RAF after input,34.30000019073486,8.866000190734862,990ms
+Chrome render trace,key held during delay,990,0,0,25.434,Paint trace event,25.697999954223633,0.26399995422363176,990ms
+Chrome render trace,key held during delay,990,0,0,25.434,DrawFrame trace event,27.485999822616577,2.051999822616576,990ms
+Chrome render trace,key held during delay,990,0,1,24.246,second RAF after input,34.299999952316284,10.053999952316286,990ms
+Chrome render trace,key held during delay,990,0,1,24.246,Paint trace event,24.646000146865845,0.40000014686584606,990ms
+Chrome render trace,key held during delay,990,0,1,24.246,DrawFrame trace event,26.752000093460083,2.5060000934600843,990ms
+Chrome render trace,key held during delay,990,0,2,25.717,second RAF after input,34.60000014305115,8.883000143051149,990ms
+Chrome render trace,key held during delay,990,0,2,25.717,Paint trace event,26.567999839782715,0.8509998397827161,990ms
+Chrome render trace,key held during delay,990,0,2,25.717,DrawFrame trace event,28.867999792099,3.1509997920990003,990ms
+Chrome render trace,key held during delay,990,0,3,20.18,second RAF after input,29.300000190734863,9.120000190734864,990ms
+Chrome render trace,key held during delay,990,0,3,20.18,Paint trace event,20.4760000705719,0.2960000705718997,990ms
+Chrome render trace,key held during delay,990,0,3,20.18,DrawFrame trace event,22.41700005531311,2.2370000553131106,990ms
+Chrome render trace,key held during delay,990,0,4,25.481999999999996,second RAF after input,33.299999952316284,7.817999952316288,990ms
+Chrome render trace,key held during delay,990,0,4,25.481999999999996,Paint trace event,25.933000087738037,0.45100008773804134,990ms
+Chrome render trace,key held during delay,990,0,4,25.481999999999996,DrawFrame trace event,27.841000080108643,2.359000080108647,990ms
+Chrome render trace,key held during delay,990,0,5,21.456,second RAF after input,28.699999809265137,7.243999809265137,990ms
+Chrome render trace,key held during delay,990,0,5,21.456,Paint trace event,21.76699995994568,0.3109999599456792,990ms
+Chrome render trace,key held during delay,990,0,5,21.456,DrawFrame trace event,23.592000007629395,2.136000007629395,990ms
+Chrome render trace,key held during delay,990,0,6,24.048,second RAF after input,32.200000047683716,8.152000047683718,990ms
+Chrome render trace,key held during delay,990,0,6,24.048,Paint trace event,24.746999979019165,0.6989999790191668,990ms
+Chrome render trace,key held during delay,990,0,6,24.048,DrawFrame trace event,26.693000078201297,2.6450000782012992,990ms
+Chrome render trace,key held during delay,990,0,7,25.959000000000003,second RAF after input,34.60000014305115,8.641000143051144,990ms
+Chrome render trace,key held during delay,990,0,7,25.959000000000003,Paint trace event,26.794000148773193,0.8350001487731902,990ms
+Chrome render trace,key held during delay,990,0,7,25.959000000000003,DrawFrame trace event,29.022000074386597,3.0630000743865935,990ms
+Chrome render trace,key held during delay,1000,0,0,11.176,second RAF after input,16.299999952316284,5.123999952316284,1000ms
+Chrome render trace,key held during delay,1000,0,0,11.176,Paint trace event,11.335999965667725,0.15999996566772445,1000ms
+Chrome render trace,key held during delay,1000,0,0,11.176,DrawFrame trace event,12.825999975204468,1.6499999752044676,1000ms
+Chrome render trace,key held during delay,1000,0,1,11.124,second RAF after input,17.699999809265137,6.575999809265136,1000ms
+Chrome render trace,key held during delay,1000,0,1,11.124,Paint trace event,11.42199993133545,0.29799993133544866,1000ms
+Chrome render trace,key held during delay,1000,0,1,11.124,DrawFrame trace event,12.901000022888184,1.777000022888183,1000ms
+Chrome render trace,key held during delay,1000,0,2,11.777,second RAF after input,17.100000143051147,5.323000143051148,1000ms
+Chrome render trace,key held during delay,1000,0,2,11.777,Paint trace event,11.726999998092651,-0.05000000190734788,1000ms
+Chrome render trace,key held during delay,1000,0,2,11.777,DrawFrame trace event,13.299999952316284,1.522999952316285,1000ms
+Chrome render trace,key held during delay,1000,0,3,18.178,second RAF after input,25.09999990463257,6.9219999046325675,1000ms
+Chrome render trace,key held during delay,1000,0,3,18.178,Paint trace event,19.0239999294281,0.8459999294280998,1000ms
+Chrome render trace,key held during delay,1000,0,3,18.178,DrawFrame trace event,20.933000087738037,2.7550000877380363,1000ms
+Chrome render trace,key held during delay,1000,0,4,14.71,second RAF after input,21,6.289999999999999,1000ms
+Chrome render trace,key held during delay,1000,0,4,14.71,Paint trace event,14.95199990272522,0.24199990272521887,1000ms
+Chrome render trace,key held during delay,1000,0,4,14.71,DrawFrame trace event,16.772000074386597,2.062000074386596,1000ms
+Chrome render trace,key held during delay,1000,0,5,11.414,second RAF after input,17.200000047683716,5.786000047683716,1000ms
+Chrome render trace,key held during delay,1000,0,5,11.414,Paint trace event,11.728000164031982,0.3140001640319827,1000ms
+Chrome render trace,key held during delay,1000,0,5,11.414,DrawFrame trace event,13.3270001411438,1.913000141143801,1000ms
+Chrome render trace,key held during delay,1000,0,6,15.994,second RAF after input,22.09999990463257,6.105999904632569,1000ms
+Chrome render trace,key held during delay,1000,0,6,15.994,Paint trace event,16.35700011253357,0.36300011253356956,1000ms
+Chrome render trace,key held during delay,1000,0,6,15.994,DrawFrame trace event,18.0550000667572,2.061000066757199,1000ms
+Chrome render trace,key held during delay,1000,0,7,10.877,second RAF after input,16.700000047683716,5.823000047683715,1000ms
+Chrome render trace,key held during delay,1000,0,7,10.877,Paint trace event,11.204999923706056,0.3279999237060558,1000ms
+Chrome render trace,key held during delay,1000,0,7,10.877,DrawFrame trace event,12.79200005531311,1.9150000553131097,1000ms
+Chrome render trace,key held during delay,1300,0,0,26.115,second RAF after input,33.89999985694885,7.784999856948854,1300ms
+Chrome render trace,key held during delay,1300,0,0,26.115,Paint trace event,26.83899998664856,0.7239999866485611,1300ms
+Chrome render trace,key held during delay,1300,0,0,26.115,DrawFrame trace event,29.24400019645691,3.1290001964569107,1300ms
+Chrome render trace,key held during delay,1300,0,1,24.531,second RAF after input,31.90000009536743,7.369000095367433,1300ms
+Chrome render trace,key held during delay,1300,0,1,24.531,Paint trace event,25.21399998664856,0.6829999866485608,1300ms
+Chrome render trace,key held during delay,1300,0,1,24.531,DrawFrame trace event,27.375999927520752,2.844999927520753,1300ms
+Chrome render trace,key held during delay,1300,0,2,24.891,second RAF after input,32.60000014305115,7.709000143051149,1300ms
+Chrome render trace,key held during delay,1300,0,2,24.891,Paint trace event,25.582000017166138,0.6910000171661395,1300ms
+Chrome render trace,key held during delay,1300,0,2,24.891,DrawFrame trace event,27.990000009536743,3.099000009536745,1300ms
+Chrome render trace,key held during delay,1300,0,3,23.921000000000003,second RAF after input,30.90000009536743,6.979000095367429,1300ms
+Chrome render trace,key held during delay,1300,0,3,23.921000000000003,Paint trace event,24.39199995994568,0.4709999599456758,1300ms
+Chrome render trace,key held during delay,1300,0,3,23.921000000000003,DrawFrame trace event,26.622999906539917,2.701999906539914,1300ms
+Chrome render trace,key held during delay,1300,0,4,23.371,second RAF after input,28.40000009536743,5.029000095367433,1300ms
+Chrome render trace,key held during delay,1300,0,4,23.371,Paint trace event,22.16000008583069,-1.2109999141693102,1300ms
+Chrome render trace,key held during delay,1300,0,4,23.371,DrawFrame trace event,24.32100009918213,0.9500000991821302,1300ms
+Chrome render trace,key held during delay,1300,0,5,24.261000000000003,second RAF after input,31.799999952316284,7.538999952316281,1300ms
+Chrome render trace,key held during delay,1300,0,5,24.261000000000003,Paint trace event,25.30900001525879,1.0480000152587863,1300ms
+Chrome render trace,key held during delay,1300,0,5,24.261000000000003,DrawFrame trace event,27.496999979019165,3.2359999790191623,1300ms
+Chrome render trace,key held during delay,1300,0,6,13.144,second RAF after input,20,6.856,1300ms
+Chrome render trace,key held during delay,1300,0,6,13.144,Paint trace event,13.366999864578249,0.22299986457824872,1300ms
+Chrome render trace,key held during delay,1300,0,6,13.144,DrawFrame trace event,15.046000003814695,1.9020000038146954,1300ms
+Chrome render trace,key held during delay,1300,0,7,25.136,second RAF after input,32.90000009536743,7.764000095367432,1300ms
+Chrome render trace,key held during delay,1300,0,7,25.136,Paint trace event,26.051000118255615,0.915000118255616,1300ms
+Chrome render trace,key held during delay,1300,0,7,25.136,DrawFrame trace event,28.35700011253357,3.22100011253357,1300ms
+Chrome render trace,key held during delay,1300,1,8,24.790000000000003,second RAF after input,32.09999990463257,7.309999904632566,1300ms
+Chrome render trace,key held during delay,1300,1,8,24.790000000000003,Paint trace event,25.28600001335144,0.49600001335143773,1300ms
+Chrome render trace,key held during delay,1300,1,8,24.790000000000003,DrawFrame trace event,27.717000007629395,2.927000007629392,1300ms
+Chrome render trace,key held during delay,1300,1,9,24.394,second RAF after input,31.200000047683716,6.8060000476837175,1300ms
+Chrome render trace,key held during delay,1300,1,9,24.394,Paint trace event,24.72699999809265,0.332999998092653,1300ms
+Chrome render trace,key held during delay,1300,1,9,24.394,DrawFrame trace event,26.888000011444092,2.4940000114440934,1300ms
+Chrome render trace,key held during delay,1300,1,10,21.013,second RAF after input,27.899999856948853,6.886999856948851,1300ms
+Chrome render trace,key held during delay,1300,1,10,21.013,Paint trace event,21.490999937057495,0.47799993705749344,1300ms
+Chrome render trace,key held during delay,1300,1,10,21.013,DrawFrame trace event,23.30299997329712,2.2899999732971175,1300ms
+Chrome render trace,key held during delay,1300,1,11,22.032,second RAF after input,30.09999990463257,8.067999904632568,1300ms
+Chrome render trace,key held during delay,1300,1,11,22.032,Paint trace event,22.536999940872192,0.5049999408721924,1300ms
+Chrome render trace,key held during delay,1300,1,11,22.032,DrawFrame trace event,24.89199995994568,2.8599999599456787,1300ms
+Chrome render trace,key held during delay,1300,1,12,24.617,second RAF after input,31.5,6.882999999999999,1300ms
+Chrome render trace,key held during delay,1300,1,12,24.617,Paint trace event,25.04699993133545,0.42999993133544834,1300ms
+Chrome render trace,key held during delay,1300,1,12,24.617,DrawFrame trace event,27.2739999294281,2.6569999294280997,1300ms
+Chrome render trace,key held during delay,1300,1,13,23.844,second RAF after input,30.5,6.655999999999999,1300ms
+Chrome render trace,key held during delay,1300,1,13,23.844,Paint trace event,24.437999963760376,0.5939999637603748,1300ms
+Chrome render trace,key held during delay,1300,1,13,23.844,DrawFrame trace event,26.3050000667572,2.4610000667571974,1300ms
+Chrome render trace,key held during delay,1300,1,14,12.303999999999998,second RAF after input,17.5,5.1960000000000015,1300ms
+Chrome render trace,key held during delay,1300,1,14,12.303999999999998,Paint trace event,12.337000131607056,0.03300013160705717,1300ms
+Chrome render trace,key held during delay,1300,1,14,12.303999999999998,DrawFrame trace event,13.91100001335144,1.607000013351442,1300ms
+Chrome render trace,key held during delay,1300,1,15,24.327,second RAF after input,30.700000047683716,6.373000047683714,1300ms
+Chrome render trace,key held during delay,1300,1,15,24.327,Paint trace event,24.5239999294281,0.19699992942809885,1300ms
+Chrome render trace,key held during delay,1300,1,15,24.327,DrawFrame trace event,26.368000030517575,2.041000030517573,1300ms
+Chrome render trace,key held during delay,1000,1,8,15.380000000000004,second RAF after input,22.700000047683716,7.3200000476837115,1000ms
+Chrome render trace,key held during delay,1000,1,8,15.380000000000004,Paint trace event,15.81500005722046,0.4350000572204564,1000ms
+Chrome render trace,key held during delay,1000,1,8,15.380000000000004,DrawFrame trace event,17.593000173568726,2.2130001735687213,1000ms
+Chrome render trace,key held during delay,1000,1,9,11.06,second RAF after input,19.09999990463257,8.039999904632568,1000ms
+Chrome render trace,key held during delay,1000,1,9,11.06,Paint trace event,11.395999908447266,0.3359999084472651,1000ms
+Chrome render trace,key held during delay,1000,1,9,11.06,DrawFrame trace event,12.9760000705719,1.916000070571899,1000ms
+Chrome render trace,key held during delay,1000,1,10,17.025,second RAF after input,24.5,7.475000000000001,1000ms
+Chrome render trace,key held during delay,1000,1,10,17.025,Paint trace event,17.659000158309937,0.63400015830993794,1000ms
+Chrome render trace,key held during delay,1000,1,10,17.025,DrawFrame trace event,19.49400019645691,2.4690001964569106,1000ms
+Chrome render trace,key held during delay,1000,1,11,11.415,second RAF after input,17.90000009536743,6.4850000953674325,1000ms
+Chrome render trace,key held during delay,1000,1,11,11.415,Paint trace event,11.749000072479248,0.3340000724792489,1000ms
+Chrome render trace,key held during delay,1000,1,11,11.415,DrawFrame trace event,13.276999950408936,1.8619999504089364,1000ms
+Chrome render trace,key held during delay,1000,1,12,11.078,second RAF after input,17.199999809265137,6.121999809265137,1000ms
+Chrome render trace,key held during delay,1000,1,12,11.078,Paint trace event,10.973999977111816,-0.104000022888183,1000ms
+Chrome render trace,key held during delay,1000,1,12,11.078,DrawFrame trace event,12.615000009536743,1.5370000095367438,1000ms
+Chrome render trace,key held during delay,1000,1,13,17.764,second RAF after input,25.200000047683716,7.4360000476837165,1000ms
+Chrome render trace,key held during delay,1000,1,13,17.764,Paint trace event,18.365000009536743,0.6010000095367438,1000ms
+Chrome render trace,key held during delay,1000,1,13,17.764,DrawFrame trace event,20.09000015258789,2.3260001525878913,1000ms
+Chrome render trace,key held during delay,1000,1,14,11.662,second RAF after input,19.59999990463257,7.9379999046325675,1000ms
+Chrome render trace,key held during delay,1000,1,14,11.662,Paint trace event,12.115999937057495,0.4539999370574943,1000ms
+Chrome render trace,key held during delay,1000,1,14,11.662,DrawFrame trace event,13.791999816894531,2.1299998168945304,1000ms
+Chrome render trace,key held during delay,1000,1,15,14.116,second RAF after input,22.59999990463257,8.483999904632569,1000ms
+Chrome render trace,key held during delay,1000,1,15,14.116,Paint trace event,14.808000087738035,0.6920000877380357,1000ms
+Chrome render trace,key held during delay,1000,1,15,14.116,DrawFrame trace event,16.819999933242798,2.703999933242798,1000ms
+Chrome render trace,key held during delay,990,1,8,26.734,second RAF after input,33.59999990463257,6.865999904632567,990ms
+Chrome render trace,key held during delay,990,1,8,26.734,Paint trace event,26.70799994468689,-0.026000055313112114,990ms
+Chrome render trace,key held during delay,990,1,8,26.734,DrawFrame trace event,29.04800009727478,2.3140000972747785,990ms
+Chrome render trace,key held during delay,990,1,9,24.227,second RAF after input,32,7.773,990ms
+Chrome render trace,key held during delay,990,1,9,24.227,Paint trace event,24.96900010108948,0.7420001010894808,990ms
+Chrome render trace,key held during delay,990,1,9,24.227,DrawFrame trace event,27.764000177383423,3.5370001773834225,990ms
+Chrome render trace,key held during delay,990,1,10,23.901000000000003,second RAF after input,31.699999809265137,7.798999809265133,990ms
+Chrome render trace,key held during delay,990,1,10,23.901000000000003,Paint trace event,24.877000093460083,0.9760000934600797,990ms
+Chrome render trace,key held during delay,990,1,10,23.901000000000003,DrawFrame trace event,27.227999925613403,3.3269999256134,990ms
+Chrome render trace,key held during delay,990,1,11,15.455,second RAF after input,21.59999990463257,6.144999904632568,990ms
+Chrome render trace,key held during delay,990,1,11,15.455,Paint trace event,15.566999912261965,0.1119999122619646,990ms
+Chrome render trace,key held during delay,990,1,11,15.455,DrawFrame trace event,17.394999980926514,1.9399999809265136,990ms
+Chrome render trace,key held during delay,990,1,12,25.304,second RAF after input,33,7.6960000000000015,990ms
+Chrome render trace,key held during delay,990,1,12,25.304,Paint trace event,26.038999795913696,0.7349997959136978,990ms
+Chrome render trace,key held during delay,990,1,12,25.304,DrawFrame trace event,28.608999967575073,3.3049999675750747,990ms
+Chrome render trace,key held during delay,990,1,13,24.854,second RAF after input,32.60000014305115,7.746000143051148,990ms
+Chrome render trace,key held during delay,990,1,13,24.854,Paint trace event,25.628000020980835,0.7740000209808358,990ms
+Chrome render trace,key held during delay,990,1,13,24.854,DrawFrame trace event,27.99500012397766,3.141000123977662,990ms
+Chrome render trace,key held during delay,990,1,14,23.51,second RAF after input,30.5,6.989999999999998,990ms
+Chrome render trace,key held during delay,990,1,14,23.51,Paint trace event,24.286999940872192,0.7769999408721908,990ms
+Chrome render trace,key held during delay,990,1,14,23.51,DrawFrame trace event,26.35599994659424,2.8459999465942367,990ms
+Chrome render trace,key held during delay,990,1,15,16.373,second RAF after input,22.799999952316284,6.426999952316283,990ms
+Chrome render trace,key held during delay,990,1,15,16.373,Paint trace event,16.6010000705719,0.2280000705718983,990ms
+Chrome render trace,key held during delay,990,1,15,16.373,DrawFrame trace event,18.509999990463257,2.1369999904632557,990ms
+Chrome render trace,key held during delay,1000,2,16,14.722,second RAF after input,21.09999990463257,6.377999904632569,1000ms
+Chrome render trace,key held during delay,1000,2,16,14.722,Paint trace event,15.234999895095823,0.5129998950958239,1000ms
+Chrome render trace,key held during delay,1000,2,16,14.722,DrawFrame trace event,17.01900005340576,2.297000053405762,1000ms
+Chrome render trace,key held during delay,1000,2,17,11.283,second RAF after input,16.899999856948853,5.616999856948853,1000ms
+Chrome render trace,key held during delay,1000,2,17,11.283,Paint trace event,11.505000114440918,0.2220001144409185,1000ms
+Chrome render trace,key held during delay,1000,2,17,11.283,DrawFrame trace event,13.141000032424929,1.858000032424929,1000ms
+Chrome render trace,key held during delay,1000,2,18,10.743,second RAF after input,16,5.257,1000ms
+Chrome render trace,key held during delay,1000,2,18,10.743,Paint trace event,10.805999994277954,0.06299999427795377,1000ms
+Chrome render trace,key held during delay,1000,2,18,10.743,DrawFrame trace event,12.373000144958496,1.6300001449584958,1000ms
+Chrome render trace,key held during delay,1000,2,19,14.637,second RAF after input,22.399999856948853,7.762999856948852,1000ms
+Chrome render trace,key held during delay,1000,2,19,14.637,Paint trace event,15.06500005722046,0.4280000572204603,1000ms
+Chrome render trace,key held during delay,1000,2,19,14.637,DrawFrame trace event,16.77400016784668,2.1370001678466792,1000ms
+Chrome render trace,key held during delay,1000,2,20,13.566999999999998,second RAF after input,20.299999952316284,6.732999952316286,1000ms
+Chrome render trace,key held during delay,1000,2,20,13.566999999999998,Paint trace event,13.95199990272522,0.38499990272522133,1000ms
+Chrome render trace,key held during delay,1000,2,20,13.566999999999998,DrawFrame trace event,15.661999940872192,2.094999940872194,1000ms
+Chrome render trace,key held during delay,1000,2,21,11.89,second RAF after input,18.40000009536743,6.510000095367431,1000ms
+Chrome render trace,key held during delay,1000,2,21,11.89,Paint trace event,12.27900004386902,0.38900004386901976,1000ms
+Chrome render trace,key held during delay,1000,2,21,11.89,DrawFrame trace event,13.850000143051147,1.960000143051147,1000ms
+Chrome render trace,key held during delay,1000,2,22,15.072,second RAF after input,21.700000047683716,6.628000047683717,1000ms
+Chrome render trace,key held during delay,1000,2,22,15.072,Paint trace event,15.416000127792358,0.3440001277923592,1000ms
+Chrome render trace,key held during delay,1000,2,22,15.072,DrawFrame trace event,17.140000104904175,2.0680001049041756,1000ms
+Chrome render trace,key held during delay,1000,2,23,16.44,second RAF after input,26.399999856948853,9.959999856948851,1000ms
+Chrome render trace,key held during delay,1000,2,23,16.44,Paint trace event,18.765000104904175,2.3250001049041735,1000ms
+Chrome render trace,key held during delay,1000,2,23,16.44,DrawFrame trace event,20.871999979019165,4.431999979019164,1000ms
+Chrome render trace,key held during delay,1300,2,16,22.691,second RAF after input,30.90000009536743,8.209000095367433,1300ms
+Chrome render trace,key held during delay,1300,2,16,22.691,Paint trace event,22.91600012779236,0.22500012779235945,1300ms
+Chrome render trace,key held during delay,1300,2,16,22.691,DrawFrame trace event,25.097000122070312,2.4060001220703136,1300ms
+Chrome render trace,key held during delay,1300,2,17,24.951,second RAF after input,31.90000009536743,6.949000095367431,1300ms
+Chrome render trace,key held during delay,1300,2,17,24.951,Paint trace event,25.69700002670288,0.7460000267028803,1300ms
+Chrome render trace,key held during delay,1300,2,17,24.951,DrawFrame trace event,27.674000024795532,2.7230000247955317,1300ms
+Chrome render trace,key held during delay,1300,2,18,24.46,second RAF after input,32,7.539999999999999,1300ms
+Chrome render trace,key held during delay,1300,2,18,24.46,Paint trace event,25.12399983406067,0.6639998340606681,1300ms
+Chrome render trace,key held during delay,1300,2,18,24.46,DrawFrame trace event,27.51699995994568,3.056999959945678,1300ms
+Chrome render trace,key held during delay,1300,2,19,23.153,second RAF after input,29.700000047683716,6.547000047683717,1300ms
+Chrome render trace,key held during delay,1300,2,19,23.153,Paint trace event,23.490999937057495,0.3379999370574964,1300ms
+Chrome render trace,key held during delay,1300,2,19,23.153,DrawFrame trace event,25.467000007629395,2.314000007629396,1300ms
+Chrome render trace,key held during delay,1300,2,20,25.407,second RAF after input,33.10000014305115,7.693000143051147,1300ms
+Chrome render trace,key held during delay,1300,2,20,25.407,Paint trace event,26.052000045776367,0.6450000457763672,1300ms
+Chrome render trace,key held during delay,1300,2,20,25.407,DrawFrame trace event,28.2739999294281,2.8669999294281006,1300ms
+Chrome render trace,key held during delay,1300,2,21,24.01,second RAF after input,32.200000047683716,8.190000047683714,1300ms
+Chrome render trace,key held during delay,1300,2,21,24.01,Paint trace event,24.73799991607666,0.7279999160766586,1300ms
+Chrome render trace,key held during delay,1300,2,21,24.01,DrawFrame trace event,27.075000047683716,3.0650000476837143,1300ms
+Chrome render trace,key held during delay,1300,2,22,25.015,second RAF after input,31.5,6.484999999999999,1300ms
+Chrome render trace,key held during delay,1300,2,22,25.015,Paint trace event,25.342000007629395,0.32700000762939396,1300ms
+Chrome render trace,key held during delay,1300,2,22,25.015,DrawFrame trace event,27.29699993133545,2.2819999313354487,1300ms
+Chrome render trace,key held during delay,1300,2,23,26.302,second RAF after input,32.90000009536743,6.598000095367432,1300ms
+Chrome render trace,key held during delay,1300,2,23,26.302,Paint trace event,26.09999990463257,-0.20200009536743124,1300ms
+Chrome render trace,key held during delay,1300,2,23,26.302,DrawFrame trace event,28.537999868392944,2.2359998683929447,1300ms
+Chrome render trace,key held during delay,990,2,16,25.314,second RAF after input,33,7.686,990ms
+Chrome render trace,key held during delay,990,2,16,25.314,Paint trace event,26.098999977111816,0.7849999771118163,990ms
+Chrome render trace,key held during delay,990,2,16,25.314,DrawFrame trace event,28.539000034332275,3.2250000343322753,990ms
+Chrome render trace,key held during delay,990,2,17,25.874999999999996,second RAF after input,33.89999985694885,8.024999856948856,990ms
+Chrome render trace,key held during delay,990,2,17,25.874999999999996,Paint trace event,26.65499997138977,0.7799999713897741,990ms
+Chrome render trace,key held during delay,990,2,17,25.874999999999996,DrawFrame trace event,29.13699984550476,3.2619998455047643,990ms
+Chrome render trace,key held during delay,990,2,18,25.523,second RAF after input,32.89999985694885,7.376999856948853,990ms
+Chrome render trace,key held during delay,990,2,18,25.523,Paint trace event,26.23199987411499,0.7089998741149905,990ms
+Chrome render trace,key held during delay,990,2,18,25.523,DrawFrame trace event,28.257999897003177,2.7349998970031777,990ms
+Chrome render trace,key held during delay,990,2,19,28.594,second RAF after input,36.59999990463257,8.005999904632567,990ms
+Chrome render trace,key held during delay,990,2,19,28.594,Paint trace event,28.83899998664856,0.24499998664855838,990ms
+Chrome render trace,key held during delay,990,2,19,28.594,DrawFrame trace event,30.597000122070312,2.0030001220703113,990ms
+Chrome render trace,key held during delay,990,2,20,25.232,second RAF after input,34,8.768,990ms
+Chrome render trace,key held during delay,990,2,20,25.232,Paint trace event,25.927000045776367,0.6950000457763679,990ms
+Chrome render trace,key held during delay,990,2,20,25.232,DrawFrame trace event,28.57200002670288,3.3400000267028815,990ms
+Chrome render trace,key held during delay,990,2,21,25.564,second RAF after input,32.299999952316284,6.735999952316284,990ms
+Chrome render trace,key held during delay,990,2,21,25.564,Paint trace event,25.80299997329712,0.23899997329711908,990ms
+Chrome render trace,key held during delay,990,2,21,25.564,DrawFrame trace event,27.846999883651733,2.2829998836517333,990ms
+Chrome render trace,key held during delay,990,2,22,24.985,second RAF after input,33.10000014305115,8.115000143051148,990ms
+Chrome render trace,key held during delay,990,2,22,24.985,Paint trace event,25.943000078201297,0.9580000782012981,990ms
+Chrome render trace,key held during delay,990,2,22,24.985,DrawFrame trace event,28.365000009536743,3.3800000095367437,990ms
+Chrome render trace,key held during delay,990,2,23,21.935,second RAF after input,29.299999952316284,7.3649999523162855,990ms
+Chrome render trace,key held during delay,990,2,23,21.935,Paint trace event,22.306999921798703,0.3719999217987038,990ms
+Chrome render trace,key held during delay,990,2,23,21.935,DrawFrame trace event,24.43099999427795,2.495999994277952,990ms
+Chrome render trace,complete keypress then wait,990,0,0,10.972,second RAF after input,12.799999952316284,1.8279999523162846,990ms
+Chrome render trace,complete keypress then wait,990,0,0,10.972,Paint trace event,11.56500005722046,0.5930000572204612,990ms
+Chrome render trace,complete keypress then wait,990,0,0,10.972,DrawFrame trace event,12.933000087738035,1.9610000877380358,990ms
+Chrome render trace,complete keypress then wait,990,0,1,9.738,second RAF after input,11.299999952316284,1.5619999523162846,990ms
+Chrome render trace,complete keypress then wait,990,0,1,9.738,Paint trace event,10.230000019073486,0.4920000190734868,990ms
+Chrome render trace,complete keypress then wait,990,0,1,9.738,DrawFrame trace event,11.430999994277954,1.6929999942779546,990ms
+Chrome render trace,complete keypress then wait,990,0,2,9.084,second RAF after input,10.599999904632568,1.5159999046325687,990ms
+Chrome render trace,complete keypress then wait,990,0,2,9.084,Paint trace event,9.561999797821043,0.4779997978210435,990ms
+Chrome render trace,complete keypress then wait,990,0,2,9.084,DrawFrame trace event,10.75599980354309,1.6719998035430912,990ms
+Chrome render trace,complete keypress then wait,990,0,3,9.425999999999998,second RAF after input,11.099999904632568,1.67399990463257,990ms
+Chrome render trace,complete keypress then wait,990,0,3,9.425999999999998,Paint trace event,9.982999801635742,0.5569998016357438,990ms
+Chrome render trace,complete keypress then wait,990,0,3,9.425999999999998,DrawFrame trace event,11.325999975204468,1.8999999752044694,990ms
+Chrome render trace,complete keypress then wait,990,0,4,8.71,second RAF after input,10.199999809265137,1.4899998092651359,990ms
+Chrome render trace,complete keypress then wait,990,0,4,8.71,Paint trace event,9.180999994277954,0.47099999427795325,990ms
+Chrome render trace,complete keypress then wait,990,0,4,8.71,DrawFrame trace event,10.453999996185305,1.7439999961853037,990ms
+Chrome render trace,complete keypress then wait,990,0,5,11.057,second RAF after input,12.799999952316284,1.7429999523162838,990ms
+Chrome render trace,complete keypress then wait,990,0,5,11.057,Paint trace event,11.585999965667725,0.5289999656677242,990ms
+Chrome render trace,complete keypress then wait,990,0,5,11.057,DrawFrame trace event,12.902999877929688,1.8459998779296871,990ms
+Chrome render trace,complete keypress then wait,990,0,6,10.227,second RAF after input,11.800000190734863,1.573000190734863,990ms
+Chrome render trace,complete keypress then wait,990,0,6,10.227,Paint trace event,10.769000053405762,0.5420000534057614,990ms
+Chrome render trace,complete keypress then wait,990,0,6,10.227,DrawFrame trace event,12.02900004386902,1.80200004386902,990ms
+Chrome render trace,complete keypress then wait,990,0,7,9.744,second RAF after input,11.399999856948853,1.6559998569488528,990ms
+Chrome render trace,complete keypress then wait,990,0,7,9.744,Paint trace event,10.312999963760376,0.5689999637603762,990ms
+Chrome render trace,complete keypress then wait,990,0,7,9.744,DrawFrame trace event,11.539999961853027,1.7959999618530276,990ms
+Chrome render trace,complete keypress then wait,1000,0,0,9.729,second RAF after input,11.400000095367432,1.6710000953674324,1000ms
+Chrome render trace,complete keypress then wait,1000,0,0,9.729,Paint trace event,10.268999814987184,0.5399998149871852,1000ms
+Chrome render trace,complete keypress then wait,1000,0,0,9.729,DrawFrame trace event,11.593999862670898,1.8649998626708992,1000ms
+Chrome render trace,complete keypress then wait,1000,0,1,9.848,second RAF after input,11.600000143051147,1.7520001430511467,1000ms
+Chrome render trace,complete keypress then wait,1000,0,1,9.848,Paint trace event,10.423999786376951,0.5759997863769506,1000ms
+Chrome render trace,complete keypress then wait,1000,0,1,9.848,DrawFrame trace event,11.682999849319458,1.8349998493194573,1000ms
+Chrome render trace,complete keypress then wait,1000,0,2,9.419,second RAF after input,11,1.5809999999999995,1000ms
+Chrome render trace,complete keypress then wait,1000,0,2,9.419,Paint trace event,9.955999851226808,0.5369998512268079,1000ms
+Chrome render trace,complete keypress then wait,1000,0,2,9.419,DrawFrame trace event,11.194000005722046,1.7750000057220454,1000ms
+Chrome render trace,complete keypress then wait,1000,0,3,8.169999999999998,second RAF after input,9.700000047683716,1.5300000476837177,1000ms
+Chrome render trace,complete keypress then wait,1000,0,3,8.169999999999998,Paint trace event,8.620000123977661,0.450000123977663,1000ms
+Chrome render trace,complete keypress then wait,1000,0,3,8.169999999999998,DrawFrame trace event,9.743000030517578,1.57300003051758,1000ms
+Chrome render trace,complete keypress then wait,1000,0,4,9.465,second RAF after input,11,1.5350000000000001,1000ms
+Chrome render trace,complete keypress then wait,1000,0,4,9.465,Paint trace event,9.948999881744385,0.4839998817443849,1000ms
+Chrome render trace,complete keypress then wait,1000,0,4,9.465,DrawFrame trace event,11.263000011444092,1.798000011444092,1000ms
+Chrome render trace,complete keypress then wait,1000,0,5,14.215,second RAF after input,16.399999856948853,2.1849998569488527,1000ms
+Chrome render trace,complete keypress then wait,1000,0,5,14.215,Paint trace event,15.085000038146973,0.8700000381469728,1000ms
+Chrome render trace,complete keypress then wait,1000,0,5,14.215,DrawFrame trace event,16.561000108718872,2.346000108718872,1000ms
+Chrome render trace,complete keypress then wait,1000,0,6,9.572,second RAF after input,11.399999856948853,1.8279998569488534,1000ms
+Chrome render trace,complete keypress then wait,1000,0,6,9.572,Paint trace event,10.167999982833862,0.5959999828338631,1000ms
+Chrome render trace,complete keypress then wait,1000,0,6,9.572,DrawFrame trace event,11.624000072479248,2.052000072479249,1000ms
+Chrome render trace,complete keypress then wait,1000,0,7,10.678,second RAF after input,12.700000047683716,2.022000047683715,1000ms
+Chrome render trace,complete keypress then wait,1000,0,7,10.678,Paint trace event,11.330999851226808,0.6529998512268076,1000ms
+Chrome render trace,complete keypress then wait,1000,0,7,10.678,DrawFrame trace event,12.746999979019163,2.0689999790191624,1000ms
+Chrome render trace,complete keypress then wait,1300,0,0,13.187,second RAF after input,15.299999952316284,2.112999952316285,1300ms
+Chrome render trace,complete keypress then wait,1300,0,0,13.187,Paint trace event,13.9520001411438,0.7650001411438012,1300ms
+Chrome render trace,complete keypress then wait,1300,0,0,13.187,DrawFrame trace event,16.300000190734863,3.113000190734864,1300ms
+Chrome render trace,complete keypress then wait,1300,0,1,11.145,second RAF after input,12.799999952316284,1.6549999523162846,1300ms
+Chrome render trace,complete keypress then wait,1300,0,1,11.145,Paint trace event,11.725000143051147,0.5800001430511479,1300ms
+Chrome render trace,complete keypress then wait,1300,0,1,11.145,DrawFrame trace event,13.033999919891356,1.888999919891356,1300ms
+Chrome render trace,complete keypress then wait,1300,0,2,10.176,second RAF after input,11.900000095367432,1.7240000953674315,1300ms
+Chrome render trace,complete keypress then wait,1300,0,2,10.176,Paint trace event,10.746999979019163,0.5709999790191631,1300ms
+Chrome render trace,complete keypress then wait,1300,0,2,10.176,DrawFrame trace event,12.045000076293944,1.8690000762939434,1300ms
+Chrome render trace,complete keypress then wait,1300,0,3,10.946,second RAF after input,12.799999952316284,1.8539999523162844,1300ms
+Chrome render trace,complete keypress then wait,1300,0,3,10.946,Paint trace event,11.598000049591064,0.6520000495910647,1300ms
+Chrome render trace,complete keypress then wait,1300,0,3,10.946,DrawFrame trace event,13.229000091552734,2.2830000915527346,1300ms
+Chrome render trace,complete keypress then wait,1300,0,4,13.816,second RAF after input,16.100000143051147,2.2840001430511467,1300ms
+Chrome render trace,complete keypress then wait,1300,0,4,13.816,Paint trace event,14.693000078201294,0.8770000782012932,1300ms
+Chrome render trace,complete keypress then wait,1300,0,4,13.816,DrawFrame trace event,16.187000036239624,2.3710000362396233,1300ms
+Chrome render trace,complete keypress then wait,1300,0,5,9.740000000000002,second RAF after input,11.599999904632568,1.8599999046325664,1300ms
+Chrome render trace,complete keypress then wait,1300,0,5,9.740000000000002,Paint trace event,10.258000135421751,0.5180001354217492,1300ms
+Chrome render trace,complete keypress then wait,1300,0,5,9.740000000000002,DrawFrame trace event,11.569000005722046,1.829000005722044,1300ms
+Chrome render trace,complete keypress then wait,1300,0,6,12.012,second RAF after input,14,1.9879999999999995,1300ms
+Chrome render trace,complete keypress then wait,1300,0,6,12.012,Paint trace event,12.740999937057495,0.7289999370574947,1300ms
+Chrome render trace,complete keypress then wait,1300,0,6,12.012,DrawFrame trace event,14.194000005722046,2.1820000057220454,1300ms
+Chrome render trace,complete keypress then wait,1300,0,7,10.708,second RAF after input,12.400000095367432,1.6920000953674315,1300ms
+Chrome render trace,complete keypress then wait,1300,0,7,10.708,Paint trace event,11.247999906539915,0.539999906539915,1300ms
+Chrome render trace,complete keypress then wait,1300,0,7,10.708,DrawFrame trace event,12.588000059127808,1.8800000591278074,1300ms
+Chrome render trace,complete keypress then wait,1300,1,8,15.501,second RAF after input,18.09999990463257,2.598999904632569,1300ms
+Chrome render trace,complete keypress then wait,1300,1,8,15.501,Paint trace event,16.526000022888184,1.0250000228881841,1300ms
+Chrome render trace,complete keypress then wait,1300,1,8,15.501,DrawFrame trace event,18.28000020980835,2.77900020980835,1300ms
+Chrome render trace,complete keypress then wait,1300,1,9,10.713,second RAF after input,12.5,1.7870000000000008,1300ms
+Chrome render trace,complete keypress then wait,1300,1,9,10.713,Paint trace event,11.319000005722046,0.6060000057220467,1300ms
+Chrome render trace,complete keypress then wait,1300,1,9,10.713,DrawFrame trace event,12.62999987602234,1.9169998760223415,1300ms
+Chrome render trace,complete keypress then wait,1300,1,10,10.72,second RAF after input,12.5,1.7799999999999994,1300ms
+Chrome render trace,complete keypress then wait,1300,1,10,10.72,Paint trace event,11.031999826431274,0.3119998264312738,1300ms
+Chrome render trace,complete keypress then wait,1300,1,10,10.72,DrawFrame trace event,12.367999792099,1.6479997920990002,1300ms
+Chrome render trace,complete keypress then wait,1300,1,11,12.893,second RAF after input,15,2.1069999999999993,1300ms
+Chrome render trace,complete keypress then wait,1300,1,11,12.893,Paint trace event,13.65400004386902,0.7610000438690196,1300ms
+Chrome render trace,complete keypress then wait,1300,1,11,12.893,DrawFrame trace event,15.287999868392944,2.3949998683929437,1300ms
+Chrome render trace,complete keypress then wait,1300,1,12,10.735,second RAF after input,33.40000009536743,22.665000095367432,1300ms
+Chrome render trace,complete keypress then wait,1300,1,12,10.735,Paint trace event,11.358999967575071,0.623999967575072,1300ms
+Chrome render trace,complete keypress then wait,1300,1,12,10.735,DrawFrame trace event,12.739000082015991,2.004000082015992,1300ms
+Chrome render trace,complete keypress then wait,1300,1,13,10.356,second RAF after input,12.200000047683716,1.844000047683716,1300ms
+Chrome render trace,complete keypress then wait,1300,1,13,10.356,Paint trace event,10.908999919891356,0.5529999198913558,1300ms
+Chrome render trace,complete keypress then wait,1300,1,13,10.356,DrawFrame trace event,12.26699995994568,1.9109999599456806,1300ms
+Chrome render trace,complete keypress then wait,1300,1,14,9.737,second RAF after input,13.800000190734863,4.063000190734863,1300ms
+Chrome render trace,complete keypress then wait,1300,1,14,9.737,Paint trace event,10.259999990463257,0.5229999904632567,1300ms
+Chrome render trace,complete keypress then wait,1300,1,14,9.737,DrawFrame trace event,12.545000076293944,2.8080000762939434,1300ms
+Chrome render trace,complete keypress then wait,1300,1,15,10.437,second RAF after input,14.700000047683716,4.263000047683716,1300ms
+Chrome render trace,complete keypress then wait,1300,1,15,10.437,Paint trace event,11.042999982833862,0.6059999828338629,1300ms
+Chrome render trace,complete keypress then wait,1300,1,15,10.437,DrawFrame trace event,13.151999950408936,2.714999950408936,1300ms
+Chrome render trace,complete keypress then wait,1000,1,8,13.797,second RAF after input,15.699999809265137,1.9029998092651361,1000ms
+Chrome render trace,complete keypress then wait,1000,1,8,13.797,Paint trace event,14.567999839782717,0.770999839782716,1000ms
+Chrome render trace,complete keypress then wait,1000,1,8,13.797,DrawFrame trace event,16.039000034332275,2.242000034332275,1000ms
+Chrome render trace,complete keypress then wait,1000,1,9,8.952000000000002,second RAF after input,10.399999856948853,1.4479998569488508,1000ms
+Chrome render trace,complete keypress then wait,1000,1,9,8.952000000000002,Paint trace event,9.436000108718872,0.48400010871887034,1000ms
+Chrome render trace,complete keypress then wait,1000,1,9,8.952000000000002,DrawFrame trace event,10.653000116348268,1.7010001163482666,1000ms
+Chrome render trace,complete keypress then wait,1000,1,10,9.337,second RAF after input,10.900000095367432,1.563000095367432,1000ms
+Chrome render trace,complete keypress then wait,1000,1,10,9.337,Paint trace event,9.860999822616575,0.5239998226165756,1000ms
+Chrome render trace,complete keypress then wait,1000,1,10,9.337,DrawFrame trace event,11.049999952316284,1.7129999523162844,1000ms
+Chrome render trace,complete keypress then wait,1000,1,11,10.596,second RAF after input,12.400000095367432,1.8040000953674316,1000ms
+Chrome render trace,complete keypress then wait,1000,1,11,10.596,Paint trace event,11.275000095367432,0.6790000953674316,1000ms
+Chrome render trace,complete keypress then wait,1000,1,11,10.596,DrawFrame trace event,12.596999883651732,2.0009998836517315,1000ms
+Chrome render trace,complete keypress then wait,1000,1,12,10.088,second RAF after input,11.700000047683716,1.6120000476837166,1000ms
+Chrome render trace,complete keypress then wait,1000,1,12,10.088,Paint trace event,10.611999988555908,0.523999988555909,1000ms
+Chrome render trace,complete keypress then wait,1000,1,12,10.088,DrawFrame trace event,12.057999849319458,1.9699998493194588,1000ms
+Chrome render trace,complete keypress then wait,1000,1,13,11.797,second RAF after input,14.299999952316284,2.5029999523162836,1000ms
+Chrome render trace,complete keypress then wait,1000,1,13,11.797,Paint trace event,12.510999917984009,0.7139999179840082,1000ms
+Chrome render trace,complete keypress then wait,1000,1,13,11.797,DrawFrame trace event,14.204999923706056,2.407999923706056,1000ms
+Chrome render trace,complete keypress then wait,1000,1,14,11.149,second RAF after input,13,1.8510000000000009,1000ms
+Chrome render trace,complete keypress then wait,1000,1,14,11.149,Paint trace event,11.847999811172484,0.6989998111724844,1000ms
+Chrome render trace,complete keypress then wait,1000,1,14,11.149,DrawFrame trace event,13.355999946594238,2.206999946594239,1000ms
+Chrome render trace,complete keypress then wait,1000,1,15,9.779,second RAF after input,11.600000143051147,1.8210001430511475,1000ms
+Chrome render trace,complete keypress then wait,1000,1,15,9.779,Paint trace event,10.361999988555908,0.5829999885559083,1000ms
+Chrome render trace,complete keypress then wait,1000,1,15,9.779,DrawFrame trace event,11.728000164031982,1.9490001640319825,1000ms
+Chrome render trace,complete keypress then wait,990,1,8,10.465,second RAF after input,12.200000047683716,1.735000047683716,990ms
+Chrome render trace,complete keypress then wait,990,1,8,10.465,Paint trace event,10.992000102996826,0.5270001029968263,990ms
+Chrome render trace,complete keypress then wait,990,1,8,10.465,DrawFrame trace event,12.390000104904177,1.9250001049041767,990ms
+Chrome render trace,complete keypress then wait,990,1,9,11.741,second RAF after input,13.599999904632568,1.8589999046325687,990ms
+Chrome render trace,complete keypress then wait,990,1,9,11.741,Paint trace event,12.314000129699709,0.5730001296997091,990ms
+Chrome render trace,complete keypress then wait,990,1,9,11.741,DrawFrame trace event,13.726999998092651,1.9859999980926517,990ms
+Chrome render trace,complete keypress then wait,990,1,10,10.129,second RAF after input,11.799999952316284,1.6709999523162846,990ms
+Chrome render trace,complete keypress then wait,990,1,10,10.129,Paint trace event,10.692999839782717,0.5639998397827171,990ms
+Chrome render trace,complete keypress then wait,990,1,10,10.129,DrawFrame trace event,12.1010000705719,1.9720000705718999,990ms
+Chrome render trace,complete keypress then wait,990,1,11,11.6,second RAF after input,13.600000143051147,2.000000143051148,990ms
+Chrome render trace,complete keypress then wait,990,1,11,11.6,Paint trace event,12.314000129699709,0.7140001296997092,990ms
+Chrome render trace,complete keypress then wait,990,1,11,11.6,DrawFrame trace event,13.795000076293944,2.195000076293944,990ms
+Chrome render trace,complete keypress then wait,990,1,12,10.106000000000002,second RAF after input,11.800000190734863,1.6940001907348616,990ms
+Chrome render trace,complete keypress then wait,990,1,12,10.106000000000002,Paint trace event,10.641000032424929,0.5350000324249269,990ms
+Chrome render trace,complete keypress then wait,990,1,12,10.106000000000002,DrawFrame trace event,12.062000036239624,1.9560000362396224,990ms
+Chrome render trace,complete keypress then wait,990,1,13,9.677,second RAF after input,11.5,1.8230000000000004,990ms
+Chrome render trace,complete keypress then wait,990,1,13,9.677,Paint trace event,10.248000144958496,0.5710001449584965,990ms
+Chrome render trace,complete keypress then wait,990,1,13,9.677,DrawFrame trace event,11.57800006866455,1.9010000686645512,990ms
+Chrome render trace,complete keypress then wait,990,1,14,9.243,second RAF after input,10.799999952316284,1.5569999523162839,990ms
+Chrome render trace,complete keypress then wait,990,1,14,9.243,Paint trace event,9.766000032424929,0.5230000324249282,990ms
+Chrome render trace,complete keypress then wait,990,1,14,9.243,DrawFrame trace event,11.02900004386902,1.78600004386902,990ms
+Chrome render trace,complete keypress then wait,990,1,15,9.18,second RAF after input,10.900000095367432,1.720000095367432,990ms
+Chrome render trace,complete keypress then wait,990,1,15,9.18,Paint trace event,9.7220001220703125,0.5420001220703128,990ms
+Chrome render trace,complete keypress then wait,990,1,15,9.18,DrawFrame trace event,11.009000062942505,1.8290000629425052,990ms
+Chrome render trace,complete keypress then wait,1000,2,16,11.357,second RAF after input,13.5,2.1430000000000007,1000ms
+Chrome render trace,complete keypress then wait,1000,2,16,11.357,Paint trace event,12.164999961853027,0.807999961853028,1000ms
+Chrome render trace,complete keypress then wait,1000,2,16,11.357,DrawFrame trace event,13.753000020980837,2.3960000209808374,1000ms
+Chrome render trace,complete keypress then wait,1000,2,17,9.869,second RAF after input,11.599999904632568,1.7309999046325686,1000ms
+Chrome render trace,complete keypress then wait,1000,2,17,9.869,Paint trace event,10.40499997138977,0.5359999713897707,1000ms
+Chrome render trace,complete keypress then wait,1000,2,17,9.869,DrawFrame trace event,11.755000114440918,1.8860001144409182,1000ms
+Chrome render trace,complete keypress then wait,1000,2,18,11.744,second RAF after input,35.799999952316284,24.055999952316284,1000ms
+Chrome render trace,complete keypress then wait,1000,2,18,11.744,Paint trace event,12.462999820709229,0.7189998207092287,1000ms
+Chrome render trace,complete keypress then wait,1000,2,18,11.744,DrawFrame trace event,14.05299997329712,2.3089999732971194,1000ms
+Chrome render trace,complete keypress then wait,1000,2,19,9.051000000000002,second RAF after input,10.699999809265137,1.6489998092651348,1000ms
+Chrome render trace,complete keypress then wait,1000,2,19,9.051000000000002,Paint trace event,9.542999982833862,0.49199998283386037,1000ms
+Chrome render trace,complete keypress then wait,1000,2,19,9.051000000000002,DrawFrame trace event,10.920000076293944,1.8690000762939416,1000ms
+Chrome render trace,complete keypress then wait,1000,2,20,12.501,second RAF after input,14.699999809265137,2.1989998092651373,1000ms
+Chrome render trace,complete keypress then wait,1000,2,20,12.501,Paint trace event,13.329999923706056,0.828999923706057,1000ms
+Chrome render trace,complete keypress then wait,1000,2,20,12.501,DrawFrame trace event,15.015000104904177,2.514000104904177,1000ms
+Chrome render trace,complete keypress then wait,1000,2,21,12.285,second RAF after input,14.599999904632568,2.314999904632568,1000ms
+Chrome render trace,complete keypress then wait,1000,2,21,12.285,Paint trace event,13.061999797821043,0.776999797821043,1000ms
+Chrome render trace,complete keypress then wait,1000,2,21,12.285,DrawFrame trace event,14.748999834060667,2.463999834060667,1000ms
+Chrome render trace,complete keypress then wait,1000,2,22,15.131,second RAF after input,18,2.8689999999999998,1000ms
+Chrome render trace,complete keypress then wait,1000,2,22,15.131,Paint trace event,16.36899995803833,1.2379999580383299,1000ms
+Chrome render trace,complete keypress then wait,1000,2,22,15.131,DrawFrame trace event,18.23800015449524,3.107000154495239,1000ms
+Chrome render trace,complete keypress then wait,1000,2,23,12.053,second RAF after input,14.799999952316284,2.7469999523162834,1000ms
+Chrome render trace,complete keypress then wait,1000,2,23,12.053,Paint trace event,12.948999881744385,0.8959998817443839,1000ms
+Chrome render trace,complete keypress then wait,1000,2,23,12.053,DrawFrame trace event,14.530999898910522,2.4779998989105216,1000ms
+Chrome render trace,complete keypress then wait,1300,2,16,17.089,second RAF after input,20.200000047683716,3.111000047683717,1300ms
+Chrome render trace,complete keypress then wait,1300,2,16,17.089,Paint trace event,18.15699982643127,1.0679998264312722,1300ms
+Chrome render trace,complete keypress then wait,1300,2,16,17.089,DrawFrame trace event,20.209999799728394,3.120999799728395,1300ms
+Chrome render trace,complete keypress then wait,1300,2,17,13.101,second RAF after input,15.300000190734863,2.1990001907348624,1300ms
+Chrome render trace,complete keypress then wait,1300,2,17,13.101,Paint trace event,14.00600004196167,0.905000041961669,1300ms
+Chrome render trace,complete keypress then wait,1300,2,17,13.101,DrawFrame trace event,15.508000135421751,2.4070001354217503,1300ms
+Chrome render trace,complete keypress then wait,1300,2,18,13.173,second RAF after input,15.400000095367432,2.2270000953674316,1300ms
+Chrome render trace,complete keypress then wait,1300,2,18,13.173,Paint trace event,14.105000019073486,0.9320000190734863,1300ms
+Chrome render trace,complete keypress then wait,1300,2,18,13.173,DrawFrame trace event,15.554999828338625,2.381999828338625,1300ms
+Chrome render trace,complete keypress then wait,1300,2,19,9.114,second RAF after input,10.599999904632568,1.4859999046325676,1300ms
+Chrome render trace,complete keypress then wait,1300,2,19,9.114,Paint trace event,9.635999917984009,0.521999917984008,1300ms
+Chrome render trace,complete keypress then wait,1300,2,19,9.114,DrawFrame trace event,10.984999895095823,1.8709998950958227,1300ms
+Chrome render trace,complete keypress then wait,1300,2,20,9.182,second RAF after input,10.799999952316284,1.6179999523162838,1300ms
+Chrome render trace,complete keypress then wait,1300,2,20,9.182,Paint trace event,9.746000051498411,0.5640000514984109,1300ms
+Chrome render trace,complete keypress then wait,1300,2,20,9.182,DrawFrame trace event,11.111999988555908,1.9299999885559078,1300ms
+Chrome render trace,complete keypress then wait,1300,2,21,9.579,second RAF after input,14.100000143051147,4.521000143051147,1300ms
+Chrome render trace,complete keypress then wait,1300,2,21,9.579,Paint trace event,10.101999998092651,0.5229999980926507,1300ms
+Chrome render trace,complete keypress then wait,1300,2,21,9.579,DrawFrame trace event,13.108999967575071,3.529999967575071,1300ms
+Chrome render trace,complete keypress then wait,1300,2,22,9.121,second RAF after input,10.599999904632568,1.478999904632568,1300ms
+Chrome render trace,complete keypress then wait,1300,2,22,9.121,Paint trace event,9.635999917984009,0.5149999179840083,1300ms
+Chrome render trace,complete keypress then wait,1300,2,22,9.121,DrawFrame trace event,10.884000062942505,1.7630000629425044,1300ms
+Chrome render trace,complete keypress then wait,1300,2,23,15.835,second RAF after input,18.299999952316284,2.4649999523162833,1300ms
+Chrome render trace,complete keypress then wait,1300,2,23,15.835,Paint trace event,16.921000003814697,1.0860000038146964,1300ms
+Chrome render trace,complete keypress then wait,1300,2,23,15.835,DrawFrame trace event,18.57100009918213,2.736000099182128,1300ms
+Chrome render trace,complete keypress then wait,990,2,16,9.2,second RAF after input,10.799999952316284,1.599999952316285,990ms
+Chrome render trace,complete keypress then wait,990,2,16,9.2,Paint trace event,9.724999904632568,0.5249999046325691,990ms
+Chrome render trace,complete keypress then wait,990,2,16,9.2,DrawFrame trace event,11.01699995994568,1.8169999599456812,990ms
+Chrome render trace,complete keypress then wait,990,2,17,9.437,second RAF after input,11.099999904632568,1.662999904632569,990ms
+Chrome render trace,complete keypress then wait,990,2,17,9.437,Paint trace event,9.686999797821043,0.24999979782104376,990ms
+Chrome render trace,complete keypress then wait,990,2,17,9.437,DrawFrame trace event,10.95699977874756,1.519999778747561,990ms
+Chrome render trace,complete keypress then wait,990,2,18,11.855,second RAF after input,13.899999856948853,2.044999856948852,990ms
+Chrome render trace,complete keypress then wait,990,2,18,11.855,Paint trace event,12.653000116348268,0.798000116348268,990ms
+Chrome render trace,complete keypress then wait,990,2,18,11.855,DrawFrame trace event,14.15499997138977,2.29999997138977,990ms
+Chrome render trace,complete keypress then wait,990,2,19,11.666,second RAF after input,13.800000190734863,2.134000190734863,990ms
+Chrome render trace,complete keypress then wait,990,2,19,11.666,Paint trace event,12.458000183105469,0.7920001831054684,990ms
+Chrome render trace,complete keypress then wait,990,2,19,11.666,DrawFrame trace event,14.013000011444092,2.3470000114440914,990ms
+Chrome render trace,complete keypress then wait,990,2,20,13.025,second RAF after input,15.200000047683716,2.1750000476837155,990ms
+Chrome render trace,complete keypress then wait,990,2,20,13.025,Paint trace event,13.77999997138977,0.7549999713897702,990ms
+Chrome render trace,complete keypress then wait,990,2,20,13.025,DrawFrame trace event,15.400000095367432,2.3750000953674313,990ms
+Chrome render trace,complete keypress then wait,990,2,21,14.68,second RAF after input,17.299999952316284,2.6199999523162845,990ms
+Chrome render trace,complete keypress then wait,990,2,21,14.68,Paint trace event,15.73799991607666,1.0579999160766604,990ms
+Chrome render trace,complete keypress then wait,990,2,21,14.68,DrawFrame trace event,17.460999965667725,2.780999965667725,990ms
+Chrome render trace,complete keypress then wait,990,2,22,9.641,second RAF after input,11.399999856948853,1.7589998569488525,990ms
+Chrome render trace,complete keypress then wait,990,2,22,9.641,Paint trace event,10.315999984741213,0.6749999847412127,990ms
+Chrome render trace,complete keypress then wait,990,2,22,9.641,DrawFrame trace event,11.585000038146973,1.9440000381469726,990ms
+Chrome render trace,complete keypress then wait,990,2,23,11.539,second RAF after input,13.700000047683716,2.161000047683716,990ms
+Chrome render trace,complete keypress then wait,990,2,23,11.539,Paint trace event,12.338000059127808,0.7990000591278079,990ms
+Chrome render trace,complete keypress then wait,990,2,23,11.539,DrawFrame trace event,13.877000093460085,2.338000093460085,990ms
+Chrome trace screenshot,key held during delay,990,0,0,24.013,second RAF after input,32.700000047683716,8.687000047683714,990ms
+Chrome trace screenshot,key held during delay,990,0,0,24.013,first changed trace screenshot,32.62100005149841,8.608000051498411,990ms
+Chrome trace screenshot,key held during delay,990,0,1,30.930999999999997,second RAF after input,40.79999995231629,9.868999952316294,990ms
+Chrome trace screenshot,key held during delay,990,0,1,30.930999999999997,first changed trace screenshot,40.51200008392334,9.581000083923342,990ms
+Chrome trace screenshot,key held during delay,990,0,2,20.987,second RAF after input,29.5,8.513000000000002,990ms
+Chrome trace screenshot,key held during delay,990,0,2,20.987,first changed trace screenshot,30.628999948501587,9.641999948501589,990ms
+Chrome trace screenshot,key held during delay,990,0,3,25.641,second RAF after input,33.299999952316284,7.658999952316286,990ms
+Chrome trace screenshot,key held during delay,990,0,3,25.641,first changed trace screenshot,34.76100015640259,9.12000015640259,990ms
+Chrome trace screenshot,key held during delay,990,0,4,25.459999999999997,second RAF after input,34.09999990463257,8.639999904632571,990ms
+Chrome trace screenshot,key held during delay,990,0,4,25.459999999999997,first changed trace screenshot,35.73799991607666,10.277999916076663,990ms
+Chrome trace screenshot,key held during delay,990,0,5,15.309,second RAF after input,22.600000143051147,7.291000143051148,990ms
+Chrome trace screenshot,key held during delay,990,0,5,15.309,first changed trace screenshot,23.69000005722046,8.38100005722046,990ms
+Chrome trace screenshot,key held during delay,990,0,6,25.174999999999997,second RAF after input,33.40000009536743,8.225000095367434,990ms
+Chrome trace screenshot,key held during delay,990,0,6,25.174999999999997,first changed trace screenshot,34.90700006484985,9.732000064849856,990ms
+Chrome trace screenshot,key held during delay,990,0,7,24.583,second RAF after input,32.80000019073486,8.217000190734865,990ms
+Chrome trace screenshot,key held during delay,990,0,7,24.583,first changed trace screenshot,34.20299983024597,9.619999830245973,990ms
+Chrome trace screenshot,key held during delay,1000,0,0,13.042,second RAF after input,19.700000047683716,6.658000047683716,1000ms
+Chrome trace screenshot,key held during delay,1000,0,0,13.042,first changed trace screenshot,20.764000177383423,7.722000177383423,1000ms
+Chrome trace screenshot,key held during delay,1000,0,1,11.262,second RAF after input,16.600000143051147,5.338000143051147,1000ms
+Chrome trace screenshot,key held during delay,1000,0,1,11.262,first changed trace screenshot,18.532999992370605,7.270999992370605,1000ms
+Chrome trace screenshot,key held during delay,1000,0,2,9.977,second RAF after input,15.200000047683716,5.2230000476837155,1000ms
+Chrome trace screenshot,key held during delay,1000,0,2,9.977,first changed trace screenshot,17.08999991416931,7.112999914169311,1000ms
+Chrome trace screenshot,key held during delay,1000,0,3,14.681,second RAF after input,20.5,5.819000000000001,1000ms
+Chrome trace screenshot,key held during delay,1000,0,3,14.681,first changed trace screenshot,22.793999910354614,8.112999910354615,1000ms
+Chrome trace screenshot,key held during delay,1000,0,4,11.682,second RAF after input,18.600000143051147,6.918000143051147,1000ms
+Chrome trace screenshot,key held during delay,1000,0,4,11.682,first changed trace screenshot,19.519999980926514,7.837999980926513,1000ms
+Chrome trace screenshot,key held during delay,1000,0,5,10.223,second RAF after input,15.5,5.276999999999999,1000ms
+Chrome trace screenshot,key held during delay,1000,0,5,10.223,first changed trace screenshot,17.524999856948853,7.301999856948852,1000ms
+Chrome trace screenshot,key held during delay,1000,0,6,10.066,second RAF after input,15.200000047683716,5.134000047683715,1000ms
+Chrome trace screenshot,key held during delay,1000,0,6,10.066,first changed trace screenshot,17.365000009536743,7.299000009536742,1000ms
+Chrome trace screenshot,key held during delay,1000,0,7,9.893,second RAF after input,15.700000047683716,5.807000047683715,1000ms
+Chrome trace screenshot,key held during delay,1000,0,7,9.893,first changed trace screenshot,17.16600012779236,7.273000127792358,1000ms
+Chrome trace screenshot,key held during delay,1300,0,0,23.621999999999996,second RAF after input,31.399999856948853,7.777999856948856,1300ms
+Chrome trace screenshot,key held during delay,1300,0,0,23.621999999999996,first changed trace screenshot,33.04200005531311,9.420000055313114,1300ms
+Chrome trace screenshot,key held during delay,1300,0,1,23.86,second RAF after input,30.5,6.640000000000001,1300ms
+Chrome trace screenshot,key held during delay,1300,0,1,23.86,first changed trace screenshot,32.875,9.015,1300ms
+Chrome trace screenshot,key held during delay,1300,0,2,23.531,second RAF after input,30.899999856948853,7.368999856948854,1300ms
+Chrome trace screenshot,key held during delay,1300,0,2,23.531,first changed trace screenshot,33.62400007247925,10.09300007247925,1300ms
+Chrome trace screenshot,key held during delay,1300,0,3,24.893,second RAF after input,32,7.106999999999999,1300ms
+Chrome trace screenshot,key held during delay,1300,0,3,24.893,first changed trace screenshot,35.081000089645386,10.188000089645385,1300ms
+Chrome trace screenshot,key held during delay,1300,0,4,24.149,second RAF after input,31.40000009536743,7.251000095367431,1300ms
+Chrome trace screenshot,key held during delay,1300,0,4,24.149,first changed trace screenshot,34.26600003242493,10.117000032424926,1300ms
+Chrome trace screenshot,key held during delay,1300,0,5,26.157,second RAF after input,33.200000047683716,7.043000047683716,1300ms
+Chrome trace screenshot,key held during delay,1300,0,5,26.157,first changed trace screenshot,36.02199983596802,9.864999835968018,1300ms
+Chrome trace screenshot,key held during delay,1300,0,6,27.476,second RAF after input,32.10000014305115,4.624000143051148,1300ms
+Chrome trace screenshot,key held during delay,1300,0,6,27.476,first changed trace screenshot,35.0699999332428,7.593999933242799,1300ms
+Chrome trace screenshot,key held during delay,1300,0,7,23.24,second RAF after input,29.90000009536743,6.660000095367433,1300ms
+Chrome trace screenshot,key held during delay,1300,0,7,23.24,first changed trace screenshot,32.75500011444092,9.51500011444092,1300ms
+Chrome trace screenshot,key held during delay,1300,1,8,23.878,second RAF after input,32.40000009536743,8.522000095367432,1300ms
+Chrome trace screenshot,key held during delay,1300,1,8,23.878,first changed trace screenshot,34.06500005722046,10.187000057220459,1300ms
+Chrome trace screenshot,key held during delay,1300,1,9,27.554,second RAF after input,34.69999980926514,7.145999809265138,1300ms
+Chrome trace screenshot,key held during delay,1300,1,9,27.554,first changed trace screenshot,37.348000049591064,9.794000049591066,1300ms
+Chrome trace screenshot,key held during delay,1300,1,10,22.92,second RAF after input,30.09999990463257,7.179999904632567,1300ms
+Chrome trace screenshot,key held during delay,1300,1,10,22.92,first changed trace screenshot,32.7739999294281,9.853999929428099,1300ms
+Chrome trace screenshot,key held during delay,1300,1,11,24.155,second RAF after input,30.59999990463257,6.444999904632567,1300ms
+Chrome trace screenshot,key held during delay,1300,1,11,24.155,first changed trace screenshot,32.94099998474121,8.78599998474121,1300ms
+Chrome trace screenshot,key held during delay,1300,1,12,26.997,second RAF after input,34,7.003,1300ms
+Chrome trace screenshot,key held during delay,1300,1,12,26.997,first changed trace screenshot,36.6969997882843,9.699999788284302,1300ms
+Chrome trace screenshot,key held during delay,1300,1,13,23.857000000000003,second RAF after input,31.100000143051147,7.243000143051145,1300ms
+Chrome trace screenshot,key held during delay,1300,1,13,23.857000000000003,first changed trace screenshot,33.776000022888184,9.91900002288818,1300ms
+Chrome trace screenshot,key held during delay,1300,1,14,28.033,second RAF after input,34.5,6.466999999999999,1300ms
+Chrome trace screenshot,key held during delay,1300,1,14,28.033,first changed trace screenshot,36.99899983406067,8.965999834060668,1300ms
+Chrome trace screenshot,key held during delay,1300,1,15,23.327,second RAF after input,30.5,7.172999999999998,1300ms
+Chrome trace screenshot,key held during delay,1300,1,15,23.327,first changed trace screenshot,33.21199989318848,9.884999893188475,1300ms
+Chrome trace screenshot,key held during delay,1000,1,8,10.895,second RAF after input,16,5.105,1000ms
+Chrome trace screenshot,key held during delay,1000,1,8,10.895,first changed trace screenshot,18.326000213623047,7.431000213623047,1000ms
+Chrome trace screenshot,key held during delay,1000,1,9,10.734,second RAF after input,17.200000047683716,6.466000047683716,1000ms
+Chrome trace screenshot,key held during delay,1000,1,9,10.734,first changed trace screenshot,17.996000051498413,7.262000051498413,1000ms
+Chrome trace screenshot,key held during delay,1000,1,10,15.96,second RAF after input,23.09999990463257,7.1399999046325675,1000ms
+Chrome trace screenshot,key held during delay,1000,1,10,15.96,first changed trace screenshot,24.372999906539917,8.412999906539916,1000ms
+Chrome trace screenshot,key held during delay,1000,1,11,10.497,second RAF after input,16.799999952316284,6.302999952316284,1000ms
+Chrome trace screenshot,key held during delay,1000,1,11,10.497,first changed trace screenshot,18.20400023460388,7.707000234603878,1000ms
+Chrome trace screenshot,key held during delay,1000,1,12,9.936,second RAF after input,16.199999809265137,6.263999809265137,1000ms
+Chrome trace screenshot,key held during delay,1000,1,12,9.936,first changed trace screenshot,17.395999908447266,7.459999908447266,1000ms
+Chrome trace screenshot,key held during delay,1000,1,13,9.93,second RAF after input,16.200000047683716,6.270000047683716,1000ms
+Chrome trace screenshot,key held during delay,1000,1,13,9.93,first changed trace screenshot,17.34599995613098,7.415999956130982,1000ms
+Chrome trace screenshot,key held during delay,1000,1,14,15.483,second RAF after input,23,7.5169999999999995,1000ms
+Chrome trace screenshot,key held during delay,1000,1,14,15.483,first changed trace screenshot,22.51800012588501,7.035000125885009,1000ms
+Chrome trace screenshot,key held during delay,1000,1,15,12.207,second RAF after input,20.40000009536743,8.193000095367431,1000ms
+Chrome trace screenshot,key held during delay,1000,1,15,12.207,first changed trace screenshot,20.41100001335144,8.20400001335144,1000ms
+Chrome trace screenshot,key held during delay,990,1,8,25.253000000000004,second RAF after input,32.09999990463257,6.846999904632565,990ms
+Chrome trace screenshot,key held during delay,990,1,8,25.253000000000004,first changed trace screenshot,34.901999950408936,9.648999950408932,990ms
+Chrome trace screenshot,key held during delay,990,1,9,28.96,second RAF after input,36.10000014305115,7.140000143051147,990ms
+Chrome trace screenshot,key held during delay,990,1,9,28.96,first changed trace screenshot,38.8289999961853,9.868999996185302,990ms
+Chrome trace screenshot,key held during delay,990,1,10,24.997000000000003,second RAF after input,32.60000014305115,7.603000143051144,990ms
+Chrome trace screenshot,key held during delay,990,1,10,24.997000000000003,first changed trace screenshot,35.1800000667572,10.183000066757199,990ms
+Chrome trace screenshot,key held during delay,990,1,11,24.614,second RAF after input,31.600000143051147,6.986000143051147,990ms
+Chrome trace screenshot,key held during delay,990,1,11,24.614,first changed trace screenshot,34.569000005722046,9.955000005722045,990ms
+Chrome trace screenshot,key held during delay,990,1,12,25.635,second RAF after input,31.799999952316284,6.164999952316283,990ms
+Chrome trace screenshot,key held during delay,990,1,12,25.635,first changed trace screenshot,34.44799995422363,8.812999954223631,990ms
+Chrome trace screenshot,key held during delay,990,1,13,25.113,second RAF after input,31.90000009536743,6.787000095367432,990ms
+Chrome trace screenshot,key held during delay,990,1,13,25.113,first changed trace screenshot,34.87600016593933,9.763000165939332,990ms
+Chrome trace screenshot,key held during delay,990,1,14,29.371,second RAF after input,37.39999985694885,8.028999856948854,990ms
+Chrome trace screenshot,key held during delay,990,1,14,29.371,first changed trace screenshot,38.92700004577637,9.556000045776369,990ms
+Chrome trace screenshot,key held during delay,990,1,15,25.092,second RAF after input,31.299999952316284,6.207999952316285,990ms
+Chrome trace screenshot,key held during delay,990,1,15,25.092,first changed trace screenshot,33.64200019836426,8.550000198364259,990ms
+Chrome trace screenshot,key held during delay,1000,2,16,9.936,second RAF after input,15,5.064,1000ms
+Chrome trace screenshot,key held during delay,1000,2,16,9.936,first changed trace screenshot,16.813999891281128,6.877999891281128,1000ms
+Chrome trace screenshot,key held during delay,1000,2,17,12.239,second RAF after input,18.09999990463257,5.860999904632568,1000ms
+Chrome trace screenshot,key held during delay,1000,2,17,12.239,first changed trace screenshot,20.14400005340576,7.905000053405761,1000ms
+Chrome trace screenshot,key held during delay,1000,2,18,12.951,second RAF after input,18.700000047683716,5.749000047683715,1000ms
+Chrome trace screenshot,key held during delay,1000,2,18,12.951,first changed trace screenshot,20.91599988937378,7.964999889373779,1000ms
+Chrome trace screenshot,key held during delay,1000,2,19,11.112,second RAF after input,16.5,5.388,1000ms
+Chrome trace screenshot,key held during delay,1000,2,19,11.112,first changed trace screenshot,18.554999828338623,7.442999828338623,1000ms
+Chrome trace screenshot,key held during delay,1000,2,20,10.219,second RAF after input,15.5,5.281000000000001,1000ms
+Chrome trace screenshot,key held during delay,1000,2,20,10.219,first changed trace screenshot,17.438000202178955,7.219000202178956,1000ms
+Chrome trace screenshot,key held during delay,1000,2,21,9.954999999999998,second RAF after input,15.299999952316284,5.344999952316286,1000ms
+Chrome trace screenshot,key held during delay,1000,2,21,9.954999999999998,first changed trace screenshot,17.261000156402588,7.30600015640259,1000ms
+Chrome trace screenshot,key held during delay,1000,2,22,12.903,second RAF after input,19.100000143051147,6.197000143051147,1000ms
+Chrome trace screenshot,key held during delay,1000,2,22,12.903,first changed trace screenshot,21.322999954223633,8.419999954223632,1000ms
+Chrome trace screenshot,key held during delay,1000,2,23,10.693,second RAF after input,17.800000190734863,7.107000190734864,1000ms
+Chrome trace screenshot,key held during delay,1000,2,23,10.693,first changed trace screenshot,19.185999870300293,8.492999870300293,1000ms
+Chrome trace screenshot,key held during delay,1300,2,16,25.165,second RAF after input,32.90000009536743,7.7350000953674325,1300ms
+Chrome trace screenshot,key held during delay,1300,2,16,25.165,first changed trace screenshot,35.24600005149841,10.081000051498414,1300ms
+Chrome trace screenshot,key held during delay,1300,2,17,24.256,second RAF after input,30.59999990463257,6.343999904632568,1300ms
+Chrome trace screenshot,key held during delay,1300,2,17,24.256,first changed trace screenshot,33.04699993133545,8.790999931335449,1300ms
+Chrome trace screenshot,key held during delay,1300,2,18,28.275,second RAF after input,35,6.725000000000001,1300ms
+Chrome trace screenshot,key held during delay,1300,2,18,28.275,first changed trace screenshot,37.75999999046326,9.484999990463258,1300ms
+Chrome trace screenshot,key held during delay,1300,2,19,24.016,second RAF after input,30.700000047683716,6.684000047683718,1300ms
+Chrome trace screenshot,key held during delay,1300,2,19,24.016,first changed trace screenshot,33.45900011062622,9.443000110626222,1300ms
+Chrome trace screenshot,key held during delay,1300,2,20,23.245,second RAF after input,30.59999990463257,7.354999904632567,1300ms
+Chrome trace screenshot,key held during delay,1300,2,20,23.245,first changed trace screenshot,33.544999837875366,10.299999837875365,1300ms
+Chrome trace screenshot,key held during delay,1300,2,21,22.129,second RAF after input,29,6.870999999999999,1300ms
+Chrome trace screenshot,key held during delay,1300,2,21,22.129,first changed trace screenshot,31.889000177383423,9.760000177383422,1300ms
+Chrome trace screenshot,key held during delay,1300,2,22,26.383000000000003,second RAF after input,33.59999990463257,7.216999904632566,1300ms
+Chrome trace screenshot,key held during delay,1300,2,22,26.383000000000003,first changed trace screenshot,36.16200017929077,9.779000179290769,1300ms
+Chrome trace screenshot,key held during delay,1300,2,23,23.893,second RAF after input,31,7.106999999999999,1300ms
+Chrome trace screenshot,key held during delay,1300,2,23,23.893,first changed trace screenshot,33.28700017929077,9.39400017929077,1300ms
+Chrome trace screenshot,key held during delay,990,2,16,25.737,second RAF after input,33.09999990463257,7.36299990463257,990ms
+Chrome trace screenshot,key held during delay,990,2,16,25.737,first changed trace screenshot,35.66499996185303,9.927999961853029,990ms
+Chrome trace screenshot,key held during delay,990,2,17,24.631,second RAF after input,31.40000009536743,6.769000095367431,990ms
+Chrome trace screenshot,key held during delay,990,2,17,24.631,first changed trace screenshot,34.26600003242493,9.635000032424927,990ms
+Chrome trace screenshot,key held during delay,990,2,18,24.712000000000003,second RAF after input,31.799999952316284,7.087999952316281,990ms
+Chrome trace screenshot,key held during delay,990,2,18,24.712000000000003,first changed trace screenshot,34.75,10.037999999999997,990ms
+Chrome trace screenshot,key held during delay,990,2,19,27.164,second RAF after input,33,5.8359999999999985,990ms
+Chrome trace screenshot,key held during delay,990,2,19,27.164,first changed trace screenshot,35.770999908447266,8.606999908447264,990ms
+Chrome trace screenshot,key held during delay,990,2,20,21.225,second RAF after input,28.100000143051147,6.875000143051146,990ms
+Chrome trace screenshot,key held during delay,990,2,20,21.225,first changed trace screenshot,30.81499981880188,9.589999818801878,990ms
+Chrome trace screenshot,key held during delay,990,2,21,24.351,second RAF after input,31.5,7.149000000000001,990ms
+Chrome trace screenshot,key held during delay,990,2,21,24.351,first changed trace screenshot,34.30800008773804,9.957000087738038,990ms
+Chrome trace screenshot,key held during delay,990,2,22,25.654,second RAF after input,32.5,6.846,990ms
+Chrome trace screenshot,key held during delay,990,2,22,25.654,first changed trace screenshot,35.16100001335144,9.50700001335144,990ms
+Chrome trace screenshot,key held during delay,990,2,23,23.714,second RAF after input,30.90000009536743,7.186000095367433,990ms
+Chrome trace screenshot,key held during delay,990,2,23,23.714,first changed trace screenshot,33.79699993133545,10.08299993133545,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,0,16.061,second RAF after input,17.59999990463257,1.5389999046325684,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,0,16.061,first changed trace screenshot,23.63700008392334,7.57600008392334,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,1,10.681,second RAF after input,18.09999990463257,7.418999904632569,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,1,10.681,first changed trace screenshot,17.730000019073486,7.049000019073487,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,2,10.41,second RAF after input,11.900000095367432,1.4900000953674315,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,2,10.41,first changed trace screenshot,18.05299997329712,7.642999973297119,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,3,9.384,second RAF after input,10.799999952316284,1.4159999523162838,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,3,9.384,first changed trace screenshot,16.407000064849854,7.023000064849853,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,4,10.245,second RAF after input,11.599999904632568,1.3549999046325691,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,4,10.245,first changed trace screenshot,17.52500009536743,7.280000095367432,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,5,14.332,second RAF after input,15.800000190734863,1.4680001907348625,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,5,14.332,first changed trace screenshot,21.35599994659424,7.0239999465942375,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,6,9.852,second RAF after input,11.099999904632568,1.247999904632568,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,6,9.852,first changed trace screenshot,16.56000018119812,6.70800018119812,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,7,13.213,second RAF after input,15.299999952316284,2.086999952316285,990ms
+Chrome trace screenshot,complete keypress then wait,990,0,7,13.213,first changed trace screenshot,21.902999877929688,8.689999877929688,990ms
+Chrome trace screenshot,complete keypress then wait,1000,0,0,10.37,second RAF after input,11.799999952316284,1.429999952316285,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,0,10.37,first changed trace screenshot,17.631999969482422,7.261999969482423,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,1,9.316,second RAF after input,16.399999856948853,7.083999856948852,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,1,9.316,first changed trace screenshot,16.01699995994568,6.700999959945678,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,2,14.15,second RAF after input,15.599999904632568,1.449999904632568,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,2,14.15,first changed trace screenshot,21.361000061035156,7.211000061035156,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,3,10.509,second RAF after input,17.5,6.991,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,3,10.509,first changed trace screenshot,17.424999952316284,6.915999952316284,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,4,9.743000000000002,second RAF after input,17.199999809265137,7.456999809265135,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,4,9.743000000000002,first changed trace screenshot,16.763000011444092,7.02000001144409,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,5,11.327,second RAF after input,19.199999809265137,7.872999809265137,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,5,11.327,first changed trace screenshot,18.980000019073486,7.653000019073486,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,6,10.271,second RAF after input,17.700000047683716,7.429000047683715,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,6,10.271,first changed trace screenshot,17.58799982070923,7.316999820709228,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,7,9.169999999999998,second RAF after input,10.5,1.3300000000000018,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,0,7,9.169999999999998,first changed trace screenshot,16.240999937057495,7.070999937057497,1000ms
+Chrome trace screenshot,complete keypress then wait,1300,0,0,11.721,second RAF after input,13.200000047683716,1.4790000476837157,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,0,11.721,first changed trace screenshot,19.894999980926514,8.173999980926514,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,1,10.925,second RAF after input,13.700000047683716,2.775000047683715,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,1,10.925,first changed trace screenshot,19.60199999809265,8.67699999809265,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,2,11.609,second RAF after input,13,1.391,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,2,11.609,first changed trace screenshot,19.384999990463257,7.775999990463257,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,3,11.496,second RAF after input,12.799999952316284,1.3039999523162837,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,3,11.496,first changed trace screenshot,19.248000144958496,7.752000144958496,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,4,11.982,second RAF after input,13.399999856948853,1.4179998569488532,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,4,11.982,first changed trace screenshot,19.897000074386597,7.915000074386597,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,5,13.207,second RAF after input,14.800000190734863,1.5930001907348625,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,5,13.207,first changed trace screenshot,21.884999990463257,8.677999990463256,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,6,11.545,second RAF after input,13.099999904632568,1.5549999046325684,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,6,11.545,first changed trace screenshot,19.651999950408936,8.106999950408936,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,7,11.684,second RAF after input,13.199999809265137,1.5159998092651374,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,0,7,11.684,first changed trace screenshot,19.644999980926514,7.960999980926514,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,8,11.014,second RAF after input,12.399999856948853,1.3859998569488532,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,8,11.014,first changed trace screenshot,18.761000156402588,7.7470001564025885,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,9,11.497,second RAF after input,12.900000095367432,1.4030000953674318,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,9,11.497,first changed trace screenshot,19.412999868392944,7.9159998683929444,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,10,11.702,second RAF after input,13.199999809265137,1.4979998092651368,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,10,11.702,first changed trace screenshot,19.561000108718872,7.859000108718872,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,11,11.302,second RAF after input,12.700000047683716,1.3980000476837162,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,11,11.302,first changed trace screenshot,19.197999954223633,7.895999954223633,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,12,11.874,second RAF after input,13.300000190734863,1.4260001907348627,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,12,11.874,first changed trace screenshot,19.70300006866455,7.82900006866455,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,13,11.739,second RAF after input,13.399999856948853,1.6609998569488518,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,13,11.739,first changed trace screenshot,20.131999969482425,8.392999969482425,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,14,11.121999999999998,second RAF after input,13.700000047683716,2.5780000476837177,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,14,11.121999999999998,first changed trace screenshot,19.813999891281128,8.69199989128113,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,15,12.308999999999996,second RAF after input,13.700000047683716,1.39100004768372,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,1,15,12.308999999999996,first changed trace screenshot,20.25600004196167,7.947000041961674,1300ms
+Chrome trace screenshot,complete keypress then wait,1000,1,8,9.795000000000002,second RAF after input,17.200000047683716,7.405000047683714,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,8,9.795000000000002,first changed trace screenshot,16.84999990463257,7.054999904632567,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,9,9.287,second RAF after input,10.800000190734863,1.5130001907348625,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,9,9.287,first changed trace screenshot,16.25600004196167,6.969000041961669,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,10,9.765,second RAF after input,11.200000047683716,1.4350000476837153,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,10,9.765,first changed trace screenshot,16.687999963760376,6.922999963760375,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,11,10.182,second RAF after input,11.5,1.3179999999999996,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,11,10.182,first changed trace screenshot,17.804999828338623,7.622999828338623,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,12,9.516,second RAF after input,10.899999856948853,1.3839998569488525,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,12,9.516,first changed trace screenshot,16.861000061035156,7.345000061035156,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,13,9.127,second RAF after input,10.400000095367432,1.273000095367431,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,13,9.127,first changed trace screenshot,15.802000045776367,6.6750000457763665,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,14,9.664,second RAF after input,17.200000047683716,7.536000047683716,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,14,9.664,first changed trace screenshot,16.85199999809265,7.187999998092652,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,15,9.981,second RAF after input,11.399999856948853,1.4189998569488527,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,1,15,9.981,first changed trace screenshot,17.07800006866455,7.097000068664551,1000ms
+Chrome trace screenshot,complete keypress then wait,990,1,8,10.002,second RAF after input,11.5,1.4979999999999993,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,8,10.002,first changed trace screenshot,17.33300018310547,7.331000183105468,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,9,10.044,second RAF after input,11.5,1.4559999999999995,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,9,10.044,first changed trace screenshot,17.22000002861023,7.176000028610229,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,10,9.772,second RAF after input,11.200000047683716,1.4280000476837156,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,10,9.772,first changed trace screenshot,16.77900004386902,7.007000043869018,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,11,9.322,second RAF after input,10.699999809265137,1.3779998092651375,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,11,9.322,first changed trace screenshot,16.311000108718872,6.989000108718873,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,12,9.637,second RAF after input,10.900000095367432,1.2630000953674312,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,12,9.637,first changed trace screenshot,16.746999979019165,7.109999979019165,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,13,9.791,second RAF after input,11.200000047683716,1.4090000476837155,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,13,9.791,first changed trace screenshot,17.187999963760376,7.396999963760376,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,14,11.981,second RAF after input,13.299999952316284,1.3189999523162843,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,14,11.981,first changed trace screenshot,18.394999980926514,6.413999980926514,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,15,10.458,second RAF after input,11.899999856948853,1.4419998569488524,990ms
+Chrome trace screenshot,complete keypress then wait,990,1,15,10.458,first changed trace screenshot,17.94099998474121,7.482999984741211,990ms
+Chrome trace screenshot,complete keypress then wait,1000,2,16,10.025,second RAF after input,11.300000190734863,1.275000190734863,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,16,10.025,first changed trace screenshot,17.18400001525879,7.159000015258789,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,17,10.408,second RAF after input,11.800000190734863,1.3920001907348638,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,17,10.408,first changed trace screenshot,17.658999919891357,7.250999919891358,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,18,10.879,second RAF after input,18.699999809265137,7.820999809265137,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,18,10.879,first changed trace screenshot,18.53700017929077,7.658000179290772,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,19,11.264,second RAF after input,12.700000047683716,1.4360000476837165,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,19,11.264,first changed trace screenshot,18.715999841690063,7.451999841690064,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,20,9.326,second RAF after input,10.799999952316284,1.4739999523162837,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,20,9.326,first changed trace screenshot,16.286999940872192,6.960999940872192,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,21,9.445,second RAF after input,10.799999952316284,1.354999952316284,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,21,9.445,first changed trace screenshot,16.365000009536743,6.920000009536743,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,22,9.737999999999998,second RAF after input,11.100000143051147,1.3620001430511497,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,22,9.737999999999998,first changed trace screenshot,16.873000144958496,7.135000144958498,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,23,9.121,second RAF after input,10.900000095367432,1.7790000953674312,1000ms
+Chrome trace screenshot,complete keypress then wait,1000,2,23,9.121,first changed trace screenshot,16.73900008201599,7.618000082015991,1000ms
+Chrome trace screenshot,complete keypress then wait,1300,2,16,13.002,second RAF after input,14.5,1.4979999999999993,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,16,13.002,first changed trace screenshot,21.67199993133545,8.669999931335449,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,17,13.09,second RAF after input,14.700000047683716,1.610000047683716,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,17,13.09,first changed trace screenshot,21.94099998474121,8.850999984741211,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,18,11.645,second RAF after input,13.200000047683716,1.5550000476837162,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,18,11.645,first changed trace screenshot,19.902999877929688,8.257999877929688,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,19,11.899,second RAF after input,13.399999856948853,1.5009998569488534,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,19,11.899,first changed trace screenshot,20.01799988746643,8.118999887466432,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,20,12.62,second RAF after input,14.200000047683716,1.5800000476837166,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,20,12.62,first changed trace screenshot,21.13699984550476,8.516999845504762,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,21,12.899,second RAF after input,14.5,1.6010000000000009,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,21,12.899,first changed trace screenshot,21.424000024795532,8.525000024795533,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,22,11.648,second RAF after input,13.199999809265137,1.551999809265137,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,22,11.648,first changed trace screenshot,19.73900008201599,8.091000082015992,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,23,12.052,second RAF after input,13.699999809265137,1.6479998092651371,1300ms
+Chrome trace screenshot,complete keypress then wait,1300,2,23,12.052,first changed trace screenshot,20.426000118255615,8.374000118255616,1300ms
+Chrome trace screenshot,complete keypress then wait,990,2,16,9.557,second RAF after input,10.799999952316284,1.2429999523162838,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,16,9.557,first changed trace screenshot,16.603999853134155,7.046999853134155,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,17,9.473999999999998,second RAF after input,10.799999952316284,1.3259999523162858,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,17,9.473999999999998,first changed trace screenshot,16.85800004005432,7.384000040054323,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,18,10.598,second RAF after input,12,1.4019999999999992,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,18,10.598,first changed trace screenshot,18.33000016212463,7.7320001621246295,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,19,9.775,second RAF after input,11.099999904632568,1.324999904632568,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,19,9.775,first changed trace screenshot,17.07800006866455,7.30300006866455,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,20,9.938,second RAF after input,17.59999990463257,7.661999904632568,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,20,9.938,first changed trace screenshot,17.30299997329712,7.3649999732971185,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,21,10.928,second RAF after input,12.299999952316284,1.3719999523162834,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,21,10.928,first changed trace screenshot,18.828999996185303,7.900999996185302,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,22,9.82,second RAF after input,17.299999952316284,7.479999952316284,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,22,9.82,first changed trace screenshot,17.17899990081787,7.358999900817871,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,23,9.816,second RAF after input,11.200000047683716,1.384000047683715,990ms
+Chrome trace screenshot,complete keypress then wait,990,2,23,9.816,first changed trace screenshot,16.937999963760376,7.121999963760375,990ms
