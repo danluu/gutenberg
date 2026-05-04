@@ -10912,6 +10912,109 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		height = 7.4
 	)
 
+	redux_owner_guard_validation_matrix <- redux_owner_guard_candidates %>%
+		mutate(
+			validation_burden = case_when(
+				source_site == "HeadingEdit anchor useSelect" ~ "low",
+				source_site == "Pattern override support HOC" ~ "low-medium",
+				source_site == "useInnerBlocksProps useSelect" ~ "medium",
+				source_site == "BlockListBlockProvider useSelect" ~ "medium-high",
+				source_site == "BlockListItems useSelect" ~ "high",
+				source_site == "(audited marker fanout total)" ~ "high",
+				TRUE ~ "defer"
+			),
+			validation_burden = factor(
+				validation_burden,
+				levels = c("low", "low-medium", "medium", "medium-high", "high", "defer")
+			),
+			validation_burden_score = case_when(
+				validation_burden == "low" ~ 1,
+				validation_burden == "low-medium" ~ 2,
+				validation_burden == "medium" ~ 3,
+				validation_burden == "medium-high" ~ 4,
+				validation_burden == "high" ~ 5,
+				TRUE ~ 6
+			),
+			required_behavior_checks = case_when(
+				source_site == "Pattern override support HOC" ~ "Text insertion; block binding support settings change; block-name variation; pattern override behavior.",
+				source_site == "HeadingEdit anchor useSelect" ~ "Text insertion outside headings; generateAnchors setting toggle; table-of-contents block insertion/removal.",
+				source_site == "BlockListBlockProvider useSelect" ~ "Edited block updates; non-edited block remains fresh after selection, variation, movement/removal, overlay, and template-mode changes.",
+				source_site == "useInnerBlocksProps useSelect" ~ "Text insertion; child insertion/removal/reorder; zoom/template lock/editing mode/layout changes.",
+				source_site == "BlockListItems useSelect" ~ "Text insertion plus selection, visible block list, appender, template lock, zoom, block insertion/removal/reorder, and multi-select flows.",
+				source_site == "(audited marker fanout total)" ~ "All local-guard checks plus persistence transition behavior in useBlockSync and compatibility for isLastBlockChangePersistent consumers.",
+				TRUE ~ "Audit source and owner mix before writing an optimization."
+			),
+			stale_state_failure_mode = case_when(
+				source_site == "Pattern override support HOC" ~ "Block binding UI/support state goes stale after settings or block-name changes.",
+				source_site == "HeadingEdit anchor useSelect" ~ "Heading anchor affordance or table-of-contents-dependent behavior goes stale.",
+				source_site == "BlockListBlockProvider useSelect" ~ "Non-edited block selection, movement/removal, variation, overlay, or block identity UI goes stale.",
+				source_site == "useInnerBlocksProps useSelect" ~ "Inner-block layout, root, lock, zoom, or editing-mode state goes stale.",
+				source_site == "BlockListItems useSelect" ~ "Block list selection, visibility, appender, template, zoom, or structural UI goes stale.",
+				source_site == "(audited marker fanout total)" ~ "Persistence marker stops driving the correct onInput/onChange transition or external persistence consumers miss the signal.",
+				TRUE ~ "Unknown until source owners are separated."
+			),
+			acceptance_measurement = case_when(
+				source_site == "(audited marker fanout total)" ~ "Retains persistence semantics while reducing ordinary block-editor useSelect fanout in marker-only windows.",
+				source_site == "Other mapped owners" ~ "No optimization until owner buckets are separated and a concrete stale-state risk is known.",
+				TRUE ~ "Reduces this owner family's listener calls on paragraph text input without changing the required behavior checks."
+			),
+			plot_exposure_p50_ms = if_else(
+				source_site == "(audited marker fanout total)",
+				estimated_skippable_duration_p50_ms,
+				candidate_duration_p50_ms
+			)
+		)
+
+	write_csv(
+		redux_owner_guard_validation_matrix,
+		file.path(data_dir, "typing-delay-redux-listener-guard-validation-matrix.csv")
+	)
+
+	redux_owner_guard_validation_plot <- redux_owner_guard_validation_matrix %>%
+		mutate(
+			guard_candidate_plot = str_wrap(guard_candidate, 54),
+			prototype_priority_plot = recode(
+				prototype_priority,
+				"first local prototype" = "first local",
+				"second local prototype" = "second local",
+				"validation prototype" = "validation",
+				"prototype after local guards" = "after local guards",
+				"defer" = "defer"
+			)
+		)
+
+	save_plot(
+		ggplot(
+			redux_owner_guard_validation_plot,
+			aes(
+				plot_exposure_p50_ms,
+				fct_reorder(guard_candidate_plot, validation_burden_score, .desc = TRUE),
+				color = validation_burden,
+				shape = prototype_priority_plot,
+				size = candidate_listener_count_p50
+			)
+		) +
+			geom_point(alpha = 0.92) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Validation burden") +
+			scale_size_area(max_size = 8, labels = label_number(), name = "p50 listener calls") +
+			labs(
+				title = "High exposure is not the same as a safe first guard",
+				subtitle = "Guard candidates ranked by validation burden; exposure is current source-row p50, except the total row uses audited skippable p50",
+				x = "Current p50 exposure / estimated skippable time (ms)",
+				y = NULL,
+				shape = "Next step"
+			) +
+			guides(
+				color = guide_legend(nrow = 2),
+				shape = guide_legend(nrow = 2),
+				size = guide_legend(nrow = 1)
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"134-redux-listener-guard-validation-matrix.png",
+		width = 13.5,
+		height = 8.0
+	)
+
 	redux_owner_other_breakdown <- redux_listener_owner_source_summary %>%
 		anti_join(
 			redux_owner_source_audit_sites,

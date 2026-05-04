@@ -748,6 +748,8 @@ The R script derives:
     validation.
 -   `data/typing-delay-redux-listener-guard-candidates.csv`: risk-ranked
     concrete guard/prototype candidates for the audited text-update fanout.
+-   `data/typing-delay-redux-listener-guard-validation-matrix.csv`:
+    validation-burden matrix for those concrete guard/prototype candidates.
 -   `data/typing-delay-redux-listener-other-owner-*.csv`: residual breakdown
     of the `Other mapped owners` bucket from the source audit.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
@@ -3802,6 +3804,30 @@ a `BlockListItems` structural-version guard. Only after those local guards are
 understood should the broader store-partition or branch-aware subscriber
 notification design be considered.
 
+I added one more validation-burden view because exposure alone is the wrong
+optimization order. The question is not just "how many milliseconds are in this
+bucket?" It is also "what user-visible state can go stale if the guard is
+wrong?"
+
+![Redux listener guard validation matrix](figures/134-redux-listener-guard-validation-matrix.png)
+
+| Candidate | Exposure | Validation burden | Required behavior checks | Stale-state failure mode |
+| --------- | -------: | ----------------- | ------------------------ | ------------------------ |
+| Cache supported binding attributes by block name and settings version | `3.6ms` | low-medium | text insertion; binding-support settings change; block-name variation; pattern override behavior | block binding UI/support state goes stale after settings or block-name changes |
+| Guard heading anchor selector by anchor-setting and TOC-count versions | `0.5ms` | low | text insertion outside headings; `generateAnchors` toggle; table-of-contents block insertion/removal | heading anchor affordance or table-of-contents-dependent behavior goes stale |
+| Recompute only the edited `BlockListBlockProvider` for text-attribute updates | `3.5ms` | medium-high | edited block updates; non-edited blocks stay fresh after selection, variation, movement/removal, overlay, and template-mode changes | non-edited block identity, selection, movement/removal, variation, or overlay UI goes stale |
+| Guard `useInnerBlocksProps` by root/order/settings versions | `1.1ms` | medium | text insertion; child insertion/removal/reorder; zoom, template-lock, editing-mode, and layout changes | inner-block layout, root, lock, zoom, or editing-mode state goes stale |
+| Guard `BlockListItems` by structural/selection versions | `5.3ms` | high | text insertion plus selection, visible block list, appender, template lock, zoom, insert/remove/reorder, and multi-select flows | block list selection, visibility, appender, template, zoom, or structural UI goes stale |
+| Split persistence-only changes away from block-editor root notification | `8.7ms` skippable | high | all local-guard checks plus `useBlockSync` persistence-transition behavior and direct `isLastBlockChangePersistent` consumers | persistence marker stops driving the correct `onInput`/`onChange` transition, or external consumers miss the signal |
+
+This closes the next planning gap. The first patches should be the
+settings/name guards even though `BlockListItems` and the store-partition idea
+have larger headline exposure. `BlockListItems` needs to prove selection,
+visible-list, appender, zoom, template-lock, and structural behavior first. The
+store-partition idea needs to preserve the persistence signal used by
+`useBlockSync`, so it is not a first patch unless the local guards fail to
+produce the expected shape.
+
 I also broke down the residual `Other mapped owners` row so that it is not a
 black box. That row is small: `1.3ms` p50 across `62` source-mapped sites and
 `261` p50 listener calls. The nonzero p50 cost is split between
@@ -5926,6 +5952,16 @@ is selection/tree/appender-sensitive; leave the broader store-partition or
 branch-aware notification design until after local guards prove the shape of the
 win.
 
+The validation-burden matrix makes that ordering less hand-wavy. The largest
+single local bucket, `BlockListItems`, is not the first patch because a stale
+selector there can affect selection, appender, template-lock, zoom, and visible
+block-list behavior. The safer first patches are the pattern-override
+settings/name guard and the `HeadingEdit` anchor/TOC-count guard: both have
+clear stale-state tests and do not depend on the edited paragraph's content.
+The broad store-partition design remains plausible but high risk because it
+must keep the persistence transition visible to `useBlockSync` and direct
+`isLastBlockChangePersistent` consumers.
+
 The residual-owner follow-up closes the suspicion that the `unknown/mixed` tail
 might hide another large text-specific path. It does not. The tail is `1.3ms`
 p50 total; `0.6ms` is settings/block-support work, `0.6ms` is editor chrome or
@@ -6037,7 +6073,10 @@ For investigation:
     callbacks to React render ownership, so the components woken after the
     `core/block-editor` fanout are identifiable.
 -   For the block-list owner groups identified here, separate necessary
-    text-input invalidations from broad block-tree invalidations.
+    text-input invalidations from broad block-tree invalidations. Start with
+    low-burden settings/name guards; do not start with `BlockListItems` despite
+    its larger exposure until selection, visible-list, appender, zoom,
+    template-lock, and structural tests pass.
 -   Keep instrumenting around the post-keyup interval, but focus below ordinary
     JS callbacks. Timer, RAF, idle, data-action, key-flag, and DevTools timeline
     checks did not explain why a roughly `30-40ms` gap changes the next input
