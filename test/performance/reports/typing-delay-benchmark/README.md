@@ -1019,6 +1019,9 @@ The R script derives:
     remaining work, separating trigger-only checks, work that can start now,
     sidecar-gated mechanism claims, claim-expansion lanes, and external policy
     joins.
+-   `data/typing-delay-open-question-priority-scorecard.csv`: next-action
+    scorecard ranking remaining work by information gain, decision urgency,
+    execution cost, prerequisite state, and risk of acting prematurely.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9170,6 +9173,22 @@ claims to presentation or product claims.
 | Sidecar-gated mechanism claims | Trace-off protocol sidecar for Chromium runtime; helper/key-window/renderer/collector sidecar for CPU/QoS. | Naming V8, scheduler, P-core, frequency, QoS placement, cache, or runnable-latency causes from aggregate latency rows. |
 | Claim-expansion lanes | External display calibration or workload recorder/replayer only if those claims are needed. | Converting Chromium-internal screenshots into hardware-display timing, or fixed-`x` insertion into representative product latency. |
 | External policy join | Dashboard/reviewer threshold policy joined to CI artifacts. | Predicting pass/fail from local q50 movement alone. |
+
+Scoring the next actions makes the priority order explicit. I used a simple
+score: expected information gain times decision urgency divided by execution
+cost. The score is not a statistical model; it is a forcing function to separate
+useful next artifacts from busywork.
+
+![Open question priority scorecard](figures/201-open-question-priority-scorecard.png)
+
+| Priority | Action | Why |
+| -------- | ------ | --- |
+| Do first | Run the compact CI-topology validation artifact. | It is the only way to validate wait-removal, variance, first-key, failure, and threshold-portability claims against the real Performance Tests topology. |
+| Do first | Prototype the next behavior-gated selector guard. | It can produce actionable source evidence now, but only if behavior tests and source-span collapse pass before aggregate p50 claims. |
+| Do after those | Implement the shared retained-key sidecar schema. | Runtime and CPU/QoS mechanisms are both blocked by missing per-key joins; a shared schema avoids incompatible one-off collectors. |
+| After sidecar | Run CPU/QoS sidecar plus `powermetrics`, and run the trace-off protocol sidecar. | These can name lower-level mechanisms; doing them before sidecar acceptance would risk observer artifacts and unjoinable counter rows. |
+| Wait for prerequisite | Store-notification partition, threshold-policy join, workload replay, and external display calibration. | Each is useful only after a narrower source guard, CI artifact, product-claim need, or display-claim need exists. |
+| Do not do now | Repeat broad local startup/API sweeps under unchanged settings. | The questions are closed locally unless a helper, browser, trace placement, throwaway policy, or reported statistic changes. |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

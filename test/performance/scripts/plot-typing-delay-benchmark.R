@@ -21273,6 +21273,117 @@ save_plot(
 	height = 7.6
 )
 
+open_question_priority_scorecard <- tribble(
+	~next_action, ~open_question, ~priority_band, ~prerequisite_state, ~first_artifact, ~why_this_priority, ~avoid_spending_time_on, ~expected_information_gain_score, ~decision_urgency_score, ~execution_cost_score, ~premature_action_risk_score, ~plot_label,
+	"Run compact CI-topology validation", "Pattern-loading wait and absolute CI portability", "do first", "artifact-ready", "Compact Performance Tests topology artifact with raw samples, environment metadata, failure counts, resources, first-key distributions, and per-run order.", "This is the highest leverage validation because local macOS runs cannot decide wait removal, threshold portability, or CI variance.", "Full dense local delay sweeps or CI threshold claims from local p50.", 5, 5, 3, 5, "CI topology",
+	"Prototype the next behavior-gated selector guard", "Low-risk source optimization", "do first", "artifact-ready", "Focused behavior tests plus source-span microscope for the next hot owner.", "This can produce a real local engineering improvement while staying inside behavior/source evidence already identified.", "Aggregate p50 claims before behavior and source-span gates pass.", 4, 4, 2, 4, "selector",
+	"Implement shared retained-key sidecar schema", "Runtime checkpoint and CPU/QoS mechanisms", "do after first two", "needs sidecar", "Stable key-window, helper, renderer, collector, command, and clock-sync schema with no privileged counters.", "Both remaining mechanism lanes are blocked by missing joins, so a shared sidecar schema prevents two incompatible one-off collectors.", "Root counters, browser trace categories, or mechanism names before join coverage and sidecar overhead pass.", 4, 3, 4, 5, "sidecar",
+	"Run CPU/QoS sidecar acceptance then powermetrics", "System mechanism", "after sidecar", "needs sidecar", "Unprivileged sidecar acceptance artifact, then compact manifest under root powermetrics if sidecar passes.", "This is the first path that can distinguish frequency/residency/QoS from aggregate CPU-state correlation.", "P-core, frequency, cache, or scheduler claims from aggregate latency rows.", 4, 3, 5, 5, "CPU/QoS",
+	"Run trace-off protocol sidecar", "Chromium runtime checkpoint", "after sidecar", "needs sidecar", "Protocol command sidecar joined to retained key gaps and runtime-repeat controls.", "This can name or falsify the browser/runtime checkpoint mechanism; more ordinary JS waits cannot.", "More delay rows, RAF/timer controls, or trace-on-only observer explanations.", 4, 2, 5, 4, "runtime",
+	"Join threshold policy to CI artifacts", "Pass/fail and review semantics", "after CI artifact", "needs CI artifact", "External dashboard or reviewer threshold policy joined to raw CI artifact movement.", "This is required before translating q50 movement into pass/fail or review reliability.", "Repository pass/fail predictions from local q50 or summary-only CodeVitals values.", 4, 4, 3, 4, "threshold",
+	"Prototype store notification partition only after first guard", "Store subscriber fanout", "wait for guard", "needs prototype evidence", "Compatibility-preserving selector-aware or branch-aware useSelect prototype with public subscriber fixtures.", "The possible win is large, but it changes data-layer semantics and should wait until narrower guards establish the local source path.", "Changing public root notification semantics for benchmark timing alone.", 5, 3, 5, 5, "store fanout",
+	"Build workload replay MVP", "Human/plugin product latency", "claim-dependent", "needs workload", "Recorder/replayer with event records, assertions, source spans, endpoints, document/session context, and per-stratum summaries.", "Only needed if the claim broadens from fixed-x artifact/source triage to representative editor or plugin latency.", "Averaging missing user strata into fixed-x q50.", 5, 3, 4, 5, "workload",
+	"Run external display calibration", "Hardware display or semantic glyph timing", "claim-dependent", "needs external endpoint", "External/compositor/OCR/camera endpoint joined per retained key to internal visual endpoints and complete-keypress controls.", "Only needed if the report must claim actual presented-frame or semantic glyph timing instead of Chromium-internal propagation.", "Treating trace screenshots as physical display timing.", 3, 2, 5, 4, "display",
+	"Repeat broad local startup/API sweeps", "Already-bounded startup and helper-family questions", "do not do now", "closed unless triggered", "No artifact unless a trigger changes.", "The current metric boundary is already closed locally; repeating unchanged settings has low expected information gain.", "Any broad repeat that is not tied to a helper/browser/statistic/trace-placement change.", 1, 1, 3, 2, "no sweep"
+) %>%
+	mutate(
+		priority_band = factor(
+			priority_band,
+			levels = c("do first", "do after first two", "after sidecar", "after CI artifact", "wait for guard", "claim-dependent", "do not do now")
+		),
+		prerequisite_state = factor(
+			prerequisite_state,
+			levels = c("artifact-ready", "needs sidecar", "needs CI artifact", "needs prototype evidence", "needs workload", "needs external endpoint", "closed unless triggered")
+		),
+		priority_score = round(
+			(expected_information_gain_score * decision_urgency_score) / execution_cost_score,
+			2
+		),
+		label_x = execution_cost_score + case_when(
+			plot_label == "CI topology" ~ 0.12,
+			plot_label == "selector" ~ 0.12,
+			plot_label == "sidecar" ~ -0.50,
+			plot_label == "CPU/QoS" ~ -0.60,
+			plot_label == "runtime" ~ -0.56,
+			plot_label == "threshold" ~ 0.12,
+			plot_label == "store fanout" ~ -0.80,
+			plot_label == "workload" ~ 0.12,
+			plot_label == "display" ~ -0.50,
+			TRUE ~ 0.12
+		),
+		label_y = priority_score + case_when(
+			plot_label == "CI topology" ~ 0.14,
+			plot_label == "selector" ~ 0.10,
+			plot_label == "sidecar" ~ -0.12,
+			plot_label == "CPU/QoS" ~ 0.12,
+			plot_label == "runtime" ~ -0.12,
+			plot_label == "threshold" ~ -0.12,
+			plot_label == "store fanout" ~ 0.12,
+			plot_label == "workload" ~ 0.12,
+			plot_label == "display" ~ -0.12,
+			TRUE ~ 0.10
+		)
+	)
+
+write_csv(
+	open_question_priority_scorecard %>% select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-priority-scorecard.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_priority_scorecard,
+		aes(
+			execution_cost_score,
+			priority_score,
+			color = priority_band,
+			shape = prerequisite_state,
+			size = premature_action_risk_score
+		)
+	) +
+		geom_point(alpha = 0.92) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.6, 5.35),
+			labels = c("1" = "tiny", "2" = "small", "3" = "CI/policy", "4" = "sidecar/replay", "5" = "root/new observer")
+		) +
+		scale_y_continuous(
+			breaks = 0:8,
+			limits = c(0.15, 8.8)
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Priority") +
+		scale_shape_manual(
+			values = c(
+				"artifact-ready" = 16,
+				"needs sidecar" = 17,
+				"needs CI artifact" = 15,
+				"needs prototype evidence" = 18,
+				"needs workload" = 9,
+				"needs external endpoint" = 6,
+				"closed unless triggered" = 4
+			),
+			name = "Prerequisite"
+		) +
+		scale_size_area(max_size = 6.5, breaks = 2:5, name = "Risk if premature") +
+		labs(
+			title = "Next open-question work should prioritize CI topology and behavior-gated source evidence",
+			subtitle = "Priority score is expected information gain times decision urgency divided by execution cost",
+			x = "Execution cost / prerequisite burden",
+			y = "Priority score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"201-open-question-priority-scorecard.png",
+	width = 12.8,
+	height = 7.6
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
