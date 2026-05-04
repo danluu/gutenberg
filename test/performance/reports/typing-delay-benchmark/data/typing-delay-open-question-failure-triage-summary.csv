@@ -1,0 +1,18 @@
+manifest,manifest_order,manifest_label,failure_class,failure_modes,max_triage_weight,decision_effects
+Behavior-gated source prototype manifest,3,3. Behavior-gated source prototype manifest,behavior/source,2,4,reject source patch; re-scope source owner
+Behavior-gated source prototype manifest,3,3. Behavior-gated source prototype manifest,measurement/source mismatch,1,1,treat as unexplained timing
+CI topology retained-metric manifest,1,1. CI topology retained-metric manifest,topology/order,1,4,block CI wait change
+CI topology retained-metric manifest,1,1. CI topology retained-metric manifest,first input,1,2,split first-input metric
+CI topology retained-metric manifest,1,1. CI topology retained-metric manifest,correctness/actionability,1,4,block CI wait change
+CI topology retained-metric manifest,1,1. CI topology retained-metric manifest,readiness/resource,1,4,block CI wait change
+CPU/QoS counter manifest,5,5. CPU/QoS counter manifest,observer perturbation,1,3,change collector
+CPU/QoS counter manifest,5,5. CPU/QoS counter manifest,system counters,1,3,keep empirical sensitivity only
+CPU/QoS counter manifest,5,5. CPU/QoS counter manifest,permission/tooling,1,2,downgrade mechanism claim
+Pattern readiness/resource manifest,2,2. Pattern readiness/resource manifest,topology/order,1,3,use fallback wait
+Pattern readiness/resource manifest,2,2. Pattern readiness/resource manifest,correctness/actionability,1,3,keep or narrow pattern wait
+Pattern readiness/resource manifest,2,2. Pattern readiness/resource manifest,readiness/resource,1,3,keep or narrow pattern wait
+Retained-key sidecar acceptance manifest,4,4. Retained-key sidecar acceptance manifest,sidecar/join,2,4,block mechanism observers
+Retained-key sidecar acceptance manifest,4,4. Retained-key sidecar acceptance manifest,observer perturbation,1,4,redesign sidecar
+Workload/display expansion manifest,6,6. Workload/display expansion manifest,observer perturbation,1,3,redesign endpoint observer
+Workload/display expansion manifest,6,6. Workload/display expansion manifest,workload/product,1,2,scope product claim by stratum
+Workload/display expansion manifest,6,6. Workload/display expansion manifest,presentation/display,1,2,scope display claim

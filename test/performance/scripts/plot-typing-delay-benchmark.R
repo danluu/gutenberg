@@ -23163,6 +23163,164 @@ save_plot(
 	height = 6.8
 )
 
+open_question_failure_triage <- tribble(
+	~manifest, ~manifest_order, ~failure_signal, ~failure_class, ~triage_order, ~inspect_first, ~narrower_rerun, ~do_not_conclude, ~decision_effect,
+	"CI topology retained-metric manifest", 1, "row ordering differs from local", "topology/order", 1, "branch order, runner image, browser revision, CPU/container metadata, wp-env logs", "paired same-runner manifest with reversed branch order and fixed browser revision", "do not call local semantics wrong before separating topology from metric semantics", "block CI wait change",
+	"CI topology retained-metric manifest", 1, "first-key tails widen", "first input", 2, "discarded key, first retained key, startup resource timing, actionability retries", "first-key-only manifest with discarded and retained samples reported separately", "do not hide first-input risk inside retained q50", "split first-input metric",
+	"CI topology retained-metric manifest", 1, "failures or actionability retries appear", "correctness/actionability", 3, "Playwright retry logs, skipped rows, focus/actionability waits, browser console errors", "same wait candidates with actionability/failure sidecar enabled", "do not trade wait time for failed interactions", "block CI wait change",
+	"CI topology retained-metric manifest", 1, "resources move into the measured window", "readiness/resource", 4, "resource groups, endpoint names, request timing relative to retained keys", "resource-quiet manifest with key-window joins", "do not claim wait removal from q50 alone", "block CI wait change",
+	"Pattern readiness/resource manifest", 2, "readiness predicate misses late resources", "readiness/resource", 5, "missed endpoint groups, pattern source, timeout/fallback path, cache state", "predicate-only versus fixed-wait rows by endpoint group", "do not treat broad REST quiet as source-specific readiness", "keep or narrow pattern wait",
+	"Pattern readiness/resource manifest", 2, "preview or canvas failures increase", "correctness/actionability", 6, "preview iframe readiness, canvas availability, actionability retries, spec/lane", "per-spec preview/canvas manifest with retained rows and failure counts", "do not remove waits if hidden UI readiness fails", "keep or narrow pattern wait",
+	"Pattern readiness/resource manifest", 2, "fixed wait fallback is more reliable", "topology/order", 7, "candidate q50, variance, retained counts, failures, timeout rate by lane", "fixed-wait fallback sweep around the best local wait in target topology", "do not overfit a predicate that is less reliable than a fixed fallback", "use fallback wait",
+	"Behavior-gated source prototype manifest", 3, "behavior fixture fails", "behavior/source", 8, "changed fixture, public filter path, selection/editability/settings/bindings state", "single-owner behavior fixture with timing disabled", "do not cite source-span or p50 wins after behavior changes", "reject source patch",
+	"Behavior-gated source prototype manifest", 3, "source span does not collapse", "behavior/source", 9, "targeted owner span, listener fanout, selector dependencies, selected versus unselected rows", "marker-only source-span microscope for that owner", "do not cite aggregate p50 as a source win", "re-scope source owner",
+	"Behavior-gated source prototype manifest", 3, "aggregate timing moves without source evidence", "measurement/source mismatch", 10, "run order, observer state, unrelated source spans, cache/warmup phase", "matched aggregate plus source-span run in the same order", "do not backfill a causal source explanation from p50 alone", "treat as unexplained timing",
+	"Retained-key sidecar acceptance manifest", 4, "join coverage is incomplete", "sidecar/join", 11, "key-window IDs, clock sync, frame/renderer identity, dropped command records", "sidecar schema debug run with synthetic known key windows", "do not interpret unjoinable counters or runtime fields", "block mechanism observers",
+	"Retained-key sidecar acceptance manifest", 4, "sidecar changes class ordering", "observer perturbation", 12, "sidecar-on/off q summaries, retained counts, EventDispatch timing, command count", "observer-overhead A/B rows at the differentiating delays", "do not treat sidecar fields as passive measurements", "redesign sidecar",
+	"Retained-key sidecar acceptance manifest", 4, "clocks or renderer identity are ambiguous", "sidecar/join", 13, "browser/driver timebase sync, frame target, renderer process, command identity", "clock-sync and renderer-identity calibration run", "do not join counters across ambiguous windows", "block mechanism observers",
+	"CPU/QoS counter manifest", 5, "counters do not separate fast and slow classes", "system counters", 14, "frequency, residency, QoS, runnable latency, cache/memory, power state", "root trace fallback or smaller CPU-state manifest", "do not name CPU/QoS mechanism from latency classes alone", "keep empirical sensitivity only",
+	"CPU/QoS counter manifest", 5, "counter collection perturbs ordering", "observer perturbation", 15, "counter-on/off q summaries, retained counts, collector interval, root trace overhead", "counter-overhead A/B with sidecar acceptance fields", "do not use perturbed counters to name a cause", "change collector",
+	"CPU/QoS counter manifest", 5, "root counters unavailable", "permission/tooling", 16, "sudo permissions, powermetrics fields, trace availability, runner policy", "unprivileged sidecar-only manifest plus documented unavailable fields", "do not invent a system mechanism without system fields", "downgrade mechanism claim",
+	"Workload/display expansion manifest", 6, "replay strata diverge from fixed-x", "workload/product", 17, "stratum, action type, assertions, source spans, per-stratum q summaries", "stratum-specific replay manifest", "do not generalize fixed-x to product workload latency", "scope product claim by stratum",
+	"Workload/display expansion manifest", 6, "external endpoint disagrees with Chromium-internal endpoint", "presentation/display", 18, "endpoint timestamp, calibration error, retained-key join, observer-on/off order", "single-endpoint calibration ladder with internal screenshot control", "do not call internal screenshots hardware-display latency", "scope display claim",
+	"Workload/display expansion manifest", 6, "external/replay observer changes ordering", "observer perturbation", 19, "observer-on/off row ordering, retained counts, endpoint latency, capture overhead", "observer-overhead calibration before endpoint interpretation", "do not interpret endpoints that change the benchmark class", "redesign endpoint observer"
+) %>%
+	mutate(
+		manifest_label = paste0(manifest_order, ". ", manifest),
+		manifest_label = fct_reorder(manifest_label, manifest_order, .desc = TRUE),
+		failure_class = factor(
+			failure_class,
+			levels = c(
+				"topology/order",
+				"first input",
+				"correctness/actionability",
+				"readiness/resource",
+				"behavior/source",
+				"measurement/source mismatch",
+				"sidecar/join",
+				"observer perturbation",
+				"system counters",
+				"permission/tooling",
+				"workload/product",
+				"presentation/display"
+			)
+		),
+		decision_effect = factor(
+			decision_effect,
+			levels = c(
+				"block CI wait change",
+				"split first-input metric",
+				"keep or narrow pattern wait",
+				"use fallback wait",
+				"reject source patch",
+				"re-scope source owner",
+				"treat as unexplained timing",
+				"block mechanism observers",
+				"redesign sidecar",
+				"keep empirical sensitivity only",
+				"change collector",
+				"downgrade mechanism claim",
+				"scope product claim by stratum",
+				"scope display claim",
+				"redesign endpoint observer"
+			)
+		),
+		triage_weight = case_when(
+			decision_effect %in% c("block CI wait change", "reject source patch", "block mechanism observers", "redesign sidecar") ~ 4,
+			decision_effect %in% c("keep or narrow pattern wait", "use fallback wait", "keep empirical sensitivity only", "change collector", "redesign endpoint observer") ~ 3,
+			decision_effect %in% c("split first-input metric", "re-scope source owner", "downgrade mechanism claim", "scope product claim by stratum", "scope display claim") ~ 2,
+			TRUE ~ 1
+		)
+	)
+
+open_question_failure_triage_summary <- open_question_failure_triage %>%
+	group_by(manifest, manifest_order, manifest_label, failure_class) %>%
+	summarize(
+		failure_modes = n(),
+		max_triage_weight = max(triage_weight),
+		decision_effects = paste(sort(unique(decision_effect)), collapse = "; "),
+		.groups = "drop"
+	) %>%
+	mutate(
+		manifest_label = fct_reorder(manifest_label, manifest_order, .desc = TRUE),
+		failure_class = fct_drop(failure_class)
+	)
+
+open_question_failure_triage_effects <- open_question_failure_triage %>%
+	count(decision_effect, failure_class, wt = triage_weight, name = "weighted_failure_modes") %>%
+	filter(weighted_failure_modes > 0) %>%
+	mutate(
+		decision_effect = fct_reorder(decision_effect, weighted_failure_modes, .fun = sum),
+		failure_class = fct_drop(failure_class)
+	)
+
+write_csv(
+	open_question_failure_triage %>%
+		select(
+			manifest,
+			manifest_order,
+			failure_signal,
+			failure_class,
+			triage_order,
+			triage_weight,
+			inspect_first,
+			narrower_rerun,
+			do_not_conclude,
+			decision_effect
+		),
+	file.path(data_dir, "typing-delay-open-question-failure-triage.csv")
+)
+
+write_csv(
+	open_question_failure_triage_summary,
+	file.path(data_dir, "typing-delay-open-question-failure-triage-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_failure_triage_summary,
+		aes(failure_class, manifest_label, fill = failure_modes)
+	) +
+		geom_tile(color = "white", linewidth = 0.45) +
+		geom_text(aes(label = failure_modes), color = "grey15", size = 3) +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Failure modes") +
+		labs(
+			title = "Failed closure manifests need narrower triage, not post-hoc explanations",
+			subtitle = "Numbers count predeclared failure signals that should trigger a targeted rerun or scoped conclusion",
+			x = "Failure class",
+			y = "Closure manifest"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(
+			axis.text.x = element_text(angle = 30, hjust = 1),
+			legend.position = "bottom"
+		),
+	"220-open-question-failure-triage-map.png",
+	width = 13.2,
+	height = 7.4
+)
+
+save_plot(
+	ggplot(
+		open_question_failure_triage_effects,
+		aes(decision_effect, weighted_failure_modes, fill = failure_class)
+	) +
+		geom_col(width = 0.72) +
+		coord_flip() +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Failure class") +
+		labs(
+			title = "Most failed gates should block action or narrow the claim",
+			subtitle = "Weighted by how directly a failure would invalidate a decision or observer",
+			x = "Decision effect",
+			y = "Weighted failure modes"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"221-open-question-failure-triage-effects.png",
+	width = 12,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

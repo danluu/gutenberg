@@ -1078,6 +1078,11 @@ The R script derives:
     needed before making it.
 -   `data/typing-delay-open-question-claim-gate-summary.csv`: rollup of claim
     gates by claim scope and current support level.
+-   `data/typing-delay-open-question-failure-triage.csv`: failure-triage ledger
+    for each closure manifest, listing what to inspect first, what narrower
+    rerun to use, and what conclusion not to draw.
+-   `data/typing-delay-open-question-failure-triage-summary.csv`: rollup of
+    failure modes by closure manifest and failure class.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9541,6 +9546,34 @@ make narrow benchmark-artifact claims now. It can make local retained-q50
 decisions with local scope. Everything that affects CI policy, source changes,
 mechanism naming, product/display scope, or pass/fail prediction has a named gate
 and should stay out of the conclusion until that gate passes.
+
+The failure-triage ledger is the next anti-rationalization guard. If one of the
+closure manifests fails, the next step is a smaller diagnostic branch, not an
+argument that the failed artifact secretly supports the original claim.
+
+![Open question failure triage map](figures/220-open-question-failure-triage-map.png)
+
+![Open question failure triage effects](figures/221-open-question-failure-triage-effects.png)
+
+| Failure class | Inspect first | Avoid concluding |
+| ------------- | ------------- | ---------------- |
+| Topology/order | branch order, runner image, browser revision, CPU/container metadata, wp-env logs | local semantics are wrong before separating topology from metric semantics |
+| First input | discarded key, first retained key, startup resources, actionability retries | retained q50 captures idle-return risk |
+| Correctness/actionability | Playwright retries, skipped rows, focus/actionability waits, preview/canvas failures | wait time can be traded for hidden failures |
+| Readiness/resource | endpoint groups, resource timing, readiness predicate logs, timeout/fallback paths | q50 alone proves wait removal |
+| Behavior/source | changed fixture, public filter path, selector dependencies, source-span fanout | p50 or listener-count changes prove semantic safety |
+| Sidecar/join | key-window IDs, clock sync, renderer identity, dropped command records | unjoinable sidecar/counter rows can name a mechanism |
+| Observer perturbation | observer-on/off q summaries, retained counts, command counts, capture overhead | fields from a perturbing observer are passive evidence |
+| System counters | frequency, residency, QoS, runnable latency, cache/memory, power state | aggregate latency classes name a CPU/QoS mechanism |
+| Workload/product | stratum, action type, assertions, source spans, per-stratum summaries | fixed-`x` insertion is representative product latency |
+| Presentation/display | endpoint timestamp, calibration error, retained-key join, internal screenshot control | Chromium-internal screenshots are hardware-display latency |
+
+This makes a failed run useful without making it ambiguous. CI/topology failures
+block CI wait changes until a narrower topology or first-input manifest explains
+them. Source failures reject or re-scope the patch before aggregate timing is
+used. Sidecar and counter failures block mechanism names. Replay or display
+failures narrow product/display claims instead of weakening the benchmark
+artifact claim.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
