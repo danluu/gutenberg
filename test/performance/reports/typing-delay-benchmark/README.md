@@ -959,6 +959,10 @@ The R script derives:
 -   `data/typing-delay-workload-replay-schema-contract-audit.csv`: concrete
     recording, replay, stratum, instrumentation, and acceptance schema for
     representative workload replay.
+-   `data/typing-delay-workload-replay-implementation-*.csv` and
+    `data/typing-delay-workload-replay-mvp-plan.csv`: source-level audit of how
+    representative replay should plug into the current Playwright performance
+    harness, plus a phased MVP plan.
 -   `data/typing-delay-portability-validation-contract-audit.csv`: decision
     contract for validating absolute p50/CV portability before threshold or
     absolute-latency changes.
@@ -8162,6 +8166,34 @@ specific schema. The remaining missing evidence is actual recorded or generated
 histories that satisfy the schema, plus before/after replay results for the
 strata relevant to a given patch.
 
+I then audited where that schema would plug into the current Playwright
+performance harness. The useful conclusion is that this is not mostly a reporter
+change. The harness already has raw result attachments, a custom reporter,
+Chromium trace collection, fixed-fixture setup, editor helpers, and `pressKeys`
+for shortcuts and clipboard emulation. The missing layers are an event-record
+sidecar, a manifest-driven executor for heterogeneous events, assertion packs,
+and an opt-in recorder for real/plugin-heavy histories.
+
+![Workload replay implementation audit](figures/166-workload-replay-implementation-audit.png)
+
+![Workload replay MVP plan](figures/167-workload-replay-mvp-plan.png)
+
+| Phase | Goal | Claim boundary |
+| ----- | ---- | -------------- |
+| MVP harness plumbing | store event-level records without breaking current q50 reporter output | synthetic replay development only |
+| MVP replay executor | replay deterministic synthetic manifests across ordinary text, shortcut/paste, selection, and block-operation strata | source attribution on synthetic strata |
+| MVP assertion packs | reject latency samples that do not reproduce the intended editor state | low-risk patch evaluation only within covered strata |
+| Recorded workload pilot | collect redacted real or plugin-heavy histories and replay them by stratum | product-latency owner rankings can start here |
+
+The source audit also closes one tempting shortcut. Current `post-editor.spec.js`
+typing uses `target.type( 'x'.repeat( iterations ), { delay } )`, throws away the
+first character, and stores metric arrays through the performance reporter. That
+is the right shape for the existing fixed-character stressor, but it is the wrong
+shape for representative replay. Replay needs per-event records joined to trace
+windows, behavior assertions, source-span owner IDs, visual or behavior
+endpoints, document/session metadata, and stratum labels. A single extra q50
+array would preserve neither event ordering nor correctness.
+
 ### Portability Validation Contract
 
 The remaining portability question is not whether the local runs found the
@@ -8270,7 +8302,7 @@ The high-level split is:
 | Chromium runtime checkpoint | runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated `Runtime.evaluate` / `Runtime.callFunctionOn` rows are the dose-response control, trace-on `captureSnapshot` rows isolate the perturbation, and native rows bound browser-only scale | run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows |
 | CPU/QoS mechanism | counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this harness | run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows |
 | Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
-| Human/plugin workload | workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency | build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims |
+| Human/plugin workload | workload schema audit now has a source-level implementation plan: the current harness can reuse raw attachments, the custom reporter, Metrics tracing, fixture loaders, editor helpers, and `pressKeys`, but it still needs an event-record sidecar, manifest-driven executor, assertion packs, and an opt-in recorder before product-latency ranking is valid | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; do not treat another fixed-x q50 array as representative replay |
 | Portability of absolute numbers | portability runbook audit now has an executable compact manifest: three threshold-score rows, two deployment-score rows, and three causal diagnostics, with local effect sizes and known intentional-wait costs; the known threshold-score wait cost is `774.5s` and the known deployment-score wait cost is `162.0s` in a two-branch-style comparison | run that compact manifest on CI Chromium and one comparable lane before moving thresholds; expand only when a row changes ordering, variance class, timer/runtime behavior, or visual endpoint direction |
 
 This is the practical answer to "what is still open?" The main causal story for

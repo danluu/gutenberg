@@ -16873,6 +16873,186 @@ write_csv(
 	file.path(data_dir, "typing-delay-workload-replay-schema-contract-audit.csv")
 )
 
+workload_replay_implementation_audit <- tribble(
+	~implementation_piece, ~source_surface, ~existing_capability, ~required_change, ~why_required, ~shortcut_to_avoid, ~reuse_score, ~risk_score, ~first_phase,
+	"Raw result transport",
+	"test/performance/specs/post-editor.spec.js afterAll results attachment; test/performance/config/performance-reporter.ts raw and curated result files",
+	"Specs can attach raw JSON, and the reporter already preserves a raw results file before curating q25/q50/q75 arrays.",
+	"Add a replay sidecar attachment or raw-only field for per-event histories and per-sample metadata; keep curated q50 output as a derived summary.",
+	"The current curated reporter schema is metric-array-oriented; replay needs event records, assertions, owner spans, and document/session context.",
+	"Do not squeeze event histories into one metric array or only keep aggregate q50s.",
+	4, 2, "MVP harness plumbing",
+	"Trace and EventDispatch collection",
+	"packages/e2e-test-utils-playwright/src/metrics/index.ts startTracing/stopTracing/getEventDurations",
+	"Metrics already starts Chromium tracing and extracts EventDispatch durations by event type.",
+	"Keep per-event trace windows and identifiers, not only duration arrays; optionally add richer trace categories only for replay diagnostics.",
+	"Replay has to join an editing event to source spans, visual endpoints, async work, and behavior assertions.",
+	"Do not treat unkeyed EventDispatch durations as replay samples once actions are heterogeneous.",
+	3, 3, "MVP harness plumbing",
+	"Event executor",
+	"test/performance/specs/post-editor.spec.js type() helper; page.keyboard.type(); Locator.type(); packages/e2e-test-utils-playwright/src/page-utils/press-keys.ts",
+	"The current typing tests can synthesize repeated fixed text with a delay, and pressKeys covers shortcuts plus clipboard emulation.",
+	"Build a replay executor that consumes event records: text insertion, complete keypress, shortcut, paste, click, selection/navigation, transform, and structural actions.",
+	"Human/plugin replay is heterogeneous; a single held-key type('xxxxx') loop cannot preserve event type, gap, hold, composition, or target context.",
+	"Do not use Playwright held-key delay as the default human replay path.",
+	3, 4, "MVP replay executor",
+	"Document/session materializer",
+	"test/performance/fixtures/perf-utils.ts loadBlocksForLargePost/loadBlocksFromHtml/load1000Paragraphs; admin create/edit post helpers",
+	"PerfUtils can load HTML fixtures, generate synthetic 1000-paragraph posts, save drafts, reopen posts, and disable autosave.",
+	"Add a manifest-driven materializer for document shape, post type, selected block context, plugin/theme set, viewport, autosave state, and session age.",
+	"Latency ownership changes with document shape and editor state; replay must reconstruct enough state to make event histories comparable.",
+	"Do not replay all histories on the existing large-post fixture.",
+	4, 3, "MVP replay executor",
+	"Behavior assertions",
+	"Current performance specs mostly push durations; e2e editor helpers expose selection/content actions",
+	"Existing tests can inspect edited content, selected blocks, visible UI, and save state when a spec asks for it.",
+	"Define assertion packs per stratum: text delta, selection/caret, block-tree hash, visible list/appender, template/editing mode, undo, pattern binding, plugin-visible side effects, and focus.",
+	"Replay speedups are invalid if the action does not produce the same editor state.",
+	"Do not accept a latency improvement from a replay sample with failed or missing behavior assertions.",
+	3, 5, "MVP assertion packs",
+	"Recorder",
+	"No current general human-session recorder in the performance harness; typing-delay benchmark has one-off in-page event/source instrumentation",
+	"Source-span and event instrumentation exists for diagnostics, but it is tied to the synthetic typing-delay benchmark.",
+	"Factor an opt-in recorder that emits redacted editing-event records plus document/session context and source/visual IDs.",
+	"Recorded histories are needed before fixed-x source rankings can become product latency rankings.",
+	"Do not call synthetic generated sequences representative human/plugin histories.",
+	2, 5, "recorded workload pilot",
+	"Replay reporting",
+	"test/performance/config/performance-reporter.ts curateResults; report R pipeline derived CSVs and figures",
+	"The existing reporter stores raw JSON and curated q50 summaries; the R pipeline can add derived decision tables and figures.",
+	"Report per-stratum p50/p90, owner-rank deltas, visual/behavior endpoints, assertion failures, sample counts, and environment metadata before any aggregate score.",
+	"A product claim needs per-stratum pass/fail and owner ranking; one scalar hides regressions.",
+	"Do not average ordinary text, correction, selection, paste, transform, and plugin side effects into one headline without stratum tables.",
+	4, 3, "MVP report output"
+)
+
+write_csv(
+	workload_replay_implementation_audit,
+	file.path(data_dir, "typing-delay-workload-replay-implementation-audit.csv")
+)
+
+workload_replay_mvp_plan <- tribble(
+	~phase, ~phase_order, ~goal, ~must_implement, ~can_reuse, ~acceptance_gate, ~claim_boundary,
+	"MVP harness plumbing", 1,
+	"Store event-level replay records without breaking current performance results.",
+	"Raw sidecar attachment, event schema validation, per-event trace IDs, and environment/document metadata.",
+	"testInfo.attach('results'), raw reporter output, Metrics tracing, and existing R derived-data pipeline.",
+	"A replay run writes raw per-event records plus curated summaries, and current q50 reporter output remains unchanged.",
+	"Allows synthetic replay development only; no product workload claim.",
+	"MVP replay executor", 2,
+	"Replay deterministic synthetic event manifests across at least ordinary text, shortcut/paste, selection, and block-operation strata.",
+	"Manifest-driven executor, complete-keypress text path, pressKeys/clipboard path, click/selection path, block action path, and recorded-gap scheduling.",
+	"post-editor performance setup, PerfUtils fixture loading, pressKeys, editor helpers, and Metrics tracing.",
+	"Each stratum produces source spans, visual or behavior endpoints, and retained per-event samples.",
+	"Can test harness semantics and source attribution on synthetic strata; still not human/plugin representative.",
+	"MVP assertion packs", 3,
+	"Reject latency samples that do not reproduce the intended editor state.",
+	"Text/content hash assertions, selection/focus assertions, visible-list/appender assertions, structural hash assertions, and per-stratum failure reporting.",
+	"existing editor content/selection helpers and Playwright locators.",
+	"Every replayed event has a pass/fail assertion record; failed events are excluded from latency claims and reported separately.",
+	"Can evaluate low-risk patches only within covered strata.",
+	"Recorded workload pilot", 4,
+	"Collect redacted real or plugin-heavy editing histories and replay them by stratum.",
+	"Opt-in recorder, redaction/hashing, plugin/theme/session metadata, event gaps/hold/composition fields, source/visual IDs, and fixture materialization.",
+	"one-off typing-delay instrumentation patterns, raw sidecar files, and existing fixture loaders.",
+	"At least ordinary text, correction/backspace, selection/navigation, paste/transform, long-idle return, and plugin side-effect strata have recorded samples and behavior assertions.",
+	"Only then can owner rankings support product-latency claims beyond the fixed-x stressor."
+)
+
+write_csv(
+	workload_replay_mvp_plan,
+	file.path(data_dir, "typing-delay-workload-replay-mvp-plan.csv")
+)
+
+workload_replay_implementation_plot <- workload_replay_implementation_audit %>%
+	mutate(
+		implementation_piece = fct_reorder(implementation_piece, risk_score + reuse_score / 10),
+		first_phase = factor(
+			first_phase,
+			levels = c(
+				"MVP harness plumbing",
+				"MVP replay executor",
+				"MVP assertion packs",
+				"MVP report output",
+				"recorded workload pilot"
+			)
+		)
+	)
+
+save_plot(
+	ggplot(
+		workload_replay_implementation_plot,
+		aes(reuse_score, implementation_piece, color = first_phase, shape = first_phase)
+	) +
+		geom_point(aes(size = risk_score), alpha = 0.9) +
+		geom_text(
+			aes(label = paste0("risk ", risk_score)),
+			nudge_x = 0.12,
+			size = 2.8,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "First phase") +
+		scale_shape_manual(
+			values = c(
+				"MVP harness plumbing" = 16,
+				"MVP replay executor" = 17,
+				"MVP assertion packs" = 15,
+				"MVP report output" = 18,
+				"recorded workload pilot" = 8
+			),
+			name = "First phase",
+			drop = FALSE
+		) +
+		scale_size_area(max_size = 6, name = "Risk score") +
+		scale_x_continuous(breaks = 1:5, limits = c(1.8, 4.7)) +
+		labs(
+			title = "Workload replay needs new executor and assertion layers, not a new q50 array",
+			subtitle = "Source audit of the current Playwright performance harness; higher reuse means more existing harness support",
+			x = "Existing harness reuse score",
+			y = NULL
+		) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"166-workload-replay-implementation-audit.png",
+	width = 11.5,
+	height = 7
+)
+
+workload_replay_mvp_plot <- workload_replay_mvp_plan %>%
+	mutate(
+		phase = factor(phase, levels = phase),
+		phase_type = if_else(phase_order < 4, "synthetic replay foundation", "recorded workload"),
+		claim_short = case_when(
+			phase_order == 1 ~ "synthetic only",
+			phase_order == 2 ~ "source attribution",
+			phase_order == 3 ~ "covered strata only",
+			TRUE ~ "product claims start"
+		)
+	)
+
+save_plot(
+	ggplot(workload_replay_mvp_plot, aes(phase_order, phase, fill = phase_type)) +
+		geom_col(width = 0.66, alpha = 0.92, show.legend = FALSE) +
+		geom_text(
+			aes(label = claim_short),
+			hjust = 0,
+			nudge_x = 0.06,
+			size = 3.0,
+			color = "grey20"
+		) +
+		scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+		scale_x_continuous(breaks = 1:4, limits = c(0, 4.7)) +
+		labs(
+			title = "Representative workload replay has to be built in phases",
+			subtitle = "The first three phases validate replay mechanics; product claims wait for recorded workload strata",
+			x = "Phase order",
+			y = NULL
+		),
+	"167-workload-replay-mvp-plan.png",
+	width = 12,
+	height = 6.5
+)
+
 portability_validation_contract_audit <- tribble(
 	~portability_question, ~current_local_answer, ~evidence_already_available, ~remaining_gap, ~validation_contract, ~decision,
 	"Are the absolute p50 values portable enough for thresholds?",
