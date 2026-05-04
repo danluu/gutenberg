@@ -1,0 +1,14 @@
+prototype_owner,gate_class,gates,max_risk_score
+BlockListBlockProvider,own state,2,5
+BlockListBlockProvider,public API,1,5
+BlockListBlockProvider,interaction,2,5
+BlockListBlockProvider,structure,1,5
+BlockListBlockProvider,editability,1,5
+BlockListBlockProvider,settings,1,4
+useInnerBlocksProps,structure,1,5
+useInnerBlocksProps,editability,1,5
+useInnerBlocksProps,settings,1,5
+useInnerBlocksProps,drop zone,1,3
+useInnerBlocksProps,identity/type,1,4
+useInnerBlocksProps,side effect,1,4
+useInnerBlocksProps,controlled state,1,4

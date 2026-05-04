@@ -15436,38 +15436,38 @@ if (file.exists(marker_allspan_action_summary_path)) {
 					shape = decision,
 					size = risk_score
 				)
-				) +
+			) +
 				geom_point(alpha = 0.9) +
 				facet_grid(
-					prototype_owner ~ .,
-					scales = "free_y",
-					space = "free_y"
-				) +
-				scale_color_brewer(type = "qual", palette = "Set1", name = "Prototype owner") +
-				scale_shape_manual(
-					values = c(
-						"usable small boundary" = 16,
-						"partial fast path only" = 17,
-						"needs private revision" = 15,
-						"needs private root revision" = 0,
-						"needs parent/root key" = 2,
-						"needs split keys" = 3,
-						"needs affected-set design" = 4,
-						"hardest local key" = 8
-					),
-					name = "Decision"
-				) +
-				scale_size_area(max_size = 7, breaks = 3:5, name = "stale risk") +
-				scale_x_continuous(
-					breaks = 1:3,
-					limits = c(0.75, 3.25),
-					labels = c("1" = "not enough", "2" = "partial", "3" = "usable")
-				) +
-				labs(
-					title = "Existing store signals are not enough for the hot selector prototypes",
-					subtitle = "Internal state slices exist, but most boundaries lack exposed per-client/root revision keys or affected sets",
-					x = "Existing signal sufficiency for a skip decision",
-					y = NULL
+				prototype_owner ~ .,
+				scales = "free_y",
+				space = "free_y"
+			) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Prototype owner") +
+			scale_shape_manual(
+				values = c(
+					"usable small boundary" = 16,
+					"partial fast path only" = 17,
+					"needs private revision" = 15,
+					"needs private root revision" = 0,
+					"needs parent/root key" = 2,
+					"needs split keys" = 3,
+					"needs affected-set design" = 4,
+					"hardest local key" = 8
+				),
+				name = "Decision"
+			) +
+			scale_size_area(max_size = 7, breaks = 3:5, name = "stale risk") +
+			scale_x_continuous(
+				breaks = 1:3,
+				limits = c(0.75, 3.25),
+				labels = c("1" = "not enough", "2" = "partial", "3" = "usable")
+			) +
+			labs(
+				title = "Existing store signals are not enough for the hot selector prototypes",
+				subtitle = "Internal state slices exist, but most boundaries lack exposed per-client/root revision keys or affected sets",
+				x = "Existing signal sufficiency for a skip decision",
+				y = NULL
 				) +
 				theme(legend.position = "bottom", legend.box = "vertical"),
 			"153-selector-prototype-store-signal-audit.png",
@@ -15475,9 +15475,335 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			height = 7.4
 		)
 
+		selector_prototype_source_blueprint <- tribble(
+			~prototype_owner, ~prototype_step, ~source_anchor, ~diagnostic_scope_ms, ~metadata_count, ~source_evidence, ~proposed_boundary, ~ordinary_text_skip_case, ~must_keep_fresh, ~source_blocker, ~proof_gate, ~prototype_decision, ~feasibility_score, ~risk_score,
+			"BlockListBlockProvider",
+			"own-block public props boundary",
+			"packages/block-editor/src/components/block-list/block.js:562-741; block.js:879-904",
+			301.5,
+			1437,
+			"The selector returns blockWithoutAttributes, getBlockAttributes, name, validity, className, bindable attributes, visibility metadata, active variation title, and public editor.BlockListBlock filter props.",
+			"per-clientId own-block revision covering attributes, identity, validity, block name/type, active variation, binding metadata, visibility metadata, and wrapper-class inputs",
+			"An unrelated paragraph UPDATE_BLOCK_ATTRIBUTES whose changed clientId is not this provider's clientId and whose metadata/layout-sensitive fields cannot affect this provider.",
+			"The edited block, replaced/removed/transformed blocks, blocks whose own metadata/className/variation changed, and any public filter observer of block/name/attributes/isValid/canMove/canRemove/isSelected.",
+			"Public filter props and PrivateBlockContext are built from the same selectedProps object, so a selected-only or component-only memo would stale observable API.",
+			"Add a fixture editor.BlockListBlock filter that records public props, then prove edited block updates while unrelated providers reuse output only on the fast path.",
+			"needs private revision",
+			2,
+			5,
+			"BlockListBlockProvider",
+			"last-attribute-change fast path",
+			"packages/block-editor/src/store/reducer.js:1911-1932; selectors.js:2973-2983",
+			301.5,
+			1437,
+			"__experimentalGetLastBlockAttributeChanges returns the most recent UPDATE_BLOCK/UPDATE_BLOCK_ATTRIBUTES attribute subset keyed by clientId.",
+			"treat lastBlockAttributesChange as an action hint for an attribute-only skip, not as the full selectedProps dependency contract",
+			"If the latest action updates attributes for other clientIds only, own-attribute reads for this provider are unchanged.",
+			"Any non-attribute action, block replacement/removal, selection change, settings change, visibility/device change, template/editing-mode change, or own metadata/layout-sensitive attribute change.",
+			"The reducer state is the latest action summary; it is not a durable per-client revision and it does not cover the rest of selectedProps.",
+			"Assert the fast path disables itself on every non-attribute action family and on own-clientId changes; source spans should show only non-edited providers skip.",
+			"partial fast path only",
+			3,
+			4,
+			"BlockListBlockProvider",
+			"selection and interaction affected set",
+			"packages/block-editor/src/components/block-list/block.js:658-739; use-block-props/index.js:176-214",
+			301.5,
+			1437,
+			"The provider reads selected, child-selected, first multi-selected, full/partial selection, initial caret, highlighted, dragging, and overlay state, and useBlockProps turns those into classes, refs, focus, drag, and scroll behavior.",
+			"selection/interaction revision plus affected-client/root set covering selected blocks, ancestors, highlighted/dragged/overlay participants, and roots whose appender/section state can change",
+			"Ordinary text insertion after selection has settled and no drag/overlay/highlight state moved.",
+			"Selection, multi-selection, child selection, caret position, drag start/end, overlay activation, highlight changes, section selection, and selected-root transitions.",
+			"No current selector exposes the affected set; recomputing all providers is safe but broad.",
+			"Behavior tests for selection, multi-selection, child selection, drag/overlay/highlight, and scroll/focus affordances before any source-span win is counted.",
+			"needs affected set",
+			1,
+			5,
+			"BlockListBlockProvider",
+			"structure, editability, and settings split",
+			"packages/block-editor/src/components/block-list/block.js:667-738; use-block-props/index.js:176-214",
+			301.5,
+			1437,
+			"The provider reads block index, same-name duplicates, section parent/root, template lock, canRemove/canMove, editing mode, content-only section, preview mode, device type, supportsLayout, and binding support settings.",
+			"separate root-structure, section, editability/capability, settings/device, and visibility revisions, or a conservative recompute path for those slices",
+			"Plain paragraph text attributes do not change order, duplicate uniqueness, section ancestry, template lock, editing modes, device type, or global settings.",
+			"Insert/remove/move/replace, unique-block warnings, section-parent changes, template/content-only mode, capability changes, device/preview/settings changes, and visibility metadata changes.",
+			"These are mixed client/root/global dependencies, so one clientId attribute key is insufficient.",
+			"Prototype must include forced invalidation tests for each slice; missing any one gives visible stale classes, disabled state, controls, or warnings.",
+			"needs split keys",
+			1,
+			5,
+			"useInnerBlocksProps",
+			"root drop-zone boundary",
+			"packages/block-editor/src/components/inner-blocks/index.js:194-216; index.js:290-302",
+			66.3,
+			580,
+			"When clientId is absent, the selector only checks isZoomOut and getSectionRootClientId to disable the root drop zone, then renders root BlockListItems.",
+			"root zoom/section-root revision, or keep this tiny root read direct while larger clientId paths get guarded",
+			"Ordinary paragraph text insertion does not change zoom or section root.",
+			"Zoom in/out, auto-scaled zoom, section-root changes, and root drop-zone option changes.",
+			"This is the cleanest inner-blocks boundary, but it is only a subset of the useInnerBlocksProps row.",
+			"Focused root and section-root drop-zone behavior test plus source-span check for root wrappers.",
+			"usable small boundary",
+			4,
+			3,
+			"useInnerBlocksProps",
+			"client identity/root/type boundary",
+			"packages/block-editor/src/components/inner-blocks/index.js:218-246",
+			66.3,
+			580,
+			"The clientId path reads getBlockName, getBlockRootClientId, getBlockType, hasBlockSupport('__experimentalExposeControlsToChildren'), getTemplateLock(parent), and getBlockEditingMode.",
+			"per-client identity/root revision plus block-type/support revision and parent template/editing revision",
+			"Unrelated text attributes do not change this wrapper's name, parent root, block type, toolbar-capture support, parent lock, or editing mode.",
+			"Block transform/replacement, parent/root move, block type/support registration, parent template lock, and derived editing-mode changes.",
+			"Existing selectors return values, not a cheap dependency key independent of recomputing the mapping.",
+			"Transform, parent/root move, capture-toolbar support, template lock, and editing-mode tests before counting a skip.",
+			"needs private revision",
+			2,
+			4,
+			"useInnerBlocksProps",
+			"layout/default-layout dependency",
+			"packages/block-editor/src/store/get-block-settings.js:94-170; inner-blocks/index.js:218-246",
+			66.3,
+			580,
+			"getBlockSettings(clientId, 'layout') walks the current block and ancestors, reads their attributes.settings, falls back to global __experimentalFeatures, and allows runtime filters.",
+			"layout-settings key covering current block, ancestor blocks with __experimentalSettings support, global settings, and filter invalidation policy",
+			"Plain text in an unrelated paragraph should not change layout settings, but an attributes-blind skip is unsafe because attributes can carry settings.",
+			"Current or ancestor settings attributes, global theme/editor settings, block support changes, and blockEditor.useSetting filters.",
+			"This is the hardest local key; a reducer-only attribute/clientId key cannot see runtime filters and ancestor inheritance by itself.",
+			"Layout inheritance tests with current and ancestor settings plus a filter fixture; do not claim a full useInnerBlocksProps skip without this.",
+			"needs layout key",
+			1,
+			5,
+			"useInnerBlocksProps",
+			"nested settings side-effect gate",
+			"packages/block-editor/src/components/inner-blocks/use-nested-settings-update.js:78-188; inner-blocks/index.js:80-132",
+			66.3,
+			580,
+			"useNestedSettingsUpdate intentionally avoids its own useSelect and writes block-list settings in a queued microtask when allowed blocks, prioritized inserter blocks, defaults, template lock, captureToolbars, orientation, or layout change.",
+			"guarded selector output must still drive blockListSettings updates when any InnerBlocks option or computed layout/template input changes",
+			"Ordinary text input should not change these InnerBlocks options for unrelated wrappers.",
+			"Allowed-blocks/default-block/direct-insert/template-lock/capture-toolbar/orientation/layout changes and deprecation paths.",
+			"A render skip that also skips this side effect can stale inserter/template/drop-zone settings even if visible props look unchanged.",
+			"Assert blockListSettings updates on option changes and no spurious updates on ordinary text-only input.",
+			"needs side-effect gate",
+			2,
+			4
+		) %>%
+			mutate(
+				prototype_owner = factor(
+					prototype_owner,
+					levels = c("BlockListBlockProvider", "useInnerBlocksProps")
+				),
+				prototype_decision = factor(
+					prototype_decision,
+					levels = c(
+						"usable small boundary",
+						"partial fast path only",
+						"needs private revision",
+						"needs affected set",
+						"needs split keys",
+						"needs layout key",
+						"needs side-effect gate"
+					)
+				)
+			)
+
+		write_csv(
+			selector_prototype_source_blueprint,
+			file.path(data_dir, "typing-delay-selector-prototype-source-blueprint.csv")
+		)
+
+		selector_prototype_source_blueprint_summary <- selector_prototype_source_blueprint %>%
+			group_by(prototype_owner) %>%
+			summarize(
+				diagnostic_scope_ms = first(diagnostic_scope_ms),
+				metadata_count = first(metadata_count),
+				prototype_steps = n(),
+				low_feasibility_steps = sum(feasibility_score <= 2),
+				max_risk_score = max(risk_score),
+				best_feasibility_score = max(feasibility_score),
+				key_conclusion = case_when(
+					first(as.character(prototype_owner)) == "BlockListBlockProvider" ~ "The only plausible first provider fast path is latest-attribute-action filtering for non-edited blocks; a full skip still needs private revisions/affected sets for public props, selection, structure, editability, settings, and visibility.",
+					first(as.character(prototype_owner)) == "useInnerBlocksProps" ~ "The root drop-zone slice is clean, but the full row is blocked by layout/default-layout inheritance and the nested-settings side effect.",
+					TRUE ~ "Needs source blueprint."
+				),
+				.groups = "drop"
+			)
+
+		write_csv(
+			selector_prototype_source_blueprint_summary,
+			file.path(data_dir, "typing-delay-selector-prototype-source-blueprint-summary.csv")
+		)
+
+		selector_prototype_source_blueprint_plot <- selector_prototype_source_blueprint %>%
+			mutate(
+				plot_label = case_when(
+					prototype_step == "own-block public props boundary" ~ "public props",
+					prototype_step == "last-attribute-change fast path" ~ "attr hint",
+					prototype_step == "selection and interaction affected set" ~ "selection set",
+					prototype_step == "structure, editability, and settings split" ~ "split keys",
+					prototype_step == "root drop-zone boundary" ~ "root drop zone",
+					prototype_step == "client identity/root/type boundary" ~ "identity/root",
+					prototype_step == "layout/default-layout dependency" ~ "layout key",
+					TRUE ~ "settings side effect"
+				),
+				label_x = feasibility_score + case_when(
+					prototype_step == "selection and interaction affected set" ~ -0.18,
+					prototype_step == "layout/default-layout dependency" ~ -0.16,
+					prototype_step == "root drop-zone boundary" ~ -0.38,
+					TRUE ~ 0.16
+				),
+				label_y = risk_score + case_when(
+					prototype_step == "selection and interaction affected set" ~ 0.26,
+					prototype_step == "structure, editability, and settings split" ~ 0.08,
+					prototype_step == "layout/default-layout dependency" ~ -0.18,
+					prototype_step == "client identity/root/type boundary" ~ 0.34,
+					prototype_step == "nested settings side-effect gate" ~ -0.18,
+					prototype_step == "root drop-zone boundary" ~ -0.2,
+					prototype_step == "last-attribute-change fast path" ~ -0.2,
+					TRUE ~ 0.18
+				)
+			)
+
+		save_plot(
+			ggplot(
+				selector_prototype_source_blueprint_plot,
+				aes(
+					feasibility_score,
+					risk_score,
+					color = prototype_owner,
+					shape = prototype_decision,
+					size = diagnostic_scope_ms
+				)
+			) +
+				geom_point(alpha = 0.9) +
+				geom_text(
+					aes(label_x, label_y, label = plot_label),
+					size = 3.0,
+					color = "grey20",
+					show.legend = FALSE
+				) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Prototype owner") +
+				scale_shape_manual(
+					values = c(
+						"usable small boundary" = 16,
+						"partial fast path only" = 17,
+						"needs private revision" = 15,
+						"needs affected set" = 4,
+						"needs split keys" = 3,
+						"needs layout key" = 8,
+						"needs side-effect gate" = 7
+					),
+					name = "Source decision"
+				) +
+				scale_size_area(max_size = 8, labels = label_number(suffix = "ms"), name = "diagnostic scope") +
+				scale_x_continuous(
+					breaks = 1:4,
+					limits = c(0.75, 4.35),
+					labels = c("1" = "blocked", "2" = "prototype", "3" = "partial", "4" = "usable")
+				) +
+				scale_y_continuous(
+					breaks = 1:5,
+					limits = c(2.65, 5.35),
+					labels = c("1" = "low", "2" = "", "3" = "medium", "4" = "high", "5" = "must test")
+				) +
+				labs(
+					title = "Next selector prototypes are invalidation-key problems",
+					subtitle = "Only the root drop-zone slice is clean; provider fast paths and full inner-blocks skips need private revisions, affected sets, or layout/settings gates",
+					x = "Feasibility using current source signals",
+					y = "Stale-UI risk if skipped incorrectly"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"168-selector-prototype-source-blueprint.png",
+			width = 12,
+			height = 7.5
+		)
+
+		selector_prototype_acceptance_gates <- tribble(
+			~prototype_owner, ~gate, ~gate_class, ~source_anchor, ~why_required, ~required_probe, ~risk_score,
+			"BlockListBlockProvider", "edited block content", "own state", "block.js:611-651; block.js:881-901", "The edited provider exposes current attributes/name/isValid/block to BlockEdit and editor.BlockListBlock filters.", "Type into the edited paragraph and assert content, public filter props, and source spans recompute for that block.", 5,
+			"BlockListBlockProvider", "unrelated text-only skip", "own state", "reducer.js:1911-1932; selectors.js:2973-2983", "The win requires non-edited providers to reuse output on other-client attribute updates.", "Type in one paragraph and assert unrelated provider source spans fall while DOM/filter-observed props stay unchanged.", 4,
+			"BlockListBlockProvider", "public filter compatibility", "public API", "block.js:870-904", "BlockListBlock is filtered and its props are public API.", "Install a test editor.BlockListBlock filter that observes block, attributes, isSelected, canMove, and canRemove across updates.", 5,
+			"BlockListBlockProvider", "selection and child selection", "interaction", "block.js:658-729; use-block-props/index.js:176-214", "Selected, child-selected, multi-selected, and caret state control classes, focus, scroll, and sync rendering.", "Select, clear, multi-select, and select child blocks; assert classes, controls, and focus behavior.", 5,
+			"BlockListBlockProvider", "drag, overlay, and highlight", "interaction", "block.js:716-728; use-block-props/index.js:121-140", "Drag and overlay state changes refs, draggable behavior, disabled overlay handling, and classes.", "Start/end drag, toggle overlay/highlight, and assert visible affordances plus source invalidation of affected blocks.", 5,
+			"BlockListBlockProvider", "structure and unique-block warnings", "structure", "block.js:667-739", "Index, section parent, getBlocksByName, and originalBlockClientId can change without text content changes.", "Insert, move, remove, replace, and duplicate unique blocks; assert order, warning, section, and wrapper state.", 5,
+			"BlockListBlockProvider", "editing modes and capabilities", "editability", "block.js:686-733", "Template lock, canMove/canRemove, content-only mode, and subtree disabled state drive visible controls and tabindex/classes.", "Toggle template/content-only/editing modes and block locks; assert controls, disabled outline, and classes.", 5,
+			"BlockListBlockProvider", "settings, device, visibility, and bindings", "settings", "block.js:614-651; block.js:752-859", "Device type, preview, supportsLayout, bindable attributes, and metadata visibility affect context, classes, and hidden blocks.", "Change device/preview/settings and visibility metadata; assert hide/show, wrapper classes, and binding affordances.", 4,
+			"useInnerBlocksProps", "root drop-zone state", "drop zone", "inner-blocks/index.js:206-216; index.js:290-302", "Root drop-zone disablement depends on zoom and section root.", "Toggle zoom/section root and assert root/nested drop zones do not both accept the same drag.", 3,
+			"useInnerBlocksProps", "child order and structural edits", "structure", "inner-blocks/index.js:122-132; block-list/index.js:211-302", "The returned children include BlockListItems for this root; stale order or placeholder/appender state is visible.", "Insert, remove, reorder children and assert rows, placeholder, appender, and source invalidation.", 5,
+			"useInnerBlocksProps", "parent template lock and editing mode", "editability", "inner-blocks/index.js:220-246; use-nested-settings-update.js:93-103", "Template lock and editing mode disable drop zones and update nested settings.", "Toggle parent template lock and editing modes; assert drop-zone and inserter behavior.", 5,
+			"useInnerBlocksProps", "block type and toolbar capture", "identity/type", "inner-blocks/index.js:218-246", "Block name/type/support controls captureToolbars, component choice, and block type passed to InnerBlocks.", "Transform/replace block and change expose-controls support fixture; assert toolbar capture and children props.", 4,
+			"useInnerBlocksProps", "layout/default layout inheritance", "settings", "get-block-settings.js:94-170; inner-blocks/index.js:102-119", "Layout can come from current or ancestor attributes, global settings, and filters.", "Change current and ancestor settings attributes, global layout settings, and a useSetting filter; assert layout output.", 5,
+			"useInnerBlocksProps", "nested settings side effect", "side effect", "use-nested-settings-update.js:78-188", "Skipping render must not skip updateBlockListSettings when InnerBlocks options or computed orientation/layout change.", "Change allowedBlocks, defaultBlock, directInsert, templateLock, captureToolbars, orientation, and layout; assert blockListSettings updates.", 4,
+			"useInnerBlocksProps", "controlled inner blocks", "controlled state", "inner-blocks/index.js:154-157; index.js:285-299", "useInnerBlocksProps chooses ControlledInnerBlocks when value/onChange exist, which runs useBlockSync.", "Use a controlled inner-block fixture and assert onChange/value sync still works under the guard.", 4
+		) %>%
+			mutate(
+				prototype_owner = factor(
+					prototype_owner,
+					levels = c("BlockListBlockProvider", "useInnerBlocksProps")
+				),
+				gate_class = factor(
+					gate_class,
+					levels = c(
+						"own state",
+						"public API",
+						"interaction",
+						"structure",
+						"editability",
+						"settings",
+						"drop zone",
+						"identity/type",
+						"side effect",
+						"controlled state"
+					)
+				)
+			)
+
+		write_csv(
+			selector_prototype_acceptance_gates,
+			file.path(data_dir, "typing-delay-selector-prototype-acceptance-gates.csv")
+		)
+
+		selector_prototype_acceptance_gate_summary <- selector_prototype_acceptance_gates %>%
+			group_by(prototype_owner, gate_class) %>%
+			summarize(
+				gates = n(),
+				max_risk_score = max(risk_score),
+				.groups = "drop"
+			)
+
+		write_csv(
+			selector_prototype_acceptance_gate_summary,
+			file.path(data_dir, "typing-delay-selector-prototype-acceptance-gate-summary.csv")
+		)
+
+		save_plot(
+			ggplot(
+				selector_prototype_acceptance_gate_summary,
+				aes(prototype_owner, gates, fill = gate_class)
+			) +
+				geom_col(width = 0.66, color = "white", linewidth = 0.25) +
+				scale_fill_brewer(type = "qual", palette = "Paired", name = "Acceptance gate") +
+				scale_y_continuous(
+					breaks = 0:8,
+					expand = expansion(mult = c(0, 0.08))
+				) +
+				labs(
+					title = "Selector-guard wins need behavior gates before p50 claims",
+					subtitle = "The provider risk is public props plus interaction state; inner-blocks risk is layout/settings, side effects, and controlled children",
+					x = NULL,
+					y = "Required gate count"
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"169-selector-prototype-acceptance-gates.png",
+			width = 12,
+			height = 7.2
+		)
+
 		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
-		mutate(
-			plot_label = case_when(
+			mutate(
+				plot_label = case_when(
 				design_option == "Source-feasible local selector guards" ~ "local guards",
 				design_option == "Persistence-aware useBlockSync side channel" ~ "useBlockSync side channel",
 				design_option == "Split persistence state out of block-editor root" ~ "split persistence state",

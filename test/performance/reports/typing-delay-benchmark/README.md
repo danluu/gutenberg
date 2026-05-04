@@ -900,6 +900,11 @@ The R script derives:
 -   `data/typing-delay-selector-prototype-store-signal-*.csv`: audit of
     existing block-editor store signals and whether they are sufficient for the
     next selector prototypes' skip decisions.
+-   `data/typing-delay-selector-prototype-source-blueprint*.csv` and
+    `data/typing-delay-selector-prototype-acceptance-gate*.csv`: deeper
+    source-level blueprint for the next `BlockListBlockProvider` and
+    `useInnerBlocksProps` prototypes, including the behavior gates that must pass
+    before any p50 win is counted.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -5453,6 +5458,58 @@ attribute-only action. For `useInnerBlocksProps`, the root drop-zone and
 identity/root pieces are smaller, but layout/default-layout cannot be skipped
 until inherited layout settings and filters are accounted for.
 
+I then pushed the next-prototype source audit down to the level of concrete
+implementation gates. The useful result is a veto against another tempting
+shortcut: neither hot row should be implemented as "if this block is not selected,
+skip it." `BlockListBlockProvider` exposes public
+`editor.BlockListBlock` filter props and builds `PrivateBlockContext` for
+`useBlockProps`. A wrong skip can stale `block`, `attributes`, `name`, validity,
+selection classes, drag/focus handlers, visibility classes, or wrapper props. The
+only plausible cheap provider fast path is narrower: use the latest attribute
+action as a hint for unrelated non-edited blocks, and disable that path for every
+selection, structure, editability, settings, visibility, or non-attribute action.
+
+`useInnerBlocksProps` has one clean slice, the root drop-zone check keyed by zoom
+and section root. The full row is not that clean. The client path reads block
+identity, parent/root, block type, capture-toolbar support, editing mode, parent
+template lock, and `getBlockSettings( clientId, 'layout' )`. That last selector
+walks the current block and ancestors, reads their `attributes.settings`, falls
+back to global `__experimentalFeatures`, and allows runtime filters. The
+component also drives `useNestedSettingsUpdate`, which writes
+`blockListSettings` in a queued microtask. So an inner-blocks prototype must
+preserve layout/settings inheritance and side effects, not just return the same
+React children for ordinary text.
+
+![Selector prototype source blueprint](figures/168-selector-prototype-source-blueprint.png)
+
+| Prototype step | Source conclusion | Decision |
+| -------------- | ----------------- | -------- |
+| Provider own-block public props | public filter props and private context share the selected-props object | needs private per-client revision |
+| Provider last-attribute-change fast path | useful for other-client attribute-only actions, but only as an action hint | partial fast path only |
+| Provider selection/interaction | selected, ancestor-selected, drag, overlay, highlight, and caret state need affected sets | needs affected set |
+| Provider structure/editability/settings | index, section, template, capability, device, preview, visibility, and settings are mixed client/root/global state | needs split keys |
+| Inner blocks root drop zone | root path only reads zoom and section root | usable small boundary |
+| Inner blocks identity/root/type | name/root/type/support/template/editing reads lack cheap revision keys | needs private revision |
+| Inner blocks layout/default layout | current/ancestor settings attributes, global settings, and filters can change layout | needs layout key |
+| Inner blocks nested settings side effect | render changes drive queued `updateBlockListSettings` writes | needs side-effect gate |
+
+I also turned that into an acceptance-gate list before any later patch claims a
+p50 win. This is the audit style that avoids the previous bad reasoning: name the
+state that can go stale, name the user-visible output, and require a behavior
+probe before trusting a source-span reduction.
+
+![Selector prototype acceptance gates](figures/169-selector-prototype-acceptance-gates.png)
+
+The gate count is intentionally high. For the provider, the must-pass set covers
+edited content, unrelated text-only skips, public filter compatibility, selection,
+child selection, multi-selection, drag/overlay/highlight, structure, duplicate
+warnings, editing modes, capabilities, settings, device, visibility, and binding
+affordances. For inner blocks, it covers root and nested drop zones, child
+insert/remove/reorder, parent template lock, editing mode, block type/support,
+toolbar capture, layout/default-layout inheritance, nested settings side effects,
+and controlled inner blocks. The next credible implementation step is therefore a
+small provider prototype with those gates, not another broad benchmark sweep.
+
 I then pushed on the largest uncounted selector row: `BlockListItems`. The source
 audit makes the split sharper. `BlockListItems` does not read paragraph content
 attributes at all. Its `Items` selector in
@@ -7980,14 +8037,17 @@ therefore selective invalidation / subscription partitioning for text-only
 attribute updates, not callback-body tuning.
 
 The remaining product question is no longer just "which invalidation guard?"
-The source-feasibility-adjusted answer is: start with the pattern-override
-selected-only split; next test clientId-specific attribute invalidation for
-non-edited `BlockListBlockProvider` instances and a root/order/settings boundary
-for `useInnerBlocksProps`; treat `HeadingEdit` as a shared-signal design problem;
-treat `BlockListItems` as a high-risk validation prototype because it is
-selection/tree/appender-sensitive; leave the broader store-partition or
-branch-aware notification design until after local guards prove the shape of the
-win.
+The source-feasibility-adjusted answer is: the pattern-override selected-only
+split is done locally; next prototype a small non-edited
+`BlockListBlockProvider` fast path using latest-attribute-action information only
+as a hint, while preserving public filter props and separate
+selection/structure/editability/settings invalidation; then prototype the clean
+pieces of `useInnerBlocksProps` without skipping layout/default-layout
+inheritance or `useNestedSettingsUpdate` side effects. Treat `HeadingEdit` as a
+shared-signal design problem, treat `BlockListItems` as a high-risk validation
+prototype because it is selection/tree/appender-sensitive, and leave the broader
+store-partition or branch-aware notification design until after local guards
+prove the shape of the win.
 
 The validation-burden matrix makes that ordering less hand-wavy. The largest
 single local bucket, `BlockListItems`, is not the first patch because a stale
@@ -8296,7 +8356,7 @@ The high-level split is:
 | Typing startup wait | change-trigger contract closes the operational question: current Typing has `0ms` extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local `0ms` candidate matrix | do not add a Typing startup wait under the current metric; reopen only on a trigger change; validate the five interactive non-Typing `0ms` candidates on CI/mac/container lanes before changing those sleeps; the wait-removal ledger counts these five rows as `110s` of the conservative `142s` local candidate saving |
 | Pattern-loading wait | CI validation contract has to stay split by spec: Site Editor still needs predicate/fixed-`500ms` validation, while the focused Post Editor matrix favors `0ms` over the current fixed pre-inserter wait; combined with the interaction rows, the conservative local wait-removal envelope is `142s` per two-branch comparison and the predicate envelope is about `146s` | validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; validate Post Editor `0ms` against `1000ms` with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full wait savings |
 | Input API phase boundary | CI helper decision contract closes the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match, ordinary `locator.press()` is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition |
-| Low-risk selector guards | the pattern-override selected-only patch is implemented locally and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry, with `ControlsWithStoreSubscription` still gated to one selected controls entry; focused unit coverage covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths | move to the non-edited `BlockListBlockProvider` and `useInnerBlocksProps` prototypes; run aggregate before/after p50 only if a production magnitude claim is needed |
+| Low-risk selector guards | the pattern-override selected-only patch is implemented locally and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry, with `ControlsWithStoreSubscription` still gated to one selected controls entry; the deeper source blueprint shows the next provider prototype is only a narrow latest-attribute-action fast path unless it adds private revisions/affected sets, and the inner-blocks prototype must preserve layout/settings inheritance plus `useNestedSettingsUpdate` side effects | prototype `BlockListBlockProvider` first with public-filter, edited-block, selection, structure, editability, settings, visibility, and binding gates; prototype `useInnerBlocksProps` after that with root/drop-zone, identity/root, layout/default-layout, nested-settings, and controlled-inner-block gates; run aggregate before/after p50 only after behavior gates and source spans pass |
 | Store subscriber partition | public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private `useBlockSync` side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware `@wordpress/data` subscriptions are the only compatibility-preserving fanout route found | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
 | Chromium runtime checkpoint | runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated `Runtime.evaluate` / `Runtime.callFunctionOn` rows are the dose-response control, trace-on `captureSnapshot` rows isolate the perturbation, and native rows bound browser-only scale | run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows |

@@ -1,0 +1,3 @@
+prototype_owner,diagnostic_scope_ms,metadata_count,prototype_steps,low_feasibility_steps,max_risk_score,best_feasibility_score,key_conclusion
+BlockListBlockProvider,301.5,1437,4,3,5,3,"The only plausible first provider fast path is latest-attribute-action filtering for non-edited blocks; a full skip still needs private revisions/affected sets for public props, selection, structure, editability, settings, and visibility."
+useInnerBlocksProps,66.3,580,4,3,5,4,"The root drop-zone slice is clean, but the full row is blocked by layout/default-layout inheritance and the nested-settings side effect."
