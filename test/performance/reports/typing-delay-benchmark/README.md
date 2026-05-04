@@ -642,6 +642,12 @@ The R script derives:
 -   `data/typing-delay-chromium-runtime-trace-runbook-audit.csv`: concrete
     Chromium runtime trace rows, trace channels, alignment points, and acceptance
     gates for naming the lower-level browser mechanism.
+-   `data/typing-delay-chromium-runtime-current-harness-gap-audit.csv`: source
+    audit of which existing benchmark surfaces can already support the Chromium
+    runtime checkpoint question, and which fields are missing.
+-   `data/typing-delay-chromium-runtime-falsification-gate-audit.csv`: theory
+    audit that separates falsified controls from open runtime/scheduler/V8/OS
+    mechanism gates.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -7018,6 +7024,57 @@ wait/checkpoint contrast, the dose response, the trace-snapshot perturbation, an
 the native scale control, the exact Chromium mechanism remains unnamed even
 though the benchmark-level CI decision is closed.
 
+### Chromium Runtime Harness Gap Audit
+
+I re-audited this as a falsification problem rather than a story-fitting problem.
+The source-level check says the existing benchmark can already vary the input
+path and runtime checkpoint shape, but it cannot yet name the Chromium internal
+state. The missing piece is not another Gutenberg delay point; it is a
+per-retained-key observer that aligns protocol commands, scheduler/runtime trace
+state, V8 or microtask slices if exposed, OS counters if needed, and the existing
+`EventDispatch` and Gutenberg source spans.
+
+![Runtime checkpoint harness gap](figures/170-runtime-checkpoint-harness-gap.png)
+
+The practical split is:
+
+| Harness surface | Source evidence | Current capability | Mechanism blocker |
+| --------------- | --------------- | ------------------ | ----------------- |
+| Browser trace categories | `packages/e2e-test-utils-playwright/src/metrics/index.ts:214-219`; `test/performance/specs/typing-delay-benchmark.spec.js:1128-1144` | `Metrics.startTracing()` accepts options, but this benchmark currently wires `devtools.timeline`, render, and screenshot-oriented categories. | No runtime-checkpoint trace bundle for scheduler queues, V8 execution, microtasks, input priority, or task attribution. |
+| Inter-key gap trace extraction | `test/performance/specs/typing-delay-benchmark.spec.js:1370-1408`; `4356-4358` | The harness can retain events overlapping the previous-keyup to next-keydown gap. | It does not yet retain enough process/thread/flow/task fields or protocol-command alignment to identify the browser state change. |
+| Runtime checkpoint delay modes | `test/performance/specs/typing-delay-benchmark.spec.js:3980-4160` | Raw CDP input is held fixed while direct `Runtime.evaluate`, `Runtime.callFunctionOn`, timeout, RAF, page/locator evaluation, and repeat counts vary. | Per-key CDP command start/end times, execution contexts, object lifecycle, and command counts are not stored beside the retained samples. |
+| Per-sample records | `test/performance/specs/typing-delay-benchmark.spec.js:4211-4360`; `extract-typing-delay-runtime-repeat.js:99-134` | Records already carry retained sample index, latency/key durations, observed gap, browser events, data spans, and optional gap events. | Current extraction summarizes p50s and gaps, not per-sample runtime/scheduler predictors. |
+| Trace snapshot boundary | protocol-log audit around `captureSnapshot` | Existing protocol logs line up trace-on `captureSnapshot` calls with the full fast band. | The Playwright trace facility cannot be both the perturbation and the only observer of the perturbing commands. |
+| Native scale control | native runtime-repeat extractor and summary CSV | Native `contenteditable` repeats the same raw-CDP/runtime grid and shows only a sub-millisecond movement. | Native rows still need the same runtime/scheduler sidecar if the final claim names Chromium internals. |
+
+That audit gives the stricter rule I should have used earlier: if a theory says
+"some work moved" or "some state was already finalized," it has to identify a
+recorded event, command, trace state, or source span that moved. For the
+Chromium checkpoint question, the current data proves the boundary but not the
+internal browser mechanism.
+
+![Runtime checkpoint falsification gates](figures/171-runtime-checkpoint-falsification-gates.png)
+
+The remaining theory matrix is:
+
+| Candidate mechanism | Current status | Current evidence | Required next evidence |
+| ------------------- | -------------- | ---------------- | ---------------------- |
+| Elapsed post-keyup time / browser rest | falsified locally | Ordinary raw-CDP waits through about `5008ms` stay near the slow `21-24ms` keypress band. | None for the current benchmark decision; reopen only if a new browser build changes ordinary-wait behavior. |
+| Single task, timer, or frame checkpoint | partly falsified | One sync `Runtime.evaluate`, `setTimeout(0)`, or RAF checkpoint improves only partway. | Runtime/scheduler trace showing why repeated checkpoints differ from one-shot task/frame checkpoints. |
+| Runtime command count / execution checkpoint | open and plausible | `Runtime.evaluate` and `Runtime.callFunctionOn` form a repeat-count dose response down to about `13ms` at x17. | A per-sample trace-state metric that changes with x0/x1/x3/x7/x11/x17 and predicts `EventDispatch` duration. |
+| V8 or microtask state | open | Runtime commands are sufficient to move the path, but current artifacts do not expose V8 or microtask slices. | V8 execution, microtask checkpoint, or execution-context state differing between waits and repeated runtime calls. |
+| Renderer scheduler / input task priority | open | Runtime and CPU/QoS controls both show state below Gutenberg selectors, but current categories are render/screenshot oriented. | Task queue, priority, or main-thread scheduling state differing after checkpoints and predicting the lower input span. |
+| Trace snapshot perturbation | supported for trace-on fast band | Trace-on per-key `keyboard.press()` and trace-on raw CDP plus `page.evaluate()` both hit the fast band. | Separate low-overhead protocol log showing whether `captureSnapshot` or related snapshot work creates the same state as high-repeat runtime checkpoints. |
+| OS power/QoS/cache state | open lower layer | CPU/QoS controls can put the same broad Gutenberg path into different latency bands. | OS counters showing whether runtime checkpoints still predict latency after matching frequency, residency, QoS, and scheduler state. |
+| Gutenberg fanout amplification | supported for scale | Native contenteditable moves only about `0.3-0.4ms`; Gutenberg moves by several milliseconds. | Matched browser trace plus Gutenberg source spans showing where the browser-level state is amplified into editor work. |
+
+So the best current answer to the open runtime question is deliberately modest:
+the low-latency band around runtime checkpoints is real, not an elapsed-time
+artifact, not a DOM event-payload artifact, and not big enough in native editing
+to explain Gutenberg-scale latency by itself. The exact Chromium state remains
+open until the benchmark records the per-key protocol and runtime/scheduler
+sidecar above.
+
 ### Native Contenteditable Baseline
 
 The key-state traces show conditions that separate slow and fast Gutenberg
@@ -7936,6 +7993,14 @@ lower bound for a predicate but is too volatile to recommend as a blind
 replacement without CI validation, and waiting for preview canvases is an
 invalid predicate because it would remove the measured workload.
 
+The latest runtime-checkpoint audit tightens the most important remaining causal
+boundary. The benchmark has enough evidence to reject elapsed wait, DOM key
+payload, single generic task/frame checkpoint, and native browser-only scale
+theories. It does not have enough browser-side observer data to name the exact
+Chromium state. The remaining credible theories require per-retained-key
+protocol-command timing plus scheduler/runtime/V8 or OS-counter state aligned to
+the existing `EventDispatch` and Gutenberg source spans.
+
 The Post Editor `loadPatterns` follow-up splits that exception in two. The Site
 Editor result does not apply directly because Post Editor injects local patterns
 into editor settings and measures the local `Test` category. In the focused Post
@@ -8359,7 +8424,7 @@ The high-level split is:
 | Low-risk selector guards | the pattern-override selected-only patch is implemented locally and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry, with `ControlsWithStoreSubscription` still gated to one selected controls entry; the deeper source blueprint shows the next provider prototype is only a narrow latest-attribute-action fast path unless it adds private revisions/affected sets, and the inner-blocks prototype must preserve layout/settings inheritance plus `useNestedSettingsUpdate` side effects | prototype `BlockListBlockProvider` first with public-filter, edited-block, selection, structure, editability, settings, visibility, and binding gates; prototype `useInnerBlocksProps` after that with root/drop-zone, identity/root, layout/default-layout, nested-settings, and controlled-inner-block gates; run aggregate before/after p50 only after behavior gates and source spans pass |
 | Store subscriber partition | public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private `useBlockSync` side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware `@wordpress/data` subscriptions are the only compatibility-preserving fanout route found | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
-| Chromium runtime checkpoint | runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated `Runtime.evaluate` / `Runtime.callFunctionOn` rows are the dose-response control, trace-on `captureSnapshot` rows isolate the perturbation, and native rows bound browser-only scale | run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows |
+| Chromium runtime checkpoint | harness-gap and falsification audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement the runtime trace runbook with per-retained-key protocol-command timing, command counts, execution context/object lifecycle, scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
 | CPU/QoS mechanism | counter-runset audit makes the remaining mechanism test concrete: near-key no-CPU rows are the slow negative control, ordinary/utility rows are the fast policy-visible control, background/maintenance rows are the slow policy contrast, and finite-burst rows test decay; exact hardware/scheduler state remains below this harness | run that row set with per-sample OS scheduler, power, hardware-counter, browser scheduler, and source-span alignment before adding more JS benchmark rows |
 | Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
 | Human/plugin workload | workload schema audit now has a source-level implementation plan: the current harness can reuse raw attachments, the custom reporter, Metrics tracing, fixture loaders, editor helpers, and `pressKeys`, but it still needs an event-record sidecar, manifest-driven executor, assertion packs, and an opt-in recorder before product-latency ranking is valid | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; do not treat another fixed-x q50 array as representative replay |

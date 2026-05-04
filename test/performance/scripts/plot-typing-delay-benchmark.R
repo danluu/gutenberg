@@ -10552,6 +10552,134 @@ if (
 				"reporting gate"
 			)
 
+		chromium_runtime_current_harness_gap_audit <- tribble(
+			~harness_surface, ~source_reference, ~current_capability, ~usable_now_for, ~missing_for_mechanism, ~next_instrumentation, ~readiness_score, ~mechanism_blocker_score, ~plot_label, ~plot_x, ~plot_y,
+			"Browser trace categories",
+			"packages/e2e-test-utils-playwright/src/metrics/index.ts:214-219; test/performance/specs/typing-delay-benchmark.spec.js:1128-1144",
+			"`Metrics.startTracing()` can accept custom options, but the typing benchmark currently wires only `devtools.timeline`, render, and screenshot category bundles.",
+			"EventDispatch durations, render endpoints, screenshots, and gap-event extraction when the selected categories already emit the needed events.",
+			"No runtime-checkpoint category bundle for scheduler queues, V8 execution, microtasks, input priority, or task attribution.",
+			"Add an opt-in runtime-checkpoint trace mode with explicit categories and browser revision/category metadata in each artifact.",
+			2, 5, "categories", 1.96, 5.02,
+			"Inter-key gap trace extraction",
+			"test/performance/specs/typing-delay-benchmark.spec.js:1370-1408; 4356-4358",
+			"`traceEventsForKeyGaps()` keeps events that overlap previous-keyup-end through next-keydown-start and records name/category/phase/time/duration plus a few args fields.",
+			"Summarizing non-key trace work inside the exact window where waits and checkpoints differ.",
+			"Needs richer fields for process/thread ids, flow ids, event ids, queue/task metadata, and protocol-command alignment.",
+			"Expand retained gap events for runtime-trace mode; keep per-sample windows instead of only aggregate p50 tables.",
+			3, 4, "gap windows", 3.00, 4.02,
+			"Runtime checkpoint delay modes",
+			"test/performance/specs/typing-delay-benchmark.spec.js:3980-4160",
+			"The spec already holds raw CDP input constant and varies direct `Runtime.evaluate`, full `Runtime.evaluate`, `Runtime.callFunctionOn`, timeout, RAF, page/locator evaluation, and repeat counts.",
+			"Producing the primary wait-vs-checkpoint contrast and the direct runtime dose response without changing the key event payload.",
+			"CDP command start/end times, execution context ids, object lifecycle, and command counts are not stored per retained key.",
+			"Wrap every CDP/runtime/evaluate checkpoint in a protocol-command sidecar with monotonic driver timestamps and browser-window alignment.",
+			4, 5, "delay modes", 4.00, 5.02,
+			"Per-sample result records",
+			"test/performance/specs/typing-delay-benchmark.spec.js:4211-4360; extract-typing-delay-runtime-repeat.js:99-134",
+			"Records already carry retained sample index, latency/key event durations, observed inter-key gap, browser events, data spans, and optional gapTraceEvents.",
+			"Joining source-span owner data to the fast/slow checkpoint samples.",
+			"Current extraction summarizes gaps and p50s, not scheduler/runtime state predictors per sample.",
+			"Create a runtime-checkpoint extractor that emits one row per retained key with command counts, trace-state metrics, EventDispatch, and Gutenberg source-span ids.",
+			4, 4, "records", 4.00, 4.02,
+			"Playwright trace snapshot boundary",
+			"report protocol-log audit around `captureSnapshot`; current benchmark artifact rows",
+			"Existing protocol logs identified trace-on `captureSnapshot` calls as aligned with the full fast band.",
+			"Separating trace-on automation perturbation from trace-off runtime-repeat controls.",
+			"The same Playwright trace facility cannot be both the perturbation and the only observer for the perturbing commands.",
+			"Use a separate low-overhead protocol log or CDP wrapper while comparing trace-on snapshot rows to trace-off runtime-repeat rows.",
+			2, 5, "snapshot log", 2.22, 4.92,
+			"Native scale control",
+			"extract-typing-delay-native-runtime-repeat.js; typing-delay-native-runtime-repeat-summary.csv",
+			"Native contenteditable repeats the same raw CDP/runtime checkpoint grid and shows only a sub-millisecond browser-only movement.",
+			"Bounding the browser-only scale and forcing Gutenberg fanout to explain the multi-millisecond amplification.",
+			"Native rows still need the same runtime/scheduler trace-state sidecar if the final mechanism claim names Chromium internals.",
+			"Run the runtime trace subset against both Gutenberg and native scenarios with matched categories and repeat counts.",
+			3, 3, "native scale", 3.00, 3.02
+		)
+
+		chromium_runtime_falsification_gate_audit <- tribble(
+			~candidate_mechanism, ~current_status, ~current_evidence, ~supporting_trace_result, ~falsifying_trace_result, ~required_rows, ~instrumentation_level, ~evidence_score, ~next_cost_score, ~plot_label, ~plot_x, ~plot_y,
+			"Elapsed post-keyup time / browser rest",
+			"falsified locally",
+			"Ordinary raw-CDP waits through about `5008ms` stay near the slow `21-24ms` keypress band.",
+			"No additional trace result is needed for the current benchmark decision.",
+			"Would reopen only if a new browser build makes ordinary waits converge with runtime checkpoints.",
+			"raw CDP x0; waits `16ms`, `1000ms`, `5000ms`",
+			"existing p50 rows",
+			5, 1, "wait", 5.00, 1.00,
+			"Single task, timer, or frame checkpoint",
+			"partly falsified",
+			"One sync `Runtime.evaluate`, `setTimeout(0)`, or RAF checkpoint improves only partway.",
+			"Repeated checkpoint trace state differs from one-shot timeout/RAF in the same direction as p50.",
+			"One-shot task/frame rows and repeated runtime rows have the same trace state but different p50s.",
+			"`Runtime.evaluate` x1; timeout; RAF; `Runtime.evaluate` x7/x17",
+			"runtime/scheduler trace",
+			4, 4, "single task", 3.94, 4.02,
+			"Runtime command count / execution checkpoint",
+			"open and plausible",
+			"`Runtime.evaluate` and `Runtime.callFunctionOn` form a repeat-count dose response down to about `13ms` at x17.",
+			"A per-sample trace-state metric changes monotonically or stepwise with x0/x1/x3/x7/x11/x17 and predicts EventDispatch duration.",
+			"Repeat count changes p50 with no corresponding command, V8, microtask, scheduler, or OS-counter state difference.",
+			"`Runtime.evaluate` and `Runtime.callFunctionOn` x0/x1/x3/x7/x11/x17",
+			"protocol plus runtime/scheduler trace",
+			4, 5, "repeat", 4.00, 5.04,
+			"V8 or microtask state",
+			"open",
+			"Runtime commands are sufficient to move the path, but current artifacts do not expose V8 or microtask slices.",
+			"V8 execution, microtask checkpoint, or execution-context state differs between waits and repeated runtime calls and tracks p50.",
+			"Scheduler/OS state explains the movement while V8/microtask slices are identical across fast and slow rows.",
+			"wait `1000ms`; `Runtime.evaluate` x7/x17; `Runtime.callFunctionOn` x7/x17",
+			"V8/microtask trace",
+			2, 5, "V8/microtask", 1.96, 5.04,
+			"Renderer scheduler / input task priority",
+			"open",
+			"Runtime and CPU/QoS controls both show state below Gutenberg selectors, but the present trace categories are render/screenshot oriented.",
+			"Task queue, priority, or main-thread scheduling state differs after checkpoints and predicts the lower EventDispatch span.",
+			"Fast and slow rows have indistinguishable scheduler/input trace state after controlling OS counters.",
+			"wait rows; runtime repeats; CPU/QoS fast and slow rows",
+			"scheduler trace plus optional OS counters",
+			2, 5, "scheduler", 2.18, 4.92,
+			"Trace snapshot perturbation",
+			"supported for trace-on fast band",
+			"Trace-on per-key `keyboard.press()` and trace-on raw CDP plus `page.evaluate()` both hit the fast band; trace-off rows do not.",
+			"`captureSnapshot` or related snapshot protocol work lines up with the same runtime/scheduler state as high-repeat runtime checkpoints.",
+			"Trace-on fast rows remain fast without identifiable snapshot/protocol work, or the external observer changes trace-off controls.",
+			"trace-on keyboard.press; trace-on raw CDP plus page.evaluate; trace-off runtime repeats",
+			"separate protocol log plus runtime/scheduler trace",
+			4, 4, "snapshot", 4.18, 3.92,
+			"OS power/QoS/cache state",
+			"open lower layer",
+			"CPU/QoS controls can put the same broad Gutenberg path into different latency bands.",
+			"OS counters explain the runtime checkpoint state difference, leaving Chromium trace state as downstream.",
+			"Runtime checkpoints still predict p50 after matching frequency, residency, QoS, and scheduler counters.",
+			"runtime repeats plus CPU/QoS contrast rows",
+			"OS counters plus browser trace",
+			3, 5, "OS", 3.00, 5.04,
+			"Gutenberg fanout amplification",
+			"supported for scale",
+			"Native contenteditable moves only about `0.3-0.4ms` while Gutenberg moves by several milliseconds.",
+			"Browser trace state changes are similar in native and Gutenberg, while Gutenberg source spans supply the additional multi-millisecond movement.",
+			"Native rows move by the same multi-millisecond amount or Gutenberg source spans do not account for the scale gap.",
+			"Gutenberg runtime repeats; native runtime repeats; matched source spans",
+			"browser trace plus source spans",
+			5, 3, "Gutenberg scale", 5.00, 3.00
+		) %>%
+			mutate(
+				current_status = factor(
+					current_status,
+					levels = c(
+						"falsified locally",
+						"partly falsified",
+						"supported for trace-on fast band",
+						"supported for scale",
+						"open and plausible",
+						"open",
+						"open lower layer"
+					)
+				)
+			)
+
 		write_csv(
 			cdp_boundary_consolidated,
 			file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
@@ -10571,6 +10699,14 @@ if (
 			write_csv(
 				chromium_runtime_trace_runbook_audit,
 				file.path(data_dir, "typing-delay-chromium-runtime-trace-runbook-audit.csv")
+			)
+			write_csv(
+				chromium_runtime_current_harness_gap_audit,
+				file.path(data_dir, "typing-delay-chromium-runtime-current-harness-gap-audit.csv")
+			)
+			write_csv(
+				chromium_runtime_falsification_gate_audit,
+				file.path(data_dir, "typing-delay-chromium-runtime-falsification-gate-audit.csv")
 			)
 
 		save_plot(
@@ -10601,11 +10737,72 @@ if (
 				color = "Boundary",
 				shape = "Boundary"
 			),
-		"133-cdp-boundary-consolidated.png",
-		width = 12,
-		height = 8
-	)
-}
+			"133-cdp-boundary-consolidated.png",
+			width = 12,
+			height = 8
+		)
+
+			save_plot(
+				ggplot(
+					chromium_runtime_current_harness_gap_audit,
+					aes(plot_x, plot_y, color = harness_surface, shape = harness_surface)
+				) +
+					geom_point(size = 3.5, alpha = 0.92) +
+					geom_text(
+						aes(label = plot_label),
+						nudge_x = 0.08,
+						nudge_y = 0.1,
+						size = 3,
+						show.legend = FALSE,
+						check_overlap = TRUE
+					) +
+					scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+					scale_x_continuous(breaks = 1:5, limits = c(1, 5.7)) +
+					scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+					labs(
+						title = "The runtime checkpoint blocker is observer state, not another delay row",
+						subtitle = "Higher x means the current harness surface is ready; higher y means mechanism claims are blocked without more instrumentation",
+						x = "current harness readiness (1 = absent, 5 = ready)",
+						y = "mechanism blocker severity (1 = low, 5 = high)",
+						color = "Harness surface",
+						shape = "Harness surface"
+					),
+				"170-runtime-checkpoint-harness-gap.png",
+				width = 12,
+				height = 7
+			)
+
+			save_plot(
+				ggplot(
+					chromium_runtime_falsification_gate_audit,
+					aes(plot_x, plot_y, color = current_status, shape = current_status)
+				) +
+					geom_point(size = 3.5, alpha = 0.92) +
+					geom_text(
+						aes(label = plot_label),
+						nudge_x = 0.08,
+						nudge_y = 0.08,
+						size = 3,
+						show.legend = FALSE,
+						check_overlap = TRUE
+					) +
+					scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+					scale_shape_manual(values = c(16, 17, 15, 18, 3, 4, 8), drop = FALSE) +
+					scale_x_continuous(breaks = 1:5, limits = c(1, 5.7)) +
+					scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+					labs(
+						title = "Runtime checkpoint theories split into falsified controls and instrumented gates",
+						subtitle = "The open browser-state theories require protocol, scheduler, V8, or OS counters aligned per retained key",
+						x = "current evidence strength (1 = weak, 5 = strong)",
+						y = "next measurement cost (1 = existing rows, 5 = new observer stack)",
+						color = "Current status",
+						shape = "Current status"
+					),
+				"171-runtime-checkpoint-falsification-gates.png",
+				width = 12,
+				height = 7
+			)
+	}
 
 marker_summary_path <- file.path(data_dir, "typing-delay-marker-intervention-summary.csv")
 marker_samples_path <- file.path(data_dir, "typing-delay-marker-intervention-samples.csv")
@@ -12644,8 +12841,9 @@ if (file.exists(redux_listener_owner_diff_path)) {
 			width = 12,
 			height = 8
 		)
+
+		}
 	}
-}
 
 if (file.exists(redux_listener_owner_samples_path)) {
 	redux_listener_owner_samples <- read_csv(redux_listener_owner_samples_path, show_col_types = FALSE)
