@@ -3987,6 +3987,104 @@ if (file.exists(render_trace_samples_path) && file.exists(screenshot_trace_sampl
 		width = 13,
 		height = 7.4
 	)
+
+	visual_endpoint_decomposition_summary <- visual_endpoint_alignment_summary %>%
+		group_by(probe, input_mode, endpoint) %>%
+		summarize(
+			event_dispatch_p50_990_ms = event_dispatch_p50_ms[delay_ms == 990][1],
+			event_dispatch_p50_1000_ms = event_dispatch_p50_ms[delay_ms == 1000][1],
+			event_dispatch_p50_1300_ms = event_dispatch_p50_ms[delay_ms == 1300][1],
+			post_dispatch_p50_990_ms = endpoint_minus_event_dispatch_p50_ms[delay_ms == 990][1],
+			post_dispatch_p50_1000_ms = endpoint_minus_event_dispatch_p50_ms[delay_ms == 1000][1],
+			post_dispatch_p50_1300_ms = endpoint_minus_event_dispatch_p50_ms[delay_ms == 1300][1],
+			endpoint_p50_990_ms = endpoint_p50_ms[delay_ms == 990][1],
+			endpoint_p50_1000_ms = endpoint_p50_ms[delay_ms == 1000][1],
+			endpoint_p50_1300_ms = endpoint_p50_ms[delay_ms == 1300][1],
+			.groups = "drop"
+		) %>%
+		filter(
+			!is.na(event_dispatch_p50_990_ms),
+			!is.na(event_dispatch_p50_1000_ms),
+			!is.na(event_dispatch_p50_1300_ms),
+			!is.na(post_dispatch_p50_990_ms),
+			!is.na(post_dispatch_p50_1000_ms),
+			!is.na(post_dispatch_p50_1300_ms),
+			!is.na(endpoint_p50_990_ms),
+			!is.na(endpoint_p50_1000_ms),
+			!is.na(endpoint_p50_1300_ms)
+		) %>%
+		mutate(
+			event_dispatch_slow_neighbor_mean_ms = (event_dispatch_p50_990_ms + event_dispatch_p50_1300_ms) / 2,
+			post_dispatch_slow_neighbor_mean_ms = (post_dispatch_p50_990_ms + post_dispatch_p50_1300_ms) / 2,
+			endpoint_slow_neighbor_mean_ms = (endpoint_p50_990_ms + endpoint_p50_1300_ms) / 2,
+			event_dispatch_drop_vs_slow_neighbors_ms = event_dispatch_slow_neighbor_mean_ms - event_dispatch_p50_1000_ms,
+			post_dispatch_drop_vs_slow_neighbors_ms = post_dispatch_slow_neighbor_mean_ms - post_dispatch_p50_1000_ms,
+			endpoint_drop_vs_slow_neighbors_ms = endpoint_slow_neighbor_mean_ms - endpoint_p50_1000_ms,
+			event_dispatch_share_of_endpoint_drop = event_dispatch_drop_vs_slow_neighbors_ms / endpoint_drop_vs_slow_neighbors_ms,
+			post_dispatch_share_of_endpoint_drop = post_dispatch_drop_vs_slow_neighbors_ms / endpoint_drop_vs_slow_neighbors_ms
+		) %>%
+		arrange(probe, input_mode, endpoint)
+
+	write_csv(
+		visual_endpoint_decomposition_summary,
+		file.path(data_dir, "typing-delay-visual-endpoint-decomposition-summary.csv")
+	)
+
+	visual_endpoint_decomposition_plot <- visual_endpoint_decomposition_summary %>%
+		filter(input_mode == "key held during delay") %>%
+		transmute(
+			probe,
+			endpoint,
+			`endpoint total` = endpoint_drop_vs_slow_neighbors_ms,
+			`EventDispatch slice` = event_dispatch_drop_vs_slow_neighbors_ms,
+			`post-EventDispatch tail` = post_dispatch_drop_vs_slow_neighbors_ms
+		) %>%
+		pivot_longer(
+			cols = c(`endpoint total`, `EventDispatch slice`, `post-EventDispatch tail`),
+			names_to = "component",
+			values_to = "drop_vs_slow_neighbors_ms"
+		) %>%
+		mutate(
+			component = factor(
+				component,
+				levels = c("endpoint total", "EventDispatch slice", "post-EventDispatch tail")
+			),
+			endpoint = factor(
+				endpoint,
+				levels = c(
+					"second RAF after input",
+					"Paint trace event",
+					"DrawFrame trace event",
+					"first changed trace screenshot"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(
+			visual_endpoint_decomposition_plot,
+			aes(drop_vs_slow_neighbors_ms, endpoint, color = component, shape = component)
+		) +
+			geom_vline(xintercept = 0, linewidth = 0.35, linetype = "dashed", color = "grey55") +
+			geom_point(
+				size = 3.1,
+				alpha = 0.9,
+				position = position_dodge(width = 0.45)
+			) +
+			facet_wrap(vars(probe), ncol = 1, scales = "free_y") +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Component") +
+			labs(
+				title = "The visual-endpoint speedup is mostly before post-dispatch rendering",
+				subtitle = "Drops are mean(990ms, 1300ms) minus 1000ms p50; components use separate medians, so they are diagnostic rather than exactly additive",
+				x = "1000ms drop versus slow neighbors, p50 (ms)",
+				y = NULL,
+				shape = "Component"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"126-visual-endpoint-drop-decomposition.png",
+		width = 12,
+		height = 7.4
+	)
 }
 
 taskpolicy_tier_samples_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-samples.csv")

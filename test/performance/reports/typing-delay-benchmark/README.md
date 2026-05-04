@@ -776,6 +776,9 @@ The R script derives:
 -   `data/typing-delay-visual-endpoint-alignment-*.csv`: per-sample alignment
     and correlation between EventDispatch latency and RAF/render/screenshot
     endpoints in the Chromium visual probes.
+-   `data/typing-delay-visual-endpoint-decomposition-summary.csv`: derived
+    split of the `1000ms` visual-endpoint drop into the EventDispatch slice and
+    the post-EventDispatch visual/render tail.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -5378,6 +5381,31 @@ visible per sample, not only after aggregating medians. The complete-keypress
 control is less informative for RAF because frame scheduling adds quantization,
 but Paint and changed-screenshot endpoints still track EventDispatch closely.
 
+I then decomposed the downstream endpoint drops into the EventDispatch slice and
+the post-EventDispatch visual/render tail. This is a median diagnostic, not exact
+algebra: the component p50s are computed separately, so they need not add to the
+endpoint p50 exactly. It still answers the open "is the visual speedup mostly
+after EventDispatch?" question.
+
+![Visual endpoint drop decomposition](figures/126-visual-endpoint-drop-decomposition.png)
+
+For key-held samples:
+
+| Probe | Endpoint | Endpoint drop | EventDispatch slice drop | Post-EventDispatch tail drop |
+| ----- | -------- | ------------: | -----------------------: | ---------------------------: |
+| Chrome render trace | Paint | `12.2ms` | `12.0ms` | `0.2ms` |
+| Chrome render trace | DrawFrame | `12.8ms` | `12.0ms` | `0.6ms` |
+| Chrome render trace | second RAF | `12.3ms` | `12.0ms` | `0.8ms` |
+| Chrome trace screenshot | first changed screenshot | `15.8ms` | `13.8ms` | `2.3ms` |
+| Chrome trace screenshot | second RAF | `15.1ms` | `13.8ms` | `1.3ms` |
+
+That makes the React/render caveat narrower. The post-dispatch tail is real and
+can move by `~0.2-2.3ms`, especially for trace screenshots, but it is not the
+main reason the visual endpoints are faster at `1000ms`. The main movement is
+already in the measured input/EventDispatch span. A React profiler or component
+commit attribution could still explain who owns the after-input tail, but it
+would not explain the `~12-16ms` endpoint cliff by itself.
+
 This is the most compact current answer to the visual-path open question. The
 `1000ms` effect is not confined to Chrome's `EventDispatch` slice: in key-hold
 mode it survives as the endpoint moves through editor input, frame scheduling,
@@ -5682,7 +5710,13 @@ is at or after its same-key EventDispatch slice. The combined endpoint-drop
 accounting makes the same point in one view: the key-hold `1000ms` point is
 `~11-16ms` faster than its `990ms` / `1300ms` neighbors across EventDispatch,
 second RAF, `Paint`, `DrawFrame`, and changed trace screenshot endpoints, while
-complete-keypress-then-wait is roughly flat.
+complete-keypress-then-wait is roughly flat. The new endpoint decomposition
+narrows the React-side caveat too: for key-held `Paint` and `DrawFrame`, only
+`0.2-0.6ms` of the `~12ms` endpoint drop is in the post-EventDispatch
+visual/render tail; for first changed trace screenshot, the tail contributes
+`2.3ms` of a `15.8ms` drop. So after-input rendering can still matter for
+whole-cycle attribution, but it is too small to be the primary cause of the
+`1000ms` cliff.
 
 ## Recommendations
 
