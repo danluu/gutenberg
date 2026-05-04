@@ -1054,6 +1054,9 @@ The R script derives:
 -   `data/typing-delay-cpu-qos-counter-decision-tree.csv`: staged decision
     tree for sidecar, root `powermetrics`, root `trace`, browser trace, and
     fallback counter work.
+-   `data/typing-delay-cpu-qos-claim-ladder-audit.csv`: claim-boundary audit
+    for the CPU/QoS result, separating locally proved timing boundaries from
+    privileged counter claims and product-mitigation claims.
 -   `data/typing-delay-wall-clock-fixed-sample-*.csv`: audit of fixed-sample
     delay sweeps versus equal wall-clock sampling budgets.
 
@@ -4565,6 +4568,38 @@ That produces a stricter decision tree:
 4. Add Chromium scheduler traces only if OS counters do not explain the split.
 5. Treat cache or memory hierarchy as a fallback that needs lower-level counters;
    do not claim it from JS timing or aggregate medians alone.
+
+### CPU/QoS Claim Ladder
+
+The CPU/QoS controls now prove a useful benchmark boundary, but they do not name
+the exact hardware or scheduler mechanism. This matters because several tempting
+statements sound close to the data but require different observers. The local
+tables support "ordinary/utility CPU state is sufficient locally"; they do not
+support "P-core residency caused it", "Darwin QoS placement caused it",
+"Chromium scheduler state caused it", or "cache warmth caused it".
+
+![CPU/QoS claim ladder](figures/191-cpu-qos-claim-ladder.png)
+
+| Claim | What the current data supports | What is blocked |
+| ----- | ------------------------------ | --------------- |
+| Benchmark boundary | Ordinary/utility CPU state modulates the measured Gutenberg input path, while background/maintenance CPU does not. | Naming the lower-level mechanism from aggregate p50 rows. |
+| No-op or timer callback explanation | Ruled out: near-key no-CPU controls remain slow at median p50 `24.3ms`. | Treating the `1000ms` timer callback merely existing as sufficient. |
+| Generic CPU burn explanation | Ruled out: background/maintenance CPU consumes CPU but remains slow at median p50 `24.2ms`. | Claiming any load, process activity, or warm CPU is enough. |
+| Finite duration/proximity | Descriptive only: a two-variable finite-burst model explains `71%` of finite-control p50 variation. | Treating the regression as proof of frequency, scheduler, cache, or browser queue state. |
+| P-core / frequency / residency | Open candidate. | Needs sidecar validation plus root `powermetrics` joined to retained key windows. |
+| Darwin scheduler / QoS placement | Open candidate. | Needs root trace only after `powermetrics` cannot explain the split. |
+| Cache / memory hierarchy | Fallback candidate. | Needs lower-level renderer counters after OS and browser scheduling are controlled. |
+| Chromium scheduler state | Open only after OS counters fail. | Needs trace-off protocol sidecar first, then scheduler/task-queue traces aligned with OS counters. |
+| Product optimization | Separate track. Gutenberg fanout supplies the user-visible scale, but that is not the same as the system mechanism. | Needs selector/subscriber prototypes and workload replay, not a stronger CPU/QoS mechanism claim. |
+| Mechanism report update | Blocked until one recorded state predicts every discriminating row. | Needs a joined per-key table covering no-CPU slow, ordinary/utility fast, background/maintenance slow, finite fresh/stale, and observer controls. |
+
+This is the point where a Linus-style audit says "stop guessing": the boundary is
+real, the controls are strong, but the exact cause is below the current
+instrumentation. A Kingsbury-style audit says the next run needs join keys before
+privilege: otherwise root counters only create a prettier class-level
+correlation. A Dan-Luu-style audit says product claims and benchmark-mechanism
+claims must stay separate: source fanout explains the large Gutenberg scale,
+while CPU/QoS counters are needed to explain the system-state cliff.
 
 That is the deepest current answer I can support locally. The CPU/QoS boundary is
 real and already useful as a benchmark-methodology warning, but the exact
@@ -8902,7 +8937,7 @@ The high-level split is:
 | Store subscriber partition | prototype-gate audit refines the compatibility path: the marker wakes `4,501` Redux-store listeners at p50 and `4,498` are `useSelect`, so the best fanout prototype is not an external persistence slot or narrowed public `registry.subscribe`; it is an internal dependency-filtered `useSelect` lane that preserves public root subscribe semantics, wakes `isLastBlockChangePersistent()` consumers, skips unrelated selectors, and proves listener-count collapse in a marker-only source-span run | after local guards, prototype the `useBlockSync` side channel only as a behavior-only path; for a fanout claim, require public `registry.subscribe` fixtures, persistence-selector `useSelect` fixtures, unrelated-selector skip fixtures, dynamic/cross-store/race/async gates, plugin/public subscriber smoke, and marker-only source-span collapse; do not claim timing from a side channel alone |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
 | Chromium runtime checkpoint | claim-ladder audit makes the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, Gutenberg source fanout supplies the scale, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not name V8/scheduler/OS state and do not add more JS-level delay rows until the sidecar exists |
-| CPU/QoS mechanism | local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but a root run without retained-key/helper/renderer/collector joins would still only prove class-level correlation | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split |
+| CPU/QoS mechanism | claim-ladder plus local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the benchmark boundary is proved, no-op/timer/generic-CPU explanations are ruled out, finite decay is descriptive, and P-core/frequency, Darwin scheduler/QoS, cache/memory, and Chromium scheduler claims all require observers not present in the current JS/browser table | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split; keep source/product mitigation claims separate from the system-mechanism claim |
 | Calibrated presentation | external-calibration runbook plus claim ladder closes the wording boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels; semantic glyph, presented-frame, camera-visible, and hardware/display claims are explicitly blocked until joined external observers preserve the same key-held shape and complete-keypress control | keep claims scoped to Chromium internal visual propagation unless the report needs hardware/display or semantic glyph timing; if it does, run the external calibration ladder with OCR/template matching, compositor/present timestamps, or camera/display capture joined per retained key |
 | Human/plugin workload | workload schema plus strata-coverage audits now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion only partially covers ordinary text bursts and first-input idle return, while correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata are missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, and plugin-heavy/P2-like histories |
 | Portability of absolute numbers | portability runbook and CI workflow-boundary audits now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed and published, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and I found no in-repo numeric performance fail threshold | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |

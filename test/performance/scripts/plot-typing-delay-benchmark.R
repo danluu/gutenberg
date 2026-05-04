@@ -12762,6 +12762,110 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 								)
 							)
 
+						cpu_qos_claim_ladder_audit <- tribble(
+							~claim, ~claim_order, ~allowed_claim, ~current_evidence, ~blocked_overclaim, ~required_next_evidence, ~evidence_score, ~validation_burden_score, ~overclaim_risk_score, ~decision, ~plot_label,
+							"Benchmark boundary", 1,
+							"Ordinary/utility CPU state modulates the measured Gutenberg input path; background/maintenance CPU does not.",
+							"Near-key no-CPU controls stay slow at median p50 24.3ms, continuous ordinary/utility CPU is fast at 9.7ms, and background/maintenance CPU is slow at 24.2ms.",
+							"Naming P-core residency, frequency, cache, scheduler QoS, or Chromium scheduler state from aggregate p50 rows.",
+							"None for the boundary claim; a sidecar plus privileged counters for the named mechanism.",
+							5, 1, 2, "locally supported", "CPU boundary",
+							"No-op or timer callback explanation", 2,
+							"A nearby no-op callback, delayed task, IPC command, idle child, or worker lifetime is not sufficient.",
+							"Six near-key no-CPU controls remain slow, with p50 range 22.2-24.6ms.",
+							"Explaining the fast band as merely a callback existing before the key.",
+							"No more no-CPU rows unless a concrete new browser subsystem is targeted.",
+							5, 1, 1, "locally ruled out", "no-op tasks",
+							"Generic CPU burn explanation", 3,
+							"Generic external CPU activity is not sufficient; the effect is policy-sensitive.",
+							"Background and maintenance QoS CPU controls consume CPU but remain slow at median p50 24.2ms.",
+							"Claiming that any load, any process activity, or any warm CPU is enough.",
+							"Privileged counters only to identify the lower-level policy or hardware state.",
+							5, 1, 2, "locally ruled out", "generic CPU",
+							"Finite CPU duration/proximity", 4,
+							"Finite CPU work has a descriptive duration and recency relationship with the next retained key.",
+							"The two-variable finite-burst model has R^2 = 0.71 with expected coefficient signs.",
+							"Treating the regression as proof of frequency, scheduler, cache, or browser queue state.",
+							"Join finite rows to per-key frequency/residency, scheduler, wakeup, and browser-task counters.",
+							4, 3, 3, "descriptive only", "finite decay",
+							"P-core or cluster frequency/residency", 5,
+							"Still an open candidate mechanism.",
+							"Ordinary/utility versus background/maintenance policy split is consistent with a power or residency boundary, but current artifacts do not contain residency/frequency counters.",
+							"Claiming P-core, cluster, frequency, or power-state causality from browser timing alone.",
+							"Sidecar dry run, then root powermetrics joined to retained key windows.",
+							2, 4, 5, "needs powermetrics", "P-core / freq",
+							"Darwin scheduler or QoS placement", 6,
+							"Still an open candidate mechanism.",
+							"The split tracks ordinary/utility versus background/maintenance policy more closely than Unix nice or taskpolicy latency/throughput tiers.",
+							"Claiming scheduler or QoS placement without runnable latency, wakeup, core-selection, and effective-QoS records.",
+							"Root trace only after powermetrics cannot explain the split.",
+							3, 5, 5, "needs trace", "scheduler / QoS",
+							"Cache or memory hierarchy", 7,
+							"Fallback candidate only after OS scheduler and power-state counters are insufficient.",
+							"Gutenberg's broad JS/data/RichText path could be memory-sensitive, but external child CPU controls mean the mechanism cannot require warming Gutenberg objects directly.",
+							"Claiming cache or memory causality from the local JS timing shape.",
+							"Lower-level renderer counters joined to retained EventDispatch windows after OS and browser scheduling are controlled.",
+							1, 5, 4, "fallback only", "cache / memory",
+							"Chromium scheduler state", 8,
+							"Open only after OS counters fail to explain the split.",
+							"Runtime-protocol and CPU/QoS controls show a browser/runtime boundary below Gutenberg source spans, but the current CPU/QoS rows do not include scheduler trace categories.",
+							"Naming V8, browser task queue, or scheduler state before OS power/QoS state is matched.",
+							"Trace-off protocol sidecar first; scheduler/task-queue categories after OS counter alignment.",
+							2, 5, 4, "after OS counters", "browser scheduler",
+							"Product optimization conclusion", 9,
+							"Keep product mitigation separate from system-mechanism naming.",
+							"Native controls move less than 1ms while Gutenberg moves by many milliseconds; Gutenberg fanout supplies the scale.",
+							"Treating a system-state mechanism as a source-level fix, or treating source fanout as proof of the system mechanism.",
+							"Selector/subscriber prototypes and workload replay for product lag; OS counters for the benchmark artifact.",
+							4, 3, 4, "separate product work", "product work",
+							"Mechanism report update", 10,
+							"Do not name the exact mechanism until one recorded state predicts all discriminating rows.",
+							"The compact rows and join contract are selected, but the joined per-key counter table does not exist yet.",
+							"Updating the report from class medians, one successful row family, or unrelated explanations for separate row families.",
+							"Joined per-key table covering no-CPU slow, ordinary/utility fast, background/maintenance slow, finite fresh/stale, and observer controls.",
+							5, 5, 5, "report gate", "report gate"
+						) %>%
+							mutate(
+								decision = factor(
+									decision,
+									levels = c(
+										"locally supported",
+										"locally ruled out",
+										"descriptive only",
+										"needs powermetrics",
+										"needs trace",
+										"after OS counters",
+										"fallback only",
+										"separate product work",
+										"report gate"
+									)
+								),
+								label_x = case_when(
+									plot_label == "no-op tasks" ~ 1.18,
+									plot_label == "generic CPU" ~ 1.18,
+									plot_label == "CPU boundary" ~ 1.18,
+									plot_label == "finite decay" ~ 3.10,
+									plot_label == "product work" ~ 2.80,
+									plot_label == "P-core / freq" ~ 3.68,
+									plot_label == "scheduler / QoS" ~ 4.58,
+									plot_label == "cache / memory" ~ 4.55,
+									plot_label == "browser scheduler" ~ 4.54,
+									TRUE ~ validation_burden_score + 0.1
+								),
+								label_y = case_when(
+									plot_label == "no-op tasks" ~ 0.84,
+									plot_label == "generic CPU" ~ 1.68,
+									plot_label == "CPU boundary" ~ 2.36,
+									plot_label == "finite decay" ~ 2.66,
+									plot_label == "product work" ~ 4.32,
+									plot_label == "P-core / freq" ~ 5.15,
+									plot_label == "scheduler / QoS" ~ 5.23,
+									plot_label == "cache / memory" ~ 3.78,
+									plot_label == "browser scheduler" ~ 4.33,
+									TRUE ~ overclaim_risk_score + 0.1
+								)
+							)
+
 					write_csv(
 						system_mechanism_matrix,
 						file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
@@ -12793,6 +12897,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						write_csv(
 							cpu_qos_counter_decision_tree,
 							file.path(data_dir, "typing-delay-cpu-qos-counter-decision-tree.csv")
+						)
+						write_csv(
+							cpu_qos_claim_ladder_audit %>% select(-label_x, -label_y),
+							file.path(data_dir, "typing-delay-cpu-qos-claim-ladder-audit.csv")
 						)
 
 			save_plot(
@@ -12957,6 +13065,42 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						"183-cpu-qos-counter-decision-tree.png",
 						width = 12,
 						height = 7
+					)
+
+					save_plot(
+						ggplot(
+							cpu_qos_claim_ladder_audit,
+							aes(
+								validation_burden_score,
+								overclaim_risk_score,
+								color = decision,
+								shape = decision,
+								size = evidence_score
+							)
+						) +
+							geom_point(alpha = 0.94) +
+							geom_text(
+								aes(x = label_x, y = label_y, label = plot_label),
+								size = 3,
+								show.legend = FALSE
+							) +
+							scale_color_brewer(type = "qual", palette = "Paired", drop = FALSE) +
+							scale_shape_manual(values = c(16, 4, 15, 17, 8, 7, 3, 18, 1), drop = FALSE) +
+							scale_size_continuous(range = c(2.8, 6), breaks = 1:5) +
+							scale_x_continuous(breaks = 1:5, limits = c(0.8, 5.7)) +
+							scale_y_continuous(breaks = 1:5, limits = c(0.8, 5.6)) +
+							labs(
+								title = "The CPU/QoS evidence proves a boundary, not the named mechanism",
+								subtitle = "Higher x means more validation needed; higher y means higher risk if the report names the mechanism now",
+								x = "validation burden (1 = local table, 5 = privileged or lower-level counters)",
+								y = "overclaim risk (1 = low, 5 = high)",
+								color = "Claim status",
+								shape = "Claim status",
+								size = "evidence strength"
+							),
+						"191-cpu-qos-claim-ladder.png",
+						width = 12.5,
+						height = 7.4
 					)
 			}
 
