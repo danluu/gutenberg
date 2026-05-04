@@ -1042,6 +1042,10 @@ The R script derives:
 -   `data/typing-delay-open-question-outcome-interpretation.csv`: predeclared
     outcome interpretation matrix for the remaining open questions, covering
     pass, mixed, and fail cases for each artifact gate.
+-   `data/typing-delay-open-question-claim-sensitivity.csv`: claim-sensitivity
+    matrix showing which current conclusions can be overturned by remaining
+    open questions, which can only be narrowed, and which require new claim
+    scope.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9319,6 +9323,30 @@ or mitigation. If selector behavior passes but source-span fanout does not
 collapse, the result is not a performance win; it is a rejected source
 hypothesis. If runtime or CPU/QoS observers fail to separate rows, the correct
 conclusion is empirical sensitivity, not a named scheduler or hardware cause.
+
+The claim-sensitivity view answers a different question: which conclusions are
+actually at risk? Most remaining open questions do not threaten the central
+benchmark explanation. They either affect CI portability, choose the next source
+optimization, or decide whether the report is allowed to make broader
+mechanism/product/display claims.
+
+![Open question claim sensitivity](figures/208-open-question-claim-sensitivity.png)
+
+| Current conclusion | What an open question can still change |
+| ------------------ | -------------------------------------- |
+| The `1000ms` key-held cliff exists in the current benchmark path | size and portability, not the existence of the local boundary artifact |
+| Held-key delay and complete-keypress-then-wait are different metric families | wording and CI metric definition, not the input-semantics distinction |
+| Local Typing retained-q50 does not justify adding a startup wait | CI topology actionability, not the local retained-q50 result |
+| Pattern-loading waits need source-specific readiness before removal | implementation choice and per-spec scope |
+| Selector/source guards can produce local source wins only behind behavior gates | which source patch is safe and whether aggregate p50 can be cited |
+| Runtime and CPU/QoS lower-layer mechanisms remain unnamed | mechanism wording; not the empirical delay/mode sensitivity |
+| Product workload and external display claims require new observers | whether the report may generalize beyond fixed-`x` and Chromium-internal endpoints |
+| CI pass/fail cannot be predicted from local q50 alone | threshold portability and external policy, not local measurement semantics |
+
+So the remaining open questions do not all have equal leverage. The highest-risk
+rows are CI topology, pattern readiness, and selector behavior because they can
+change near-term decisions. Runtime, CPU/QoS, workload, and display work are
+important only if the claim widens beyond the current benchmark artifact.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

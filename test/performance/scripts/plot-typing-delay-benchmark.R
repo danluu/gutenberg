@@ -22110,6 +22110,145 @@ save_plot(
 	height = 7.4
 )
 
+open_question_claim_sensitivity <- tribble(
+	~current_conclusion, ~open_question_can_change, ~cannot_change, ~decision_class, ~claim_sensitivity_score, ~evidence_readiness_score, ~overclaim_risk_score, ~plot_label,
+	"The 1000ms key-held cliff exists in the current benchmark path.",
+	"Effect size and portability under a new browser/helper/topology.",
+	"The local existence of the key-held boundary artifact in the measured path.",
+	"current conclusion robust",
+	1.4, 4.6, 3.4, "cliff exists",
+	"Held-key delay and complete-keypress-then-wait are different metric families.",
+	"CI metric wording, threshold policy, and the chosen helper family.",
+	"The input-semantics distinction between holding a key down and waiting after keyup.",
+	"current conclusion robust",
+	1.2, 4.8, 3.8, "metric family",
+	"Local Typing retained-q50 does not justify adding a startup wait.",
+	"Whether the real CI topology makes wait removal safe for failures, first-key tails, and variance.",
+	"The local retained-q50 result under the current Typing metric.",
+	"changes CI action",
+	4.4, 3.2, 5.0, "startup wait",
+	"Pattern-loading waits need source-specific readiness before removal.",
+	"Which specs and lanes can replace fixed sleeps with source/resource predicates.",
+	"The requirement that behavior and readiness be preserved before claiming wait savings.",
+	"changes engineering path",
+	4.1, 3.0, 4.4, "patterns",
+	"Selector/source guards can produce local source wins only behind behavior gates.",
+	"Which owner is safe to optimize and whether aggregate p50 can be cited.",
+	"The need for behavior fixtures and source-span collapse before a timing claim.",
+	"changes engineering path",
+	4.0, 3.5, 4.6, "selector",
+	"Store subscriber partition is not yet a compatible performance claim.",
+	"Whether a filtered lane can preserve public subscription and dynamic dependency semantics.",
+	"The current rejection of listener-count-only or side-channel-only performance claims.",
+	"needs prerequisite",
+	3.4, 2.2, 4.8, "store",
+	"Runtime and CPU/QoS lower-layer mechanisms remain unnamed.",
+	"Whether a sidecar/counter join can name Chromium runtime, frequency, residency, QoS, cache, or runnable state.",
+	"The empirical delay/mode sensitivity and the fact that aggregate JS timings cannot name the lower layer alone.",
+	"mechanism wording only",
+	2.4, 2.0, 4.2, "mechanism",
+	"Product workload and external display claims require new observers.",
+	"Whether fixed-x results generalize to replay strata or external display/glyph endpoints.",
+	"The current benchmark-artifact and Chromium-internal endpoint scope.",
+	"claim expansion only",
+	2.8, 2.3, 4.4, "scope",
+	"CI pass/fail cannot be predicted from local q50 alone.",
+	"Threshold portability, external dashboard/reviewer policy, and CI-lane variance.",
+	"Local measurement semantics and the q50 reporting path.",
+	"changes CI action",
+	4.6, 2.8, 5.0, "CI threshold"
+) %>%
+	mutate(
+		decision_class = factor(
+			decision_class,
+			levels = c(
+				"current conclusion robust",
+				"changes engineering path",
+				"changes CI action",
+				"needs prerequisite",
+				"mechanism wording only",
+				"claim expansion only"
+			)
+		),
+		label_x = evidence_readiness_score + case_when(
+			plot_label == "cliff exists" ~ 0.1,
+			plot_label == "metric family" ~ -0.55,
+			plot_label == "startup wait" ~ 0.12,
+			plot_label == "CI threshold" ~ 0.12,
+			plot_label == "mechanism" ~ 0.1,
+			TRUE ~ 0.1
+		),
+		label_y = claim_sensitivity_score + case_when(
+			plot_label == "cliff exists" ~ 0.14,
+			plot_label == "metric family" ~ -0.16,
+			plot_label == "startup wait" ~ 0.12,
+			plot_label == "CI threshold" ~ -0.16,
+			plot_label == "patterns" ~ 0.12,
+			plot_label == "selector" ~ -0.16,
+			TRUE ~ 0.12
+		)
+	)
+
+write_csv(
+	open_question_claim_sensitivity %>%
+		select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-claim-sensitivity.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_claim_sensitivity,
+		aes(
+			evidence_readiness_score,
+			claim_sensitivity_score,
+			color = decision_class,
+			shape = decision_class,
+			size = overclaim_risk_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "What can change") +
+		scale_shape_manual(
+			values = c(
+				"current conclusion robust" = 16,
+				"changes engineering path" = 17,
+				"changes CI action" = 15,
+				"needs prerequisite" = 18,
+				"mechanism wording only" = 8,
+				"claim expansion only" = 7
+			),
+			name = "What can change"
+		) +
+		scale_size_area(max_size = 6.6, breaks = 3:5, name = "Overclaim risk") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.7, 5.05),
+			labels = c("1" = "weak", "2" = "design", "3" = "artifact", "4" = "strong", "5" = "settled")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(0.9, 4.9),
+			labels = c("1" = "wording", "2" = "scope", "3" = "mechanism", "4" = "decision", "5" = "core claim")
+		) +
+		labs(
+			title = "Most open questions do not overturn the current benchmark explanation",
+			subtitle = "They mainly affect CI actionability, source patch choice, or whether the report can widen mechanism/product claims",
+			x = "Evidence readiness",
+			y = "Sensitivity of current conclusion"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"208-open-question-claim-sensitivity.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
