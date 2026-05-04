@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import { createHash } from 'crypto';
 
 /**
  * WordPress dependencies
@@ -100,6 +101,13 @@ const traceRenderEvents =
 	process.env.BENCHMARK_TRACE_RENDER_EVENTS === '1' ||
 	process.env.BENCHMARK_TRACE_RENDER_EVENTS === 'true';
 const renderTraceWindowMs = intEnv( 'BENCHMARK_RENDER_TRACE_WINDOW_MS', 150 );
+const traceScreenshots =
+	process.env.BENCHMARK_TRACE_SCREENSHOTS === '1' ||
+	process.env.BENCHMARK_TRACE_SCREENSHOTS === 'true';
+const screenshotTraceWindowMs = intEnv(
+	'BENCHMARK_SCREENSHOT_TRACE_WINDOW_MS',
+	250
+);
 const freshEditorPerDelay =
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === '1' ||
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === 'true';
@@ -871,6 +879,12 @@ if ( renderTraceWindowMs <= 0 ) {
 	);
 }
 
+if ( screenshotTraceWindowMs <= 0 ) {
+	throw new Error(
+		'BENCHMARK_SCREENSHOT_TRACE_WINDOW_MS must be greater than 0.'
+	);
+}
+
 if ( maxDelayMs < minDelayMs ) {
 	throw new Error(
 		'BENCHMARK_MAX_DELAY_MS must be >= BENCHMARK_MIN_DELAY_MS.'
@@ -1085,6 +1099,28 @@ const renderTraceCategories = [
 	'cc',
 	'disabled-by-default-cc.debug',
 ];
+const screenshotTraceCategories = [
+	'devtools.timeline',
+	'disabled-by-default-devtools.screenshot',
+];
+
+function browserTraceOptions() {
+	if ( ! traceRenderEvents && ! traceScreenshots ) {
+		return undefined;
+	}
+
+	return {
+		screenshots: traceScreenshots,
+		categories: [
+			...new Set( [
+				...( traceRenderEvents
+					? renderTraceCategories
+					: [ 'devtools.timeline' ] ),
+				...( traceScreenshots ? screenshotTraceCategories : [] ),
+			] ),
+		],
+	};
+}
 
 function renderTraceEventsForKeyWindows( trace ) {
 	return trace.traceEvents
@@ -1147,6 +1183,71 @@ function renderTraceEventDeltasForKey( renderEvents, keydownTimestampMs ) {
 		renderFirstCompositeLayersAfterKeydownMs:
 			firstDeltaMs( 'CompositeLayers' ),
 		renderFirstDrawFrameAfterKeydownMs: firstDeltaMs( 'DrawFrame' ),
+	};
+}
+
+function screenshotHash( snapshot ) {
+	if ( ! snapshot ) {
+		return undefined;
+	}
+	return createHash( 'sha1' ).update( snapshot ).digest( 'hex' );
+}
+
+function screenshotTraceEventsForKeyWindows( trace ) {
+	return trace.traceEvents
+		.filter(
+			( item ) =>
+				item.name === 'Screenshot' &&
+				typeof item.args?.snapshot === 'string'
+		)
+		.map( ( item ) => ( {
+			durationMs: item.dur ? item.dur / 1000 : 0,
+			snapshotBytes: item.args.snapshot.length,
+			snapshotHash: screenshotHash( item.args.snapshot ),
+			timestampMs: item.ts / 1000,
+		} ) )
+		.sort( ( a, b ) => a.timestampMs - b.timestampMs );
+}
+
+function screenshotTraceDeltasForKey( screenshotEvents, keydownTimestampMs ) {
+	if ( ! screenshotEvents ) {
+		return {};
+	}
+
+	const windowStartMs = keydownTimestampMs;
+	const windowStopMs = keydownTimestampMs + screenshotTraceWindowMs;
+	const previousScreenshot = screenshotEvents
+		.filter( ( event ) => event.timestampMs < keydownTimestampMs )
+		.at( -1 );
+	const screenshotsInWindow = screenshotEvents.filter(
+		( event ) =>
+			event.timestampMs >= windowStartMs &&
+			event.timestampMs <= windowStopMs
+	);
+	const firstScreenshot = screenshotsInWindow[ 0 ];
+	const firstChangedScreenshot =
+		previousScreenshot &&
+		screenshotsInWindow.find(
+			( event ) => event.snapshotHash !== previousScreenshot.snapshotHash
+		);
+
+	return {
+		screenshotTraceEventCountAfterKeydown: screenshotsInWindow.length,
+		screenshotPreviousBeforeKeydownMs: previousScreenshot
+			? keydownTimestampMs - previousScreenshot.timestampMs
+			: undefined,
+		screenshotFirstAfterKeydownMs: firstScreenshot
+			? firstScreenshot.timestampMs - keydownTimestampMs
+			: undefined,
+		screenshotFirstAfterKeydownHash: firstScreenshot?.snapshotHash,
+		screenshotFirstAfterKeydownBytes: firstScreenshot?.snapshotBytes,
+		screenshotFirstChangedAfterKeydownMs: firstChangedScreenshot
+			? firstChangedScreenshot.timestampMs - keydownTimestampMs
+			: undefined,
+		screenshotFirstChangedAfterKeydownHash:
+			firstChangedScreenshot?.snapshotHash,
+		screenshotFirstChangedAfterKeydownBytes:
+			firstChangedScreenshot?.snapshotBytes,
 	};
 }
 
@@ -3223,11 +3324,7 @@ setInterval(() => {}, 2147483647);
 				);
 
 				if ( useBrowserTrace ) {
-					await metrics.startTracing(
-						traceRenderEvents
-							? { categories: renderTraceCategories }
-							: undefined
-					);
+					await metrics.startTracing( browserTraceOptions() );
 				}
 				if (
 					waitForPersistenceBetweenKeys ||
@@ -3369,6 +3466,10 @@ setInterval(() => {}, 2147483647);
 					useBrowserTrace && traceRenderEvents
 						? renderTraceEventsForKeyWindows( metrics.trace )
 						: undefined;
+				const screenshotTraceEvents =
+					useBrowserTrace && traceScreenshots
+						? screenshotTraceEventsForKeyWindows( metrics.trace )
+						: undefined;
 
 				delayRunSummaries.push( {
 					round,
@@ -3497,6 +3598,7 @@ setInterval(() => {}, 2147483647);
 						: undefined,
 					visualLatencyEvents,
 					renderTraceEventCount: renderTraceEvents?.length,
+					screenshotTraceEventCount: screenshotTraceEvents?.length,
 					gapTraceEvents: traceGapEvents
 						? traceEventsForKeyGaps( metrics.trace )
 						: undefined,
@@ -3620,6 +3722,10 @@ setInterval(() => {}, 2147483647);
 						renderTraceEvents,
 						keydown.timestampMs
 					);
+					const screenshotTraceDeltas = screenshotTraceDeltasForKey(
+						screenshotTraceEvents,
+						keydown.timestampMs
+					);
 					const isThrowaway = sampleIndex < throwawayPerDelay;
 					const delaySampleIndex =
 						retainedSamplesByDelay.get( delayMs );
@@ -3717,6 +3823,7 @@ setInterval(() => {}, 2147483647);
 								: visualLatencyEvent.firstMutationAtMs -
 								  visualLatencyEvent.keydownAtMs,
 						...renderTraceDeltas,
+						...screenshotTraceDeltas,
 					} );
 
 					globalTypedCharacterIndex++;
@@ -3799,6 +3906,8 @@ setInterval(() => {}, 2147483647);
 				traceVisualLatency,
 				traceRenderEvents,
 				renderTraceWindowMs,
+				traceScreenshots,
+				screenshotTraceWindowMs,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,

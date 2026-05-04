@@ -347,6 +347,12 @@ The short version:
     complete-keypress-then-wait values stay flat at `10.7-11.3ms`. This is still
     not a calibrated screen-presentation timestamp, but it disconfirms "JS/RAF
     bookkeeping only."
+-   A new Chromium trace-screenshot probe pushes closer to observed pixels. It
+    stores only per-frame hashes/timestamps, not images. Key-held `1000ms` drops
+    from `34.8ms` / `33.7ms` keydown-to-first-changed-screenshot at `990ms` /
+    `1300ms` to `18.4ms`; complete-keypress-then-wait stays in the
+    `16.9-19.9ms` band. This is still not high-speed-camera calibration, but it
+    disconfirms "render trace bookkeeping only."
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -415,6 +421,8 @@ run:
     and second RAF in the editor canvas;
 -   opt-in Chromium render-event tracing for keydown-to-`Layout`, `PrePaint`,
     `Paint`, `Layerize`, and `DrawFrame` timing;
+-   opt-in Chromium trace-screenshot timing for first changed screenshot after
+    keydown;
 -   background CPU controls using `taskpolicy` QoS clamps, latency tiers, and
     throughput tiers;
 -   alternate delay modes:
@@ -612,6 +620,8 @@ The R script derives:
 -   `data/typing-delay-render-trace-*.csv`: opt-in Chromium render-trace samples
     and summaries for keydown-to-`Layout`, `PrePaint`, `Paint`, `Layerize`, and
     `DrawFrame` timing.
+-   `data/typing-delay-screenshot-trace-*.csv`: opt-in Chromium trace-screenshot
+    samples and summaries for first changed screenshot after keydown.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 
@@ -4415,6 +4425,52 @@ RAF proxy. It reaches Chromium render trace events. What this still does not
 close is actual presentation latency: the remaining measurement gap is
 compositor/presentation/pixels, not "does the effect survive past JS?"
 
+## Chromium Trace Screenshot Probe
+
+The next test moves from render-event timestamps to Chromium's trace screenshot
+stream. With `BENCHMARK_TRACE_SCREENSHOTS=1`, the benchmark enables trace
+screenshots and records, per key, the first screenshot after keydown and the first
+screenshot whose trace snapshot hash differs from the previous screenshot. The
+committed data stores only timestamps, byte counts, and hashes, not the images.
+
+This is closer to the screen than `Paint` / `DrawFrame`, but it is still not a
+calibrated input-to-screen measurement. Trace screenshots are sampled Chromium
+snapshots, not display presentation timestamps or camera-observed pixels. Hash
+difference is also a coarse "something in the screenshot changed" test, not a
+semantic OCR check that the newly typed character is visible. For this benchmark,
+though, it answers one useful question: does the `1000ms` key-hold drop survive
+when the endpoint is a changed screenshot frame?
+
+I ran the same large-post `990ms`, `1000ms`, and `1300ms` comparison with 3
+rounds and 8 retained samples per delay. Every retained sample had a first
+screenshot and first changed screenshot in the `250ms` post-keydown window; the
+median count was one screenshot per key in that window.
+
+![Screenshot trace summary](figures/110-screenshot-trace-summary.png)
+
+![Screenshot trace distribution](figures/111-screenshot-trace-distribution.png)
+
+| Input mode | Delay | EventDispatch p50 | keydown-to-second-RAF p50 | keydown-to-first-changed-screenshot p50 |
+| ---------- | ----: | ----------------: | ------------------------: | --------------------------------------: |
+| key held during delay |  `990ms` | `25.1ms` | `32.3ms` | `34.8ms` |
+| key held during delay | `1000ms` | `10.8ms` | `16.7ms` | `18.4ms` |
+| key held during delay | `1300ms` | `24.1ms` | `31.3ms` | `33.7ms` |
+| complete keypress then wait |  `990ms` |  `10.0ms` | `11.5ms` | `17.3ms` |
+| complete keypress then wait | `1000ms` |  `9.8ms` | `11.6ms` | `16.9ms` |
+| complete keypress then wait | `1300ms` | `11.7ms` | `13.4ms` | `19.9ms` |
+
+The shape survives again. In key-hold mode, `1000ms` is about `15-16ms` faster
+than `990ms` and `1300ms` at the first changed trace-screenshot endpoint. In
+complete-keypress-then-wait mode, the screenshot endpoint stays in the same
+`17-20ms` band and does not show a cliff at `1000ms`.
+
+That closes another possible escape hatch. The key-hold-only speedup is not only
+`EventDispatch`, not only JS/RAF, and not only Chrome render-event bookkeeping.
+It is visible in Chromium's changed trace-screenshot stream. The remaining
+user-facing caveat is now specifically calibrated presentation: trace screenshots
+are closer to pixels, but they are not display presentation timestamps or an
+external screen observation.
+
 ## Trace Grouping Bug Avoided
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
@@ -4465,9 +4521,10 @@ Known problems:
 
 -   **It still does not have a calibrated input-to-screen endpoint.** The visual
     proxy reaches editor-canvas input, mutation, and RAF boundaries, and the
-    render trace probe reaches Chromium `Paint` / `DrawFrame` trace events. Those
-    are still not compositor presentation timestamps or screen-observation
-    measurements.
+    render trace probe reaches Chromium `Paint` / `DrawFrame` trace events. The
+    screenshot trace probe reaches changed Chromium trace snapshots. Those are
+    still not compositor presentation timestamps, high-speed-camera pixels, or
+    semantic proof that the exact typed character is visible.
 -   **Synthetic keyboard input is not real keyboard input.** Playwright's
     `page.keyboard.type()` is useful, but it is not a hardware-to-screen pipeline.
 -   **There are now multiple delay modes.** This is useful for diagnosis, but any
@@ -4558,8 +4615,8 @@ failure-oriented ways to read the data.
 -   Make the benchmark adversarial. Try alternate delays, longer wall-clock runs,
     fresh editors, randomized order, and timer interventions.
 -   Measure the thing users see. Trace-event latency is useful for diagnosis, but
-    input-to-paint or high-speed-camera calibration would answer a different and
-    more user-facing question.
+    calibrated input-to-screen or high-speed-camera measurement would answer a
+    different and more user-facing question.
 -   Do not assume representativeness. Vanilla Core, a large fixture, a synthetic
     thousand-paragraph post, and plugin-heavy editors can all expose different
     behavior.
@@ -4611,11 +4668,13 @@ that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timin
 keydown-to-second-RAF falls from about `33ms` / `32ms` at `990ms` / `1300ms` to
 `20ms` at `1000ms`. The Chromium render trace probe then shows the same shape in
 `Paint` and `DrawFrame` trace events: keydown-to-`Paint` falls from about `26ms`
-/ `25ms` at `990ms` / `1300ms` to `13ms` at `1000ms`. That disconfirms
-"EventDispatch trace accounting only" and "JS/RAF proxy only" theories. What
-remains open is calibrated input-to-screen: Chrome render trace events are not
-compositor presentation or pixel timestamps, so a final user-visible answer still
-needs presentation-timing or screen-observation calibration.
+/ `25ms` at `990ms` / `1300ms` to `13ms` at `1000ms`. The screenshot trace probe
+pushes closer to observed pixels: keydown-to-first-changed-screenshot falls from
+about `35ms` / `34ms` to `18ms`. That disconfirms "EventDispatch trace
+accounting only", "JS/RAF proxy only", and "render-event bookkeeping only"
+theories. What remains open is calibrated input-to-screen: Chrome trace
+screenshots are not compositor presentation timestamps, high-speed-camera
+pixels, or semantic proof that the newly typed character is visible.
 
 ## Recommendations
 
@@ -4664,8 +4723,8 @@ For investigation:
     undo, and block insertion.
 -   Keep the native baseline and add more minimal editor-like baselines to
     estimate browser/editor overhead.
--   Extend the visual/render probes to a calibrated input-to-screen endpoint, or
-    calibrate them with presentation traces, screenshots, or high-speed camera
+-   Extend the visual/render/screenshot probes to a calibrated input-to-screen
+    endpoint, or calibrate them with presentation traces or high-speed camera
     data for benchmark runs.
 -   Repeat source-level attribution on Safari and Firefox if comparable tooling
     is available.
@@ -4730,6 +4789,10 @@ The key runs used in this report were:
     and `1300ms`, with opt-in Chromium render-event tracing.
 -   `render_between_keys`: complete keypress, then wait at `990ms`, `1000ms`,
     and `1300ms`, with the same render-event tracing.
+-   `screenshot_keyhold`: normal Playwright key-hold delay at `990ms`,
+    `1000ms`, and `1300ms`, with opt-in Chromium trace screenshots.
+-   `screenshot_between_keys`: complete keypress, then wait at `990ms`,
+    `1000ms`, and `1300ms`, with the same trace-screenshot probe.
 -   `taskpolicy_tier_sweep`: `taskpolicy -l 0..5` and `taskpolicy -t 0..5`
     background CPU controls with a `1250ms` no-op timer and `1300ms` held-key
     delay.

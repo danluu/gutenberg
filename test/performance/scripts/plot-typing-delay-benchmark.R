@@ -3386,6 +3386,198 @@ if (file.exists(render_trace_samples_path) && file.exists(render_trace_summary_p
 	)
 }
 
+screenshot_trace_samples_path <- file.path(data_dir, "typing-delay-screenshot-trace-samples.csv")
+screenshot_trace_summary_path <- file.path(data_dir, "typing-delay-screenshot-trace-summary.csv")
+
+read_screenshot_trace_runs <- function() {
+	raw_specs <- tribble(
+		~input_mode, ~delay_mode, ~json_dir,
+		"key held during delay", "keyboard", file.path(repo_root, "test/performance/artifacts/typing-delay-screenshot-keyhold"),
+		"complete keypress then wait", "between-keys", file.path(repo_root, "test/performance/artifacts/typing-delay-screenshot-between-keys")
+	) %>%
+		filter(dir.exists(json_dir))
+
+	if (nrow(raw_specs) == 0) {
+		return(NULL)
+	}
+
+	column_or <- function(data, column, value = NA_real_) {
+		if (column %in% names(data)) {
+			data[[column]]
+		} else {
+			rep(value, nrow(data))
+		}
+	}
+
+	rows <- list()
+	for (i in seq_len(nrow(raw_specs))) {
+		spec <- raw_specs[i, ]
+		json_files <- list.files(spec$json_dir, pattern = "^typing-delay-benchmark-.*\\.json$", full.names = TRUE)
+		if (length(json_files) == 0) {
+			next
+		}
+		raw <- fromJSON(json_files[[1]], flatten = TRUE)
+		if (is.null(raw$records)) {
+			next
+		}
+
+		records <- as_tibble(raw$records) %>%
+			filter(!isThrowaway)
+
+		rows[[length(rows) + 1]] <- records %>%
+			transmute(
+				input_mode = spec$input_mode,
+				delay_mode = spec$delay_mode,
+				delay_ms = delayMs,
+				round,
+				delay_sample_index = delaySampleIndex,
+				latency_ms = latencyMs,
+				keypress_ms = keypressMs,
+				visual_keydown_to_second_raf_ms = column_or(records, "visualKeydownToSecondRafAfterInputMs"),
+				screenshot_previous_before_keydown_ms = column_or(records, "screenshotPreviousBeforeKeydownMs"),
+				screenshot_first_after_keydown_ms = column_or(records, "screenshotFirstAfterKeydownMs"),
+				screenshot_first_changed_after_keydown_ms = column_or(records, "screenshotFirstChangedAfterKeydownMs"),
+				screenshot_trace_event_count_after_keydown = column_or(records, "screenshotTraceEventCountAfterKeydown"),
+				screenshot_first_changed_after_keydown_bytes = column_or(records, "screenshotFirstChangedAfterKeydownBytes")
+			)
+	}
+
+	if (length(rows) == 0) {
+		return(NULL)
+	}
+
+	bind_rows(rows)
+}
+
+screenshot_trace_samples_from_artifacts <- read_screenshot_trace_runs()
+if (!is.null(screenshot_trace_samples_from_artifacts)) {
+	screenshot_trace_samples <- screenshot_trace_samples_from_artifacts
+	write_csv(screenshot_trace_samples, screenshot_trace_samples_path)
+
+	screenshot_trace_summary <- screenshot_trace_samples %>%
+		group_by(input_mode, delay_mode, delay_ms) %>%
+		summarise(
+			retained_n = n(),
+			latency_p50_ms = quant(latency_ms, 0.5),
+			latency_p90_ms = quant(latency_ms, 0.9),
+			keypress_p50_ms = quant(keypress_ms, 0.5),
+			visual_keydown_to_second_raf_p50_ms = quant(visual_keydown_to_second_raf_ms, 0.5),
+			screenshot_previous_before_keydown_p50_ms = quant(screenshot_previous_before_keydown_ms, 0.5),
+			screenshot_first_after_keydown_p50_ms = quant(screenshot_first_after_keydown_ms, 0.5),
+			screenshot_first_changed_after_keydown_p50_ms = quant(screenshot_first_changed_after_keydown_ms, 0.5),
+			screenshot_first_changed_after_keydown_p90_ms = quant(screenshot_first_changed_after_keydown_ms, 0.9),
+			screenshot_trace_event_count_after_keydown_p50 = quant(screenshot_trace_event_count_after_keydown, 0.5),
+			missing_screenshot_first = sum(is.na(screenshot_first_after_keydown_ms)),
+			missing_screenshot_changed = sum(is.na(screenshot_first_changed_after_keydown_ms)),
+			.groups = "drop"
+		)
+	write_csv(screenshot_trace_summary, screenshot_trace_summary_path)
+}
+
+if (file.exists(screenshot_trace_samples_path) && file.exists(screenshot_trace_summary_path)) {
+	screenshot_trace_samples <- read_csv(screenshot_trace_samples_path, show_col_types = FALSE) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms"))
+		)
+	screenshot_trace_summary <- read_csv(screenshot_trace_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			)
+		)
+
+	screenshot_trace_summary_plot <- screenshot_trace_summary %>%
+		transmute(
+			input_mode,
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms")),
+			`EventDispatch trace latency` = latency_p50_ms,
+			`keydown to second RAF after input` = visual_keydown_to_second_raf_p50_ms,
+			`keydown to first changed trace screenshot` = screenshot_first_changed_after_keydown_p50_ms
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"EventDispatch trace latency",
+					"keydown to second RAF after input",
+					"keydown to first changed trace screenshot"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(screenshot_trace_summary_plot, aes(delay_label, value, color = input_mode, shape = input_mode)) +
+			geom_point(size = 3.1, alpha = 0.92) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "Trace screenshots show the key-hold-only 1000ms drop",
+				subtitle = "First changed Chromium trace screenshot after keydown; 24 retained samples per point",
+				x = "Delay",
+				y = "p50 duration from keydown",
+				color = "Input mode",
+				shape = "Input mode"
+			),
+		"110-screenshot-trace-summary.png",
+		width = 9.6,
+		height = 8.8
+	)
+
+	screenshot_trace_distribution_plot <- screenshot_trace_samples %>%
+		select(
+			input_mode,
+			delay_label,
+			`EventDispatch trace latency` = latency_ms,
+			`keydown to first changed trace screenshot` = screenshot_first_changed_after_keydown_ms
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		)
+
+	save_plot(
+		ggplot(screenshot_trace_distribution_plot, aes(delay_label, value, color = input_mode)) +
+			geom_point(
+				position = position_jitter(width = 0.09, height = 0, seed = 55),
+				size = 1.8,
+				alpha = 0.55
+			) +
+			stat_summary(
+				aes(group = input_mode),
+				fun = median,
+				geom = "point",
+				shape = 95,
+				size = 7,
+				position = position_dodge(width = 0.35),
+				color = brewer_color("Set1", 1),
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_grid(metric ~ input_mode, scales = "free_y") +
+			labs(
+				title = "Screenshot samples preserve the same key-hold-only shape",
+				subtitle = "Red ticks are medians; trace screenshots are Chromium snapshots, not high-speed-camera pixels",
+				x = "Delay",
+				y = NULL,
+				color = "Input mode"
+			),
+		"111-screenshot-trace-distribution.png",
+		width = 11.5,
+		height = 7.8
+	)
+}
+
 taskpolicy_tier_samples_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-samples.csv")
 taskpolicy_tier_summary_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-summary.csv")
 
