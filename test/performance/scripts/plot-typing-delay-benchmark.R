@@ -23461,6 +23461,118 @@ save_plot(
 	height = 7.2
 )
 
+open_question_gate_quality <- tribble(
+	~gate, ~gate_order, ~lane, ~false_pass_risk, ~false_fail_risk, ~ambiguous_result_risk, ~primary_false_pass, ~primary_false_fail, ~guardrail, ~redundant_check, ~interpretation_rule,
+	"Current local benchmark artifact", 1, "Benchmark artifact", 1, 2, 2, "Treating a local key-held result as product/display/system behavior.", "Discarding a real local boundary after a helper or browser update without rerunning controls.", "Keep local wording tied to helper, browser, trace placement, and statistic.", "Small trigger-control rerun after helper/browser/statistic changes.", "If the trigger changes, reopen only that trigger; otherwise stop local-semantics work.",
+	"CI topology retained-metric manifest", 2, "CI/readiness", 4, 3, 4, "CI wait removal appears safe because q50 is stable while failures, first-key tails, or resources regress.", "A noisy CI lane rejects a stable local decision because branch order or runner phase was uncontrolled.", "Require raw retained rows, failures, resources, first-key tails, branch order, and environment metadata.", "Same-runner paired/reversed-order rerun plus first-key-only slice.", "If non-q50 fields disagree, block wait changes and narrow the topology artifact.",
+	"Pattern readiness/resource manifest", 3, "CI/readiness", 5, 3, 4, "A predicate passes q50 but moves preview/canvas readiness or late resources into measurement.", "A valid predicate is rejected because one endpoint group or cache state was not separated.", "Split by spec, lane, endpoint group, preview/canvas behavior, timeout, and fallback path.", "Predicate-only versus fixed-wait rows by endpoint group.", "If readiness evidence is mixed, keep/narrow waits or use fixed fallback; do not cite q50 alone.",
+	"Behavior-gated source prototype manifest", 4, "Source/code", 5, 2, 3, "A source patch wins timing by changing editor semantics or public data behavior.", "A safe patch is rejected because aggregate timing did not move in a noisy run.", "Behavior and compatibility fixtures must pass before source spans and aggregate timing are considered.", "Timing-disabled fixture rerun plus marker-only source-span microscope.", "Behavior failure rejects the patch; source-span failure re-scopes the owner; aggregate-only movement is unexplained.",
+	"Retained-key sidecar acceptance manifest", 5, "Sidecar/mechanism", 5, 3, 4, "Unjoinable or perturbing sidecar rows are interpreted as mechanism evidence.", "A useful sidecar is rejected because clock sync, renderer identity, or command identity was under-instrumented.", "Require key-window IDs, clock sync, renderer/command identity, join coverage, and sidecar-on/off ordering controls.", "Synthetic known-key-window calibration plus observer-overhead A/B rows.", "If join or overhead fails, redesign the sidecar before running runtime or root-counter observers.",
+	"Runtime sidecar mechanism row", 6, "Sidecar/mechanism", 4, 3, 4, "A runtime checkpoint dose response is named as V8/scheduler state without a joined differentiating field.", "A real runtime state is missed because sidecar fields are too coarse or observer placement is wrong.", "Name only fields joined to retained keys that separate fast and slow classes without changing ordering.", "Trace-off command sidecar plus runtime-repeat controls.", "If no runtime field separates classes, keep the runtime result empirical or move to another observer.",
+	"CPU/QoS counter manifest", 7, "CPU/QoS", 5, 3, 4, "Latency classes are overfit into frequency, P-core, QoS, cache, or runnable-latency names.", "A real system mechanism is missed because counter interval, root permissions, or collector overhead is inadequate.", "Run counters only after sidecar acceptance and compare counter-on/off class ordering.", "Root `powermetrics` first, root trace fallback only if counters do not separate classes.", "If counters fail or perturb ordering, downgrade to empirical CPU-state sensitivity.",
+	"Workload replay manifest", 8, "Claim expansion", 4, 3, 4, "Fixed-`x` insertion is treated as representative product workload latency.", "A useful product stratum is rejected because replay assertions or recorded corpus coverage are incomplete.", "Require per-stratum assertions, source spans, retained rows, and behavior checks.", "Synthetic stratum first, recorded workload pilot second.", "Scope claims by passing stratum; failures do not weaken the fixed-`x` benchmark artifact.",
+	"External presentation manifest", 9, "Claim expansion", 5, 3, 4, "Chromium-internal screenshots or paint events are called hardware/display latency.", "A valid external endpoint is rejected because calibration or observer-overhead controls are missing.", "Join external endpoint timestamps to retained keys and prove observer-on/off ordering is preserved.", "Internal screenshot control plus single-endpoint calibration ladder.", "If endpoint ordering differs, scope the display claim or redesign the observer.",
+	"External pass/fail policy join", 10, "External policy", 4, 2, 3, "Local q50 movement is treated as a repository or dashboard pass/fail gate.", "A useful CI artifact is dismissed because external reviewer/dashboard policy is undocumented.", "Separate artifact production from external policy; require documented threshold/reviewer rule.", "CodeVitals/reviewer policy join against archived raw CI artifacts.", "If policy is unavailable, report q50 as evidence, not pass/fail prediction."
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		gate_label = str_wrap(gate, width = 34),
+		gate_label = fct_reorder(gate_label, gate_order, .desc = TRUE),
+		overall_gate_risk = false_pass_risk + ambiguous_result_risk + false_fail_risk,
+		highest_risk = pmax(false_pass_risk, ambiguous_result_risk, false_fail_risk),
+		dominant_risk = case_when(
+			false_pass_risk >= ambiguous_result_risk & false_pass_risk >= false_fail_risk ~ "false pass",
+			ambiguous_result_risk >= false_fail_risk ~ "ambiguous result",
+			TRUE ~ "false fail"
+		),
+		dominant_risk = factor(dominant_risk, levels = c("false pass", "ambiguous result", "false fail"))
+	)
+
+open_question_gate_quality_long <- open_question_gate_quality %>%
+	select(gate, gate_order, gate_label, lane, false_pass_risk, ambiguous_result_risk, false_fail_risk) %>%
+	pivot_longer(
+		cols = c(false_pass_risk, ambiguous_result_risk, false_fail_risk),
+		names_to = "risk_type",
+		values_to = "risk_score"
+	) %>%
+	mutate(
+		risk_type = recode(
+			risk_type,
+			false_pass_risk = "false pass",
+			ambiguous_result_risk = "ambiguous result",
+			false_fail_risk = "false fail"
+		),
+		risk_type = factor(risk_type, levels = c("false pass", "ambiguous result", "false fail")),
+		gate_label = fct_reorder(gate_label, gate_order, .desc = TRUE)
+	)
+
+write_csv(
+	open_question_gate_quality %>%
+		select(
+			gate,
+			gate_order,
+			lane,
+			false_pass_risk,
+			false_fail_risk,
+			ambiguous_result_risk,
+			overall_gate_risk,
+			dominant_risk,
+			primary_false_pass,
+			primary_false_fail,
+			guardrail,
+			redundant_check,
+			interpretation_rule
+		),
+	file.path(data_dir, "typing-delay-open-question-gate-quality.csv")
+)
+
+write_csv(
+	open_question_gate_quality_long,
+	file.path(data_dir, "typing-delay-open-question-gate-quality-long.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_gate_quality_long,
+		aes(risk_type, gate_label, fill = risk_score)
+	) +
+		geom_tile(color = "white", linewidth = 0.45) +
+		geom_text(aes(label = risk_score), color = "grey15", size = 3) +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Risk") +
+		labs(
+			title = "Gate quality risk is highest for false passes in broad claims",
+			subtitle = "The main risk is overclaiming from incomplete artifacts, not missing the local benchmark boundary",
+			x = "Gate failure mode",
+			y = "Gate"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"224-open-question-gate-quality.png",
+	width = 12.4,
+	height = 7.4
+)
+
+save_plot(
+	ggplot(
+		open_question_gate_quality,
+		aes(reorder(gate_label, overall_gate_risk), overall_gate_risk, fill = dominant_risk)
+	) +
+		geom_col(width = 0.72) +
+		coord_flip() +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Dominant risk") +
+		labs(
+			title = "The strongest guardrails are needed where false-pass risk dominates",
+			subtitle = "Higher scores mean the gate needs more redundant checks before closing or expanding a claim",
+			x = "Gate",
+			y = "Combined gate-quality risk"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"225-open-question-gate-quality-rollup.png",
+	width = 11.6,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

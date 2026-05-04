@@ -1088,6 +1088,11 @@ The R script derives:
     and which narrower artifact is next after each pass/fail/mixed result.
 -   `data/typing-delay-open-question-escalation-summary.csv`: rollup of
     escalation outcomes by claim lane and outcome class.
+-   `data/typing-delay-open-question-gate-quality.csv`: false-pass, false-fail,
+    and ambiguous-result audit for the gates that close or narrow remaining
+    open-question claims.
+-   `data/typing-delay-open-question-gate-quality-long.csv`: long-form risk
+    table used for plotting gate-quality risk by failure mode.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9604,6 +9609,32 @@ local benchmark explanation is not waiting on every lane. CI policy, source
 changes, mechanism names, product/display generalization, and pass/fail
 prediction each have their own escalation path. The report should move down only
 the path needed for the claim being made.
+
+The gate-quality audit checks the closure system itself. The largest risk is a
+false pass: accepting a broad claim because one artifact has a stable q50 or a
+single observer, while the fields that make the claim safe are absent. False
+failures matter too, but they mostly waste work or narrow a claim; false passes
+are how the analysis would overstate the result.
+
+![Open question gate quality](figures/224-open-question-gate-quality.png)
+
+![Open question gate quality rollup](figures/225-open-question-gate-quality-rollup.png)
+
+| Gate | Main false-pass risk | Guardrail |
+| ---- | -------------------- | --------- |
+| CI topology retained metric | q50 is stable while failures, first-key tails, resources, or environment drift regress | require raw rows, failures, resources, first-key tails, branch order, and environment metadata |
+| Pattern readiness/resource | a predicate passes q50 while moving preview/canvas or late resources into measurement | split by spec, lane, endpoint group, preview/canvas behavior, timeout, and fallback path |
+| Behavior-gated source prototype | timing improves because editor semantics or public data behavior changed | behavior and compatibility fixtures must pass before source spans or aggregate timing are interpreted |
+| Retained-key sidecar | unjoinable or perturbing sidecar rows are treated as passive mechanism evidence | require key-window IDs, clock sync, renderer/command identity, join coverage, and sidecar-on/off controls |
+| Runtime or CPU/QoS mechanism | aggregate latency classes are named as V8, scheduler, frequency, QoS, cache, or runnable-latency causes | name only fields joined to retained keys that separate classes without changing ordering |
+| Workload or presentation expansion | fixed-`x` or Chromium-internal endpoints are generalized to product or hardware/display latency | require replay strata or calibrated external endpoints joined to retained keys |
+| External pass/fail policy | q50 movement is treated as a repository or dashboard gate without the policy | separate artifact production from threshold/reviewer policy |
+
+This adds one more constraint on future work: a gate is not allowed to close a
+claim unless its own false-pass guardrail is satisfied. If the guardrail is
+missing, the result can still be useful as a diagnostic, but it should be routed
+through the failure-triage or escalation ladder instead of being promoted into a
+conclusion.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,43 @@
+gate,gate_order,gate_label,lane,risk_type,risk_score
+Current local benchmark artifact,1,Current local benchmark artifact,Benchmark artifact,false pass,1
+Current local benchmark artifact,1,Current local benchmark artifact,Benchmark artifact,ambiguous result,2
+Current local benchmark artifact,1,Current local benchmark artifact,Benchmark artifact,false fail,2
+CI topology retained-metric manifest,2,"CI topology retained-metric
+manifest",CI/readiness,false pass,4
+CI topology retained-metric manifest,2,"CI topology retained-metric
+manifest",CI/readiness,ambiguous result,4
+CI topology retained-metric manifest,2,"CI topology retained-metric
+manifest",CI/readiness,false fail,3
+Pattern readiness/resource manifest,3,"Pattern readiness/resource
+manifest",CI/readiness,false pass,5
+Pattern readiness/resource manifest,3,"Pattern readiness/resource
+manifest",CI/readiness,ambiguous result,4
+Pattern readiness/resource manifest,3,"Pattern readiness/resource
+manifest",CI/readiness,false fail,3
+Behavior-gated source prototype manifest,4,"Behavior-gated source prototype
+manifest",Source/code,false pass,5
+Behavior-gated source prototype manifest,4,"Behavior-gated source prototype
+manifest",Source/code,ambiguous result,3
+Behavior-gated source prototype manifest,4,"Behavior-gated source prototype
+manifest",Source/code,false fail,2
+Retained-key sidecar acceptance manifest,5,"Retained-key sidecar acceptance
+manifest",Sidecar/mechanism,false pass,5
+Retained-key sidecar acceptance manifest,5,"Retained-key sidecar acceptance
+manifest",Sidecar/mechanism,ambiguous result,4
+Retained-key sidecar acceptance manifest,5,"Retained-key sidecar acceptance
+manifest",Sidecar/mechanism,false fail,3
+Runtime sidecar mechanism row,6,Runtime sidecar mechanism row,Sidecar/mechanism,false pass,4
+Runtime sidecar mechanism row,6,Runtime sidecar mechanism row,Sidecar/mechanism,ambiguous result,4
+Runtime sidecar mechanism row,6,Runtime sidecar mechanism row,Sidecar/mechanism,false fail,3
+CPU/QoS counter manifest,7,CPU/QoS counter manifest,CPU/QoS,false pass,5
+CPU/QoS counter manifest,7,CPU/QoS counter manifest,CPU/QoS,ambiguous result,4
+CPU/QoS counter manifest,7,CPU/QoS counter manifest,CPU/QoS,false fail,3
+Workload replay manifest,8,Workload replay manifest,Claim expansion,false pass,4
+Workload replay manifest,8,Workload replay manifest,Claim expansion,ambiguous result,4
+Workload replay manifest,8,Workload replay manifest,Claim expansion,false fail,3
+External presentation manifest,9,External presentation manifest,Claim expansion,false pass,5
+External presentation manifest,9,External presentation manifest,Claim expansion,ambiguous result,4
+External presentation manifest,9,External presentation manifest,Claim expansion,false fail,3
+External pass/fail policy join,10,External pass/fail policy join,External policy,false pass,4
+External pass/fail policy join,10,External pass/fail policy join,External policy,ambiguous result,3
+External pass/fail policy join,10,External pass/fail policy join,External policy,false fail,2
