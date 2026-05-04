@@ -5311,11 +5311,108 @@ if (file.exists(render_trace_samples_path) && file.exists(screenshot_trace_sampl
 		"Defines when the report may widen beyond Chromium internal visual propagation."
 	)
 
-	write_csv(
-		presentation_external_calibration_runbook_audit,
-		file.path(data_dir, "typing-delay-presentation-external-calibration-runbook-audit.csv")
-	)
-}
+		write_csv(
+			presentation_external_calibration_runbook_audit,
+			file.path(data_dir, "typing-delay-presentation-external-calibration-runbook-audit.csv")
+		)
+
+		presentation_claim_ladder_audit <- tribble(
+			~claim_level, ~claim_order, ~current_evidence, ~remaining_caveat, ~required_before_claim, ~evidence_score, ~calibration_burden_score, ~decision, ~plot_label,
+			"EventDispatch input latency",
+			1,
+			"Per-key EventDispatch slices show the held-key 1000ms drop and complete-keypress control split.",
+			"This is an input/event trace metric, not visual presentation.",
+			"No external calibration needed if the claim stays scoped to EventDispatch.",
+			5, 1, "supported internally", "EventDispatch",
+			"Chromium visual/render propagation",
+			2,
+			"Second RAF, Paint, DrawFrame, and changed trace screenshot endpoints preserve the key-held 1000ms drop.",
+			"These endpoints are Chromium-internal or trace-derived, not display presentation timestamps.",
+			"Keep wording scoped to Chromium visual/render endpoints and report observer mode.",
+			5, 2, "supported internally", "RAF/Paint",
+			"Localized changed screenshot pixels",
+			3,
+			"Decoded changed trace screenshots overlap the target textbox and exact typed-x DOM range in every retained decoded sample.",
+			"Pixel overlap is not semantic glyph recognition or external screen observation.",
+			"Claim only localized trace-screenshot pixel movement unless OCR/template matching is added per retained key.",
+			5, 3, "supported internally", "localized pixels",
+			"Semantic first-visible glyph",
+			4,
+			"No OCR or template-match timestamp is currently recorded.",
+			"The changed pixels may include caret/antialiasing movement; semantic first glyph remains unproven.",
+			"Add crop-to-DOM-range OCR/template matching, recognition tolerance, and per-sample join to keydown/EventDispatch.",
+			2, 4, "external if needed", "OCR",
+			"Compositor or presented frame",
+			5,
+			"No compositor submit, swap, present, or displayed-frame timestamp is currently joined to retained keys.",
+			"Trace screenshots and Paint/DrawFrame are not swap/present/scanout timing.",
+			"Add compositor/presentation trace rows for 990ms/1000ms/1300ms key-held and complete-keypress controls.",
+			2, 4, "external if needed", "present",
+			"Camera-visible display timing",
+			6,
+			"No external camera/display capture is currently recorded.",
+			"Hardware-to-eye timing depends on camera fps/exposure, display refresh, panel mode, and timebase alignment.",
+			"Add calibration flash or equivalent sync marker, display metadata, camera settings, and per-sample frame joins.",
+			1, 5, "external if needed", "camera",
+			"Report widening gate",
+			7,
+			"Internal endpoint stack is internally consistent and mostly EventDispatch-driven.",
+			"Widening beyond Chromium internal endpoints requires external observers to preserve the same qualitative shape.",
+			"Only widen wording when the external endpoint joins the same retained samples and keeps the held-key drop with complete-keypress flat.",
+			4, 3, "wording gate", "gate"
+		) %>%
+			mutate(
+				claim_level = factor(claim_level, levels = claim_level),
+				decision = factor(
+					decision,
+					levels = c("supported internally", "external if needed", "wording gate")
+				)
+			)
+
+		write_csv(
+			presentation_claim_ladder_audit,
+			file.path(data_dir, "typing-delay-presentation-claim-ladder-audit.csv")
+		)
+
+		save_plot(
+			ggplot(
+				presentation_claim_ladder_audit,
+				aes(
+					claim_order,
+					calibration_burden_score,
+					color = decision,
+					shape = decision,
+					size = evidence_score
+				)
+			) +
+				geom_point(alpha = 0.94) +
+				geom_text(
+					aes(label = plot_label),
+					nudge_x = 0.08,
+					nudge_y = 0.08,
+					size = 3,
+					show.legend = FALSE,
+					check_overlap = TRUE
+				) +
+				scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+				scale_shape_manual(values = c(16, 17, 15), drop = FALSE) +
+				scale_size_continuous(range = c(2.8, 6), breaks = 1:5) +
+				scale_x_continuous(breaks = 1:7, limits = c(0.8, 7.8)) +
+				scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+				labs(
+					title = "Presentation claims should widen only after the endpoint is calibrated",
+					subtitle = "Current evidence supports Chromium-internal visual propagation; OCR, present, and camera claims need joined external observers",
+					x = "claim ladder order",
+					y = "calibration burden (1 = low, 5 = high)",
+					color = "Decision",
+					shape = "Decision",
+					size = "current evidence"
+				),
+			"187-presentation-claim-ladder.png",
+			width = 12,
+			height = 7
+		)
+	}
 
 taskpolicy_tier_samples_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-samples.csv")
 taskpolicy_tier_summary_path <- file.path(data_dir, "typing-delay-taskpolicy-tier-summary.csv")

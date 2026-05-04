@@ -968,6 +968,9 @@ The R script derives:
 -   `data/typing-delay-presentation-external-calibration-runbook-audit.csv`:
     concrete runbook for widening the claim from Chromium internal visual
     endpoints to compositor/display, semantic glyph, or camera-visible timing.
+-   `data/typing-delay-presentation-claim-ladder-audit.csv`: claim ladder
+    separating supported Chromium-internal visual propagation from semantic glyph,
+    presented-frame, camera-visible, and report-widening gates.
 -   `data/typing-delay-react-render-boundary-audit.csv`: derived join that
     bounds the remaining React/render caveat using visual endpoint
     decomposition, `useSelect` subphase deltas, paused listener-wrapper deltas,
@@ -7997,6 +8000,28 @@ The runbook is in
 | High-speed camera/display lane | camera-visible glyph or display transition timestamp aligned to keydown or a visual trigger | same delay/mode rows plus a calibration flash or equivalent marker; record camera fps, shutter/exposure, display refresh, and panel mode | camera-visible glyph timing preserves the key-held `1000ms` drop and gives a stable additive display tail relative to compositor/presented-frame timing | needed only before claiming hardware/display timing |
 | Decision gate | joined per-sample table across keydown, `EventDispatch`, RAF, `Paint` / `DrawFrame`, changed screenshot, localized pixels, and any external endpoint | retain the CI p50 discard/window rules, input-mode controls, and per-sample source IDs | the external endpoint confirms the same qualitative shape as the internal endpoint stack, with any extra tail smaller than or clearly separable from the `EventDispatch`-driven drop | defines when the report may widen beyond Chromium internal visual propagation |
 
+The claim ladder is now explicit:
+
+![Presentation claim ladder](figures/187-presentation-claim-ladder.png)
+
+| Claim level | Current status | Boundary |
+| ----------- | -------------- | -------- |
+| `EventDispatch` input latency | supported internally | input/event trace metric, not visual presentation |
+| Chromium visual/render propagation | supported internally | RAF, `Paint`, `DrawFrame`, and changed trace screenshots are browser-internal or trace-derived endpoints |
+| Localized changed screenshot pixels | supported internally | changed pixels overlap the target and typed range, but this is not OCR or external screen observation |
+| Semantic first-visible glyph | external if needed | requires per-retained-key OCR or template matching in a DOM-range/textbox crop |
+| Compositor or presented frame | external if needed | requires compositor submit, swap/present, or displayed-frame timestamps joined to the same keys |
+| Camera-visible display timing | external if needed | requires timebase alignment, display metadata, camera settings, and frame joins |
+| Report widening gate | wording gate | widen language only when the external endpoint preserves the same key-held shape and complete-keypress control |
+
+That prevents two overclaims. First, the current data can say the held-key
+artifact reaches Chromium-internal visual/render endpoints and localized changed
+trace-screenshot pixels. Second, it cannot yet say the exact time a user saw the
+typed glyph, because semantic recognition, compositor presentation, scanout, and
+camera/display timing are unmeasured. If those external endpoints disagree with
+the internal stack, the right conclusion is not "the internal result was false";
+it is that the claim boundary stops at the deepest endpoint that passed.
+
 If the external endpoint disagrees, that does not invalidate the current
 internal-browser result. It narrows the wording to the deepest endpoint that
 passed and makes the disagreement the next open question. The important guard is
@@ -8782,7 +8807,7 @@ The high-level split is:
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
 | Chromium runtime checkpoint | harness-gap, falsification, and protocol-sidecar audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
 | CPU/QoS mechanism | local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but a root run without retained-key/helper/renderer/collector joins would still only prove class-level correlation | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split |
-| Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
+| Calibrated presentation | external-calibration runbook plus claim ladder closes the wording boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels; semantic glyph, presented-frame, camera-visible, and hardware/display claims are explicitly blocked until joined external observers preserve the same key-held shape and complete-keypress control | keep claims scoped to Chromium internal visual propagation unless the report needs hardware/display or semantic glyph timing; if it does, run the external calibration ladder with OCR/template matching, compositor/present timestamps, or camera/display capture joined per retained key |
 | Human/plugin workload | workload schema plus strata-coverage audits now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion only partially covers ordinary text bursts and first-input idle return, while correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata are missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, and plugin-heavy/P2-like histories |
 | Portability of absolute numbers | portability runbook and CI workflow-boundary audits now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed and published, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and I found no in-repo numeric performance fail threshold | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |
 
