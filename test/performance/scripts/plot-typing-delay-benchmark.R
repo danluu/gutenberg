@@ -17879,6 +17879,159 @@ write_csv(
 	file.path(data_dir, "typing-delay-portability-validation-runbook-audit.csv")
 )
 
+portability_ci_workflow_boundary_audit <- tribble(
+	~workflow_surface, ~workflow_group, ~source_reference, ~current_ci_behavior, ~portability_implication, ~threshold_risk, ~required_validation, ~local_answer_strength, ~threshold_blocker_score, ~threshold_readiness_score,
+	"Runner and timeout", "runner", ".github/workflows/performance.yml:31-39", "The Performance Tests job runs on ubuntu-24.04, has a 60 minute timeout, and writes artifacts under WP_ARTIFACTS_PATH.", "Local macOS p50 and CV are not threshold-portable to CI Linux; compact rows also have to respect the CI wall-clock budget.", "host, OS, runner, and browser scheduling drift", "Run the compact manifest on the actual Ubuntu 24.04 Performance Tests topology and record runner image, CPU model, core count, browser revision, Docker/wp-env metadata, and elapsed time.", 4, 5, 2,
+	"Branch comparison topology", "topology", ".github/workflows/performance.yml:57-94; bin/plugin/commands/performance.js:296-489", "PRs compare GITHUB_SHA with GITHUB_BASE_REF using testsBranch GITHUB_SHA; push compares GITHUB_SHA with a fixed reference commit; each branch environment is built and tested sequentially.", "Within-job comparison reduces some host drift, but branch order, build cache, wp-env lifecycle, and fixed-reference compatibility still affect absolute values.", "branch-order and build-topology drift", "Preserve branch order, run key, wp-env lifecycle, build metadata, commit IDs, testsBranch, and WP version in validation artifacts.", 4, 4, 2,
+	"Round and aggregation policy", "aggregation", "bin/plugin/commands/performance.js:235-237; bin/plugin/commands/performance.js:501-531", "Default TEST_ROUNDS is 1; when more rounds are requested, raw arrays are flattened before q25, q50, q75, and cnt are computed.", "The CI score is a small retained-sample q50 by default; local dense-sweep volatility does not automatically map to CI volatility.", "underestimated volatility", "Run paired repeated compact rows on CI or preserve per-run raw files so q50, CV, ordering, and tail movement can be recomputed.", 5, 5, 2,
+	"Typing metric definition", "metric", "test/performance/specs/post-editor.spec.js:192-240", "Typing sends 11 characters with Playwright type(), discards the first character, and reports 10 retained sums of keydown plus keypress plus keyup EventDispatch durations.", "Any portability lane must keep the same retained/throwaway and held-key semantics unless it declares a new metric.", "metric-definition drift", "Record delay env vars, retained count, throwaway count, first-three-key distribution, input helper family, hold/tap mode, and trace placement.", 5, 4, 3,
+	"Artifact and publishing surface", "publishing", "bin/plugin/commands/performance.js:493-632; bin/log-performance-results.js:42-73", "Curated artifacts store q25, q50, q75, and cnt; the workflow summary prints q50 with quartile percentages; the push publisher sends q50 only for each metric and base metric.", "External dashboards mostly see q50, so reliability and volatility require archived artifacts or extra publishing.", "dashboard hides volatility", "Archive raw and curated compact-manifest artifacts and add q25, q75, cnt, CV, or per-run rows before threshold changes.", 4, 4, 2,
+	"Failure semantics", "pass/fail", "bin/plugin/commands/performance.js:587-597; .github/workflows/performance.yml:96-119", "The script computes percent change for display, but this repository code does not show a numeric performance fail threshold; the GitHub job fails on test/script failure.", "Pass/fail portability is about preserving evidence for review or external dashboards, not matching a hidden in-repo threshold.", "external decision ambiguity", "Document the external dashboard or reviewer threshold policy before treating a local q50 movement as a CI pass/fail prediction.", 3, 4, 2
+) %>%
+	mutate(
+		workflow_group = factor(
+			workflow_group,
+			levels = c("runner", "topology", "aggregation", "metric", "publishing", "pass/fail")
+		),
+		workflow_surface_wrapped = str_wrap(workflow_surface, 15),
+		risk_wrapped = str_wrap(threshold_risk, 22),
+		plot_x = local_answer_strength + case_when(
+			workflow_surface == "Branch comparison topology" ~ -0.14,
+			workflow_surface == "Artifact and publishing surface" ~ 0.14,
+			workflow_surface == "Round and aggregation policy" ~ 0.02,
+			TRUE ~ 0
+		),
+		plot_y = threshold_blocker_score + case_when(
+			workflow_surface == "Branch comparison topology" ~ 0.12,
+			workflow_surface == "Artifact and publishing surface" ~ -0.12,
+			workflow_surface == "Round and aggregation policy" ~ 0.02,
+			TRUE ~ 0
+		)
+	)
+
+write_csv(
+	portability_ci_workflow_boundary_audit,
+	file.path(data_dir, "typing-delay-portability-ci-workflow-boundary-audit.csv")
+)
+
+save_plot(
+	ggplot(
+		portability_ci_workflow_boundary_audit,
+		aes(
+			plot_x,
+			plot_y,
+			color = workflow_group,
+			size = threshold_readiness_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(label = workflow_surface_wrapped),
+			color = "grey20",
+			size = 3.1,
+			lineheight = 0.9,
+			nudge_y = 0.2,
+			show.legend = FALSE
+		) +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(2.6, 5.35),
+			labels = c("1" = "weak", "2" = "low", "3" = "partial", "4" = "bounded", "5" = "strong")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(1.5, 5.55),
+			labels = c("1" = "low", "2" = "small", "3" = "moderate", "4" = "large", "5" = "blocking")
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "CI boundary") +
+		scale_size_area(max_size = 7, breaks = c(2, 3), name = "Threshold readiness") +
+		labs(
+			title = "CI portability is blocked by workflow semantics, not by another local delay row",
+			subtitle = "The actual threshold lane is the Ubuntu Performance Tests topology; local evidence selects rows but does not set absolute q50/CV thresholds",
+			x = "Current local answer strength",
+			y = "Threshold blocker score"
+		) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"174-portability-ci-workflow-boundary.png",
+	width = 12,
+	height = 7
+)
+
+portability_threshold_semantics_audit <- tribble(
+	~question, ~decision_class, ~current_answer, ~source_reference, ~threshold_decision, ~why_it_matters, ~evidence_needed, ~local_decision_score, ~ci_threshold_readiness_score, ~risk_score,
+	"Can local macOS p50 set CI thresholds?", "threshold blocked", "No. Local runs are enough to choose compact discriminator rows, not enough to claim portable absolute p50 or CV.", "local compact manifest plus .github/workflows/performance.yml:31-39", "Do not move thresholds from local numbers.", "The CI lane is Ubuntu 24.04 with wp-env, Playwright-bundled Chromium, and CI scheduler behavior.", "CI compact-manifest artifacts with environment metadata, q50/q25/q75/cnt, per-run raw arrays, and elapsed time.", 5, 1, 5,
+	"Can local ordering choose measurement semantics?", "locally actionable", "Yes, with a claim boundary. The local evidence distinguishes held-key stressor, tap/complete-keypress, startup-wait, runtime-checkpoint, and visual-endpoint semantics.", "typing-delay-portability-compact-validation-manifest.csv", "Use local results for metric semantics and prototype order.", "Those choices are qualitative and mechanism-based, not absolute thresholds.", "One CI confirmation run should preserve row ordering before rollout, but the local decision is already strong.", 5, 3, 3,
+	"Can q50 alone assess reliability?", "artifact required", "No. q50 is the reported and published score, but the stability question needs q25/q75/cnt, raw arrays, per-run grouping, CV, and first-key distributions.", "bin/plugin/commands/performance.js:493-632; bin/log-performance-results.js:42-73", "Keep q50 compatibility but add reliability extraction from artifacts.", "A q50-only dashboard can hide variance changes, retained-tail movement, and first retained key artifacts.", "Archive compact raw files and compute q25/q75/cnt/CV/per-key distributions before declaring reliability unchanged.", 5, 2, 5,
+	"Can the compact manifest replace the full sweep?", "validation first", "For first portability validation, yes. The manifest contains rows that can falsify the known mechanisms with far lower wait cost than a dense sweep.", "typing-delay-portability-compact-validation-rollup.csv", "Run compact first; expand only on ordering, variance, timer/runtime, or visual-endpoint changes.", "A full 10ms sweep is expensive and mostly redundant when the mechanism-specific rows preserve class.", "CI compact run with expansion triggers and an audit trail from each row to the local discriminator.", 4, 3, 3,
+	"Can CodeVitals q50 answer pass/fail reliability?", "external policy needed", "Not by itself. The in-repo push publisher sends q50/base q50; no in-repo numeric performance fail threshold was found.", "bin/log-performance-results.js:42-73; bin/plugin/commands/performance.js:587-597", "Document external dashboard or reviewer policy before treating a benchmark movement as pass/fail.", "The GitHub job can pass while q50 changes; dashboard interpretation is outside the raw Playwright run.", "Dashboard threshold policy plus artifact-backed volatility summary for the same metric and branch comparison.", 4, 1, 4,
+	"Should Firefox/WebKit p50 validate Chromium thresholds?", "causal only", "No. They validate timer ordering and cross-engine mechanism shape, not the exact Chromium EventDispatch score.", "browser timeline audits in this report", "Use non-Chromium browsers as causal diagnostics only.", "Metric definitions and browser scheduling differ; agreement in the cliff shape does not make magnitudes interchangeable.", "Playwright-bundled Chromium CI lane for thresholds; Firefox/WebKit only when mechanism portability is being questioned.", 5, 2, 3
+) %>%
+	mutate(
+		decision_class = factor(
+			decision_class,
+			levels = c("threshold blocked", "locally actionable", "artifact required", "validation first", "external policy needed", "causal only")
+		),
+		question_wrapped = str_wrap(question, 18),
+		plot_x = local_decision_score + case_when(
+			question == "Can q50 alone assess reliability?" ~ -0.12,
+			question == "Should Firefox/WebKit p50 validate Chromium thresholds?" ~ 0.12,
+			TRUE ~ 0
+		),
+		plot_y = ci_threshold_readiness_score + case_when(
+			question == "Can q50 alone assess reliability?" ~ 0.08,
+			question == "Should Firefox/WebKit p50 validate Chromium thresholds?" ~ -0.08,
+			TRUE ~ 0
+		)
+	)
+
+write_csv(
+	portability_threshold_semantics_audit,
+	file.path(data_dir, "typing-delay-portability-threshold-semantics-audit.csv")
+)
+
+save_plot(
+	ggplot(
+		portability_threshold_semantics_audit,
+		aes(
+			plot_x,
+			plot_y,
+			color = decision_class,
+			size = risk_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(label = question_wrapped),
+			color = "grey20",
+			size = 3.0,
+			lineheight = 0.9,
+			nudge_y = 0.2,
+			show.legend = FALSE
+		) +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(3.55, 5.35),
+			labels = c("1" = "weak", "2" = "low", "3" = "partial", "4" = "bounded", "5" = "strong")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(0.65, 3.55),
+			labels = c("1" = "blocked", "2" = "artifact gap", "3" = "validate", "4" = "ready", "5" = "ready")
+		) +
+		scale_color_brewer(type = "qual", palette = "Set2", name = "Decision class") +
+		scale_size_area(max_size = 7, breaks = c(3, 4, 5), name = "Risk if skipped") +
+		labs(
+			title = "Portability decisions split into local semantics, CI thresholds, and external policy",
+			subtitle = "q50 compatibility is preserved, but reliability and pass/fail claims need CI artifacts and dashboard policy",
+			x = "Local decision strength",
+			y = "CI threshold readiness"
+		) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"175-portability-threshold-semantics.png",
+	width = 12,
+	height = 7
+)
+
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and the five interactive non-Typing sleeps now have their own local 0ms candidate matrix.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, reported statistic, or non-local runner changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change. Validate the five interactive non-Typing 0ms candidates on CI/mac/container lanes before changing those sleeps.",
@@ -17891,7 +18044,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "privileged counter ladder", "Local counter feasibility audit makes the remaining mechanism test executable: the compact row set is known, powermetrics and trace expose the needed power/QoS/scheduler surfaces on this M3 Max host, but both require root and the benchmark still needs a per-retained-key sidecar before the counters are joinable.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Add helper-PID/key-window/collector sidecar first, then run compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root powermetrics; add root trace only if frequency/residency/QoS counters do not explain the split; do not add more unprivileged JS benchmark rows.",
 	"Calibrated presentation", "user-facing measurement", 5, 5, 4, "external calibration contract", "External-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, Paint, DrawFrame, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same 990ms/1000ms/1300ms held-key and complete-keypress controls with observer-effect gates.", "Externally presented frame timestamp and semantic first-visible-glyph timing outside Chromium trace screenshots.", "Run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints.",
 	"Human/plugin workload", "workload coverage", 4, 4, 4, "replay contract", "Workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency.", "Actual recorded human/plugin-heavy histories and before/after replay results for P2-like, long-session, composition, correction, selection, paste, transform, structural-edit, media/pattern-heavy, and plugin side-effect strata.", "Build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims.",
-	"Portability of absolute numbers", "methodology", 4, 3, 3, "validation contract", "Portability runbook audit separates threshold lanes from causal lanes: use exact Playwright-bundled Chromium on CI plus a comparable local/container lane, compact mechanism rows, environment metadata, and expansion triggers before changing absolute p50/CV claims.", "How compact score rows and key diagnostics move across actual CI runner classes, Playwright Chromium revisions, wp-env/container limits, OS/browser versions, and power/QoS state.", "Run the portability runbook first: compact mechanism rows with per-run p50/CV/order/first-key metadata on CI Chromium and one comparable lane; expand only when ordering, variance, timer, or visual endpoint behavior changes."
+	"Portability of absolute numbers", "methodology", 4, 3, 3, "validation contract", "Portability runbook and CI workflow-boundary audits now separate local semantics from threshold portability: the actual repo lane is the Ubuntu 24.04 Performance Tests topology with Playwright-bundled Chromium/wp-env, q50 is the printed and published score, q25/q75/cnt/raw arrays live in artifacts, default rounds is 1, and no in-repo numeric performance fail threshold was found.", "How compact score rows and key diagnostics move across actual CI runner classes, Playwright Chromium revisions, wp-env/container limits, OS/browser versions, and power/QoS state; separately, what external dashboard or reviewer policy converts q50 movement into pass/fail.", "Run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add dashboard threshold policy before treating local movements as CI pass/fail predictions."
 ) %>%
 	mutate(
 		category = factor(

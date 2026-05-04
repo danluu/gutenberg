@@ -1,0 +1,20 @@
+question,decision_class,current_answer,source_reference,threshold_decision,why_it_matters,evidence_needed,local_decision_score,ci_threshold_readiness_score,risk_score,question_wrapped,plot_x,plot_y
+Can local macOS p50 set CI thresholds?,threshold blocked,"No. Local runs are enough to choose compact discriminator rows, not enough to claim portable absolute p50 or CV.",local compact manifest plus .github/workflows/performance.yml:31-39,Do not move thresholds from local numbers.,"The CI lane is Ubuntu 24.04 with wp-env, Playwright-bundled Chromium, and CI scheduler behavior.","CI compact-manifest artifacts with environment metadata, q50/q25/q75/cnt, per-run raw arrays, and elapsed time.",5,1,5,"Can local macOS
+p50 set CI
+thresholds?",5,1
+Can local ordering choose measurement semantics?,locally actionable,"Yes, with a claim boundary. The local evidence distinguishes held-key stressor, tap/complete-keypress, startup-wait, runtime-checkpoint, and visual-endpoint semantics.",typing-delay-portability-compact-validation-manifest.csv,Use local results for metric semantics and prototype order.,"Those choices are qualitative and mechanism-based, not absolute thresholds.","One CI confirmation run should preserve row ordering before rollout, but the local decision is already strong.",5,3,3,"Can local ordering
+choose measurement
+semantics?",5,3
+Can q50 alone assess reliability?,artifact required,"No. q50 is the reported and published score, but the stability question needs q25/q75/cnt, raw arrays, per-run grouping, CV, and first-key distributions.",bin/plugin/commands/performance.js:493-632; bin/log-performance-results.js:42-73,Keep q50 compatibility but add reliability extraction from artifacts.,"A q50-only dashboard can hide variance changes, retained-tail movement, and first retained key artifacts.",Archive compact raw files and compute q25/q75/cnt/CV/per-key distributions before declaring reliability unchanged.,5,2,5,"Can q50
+alone assess
+reliability?",4.88,2.08
+Can the compact manifest replace the full sweep?,validation first,"For first portability validation, yes. The manifest contains rows that can falsify the known mechanisms with far lower wait cost than a dense sweep.",typing-delay-portability-compact-validation-rollup.csv,"Run compact first; expand only on ordering, variance, timer/runtime, or visual-endpoint changes.",A full 10ms sweep is expensive and mostly redundant when the mechanism-specific rows preserve class.,CI compact run with expansion triggers and an audit trail from each row to the local discriminator.,4,3,3,"Can the compact
+manifest replace
+the full sweep?",4,3
+Can CodeVitals q50 answer pass/fail reliability?,external policy needed,Not by itself. The in-repo push publisher sends q50/base q50; no in-repo numeric performance fail threshold was found.,bin/log-performance-results.js:42-73; bin/plugin/commands/performance.js:587-597,Document external dashboard or reviewer policy before treating a benchmark movement as pass/fail.,The GitHub job can pass while q50 changes; dashboard interpretation is outside the raw Playwright run.,Dashboard threshold policy plus artifact-backed volatility summary for the same metric and branch comparison.,4,1,4,"Can CodeVitals q50
+answer pass/fail
+reliability?",4,1
+Should Firefox/WebKit p50 validate Chromium thresholds?,causal only,"No. They validate timer ordering and cross-engine mechanism shape, not the exact Chromium EventDispatch score.",browser timeline audits in this report,Use non-Chromium browsers as causal diagnostics only.,Metric definitions and browser scheduling differ; agreement in the cliff shape does not make magnitudes interchangeable.,Playwright-bundled Chromium CI lane for thresholds; Firefox/WebKit only when mechanism portability is being questioned.,5,2,3,"Should
+Firefox/WebKit p50
+validate Chromium
+thresholds?",5.12,1.92

@@ -1,0 +1,23 @@
+workflow_surface,workflow_group,source_reference,current_ci_behavior,portability_implication,threshold_risk,required_validation,local_answer_strength,threshold_blocker_score,threshold_readiness_score,workflow_surface_wrapped,risk_wrapped,plot_x,plot_y
+Runner and timeout,runner,.github/workflows/performance.yml:31-39,"The Performance Tests job runs on ubuntu-24.04, has a 60 minute timeout, and writes artifacts under WP_ARTIFACTS_PATH.",Local macOS p50 and CV are not threshold-portable to CI Linux; compact rows also have to respect the CI wall-clock budget.,"host, OS, runner, and browser scheduling drift","Run the compact manifest on the actual Ubuntu 24.04 Performance Tests topology and record runner image, CPU model, core count, browser revision, Docker/wp-env metadata, and elapsed time.",4,5,2,"Runner and
+timeout","host, OS, runner, and
+browser scheduling
+drift",4,5
+Branch comparison topology,topology,.github/workflows/performance.yml:57-94; bin/plugin/commands/performance.js:296-489,PRs compare GITHUB_SHA with GITHUB_BASE_REF using testsBranch GITHUB_SHA; push compares GITHUB_SHA with a fixed reference commit; each branch environment is built and tested sequentially.,"Within-job comparison reduces some host drift, but branch order, build cache, wp-env lifecycle, and fixed-reference compatibility still affect absolute values.",branch-order and build-topology drift,"Preserve branch order, run key, wp-env lifecycle, build metadata, commit IDs, testsBranch, and WP version in validation artifacts.",4,4,2,"Branch
+comparison
+topology","branch-order and
+build-topology drift",3.86,4.12
+Round and aggregation policy,aggregation,bin/plugin/commands/performance.js:235-237; bin/plugin/commands/performance.js:501-531,"Default TEST_ROUNDS is 1; when more rounds are requested, raw arrays are flattened before q25, q50, q75, and cnt are computed.",The CI score is a small retained-sample q50 by default; local dense-sweep volatility does not automatically map to CI volatility.,underestimated volatility,"Run paired repeated compact rows on CI or preserve per-run raw files so q50, CV, ordering, and tail movement can be recomputed.",5,5,2,"Round and
+aggregation
+policy","underestimated
+volatility",5.02,5.02
+Typing metric definition,metric,test/performance/specs/post-editor.spec.js:192-240,"Typing sends 11 characters with Playwright type(), discards the first character, and reports 10 retained sums of keydown plus keypress plus keyup EventDispatch durations.",Any portability lane must keep the same retained/throwaway and held-key semantics unless it declares a new metric.,metric-definition drift,"Record delay env vars, retained count, throwaway count, first-three-key distribution, input helper family, hold/tap mode, and trace placement.",5,4,3,"Typing metric
+definition","metric-definition
+drift",5,4
+Artifact and publishing surface,publishing,bin/plugin/commands/performance.js:493-632; bin/log-performance-results.js:42-73,"Curated artifacts store q25, q50, q75, and cnt; the workflow summary prints q50 with quartile percentages; the push publisher sends q50 only for each metric and base metric.","External dashboards mostly see q50, so reliability and volatility require archived artifacts or extra publishing.",dashboard hides volatility,"Archive raw and curated compact-manifest artifacts and add q25, q75, cnt, CV, or per-run rows before threshold changes.",4,4,2,"Artifact and
+publishing
+surface","dashboard hides
+volatility",4.14,3.88
+Failure semantics,pass/fail,bin/plugin/commands/performance.js:587-597; .github/workflows/performance.yml:96-119,"The script computes percent change for display, but this repository code does not show a numeric performance fail threshold; the GitHub job fails on test/script failure.","Pass/fail portability is about preserving evidence for review or external dashboards, not matching a hidden in-repo threshold.",external decision ambiguity,Document the external dashboard or reviewer threshold policy before treating a local q50 movement as a CI pass/fail prediction.,3,4,2,"Failure
+semantics","external decision
+ambiguity",3,4

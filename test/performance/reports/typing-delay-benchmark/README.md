@@ -983,6 +983,13 @@ The R script derives:
 -   `data/typing-delay-portability-compact-validation-*.csv`: executable
     compact-validation manifest and rollup, joining the runbook to local effect
     sizes and known two-branch intentional-wait costs.
+-   `data/typing-delay-portability-ci-workflow-boundary-audit.csv`: source-level
+    audit of the actual Performance Tests workflow boundary: runner, branch
+    topology, round aggregation, typing metric definition, artifact publishing,
+    and pass/fail semantics.
+-   `data/typing-delay-portability-threshold-semantics-audit.csv`: decision audit
+    separating local measurement-semantics claims from CI threshold readiness,
+    q50-only dashboard limits, and external pass/fail policy.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -8464,6 +8471,44 @@ class changes. Runtime checkpoint, CPU/QoS, and visual endpoint rows are causal
 diagnostics; they can explain portability failures, but they should not set
 absolute thresholds by themselves.
 
+### CI Workflow Portability Boundary
+
+I also audited the actual `Performance Tests` workflow and the scripts it calls.
+This tightens the portability open question. The threshold lane is not "whatever
+local Chromium reports"; it is the Ubuntu 24.04 GitHub Actions job running
+`bin/plugin/cli.js perf` with Playwright-bundled Chromium, wp-env, per-branch
+builds, and archived raw/curated JSON artifacts.
+
+![Portability CI workflow boundary](figures/174-portability-ci-workflow-boundary.png)
+
+![Portability threshold semantics](figures/175-portability-threshold-semantics.png)
+
+| CI surface | What the repository does | Portability consequence |
+| ---------- | ------------------------ | ----------------------- |
+| Runner | `.github/workflows/performance.yml` runs one 60 minute `ubuntu-24.04` job and stores artifacts under `WP_ARTIFACTS_PATH` | local macOS p50/CV cannot set CI thresholds without an Ubuntu lane |
+| Branch topology | PRs compare `GITHUB_SHA` with `GITHUB_BASE_REF`; push compares against a fixed reference commit; each branch environment is built and tested sequentially | compact validation has to preserve branch order, tests branch, wp-env lifecycle, WP version, and build metadata |
+| Aggregation | `TEST_ROUNDS` defaults to `1`; additional rounds are flattened before q25/q50/q75/cnt are computed | the default CI score is a small retained-sample q50, so volatility needs raw/per-run artifacts |
+| Typing metric | Typing sends 11 characters with `type()`, discards the first, and stores 10 retained sums of keydown+keypress+keyup EventDispatch durations | portability lanes must keep that held-key/throwaway definition or explicitly declare a new metric |
+| Publishing | curated artifacts store q25/q50/q75/cnt, the summary prints q50 with quartile percentages, and `bin/log-performance-results.js` publishes q50/base q50 | q50 compatibility is required, but q50 alone cannot answer reliability or variance |
+| Failure semantics | the repo script computes percent change for display, but I found no in-repo numeric performance fail threshold | GitHub pass/fail is test/script success here; any numeric pass/fail claim needs the external dashboard or reviewer policy |
+
+That changes the next useful portability run. The compact manifest should be run
+through the real Performance Tests topology, or an equivalent reusable workflow,
+and it should archive raw and curated artifacts with environment metadata. The
+required output is not just `q50`: it is q50/q25/q75/cnt, per-run grouping,
+first-key distributions, sample order, CV, elapsed time, branch order, browser
+revision, runner image, CPU/core count, wp-env/container metadata, and git/WP
+identifiers.
+
+The local report can therefore make strong claims about measurement semantics:
+held-key delay is a separate stressor, tap/complete-keypress is a different
+metric family, the `1000ms` cliff is a boundary artifact of the benchmark path,
+and startup waits do not improve the retained Typing q50 locally. It still cannot
+claim that a local absolute p50 is the CI threshold value. If q50 movement is
+used to decide pass/fail outside this repository, that policy has to be joined to
+the artifact-backed volatility summary before the report can predict CI
+reliability.
+
 ### Remaining Open Questions Matrix
 
 At this point, more runs of the same JS-level benchmark are not all equally
@@ -8487,7 +8532,7 @@ The high-level split is:
 | CPU/QoS mechanism | local counter feasibility audit makes the remaining mechanism test executable: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but both require root and the benchmark still needs a per-retained-key sidecar before the counters are joinable; exact hardware/scheduler state remains unnamed | add helper-PID/key-window/collector sidecar first, then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split; do not add more unprivileged JS benchmark rows |
 | Calibrated presentation | external-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same `990ms` / `1000ms` / `1300ms` held-key and complete-keypress controls with observer-effect gates | run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints |
 | Human/plugin workload | workload schema audit now has a source-level implementation plan: the current harness can reuse raw attachments, the custom reporter, Metrics tracing, fixture loaders, editor helpers, and `pressKeys`, but it still needs an event-record sidecar, manifest-driven executor, assertion packs, and an opt-in recorder before product-latency ranking is valid | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; do not treat another fixed-x q50 array as representative replay |
-| Portability of absolute numbers | portability runbook audit now has an executable compact manifest: three threshold-score rows, two deployment-score rows, and three causal diagnostics, with local effect sizes and known intentional-wait costs; the known threshold-score wait cost is `774.5s` and the known deployment-score wait cost is `162.0s` in a two-branch-style comparison | run that compact manifest on CI Chromium and one comparable lane before moving thresholds; expand only when a row changes ordering, variance class, timer/runtime behavior, or visual endpoint direction |
+| Portability of absolute numbers | portability runbook and CI workflow-boundary audits now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed and published, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and I found no in-repo numeric performance fail threshold | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
