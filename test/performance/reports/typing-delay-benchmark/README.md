@@ -131,6 +131,13 @@ The short version:
     mostly a Playwright trace-snapshot artifact: per-key `keyboard.press()`
     becomes slow again when trace snapshots are disabled, and protocol logs show
     `captureSnapshot` evaluations between keys when tracing is enabled.
+-   The remaining trace-off gap also has a dose-response control now. Repeating
+    direct no-op CDP runtime calls between raw key events shrinks the next
+    `keypress` span from `21.5ms` raw CDP to `19.7-19.9ms` with one checkpoint,
+    `15.3-15.4ms` with eleven checkpoints, and `13.2-13.4ms` with seventeen
+    checkpoints. That means the trace-off residual is not evidence for a hidden
+    Gutenberg semantic state change caused by Playwright evaluation; enough
+    browser/runtime checkpoints between keys can reproduce and exceed it.
 -   Event-listener timing narrows the visible Gutenberg work to editor-canvas
     input handling. The dominant measured callback is registered from
     `rich-text`; source-map lookup identifies it as the `onInput` path in
@@ -459,8 +466,14 @@ run:
         CDP `Runtime.evaluate` between characters;
     -   `cdp-key-hold-runtime-evaluate-full`: same, but with `awaitPromise`,
         `returnByValue`, and `userGesture`;
+    -   `cdp-key-hold-runtime-evaluate-repeat`: same direct CDP
+        `Runtime.evaluate` checkpoint repeated
+        `BENCHMARK_RUNTIME_REPEAT_COUNT` times between characters;
     -   `cdp-key-hold-runtime-call-function-on`: send raw CDP key events plus a
         direct CDP `Runtime.callFunctionOn` against `globalThis`;
+    -   `cdp-key-hold-runtime-call-function-on-repeat`: same direct CDP
+        `Runtime.callFunctionOn` checkpoint repeated
+        `BENCHMARK_RUNTIME_REPEAT_COUNT` times between characters;
     -   `cdp-key-hold-runtime-timeout`: send raw CDP key events plus an awaited
         CDP `Runtime.evaluate` `setTimeout( 0 )` between characters;
     -   `cdp-key-hold-runtime-raf`: send raw CDP key events plus an awaited CDP
@@ -531,6 +544,8 @@ The R script derives:
     off.
 -   `data/typing-delay-eval-path-*.csv`: trace-off follow-up traces comparing
     direct CDP runtime calls, Playwright page evaluation, and locator evaluation.
+-   `data/typing-delay-runtime-repeat-*.csv`: trace-off dose-response follow-up
+    traces that repeat direct CDP runtime checkpoints between raw CDP key events.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -4217,9 +4232,57 @@ That means the safe benchmark fix is unchanged: do not use a synthetic key-hold
 delay as a proxy for typing pauses. Use a complete keypress and then wait, or
 replay recorded human typing, and disable or account for Playwright trace
 snapshots when comparing per-key Playwright calls with one multi-character
-Playwright action. For root cause, the remaining open issue is below this
-benchmark's Gutenberg and DOM-level instrumentation: the exact Chromium renderer
-checkpoint caused by Playwright's utility-script/locator protocol sequence.
+Playwright action.
+
+### Runtime Repeat Dose-Response
+
+The prior trace-off result still left a plausible narrower theory: perhaps
+Playwright's utility-script or locator evaluation does something special that a
+plain CDP runtime call does not. I added two repeat modes to test that directly.
+Both keep the input path as raw `Input.dispatchKeyEvent` held-key events at
+`1300ms`, run with Playwright `--trace=off`, and vary only how many no-op direct
+CDP runtime calls happen after each `keyup` and before the next `keydown`:
+
+-   `Runtime.evaluate( 'undefined' )` with `awaitPromise`, `returnByValue`, and
+    `userGesture`;
+-   `Runtime.callFunctionOn` against `globalThis`, with the same flags.
+
+Each point below uses `36` retained samples plus one throwaway. The result is a
+dose response.
+
+![Runtime repeat dose-response](figures/25e-runtime-repeat-dose-response.png)
+
+![Runtime repeat gap response](figures/25f-runtime-repeat-gap-response.png)
+
+| Between-key checkpoint | Repeat count | Observed post-keyup gap p50 | `keypress` p50 | `keypress` p10-p90 |
+| ---------------------- | -----------: | --------------------------: | -------------: | ------------------: |
+| raw CDP only | `0` |  `3.6ms` | `21.5ms` | `18.9-23.9ms` |
+| `Runtime.evaluate` | `1` |  `4.3ms` | `19.7ms` | `16.8-22.7ms` |
+| `Runtime.evaluate` | `3` |  `8.6ms` | `17.3ms` | `14.7-19.4ms` |
+| `Runtime.evaluate` | `7` | `12.0ms` | `15.4ms` | `13.5-18.5ms` |
+| `Runtime.evaluate` | `11` | `14.9ms` | `15.4ms` | `13.1-18.3ms` |
+| `Runtime.evaluate` | `17` | `18.4ms` | `13.2ms` | `12.1-15.4ms` |
+| `Runtime.callFunctionOn` | `1` |  `5.2ms` | `19.9ms` | `14.5-23.3ms` |
+| `Runtime.callFunctionOn` | `3` |  `8.2ms` | `17.1ms` | `14.3-21.9ms` |
+| `Runtime.callFunctionOn` | `7` | `11.9ms` | `16.0ms` | `13.5-17.8ms` |
+| `Runtime.callFunctionOn` | `11` | `15.1ms` | `15.3ms` | `13.0-17.8ms` |
+| `Runtime.callFunctionOn` | `17` | `19.2ms` | `13.4ms` | `12.3-15.9ms` |
+
+This disconfirms the utility-script-specific version of the trace-off theory.
+One direct runtime checkpoint gives only a small improvement, matching the
+earlier `Runtime.evaluate` and `Runtime.callFunctionOn` rows. But enough direct
+runtime checkpoints reproduce and then exceed the trace-off Playwright
+evaluation/locator improvement. The measured `keypress` slice tracks the
+between-key protocol/checkpoint gap, not a unique Gutenberg semantic transition
+introduced by `page.evaluate()`.
+
+The exact browser-internal mechanism is still below this benchmark's
+Gutenberg/DOM-level instrumentation. The evidence-supported statement is now
+narrower and stronger: renderer/runtime checkpoints inserted by the automation
+layer can change the amount of Gutenberg input work charged to the next
+`EventDispatch` slice. Playwright trace snapshots are the largest version of
+that in the default performance-test configuration; even with trace disabled,
+additional runtime checkpoints remain a smaller measurement perturbation.
 
 ### Native Contenteditable Baseline
 
@@ -5119,6 +5182,9 @@ The key runs used in this report were:
 -   `eval_path_*`: trace-off `1300ms` raw-CDP held-key traces comparing direct
     CDP runtime calls, Playwright page evaluation, and Playwright locator
     evaluation between characters.
+-   `runtime_repeat_*`: trace-off `1300ms` raw-CDP held-key traces repeating direct
+    CDP `Runtime.evaluate` and `Runtime.callFunctionOn` checkpoints between
+    characters at repeat counts `1`, `3`, `7`, `11`, and `17`.
 -   `marker_normal_targeted`: normal marker action at `990ms`, `1000ms`,
     `1010ms`, and `1300ms`, with timer/action tracing.
 -   `marker_noop_targeted`: same delays and counts, but the bound
@@ -5362,6 +5428,12 @@ The compact trace-off evaluation-path CSVs were extracted with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-eval-path.js
+```
+
+The compact runtime-repeat dose-response CSVs were extracted with:
+
+```sh
+node test/performance/scripts/extract-typing-delay-runtime-repeat.js
 ```
 
 The compact marker-intervention CSVs were extracted with:

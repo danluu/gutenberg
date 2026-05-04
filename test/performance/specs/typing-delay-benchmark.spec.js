@@ -51,6 +51,7 @@ const settleBetweenDelayRunsMs = intEnv(
 const orderMode = process.env.BENCHMARK_ORDER_MODE || 'mixed';
 const delayMode = process.env.BENCHMARK_DELAY_MODE || 'keyboard';
 const postKeyupGapMs = intEnv( 'BENCHMARK_POST_KEYUP_GAP_MS', 0 );
+const runtimeRepeatCount = intEnv( 'BENCHMARK_RUNTIME_REPEAT_COUNT', 1 );
 const scenario = process.env.BENCHMARK_SCENARIO || 'large-post-paragraph';
 const nativeTimerBusyWaitMs = intEnv(
 	'BENCHMARK_NATIVE_TIMER_BUSY_WAIT_MS',
@@ -162,7 +163,9 @@ const supportedDelayModes = [
 	'cdp-key-hold-frame-locator-evaluate',
 	'cdp-key-hold-runtime-evaluate',
 	'cdp-key-hold-runtime-evaluate-full',
+	'cdp-key-hold-runtime-evaluate-repeat',
 	'cdp-key-hold-runtime-call-function-on',
+	'cdp-key-hold-runtime-call-function-on-repeat',
 	'cdp-key-hold-runtime-timeout',
 	'cdp-key-hold-runtime-raf',
 ];
@@ -3741,20 +3744,26 @@ setInterval(() => {}, 2147483647);
 					delayMode === 'cdp-key-hold-frame-locator-evaluate' ||
 					delayMode === 'cdp-key-hold-runtime-evaluate' ||
 					delayMode === 'cdp-key-hold-runtime-evaluate-full' ||
+					delayMode === 'cdp-key-hold-runtime-evaluate-repeat' ||
 					delayMode === 'cdp-key-hold-runtime-call-function-on' ||
+					delayMode ===
+						'cdp-key-hold-runtime-call-function-on-repeat' ||
 					delayMode === 'cdp-key-hold-runtime-timeout' ||
 					delayMode === 'cdp-key-hold-runtime-raf'
 				) {
 					const cdpSession = await page
 						.context()
 						.newCDPSession( page );
-					const callFunctionGlobalObject =
-						delayMode === 'cdp-key-hold-runtime-call-function-on'
-							? await cdpSession.send( 'Runtime.evaluate', {
-									expression: 'globalThis',
-									objectGroup: 'typing-delay-benchmark',
-							  } )
-							: null;
+					const usesRuntimeCallFunctionOn =
+						delayMode === 'cdp-key-hold-runtime-call-function-on' ||
+						delayMode ===
+							'cdp-key-hold-runtime-call-function-on-repeat';
+					const callFunctionGlobalObject = usesRuntimeCallFunctionOn
+						? await cdpSession.send( 'Runtime.evaluate', {
+								expression: 'globalThis',
+								objectGroup: 'typing-delay-benchmark',
+						  } )
+						: null;
 					try {
 						for ( let i = 0; i < sampleCount; i++ ) {
 							await dispatchCdpKeyPress( cdpSession, delayMs );
@@ -3814,6 +3823,24 @@ setInterval(() => {}, 2147483647);
 							}
 							if (
 								delayMode ===
+									'cdp-key-hold-runtime-evaluate-repeat' &&
+								i < sampleCount - 1
+							) {
+								for (
+									let repeat = 0;
+									repeat < runtimeRepeatCount;
+									repeat++
+								) {
+									await cdpSession.send( 'Runtime.evaluate', {
+										awaitPromise: true,
+										expression: 'undefined',
+										returnByValue: true,
+										userGesture: true,
+									} );
+								}
+							}
+							if (
+								delayMode ===
 									'cdp-key-hold-runtime-call-function-on' &&
 								i < sampleCount - 1
 							) {
@@ -3830,6 +3857,31 @@ setInterval(() => {}, 2147483647);
 										userGesture: true,
 									}
 								);
+							}
+							if (
+								delayMode ===
+									'cdp-key-hold-runtime-call-function-on-repeat' &&
+								i < sampleCount - 1
+							) {
+								for (
+									let repeat = 0;
+									repeat < runtimeRepeatCount;
+									repeat++
+								) {
+									await cdpSession.send(
+										'Runtime.callFunctionOn',
+										{
+											awaitPromise: true,
+											functionDeclaration:
+												'function() { return undefined; }',
+											objectId:
+												callFunctionGlobalObject.result
+													.objectId,
+											returnByValue: true,
+											userGesture: true,
+										}
+									);
+								}
 							}
 							if (
 								delayMode === 'cdp-key-hold-runtime-timeout' &&
@@ -4402,6 +4454,7 @@ setInterval(() => {}, 2147483647);
 				waitForPersistenceBetweenKeys,
 				delayMode,
 				postKeyupGapMs,
+				runtimeRepeatCount,
 				settleBeforeEditorSetupMs,
 				settleAfterEditorSetupMs,
 				setupStyle,

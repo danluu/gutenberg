@@ -6871,6 +6871,108 @@ if (file.exists(eval_path_summary_path)) {
 		"25d-trace-off-evaluation-path.png",
 		width = 11,
 		height = 6.5
+		)
+}
+
+runtime_repeat_summary_path <- file.path(data_dir, "typing-delay-runtime-repeat-summary.csv")
+if (file.exists(runtime_repeat_summary_path)) {
+	runtime_repeat_summary <- read_csv(runtime_repeat_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			repeat_mode = factor(
+				repeat_mode,
+				levels = c(
+					"raw CDP only",
+					"Runtime.evaluate",
+					"Runtime.callFunctionOn"
+				)
+			),
+			point_label = case_when(
+				repeat_count == 0 ~ "raw",
+				TRUE ~ as.character(repeat_count)
+			),
+			label_x = case_when(
+				repeat_count == 0 ~ actual_post_keyup_gap_p50_ms + 0.9,
+				TRUE ~ actual_post_keyup_gap_p50_ms
+			),
+			label_y = case_when(
+				repeat_count == 0 ~ keypress_p50_ms + 0.35,
+				repeat_count == 1 ~ keypress_p50_ms + 0.45,
+				repeat_count == 17 ~ keypress_p50_ms - 0.45,
+				TRUE ~ keypress_p50_ms + 0.25
+			)
+		)
+
+	save_plot(
+		ggplot(
+			runtime_repeat_summary,
+			aes(
+				repeat_count,
+				keypress_p50_ms,
+				color = repeat_mode,
+				shape = repeat_mode
+			)
+		) +
+			geom_errorbar(
+				aes(ymin = keypress_p10_ms, ymax = keypress_p90_ms),
+				width = 0.42,
+				alpha = 0.45,
+				position = position_dodge(width = 0.6)
+			) +
+			geom_point(
+				size = 3.2,
+				alpha = 0.92,
+				position = position_dodge(width = 0.6)
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_x_continuous(breaks = c(0, 1, 3, 7, 11, 17)) +
+			labs(
+				title = "Direct runtime checkpoints shrink the next keypress span",
+				subtitle = "Raw CDP 1300ms held-key input, Playwright trace disabled; vertical bars show p10-p90",
+				x = "Direct runtime no-op calls between keys",
+				y = "keypress EventDispatch duration (ms)",
+				color = "Between-key action",
+				shape = "Between-key action"
+			) +
+			theme(legend.position = "bottom"),
+		"25e-runtime-repeat-dose-response.png",
+		width = 11,
+		height = 6.5
+	)
+
+	save_plot(
+		ggplot(
+			runtime_repeat_summary,
+			aes(
+				actual_post_keyup_gap_p50_ms,
+				keypress_p50_ms,
+				color = repeat_mode,
+				shape = repeat_mode
+			)
+		) +
+			geom_point(size = 3.2, alpha = 0.92) +
+			geom_errorbar(
+				aes(ymin = keypress_p10_ms, ymax = keypress_p90_ms),
+				width = 0.16,
+				alpha = 0.45
+			) +
+			geom_text(
+				aes(label_x, label_y, label = point_label),
+				size = 3.0,
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			labs(
+				title = "The residual gap tracks the inter-key checkpoint gap",
+				subtitle = "Labels are repeat counts; raw CDP has no added runtime call",
+				x = "Observed previous keyup to next keydown, p50 (ms)",
+				y = "keypress EventDispatch duration (ms)",
+				color = "Between-key action",
+				shape = "Between-key action"
+			) +
+			theme(legend.position = "bottom"),
+		"25f-runtime-repeat-gap-response.png",
+		width = 11,
+		height = 6.5
 	)
 }
 
