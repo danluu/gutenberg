@@ -19409,6 +19409,115 @@ write_csv(
 	file.path(data_dir, "typing-delay-workload-replay-mvp-plan.csv")
 )
 
+workload_replay_claim_ladder_audit <- tribble(
+	~claim, ~claim_order, ~current_evidence, ~allowed_claim, ~blocked_overclaim, ~next_evidence, ~fixed_x_evidence_score, ~product_claim_blocker_score, ~implementation_burden_score, ~decision, ~plot_label,
+	"Fixed-character artifact reproduction", 1,
+	"The held-key 1000ms shape survives visual endpoints, source traces, CPU/QoS controls, and CDP boundary checks in the vanilla large-post fixture.",
+	"Use fixed-x as the diagnostic harness for the 1000ms benchmark artifact and source-boundary work.",
+	"Treat fixed-x as representative of human typing or plugin-heavy editing.",
+	"None for the artifact claim; keep the claim scoped to the benchmark stressor.",
+	5, 1, 1, "artifact claim supported", "artifact",
+	"Gutenberg-scale amplification", 2,
+	"Native contenteditable moves less than 1ms in the same direction, while Gutenberg empty and large-post controls amplify idle/system effects by several milliseconds and source spans show broad fanout.",
+	"Say the large visible swing needs Gutenberg-scale work, not native browser input overhead alone.",
+	"Rank which real plugin/theme/history features dominate user-visible latency.",
+	"Replay document-shape and plugin strata with the same source spans.",
+	5, 2, 2, "source scale supported", "Gutenberg scale",
+	"Low-risk source patch triage", 3,
+	"Pattern-override selected-only split has focused behavior coverage and source-span collapse; provider/inner-blocks candidates have source gates.",
+	"Use fixed-x plus focused behavior tests to choose and validate narrow source patches within the covered insertion path.",
+	"Call a fixed-x-only patch a general product-latency win.",
+	"Before/after source spans and behavior assertions for the affected strata.",
+	4, 3, 2, "source triage only", "source triage",
+	"Ordinary text replay", 4,
+	"Fixed-x partially covers ordinary insertion but uses a held-key stressor rather than complete human keypress semantics.",
+	"Start synthetic replay with complete-keypress ordinary text, idle-then-type, and mixed inter-key gaps.",
+	"Claim product typing ranking before recorded validation.",
+	"Synthetic complete-keypress manifests first; recorded ordinary typing histories for product ranking.",
+	3, 3, 3, "synthetic first", "text replay",
+	"Correction, selection, paste, and structure strata", 5,
+	"Current fixed-x rows do not cover deletion, selected-text replacement, caret navigation, paste/transform, insert/remove/reorder, template lock, or appender behavior.",
+	"Use synthetic strata as behavior gates and patch-acceptance coverage.",
+	"Average these missing strata into the fixed-x insertion p50.",
+	"Manifest-driven synthetic replay with per-stratum assertions and owner spans.",
+	2, 4, 3, "synthetic gate", "missing synthetic",
+	"IME and composition", 6,
+	"Composition changes event ordering and input deltas; ordinary keypress replay cannot stand in for it.",
+	"Keep IME/composition out of ordinary typing claims unless separately piloted.",
+	"Treat complete-keypress or fixed-x insertion as IME evidence.",
+	"Browser-native or recorded composition pilot with composition boundaries and inputType.",
+	1, 5, 5, "recorded or specialized", "IME",
+	"Long-session idle return", 7,
+	"Startup and first-input controls partially cover first key after idle, but not session age, autosave state, pending async work, or long editing histories.",
+	"Treat long-idle behavior as a separate stratum.",
+	"Use startup-wait q50 to claim long-session user experience.",
+	"Long synthetic sessions or recorded idle-return histories with autosave/REST markers.",
+	2, 5, 4, "recorded or specialized", "idle return",
+	"Media and pattern-heavy editing", 8,
+	"Pattern/readiness work has separate wait and resource boundaries, and current fixed-x text insertion does not cover preview canvases or media/resource side effects.",
+	"Validate wait or pattern-related product claims in their own stratum.",
+	"Generalize text-insertion source wins to media/pattern-heavy editing.",
+	"Synthetic pattern/media manifests plus CI/container/resource telemetry.",
+	2, 5, 4, "synthetic plus CI", "media/pattern",
+	"Plugin-heavy or P2-like side effects", 9,
+	"The current large-post fixture is vanilla and does not include external subscribers, plugin UI, P2-like network work, autocomplete, or collaborative side effects.",
+	"Require recorded or plugin-fixture replay before product-ranking language.",
+	"Rank plugin-heavy user latency from vanilla fixed-x source owners.",
+	"Recorded plugin pilot with plugin/theme set, network/resource markers, external-store owner spans, and behavior assertions.",
+	1, 5, 5, "recorded required", "plugin/P2",
+	"Single headline product p50", 10,
+	"Per-stratum coverage is uneven: fixed-x partially covers ordinary text and first-input idle return, but most user workflows are missing.",
+	"Report per-stratum before/after p50, p90, owner-rank deltas, visual endpoints, and assertion failures.",
+	"Hide regressions in missing strata behind one averaged p50.",
+	"Stratified replay results with sample counts and behavior pass/fail before any product headline.",
+	3, 5, 4, "reject average", "no single p50"
+) %>%
+	mutate(
+		decision = factor(
+			decision,
+			levels = c(
+				"artifact claim supported",
+				"source scale supported",
+				"source triage only",
+				"synthetic first",
+				"synthetic gate",
+				"synthetic plus CI",
+				"recorded or specialized",
+				"recorded required",
+				"reject average"
+			)
+		),
+		label_x = fixed_x_evidence_score + case_when(
+			plot_label == "artifact" ~ -0.55,
+			plot_label == "Gutenberg scale" ~ -0.44,
+			plot_label == "source triage" ~ -0.35,
+			plot_label == "text replay" ~ -0.20,
+			plot_label == "missing synthetic" ~ -0.18,
+			plot_label == "IME" ~ 0.12,
+			plot_label == "idle return" ~ 0.08,
+			plot_label == "media/pattern" ~ 0.10,
+			plot_label == "plugin/P2" ~ 0.12,
+			TRUE ~ 0.1
+		),
+		label_y = product_claim_blocker_score + case_when(
+			plot_label == "artifact" ~ -0.20,
+			plot_label == "Gutenberg scale" ~ 0.20,
+			plot_label == "source triage" ~ -0.22,
+			plot_label == "text replay" ~ 0.22,
+			plot_label == "missing synthetic" ~ -0.25,
+			plot_label == "IME" ~ -0.24,
+			plot_label == "idle return" ~ 0.18,
+			plot_label == "media/pattern" ~ -0.16,
+			plot_label == "plugin/P2" ~ 0.20,
+			TRUE ~ 0.1
+		)
+	)
+
+write_csv(
+	workload_replay_claim_ladder_audit %>% select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-workload-replay-claim-ladder-audit.csv")
+)
+
 workload_replay_implementation_plot <- workload_replay_implementation_audit %>%
 	mutate(
 		implementation_piece = fct_reorder(implementation_piece, risk_score + reuse_score / 10),
@@ -19541,6 +19650,62 @@ save_plot(
 	"186-workload-strata-coverage-gate.png",
 	width = 12.5,
 	height = 7.6
+)
+
+save_plot(
+	ggplot(
+		workload_replay_claim_ladder_audit,
+		aes(
+			fixed_x_evidence_score,
+			product_claim_blocker_score,
+			color = decision,
+			shape = decision,
+			size = implementation_burden_score
+		)
+	) +
+		geom_point(alpha = 0.93) +
+		geom_text(
+			aes(label_x, label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Set1", name = "Decision") +
+		scale_shape_manual(
+			values = c(
+				"artifact claim supported" = 16,
+				"source scale supported" = 17,
+				"source triage only" = 15,
+				"synthetic first" = 3,
+				"synthetic gate" = 7,
+				"synthetic plus CI" = 8,
+				"recorded or specialized" = 4,
+				"recorded required" = 13,
+				"reject average" = 1
+			),
+			name = "Decision"
+		) +
+		scale_size_continuous(range = c(2.8, 6), breaks = 1:5, name = "Implementation burden") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(0.7, 5.35),
+			labels = c("1" = "missing", "2" = "weak", "3" = "partial", "4" = "source", "5" = "strong")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(0.7, 5.45),
+			labels = c("1" = "low", "2" = "scoped", "3" = "synthetic", "4" = "strata", "5" = "recorded")
+		) +
+		labs(
+			title = "Fixed-x is strong artifact evidence, not product-ranking evidence",
+			subtitle = "Higher x means stronger current fixed-x/source evidence; higher y means more evidence needed before product-latency claims",
+			x = "current fixed-x/source evidence strength",
+			y = "product-claim blocker"
+		) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"193-workload-replay-claim-ladder.png",
+	width = 12.5,
+	height = 7.4
 )
 
 portability_validation_contract_audit <- tribble(

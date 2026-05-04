@@ -1007,6 +1007,10 @@ The R script derives:
     strata gate showing which histories are covered by the fixed-`x` stressor,
     which can start synthetically, and which require recorded sessions before
     product-latency claims.
+-   `data/typing-delay-workload-replay-claim-ladder-audit.csv`: claim-boundary
+    ladder separating fixed-`x` artifact/source evidence, synthetic replay
+    gates, recorded/specialized workload requirements, and product-ranking
+    blockers.
 -   `data/typing-delay-workload-replay-implementation-*.csv` and
     `data/typing-delay-workload-replay-mvp-plan.csv`: source-level audit of how
     representative replay should plug into the current Playwright performance
@@ -8769,6 +8773,38 @@ specific schema. The remaining missing evidence is actual recorded or generated
 histories that satisfy the schema, plus before/after replay results for the
 strata relevant to a given patch.
 
+### Workload Replay Claim Ladder
+
+The fixed-`x` benchmark is strong evidence for the artifact and for source-path
+triage, but weak evidence for product ranking. That distinction is the important
+workload boundary. More fixed-`x` samples can improve the artifact statistics;
+they cannot turn a vanilla large-post held-key stressor into a representative
+plugin or human editing workload.
+
+![Workload replay claim ladder](figures/193-workload-replay-claim-ladder.png)
+
+| Claim | Current evidence | Boundary |
+| ----- | ---------------- | -------- |
+| Fixed-character artifact reproduction | strong: the `1000ms` shape survives visual endpoints, source traces, CPU/QoS controls, and CDP boundary checks | valid diagnostic harness; not human typing or plugin-heavy editing |
+| Gutenberg-scale amplification | strong: native controls move less than `1ms`, while Gutenberg-scale work amplifies the swing | source-scale claim only; does not rank real plugin/theme/session features |
+| Low-risk source patch triage | useful: fixed-`x` plus behavior tests can validate narrow selector/subscriber patches in the covered insertion path | not a general product-latency claim |
+| Ordinary text replay | partial: fixed-`x` covers insertion shape but uses held-key semantics | start synthetic complete-keypress replay; recorded ordinary typing needed for product ranking |
+| Correction, selection, paste, structure | missing in fixed-`x` | use synthetic strata as behavior gates before broad patch claims |
+| IME/composition | missing and event-order-specific | needs recorded or browser-native composition pilot |
+| Long-session idle return | only partially covered by first-input/startup controls | needs long synthetic sessions or recorded idle-return histories |
+| Media/pattern-heavy editing | missing and readiness/resource-sensitive | needs synthetic pattern/media manifests plus CI/container/resource telemetry |
+| Plugin-heavy/P2-like side effects | missing from the vanilla fixture | needs recorded plugin pilot before product-ranking language |
+| Single headline product p50 | unsafe while coverage is uneven | report per-stratum p50/p90, owner deltas, visual endpoints, assertion failures, and sample counts |
+
+This makes the next useful work more precise. Synthetic replay is enough for
+behavior gates and source-patch acceptance in ordinary text, correction,
+selection, paste, and structure strata. Recorded or specialized histories are
+required for IME/composition, long-session idle return, media/pattern-heavy
+editing, and plugin-heavy/P2-like side effects. A patch can be called a
+fixed-`x` artifact win before those histories exist; it should not be called a
+product-latency win unless the relevant strata improve or stay neutral with
+passing behavior assertions.
+
 I then audited where that schema would plug into the current Playwright
 performance harness. The useful conclusion is that this is not mostly a reporter
 change. The harness already has raw result attachments, a custom reporter,
@@ -8971,7 +9007,7 @@ The high-level split is:
 | Chromium runtime checkpoint | claim-ladder audit makes the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, Gutenberg source fanout supplies the scale, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not name V8/scheduler/OS state and do not add more JS-level delay rows until the sidecar exists |
 | CPU/QoS mechanism | claim-ladder plus local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the benchmark boundary is proved, no-op/timer/generic-CPU explanations are ruled out, finite decay is descriptive, and P-core/frequency, Darwin scheduler/QoS, cache/memory, and Chromium scheduler claims all require observers not present in the current JS/browser table | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split; keep source/product mitigation claims separate from the system-mechanism claim |
 | Calibrated presentation | external-calibration runbook plus claim ladder closes the wording boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels; semantic glyph, presented-frame, camera-visible, and hardware/display claims are explicitly blocked until joined external observers preserve the same key-held shape and complete-keypress control | keep claims scoped to Chromium internal visual propagation unless the report needs hardware/display or semantic glyph timing; if it does, run the external calibration ladder with OCR/template matching, compositor/present timestamps, or camera/display capture joined per retained key |
-| Human/plugin workload | workload schema plus strata-coverage audits now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion only partially covers ordinary text bursts and first-input idle return, while correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata are missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, and plugin-heavy/P2-like histories |
+| Human/plugin workload | workload schema, strata-coverage audit, and claim ladder now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion is strong evidence for the benchmark artifact and source triage, partially covers ordinary text and first-input idle return, and leaves correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, media/pattern-heavy editing, and plugin-heavy/P2-like histories; report per-stratum results rather than one headline p50 |
 | Portability of absolute numbers | portability runbook, CI workflow-boundary audit, and q50-consumer ladder now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed, archived, and uploaded, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and the visible in-repo pass/fail path is command/workflow success rather than a numeric q50 gate | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |
 
 This is the practical answer to "what is still open?" The main causal story for
