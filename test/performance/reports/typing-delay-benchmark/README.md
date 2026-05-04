@@ -1049,6 +1049,9 @@ The R script derives:
 -   `data/typing-delay-open-question-instrumentation-portfolio.csv`: portfolio
     view that groups remaining open questions into shared artifacts and
     separates decision-changing bundles from claim-expansion-only bundles.
+-   `data/typing-delay-open-question-critical-path.csv`: critical-path schedule
+    for the shared open-question artifacts, including blockers, parallel work,
+    stop conditions, and work to avoid before prerequisites pass.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9369,6 +9372,31 @@ behavior-gated source prototype before spending time on lower-layer mechanism
 naming. Pattern readiness belongs near CI because it is a wait-removal decision,
 not a mechanism hunt. The sidecar is still useful, but it should be treated as a
 shared prerequisite for mechanism naming, not as eight separate delay sweeps.
+
+The critical path follows from that portfolio. CI topology and behavior-gated
+source work can start independently. Pattern readiness should be coupled to the
+CI topology lane if wait removal is under consideration. Runtime and CPU/QoS
+mechanism naming should wait until the shared retained-key sidecar passes its
+join and overhead gates.
+
+![Open question critical path](figures/210-open-question-critical-path.png)
+
+| Phase | Artifact | What not to do before it passes |
+| ----- | -------- | -------------------------------- |
+| Start now | Compact CI topology artifact | change CI waits, predict pass/fail from local q50, or treat first-key behavior as solved |
+| Start now | Behavior-gated source prototype | cite aggregate p50 or store fanout as a source win |
+| With CI | Pattern readiness/resource artifact | remove pattern-loading sleeps globally |
+| After first two | Shared retained-key sidecar | run root counters or browser traces for mechanism names |
+| After sidecar | CPU/QoS counter bundle | name P-core, frequency, QoS, cache, or scheduler causes |
+| Claim-dependent | Workload/display expansion artifacts | generalize fixed-`x` or Chromium-internal endpoints to product or hardware/display latency |
+
+That sequencing also gives a stop rule for the analysis process itself. If the
+CI topology artifact fails, the next work is not a lower-layer mechanism run; it
+is a smaller CI manifest that isolates ordering, first-key tails, failures, and
+resource movement. If the source prototype fails behavior gates, the next work
+is a narrower source owner, not a broader timing sweep. If both pass, then the
+remaining mechanism work can be explicitly scoped as explanatory rather than
+decision-blocking.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

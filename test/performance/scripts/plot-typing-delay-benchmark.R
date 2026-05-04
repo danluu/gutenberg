@@ -22364,6 +22364,105 @@ save_plot(
 	height = 7.4
 )
 
+open_question_critical_path <- tribble(
+	~artifact, ~phase_start, ~phase_end, ~critical_lane, ~can_run_parallel_with, ~blocker, ~stop_condition, ~work_to_avoid_before_pass, ~decision_leverage_score, ~critical_path_risk_score, ~plot_label,
+	"Compact CI topology artifact", 1, 2.7, "start now",
+	"Behavior-gated source prototype",
+	"None under the current report scope.",
+	"Real Performance Tests topology preserves row ordering, retained counts, failures, first-key tails, and resource placement.",
+	"Changing CI waits, predicting pass/fail from local q50, or treating first-key behavior as solved.",
+	5.0, 5.0, "CI topology",
+	"Behavior-gated source prototype", 1, 2.4, "start now",
+	"Compact CI topology artifact",
+	"Source owner chosen and behavior fixtures scoped.",
+	"Behavior fixtures pass and source-span fanout collapses for the targeted owner.",
+	"Citing aggregate p50 or store fanout as a source win.",
+	4.6, 4.4, "source",
+	"Pattern readiness/resource artifact", 1.6, 3.0, "with CI",
+	"Compact CI topology artifact",
+	"Wait removal is being considered for pattern-loading rows.",
+	"Source-specific readiness plus resource quiet preserves preview/canvas behavior and retained samples across lanes.",
+	"Removing pattern-loading sleeps globally.",
+	4.2, 4.3, "patterns",
+	"Shared retained-key sidecar", 2.8, 4.0, "after first two",
+	"None; depends on CI/source priority decisions first.",
+	"CI topology and source-priority decisions are no longer blocking near-term action.",
+	"Every retained key joins to helper, renderer, command, and collector windows without changing class ordering.",
+	"Running root counters or browser traces for mechanism names.",
+	3.4, 4.8, "sidecar",
+	"CPU/QoS counter bundle", 4.0, 5.0, "after sidecar",
+	"Runtime sidecar field extraction if mechanism naming is still required.",
+	"Shared retained-key sidecar passes join coverage and overhead gates.",
+	"Powermetrics separates fast and slow classes, or root trace is justified by a failed counter split.",
+	"Naming P-core, frequency, QoS, cache, or scheduler causes.",
+	2.4, 4.2, "CPU/QoS",
+	"Workload/display expansion artifacts", 4.6, 5.8, "claim-dependent",
+	"Can run independently only after the report needs product or display claims.",
+	"Claim scope widens beyond fixed-x insertion or Chromium-internal endpoints.",
+	"Replay strata or external endpoints agree for the exact product/display claim being made.",
+	"Generalizing fixed-x or Chromium-internal endpoints to product or hardware/display latency.",
+	2.4, 3.8, "claim expansion"
+) %>%
+	mutate(
+		critical_lane = factor(
+			critical_lane,
+			levels = c("start now", "with CI", "after first two", "after sidecar", "claim-dependent")
+		),
+		plot_label = fct_reorder(plot_label, phase_start, .desc = TRUE)
+	)
+
+write_csv(
+	open_question_critical_path,
+	file.path(data_dir, "typing-delay-open-question-critical-path.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_critical_path,
+		aes(
+			x = phase_start,
+			xend = phase_end,
+			y = plot_label,
+			yend = plot_label,
+			color = critical_lane
+		)
+	) +
+		geom_segment(linewidth = 5.4, alpha = 0.82, lineend = "round") +
+		geom_point(aes(x = phase_end, size = critical_path_risk_score), alpha = 0.92) +
+		geom_text(
+			aes(x = phase_end + 0.08, label = plot_label),
+			color = "grey20",
+			size = 3,
+			hjust = 0,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Critical lane") +
+		scale_size_area(max_size = 6.8, breaks = 3:5, name = "Risk if skipped") +
+		scale_x_continuous(
+			breaks = 1:6,
+			limits = c(0.85, 6.35),
+			labels = c(
+				"1" = "start now",
+				"2" = "first gates",
+				"3" = "CI/readiness",
+				"4" = "sidecar",
+				"5" = "counters",
+				"6" = "claim expansion"
+			)
+		) +
+		labs(
+			title = "Critical path starts with CI topology and source behavior gates",
+			subtitle = "Mechanism naming and claim-expansion artifacts should wait for their prerequisite gates",
+			x = "Execution phase",
+			y = "Artifact bundle"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"210-open-question-critical-path.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
