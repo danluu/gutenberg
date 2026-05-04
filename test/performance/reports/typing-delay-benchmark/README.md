@@ -505,6 +505,9 @@ run:
 -   alternate delay modes:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
+    -   `fixed-hold-then-wait`: hold the key for up to
+        `BENCHMARK_KEY_HOLD_MS`, release it, then wait for the rest of the
+        configured delay;
     -   `after-persistence`: wait for `isLastBlockChangePersistent()`, then wait;
     -   `hold-then-keyup-gap`: hold a key, release it, then optionally wait;
     -   `type-one-char-hold`: run one Playwright `keyboard.type( 'x' )` action
@@ -691,6 +694,9 @@ The R script derives:
     CI-comparable held-key versus tap-then-wait runs at `0ms`, `100ms`,
     `250ms`, `500ms`, and `1000ms`, with reported-q50 run-to-run variance and
     runtime deltas.
+-   `data/typing-delay-ci-hold-duration-*.csv`: same paired CI-comparable
+    settings, adding fixed `50ms` and `100ms` key holds followed by the
+    remaining post-keyup wait.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -1677,6 +1683,30 @@ keypress, keyup, wait, next complete keypress. That is different from current CI
 where Playwright holds each key down for the configured delay before keyup.
 
 ![CI held-key versus tap p50](figures/95-ci-key-mode-p50-comparison.png)
+
+The next run keeps the same saved/reopened large-post setup and delay points, but
+adds two realistic fixed key holds. A `50ms` or `100ms` hold is still not the same
+metric as tap-then-wait because the key is down for part of each interval, but it
+also avoids the current full-delay synthetic hold.
+
+![CI key-hold duration p50 comparison](figures/95b-ci-key-hold-duration-p50-comparison.png)
+
+The fixed-hold run closes the realistic-hold subquestion: a short physical hold
+does not reproduce the current full-delay held-key slow band. At `250ms` and
+`500ms`, the current full-hold mode reports `33.0ms` and `36.9ms` p50, while
+`50ms` / `100ms` holds followed by post-keyup waits stay in the `10.4-13.9ms`
+range, close to tap-then-wait. So the problem is not "the key is down briefly";
+it is the synthetic benchmark holding the key down for the whole configured
+delay.
+
+Selected fixed-hold p50s:
+
+| Input mode | `100ms` | `250ms` | `500ms` | `1000ms` |
+| ---------- | ------: | ------: | ------: | -------: |
+| current CI held key | `14.0ms` | `33.0ms` | `36.9ms` | `17.3ms` |
+| `100ms` hold then wait | `10.0ms` | `10.4ms` | `12.3ms` | `10.6ms` |
+| `50ms` hold then wait | `11.0ms` | `12.6ms` | `13.9ms` | `11.5ms` |
+| tap then wait | `11.5ms` | `12.7ms` | `12.1ms` | `11.0ms` |
 
 ![CI held-key versus tap runtime/reliability](figures/96-ci-key-mode-runtime-reliability.png)
 
@@ -5420,7 +5450,11 @@ The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,
 but recent ordinary/utility CPU activity can move that measured path between
 slow and fast bands without changing the DOM event payload or Gutenberg's coarse
-state at keydown. The new `taskpolicy` tier sweep narrows the system side: all
+state at keydown. The fixed-hold CI pass closes another benchmark-shape question:
+`50ms` and `100ms` holds followed by post-keyup wait behave much more like
+tap-then-wait than like the current full-delay synthetic hold, so a brief
+realistic key hold is not enough to reproduce the slow `250ms` / `500ms` CI
+held-key band. The new `taskpolicy` tier sweep narrows the system side: all
 `-l 0..5` latency tiers and all `-t 0..5` throughput tiers stay fast, while
 Darwin background priority and QoS background/maintenance clamps stay slow. The
 new CPU/QoS audit quantifies the split: near-key no-CPU tasks stay slow
@@ -5870,6 +5904,12 @@ The key runs used in this report were:
     saved/reopened large-post draft, autosave disabled, `target.type()` with a
     `1000ms` delay, 10 retained samples and 1 throwaway per round, 4 fresh
     rounds per wait setting.
+-   `ci_hold_duration_50ms` and `ci_hold_duration_100ms`: same CI-comparable
+    saved/reopened large-post setup, with
+    `BENCHMARK_DELAY_MODE=fixed-hold-then-wait`,
+    `BENCHMARK_KEY_HOLD_MS=50` or `100`, delays `0ms`, `100ms`, `250ms`,
+    `500ms`, and `1000ms`, 10 retained samples and 1 throwaway per round, 4
+    fresh rounds per hold setting.
 -   `ci_typing_start_wait_curve_*`: deeper CI-comparable post-editor Typing
     start-wait curve at `0ms`, `50ms`, `100ms`, `250ms`, `500ms`, `1s`, `2s`,
     `5s`, `10s`, `30s`, and `60s` after editor setup, with 8 fresh

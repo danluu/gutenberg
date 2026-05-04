@@ -50,6 +50,7 @@ const settleBetweenDelayRunsMs = intEnv(
 );
 const orderMode = process.env.BENCHMARK_ORDER_MODE || 'mixed';
 const delayMode = process.env.BENCHMARK_DELAY_MODE || 'keyboard';
+const keyHoldMs = intEnv( 'BENCHMARK_KEY_HOLD_MS', 0 );
 const postKeyupGapMs = intEnv( 'BENCHMARK_POST_KEYUP_GAP_MS', 0 );
 const runtimeRepeatCount = intEnv( 'BENCHMARK_RUNTIME_REPEAT_COUNT', 1 );
 const scenario = process.env.BENCHMARK_SCENARIO || 'large-post-paragraph';
@@ -152,6 +153,7 @@ const supportedScenarios = [
 const supportedDelayModes = [
 	'keyboard',
 	'between-keys',
+	'fixed-hold-then-wait',
 	'after-persistence',
 	'hold-then-keyup-gap',
 	'type-one-char-hold',
@@ -1473,11 +1475,13 @@ test.describe( 'Typing delay benchmark', () => {
 		}
 		if (
 			setupStyle === 'ci-post-editor-typing' &&
-			! [ 'keyboard', 'between-keys' ].includes( delayMode )
+			! [ 'keyboard', 'between-keys', 'fixed-hold-then-wait' ].includes(
+				delayMode
+			)
 		) {
 			throw new Error(
 				'BENCHMARK_SETUP_STYLE=ci-post-editor-typing only supports ' +
-					'BENCHMARK_DELAY_MODE=keyboard or between-keys.'
+					'BENCHMARK_DELAY_MODE=keyboard, between-keys, or fixed-hold-then-wait.'
 			);
 		}
 
@@ -3814,6 +3818,21 @@ setInterval(() => {}, 2147483647);
 							await page.waitForTimeout( delayMs );
 						}
 					}
+				} else if ( delayMode === 'fixed-hold-then-wait' ) {
+					if ( setupStyle === 'ci-post-editor-typing' ) {
+						await paragraph.click();
+					}
+					const holdMs = Math.min( keyHoldMs, delayMs );
+					const postKeyupWaitMs = Math.max( delayMs - holdMs, 0 );
+					for ( let i = 0; i < sampleCount; i++ ) {
+						await page.keyboard.down( 'x' );
+						await sleepMs( holdMs );
+						await page.keyboard.up( 'x' );
+						if ( postKeyupWaitMs > 0 && i < sampleCount - 1 ) {
+							// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+							await page.waitForTimeout( postKeyupWaitMs );
+						}
+					}
 				} else if ( delayMode === 'hold-then-keyup-gap' ) {
 					for ( let i = 0; i < sampleCount; i++ ) {
 						await page.keyboard.press( 'x', { delay: delayMs } );
@@ -4558,6 +4577,7 @@ setInterval(() => {}, 2147483647);
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,
+				keyHoldMs,
 				postKeyupGapMs,
 				runtimeRepeatCount,
 				settleBeforeEditorSetupMs,
