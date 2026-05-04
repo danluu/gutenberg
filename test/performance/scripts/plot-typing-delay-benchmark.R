@@ -9559,6 +9559,106 @@ if (file.exists(marker_allspan_action_summary_path)) {
 }
 
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
+	subscriber_outcome_source <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
+		filter(intervention %in% c(
+			"normal marker",
+			"marker no-op",
+			"raw unknown action",
+			"mark next not persistent",
+			"stop/start typing",
+			"toggle selection"
+		)) %>%
+		mutate(
+			async_queue_share = use_select_render_queue_add_count_p50 / use_select_on_change_count_p50,
+			sync_map_select_share = use_select_map_select_count_p50 / use_select_on_change_count_p50
+		)
+
+	subscriber_outcome_summary <- subscriber_outcome_source %>%
+		transmute(
+			intervention,
+			keypress_p50_ms,
+			latency_p50_ms,
+			use_select_on_change_count_p50,
+			use_select_render_queue_add_count_p50,
+			use_select_on_store_change_count_p50,
+			use_select_update_value_count_p50,
+			use_select_map_select_count_p50,
+			async_queue_share,
+			sync_map_select_share,
+			use_select_on_change_duration_p50_ms,
+			use_select_render_queue_add_duration_p50_ms,
+			use_select_on_store_change_duration_p50_ms,
+			use_select_update_value_duration_p50_ms,
+			use_select_map_select_duration_p50_ms
+		)
+
+	write_csv(
+		subscriber_outcome_summary,
+		file.path(data_dir, "typing-delay-use-select-subscriber-outcome-summary.csv")
+	)
+
+	subscriber_outcome_plot <- subscriber_outcome_summary %>%
+		pivot_longer(
+			cols = c(
+				use_select_on_change_count_p50,
+				use_select_render_queue_add_count_p50,
+				use_select_on_store_change_count_p50,
+				use_select_update_value_count_p50,
+				use_select_map_select_count_p50
+			),
+			names_to = "outcome",
+			values_to = "count_p50"
+		) %>%
+		mutate(
+			outcome = recode(
+				outcome,
+				use_select_on_change_count_p50 = "woken useSelect.onChange",
+				use_select_render_queue_add_count_p50 = "queued async updates",
+				use_select_on_store_change_count_p50 = "sync onStoreChange",
+				use_select_update_value_count_p50 = "sync updateValue",
+				use_select_map_select_count_p50 = "sync mapSelect"
+			),
+			outcome = factor(
+				outcome,
+				levels = rev(c(
+					"woken useSelect.onChange",
+					"queued async updates",
+					"sync onStoreChange",
+					"sync updateValue",
+					"sync mapSelect"
+				))
+			),
+			intervention = factor(
+				intervention,
+				levels = rev(c(
+					"normal marker",
+					"marker no-op",
+					"raw unknown action",
+					"mark next not persistent",
+					"stop/start typing",
+					"toggle selection"
+				))
+			)
+		)
+
+	save_plot(
+		ggplot(subscriber_outcome_plot, aes(count_p50, outcome, color = outcome)) +
+			geom_point(size = 3.2, alpha = 0.9) +
+			facet_wrap(vars(intervention), ncol = 2) +
+			scale_color_brewer(type = "qual", palette = "Set2", guide = "none") +
+			labs(
+				title = "Most woken useSelect subscribers are queued, not recomputed immediately",
+				subtitle = "Next-input trace-all-data-spans run at 1000ms; 3828 of 4544 onChange callbacks go through renderQueue.add",
+				x = "p50 callback count",
+				y = NULL
+			),
+		"118-use-select-subscriber-outcome-funnel.png",
+		width = 12,
+		height = 8
+	)
+}
+
+if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
 	use_select_phase_accounting <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
 		filter(intervention %in% marker_allspan_core_interventions) %>%
 		mutate(

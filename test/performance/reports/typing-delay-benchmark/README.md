@@ -193,7 +193,11 @@ The short version:
     the invalidation boundary exact: the normal marker action changes
     `blocks.isPersistentChange`, but none of the audited hot owner sites read
     that flag. They wake because the store root changed, not because their
-    selected state depends on the changed branch.
+    selected state depends on the changed branch. The subscriber-outcome funnel
+    then shows what "wake" means in the next input: all compared interventions
+    wake `4544` `useSelect.onChange` callbacks, but `3828` of those go only to
+    async `renderQueue.add`; `716` synchronously run `onStoreChange`,
+    `updateValue`, and `mapSelect`.
 -   A dense timer-to-key gap scan adds another constraint. In the normal-marker
     and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
     low when the timer callback is roughly `40-100ms` before the next keydown,
@@ -711,6 +715,9 @@ The R script derives:
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
     control joining the action summaries with the exact store-root state effect
     for normal marker, raw unknown action, and mark-next controls.
+-   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
+    `useSelect` wakeup funnel splitting woken subscribers into async queued
+    updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
 -   `data/typing-delay-use-select-phase-accounting.csv`: trace-all-data-spans
     comparison of rootSubscribe, Redux listener wrappers, `useSelect.onChange`,
     and `useSelect.mapSelect`.
@@ -3532,6 +3539,42 @@ finer-grained invalidation, store partitioning, or a way for `useSelect`
 subscribers to avoid invalidation when the changed state branch cannot affect
 their selected value.
 
+The next split answers what "woken subscriber" means in the measured input
+slice. In `useSelect`, `onChange` either queues an async update through
+`renderQueue.add()` or synchronously calls `onStoreChange()`
+(`packages/data/src/components/use-select/index.ts:186-212`). A synchronous
+`onStoreChange()` invalidates the current value and invokes React's external
+store listener, which calls `updateValue()` / `mapSelect()` on demand
+(`packages/data/src/components/use-select/index.ts:162-184` and `276-362`).
+
+![useSelect subscriber outcome funnel](figures/118-use-select-subscriber-outcome-funnel.png)
+
+Across all six marker interventions in this all-data-span run, the next-input
+counts are identical:
+
+| Outcome | p50 count | Share of `onChange` callbacks |
+| ------- | --------: | ----------------------------: |
+| woken `useSelect.onChange` | `4,544` | `100.0%` |
+| queued async updates via `renderQueue.add` | `3,828` | `84.2%` |
+| synchronous `onStoreChange` | `716` | `15.8%` |
+| synchronous `updateValue` | `716` | `15.8%` |
+| synchronous `mapSelect` | `716` | `15.8%` |
+
+That disconfirms a remaining count-based explanation for the next-input
+differences. The faster normal marker, `stopTyping(); startTyping()`, and
+selection-toggle cases are not faster because they wake fewer `useSelect`
+callbacks, queue fewer async updates, or run fewer synchronous selector
+recomputations. Those counts are fixed in this trace. The differences are in
+how long the same callback population takes in this input slice, plus the
+separate timer-side fanout that normal marker / stop-start / toggle-selection
+can run before the next key.
+
+The open question moves again: this trace can say the measured slice is not
+dominated by more `mapSelect` calls or more render-queue insertions, but it does
+not yet identify the React component render owners for the async queued work
+after the input slice. That remains a React-render attribution question, not a
+selector-count question.
+
 This supports a code-level theory:
 
 -   `useSelect` invalidates its cached value on store update before rerunning
@@ -5304,6 +5347,16 @@ therefore no longer "which hot selector reads the persistence flag?" None of the
 audited hot selectors does. The harder engineering question is whether
 `@wordpress/data` / `core/block-editor` can expose a narrower invalidation path
 for persistence-only or text-only changes.
+
+The subscriber-outcome funnel closes another tempting explanation. The next
+input wakes the same `4544` `useSelect.onChange` callbacks across normal marker,
+no-op, raw-unknown, mark-next, stop/start, and selection-toggle controls. In each
+case `3828` callbacks only queue async work and `716` synchronously run
+`onStoreChange`, `updateValue`, and `mapSelect`. The faster paths are therefore
+not faster because they do less selector-count work in the measured input. The
+remaining React-side open question is specifically about the ownership and cost
+of queued async render work outside the EventDispatch slice, not about how many
+selectors run synchronously in the slice.
 
 The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:
