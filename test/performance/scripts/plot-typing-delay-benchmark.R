@@ -9180,6 +9180,175 @@ if (file.exists(redux_listener_owner_summary_path)) {
 	)
 }
 
+redux_owner_source_audit_sites <- tribble(
+	~source_path, ~source_line, ~source_site, ~subscription_scope, ~selector_audit,
+	"packages/block-editor/src/components/block-list/index.js", 196, "BlockListItems useSelect", "per block list/root", "Reads block order, selection ids, visible blocks, zoom state, template lock, editing mode, block name, and appender eligibility.",
+	"packages/editor/src/hooks/pattern-overrides.js", 40, "Pattern override support HOC", "per BlockEdit wrapper", "Reads block-editor settings and checks whether the current block name has supported binding attributes.",
+	"packages/block-editor/src/components/block-list/block.js", 563, "BlockListBlockProvider useSelect", "per rendered block", "Reads the block record/attributes plus selection, mode, lock, movement, variation, section, overlay, and block-type state for one clientId.",
+	"packages/block-editor/src/components/inner-blocks/index.js", 195, "useInnerBlocksProps useSelect", "per inner-blocks wrapper", "Reads block name, zoom state, template lock, root/parent client ids, editing mode, block settings, section root, and block type.",
+	"packages/block-library/src/heading/edit.js", 35, "HeadingEdit anchor useSelect", "per heading block", "Reads block-editor settings and global table-of-contents block count for heading anchor generation."
+)
+
+if (file.exists(redux_listener_owner_summary_path)) {
+	redux_listener_owner_source_summary <- read_csv(redux_listener_owner_summary_path, show_col_types = FALSE) %>%
+		filter(
+			!is.na(source_path),
+			source_path != "",
+			source_path != "(non-useSelect)",
+			window_kind == "marker before input",
+			intervention == "normal marker"
+		)
+
+	audited_marker_rows <- redux_listener_owner_source_summary %>%
+		inner_join(
+			redux_owner_source_audit_sites,
+			by = c("source_path", "source_line")
+		) %>%
+		transmute(
+			source_path,
+			source_line,
+			source_site,
+			subscription_scope,
+			selector_audit,
+			owner_groups = 1L,
+			marker_before_input_listener_duration_p50_ms = listener_duration_p50_ms,
+			marker_before_input_listener_count_p50 = listener_count_p50,
+			marker_before_input_per_listener_us = 1000 * listener_duration_p50_ms / listener_count_p50
+		)
+
+	other_marker_row <- redux_listener_owner_source_summary %>%
+		anti_join(
+			redux_owner_source_audit_sites,
+			by = c("source_path", "source_line")
+		) %>%
+		summarise(
+			source_path = "(other mapped owners)",
+			source_line = NA_real_,
+			source_site = "Other mapped owners",
+			subscription_scope = "other mapped owners",
+			selector_audit = "Aggregate of remaining source-mapped useSelect owners in the normal marker-before-input window.",
+			owner_groups = n(),
+			marker_before_input_listener_duration_p50_ms = sum(listener_duration_p50_ms, na.rm = TRUE),
+			marker_before_input_listener_count_p50 = sum(listener_count_p50, na.rm = TRUE),
+			marker_before_input_per_listener_us = 1000 * marker_before_input_listener_duration_p50_ms / marker_before_input_listener_count_p50,
+			.groups = "drop"
+		)
+
+	redux_owner_source_audit <- bind_rows(audited_marker_rows, other_marker_row)
+
+	if (file.exists(redux_listener_owner_diff_path)) {
+		source_delta_rows <- read_csv(redux_listener_owner_diff_path, show_col_types = FALSE) %>%
+			filter(
+				window_kind %in% c("next input selectionChange", "next input updateBlockAttributes"),
+				intervention %in% c("marker no-op", "mark next not persistent"),
+				!is.na(source_path),
+				source_path != ""
+			) %>%
+			mutate(
+				delta_metric = paste0(
+					recode(
+						window_kind,
+						`next input selectionChange` = "selection_change",
+						`next input updateBlockAttributes` = "update_block_attributes"
+					),
+					"_",
+					recode(
+						intervention,
+						`marker no-op` = "marker_no_op",
+						`mark next not persistent` = "mark_next_not_persistent"
+					),
+					"_delta_p50_ms"
+				)
+			)
+
+		audited_delta_rows <- source_delta_rows %>%
+			inner_join(
+				redux_owner_source_audit_sites,
+				by = c("source_path", "source_line")
+			) %>%
+			group_by(source_path, source_line, delta_metric) %>%
+			summarise(
+				diff_listener_duration_p50_ms = sum(diff_listener_duration_p50_ms, na.rm = TRUE),
+				.groups = "drop"
+			)
+
+		other_delta_rows <- source_delta_rows %>%
+			anti_join(
+				redux_owner_source_audit_sites,
+				by = c("source_path", "source_line")
+			) %>%
+			group_by(delta_metric) %>%
+			summarise(
+				source_path = "(other mapped owners)",
+				source_line = NA_real_,
+				diff_listener_duration_p50_ms = sum(diff_listener_duration_p50_ms, na.rm = TRUE),
+				.groups = "drop"
+			) %>%
+			select(source_path, source_line, delta_metric, diff_listener_duration_p50_ms)
+
+		redux_owner_source_deltas <- bind_rows(audited_delta_rows, other_delta_rows) %>%
+			pivot_wider(
+				names_from = delta_metric,
+				values_from = diff_listener_duration_p50_ms,
+				values_fill = 0
+			)
+
+		redux_owner_source_audit <- redux_owner_source_audit %>%
+			left_join(
+				redux_owner_source_deltas,
+				by = c("source_path", "source_line")
+			)
+	}
+
+	redux_owner_source_audit <- redux_owner_source_audit %>%
+		mutate(across(ends_with("_delta_p50_ms"), ~replace_na(.x, 0))) %>%
+		arrange(desc(marker_before_input_listener_duration_p50_ms))
+
+	write_csv(
+		redux_owner_source_audit,
+		file.path(data_dir, "typing-delay-redux-listener-source-audit.csv")
+	)
+
+	redux_owner_source_audit_plot <- redux_owner_source_audit %>%
+		mutate(
+			source_site = fct_reorder(source_site, marker_before_input_listener_duration_p50_ms),
+			subscription_scope_plot = recode(
+				subscription_scope,
+				`per block list/root` = "per list/root",
+				`per BlockEdit wrapper` = "per BlockEdit",
+				`per rendered block` = "per block",
+				`per inner-blocks wrapper` = "per inner-blocks",
+				`per heading block` = "per heading",
+				`other mapped owners` = "other mapped"
+			),
+			subscription_scope_plot = fct_reorder(subscription_scope_plot, marker_before_input_listener_duration_p50_ms, .fun = sum)
+		)
+
+	save_plot(
+		ggplot(redux_owner_source_audit_plot, aes(
+			marker_before_input_listener_duration_p50_ms,
+			source_site,
+			color = subscription_scope_plot,
+			size = marker_before_input_listener_count_p50
+		)) +
+			geom_point(alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Set2") +
+			scale_size_area(max_size = 8, labels = label_number()) +
+			labs(
+				title = "The marker fanout is mostly per-block and per-block-list subscriptions",
+				subtitle = "Normal 1000ms marker-before-input window; top source sites audited against current source",
+				x = "Redux listener duration, p50 (ms)",
+				y = NULL,
+				color = "Subscription scope",
+				size = "p50 listener calls"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"115-redux-listener-source-audit.png",
+		width = 12,
+		height = 7
+	)
+}
+
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
 	use_select_phase_accounting <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
 		filter(intervention %in% marker_allspan_core_interventions) %>%

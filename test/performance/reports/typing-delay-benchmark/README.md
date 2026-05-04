@@ -178,6 +178,12 @@ The short version:
     `31.3ms` `keypress` p50). A raw dispatch/timer tick is therefore not
     sufficient; a zero-duration no-op-ish timer callback does not reproduce the
     low band.
+-   A source audit of the low-level Redux listener owners confirms that the
+    Gutenberg-side cost is broad invalidation, not a single slow callback. The
+    top audited marker-window sites are per-rendered-block, per-`BlockEdit`,
+    per-block-list, per-inner-blocks, and per-heading subscriptions. Together
+    they account for `14.0ms` of `15.3ms` source-mapped listener time, but each
+    callback is only `~2-9us`.
 -   A dense timer-to-key gap scan adds another constraint. In the normal-marker
     and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
     low when the timer callback is roughly `40-100ms` before the next keydown,
@@ -686,6 +692,8 @@ The R script derives:
     from the low-level Redux listener owner samples.
 -   `data/typing-delay-redux-listener-owner-family-summary.csv`: owner-family
     grouping for the same low-level Redux listener owner data.
+-   `data/typing-delay-redux-listener-source-audit.csv`: code-audited source
+    scope summary for the dominant low-level Redux listener owner sites.
 -   `data/typing-delay-use-select-phase-accounting.csv`: trace-all-data-spans
     comparison of rootSubscribe, Redux listener wrappers, `useSelect.onChange`,
     and `useSelect.mapSelect`.
@@ -3409,6 +3417,30 @@ marker task, the family p50 sums are:
 | layout                  |          `0.2ms` |               `91` |
 | all other mapped owners |          `1.0ms` |              `111` |
 
+I then audited those top source sites against the current source instead of
+stopping at source-map labels.
+
+![Redux listener source audit](figures/115-redux-listener-source-audit.png)
+
+| Source site | Scope | Main selector reads | Marker p50 | Calls |
+| ----------- | ----- | ------------------- | ---------: | ----: |
+| `block-list/index.js:196` `BlockListItems` | per block list/root | order, selected IDs, visible blocks, zoom, template lock, editing mode, appender eligibility | `5.3ms` | `580` |
+| `pattern-overrides.js:40` HOC | per `BlockEdit` wrapper | block-editor settings and supported binding attributes for this block name | `3.6ms` | `1,437` |
+| `block-list/block.js:563` `BlockListBlockProvider` | per rendered block | block record/attributes, selection, mode, movement/removal, variation, section, overlay, same-name blocks | `3.5ms` | `1,437` |
+| `inner-blocks/index.js:195` `useInnerBlocksProps` | per inner-blocks wrapper | block name/type, zoom, template lock, root/parent IDs, editing mode, layout/settings, section root | `1.1ms` | `580` |
+| `heading/edit.js:35` `HeadingEdit` | per heading block | global anchor setting and global table-of-contents block count | `0.5ms` | `202` |
+| other mapped owners | mixed | aggregate of the remaining source-mapped `useSelect` owners | `1.3ms` | `261` |
+
+This narrows the invalidation-boundary question. The big sites are not
+expensive individual callbacks. They are subscriptions mounted once per rendered
+block, once per `BlockEdit` wrapper, or once per block list / inner-blocks
+wrapper. A paragraph text update therefore reaches a large subscription surface:
+`core/block-editor` has an effective state change, the store wrapper calls every
+subscriber for that store, and these broad per-block/list selectors then decide
+whether their own mapped value changed. For most blocks, the semantic answer is
+probably "no"; the measured cost is paying to ask that question thousands of
+times.
+
 This supports a code-level theory:
 
 -   `useSelect` invalidates its cached value on store update before rerunning
@@ -5148,6 +5180,17 @@ CPU/QoS/power-state interaction with a broad Gutenberg input path, not one bad
 selector, one browser trace accounting quirk, or taskpolicy tiering in general.
 Proving that final layer would need hardware/browser-level instrumentation, not
 another small variation of the JS benchmark.
+
+The source-audited owner pass closes a smaller open question about the broad
+Gutenberg side of that path. The dominant low-level Redux listener rows are
+per-rendered-block, per-`BlockEdit`, per-block-list, and per-inner-blocks
+subscriptions. In the normal marker-before-input window, the top audited sites
+account for `14.0ms` of `15.3ms` source-mapped listener time and thousands of
+listener calls, but their per-listener cost is only `~2-9us`. That means the
+Gutenberg part of the artifact is a coarse invalidation surface, not a single
+slow selector body. The remaining product question is which of those broad
+subscriptions can be made less sensitive to ordinary text updates without
+breaking block-list and selection behavior.
 
 The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:
