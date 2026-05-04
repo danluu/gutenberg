@@ -1015,6 +1015,10 @@ The R script derives:
 -   `data/typing-delay-open-question-falsification-runbook.csv`: cross-question
     falsification gate showing the observation, artifact, and decision change
     required to overturn each remaining recommendation.
+-   `data/typing-delay-open-question-dependency-map.csv`: critical-path map for
+    remaining work, separating trigger-only checks, work that can start now,
+    sidecar-gated mechanism claims, claim-expansion lanes, and external policy
+    joins.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9147,6 +9151,25 @@ with join keys and stop rules.
 | Selector/store source work | Behavior gates fail, source-span fanout does not collapse, public subscriber compatibility breaks, or aggregate q50 does not move after source spans pass. | Focused behavior tests, marker/source-span listener counts, compatibility fixtures, and matched aggregate artifacts only after behavior gates pass. |
 | Runtime and CPU/QoS mechanisms | Sidecar/protocol/counter rows cannot preserve class ordering or cannot join the differentiating state to retained keys. | Trace-off protocol sidecar for runtime questions; helper/key-window/renderer/collector sidecar plus root `powermetrics`/`trace` for CPU/QoS questions. |
 | Presentation and workload claims | External visual endpoints disagree with Chromium-internal endpoints, or replay strata show different owners/effects/regressions than fixed-`x`. | Per-retained-key external calibration, plus workload recorder/replayer artifacts with assertions, source spans, endpoints, and per-stratum summaries. |
+
+The dependency map is the operational version of that audit. It separates work
+that can start now from work that should wait for a prerequisite artifact. The
+main sequencing point is that the open questions do not form one queue. CI
+topology validation and behavior-gated selector work can start independently;
+runtime and CPU/QoS mechanism claims should wait for sidecars; display and
+workload work are only needed if the report broadens from benchmark/source
+claims to presentation or product claims.
+
+![Open question dependency map](figures/200-open-question-dependency-map.png)
+
+| Lane | First useful artifact | Work to avoid before that artifact exists |
+| ---- | --------------------- | ----------------------------------------- |
+| Trigger-only checks | None under unchanged metric settings. | Repeating broad startup-wait or input-API sweeps without a helper, browser, trace-placement, throwaway-policy, or statistic change. |
+| CI topology validation | Compact Performance Tests artifact with raw retained samples, failures, environment metadata, first-key distributions, resources, and per-run order. | Changing waits or treating local macOS absolute p50/CV as a CI threshold. |
+| Selector/source prototypes | Behavior-gated source prototype plus source-span microscope for the next hot owner. | Claiming selector safety or source wins from aggregate p50 alone. |
+| Sidecar-gated mechanism claims | Trace-off protocol sidecar for Chromium runtime; helper/key-window/renderer/collector sidecar for CPU/QoS. | Naming V8, scheduler, P-core, frequency, QoS placement, cache, or runnable-latency causes from aggregate latency rows. |
+| Claim-expansion lanes | External display calibration or workload recorder/replayer only if those claims are needed. | Converting Chromium-internal screenshots into hardware-display timing, or fixed-`x` insertion into representative product latency. |
+| External policy join | Dashboard/reviewer threshold policy joined to CI artifacts. | Predicting pass/fail from local q50 movement alone. |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

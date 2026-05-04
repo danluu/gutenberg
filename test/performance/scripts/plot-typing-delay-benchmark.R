@@ -21145,6 +21145,134 @@ save_plot(
 	height = 7.6
 )
 
+open_question_dependency_map <- tribble(
+	~workstream, ~question_group, ~first_unblocking_artifact, ~depends_on, ~can_run_in_parallel_with, ~avoid_before_unblocked, ~decision_unlocked, ~stop_or_advance_rule, ~dependency_depth_score, ~decision_value_score, ~risk_if_skipped_score, ~status, ~plot_label,
+	"Trigger-only rechecks", "Typing startup wait and input API helper family", "No new artifact unless the helper, browser, trace placement, throwaway policy, or reported statistic changes.", "Current metric definition", "All other workstreams", "Repeating broad startup/API sweeps under unchanged settings.", "Preserves the current metric boundary and avoids relitigating closed local questions.", "Reopen only on a trigger change; otherwise keep current recommendation.", 0, 2, 2, "closed unless triggered", "trigger only",
+	"CI topology validation", "Pattern-loading wait and absolute CI portability", "Compact real-Performance-Tests artifact with raw q50/q25/q75/cnt, per-run order, first-key distributions, failures, resources, browser revision, runner image, and wp-env metadata.", "Access to CI topology or equivalent reusable workflow", "Selector prototypes; protocol sidecar design; workload schema work", "Changing waits or thresholds from local macOS p50 alone.", "Decides whether wait-removal candidates and local threshold movement survive the actual runner.", "Advance to wait removal only if retained counts, failures, resource movement, and q50 stability survive; expand manifest if ordering changes.", 1, 5, 5, "start next", "CI topology",
+	"Selector guard prototypes", "Low-risk selector guards", "Behavior-gated source prototype plus source-span microscope for the next hot owner.", "Focused behavior fixtures and source-span harness", "CI topology validation; sidecar design", "Claiming selector safety from aggregate p50.", "Determines whether local source work can remove real fanout without changing editor behavior.", "Advance to aggregate p50 only after behavior and source-span gates pass.", 1, 4, 4, "start next", "selector",
+	"Store notification prototype", "Store subscriber partition", "Branch-aware or selector-aware useSelect prototype with public registry.subscribe compatibility fixtures.", "Selector guard results; compatibility matrix for dynamic/cross-store subscribers", "Workload replay schema; external threshold-policy discovery", "Changing public store notification semantics for the benchmark win alone.", "Determines whether the largest marker fanout can be reduced without breaking public data contracts.", "Advance only if public subscriber fixtures pass and marker-only listener counts collapse.", 2, 5, 5, "after local guard", "store fanout",
+	"Runtime protocol sidecar", "Chromium runtime checkpoint", "Trace-off protocol command sidecar with browser/driver clock sync and retained key-gap joins.", "Stable key-window schema; acceptance rows preserving known class ordering", "CPU/QoS sidecar schema; CI topology validation", "Adding more JS delay rows or naming V8/scheduler state from aggregate latency.", "Turns the runtime checkpoint dose response into a browser-mechanism question with per-key evidence.", "Advance to scheduler/runtime trace categories only if the sidecar preserves class ordering and joins command windows.", 2, 4, 4, "sidecar first", "runtime",
+	"CPU/QoS counter sidecar", "CPU/QoS mechanism", "Unprivileged helper/key-window/renderer/collector sidecar acceptance run.", "Compact CPU/QoS manifest; stable helper and retained-key join ids", "Runtime protocol sidecar schema; workload schema work", "Running root powermetrics/trace before sidecar overhead and joins pass.", "Decides whether root power/scheduler counters can name the narrowed system layer.", "Run powermetrics only after sidecar class ordering and join coverage pass; run root trace only if powermetrics cannot separate rows.", 2, 4, 5, "sidecar first", "CPU/QoS",
+	"External display calibration", "Calibrated presentation", "Per-retained-key external or compositor/display endpoint joined to EventDispatch, RAF, paint, screenshot, and complete-keypress controls.", "Need to make hardware-display or semantic-glyph claims", "CI topology validation; workload replay", "Using Chromium screenshots as physical display timing.", "Determines whether the visual claim can extend beyond Chromium-internal propagation.", "Keep internal wording unless the external endpoint preserves the qualitative shape.", 3, 3, 4, "only if claim widens", "display",
+	"Workload replay MVP", "Human/plugin workload", "Recorder/replayer with event records, assertions, source spans, endpoints, document/session context, and per-stratum summaries.", "Replay schema; assertion packs; representative synthetic or recorded histories", "Selector prototypes; CI topology validation", "Ranking product latency or plugin-heavy risk from fixed-x insertion.", "Determines whether source recommendations generalize beyond the fixed-character artifact workload.", "Report per stratum; do not average missing strata into fixed-x q50.", 2, 5, 5, "product gate", "workload",
+	"Threshold policy join", "Portability of pass/fail claims", "External dashboard/reviewer policy joined to CI raw artifacts.", "CI topology artifacts; knowledge of CodeVitals or reviewer thresholds", "Workload replay; source prototype validation", "Predicting repository pass/fail from local q50 movement alone.", "Determines whether a measured change is a displayed number, review signal, or actual failure threshold.", "Keep pass/fail claims out of the report until the external policy is joined.", 3, 4, 4, "policy required", "threshold"
+) %>%
+	mutate(
+		status = factor(
+			status,
+			levels = c(
+				"closed unless triggered",
+				"start next",
+				"after local guard",
+				"sidecar first",
+				"only if claim widens",
+				"product gate",
+				"policy required"
+			)
+		),
+		parallel_bucket = case_when(
+			workstream %in% c("CI topology validation", "Selector guard prototypes") ~ "can start now",
+			workstream %in% c("Runtime protocol sidecar", "CPU/QoS counter sidecar") ~ "shared sidecar schema",
+			workstream %in% c("Workload replay MVP", "External display calibration") ~ "claim-expansion lanes",
+			workstream == "Store notification prototype" ~ "after first local guard",
+			workstream == "Threshold policy join" ~ "after CI artifacts",
+			TRUE ~ "trigger only"
+		),
+		parallel_bucket = factor(
+			parallel_bucket,
+			levels = c(
+				"trigger only",
+				"can start now",
+				"after first local guard",
+				"shared sidecar schema",
+				"claim-expansion lanes",
+				"after CI artifacts"
+			)
+		),
+		label_x = dependency_depth_score + case_when(
+			plot_label == "trigger only" ~ 0.08,
+			plot_label == "CI topology" ~ 0.12,
+			plot_label == "selector" ~ 0.12,
+			plot_label == "store fanout" ~ 0.12,
+			plot_label == "runtime" ~ -0.55,
+			plot_label == "CPU/QoS" ~ 0.12,
+			plot_label == "display" ~ -0.55,
+			plot_label == "threshold" ~ -0.62,
+			TRUE ~ 0.12
+		),
+		label_y = decision_value_score + case_when(
+			plot_label == "trigger only" ~ 0.10,
+			plot_label == "CI topology" ~ 0.12,
+			plot_label == "selector" ~ -0.12,
+			plot_label == "store fanout" ~ 0.12,
+			plot_label == "runtime" ~ -0.12,
+			plot_label == "CPU/QoS" ~ 0.12,
+			plot_label == "display" ~ -0.12,
+			plot_label == "threshold" ~ 0.12,
+			TRUE ~ 0
+		)
+	)
+
+write_csv(
+	open_question_dependency_map %>% select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-dependency-map.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_dependency_map,
+		aes(
+			dependency_depth_score,
+			decision_value_score,
+			color = parallel_bucket,
+			shape = status,
+			size = risk_if_skipped_score
+		)
+	) +
+		geom_point(alpha = 0.92) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_x_continuous(
+			breaks = 0:3,
+			limits = c(-0.1, 3.45),
+			labels = c("0" = "trigger", "1" = "start", "2" = "after artifact", "3" = "external")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(1.75, 5.35),
+			labels = c("1" = "low", "2" = "scope", "3" = "claim", "4" = "mechanism", "5" = "decision")
+		) +
+		scale_color_brewer(type = "qual", palette = "Set2", name = "Parallel lane") +
+		scale_shape_manual(
+			values = c(
+				"closed unless triggered" = 16,
+				"start next" = 17,
+				"after local guard" = 15,
+				"sidecar first" = 18,
+				"only if claim widens" = 6,
+				"product gate" = 9,
+				"policy required" = 10
+			),
+			name = "Status"
+		) +
+		scale_size_area(max_size = 6.5, breaks = 2:5, name = "Risk if skipped") +
+		labs(
+			title = "Open questions split into parallel lanes with different prerequisites",
+			subtitle = "Start CI-topology validation and behavior-gated selector work first; sidecars gate mechanism claims",
+			x = "Dependency depth",
+			y = "Decision value unlocked"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"200-open-question-dependency-map.png",
+	width = 12.8,
+	height = 7.6
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
