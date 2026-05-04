@@ -2881,6 +2881,7 @@ site_pattern_alternating_wait_path <- file.path(data_dir, "typing-delay-site-pat
 site_pattern_readiness_probe_samples_path <- file.path(data_dir, "typing-delay-pattern-readiness-probe-samples.csv")
 site_pattern_readiness_probe_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-probe-summary.csv")
 site_pattern_readiness_boundary_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv")
+site_pattern_readiness_risk_audit_path <- file.path(data_dir, "typing-delay-pattern-readiness-risk-audit.csv")
 site_pattern_short_wait_runs_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-runs.csv")
 site_pattern_short_wait_summary_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
 
@@ -4737,6 +4738,7 @@ ci_fresh_code_path_run_path <- file.path(data_dir, "typing-delay-ci-fresh-code-p
 ci_fresh_code_path_summary_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-summary.csv")
 ci_fresh_code_path_paired_difference_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-paired-differences.csv")
 ci_fresh_code_path_api_delta_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-api-deltas.csv")
+ci_fresh_code_path_predictor_audit_path <- file.path(data_dir, "typing-delay-ci-fresh-code-path-predictor-audit.csv")
 ci_hold_duration_artifact_dirs <- c(
 	`current CI held key` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-keyboard"),
 	`100ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-hold-100"),
@@ -5691,6 +5693,122 @@ if (nrow(ci_fresh_code_path_samples) > 0) {
 		) %>%
 		arrange(delay_ms, input_api, requested_hold_ms)
 	write_csv(ci_fresh_code_path_api_deltas, ci_fresh_code_path_api_delta_path)
+
+	fresh_delta_value <- function(input_api_value, requested_hold_ms_value, delay_ms_value, column_name) {
+		ci_fresh_code_path_api_deltas %>%
+			filter(
+				input_api == input_api_value,
+				requested_hold_ms == requested_hold_ms_value,
+				delay_ms == delay_ms_value
+			) %>%
+			pull(all_of(column_name)) %>%
+			first()
+	}
+
+	fresh_summary_value <- function(input_api_value, requested_hold_ms_value, delay_ms_value, column_name) {
+		ci_fresh_code_path_summary %>%
+			filter(
+				input_api == input_api_value,
+				requested_hold_ms == requested_hold_ms_value,
+				delay_ms == delay_ms_value
+			) %>%
+			pull(all_of(column_name)) %>%
+			first()
+	}
+
+	format_fresh_ms <- function(value) {
+		paste0(number(value, accuracy = 0.1), "ms")
+	}
+
+	ci_fresh_code_path_predictor_audit <- tribble(
+		~candidate_predictor, ~candidate_rule_if_true, ~fresh_counterexample, ~current_answer, ~best_next_control,
+		"requested hold duration",
+		"Rows with the same requested physical hold should land in the same latency phase.",
+		paste0(
+			"At requested 50ms, page.keyboard is tap-like at 250ms (",
+			format_fresh_ms(fresh_delta_value("page.keyboard", 50, 250, "latency_minus_tap_p50_ms")),
+			" versus tap), while locator.type is slow (",
+			format_fresh_ms(fresh_delta_value("locator.type", 50, 250, "latency_minus_tap_p50_ms")),
+			") and locator.press(noWaitAfter) is also slow (",
+			format_fresh_ms(fresh_delta_value("locator.press noWaitAfter", 50, 250, "latency_minus_tap_p50_ms")),
+			")."
+		),
+		"Rejected as a global predictor. Hold duration is meaningful only inside an API family.",
+		"Interleave hold durations within each API/delay if the product question requires a best short-hold value.",
+		"observed down-to-up hold",
+		"Rows with similar realized keydown-to-keyup duration should land in the same latency phase.",
+		paste0(
+			"page.keyboard 50ms is tap-like even though it realizes ",
+			format_fresh_ms(fresh_summary_value("page.keyboard", 50, 500, "observed_keydown_to_keyup_p50_ms")),
+			", while locator.type 75ms is slow at a nearby ",
+			format_fresh_ms(fresh_summary_value("locator.type", 75, 500, "observed_keydown_to_keyup_p50_ms")),
+			". locator.press 100ms is tap-like at ",
+			format_fresh_ms(fresh_summary_value("locator.press", 100, 500, "observed_keydown_to_keyup_p50_ms")),
+			"."
+		),
+		"Rejected as a single threshold. The same observed-hold band contains tap-like, mixed, and slow rows.",
+		"Do not tune a universal physical-hold threshold from these data.",
+		"post-keyup wait",
+		"Rows with the same configured wait after keyup should land in the same latency phase.",
+		paste0(
+			"At delay 500ms and requested hold 50ms, page.keyboard and locator.type both have a configured ",
+			format_fresh_ms(fresh_summary_value("page.keyboard", 50, 500, "post_keyup_wait_ms")),
+			" post-keyup wait; page.keyboard is ",
+			format_fresh_ms(fresh_delta_value("page.keyboard", 50, 500, "latency_minus_tap_p50_ms")),
+			" versus tap, while locator.type is ",
+			format_fresh_ms(fresh_delta_value("locator.type", 50, 500, "latency_minus_tap_p50_ms")),
+			"."
+		),
+		"Rejected. Ordinary waiting after keyup is not enough to predict the phase.",
+		"Further post-keyup work should focus on browser/runtime checkpoints rather than elapsed wait time.",
+		"one-call keyboard.press path",
+		"The shared low-level keyboard.press routine should determine the phase.",
+		paste0(
+			"locator.type and locator.press(noWaitAfter) both use keyboard.press internally and match at 50ms/75ms, but ordinary locator.press uses the same routine plus the press epilogue and stays tap-like: at 75ms/500ms, noWaitAfter is ",
+			format_fresh_ms(fresh_delta_value("locator.press noWaitAfter", 75, 500, "latency_minus_tap_p50_ms")),
+			" versus tap, while ordinary press is ",
+			format_fresh_ms(fresh_delta_value("locator.press", 75, 500, "latency_minus_tap_p50_ms")),
+			"."
+		),
+		"Partly rejected. The key routine matters less than the automation work around it.",
+		"Use ordinary locator.press only as a checkpoint control, not as a model of pressSequentially/type.",
+		"locator focus/check path without press epilogue",
+		"Per-key locator focus/checks, when not followed by the press epilogue, should behave like locator.type.",
+		paste0(
+			"This is the best current local rule: locator.type and locator.press(noWaitAfter) are within ",
+			format_fresh_ms(abs(fresh_delta_value("locator.press noWaitAfter", 75, 1000, "latency_p50_ms") - fresh_delta_value("locator.type", 75, 1000, "latency_p50_ms"))),
+			" at 75ms/1000ms and within ",
+			format_fresh_ms(abs(fresh_delta_value("locator.press noWaitAfter", 50, 250, "latency_p50_ms") - fresh_delta_value("locator.type", 50, 250, "latency_p50_ms"))),
+			" at 50ms/250ms."
+		),
+		"Supported for 50ms/75ms. It does not explain page.keyboard's separate 75ms/100ms slow band.",
+		"Run page.keyboard with a per-key locator.focus/evaluate checkpoint, and run page.keyboard.press({ delay }) plus post-keyup wait, to split focus/check work from explicit down/up timing.",
+		"locator.press wait-for-signals epilogue",
+		"The press epilogue should move locator.press away from the locator.type/noWaitAfter band.",
+		paste0(
+			"At 50ms, removing the epilogue raises ordinary locator.press by a median ",
+			format_fresh_ms(median(
+				(ci_fresh_code_path_runs %>% filter(input_mode == "50ms locator.press noWaitAfter hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)) -
+					(ci_fresh_code_path_runs %>% filter(input_mode == "50ms locator.press hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)),
+				na.rm = TRUE
+			)),
+			" in round-paired q50s; at 75ms the paired median is ",
+			format_fresh_ms(median(
+				(ci_fresh_code_path_runs %>% filter(input_mode == "75ms locator.press noWaitAfter hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)) -
+					(ci_fresh_code_path_runs %>% filter(input_mode == "75ms locator.press hold") %>% arrange(delay_ms, round) %>% pull(reported_q50_ms)),
+				na.rm = TRUE
+			)),
+			"."
+		),
+		"Supported. This closes why ordinary locator.press is not a valid pressSequentially/type proxy.",
+		"No further local run needed unless Playwright changes this implementation.",
+		"chronological drift",
+		"Later runs should all move in the same direction if machine drift explains the matrix.",
+		"Ordinary locator.press ran late and returned to tap-like, then the clean noWaitAfter sequence ran later and moved 50ms/75ms back into the slow locator.type band.",
+		"Rejected as the primary explanation for the API split.",
+		"Only repeat if absolute p50s, rather than the API-family sign, become the decision variable."
+	)
+	write_csv(ci_fresh_code_path_predictor_audit, ci_fresh_code_path_predictor_audit_path)
 
 	ci_fresh_code_path_plot <- ci_fresh_code_path_summary %>%
 		filter(delay_ms %in% c(250, 500, 1000), input_api != "page.keyboard.type") %>%
@@ -13902,7 +14020,8 @@ if (all(file.exists(react_render_boundary_inputs))) {
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Current Typing has 0ms extra post-setup wait; repeated CI-comparable and exact-spec runs did not show retained-q50 stability gains from adding wait.", "Whether a different CI image shifts absolute numbers, not whether this local knob can speed up current Typing.", "No more Typing startup-wait runs unless the CI image or spec shape changes.",
-	"Pattern-loading wait", "CI engineering", 4, 3, 4, "validate before change", "Local exact short-wait data says 500ms preserves the 1000ms q50 band while saving wall time; 0ms moves resource work into the measured interval.", "Whether 500ms or a readiness predicate is stable across CI, macOS versions, and containers.", "Prototype an explicit pattern-readiness predicate or validate 500ms in CI/mac/container before changing the shared wait.",
+	"Pattern-loading wait", "CI engineering", 4, 3, 4, "validate before change", "Local exact short-wait data rejects 0/100ms, treats 250ms as only a predicate lower-bound signal, and makes 500ms the best fixed fallback; source audit says the valid semantic predicate is getBlockPatterns readiness before Design / Transform, with preview rendering still measured.", "Whether the getBlockPatterns predicate or 500ms fallback is stable across CI, macOS versions, and containers.", "Prototype the getBlockPatterns readiness predicate in the exact spec, with a timeout/fallback, then validate against 500ms and 1000ms in CI/mac/container.",
+	"Input API phase boundary", "CI engineering", 4, 2, 3, "targeted follow-up only", "The fresh matrix rejects requested hold, observed hold, post-keyup wait, and chronology as single predictors; locator.type and locator.press(noWaitAfter) are the same family at 50ms/75ms, while ordinary locator.press is tap-like because of the press epilogue.", "The smaller page.keyboard versus locator.type split: explicit down/up timing, per-key locator focus/check work, or their interaction with editor phase.", "Only run a compact page.keyboard.press plus per-key locator-focus/evaluate control if the CI implementation choice depends on this boundary.",
 	"Low-risk selector guards", "product optimization", 4, 3, 4, "prototype first", "Source feasibility leaves pattern override as the clear first local patch; heading is a shared/global signal problem, not a simple local guard.", "Actual behavior-test coverage and measured win after implementation.", "Implement the pattern-override selected-only split with focused behavior tests; then prototype non-edited block-provider and inner-block structural invalidation.",
 	"Store subscriber partition", "product optimization", 3, 4, 5, "research after local guards", "The marker changes only blocks.isPersistentChange; audited hot selectors do not read it, but useBlockSync needs the persistence transition.", "Whether @wordpress/data/core-block-editor can expose a persistence-aware side channel without breaking existing useSelect semantics.", "After local guards, prototype persistence-aware subscriber partitioning while preserving useBlockSync and isLastBlockChangePersistent consumers.",
 	"React render ownership", "product optimization", 5, 3, 2, "secondary optimization", "Boundary audit bounds renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering as secondary contributors.", "Which components own the smaller after-input or whole-cycle cost.", "Use React profiler only for after-input optimization ownership, not as the primary 1000ms-cliff mechanism.",
@@ -13930,6 +14049,7 @@ open_question_next_instrumentation_matrix <- tribble(
 			levels = c(
 				"closed locally",
 				"validate before change",
+				"targeted follow-up only",
 				"prototype first",
 				"research after local guards",
 				"secondary optimization",
@@ -14008,6 +14128,7 @@ save_plot(
 			values = c(
 				"closed locally" = 16,
 				"validate before change" = 17,
+				"targeted follow-up only" = 13,
 				"prototype first" = 15,
 				"research after local guards" = 3,
 				"secondary optimization" = 7,
@@ -14114,13 +14235,163 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 		file.path(data_dir, "typing-delay-pattern-readiness-decision-audit.csv")
 	)
 
+	if (file.exists(site_pattern_short_wait_runs_path) && file.exists(site_pattern_readiness_probe_samples_path)) {
+		pattern_short_wait_runs_existing <- read_csv(site_pattern_short_wait_runs_path, show_col_types = FALSE)
+		pattern_probe_samples_existing <- read_csv(site_pattern_readiness_probe_samples_path, show_col_types = FALSE)
+
+		pattern_baseline_q50_values <- pattern_short_wait_runs_existing %>%
+			filter(measurement_idle_wait_ms == 1000) %>%
+			pull(p50_ms)
+
+		pattern_bootstrap_median_delta <- function(values, baseline_values, seed_offset) {
+			if (length(values) == 0 || length(baseline_values) == 0) {
+				return(tibble(
+					bootstrap_delta_vs_1000_p025_ms = NA_real_,
+					bootstrap_delta_vs_1000_median_ms = NA_real_,
+					bootstrap_delta_vs_1000_p975_ms = NA_real_
+				))
+			}
+
+			set.seed(77896 + seed_offset)
+			deltas <- replicate(
+				20000,
+				median(sample(values, length(values), replace = TRUE), na.rm = TRUE) -
+					median(sample(baseline_values, length(baseline_values), replace = TRUE), na.rm = TRUE)
+			)
+			tibble(
+				bootstrap_delta_vs_1000_p025_ms = unname(quantile(deltas, 0.025, na.rm = TRUE)),
+				bootstrap_delta_vs_1000_median_ms = median(deltas, na.rm = TRUE),
+				bootstrap_delta_vs_1000_p975_ms = unname(quantile(deltas, 0.975, na.rm = TRUE))
+			)
+		}
+
+		pattern_baseline_stats <- tibble(
+			baseline_median_q50_ms = median(pattern_baseline_q50_values, na.rm = TRUE),
+			baseline_min_q50_ms = min(pattern_baseline_q50_values, na.rm = TRUE),
+			baseline_max_q50_ms = max(pattern_baseline_q50_values, na.rm = TRUE),
+			baseline_run_to_run_q50_sd_ms = sd(pattern_baseline_q50_values, na.rm = TRUE)
+		)
+
+		pattern_probe_boundary_by_wait <- pattern_probe_samples_existing %>%
+			mutate(
+				wait_resource_plateau = wait_resource_delta >= 18,
+				no_active_requests_at_start = activeRequestsAtStart == 0,
+				low_measurement_resources = measurement_resource_delta <= 8,
+				readiness_boundary_hit = wait_resource_plateau &
+					no_active_requests_at_start &
+					low_measurement_resources
+			) %>%
+			group_by(waitMs) %>%
+			summarise(
+				probe_samples = n(),
+				probe_readiness_hits = sum(readiness_boundary_hit),
+				probe_readiness_misses = probe_samples - probe_readiness_hits,
+				probe_active_requests_at_start_values = paste(activeRequestsAtStart, collapse = ";"),
+				probe_wait_resource_delta_values = paste(wait_resource_delta, collapse = ";"),
+				probe_measurement_resource_delta_values = paste(measurement_resource_delta, collapse = ";"),
+				.groups = "drop"
+			)
+
+		pattern_readiness_risk_audit <- pattern_short_wait_runs_existing %>%
+			group_by(measurement_idle_wait_ms) %>%
+			summarise(
+				exact_runs = n(),
+				run_q50_values_ms = paste(sprintf("%.1f", p50_ms), collapse = ", "),
+				run_q50_values = list(p50_ms),
+				median_reported_q50_ms = median(p50_ms, na.rm = TRUE),
+				min_reported_q50_ms = min(p50_ms, na.rm = TRUE),
+				max_reported_q50_ms = max(p50_ms, na.rm = TRUE),
+				run_to_run_q50_sd_ms = sd(p50_ms, na.rm = TRUE),
+				.groups = "drop"
+			) %>%
+			mutate(
+				waitMs = measurement_idle_wait_ms,
+				bootstrap = map2(
+					run_q50_values,
+					row_number(),
+					~ pattern_bootstrap_median_delta(.x, pattern_baseline_q50_values, .y)
+				)
+			) %>%
+			unnest(bootstrap) %>%
+			select(-run_q50_values) %>%
+			mutate(.join_key = 1) %>%
+			left_join(pattern_baseline_stats %>% mutate(.join_key = 1), by = ".join_key") %>%
+			select(-.join_key) %>%
+			left_join(pattern_probe_boundary_by_wait, by = "waitMs") %>%
+			mutate(
+				delta_vs_1000_median_q50_ms = median_reported_q50_ms - baseline_median_q50_ms,
+				empirical_range_overlaps_1000_range =
+					min_reported_q50_ms <= baseline_max_q50_ms &
+					max_reported_q50_ms >= baseline_min_q50_ms,
+				empirical_range_disjoint_slower_than_1000 =
+					min_reported_q50_ms > baseline_max_q50_ms,
+				runs_above_1000_median = map2_int(
+					str_split(run_q50_values_ms, ", "),
+					baseline_median_q50_ms,
+					~ sum(as.numeric(.x) > .y)
+				),
+				runs_above_1000_max = map2_int(
+					str_split(run_q50_values_ms, ", "),
+					baseline_max_q50_ms,
+					~ sum(as.numeric(.x) > .y)
+				),
+				q50_sd_ratio_vs_1000 = run_to_run_q50_sd_ms / baseline_run_to_run_q50_sd_ms,
+				open_question_status = case_when(
+					waitMs %in% c(0, 100) ~ "closed: do not use as fixed wait",
+					waitMs == 250 ~ "open: predicate lower-bound only",
+					waitMs == 500 ~ "open: best local fixed fallback",
+					waitMs == 750 ~ "closed: no advantage over 500ms",
+					waitMs == 1000 ~ "closed: current safe baseline",
+					TRUE ~ "diagnostic only"
+				),
+				deeper_interpretation = case_when(
+					waitMs == 0 ~ "All exact q50s are slower than the 1000ms empirical range and every probe sample misses the readiness boundary.",
+					waitMs == 100 ~ "All exact q50s are slower than the 1000ms empirical range and every probe sample misses the readiness boundary.",
+					waitMs == 250 ~ "The probe boundary is hit, but one exact run is above the 1000ms empirical max and run-to-run q50 sd is the highest settled value.",
+					waitMs == 500 ~ "All exact q50s stay inside or below the 1000ms empirical range with the lowest settled run-to-run q50 sd.",
+					waitMs == 750 ~ "It is settled locally but slower than 500ms and saves less runtime, so it does not answer a remaining decision question.",
+					waitMs == 1000 ~ "This is the existing safe boundary; the remaining question is whether a semantic predicate can replace the blind sleep.",
+					TRUE ~ "Diagnostic row only."
+				)
+			) %>%
+			select(
+				waitMs,
+				exact_runs,
+				run_q50_values_ms,
+				median_reported_q50_ms,
+				min_reported_q50_ms,
+				max_reported_q50_ms,
+				run_to_run_q50_sd_ms,
+				delta_vs_1000_median_q50_ms,
+				bootstrap_delta_vs_1000_p025_ms,
+				bootstrap_delta_vs_1000_median_ms,
+				bootstrap_delta_vs_1000_p975_ms,
+				empirical_range_overlaps_1000_range,
+				empirical_range_disjoint_slower_than_1000,
+				runs_above_1000_median,
+				runs_above_1000_max,
+				q50_sd_ratio_vs_1000,
+				probe_samples,
+				probe_readiness_hits,
+				probe_readiness_misses,
+				probe_active_requests_at_start_values,
+				probe_wait_resource_delta_values,
+				probe_measurement_resource_delta_values,
+				open_question_status,
+				deeper_interpretation
+			) %>%
+			arrange(waitMs)
+
+		write_csv(pattern_readiness_risk_audit, site_pattern_readiness_risk_audit_path)
+	}
+
 	pattern_readiness_predicate_candidates <- tribble(
 		~candidate, ~classification, ~evidence, ~risk, ~recommended_action,
 		"Fixed 0ms or 100ms wait", "reject", "Probe boundary hit rate is 0%; exact q50 is 96-146ms slower than the 1000ms baseline.", "Moves background pattern/resource work into the measured interval.", "Do not use for site-editor pattern loading.",
 		"Fixed 250ms wait", "possible but volatile", "Probe boundary hit rate is 100% and exact q50 matches the 1000ms band, but q50 sd is 35.6ms.", "May sit too close to the readiness boundary on slower CI hosts.", "Validate in CI/container before considering.",
 		"Fixed 500ms wait", "best fixed local candidate", "Probe boundary hit rate is 100%; exact q50 is 10.3ms lower than the 1000ms baseline with lower q50 sd.", "Still a blind sleep and may not track readiness on other hosts.", "Use only after CI/mac/container validation, or as a fallback cap for a predicate.",
 		"Current fixed 1000ms wait", "safe baseline", "Probe boundary hit rate is 100% and exact q50 is in the settled band.", "Pays 10s more than 500ms for this two-branch metric.", "Keep until a predicate or validated shorter fixed wait replaces it.",
-		"State predicate before Design / Transform click", "preferred prototype", "The intended boundary is background pattern data readiness, not preview-canvas rendering.", "Needs a correct semantic predicate and timeout fallback.", "Wait for pattern/category resolution before the user action; keep preview rendering inside measurement.",
+		"State predicate before Design / Transform click", "preferred prototype", "The intended boundary is block-pattern data readiness, not preview-canvas rendering.", "Needs a correct semantic predicate and timeout fallback.", "Wait for block-pattern resolution before the user action; keep preview rendering inside measurement.",
 		"Resource quiet window only", "diagnostic support", "Resource counts explain the local boundary, but are not a stable product contract.", "Hard-codes host/network behavior and can mask the measured workload.", "Use only as a guardrail or validation signal, not the primary predicate.",
 		"Wait for preview canvases", "invalid predicate", "The current measured workload includes named preview canvases rendering after the click.", "Would remove the actual pattern-loading work from the benchmark.", "Do not use as the readiness predicate."
 	)
@@ -14128,6 +14399,109 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 	write_csv(
 		pattern_readiness_predicate_candidates,
 		file.path(data_dir, "typing-delay-pattern-readiness-predicate-candidates.csv")
+	)
+
+	pattern_readiness_source_predicate_audit <- tribble(
+		~predicate_component, ~classification, ~semantic_fit_score, ~measurement_boundary_risk_score, ~implementation_risk_score, ~evidence_strength_score, ~source_evidence, ~recommended_check,
+		"Block-pattern REST resolution", "primary predicate", 5, 1, 2, 5, "core-data getBlockPatterns resolves /wp/v2/block-patterns/patterns; PostTransformPanel useAvailablePatterns reads getBlockPatterns before the Design panel opens.", "Before the Design / Transform click, wait for core hasFinishedResolution('getBlockPatterns') and a non-empty compatible pattern list.",
+		"Design panel open event", "measurement start boundary", 5, 1, 1, 5, "site-editor.spec.js starts the timer before clicking Design / Transform, so the click and preview rendering are inside the measured interval.", "Keep this as the start of the measured user action, not as a readiness predicate.",
+		"Pattern preview canvases", "invalid pre-wait", 1, 5, 3, 5, "site-editor.spec.js waits for named option preview canvases after the click; BlockPatternsList renders BlockPreview.Async children only when the PanelBody is opened.", "Do not wait for preview canvases before starting the metric.",
+		"core/pattern placeholder replacement", "invalid pre-wait", 1, 5, 3, 5, "site-editor.spec.js waits until [data-type='core/pattern'] is gone after the click.", "Do not wait for placeholder replacement before starting the metric.",
+		"Block-pattern category resolution", "optional guardrail", 2, 1, 2, 3, "use-block-editor-settings resolves getBlockPatternCategories for broader editor settings, but PostTransformPanel's template list uses patterns, current theme, and editor settings rather than categories.", "Only include if the goal is to preserve broad editor background readiness, not because this measured path needs it.",
+		"User pattern category resolution", "not needed for this path", 1, 1, 3, 3, "use-block-editor-settings also resolves getUserPatternCategories, but the current site-editor Transform/Design template path is theme/template-pattern based.", "Do not make this part of the primary predicate for this benchmark.",
+		"Resource quiet window", "diagnostic guardrail", 2, 3, 3, 4, "The local probe shows 19 wait-side resources before the q50 band settles, but resource counts are host- and cache-dependent.", "Use as an optional short guardrail after the semantic predicate or as validation telemetry.",
+		"Fixed 500ms sleep", "fallback", 2, 2, 1, 4, "The exact local sweep keeps the 1000ms q50 band and lowers q50 sd, but it is still a blind sleep.", "Use only as a fallback cap or after CI/mac/container validation.",
+		"Fixed 1000ms sleep", "current baseline", 1, 1, 1, 4, "Current benchmark behavior; preserves the existing boundary at the cost of 10s versus 500ms in the two-branch pattern metric.", "Keep until the semantic predicate or a validated shorter fixed wait replaces it."
+	) %>%
+		mutate(
+			predicate_component = factor(predicate_component, levels = predicate_component),
+			classification = factor(
+				classification,
+				levels = c(
+					"primary predicate",
+					"measurement start boundary",
+					"optional guardrail",
+					"diagnostic guardrail",
+					"fallback",
+					"current baseline",
+					"not needed for this path",
+					"invalid pre-wait"
+				)
+			),
+			label = str_wrap(predicate_component, 16),
+			plot_x = semantic_fit_score + case_when(
+				predicate_component == "core/pattern placeholder replacement" ~ 0.18,
+				predicate_component == "Fixed 1000ms sleep" ~ -0.16,
+				TRUE ~ 0
+			),
+			plot_y = measurement_boundary_risk_score + case_when(
+				predicate_component == "core/pattern placeholder replacement" ~ -0.18,
+				predicate_component == "Fixed 1000ms sleep" ~ 0.16,
+				TRUE ~ 0
+			)
+		)
+
+	write_csv(
+		pattern_readiness_source_predicate_audit,
+		file.path(data_dir, "typing-delay-pattern-readiness-source-predicate-audit.csv")
+	)
+
+	save_plot(
+		ggplot(
+			pattern_readiness_source_predicate_audit,
+			aes(
+				plot_x,
+				plot_y,
+				color = classification,
+				shape = classification,
+				size = evidence_strength_score
+			)
+		) +
+			geom_point(alpha = 0.9) +
+			geom_text(
+				aes(label = label),
+				size = 3,
+				color = "grey20",
+				nudge_y = 0.2,
+				lineheight = 0.9,
+				show.legend = FALSE
+			) +
+			scale_x_continuous(
+				breaks = 1:5,
+				limits = c(0.6, 5.4),
+				labels = c("1" = "poor", "2" = "low", "3" = "partial", "4" = "good", "5" = "direct")
+			) +
+			scale_y_continuous(
+				breaks = 1:5,
+				limits = c(0.6, 5.65),
+				labels = c("1" = "low", "2" = "some", "3" = "medium", "4" = "high", "5" = "invalidates metric")
+			) +
+			scale_color_brewer(type = "qual", palette = "Set2", name = "Predicate role") +
+			scale_shape_manual(
+				values = c(
+					"primary predicate" = 16,
+					"measurement start boundary" = 18,
+					"optional guardrail" = 15,
+					"diagnostic guardrail" = 17,
+					"fallback" = 7,
+					"current baseline" = 8,
+					"not needed for this path" = 3,
+					"invalid pre-wait" = 4
+				),
+				drop = FALSE
+			) +
+			scale_size_area(max_size = 8, breaks = 1:5, name = "Source evidence") +
+			labs(
+				title = "Only block-pattern readiness is a valid pre-click predicate",
+				subtitle = "Source audit of candidates for replacing the site-editor pattern-loading fixed sleep",
+				x = "Semantic fit for pre-measurement readiness",
+				y = "Risk of removing measured pattern-loading work",
+				shape = "Predicate role"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"150-site-pattern-readiness-source-predicate-audit.png",
+		width = 12.5,
+		height = 8.2
 	)
 
 	pattern_wait_decision_plot <- pattern_wait_decision_audit %>%

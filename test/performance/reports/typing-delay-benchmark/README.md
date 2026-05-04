@@ -710,6 +710,11 @@ The R script derives:
     short-wait q50s with the readiness probe.
 -   `data/typing-delay-pattern-readiness-predicate-candidates.csv`: predicate
     candidate matrix for replacing the blind pattern-loading sleep.
+-   `data/typing-delay-pattern-readiness-source-predicate-audit.csv`: source-audited
+    readiness predicate matrix for the site-editor pattern-loading metric.
+-   `data/typing-delay-pattern-readiness-risk-audit.csv`: per-run q50 range,
+    bootstrap, and probe-hit risk audit for the remaining site-editor
+    pattern-loading wait choices.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -740,7 +745,8 @@ The R script derives:
     page-keyboard fixed hold, locator `type()`, locator `press()`, and
     locator `press()` with `noWaitAfter` input paths at `50ms`, `75ms`, and
     `100ms` requested holds, including paired-differences and tap-relative API
-    delta tables.
+    delta tables. The predictor-audit table records which simple explanations
+    still fail after the clean noWaitAfter rerun.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -1691,13 +1697,17 @@ for the named pattern preview canvases to render and for `core/pattern`
 placeholders to be replaced. A replacement predicate should preserve that
 measurement boundary: wait for background pattern data/readiness before the user
 action, but do not pre-wait for the four preview canvases, because those previews
-are the measured workload. The source-side predicate should be based on
-Gutenberg state, for example `core` pattern and category resolution
-(`getBlockPatterns`, `getBlockPatternCategories`, and
-`hasFinishedResolution( 'getBlockPatterns' )`), plus a short network/resource
-quiet window if CI needs to preserve the current "after background readiness"
-semantics. The probe's "19 resources" threshold is evidence for the local
-boundary, not a value to bake into the benchmark.
+are the measured workload. The source-side predicate should be based primarily
+on Gutenberg's `core` block-pattern resolution: `getBlockPatterns` resolves
+`/wp/v2/block-patterns/patterns`, and `PostTransformPanel`'s
+`useAvailablePatterns` reads those resolved patterns before the Design panel is
+opened. Pattern categories are background editor setup, but this audited
+Transform/Design template path does not use them to build the measured template
+list, so category readiness is an optional guardrail, not the primary predicate.
+A short resource-quiet window can be kept as validation telemetry if CI needs to
+preserve the current "after background readiness" semantics. The probe's "19
+resources" threshold is evidence for the local boundary, not a value to bake
+into the benchmark.
 
 I then turned that into an explicit fixed-wait decision audit. This graph joins
 the exact short-wait spec result to the diagnostic readiness probe and plots the
@@ -1715,6 +1725,15 @@ sd, so a large point means a more volatile local estimate.
 | `750ms` | settled | `753.8ms` | `20.1ms` | `5s` | settled but not better |
 | `1000ms` | settled | `730.3ms` | `27.6ms` | `0s` | current baseline |
 
+The per-run risk audit keeps the variance visible instead of deciding from
+medians alone (`data/typing-delay-pattern-readiness-risk-audit.csv`). `0ms` and
+`100ms` are not borderline: every exact run is slower than the `1000ms`
+empirical range and every probe sample misses the readiness boundary. `250ms`
+hits the probe boundary, but one exact run is above the `1000ms` max and its
+q50 sd is the highest settled value. `500ms` is the only shorter fixed wait
+where all exact q50s stay inside or below the `1000ms` range while also having
+the lowest settled q50 sd.
+
 The stricter predicate audit is:
 
 | Candidate | Classification | Reason |
@@ -1727,11 +1746,45 @@ The stricter predicate audit is:
 | Resource quiet window only | diagnostic support | Resource counts explain this local boundary, but are not a product contract. |
 | Wait for preview canvases | invalid predicate | The current benchmark measures the preview canvases rendering after the click, so waiting for them first would remove the measured workload. |
 
+I then audited that predicate against the current source path. `PanelBody`
+renders children only after it is opened, so the pattern preview canvases stay
+inside the measured interval. `PostTransformPanel` calls `useAvailablePatterns`
+before the panel opens; that hook reads `coreStore.getBlockPatterns()`, filters
+compatible theme/template patterns, and parses their `content` into blocks. The
+source-audited predicate is therefore: before clicking Design / Transform, wait
+for `core.hasFinishedResolution( 'getBlockPatterns' )` and for a compatible
+non-empty pattern list. Do not wait for preview canvases or for
+`core/pattern` placeholder replacement, because those are the work the metric is
+currently measuring.
+
+![Site-editor pattern readiness source predicate audit](figures/150-site-pattern-readiness-source-predicate-audit.png)
+
+| Component | Role | Why |
+| --------- | ---- | --- |
+| `getBlockPatterns` resolution | primary predicate | It is the data dependency used by `useAvailablePatterns` before the Design panel opens. |
+| Design / Transform click | measurement start boundary | The spec starts timing before this click. |
+| Preview canvases and `core/pattern` replacement | invalid pre-waits | The spec waits for them after the click, so pre-waiting them would remove the measured workload. |
+| Pattern categories | optional guardrail | They are resolved for broader editor settings, but this path does not use them to build the measured template list. |
+| Resource quiet window | diagnostic guardrail | It explains the local boundary but is not a stable product contract. |
+| Fixed `500ms` | fallback | Best local fixed wait if the suite keeps a sleep, but still needs CI/mac/container validation. |
+
+One more pass over the run-level q50s sharpens what is still open. The bootstrap
+intervals below resample reported run q50s, not individual retained samples, so
+they are a small-sample stability check rather than a host-portability proof.
+
+| Choice | Deeper evidence | Status |
+| ------ | --------------- | ------ |
+| Fixed `0ms` / `100ms` | Their exact q50 ranges, `838.3-899.1ms` and `818.8-880.5ms`, are disjoint above the `1000ms` range (`714.7-805.0ms`); bootstrap median deltas are positive (`+105..+175ms` and `+79..+150ms`), and both miss the probe boundary `4/4` times. | closed: do not use as a fixed wait |
+| Fixed `250ms` | The probe boundary is hit `4/4` times and the median matches `1000ms`, but the exact q50 range is wide (`696.6-817.8ms`), one run is above the `1000ms` max, the bootstrap delta spans `-19.5..+28.3ms`, and q50 sd is `1.29x` the `1000ms` baseline. | open only as a predicate lower-bound signal |
+| Fixed `500ms` | All exact q50s stay inside or below the `1000ms` range (`699.2-755.0ms`), no run is above the `1000ms` max, the bootstrap delta spans `-29.6..+12.1ms`, and q50 sd is `0.62x` the baseline. | best local fixed fallback, still needs CI/mac/container validation |
+| Fixed `750ms` | It is locally settled, but the bootstrap delta is positive (`+5.1..+59.2ms`) and it saves only `5s` versus `10s` for `500ms`. | closed: no advantage over `500ms` |
+| Resource quietness | The `2000ms` probe still has active requests at measurement start in `2/4` samples even though wait-side resources are at the plateau. | telemetry/guardrail only, not the primary predicate |
+
 This narrows the site-editor action item. `500ms` is the best local fixed-wait
 candidate if the benchmark keeps a sleep, but the better change is a semantic
-readiness predicate before the Design / Transform click. `250ms` is useful as a
-lower-bound signal for such a predicate, not as a recommended blind replacement
-without CI/mac/container validation.
+`getBlockPatterns` readiness predicate before the Design / Transform click.
+`250ms` is useful as a lower-bound signal for such a predicate, not as a
+recommended blind replacement without CI/mac/container validation.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
@@ -2441,6 +2494,33 @@ not a contradiction: `locator.type()` `100ms` is also tap-like at `500ms` /
 automation-checkpoint answer is narrow but useful: ordinary `locator.press()` is
 not a valid model for CI's `pressSequentially()` / `type()` path because it adds
 a per-key checkpoint that can hide the slow phase.
+
+A predictor audit makes the remaining open question smaller. The derived table
+is in `data/typing-delay-ci-fresh-code-path-predictor-audit.csv`; the important
+rows are:
+
+| Candidate predictor | Current answer | Counterexample or support |
+| ------------------- | -------------- | ------------------------- |
+| Requested hold duration | rejected globally | At requested `50ms`, page-keyboard is tap-like at `250ms` (`+0.0ms` versus tap), while `locator.type()` and `locator.press(noWaitAfter)` are both slow (`+3.4ms`). |
+| Observed down-to-up hold | rejected as one threshold | page-keyboard `50ms` is tap-like with a realized `97.7ms` hold at `500ms`, while `locator.type()` `75ms` is slow with a nearby `93.5ms` realized hold; ordinary `locator.press()` `100ms` is tap-like at `114.3ms`. |
+| Configured post-keyup wait | rejected | At `500ms` delay and requested `50ms` hold, page-keyboard and `locator.type()` both have a configured `450ms` post-keyup wait; page-keyboard is `-0.4ms` versus tap while `locator.type()` is `+2.8ms`. |
+| One-call `keyboard.press()` routine | not sufficient | `locator.type()` and `locator.press(noWaitAfter)` both use `keyboard.press()` internally and match at `50ms` / `75ms`, but ordinary `locator.press()` uses the same routine plus the press epilogue and stays tap-like. |
+| Locator focus/check path without press epilogue | best current local rule for locator APIs | `locator.type()` and `locator.press(noWaitAfter)` are within `0.0ms` at `75ms` / `1000ms` and within `0.1ms` at `50ms` / `250ms`. |
+| `locator.press()` wait-for-signals epilogue | supported | Removing it raises ordinary `locator.press()` by median `+3.4ms` at `50ms` and `+3.9ms` at `75ms` in round-paired q50s. |
+| Chronological drift | rejected as primary cause | Ordinary `locator.press()` ran late and returned to the tap-like band; the later clean noWaitAfter sequence moved `50ms` / `75ms` back into the slow `locator.type()` band. |
+
+That leaves one genuinely local harness question, not a general benchmark
+question: why does page-keyboard fixed hold have its own `75ms` / `100ms` slow
+band while `locator.type()` / `locator.press(noWaitAfter)` have a `50ms` /
+`75ms` slow band? The next cheap control, if this boundary matters for a CI
+change, is not another full sweep. It is a compact split: page-level
+`page.keyboard.press( 'x', { delay: hold } )` plus the same post-keyup wait,
+crossed with a page-keyboard mode that performs a per-key locator
+`focus()`/utility evaluation before the explicit `down()` / `up()`. That would
+separate explicit down/up timing from Playwright's per-key locator focus/check
+work. Until that control exists, the practical conclusion is to treat
+`pressSequentially()` as the `locator.type()` family and ordinary
+`locator.press()` as a checkpoint control only.
 
 The reused-editor result is also not explained by text accumulation or
 within-round placement. These code-path probes reuse one editor, so each later
@@ -7070,7 +7150,8 @@ The high-level split is:
 | Question | Current answer | Next useful work |
 | -------- | -------------- | ---------------- |
 | Typing startup wait | locally closed; current Typing has no extra post-setup wait and added waits do not improve retained q50 stability | no more local startup-wait runs unless CI/spec shape changes |
-| Pattern-loading wait | bounded locally; `500ms` matches the `1000ms` q50 band while `0ms` changes the measured work | CI/mac/container validation or an explicit readiness predicate |
+| Pattern-loading wait | bounded locally; `0/100ms` are rejected, `250ms` is only a predicate lower-bound signal, `500ms` is the best local fixed fallback, and source audit identifies `getBlockPatterns` readiness before Design / Transform as the valid semantic predicate | prototype that predicate with timeout/fallback, then validate against `500ms` and `1000ms` in CI/mac/container |
+| Input API phase boundary | bounded enough for CI choice; `pressSequentially()` belongs with `locator.type()`, and ordinary `locator.press()` is a checkpoint control | only run a compact `page.keyboard.press()` plus per-key locator-focus/evaluate split if the CI implementation depends on the page-keyboard versus `locator.type()` boundary |
 | Low-risk selector guards | bounded enough to prototype; source feasibility leaves pattern override as the first local patch, while heading needs a shared/global signal | implement the pattern-override selected-only split with focused behavior tests; then prototype block-provider and inner-block structural invalidation |
 | Store subscriber partition | partially bounded; promising but contract-sensitive | research after local guards, preserving `useBlockSync` and persistence consumers |
 | React render ownership | bounded as secondary, not primary cause | profiler only for after-input/whole-cycle ownership |
@@ -7105,9 +7186,11 @@ For CI:
 -   If the goal is "after rich text has persisted", wait on
     `isLastBlockChangePersistent()` explicitly and name the metric that way.
 -   For site-editor pattern loading, do not replace the current wait with `0ms`
-    or `100ms`. Prefer a semantic readiness predicate before the Design /
-    Transform click; if the suite keeps a fixed wait, `500ms` is the best local
-    candidate and still needs CI/mac/container validation.
+    or `100ms`. Prefer waiting for `getBlockPatterns` readiness before the
+    Design / Transform click while leaving preview canvases and `core/pattern`
+    replacement inside the measured interval; if the suite keeps a fixed wait,
+    `500ms` is the best local candidate and still needs CI/mac/container
+    validation.
 -   Store per-sample results and at least p50/p90/CV, not only averages.
 -   Keep trace-parser invariants: expected key groups, keydown count distribution,
     and event ordering.

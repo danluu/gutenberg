@@ -1,0 +1,22 @@
+predicate_component,classification,semantic_fit_score,measurement_boundary_risk_score,implementation_risk_score,evidence_strength_score,source_evidence,recommended_check,label,plot_x,plot_y
+Block-pattern REST resolution,primary predicate,5,1,2,5,core-data getBlockPatterns resolves /wp/v2/block-patterns/patterns; PostTransformPanel useAvailablePatterns reads getBlockPatterns before the Design panel opens.,"Before the Design / Transform click, wait for core hasFinishedResolution('getBlockPatterns') and a non-empty compatible pattern list.","Block-pattern
+REST resolution",5,1
+Design panel open event,measurement start boundary,5,1,1,5,"site-editor.spec.js starts the timer before clicking Design / Transform, so the click and preview rendering are inside the measured interval.","Keep this as the start of the measured user action, not as a readiness predicate.","Design panel
+open event",5,1
+Pattern preview canvases,invalid pre-wait,1,5,3,5,site-editor.spec.js waits for named option preview canvases after the click; BlockPatternsList renders BlockPreview.Async children only when the PanelBody is opened.,Do not wait for preview canvases before starting the metric.,"Pattern preview
+canvases",1,5
+core/pattern placeholder replacement,invalid pre-wait,1,5,3,5,site-editor.spec.js waits until [data-type='core/pattern'] is gone after the click.,Do not wait for placeholder replacement before starting the metric.,"core/pattern
+placeholder
+replacement",1.18,4.82
+Block-pattern category resolution,optional guardrail,2,1,2,3,"use-block-editor-settings resolves getBlockPatternCategories for broader editor settings, but PostTransformPanel's template list uses patterns, current theme, and editor settings rather than categories.","Only include if the goal is to preserve broad editor background readiness, not because this measured path needs it.","Block-pattern
+category
+resolution",2,1
+User pattern category resolution,not needed for this path,1,1,3,3,"use-block-editor-settings also resolves getUserPatternCategories, but the current site-editor Transform/Design template path is theme/template-pattern based.",Do not make this part of the primary predicate for this benchmark.,"User pattern
+category
+resolution",1,1
+Resource quiet window,diagnostic guardrail,2,3,3,4,"The local probe shows 19 wait-side resources before the q50 band settles, but resource counts are host- and cache-dependent.",Use as an optional short guardrail after the semantic predicate or as validation telemetry.,"Resource quiet
+window",2,3
+Fixed 500ms sleep,fallback,2,2,1,4,"The exact local sweep keeps the 1000ms q50 band and lowers q50 sd, but it is still a blind sleep.",Use only as a fallback cap or after CI/mac/container validation.,"Fixed 500ms
+sleep",2,2
+Fixed 1000ms sleep,current baseline,1,1,1,4,Current benchmark behavior; preserves the existing boundary at the cost of 10s versus 500ms in the two-branch pattern metric.,Keep until the semantic predicate or a validated shorter fixed wait replaces it.,"Fixed 1000ms
+sleep",0.84,1.16
