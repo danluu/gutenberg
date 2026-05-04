@@ -878,6 +878,9 @@ The R script derives:
 -   `data/typing-delay-next-local-selector-prototype-*.csv`: invalidation
     contract for the next local selector prototypes,
     `BlockListBlockProvider` and `useInnerBlocksProps`.
+-   `data/typing-delay-selector-prototype-store-signal-*.csv`: audit of
+    existing block-editor store signals and whether they are sufficient for the
+    next selector prototypes' skip decisions.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -5291,6 +5294,36 @@ from the block or an ancestor. Component-only memoization is not the interesting
 prototype for either row; the measured cost is the per-store-change selector
 work, so the prototype needs a dependency boundary that lets unrelated text
 updates reuse prior selected output.
+
+I then checked whether the block-editor store already exposes the right version
+signals for those boundaries. It mostly does not. The reducers already maintain
+the underlying state slices: `blocks.attributes`, `blocks.byClientId`,
+`blocks.order`, `blocks.parents`, `blocks.tree`, `selection`, `initialPosition`,
+`highlightedBlock`, `draggedBlocks`, `blockVisibility`, `settings`,
+`blockListSettings`, `blocks.blockEditingModes`, and
+`derivedBlockEditingModes`. But those are not exposed as stable per-client or
+per-root revision keys for skip decisions. The only obvious revision-like public
+counter I found is the list-view expand revision, and that is unrelated to these
+typed-window selectors.
+
+![Selector prototype store signal audit](figures/153-selector-prototype-store-signal-audit.png)
+
+| Boundary | Existing signal | Why it is not enough |
+| -------- | --------------- | -------------------- |
+| Provider own attributes | `blocks.attributes` plus `lastBlockAttributesChange` | useful fast path for the latest attribute action, but not a full contract; it resets on non-attribute actions and does not cover identity, structure, settings, or selection |
+| Provider identity/structure | `blocks.byClientId`, `blocks.order`, `blocks.parents`, `blocks.tree` | internal maps change on the right action families, but there is no exposed per-client/per-root revision key or affected set |
+| Provider selection/interaction | `selection`, `initialPosition`, highlighted/drag state, selection-enabled state | the prototype must invalidate selected blocks, ancestors, drag/overlay/highlight participants, and roots; no single existing signal encodes that set |
+| Provider editability/settings | block editing modes, derived modes, block-list settings, visibility, global settings | too many mixed client/root/global dependencies to collapse safely without split keys |
+| Inner blocks root drop-zone | `isZoomOut()` and `getSectionRootClientId()` | small enough to read directly, but still not a named ordinary-text skip key |
+| Inner blocks layout | `getBlockSettings( clientId, 'layout' )` | hardest local key: it can read current or ancestor attributes, global settings, and runtime filters, so an attributes-blind skip is unsafe |
+
+The practical result is that `lastBlockAttributesChange` can help identify the
+ordinary text-update case, but it is not the invalidation contract. A serious
+provider prototype either needs private revision/affected-set selectors or must
+keep a conservative recompute path for anything outside a tightly proven
+attribute-only action. For `useInnerBlocksProps`, the root drop-zone and
+identity/root pieces are smaller, but layout/default-layout cannot be skipped
+until inherited layout settings and filters are accounted for.
 
 I then pushed on the largest uncounted selector row: `BlockListItems`. The source
 audit makes the split sharper. `BlockListItems` does not read paragraph content

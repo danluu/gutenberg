@@ -14782,6 +14782,195 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			height = 7.2
 		)
 
+		selector_prototype_store_signal_audit <- tribble(
+			~prototype_owner, ~dependency_boundary, ~existing_store_signal, ~signal_scope, ~why_it_is_not_enough_by_itself, ~required_prototype_signal, ~sufficiency_score, ~risk_score, ~decision,
+			"BlockListBlockProvider",
+			"own attributes",
+			"`blocks.attributes` Map changes on `UPDATE_BLOCK_ATTRIBUTES`; `lastBlockAttributesChange` records the latest changed ids and attributes.",
+			"client attribute state plus latest action",
+			"`lastBlockAttributesChange` is only the latest attribute action and resets for non-attribute actions; the attributes Map has no exposed per-clientId version and reading it through `useSelect` still wakes every subscriber.",
+			"private per-clientId own-attributes revision, with latest-attribute-action fast path only as an optimization",
+			2,
+			5,
+			"partial fast path only",
+			"BlockListBlockProvider",
+			"block identity/name",
+			"`blocks.byClientId` and `blocks.tree` change on `UPDATE_BLOCK`, insert, replace, remove, and reset paths.",
+			"client identity and denormalized tree",
+			"Existing selectors return values, not a stable identity-version key for unrelated blocks; replacement/removal also has to invalidate descendants and public filter props.",
+			"per-clientId identity/tree revision, including replacement/removal invalidation",
+			2,
+			5,
+			"needs private revision",
+			"BlockListBlockProvider",
+			"selection and interaction",
+			"`selection`, `initialPosition`, `highlightedBlock`, `draggedBlocks`, spotlight/overlay-related state, and selection-enabled state change on their own action families.",
+			"global interaction state",
+			"Provider needs to invalidate selected blocks, ancestors of selected blocks, dragged/highlighted/overlay participants, and sometimes roots; there is no single existing selector that returns that affected set as a version.",
+			"selection/interaction revision plus affected-client/root set",
+			1,
+			5,
+			"needs affected-set design",
+			"BlockListBlockProvider",
+			"structure/root/section",
+			"`blocks.order`, `blocks.parents`, and `blocks.tree` change on insert, move, replace, remove, reset, and controlled-inner-block paths.",
+			"root order, parentage, and tree",
+			"Provider needs per-root structure invalidation plus section-parent and duplicate-block-name invalidation; the existing maps are internal and not packaged as a cheap dependency key.",
+			"root structural revision plus affected parent/section roots",
+			2,
+			4,
+			"needs private root revision",
+			"BlockListBlockProvider",
+			"editability/capability/settings",
+			"`blocks.blockEditingModes`, `derivedBlockEditingModes`, `blockListSettings`, `settings`, `blockVisibility`, and permission/capability selectors cover pieces of the result.",
+			"mixed client, root, and global state",
+			"The provider output combines client mode, root mode, template lock, edited content-only section, visibility, device, preview, and binding settings; no existing signal captures that combined invalidation safely.",
+			"separate editability/capability/settings/device revisions, or keep this part in the selectedProps selector until proven stable",
+			1,
+			5,
+			"needs split keys",
+			"useInnerBlocksProps",
+			"root drop-zone",
+			"`isZoomOut()` and `getSectionRootClientId()` read zoom level and section-root settings.",
+			"global/root editor state",
+			"This boundary is small and could be recomputed directly, but it still lacks a named revision key for ordinary text-update skip decisions.",
+			"zoom/section-root revision or direct read in a small root-only selector",
+			3,
+			3,
+			"usable small boundary",
+			"useInnerBlocksProps",
+			"identity/root/type",
+			"`getBlockName`, `getBlockRootClientId`, `getBlockType`, and block support selectors cover the needed values.",
+			"client identity plus blocks registry",
+			"Block replacement, transform, parent/root move, and block-type/support registration need to invalidate; existing selectors do not provide a cheap dependency key independent of recomputing the selector.",
+			"client identity/root revision plus block-type/support revision",
+			2,
+			4,
+			"needs private revision",
+			"useInnerBlocksProps",
+			"layout/default layout",
+			"`getBlockSettings( clientId, 'layout' )` reads current or ancestor attributes, global settings, and runtime filters.",
+			"client/ancestor attributes plus settings plus filters",
+			"An attributes-blind skip is unsafe because ancestor layout/settings attributes can change the child's default layout; filters also make a purely reducer-owned version incomplete.",
+			"layout-settings dependency key covering current block, ancestors, global settings, and filter invalidation policy",
+			1,
+			5,
+			"hardest local key",
+			"useInnerBlocksProps",
+			"editing/template/drop-zone",
+			"`getBlockEditingMode`, `getTemplateLock`, `isZoomOut`, and `getSectionRootClientId` cover the values.",
+			"client, parent/root, and global state",
+			"The values are available, but not as a single skip key; parent template lock and derived editing modes need parent/root invalidation.",
+			"editability/template/zoom revision keyed by client and parent root",
+			2,
+			5,
+			"needs parent/root key"
+		) %>%
+			mutate(
+				prototype_owner = factor(
+					prototype_owner,
+					levels = c("BlockListBlockProvider", "useInnerBlocksProps")
+				),
+				decision = factor(
+					decision,
+					levels = c(
+						"usable small boundary",
+						"partial fast path only",
+						"needs private revision",
+						"needs private root revision",
+						"needs parent/root key",
+						"needs split keys",
+						"needs affected-set design",
+						"hardest local key"
+					)
+				)
+			)
+
+		write_csv(
+			selector_prototype_store_signal_audit,
+			file.path(data_dir, "typing-delay-selector-prototype-store-signal-audit.csv")
+		)
+
+		selector_prototype_store_signal_summary <- selector_prototype_store_signal_audit %>%
+			group_by(prototype_owner) %>%
+			summarize(
+				boundaries = n(),
+				usable_or_partial_boundaries = sum(sufficiency_score >= 2),
+				insufficient_boundaries = sum(sufficiency_score < 2),
+				max_risk_score = max(risk_score),
+				key_blocker = case_when(
+					first(as.character(prototype_owner)) == "BlockListBlockProvider" ~ "No single existing exposed selector gives the affected-client/root set for public props plus selection, structure, editability, and settings.",
+					first(as.character(prototype_owner)) == "useInnerBlocksProps" ~ "getBlockSettings layout depends on current or ancestor attributes, global settings, and filters, so an attributes-blind skip is unsafe.",
+					TRUE ~ "Needs store signal audit."
+				),
+				implementation_implication = case_when(
+					first(as.character(prototype_owner)) == "BlockListBlockProvider" ~ "Prototype either adds private revisions/affected sets or keeps a conservative recompute path; lastBlockAttributesChange is not a full invalidation contract.",
+					first(as.character(prototype_owner)) == "useInnerBlocksProps" ~ "Prototype can start with root/drop-zone and identity/root keys, but layout/settings must be handled before claiming a full skip.",
+					TRUE ~ "Needs prototype."
+				),
+				.groups = "drop"
+			)
+
+		write_csv(
+			selector_prototype_store_signal_summary,
+			file.path(data_dir, "typing-delay-selector-prototype-store-signal-summary.csv")
+		)
+
+		selector_prototype_store_signal_plot <- selector_prototype_store_signal_audit %>%
+			mutate(
+				dependency_boundary_wrapped = str_wrap(dependency_boundary, width = 26),
+				dependency_boundary_wrapped = fct_reorder(dependency_boundary_wrapped, sufficiency_score)
+			)
+
+		save_plot(
+			ggplot(
+				selector_prototype_store_signal_plot,
+				aes(
+					sufficiency_score,
+					dependency_boundary_wrapped,
+					color = prototype_owner,
+					shape = decision,
+					size = risk_score
+				)
+				) +
+				geom_point(alpha = 0.9) +
+				facet_grid(
+					prototype_owner ~ .,
+					scales = "free_y",
+					space = "free_y"
+				) +
+				scale_color_brewer(type = "qual", palette = "Set1", name = "Prototype owner") +
+				scale_shape_manual(
+					values = c(
+						"usable small boundary" = 16,
+						"partial fast path only" = 17,
+						"needs private revision" = 15,
+						"needs private root revision" = 0,
+						"needs parent/root key" = 2,
+						"needs split keys" = 3,
+						"needs affected-set design" = 4,
+						"hardest local key" = 8
+					),
+					name = "Decision"
+				) +
+				scale_size_area(max_size = 7, breaks = 3:5, name = "stale risk") +
+				scale_x_continuous(
+					breaks = 1:3,
+					limits = c(0.75, 3.25),
+					labels = c("1" = "not enough", "2" = "partial", "3" = "usable")
+				) +
+				labs(
+					title = "Existing store signals are not enough for the hot selector prototypes",
+					subtitle = "Internal state slices exist, but most boundaries lack exposed per-client/root revision keys or affected sets",
+					x = "Existing signal sufficiency for a skip decision",
+					y = NULL
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"153-selector-prototype-store-signal-audit.png",
+			width = 12,
+			height = 7.4
+		)
+
 		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
 		mutate(
 			plot_label = case_when(
@@ -16301,7 +16490,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, or reported statistic changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor 0ms versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry.",
 	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract narrows the deployment choice: pure getBlockPatterns is rejected locally, getBlockPatterns plus resource quiet is the first replacement candidate, fixed 500ms is only a validated fallback, and fixed 1000ms remains the conservative baseline if either replacement changes the metric boundary.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Run the contract in CI/mac/container lanes with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry before changing the fixed wait.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
-	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps, and the next-prototype contract maps the required invalidation keys for Provider and useInnerBlocksProps.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, and layout/settings inheritance.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys, then useInnerBlocksProps with root/order/settings/editability keys; keep BlockListItems as a validation prototype and do not prioritize cold high-mount rows without a hot benchmark window.",
+	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
 		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated Runtime.evaluate/Runtime.callFunctionOn rows are the dose-response control, trace-on captureSnapshot rows isolate the perturbation, and native rows bound browser-only scale.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, EventDispatch, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows.",
