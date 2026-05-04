@@ -96,6 +96,10 @@ const traceGapEvents =
 const traceVisualLatency =
 	process.env.BENCHMARK_TRACE_VISUAL_LATENCY === '1' ||
 	process.env.BENCHMARK_TRACE_VISUAL_LATENCY === 'true';
+const traceRenderEvents =
+	process.env.BENCHMARK_TRACE_RENDER_EVENTS === '1' ||
+	process.env.BENCHMARK_TRACE_RENDER_EVENTS === 'true';
+const renderTraceWindowMs = intEnv( 'BENCHMARK_RENDER_TRACE_WINDOW_MS', 150 );
 const freshEditorPerDelay =
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === '1' ||
 	process.env.BENCHMARK_FRESH_EDITOR_PER_DELAY === 'true';
@@ -853,6 +857,12 @@ if ( delayStepMs <= 0 ) {
 	throw new Error( 'BENCHMARK_DELAY_STEP_MS must be greater than 0.' );
 }
 
+if ( renderTraceWindowMs <= 0 ) {
+	throw new Error(
+		'BENCHMARK_RENDER_TRACE_WINDOW_MS must be greater than 0.'
+	);
+}
+
 if ( maxDelayMs < minDelayMs ) {
 	throw new Error(
 		'BENCHMARK_MAX_DELAY_MS must be >= BENCHMARK_MIN_DELAY_MS.'
@@ -1045,6 +1055,91 @@ function groupKeyboardDispatches( dispatches ) {
 
 function groupedKeyboardEvents( trace ) {
 	return groupKeyboardDispatches( keyboardEventDispatches( trace ) );
+}
+
+const renderTraceEventNames = new Set( [
+	'BeginFrame',
+	'CompositeLayers',
+	'DrawFrame',
+	'FireAnimationFrame',
+	'Layerize',
+	'Layout',
+	'Paint',
+	'PrePaint',
+	'ScheduleStyleRecalculation',
+	'UpdateLayoutTree',
+] );
+const renderTraceCategories = [
+	'devtools.timeline',
+	'disabled-by-default-devtools.timeline',
+	'disabled-by-default-devtools.timeline.frame',
+	'blink',
+	'cc',
+	'disabled-by-default-cc.debug',
+];
+
+function renderTraceEventsForKeyWindows( trace ) {
+	return trace.traceEvents
+		.filter(
+			( item ) =>
+				renderTraceEventNames.has( item.name ) &&
+				( item.ph === 'X' || item.ph === 'I' || item.ph === 'i' )
+		)
+		.map( ( item ) => ( {
+			name: item.name,
+			category: item.cat,
+			durationMs: item.dur ? item.dur / 1000 : 0,
+			timestampMs: item.ts / 1000,
+		} ) )
+		.sort( ( a, b ) => a.timestampMs - b.timestampMs );
+}
+
+function renderTraceEventDeltasForKey( renderEvents, keydownTimestampMs ) {
+	if ( ! renderEvents ) {
+		return {};
+	}
+
+	const windowStartMs = keydownTimestampMs;
+	const windowStopMs = keydownTimestampMs + renderTraceWindowMs;
+	const eventsInWindow = renderEvents.filter(
+		( event ) =>
+			event.timestampMs >= windowStartMs &&
+			event.timestampMs <= windowStopMs
+	);
+	const firstEvent = eventsInWindow[ 0 ];
+	const totalDurationMs = eventsInWindow.reduce(
+		( sum, event ) => sum + event.durationMs,
+		0
+	);
+
+	function firstDeltaMs( names ) {
+		const nameSet = Array.isArray( names ) ? new Set( names ) : null;
+		const event = eventsInWindow.find( ( item ) =>
+			nameSet ? nameSet.has( item.name ) : item.name === names
+		);
+		return event ? event.timestampMs - keydownTimestampMs : undefined;
+	}
+
+	return {
+		renderFirstEventAfterKeydownName: firstEvent?.name,
+		renderFirstEventAfterKeydownMs: firstEvent
+			? firstEvent.timestampMs - keydownTimestampMs
+			: undefined,
+		renderTraceEventCountAfterKeydown: eventsInWindow.length,
+		renderTraceEventDurationAfterKeydownMs: totalDurationMs,
+		renderFirstBeginFrameAfterKeydownMs: firstDeltaMs( 'BeginFrame' ),
+		renderFirstFireAnimationFrameAfterKeydownMs:
+			firstDeltaMs( 'FireAnimationFrame' ),
+		renderFirstUpdateLayoutTreeAfterKeydownMs:
+			firstDeltaMs( 'UpdateLayoutTree' ),
+		renderFirstLayoutAfterKeydownMs: firstDeltaMs( 'Layout' ),
+		renderFirstPrePaintAfterKeydownMs: firstDeltaMs( 'PrePaint' ),
+		renderFirstPaintAfterKeydownMs: firstDeltaMs( 'Paint' ),
+		renderFirstLayerizeAfterKeydownMs: firstDeltaMs( 'Layerize' ),
+		renderFirstCompositeLayersAfterKeydownMs:
+			firstDeltaMs( 'CompositeLayers' ),
+		renderFirstDrawFrameAfterKeydownMs: firstDeltaMs( 'DrawFrame' ),
+	};
 }
 
 function eventListenerKeyboardDispatches( events ) {
@@ -3076,7 +3171,11 @@ setInterval(() => {}, 2147483647);
 				);
 
 				if ( useBrowserTrace ) {
-					await metrics.startTracing();
+					await metrics.startTracing(
+						traceRenderEvents
+							? { categories: renderTraceCategories }
+							: undefined
+					);
 				}
 				if (
 					waitForPersistenceBetweenKeys ||
@@ -3214,6 +3313,10 @@ setInterval(() => {}, 2147483647);
 							eventListenerEvents || []
 					  );
 				const keyGroups = groupKeyboardDispatches( keyboardEvents );
+				const renderTraceEvents =
+					useBrowserTrace && traceRenderEvents
+						? renderTraceEventsForKeyWindows( metrics.trace )
+						: undefined;
 
 				delayRunSummaries.push( {
 					round,
@@ -3341,6 +3444,7 @@ setInterval(() => {}, 2147483647);
 						  )
 						: undefined,
 					visualLatencyEvents,
+					renderTraceEventCount: renderTraceEvents?.length,
 					gapTraceEvents: traceGapEvents
 						? traceEventsForKeyGaps( metrics.trace )
 						: undefined,
@@ -3460,6 +3564,10 @@ setInterval(() => {}, 2147483647);
 					const keyup = keyGroup.keyup;
 					const visualLatencyEvent =
 						visualLatencyEvents?.[ sampleIndex ];
+					const renderTraceDeltas = renderTraceEventDeltasForKey(
+						renderTraceEvents,
+						keydown.timestampMs
+					);
 					const isThrowaway = sampleIndex < throwawayPerDelay;
 					const delaySampleIndex =
 						retainedSamplesByDelay.get( delayMs );
@@ -3556,6 +3664,7 @@ setInterval(() => {}, 2147483647);
 								? undefined
 								: visualLatencyEvent.firstMutationAtMs -
 								  visualLatencyEvent.keydownAtMs,
+						...renderTraceDeltas,
 					} );
 
 					globalTypedCharacterIndex++;
@@ -3636,6 +3745,8 @@ setInterval(() => {}, 2147483647);
 				traceDataSpans,
 				traceAllDataSpans,
 				traceVisualLatency,
+				traceRenderEvents,
+				renderTraceWindowMs,
 				freshEditorPerDelay,
 				waitForPersistenceBetweenKeys,
 				delayMode,

@@ -3178,6 +3178,214 @@ if (file.exists(visual_latency_samples_path) && file.exists(visual_latency_summa
 	)
 }
 
+render_trace_samples_path <- file.path(data_dir, "typing-delay-render-trace-samples.csv")
+render_trace_summary_path <- file.path(data_dir, "typing-delay-render-trace-summary.csv")
+
+read_render_trace_runs <- function() {
+	raw_specs <- tribble(
+		~input_mode, ~delay_mode, ~json_dir,
+		"key held during delay", "keyboard", file.path(repo_root, "test/performance/artifacts/typing-delay-render-keyhold"),
+		"complete keypress then wait", "between-keys", file.path(repo_root, "test/performance/artifacts/typing-delay-render-between-keys")
+	) %>%
+		filter(dir.exists(json_dir))
+
+	if (nrow(raw_specs) == 0) {
+		return(NULL)
+	}
+
+	column_or <- function(data, column, value = NA_real_) {
+		if (column %in% names(data)) {
+			data[[column]]
+		} else {
+			rep(value, nrow(data))
+		}
+	}
+
+	rows <- list()
+	for (i in seq_len(nrow(raw_specs))) {
+		spec <- raw_specs[i, ]
+		json_files <- list.files(spec$json_dir, pattern = "^typing-delay-benchmark-.*\\.json$", full.names = TRUE)
+		if (length(json_files) == 0) {
+			next
+		}
+		raw <- fromJSON(json_files[[1]], flatten = TRUE)
+		if (is.null(raw$records)) {
+			next
+		}
+
+		records <- as_tibble(raw$records) %>%
+			filter(!isThrowaway)
+
+		rows[[length(rows) + 1]] <- records %>%
+			transmute(
+				input_mode = spec$input_mode,
+				delay_mode = spec$delay_mode,
+				delay_ms = delayMs,
+				round,
+				delay_sample_index = delaySampleIndex,
+				latency_ms = latencyMs,
+				keypress_ms = keypressMs,
+				visual_keydown_to_second_raf_ms = column_or(records, "visualKeydownToSecondRafAfterInputMs"),
+				render_first_event_name = column_or(records, "renderFirstEventAfterKeydownName", NA_character_),
+				render_first_event_ms = column_or(records, "renderFirstEventAfterKeydownMs"),
+				render_event_count = column_or(records, "renderTraceEventCountAfterKeydown"),
+				render_event_duration_ms = column_or(records, "renderTraceEventDurationAfterKeydownMs"),
+				render_first_begin_frame_ms = column_or(records, "renderFirstBeginFrameAfterKeydownMs"),
+				render_first_fire_animation_frame_ms = column_or(records, "renderFirstFireAnimationFrameAfterKeydownMs"),
+				render_first_update_layout_tree_ms = column_or(records, "renderFirstUpdateLayoutTreeAfterKeydownMs"),
+				render_first_layout_ms = column_or(records, "renderFirstLayoutAfterKeydownMs"),
+				render_first_prepaint_ms = column_or(records, "renderFirstPrePaintAfterKeydownMs"),
+				render_first_paint_ms = column_or(records, "renderFirstPaintAfterKeydownMs"),
+				render_first_layerize_ms = column_or(records, "renderFirstLayerizeAfterKeydownMs"),
+				render_first_composite_layers_ms = column_or(records, "renderFirstCompositeLayersAfterKeydownMs"),
+				render_first_draw_frame_ms = column_or(records, "renderFirstDrawFrameAfterKeydownMs")
+			)
+	}
+
+	if (length(rows) == 0) {
+		return(NULL)
+	}
+
+	bind_rows(rows)
+}
+
+render_trace_samples_from_artifacts <- read_render_trace_runs()
+if (!is.null(render_trace_samples_from_artifacts)) {
+	render_trace_samples <- render_trace_samples_from_artifacts
+	write_csv(render_trace_samples, render_trace_samples_path)
+
+	render_trace_summary <- render_trace_samples %>%
+		group_by(input_mode, delay_mode, delay_ms) %>%
+		summarise(
+			retained_n = n(),
+			latency_p50_ms = quant(latency_ms, 0.5),
+			latency_p90_ms = quant(latency_ms, 0.9),
+			keypress_p50_ms = quant(keypress_ms, 0.5),
+			visual_keydown_to_second_raf_p50_ms = quant(visual_keydown_to_second_raf_ms, 0.5),
+			render_first_layout_p50_ms = quant(render_first_layout_ms, 0.5),
+			render_first_fire_animation_frame_p50_ms = quant(render_first_fire_animation_frame_ms, 0.5),
+			render_first_prepaint_p50_ms = quant(render_first_prepaint_ms, 0.5),
+			render_first_paint_p50_ms = quant(render_first_paint_ms, 0.5),
+			render_first_layerize_p50_ms = quant(render_first_layerize_ms, 0.5),
+			render_first_draw_frame_p50_ms = quant(render_first_draw_frame_ms, 0.5),
+			render_event_count_p50 = quant(render_event_count, 0.5),
+			render_event_duration_p50_ms = quant(render_event_duration_ms, 0.5),
+			missing_render_paint = sum(is.na(render_first_paint_ms)),
+			missing_render_draw_frame = sum(is.na(render_first_draw_frame_ms)),
+			.groups = "drop"
+		)
+	write_csv(render_trace_summary, render_trace_summary_path)
+}
+
+if (file.exists(render_trace_samples_path) && file.exists(render_trace_summary_path)) {
+	render_trace_samples <- read_csv(render_trace_samples_path, show_col_types = FALSE) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms"))
+		)
+	render_trace_summary <- read_csv(render_trace_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			input_mode = factor(
+				input_mode,
+				levels = c("key held during delay", "complete keypress then wait")
+			)
+		)
+
+	render_trace_summary_plot <- render_trace_summary %>%
+		transmute(
+			input_mode,
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("990ms", "1000ms", "1300ms")),
+			`EventDispatch trace latency` = latency_p50_ms,
+			`keydown to second RAF after input` = visual_keydown_to_second_raf_p50_ms,
+			`keydown to PrePaint trace event` = render_first_prepaint_p50_ms,
+			`keydown to Paint trace event` = render_first_paint_p50_ms,
+			`keydown to DrawFrame trace event` = render_first_draw_frame_p50_ms
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"EventDispatch trace latency",
+					"keydown to second RAF after input",
+					"keydown to PrePaint trace event",
+					"keydown to Paint trace event",
+					"keydown to DrawFrame trace event"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(render_trace_summary_plot, aes(delay_label, value, color = input_mode, shape = input_mode)) +
+			geom_point(size = 3.0, alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "The key-hold cliff reaches Chrome render trace events",
+				subtitle = "Heavier Chromium render tracing; Paint/DrawFrame are trace events, not calibrated screen presentation",
+				x = "Delay",
+				y = "p50 duration from keydown",
+				color = "Input mode",
+				shape = "Input mode"
+			),
+		"107-render-trace-summary.png",
+		width = 9.6,
+		height = 10.8
+	)
+
+	render_trace_distribution_plot <- render_trace_samples %>%
+		select(
+			input_mode,
+			delay_label,
+			`EventDispatch trace latency` = latency_ms,
+			`keydown to Paint trace event` = render_first_paint_ms,
+			`keydown to DrawFrame trace event` = render_first_draw_frame_ms
+		) %>%
+		pivot_longer(
+			cols = -c(input_mode, delay_label),
+			names_to = "metric",
+			values_to = "value"
+		)
+
+	save_plot(
+		ggplot(render_trace_distribution_plot, aes(delay_label, value, color = input_mode)) +
+			geom_point(
+				position = position_jitter(width = 0.09, height = 0, seed = 54),
+				size = 1.8,
+				alpha = 0.55
+			) +
+			stat_summary(
+				aes(group = input_mode),
+				fun = median,
+				geom = "point",
+				shape = 95,
+				size = 7,
+				position = position_dodge(width = 0.35),
+				color = brewer_color("Set1", 1),
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			facet_grid(metric ~ input_mode, scales = "free_y") +
+			labs(
+				title = "Render trace samples retain the key-hold-only 1000ms drop",
+				subtitle = "Red ticks are medians; render events are extracted in a 150ms window after each keydown",
+				x = "Delay",
+				y = NULL,
+				color = "Input mode"
+			),
+		"108-render-trace-distribution.png",
+		width = 11.5,
+		height = 8.4
+	)
+}
+
 if (file.exists(ci_dense_n50_summary_path)) {
 	ci_held_key_delay_runtime_reliability <- read_csv(ci_dense_n50_summary_path, show_col_types = FALSE) %>%
 		transmute(

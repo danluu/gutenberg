@@ -336,6 +336,12 @@ The short version:
     key-held `1000ms` drops from `33.0ms` / `31.9ms` keydown-to-second-RAF at
     `990ms` / `1300ms` to `20.4ms`, while complete-keypress-then-wait stays low
     at `11.9-13.5ms`.
+-   A new Chromium render-trace probe pushes that one step farther. With heavier
+    `Paint` / `DrawFrame` tracing, key-held `1000ms` drops from `25.8ms` /
+    `24.9ms` keydown-to-`Paint` at `990ms` / `1300ms` to `13.1ms`; the matching
+    complete-keypress-then-wait values stay flat at `10.7-11.3ms`. This is still
+    not a calibrated screen-presentation timestamp, but it disconfirms "JS/RAF
+    bookkeeping only."
 -   A single average per delay is not enough for this benchmark. The latency curve
     has discrete regimes, and variance changes by delay.
 
@@ -402,6 +408,8 @@ run:
 -   source-level data registry / `useSelect` span tracing;
 -   opt-in visual-latency proxy tracing for keydown, `input`, mutation, next RAF,
     and second RAF in the editor canvas;
+-   opt-in Chromium render-event tracing for keydown-to-`Layout`, `PrePaint`,
+    `Paint`, `Layerize`, and `DrawFrame` timing;
 -   alternate delay modes:
     -   `keyboard`: the original Playwright `keyboard.type(..., { delay })` mode;
     -   `between-keys`: type a complete keypress, then wait;
@@ -594,6 +602,9 @@ The R script derives:
 -   `data/typing-delay-visual-latency-*.csv`: opt-in visual proxy samples and
     summaries for keydown-to-input and keydown/input-to-RAF timing in the editor
     canvas.
+-   `data/typing-delay-render-trace-*.csv`: opt-in Chromium render-trace samples
+    and summaries for keydown-to-`Layout`, `PrePaint`, `Paint`, `Layerize`, and
+    `DrawFrame` timing.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -4321,6 +4332,48 @@ but a real input-to-paint metric would need Chrome paint/compositor events,
 DOM/layout/paint instrumentation, screenshots/pixel observation, or camera-style
 calibration.
 
+## Chromium Render Trace Probe
+
+I then pushed the same open question one level closer to Chromium's rendering
+pipeline with `BENCHMARK_TRACE_RENDER_EVENTS=1`. This starts Chrome tracing with
+extra render categories and records the first `Layout`, `PrePaint`, `Paint`,
+`Layerize`, and `DrawFrame` trace event in the first `150ms` after each keydown.
+
+This is deliberately described as a render trace probe, not input-to-screen.
+Chrome's `Paint` trace event is not a calibrated compositor presentation or pixel
+timestamp, and the heavier trace categories perturb the absolute numbers. The
+question it can answer is narrower: does the key-hold-only `1000ms` shape survive
+when the endpoint is a Chromium render event instead of a JS listener slice or
+RAF callback?
+
+I ran the same large-post `990ms`, `1000ms`, and `1300ms` comparison with 3
+rounds and 8 retained samples per delay.
+
+![Render trace summary](figures/107-render-trace-summary.png)
+
+![Render trace distribution](figures/108-render-trace-distribution.png)
+
+| Input mode | Delay | EventDispatch p50 | keydown-to-second-RAF p50 | keydown-to-Paint p50 | keydown-to-DrawFrame p50 |
+| ---------- | ----: | ----------------: | ------------------------: | -------------------: | -----------------------: |
+| key held during delay | `990ms` | `25.1ms` | `32.9ms` | `25.8ms` | `27.8ms` |
+| key held during delay | `1000ms` | `12.7ms` | `19.9ms` | `13.1ms` | `14.8ms` |
+| key held during delay | `1300ms` | `24.4ms` | `31.5ms` | `24.9ms` | `27.2ms` |
+| complete keypress then wait | `990ms` | `10.1ms` | `11.8ms` | `10.7ms` | `12.0ms` |
+| complete keypress then wait | `1000ms` | `10.3ms` | `12.1ms` | `10.9ms` | `12.3ms` |
+| complete keypress then wait | `1300ms` | `10.7ms` | `13.9ms` | `11.3ms` | `13.1ms` |
+
+Every retained sample had a `Paint` and `DrawFrame` event in the `150ms` window.
+The key-hold drop is still present at those endpoints: keydown-to-`Paint` falls
+by about `12ms` at `1000ms` compared with `990ms` and `1300ms`, while
+complete-keypress-then-wait stays in the `10.7-11.3ms` band. `DrawFrame` shows
+the same key-hold-only shape.
+
+This closes a more precise version of the visual open question: the cliff is not
+only Chrome `EventDispatch` accounting, and it is not only an artifact of the JS
+RAF proxy. It reaches Chromium render trace events. What this still does not
+close is actual presentation latency: the remaining measurement gap is
+compositor/presentation/pixels, not "does the effect survive past JS?"
+
 ## Trace Grouping Bug Avoided
 
 ![Keydown event count audit](figures/09-keydown-event-count-audit.png)
@@ -4369,9 +4422,11 @@ metric.
 
 Known problems:
 
--   **It still does not have a calibrated input-to-paint endpoint.** The new visual
-    proxy reaches editor-canvas input, mutation, and RAF boundaries, but it is not
-    a paint/compositor timestamp or a screen-observation measurement.
+-   **It still does not have a calibrated input-to-screen endpoint.** The visual
+    proxy reaches editor-canvas input, mutation, and RAF boundaries, and the
+    render trace probe reaches Chromium `Paint` / `DrawFrame` trace events. Those
+    are still not compositor presentation timestamps or screen-observation
+    measurements.
 -   **Synthetic keyboard input is not real keyboard input.** Playwright's
     `page.keyboard.type()` is useful, but it is not a hardware-to-screen pipeline.
 -   **There are now multiple delay modes.** This is useful for diagnosis, but any
@@ -4507,13 +4562,16 @@ input path, not one bad selector or one browser trace accounting quirk. Proving
 that final layer would need hardware/browser-level instrumentation, not another
 small variation of the JS benchmark.
 
-The most user-facing open question is narrower now. The new visual proxy shows
+The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:
 keydown-to-second-RAF falls from about `33ms` / `32ms` at `990ms` / `1300ms` to
-`20ms` at `1000ms`. That disconfirms the strongest "EventDispatch trace
-accounting only" theory. What remains open is calibrated input-to-paint: RAF is a
-frame proxy, not a compositor/pixel timestamp, so a final user-visible answer
-still needs paint/compositor instrumentation or screen-observation calibration.
+`20ms` at `1000ms`. The Chromium render trace probe then shows the same shape in
+`Paint` and `DrawFrame` trace events: keydown-to-`Paint` falls from about `26ms`
+/ `25ms` at `990ms` / `1300ms` to `13ms` at `1000ms`. That disconfirms
+"EventDispatch trace accounting only" and "JS/RAF proxy only" theories. What
+remains open is calibrated input-to-screen: Chrome render trace events are not
+compositor presentation or pixel timestamps, so a final user-visible answer still
+needs presentation-timing or screen-observation calibration.
 
 ## Recommendations
 
@@ -4562,9 +4620,9 @@ For investigation:
     undo, and block insertion.
 -   Keep the native baseline and add more minimal editor-like baselines to
     estimate browser/editor overhead.
--   Extend the visual proxy to a calibrated input-to-paint endpoint, or calibrate
-    it with paint/compositor traces, screenshots, or high-speed camera data for
-    benchmark runs.
+-   Extend the visual/render probes to a calibrated input-to-screen endpoint, or
+    calibrate them with presentation traces, screenshots, or high-speed camera
+    data for benchmark runs.
 -   Repeat source-level attribution on Safari and Firefox if comparable tooling
     is available.
 -   Repeat with plugin-heavy editor setups if long-session lag is suspected there.
@@ -4624,6 +4682,10 @@ The key runs used in this report were:
     and `1300ms`, with opt-in keydown/input/mutation/RAF visual proxy tracing.
 -   `visual_between_keys`: complete keypress, then wait at `990ms`, `1000ms`,
     and `1300ms`, with the same visual proxy tracing.
+-   `render_keyhold`: normal Playwright key-hold delay at `990ms`, `1000ms`,
+    and `1300ms`, with opt-in Chromium render-event tracing.
+-   `render_between_keys`: complete keypress, then wait at `990ms`, `1000ms`,
+    and `1300ms`, with the same render-event tracing.
 -   `native_keyhold_timer`: native `contenteditable` with a `1000ms` input timer
     and normal Playwright key-hold delay.
 -   `native_between_keys_timer`: native `contenteditable` with a `1000ms` input
