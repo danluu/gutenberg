@@ -106,7 +106,11 @@ The short version:
     metrics favor `0ms`, while pattern loading does not. An alternating exact
     site-editor pattern run confirmed the exception: `1000ms` reported
     `728.8ms` q50 versus `871.2ms` at `0ms`, because readiness requests/resource
-    work move before the measured interval.
+    work move before the measured interval. A new exact short-wait sweep closes
+    the obvious follow-up: `500ms` matches or slightly beats `1000ms` locally
+    (`720.0ms` vs. `730.3ms` median reported q50) while saving `10s` for this
+    metric in a two-branch comparison. `250ms` also lands in the same q50 band
+    (`731.2ms`) but has higher run-to-run q50 sd.
 -   Changing the current held-key Typing delay is a larger metric change than
     the name suggests. At `500ms`, the two-branch job saves about `55s`, but the
     CI-comparable held-key q50 is `24.5ms`, not halfway between the `0ms` and
@@ -1295,7 +1299,7 @@ longer "does any non-Typing metric care?" but "are pattern-load metrics measurin
 real readiness work that the explicit wait hides, and what failure/regression
 rate does CI see if only interaction metrics remove the wait?"
 
-I followed that with two checks on the site-editor pattern-load exception. First,
+I followed that with three checks on the site-editor pattern-load exception. First,
 I ran the exact existing `Site Editor Performance > Loading Patterns` spec in
 alternating order: `0ms`, `1000ms`, repeated six times. This keeps the real spec
 shape, including ten retained samples per run and a fresh site-editor visit for
@@ -1333,24 +1337,44 @@ Selected probe rows:
 | `1000ms` | `4` | `19.0` | `59.0` | `19.0` | `7.0` |
 | `2000ms` | `4` | `19.0` | `60.0` | `19.0` | `8.0` |
 
+I then ran exact existing `Site Editor Performance > Loading Patterns` sweeps to
+confirm the useful shorter waits in the real spec shape. The first randomized
+pass covered `0ms`, `100ms`, `250ms`, `500ms`, `750ms`, and `1000ms`, four runs
+per wait. A follow-up added six more exact runs each for `250ms`, `500ms`, and
+`1000ms`, so the decision-relevant cells have ten runs each.
+
+![Site-editor pattern short-wait exact sweep](figures/103-site-pattern-short-wait-exact.png)
+
+![Site-editor pattern short-wait runtime/reliability](figures/104-site-pattern-short-wait-runtime-reliability.png)
+
+| Wait | Exact runs | Median reported q50 | Run-to-run q50 sd | Two-branch wait saved vs. `1000ms` |
+| ---: | ---------: | ------------------: | ----------------: | ---------------------------------: |
+| `0ms` | `4` | `876.1ms` | `27.6ms` | `20s` |
+| `100ms` | `4` | `826.5ms` | `28.7ms` | `18s` |
+| `250ms` | `10` | `731.2ms` | `35.6ms` | `15s` |
+| `500ms` | `10` | `720.0ms` | `17.2ms` | `10s` |
+| `750ms` | `4` | `753.8ms` | `20.1ms` | `5s` |
+| `1000ms` | `10` | `730.3ms` | `27.6ms` | `0s` |
+
 That closes the main pattern-load question. The fixed sleep is acting as a
 hidden readiness wait for site-editor pattern loading. With `0ms`, the benchmark
 opens the design/pattern UI while site-editor readiness requests and resource
 work are still close to the measurement boundary; by `250ms` in the probe, the
 same class of work has mostly moved before the measurement start. In the exact
-spec, `1000ms` then reports a much lower q50 because that readiness work is not
-part of the measured interval. This is not a sign that the page gets faster in
-wall-clock terms; the run still pays the sleep. It means the metric definition
-changes depending on whether the pre-measurement wait is present.
+spec, `250ms`, `500ms`, and `1000ms` report the same q50 band because that
+readiness work is mostly no longer part of the measured interval. This is not a
+sign that the page gets faster in wall-clock terms; the run still pays the sleep.
+It means the metric definition changes depending on whether the pre-measurement
+wait is present.
 
 The practical conclusion is split. The interaction metrics have evidence for
 removing or shrinking the explicit wait. Site-editor pattern loading should not
 blindly drop to `0ms`; it should either keep a readiness wait or, better, replace
 the blind sleep with an explicit readiness condition for the site editor and
-pattern previews. The probe suggests the useful readiness work happens well
-before `1000ms` on this machine, but the exact spec has only been paired at
-`0ms` and `1000ms`, so `250ms`/`500ms` would need exact-spec confirmation before
-using those as a CI replacement.
+pattern previews. If this stays a fixed sleep, `500ms` is the best local
+candidate from this exact run: it saves `10s` for this metric in a two-branch
+comparison and had lower run-to-run q50 sd than `1000ms`. `250ms` saved `15s`
+and matched the `1000ms` median, but it had higher q50 volatility in this sample.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
@@ -4395,21 +4419,24 @@ the report. The current q50 can therefore look stable even though the beginning
 of the input sequence is not representative of steady repeated typing.
 
 The startup-wait result is now strong for Typing and has a complete small
-non-Typing screen plus a targeted follow-up for the pattern-load exception.
-The exact and CI-comparable Typing runs say that adding post-setup wait does not
-buy retained Typing stability, and reducing the current extra post-setup wait
-cannot speed up Typing because that knob is already `0ms`. The exact Selecting
-blocks pilot says one explicit non-Typing pre-measurement sleep can be removed on
-this machine without hurting that metric: `0ms` was both faster and less
-variable than `1000ms`. The broader four-run screen says this likely generalizes
-to interactive post-editor measurements, but not to pattern loading: site-editor
-patterns were much faster after the `1000ms` wait. The new alternating exact run
-confirms that is a real metric effect, and the readiness probe shows why:
+non-Typing screen plus targeted follow-ups for the pattern-load exception. The
+exact and CI-comparable Typing runs say that adding post-setup wait does not buy
+retained Typing stability, and reducing the current extra post-setup wait cannot
+speed up Typing because that knob is already `0ms`. The exact Selecting blocks
+pilot says one explicit non-Typing pre-measurement sleep can be removed on this
+machine without hurting that metric: `0ms` was both faster and less variable than
+`1000ms`. The broader four-run screen says this likely generalizes to
+interactive post-editor measurements, but not to pattern loading: site-editor
+patterns were much faster after the `1000ms` wait. The alternating exact run
+confirmed that this was a real metric effect, and the readiness probe showed why:
 site-editor requests/resources move from the measured interval into the
-pre-measurement wait. The remaining question is now an engineering change, not a
-diagnosis question: define an explicit readiness predicate for pattern loading,
-then test whether a shorter wait such as `250ms` or `500ms` is enough in the
-exact spec and in CI.
+pre-measurement wait. The new exact short-wait sweep closes the immediate
+replacement question locally: `500ms` matched `1000ms` while saving half of this
+metric's explicit wait, and `250ms` also matched the q50 band but with higher
+run-to-run q50 sd. The remaining question is now an engineering change, not a
+diagnosis question: replace the blind sleep with an explicit readiness predicate
+for pattern loading, or validate a fixed `500ms` wait in CI/mac/container runs
+before changing the shared constant.
 
 The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,
@@ -4440,6 +4467,9 @@ For CI:
     complete keypress if that is the intended workload.
 -   If the goal is "after rich text has persisted", wait on
     `isLastBlockChangePersistent()` explicitly and name the metric that way.
+-   For site-editor pattern loading, do not replace the current wait with `0ms`.
+    Use an explicit readiness predicate for pattern previews, or separately
+    validate a shorter fixed wait such as `500ms`.
 -   Store per-sample results and at least p50/p90/CV, not only averages.
 -   Keep trace-parser invariants: expected key groups, keydown count distribution,
     and event ordering.

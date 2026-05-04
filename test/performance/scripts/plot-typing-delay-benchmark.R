@@ -2736,6 +2736,87 @@ if (file.exists(nontyping_wait_screen_summary_path) && file.exists(nontyping_wai
 
 site_pattern_alternating_wait_path <- file.path(data_dir, "typing-delay-site-pattern-alternating-wait-summary.csv")
 site_pattern_readiness_probe_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-probe-summary.csv")
+site_pattern_short_wait_runs_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-runs.csv")
+site_pattern_short_wait_summary_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
+
+read_site_pattern_short_wait_runs <- function() {
+	raw_dirs <- c(
+		file.path(repo_root, "test/performance/artifacts/site-pattern-short-wait-exact"),
+		file.path(repo_root, "test/performance/artifacts/site-pattern-short-wait-exact-followup")
+	)
+	raw_dirs <- raw_dirs[dir.exists(raw_dirs)]
+	if (length(raw_dirs) == 0) {
+		return(NULL)
+	}
+
+	rows <- list()
+	for (raw_dir in raw_dirs) {
+		run_set <- basename(raw_dir)
+		run_dirs <- list.dirs(raw_dir, recursive = FALSE, full.names = TRUE)
+		for (run_dir in run_dirs) {
+			run_name <- basename(run_dir)
+			match <- str_match(run_name, "^r([0-9]+)-wait-([0-9]+)$")
+			if (is.na(match[1, 1])) {
+				next
+			}
+			json_files <- list.files(run_dir, pattern = "^site-editor-results-.*\\.json$", full.names = TRUE)
+			if (length(json_files) == 0) {
+				next
+			}
+
+			raw <- fromJSON(json_files[[1]], flatten = TRUE)
+			values <- as.numeric(raw$results$loadPatterns)
+			rows[[length(rows) + 1]] <- tibble(
+				run_set = run_set,
+				local_run = as.integer(match[1, 2]),
+				measurement_idle_wait_ms = as.integer(match[1, 3]),
+				retained_samples = length(values),
+				p10_ms = quant(values, 0.1),
+				p50_ms = quant(values, 0.5),
+				p90_ms = quant(values, 0.9),
+				mean_ms = mean(values),
+				sd_ms = sd(values),
+				min_ms = min(values),
+				max_ms = max(values)
+			)
+		}
+	}
+
+	if (length(rows) == 0) {
+		return(NULL)
+	}
+
+	bind_rows(rows) %>%
+		arrange(run_set, local_run) %>%
+		mutate(run_order = row_number(), .before = run_set)
+}
+
+site_pattern_short_wait_runs_from_artifacts <- read_site_pattern_short_wait_runs()
+if (!is.null(site_pattern_short_wait_runs_from_artifacts)) {
+	site_pattern_short_wait_runs <- site_pattern_short_wait_runs_from_artifacts
+	write_csv(site_pattern_short_wait_runs, site_pattern_short_wait_runs_path)
+
+	site_pattern_short_wait_summary <- site_pattern_short_wait_runs %>%
+		group_by(measurement_idle_wait_ms) %>%
+		summarise(
+			exact_runs = n(),
+			median_reported_q50_ms = median(p50_ms),
+			mean_reported_q50_ms = mean(p50_ms),
+			run_to_run_q50_sd_ms = sd(p50_ms),
+			median_mean_ms = median(mean_ms),
+			median_p90_ms = median(p90_ms),
+			median_within_run_sd_ms = median(sd_ms),
+			min_q50_ms = min(p50_ms),
+			max_q50_ms = max(p50_ms),
+			.groups = "drop"
+		) %>%
+		mutate(
+			two_branch_explicit_wait_s = 20 * measurement_idle_wait_ms / 1000,
+			two_branch_saved_vs_1000ms_s = 20 * (1000 - measurement_idle_wait_ms) / 1000
+		)
+	write_csv(site_pattern_short_wait_summary, site_pattern_short_wait_summary_path)
+}
+
 if (file.exists(site_pattern_alternating_wait_path)) {
 	site_pattern_alternating_wait <- read_csv(site_pattern_alternating_wait_path, show_col_types = FALSE) %>%
 		mutate(
@@ -2808,6 +2889,98 @@ if (file.exists(site_pattern_readiness_probe_summary_path)) {
 		"102-site-pattern-readiness-probe.png",
 		width = 9.8,
 		height = 7.2
+	)
+}
+
+if (file.exists(site_pattern_short_wait_runs_path) && file.exists(site_pattern_short_wait_summary_path)) {
+	site_pattern_short_wait_runs <- read_csv(site_pattern_short_wait_runs_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(measurement_idle_wait_ms, "ms"),
+				levels = paste0(sort(unique(measurement_idle_wait_ms)), "ms")
+			)
+		)
+	site_pattern_short_wait_summary <- read_csv(site_pattern_short_wait_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			wait_label = factor(
+				paste0(measurement_idle_wait_ms, "ms"),
+				levels = levels(site_pattern_short_wait_runs$wait_label)
+			)
+		)
+
+	save_plot(
+		ggplot(site_pattern_short_wait_runs, aes(wait_label, p50_ms, color = wait_label)) +
+			geom_point(
+				position = position_jitter(width = 0.08, height = 0, seed = 41),
+				size = 2.4,
+				alpha = 0.82,
+				show.legend = FALSE
+			) +
+			stat_summary(fun = median, geom = "point", shape = 95, size = 8, color = brewer_color("Set1", 1), show.legend = FALSE) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			labs(
+				title = "Site-editor pattern loading needs a readiness wait, but not the full second",
+				subtitle = "Exact existing Loading Patterns spec; red ticks are medians; n=4 for 0/100/750ms and n=10 for 250/500/1000ms",
+				x = "MEASUREMENT_IDLE_WAIT_MS",
+				y = "Reported q50"
+			),
+		"103-site-pattern-short-wait-exact.png",
+		width = 9.4,
+		height = 5.6
+	)
+
+	site_pattern_short_wait_runtime_plot <- site_pattern_short_wait_summary %>%
+		select(
+			wait_label,
+			`two-branch explicit wait saved vs 1000ms (s)` = two_branch_saved_vs_1000ms_s,
+			`median reported q50 (ms)` = median_reported_q50_ms,
+			`run-to-run q50 sd (ms)` = run_to_run_q50_sd_ms
+		) %>%
+		pivot_longer(
+			cols = -wait_label,
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = factor(
+				metric,
+				levels = c(
+					"two-branch explicit wait saved vs 1000ms (s)",
+					"median reported q50 (ms)",
+					"run-to-run q50 sd (ms)"
+				)
+			),
+			value_label = case_when(
+				str_detect(as.character(metric), "saved") ~ sprintf("%+.0fs", value),
+				TRUE ~ sprintf("%.1f", value)
+			)
+		)
+
+	save_plot(
+		ggplot(site_pattern_short_wait_runtime_plot, aes(wait_label, value, color = wait_label)) +
+			geom_hline(
+				data = site_pattern_short_wait_runtime_plot %>%
+					filter(metric == "two-branch explicit wait saved vs 1000ms (s)") %>%
+					distinct(metric) %>%
+					mutate(value = 0),
+				aes(yintercept = value),
+				color = brewer_color("Greys", 7, type = "seq", n = 9),
+				linewidth = 0.35
+			) +
+			geom_point(size = 2.8, alpha = 0.9, show.legend = FALSE) +
+			geom_text(aes(label = value_label), vjust = -0.75, size = 2.7, show.legend = FALSE) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_y_continuous(expand = expansion(mult = c(0.14, 0.22))) +
+			facet_wrap(vars(metric), ncol = 1, scales = "free_y") +
+			labs(
+				title = "Pattern-loading short waits trade startup time against readiness coverage",
+				subtitle = "Exact site-editor Loading Patterns spec; two-branch wait savings apply to this metric only",
+				x = "MEASUREMENT_IDLE_WAIT_MS",
+				y = NULL
+			),
+		"104-site-pattern-short-wait-runtime-reliability.png",
+		width = 9.4,
+		height = 8.2
 	)
 }
 
