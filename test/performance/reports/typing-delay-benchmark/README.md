@@ -1008,6 +1008,10 @@ The R script derives:
 -   `data/typing-delay-open-question-next-instrumentation-matrix.csv`: ranked
     matrix of remaining questions, current answer strength, next-work cost, and
     recommended next instrumentation or prototype.
+-   `data/typing-delay-open-question-evidence-blockers.csv`: stop-rule audit
+    separating questions that can still benefit from local resampling from
+    questions blocked by topology validation, source prototypes, sidecars,
+    privileged counters, external endpoints, or workload replay.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9105,6 +9109,24 @@ The high-level split is:
 | Calibrated presentation | external-calibration runbook plus claim ladder closes the wording boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels; semantic glyph, presented-frame, camera-visible, and hardware/display claims are explicitly blocked until joined external observers preserve the same key-held shape and complete-keypress control | keep claims scoped to Chromium internal visual propagation unless the report needs hardware/display or semantic glyph timing; if it does, run the external calibration ladder with OCR/template matching, compositor/present timestamps, or camera/display capture joined per retained key |
 | Human/plugin workload | workload schema, strata-coverage audit, and claim ladder now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion is strong evidence for the benchmark artifact and source triage, partially covers ordinary text and first-input idle return, and leaves correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, media/pattern-heavy editing, and plugin-heavy/P2-like histories; report per-stratum results rather than one headline p50 |
 | Portability of absolute numbers | portability runbook, CI workflow-boundary audit, and q50-consumer ladder now separate local semantics from threshold portability: the actual repo lane is Ubuntu 24.04 Performance Tests with Playwright-bundled Chromium/wp-env, q50 is printed, archived, and uploaded, q25/q75/cnt/raw arrays live in artifacts, default rounds is `1`, and the visible in-repo pass/fail path is command/workflow success rather than a numeric q50 gate | run the compact manifest through the real Performance Tests topology or an equivalent reusable workflow with raw artifacts, environment metadata, repeated paired runs, q50/q25/q75/cnt/CV/per-run order, and first-key distributions; add external dashboard/reviewer threshold policy before treating local movements as CI pass/fail predictions |
+
+I then audited the same rows for a narrower question: would another local sample
+sweep change the answer, or is the missing evidence a different observer,
+prototype, workload, or topology? This is where the remaining open questions get
+more actionable. Most low-level mechanism questions now have low value from
+local resampling because the missing field is not another latency sample; it is a
+join key, counter, endpoint, or behavior contract that the current artifact does
+not contain.
+
+![Open question evidence blockers](figures/198-open-question-evidence-blockers.png)
+
+| Blocker | Questions affected | What another local sweep can still do | What it cannot do |
+| ------- | ------------------ | ------------------------------------- | ----------------- |
+| Locally closed | Typing startup wait, input API phase boundary | Reconfirm after a trigger change such as browser, helper family, trace placement, throwaway policy, or reported statistic. | Justify a startup wait or treat a helper-family switch as transparent under the current metric. |
+| Topology validation | Pattern-loading wait, absolute CI portability | Estimate candidate stability only when run in the real Performance Tests topology or an equivalent workflow. | Sample Ubuntu runners, wp-env/container limits, CI browser revisions, preview/canvas failures, or external threshold policy from a local macOS run. |
+| Code prototype | Selector guards, store subscriber partition | Confirm source-span collapse and aggregate p50 after behavior gates pass. | Prove selector invalidation safety or public `@wordpress/data` compatibility from timing data alone. |
+| Missing observer join | Chromium runtime checkpoint, CPU/QoS mechanism | Reproduce the dose response or class ordering as an acceptance control. | Name V8/task-queue/scheduler state, P-core residency, frequency, QoS placement, cache state, or runnable latency without sidecar/counter joins. |
+| External endpoint / workload gap | Calibrated presentation, human/plugin workload | Preserve the fixed-`x` artifact claim as a control. | Claim hardware-display timing, semantic first glyph timing, or representative product latency without external calibration or replay strata. |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
