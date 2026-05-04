@@ -1,0 +1,7 @@
+artifact,artifact_order,artifact_label,required_cells,required_missing,required_partial,required_present,all_cells,readiness_score,closure_state
+Compact CI topology artifact,1,CI topology,7,1,6,0,7,42.9,blocked by missing required fields
+Pattern readiness/resource artifact,2,patterns,5,1,4,0,7,42.9,blocked by missing required fields
+Behavior-gated source prototype,3,source,3,0,2,1,6,58.3,needs scope/topology validation
+Shared retained-key sidecar,4,sidecar,4,2,2,0,7,35.7,blocked by missing required fields
+CPU/QoS counter bundle,5,CPU/QoS,5,3,2,0,7,28.6,blocked by missing required fields
+Workload/display expansion artifacts,6,claim expansion,4,4,0,0,8,25,blocked by missing required fields

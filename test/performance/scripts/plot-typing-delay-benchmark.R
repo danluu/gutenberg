@@ -22572,6 +22572,170 @@ save_plot(
 	height = 7.4
 )
 
+open_question_evidence_readiness <- tribble(
+	~artifact, ~artifact_order, ~artifact_label, ~requirement_label, ~requirement_order, ~requirement_level, ~current_status, ~current_evidence, ~missing_for_closure,
+	"Compact CI topology artifact", 1, "CI topology", "raw samples", 1, "required", "partial", "Local retained-sample artifacts exist.", "Paired raw artifacts from the real Performance Tests topology.",
+	"Compact CI topology artifact", 1, "CI topology", "q25/q50/q75/cnt", 2, "required", "partial", "Local summaries exist and match the reporter shape.", "Repeated CI-topology summaries with raw retained rows.",
+	"Compact CI topology artifact", 1, "CI topology", "per-run order", 3, "required", "partial", "Local run/order artifacts exist.", "CI run order, branch order, and per-round grouping.",
+	"Compact CI topology artifact", 1, "CI topology", "first-key tails", 4, "required", "partial", "Local first-key and retained-key slices exist.", "Same first-key slices in CI topology.",
+	"Compact CI topology artifact", 1, "CI topology", "failures/actionability", 5, "required", "partial", "Some local actionability/failure surfaces are recorded.", "CI failure counts, skipped interactions, and actionability retries.",
+	"Compact CI topology artifact", 1, "CI topology", "resource timing", 6, "required", "partial", "Local resource/readiness probes exist for several waits.", "CI resource groups joined to each measured row.",
+	"Compact CI topology artifact", 1, "CI topology", "env metadata", 7, "required", "missing", "Local host context is known only informally.", "Runner image, browser revision, CPU/container limits, wp-env, and git/WP identifiers.",
+	"Pattern readiness/resource artifact", 2, "patterns", "raw samples", 1, "required", "partial", "Local pattern-wait samples exist.", "Raw retained pattern samples across CI/mac/container lanes.",
+	"Pattern readiness/resource artifact", 2, "patterns", "q25/q50/q75/cnt", 2, "required", "partial", "Local exact-wait summaries exist.", "Topology-specific summaries plus retained counts for each spec.",
+	"Pattern readiness/resource artifact", 2, "patterns", "per-run order", 3, "conditional", "partial", "Some local run grouping exists.", "Run order only matters if first-run/resource phase is being interpreted.",
+	"Pattern readiness/resource artifact", 2, "patterns", "first-key tails", 4, "conditional", "partial", "The typing harness can report first-key distributions.", "Pattern-specific first interaction tails when wait removal is evaluated.",
+	"Pattern readiness/resource artifact", 2, "patterns", "failures/actionability", 5, "required", "partial", "Actionability and retained-count checks exist locally.", "Preview/canvas/actionability failures by spec and wait policy.",
+	"Pattern readiness/resource artifact", 2, "patterns", "resource timing", 6, "required", "partial", "Resource quiet and endpoint grouping have local probes.", "Source-specific readiness, resource quiet, timeout, and fallback logs.",
+	"Pattern readiness/resource artifact", 2, "patterns", "env metadata", 7, "required", "missing", "No complete lane metadata is joined to the pattern decision artifact.", "Browser, runner, container, wp-env, and spec/lane metadata.",
+	"Behavior-gated source prototype", 3, "source", "raw samples", 1, "conditional", "partial", "Aggregate timing samples exist for the benchmark.", "Matched before/after aggregate rows after behavior and source gates pass.",
+	"Behavior-gated source prototype", 3, "source", "q25/q50/q75/cnt", 2, "conditional", "partial", "Aggregate q summaries exist.", "Prototype-specific q summaries after gate success.",
+	"Behavior-gated source prototype", 3, "source", "per-run order", 3, "conditional", "partial", "Run order is available for existing samples.", "Prototype run order and source-span run order.",
+	"Behavior-gated source prototype", 3, "source", "behavior fixtures", 8, "required", "partial", "Focused behavior coverage exists for the first low-risk guard.", "Full public-filter, selection, editability, settings, bindings, and structural gates for the next source owner.",
+	"Behavior-gated source prototype", 3, "source", "source spans", 9, "required", "present", "The source-span microscope already identifies and rechecks hot owner rows.", "Matched after-patch source-span collapse for the targeted owner.",
+	"Behavior-gated source prototype", 3, "source", "compat checks", 10, "required", "partial", "Compatibility risks are enumerated but not fully exercised for every prototype.", "Public API, plugin, dynamic dependency, and cross-store compatibility fixtures.",
+	"Shared retained-key sidecar", 4, "sidecar", "raw samples", 1, "conditional", "partial", "Raw retained samples can be used as the timing anchor.", "Accepted sidecar rows joined to each retained key.",
+	"Shared retained-key sidecar", 4, "sidecar", "q25/q50/q75/cnt", 2, "conditional", "partial", "Current summaries can act as baseline controls.", "Matched summaries with sidecar-on and sidecar-off overhead controls.",
+	"Shared retained-key sidecar", 4, "sidecar", "per-run order", 3, "required", "partial", "Local order data exists.", "Sidecar-preserved run order and class ordering.",
+	"Shared retained-key sidecar", 4, "sidecar", "env metadata", 7, "required", "missing", "Renderer/command identity is not joined to retained keys.", "Renderer identity, helper policy, command identity, clocks, and collector windows.",
+	"Shared retained-key sidecar", 4, "sidecar", "source spans", 9, "conditional", "partial", "Source spans exist, but not as a sidecar acceptance field.", "Sidecar-to-source-span join for retained keys.",
+	"Shared retained-key sidecar", 4, "sidecar", "retained-key joins", 11, "required", "missing", "No accepted retained-key sidecar join exists.", "Stable key-window IDs, clock sync, and join coverage.",
+	"Shared retained-key sidecar", 4, "sidecar", "observer overhead", 12, "required", "partial", "Several observer perturbation controls exist.", "Sidecar-specific overhead and class-order preservation.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "raw samples", 1, "conditional", "partial", "Current latency samples define the classes to separate.", "Counter runs joined to retained keys.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "q25/q50/q75/cnt", 2, "conditional", "partial", "Current q summaries define baseline row ordering.", "Matched q summaries under counter collection.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "per-run order", 3, "required", "partial", "Local order data exists.", "Counter-preserved per-run and class ordering.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "env metadata", 7, "required", "missing", "Machine state is not joined to retained keys.", "CPU model, frequency policy, core residency, QoS, power, and runner/container metadata.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "retained-key joins", 11, "required", "missing", "No sidecar join exists yet.", "Key-window to counter-window join coverage.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "observer overhead", 12, "required", "partial", "Observer overhead is bounded for some JS/browser observers.", "Counter-specific overhead and ordering controls.",
+	"CPU/QoS counter bundle", 5, "CPU/QoS", "root counters", 13, "required", "missing", "No root `powermetrics` or root trace counter bundle is joined.", "Frequency, residency, QoS, power, runnable-latency, or cache counters.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "raw samples", 1, "conditional", "partial", "Fixed-character benchmark samples exist.", "Per-stratum workload or external-endpoint samples.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "q25/q50/q75/cnt", 2, "conditional", "partial", "Fixed-character summaries exist.", "Per-stratum q summaries or external-endpoint summaries.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "resource timing", 6, "conditional", "partial", "Some resource probes exist.", "Workload/display resource timing joined to retained keys.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "behavior fixtures", 8, "required", "missing", "Fixed-`x` behavior is covered more than product replay behavior.", "Replay assertions, visual assertions, and product-workload correctness gates.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "source spans", 9, "conditional", "partial", "Source spans exist for the benchmark path.", "Source spans joined to replay strata or external endpoints.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "retained-key joins", 11, "required", "missing", "No replay/external retained-key join exists.", "Stable key or interaction IDs across traces, sidecars, and endpoints.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "observer overhead", 12, "required", "missing", "Trace/screenshot observer controls are not external endpoint controls.", "Observer-on/off calibration for replay or display tooling.",
+	"Workload/display expansion artifacts", 6, "claim expansion", "replay/external endpoint", 14, "required", "missing", "The current artifact is fixed-text and Chromium-internal.", "Representative replay strata or calibrated external display/glyph endpoint."
+) %>%
+	mutate(
+		requirement_level = factor(requirement_level, levels = c("conditional", "required")),
+		current_status = factor(current_status, levels = c("missing", "partial", "present")),
+		status_score = case_when(
+			current_status == "missing" ~ 0,
+			current_status == "partial" ~ 0.5,
+			current_status == "present" ~ 1,
+			TRUE ~ NA_real_
+		),
+		artifact_label = fct_reorder(artifact_label, artifact_order, .desc = TRUE),
+		requirement_label = fct_reorder(requirement_label, requirement_order),
+		requirement_code = if_else(requirement_level == "required", "req", "cond")
+	)
+
+open_question_evidence_readiness_summary <- open_question_evidence_readiness %>%
+	group_by(artifact, artifact_order, artifact_label, current_status) %>%
+	summarize(cells = n(), .groups = "drop") %>%
+	complete(
+		nesting(artifact, artifact_order, artifact_label),
+		current_status = levels(open_question_evidence_readiness$current_status),
+		fill = list(cells = 0)
+	) %>%
+	group_by(artifact, artifact_order, artifact_label) %>%
+	mutate(
+		total_cells = sum(cells),
+		cell_share = cells / total_cells
+	) %>%
+	ungroup() %>%
+	mutate(
+		artifact_label = fct_reorder(artifact_label, artifact_order),
+		current_status = factor(current_status, levels = c("missing", "partial", "present"))
+	)
+
+open_question_evidence_readiness_rollup <- open_question_evidence_readiness %>%
+	group_by(artifact, artifact_order, artifact_label) %>%
+	summarize(
+		required_cells = sum(requirement_level == "required"),
+		required_missing = sum(requirement_level == "required" & current_status == "missing"),
+		required_partial = sum(requirement_level == "required" & current_status == "partial"),
+		required_present = sum(requirement_level == "required" & current_status == "present"),
+		all_cells = n(),
+		readiness_score = round(100 * mean(status_score), 1),
+		closure_state = case_when(
+			required_missing > 0 ~ "blocked by missing required fields",
+			required_partial > 0 ~ "needs scope/topology validation",
+			TRUE ~ "ready to interpret"
+		),
+		.groups = "drop"
+	) %>%
+	arrange(artifact_order)
+
+write_csv(
+	open_question_evidence_readiness %>%
+		select(
+			artifact,
+			artifact_order,
+			artifact_label,
+			requirement_label,
+			requirement_order,
+			requirement_level,
+			current_status,
+			status_score,
+			current_evidence,
+			missing_for_closure
+		),
+	file.path(data_dir, "typing-delay-open-question-evidence-readiness.csv")
+)
+
+write_csv(
+	open_question_evidence_readiness_rollup,
+	file.path(data_dir, "typing-delay-open-question-evidence-readiness-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_evidence_readiness,
+		aes(requirement_label, artifact_label, fill = current_status)
+	) +
+		geom_tile(color = "white", linewidth = 0.45) +
+		geom_text(aes(label = requirement_code), color = "grey15", size = 2.7) +
+		scale_fill_brewer(type = "div", palette = "RdYlGn", direction = 1, name = "Current evidence") +
+		labs(
+			title = "Most open questions are blocked by missing fields, not sample count",
+			subtitle = "Labels mark required versus conditional fields for interpreting each artifact bundle",
+			x = "Field or gate",
+			y = "Artifact bundle"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(
+			axis.text.x = element_text(angle = 30, hjust = 1),
+			legend.position = "bottom"
+		),
+	"212-open-question-evidence-readiness.png",
+	width = 13.2,
+	height = 7.4
+)
+
+save_plot(
+	ggplot(
+		open_question_evidence_readiness_summary,
+		aes(artifact_label, cell_share, fill = current_status)
+	) +
+		geom_col(width = 0.72) +
+		coord_flip() +
+		scale_fill_brewer(type = "div", palette = "RdYlGn", direction = 1, name = "Current evidence") +
+		scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+		labs(
+			title = "Closure readiness is lowest where new observers are required",
+			subtitle = "CI and source work have partial local prerequisites; sidecar, CPU/QoS, and claim expansion are still missing required fields",
+			x = "Artifact bundle",
+			y = "Share of required or conditional fields"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"213-open-question-closure-readiness.png",
+	width = 11.4,
+	height = 6.6
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1,0 +1,43 @@
+artifact,artifact_order,artifact_label,requirement_label,requirement_order,requirement_level,current_status,status_score,current_evidence,missing_for_closure
+Compact CI topology artifact,1,CI topology,raw samples,1,required,partial,0.5,Local retained-sample artifacts exist.,Paired raw artifacts from the real Performance Tests topology.
+Compact CI topology artifact,1,CI topology,q25/q50/q75/cnt,2,required,partial,0.5,Local summaries exist and match the reporter shape.,Repeated CI-topology summaries with raw retained rows.
+Compact CI topology artifact,1,CI topology,per-run order,3,required,partial,0.5,Local run/order artifacts exist.,"CI run order, branch order, and per-round grouping."
+Compact CI topology artifact,1,CI topology,first-key tails,4,required,partial,0.5,Local first-key and retained-key slices exist.,Same first-key slices in CI topology.
+Compact CI topology artifact,1,CI topology,failures/actionability,5,required,partial,0.5,Some local actionability/failure surfaces are recorded.,"CI failure counts, skipped interactions, and actionability retries."
+Compact CI topology artifact,1,CI topology,resource timing,6,required,partial,0.5,Local resource/readiness probes exist for several waits.,CI resource groups joined to each measured row.
+Compact CI topology artifact,1,CI topology,env metadata,7,required,missing,0,Local host context is known only informally.,"Runner image, browser revision, CPU/container limits, wp-env, and git/WP identifiers."
+Pattern readiness/resource artifact,2,patterns,raw samples,1,required,partial,0.5,Local pattern-wait samples exist.,Raw retained pattern samples across CI/mac/container lanes.
+Pattern readiness/resource artifact,2,patterns,q25/q50/q75/cnt,2,required,partial,0.5,Local exact-wait summaries exist.,Topology-specific summaries plus retained counts for each spec.
+Pattern readiness/resource artifact,2,patterns,per-run order,3,conditional,partial,0.5,Some local run grouping exists.,Run order only matters if first-run/resource phase is being interpreted.
+Pattern readiness/resource artifact,2,patterns,first-key tails,4,conditional,partial,0.5,The typing harness can report first-key distributions.,Pattern-specific first interaction tails when wait removal is evaluated.
+Pattern readiness/resource artifact,2,patterns,failures/actionability,5,required,partial,0.5,Actionability and retained-count checks exist locally.,Preview/canvas/actionability failures by spec and wait policy.
+Pattern readiness/resource artifact,2,patterns,resource timing,6,required,partial,0.5,Resource quiet and endpoint grouping have local probes.,"Source-specific readiness, resource quiet, timeout, and fallback logs."
+Pattern readiness/resource artifact,2,patterns,env metadata,7,required,missing,0,No complete lane metadata is joined to the pattern decision artifact.,"Browser, runner, container, wp-env, and spec/lane metadata."
+Behavior-gated source prototype,3,source,raw samples,1,conditional,partial,0.5,Aggregate timing samples exist for the benchmark.,Matched before/after aggregate rows after behavior and source gates pass.
+Behavior-gated source prototype,3,source,q25/q50/q75/cnt,2,conditional,partial,0.5,Aggregate q summaries exist.,Prototype-specific q summaries after gate success.
+Behavior-gated source prototype,3,source,per-run order,3,conditional,partial,0.5,Run order is available for existing samples.,Prototype run order and source-span run order.
+Behavior-gated source prototype,3,source,behavior fixtures,8,required,partial,0.5,Focused behavior coverage exists for the first low-risk guard.,"Full public-filter, selection, editability, settings, bindings, and structural gates for the next source owner."
+Behavior-gated source prototype,3,source,source spans,9,required,present,1,The source-span microscope already identifies and rechecks hot owner rows.,Matched after-patch source-span collapse for the targeted owner.
+Behavior-gated source prototype,3,source,compat checks,10,required,partial,0.5,Compatibility risks are enumerated but not fully exercised for every prototype.,"Public API, plugin, dynamic dependency, and cross-store compatibility fixtures."
+Shared retained-key sidecar,4,sidecar,raw samples,1,conditional,partial,0.5,Raw retained samples can be used as the timing anchor.,Accepted sidecar rows joined to each retained key.
+Shared retained-key sidecar,4,sidecar,q25/q50/q75/cnt,2,conditional,partial,0.5,Current summaries can act as baseline controls.,Matched summaries with sidecar-on and sidecar-off overhead controls.
+Shared retained-key sidecar,4,sidecar,per-run order,3,required,partial,0.5,Local order data exists.,Sidecar-preserved run order and class ordering.
+Shared retained-key sidecar,4,sidecar,env metadata,7,required,missing,0,Renderer/command identity is not joined to retained keys.,"Renderer identity, helper policy, command identity, clocks, and collector windows."
+Shared retained-key sidecar,4,sidecar,source spans,9,conditional,partial,0.5,"Source spans exist, but not as a sidecar acceptance field.",Sidecar-to-source-span join for retained keys.
+Shared retained-key sidecar,4,sidecar,retained-key joins,11,required,missing,0,No accepted retained-key sidecar join exists.,"Stable key-window IDs, clock sync, and join coverage."
+Shared retained-key sidecar,4,sidecar,observer overhead,12,required,partial,0.5,Several observer perturbation controls exist.,Sidecar-specific overhead and class-order preservation.
+CPU/QoS counter bundle,5,CPU/QoS,raw samples,1,conditional,partial,0.5,Current latency samples define the classes to separate.,Counter runs joined to retained keys.
+CPU/QoS counter bundle,5,CPU/QoS,q25/q50/q75/cnt,2,conditional,partial,0.5,Current q summaries define baseline row ordering.,Matched q summaries under counter collection.
+CPU/QoS counter bundle,5,CPU/QoS,per-run order,3,required,partial,0.5,Local order data exists.,Counter-preserved per-run and class ordering.
+CPU/QoS counter bundle,5,CPU/QoS,env metadata,7,required,missing,0,Machine state is not joined to retained keys.,"CPU model, frequency policy, core residency, QoS, power, and runner/container metadata."
+CPU/QoS counter bundle,5,CPU/QoS,retained-key joins,11,required,missing,0,No sidecar join exists yet.,Key-window to counter-window join coverage.
+CPU/QoS counter bundle,5,CPU/QoS,observer overhead,12,required,partial,0.5,Observer overhead is bounded for some JS/browser observers.,Counter-specific overhead and ordering controls.
+CPU/QoS counter bundle,5,CPU/QoS,root counters,13,required,missing,0,No root `powermetrics` or root trace counter bundle is joined.,"Frequency, residency, QoS, power, runnable-latency, or cache counters."
+Workload/display expansion artifacts,6,claim expansion,raw samples,1,conditional,partial,0.5,Fixed-character benchmark samples exist.,Per-stratum workload or external-endpoint samples.
+Workload/display expansion artifacts,6,claim expansion,q25/q50/q75/cnt,2,conditional,partial,0.5,Fixed-character summaries exist.,Per-stratum q summaries or external-endpoint summaries.
+Workload/display expansion artifacts,6,claim expansion,resource timing,6,conditional,partial,0.5,Some resource probes exist.,Workload/display resource timing joined to retained keys.
+Workload/display expansion artifacts,6,claim expansion,behavior fixtures,8,required,missing,0,Fixed-`x` behavior is covered more than product replay behavior.,"Replay assertions, visual assertions, and product-workload correctness gates."
+Workload/display expansion artifacts,6,claim expansion,source spans,9,conditional,partial,0.5,Source spans exist for the benchmark path.,Source spans joined to replay strata or external endpoints.
+Workload/display expansion artifacts,6,claim expansion,retained-key joins,11,required,missing,0,No replay/external retained-key join exists.,"Stable key or interaction IDs across traces, sidecars, and endpoints."
+Workload/display expansion artifacts,6,claim expansion,observer overhead,12,required,missing,0,Trace/screenshot observer controls are not external endpoint controls.,Observer-on/off calibration for replay or display tooling.
+Workload/display expansion artifacts,6,claim expansion,replay/external endpoint,14,required,missing,0,The current artifact is fixed-text and Chromium-internal.,Representative replay strata or calibrated external display/glyph endpoint.

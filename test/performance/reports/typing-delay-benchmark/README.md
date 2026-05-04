@@ -1056,6 +1056,12 @@ The R script derives:
     matrix for the shared open-question artifacts, showing which raw fields,
     gates, joins, and controls are required or conditional before interpreting a
     result.
+-   `data/typing-delay-open-question-evidence-readiness.csv`: readiness audit
+    mapping the current report evidence onto those required and conditional
+    fields, so missing observers are not mistaken for low sample count.
+-   `data/typing-delay-open-question-evidence-readiness-summary.csv`: rollup of
+    missing, partial, and present required fields for each open-question artifact
+    bundle.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9416,6 +9422,33 @@ point; it is an incomplete artifact.
 | Shared retained-key sidecar | key-window IDs, helper policy, renderer/command identity, clock sync, join coverage, observer-overhead/class-ordering checks | unjoinable counters or sidecar perturbing the row ordering |
 | CPU/QoS counter bundle | accepted sidecar, root `powermetrics`, controls for class ordering, optional root trace fallback | counters that correlate weakly but do not separate retained fast/slow classes |
 | Workload/display expansion artifacts | replay strata or external endpoints, behavior/visual assertions, per-stratum summaries, retained-key joins | one aggregate product/display headline without joined strata or calibrated endpoint evidence |
+
+The readiness audit applies that checklist to the current report. This is the
+important anti-overfitting step: a partial local proxy is not the same as the
+field needed to close an open question. Most remaining cells are blocked by
+topology, behavior gates, join keys, counters, or external/replay endpoints, not
+by another wide sweep of the same key-held benchmark.
+
+![Open question evidence readiness](figures/212-open-question-evidence-readiness.png)
+
+![Open question closure readiness](figures/213-open-question-closure-readiness.png)
+
+| Artifact | Current readiness | Next missing closure evidence |
+| -------- | ----------------- | ----------------------------- |
+| Compact CI topology artifact | local raw samples, q summaries, order, first-key slices, failures, and resources are partial proxies | real Performance Tests artifacts with environment metadata and raw retained rows |
+| Pattern readiness/resource artifact | local wait/resource probes are partial proxies | source-specific readiness, preview/canvas/actionability counts, fallback logs, and lane metadata |
+| Behavior-gated source prototype | source spans are present and behavior/compatibility gates are partial | targeted after-patch source-span collapse plus full public API and behavior fixtures |
+| Shared retained-key sidecar | baseline samples and observer controls are only partial | stable retained-key join IDs, clock sync, renderer/command identity, and sidecar overhead checks |
+| CPU/QoS counter bundle | latency classes exist, but the mechanism observer is missing | accepted sidecar plus root `powermetrics` or trace counters joined to retained keys |
+| Workload/display expansion artifacts | fixed-`x` samples and internal endpoints are only partial controls | replay strata or calibrated external endpoints with behavior/visual assertions and retained-key joins |
+
+The practical consequence is that only two closure lanes can benefit immediately
+from more ordinary benchmark samples: CI topology and pattern readiness, and
+even those samples must be collected in the right topology with the right
+metadata. Selector/source work needs behavior fixtures and source-span collapse
+before aggregate timing is interpretable. Runtime, CPU/QoS, display, and
+workload claims need new joined observers; more local q50 rows would mainly
+reduce noise around the wrong measurement.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
