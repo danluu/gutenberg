@@ -1,0 +1,50 @@
+claim_scope,current_gate,claims,scope_claims
+benchmark artifact,supported now,3,3
+benchmark artifact,supported locally,0,3
+benchmark artifact,blocked by manifest,0,3
+benchmark artifact,blocked by sidecar,0,3
+benchmark artifact,blocked by counters,0,3
+benchmark artifact,blocked by endpoint,0,3
+benchmark artifact,blocked externally,0,3
+local decision,supported now,0,1
+local decision,supported locally,1,1
+local decision,blocked by manifest,0,1
+local decision,blocked by sidecar,0,1
+local decision,blocked by counters,0,1
+local decision,blocked by endpoint,0,1
+local decision,blocked externally,0,1
+CI actionability,supported now,0,2
+CI actionability,supported locally,0,2
+CI actionability,blocked by manifest,2,2
+CI actionability,blocked by sidecar,0,2
+CI actionability,blocked by counters,0,2
+CI actionability,blocked by endpoint,0,2
+CI actionability,blocked externally,0,2
+source change,supported now,0,2
+source change,supported locally,0,2
+source change,blocked by manifest,2,2
+source change,blocked by sidecar,0,2
+source change,blocked by counters,0,2
+source change,blocked by endpoint,0,2
+source change,blocked externally,0,2
+mechanism,supported now,0,2
+mechanism,supported locally,0,2
+mechanism,blocked by manifest,0,2
+mechanism,blocked by sidecar,1,2
+mechanism,blocked by counters,1,2
+mechanism,blocked by endpoint,0,2
+mechanism,blocked externally,0,2
+claim expansion,supported now,0,2
+claim expansion,supported locally,0,2
+claim expansion,blocked by manifest,0,2
+claim expansion,blocked by sidecar,0,2
+claim expansion,blocked by counters,0,2
+claim expansion,blocked by endpoint,2,2
+claim expansion,blocked externally,0,2
+external policy,supported now,0,1
+external policy,supported locally,0,1
+external policy,blocked by manifest,0,1
+external policy,blocked by sidecar,0,1
+external policy,blocked by counters,0,1
+external policy,blocked by endpoint,0,1
+external policy,blocked externally,1,1

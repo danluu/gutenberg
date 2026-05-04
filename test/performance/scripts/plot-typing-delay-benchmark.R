@@ -23036,6 +23036,133 @@ save_plot(
 	height = 7.2
 )
 
+open_question_claim_gate_ledger <- tribble(
+	~claim, ~claim_order, ~claim_scope, ~current_gate, ~required_manifest, ~required_manifest_order, ~external_dependency, ~allowed_wording, ~blocked_wording, ~next_evidence,
+	"The 1000ms key-held cliff exists in the current benchmark path", 1, "benchmark artifact", "supported now", "current artifact", 0, "none", "The cliff exists for this key-held benchmark path and current observers.", "The cliff is a product-wide input latency rule.", "None for the local artifact; rerun only after browser/helper/trace settings change.",
+	"Held-key delay and complete-keypress-then-wait are different metric families", 2, "benchmark artifact", "supported now", "current artifact", 0, "none", "A held key and a tap followed by a wait must be reported as separate metrics.", "The old delay setting is just an idle wait after a normal keypress.", "None unless the helper family changes.",
+	"RichText persistence timing explains the measurement boundary", 3, "benchmark artifact", "supported now", "current artifact", 0, "none", "The boundary is a benchmark-path timing boundary around transient/persistent RichText state.", "The boundary names a browser scheduler, CPU, or display mechanism.", "Use sidecars/counters only if naming lower-layer mechanisms.",
+	"Local Typing retained q50 does not justify adding startup wait", 4, "local decision", "supported locally", "current artifact", 0, "none", "Under the local retained-q50 metric, added startup waits do not improve stability.", "Startup waits can be removed from CI without topology validation.", "CI topology retained-metric manifest before changing CI policy.",
+	"CI wait removal is reliable and saves time", 5, "CI actionability", "blocked by manifest", "CI topology retained-metric manifest", 1, "external threshold/reviewer policy for pass/fail claims", "CI wait changes are allowed only after real topology rows preserve ordering, failures, resources, and first-key behavior.", "Local macOS q50 proves CI wait removal is safe.", "Run the CI topology retained-metric manifest with raw rows and environment metadata.",
+	"Pattern-loading waits can be removed or replaced", 6, "CI actionability", "blocked by manifest", "Pattern readiness/resource manifest", 2, "none", "A predicate or shorter fixed wait is valid only when readiness, resources, preview/canvas behavior, failures, and retained rows pass.", "Pattern wait removal is justified by q50 alone.", "Run the pattern readiness/resource manifest by spec and lane.",
+	"Selector/source optimization is behavior-preserving and useful", 7, "source change", "blocked by manifest", "Behavior-gated source prototype manifest", 3, "none", "A source win is interpretable only after behavior/compatibility fixtures and source-span collapse pass.", "Aggregate p50 alone proves a safe source optimization.", "Run targeted behavior fixtures, compatibility fixtures, and source-span microscope.",
+	"Store subscriber partition is compatible", 8, "source change", "blocked by manifest", "Behavior-gated source prototype manifest", 3, "public @wordpress/data contract review", "Store partition work must preserve public subscribe/useSelect behavior and dynamic dependency cases.", "Listener-count reduction alone proves compatibility.", "Add public subscriber, persistence-selector, unrelated-selector, dynamic dependency, race, and cross-store fixtures.",
+	"Chromium runtime checkpoint state can be named", 9, "mechanism", "blocked by sidecar", "Retained-key sidecar acceptance manifest", 4, "none", "Runtime state can be named only after a trace-off sidecar joins differentiating state to retained keys without perturbing ordering.", "Runtime.evaluate dose response identifies the exact Chromium cause.", "Build and accept the retained-key sidecar first.",
+	"CPU/QoS mechanism can be named", 10, "mechanism", "blocked by counters", "CPU/QoS counter manifest", 5, "root permissions and counter availability", "CPU/QoS names require accepted sidecar rows plus root counters that separate fast and slow classes.", "Frequency, P-core, QoS, cache, or scheduler cause is proved by aggregate latency rows.", "Run sidecar-accepted root powermetrics or trace counter rows.",
+	"Fixed-x benchmark generalizes to product workload latency", 11, "claim expansion", "blocked by endpoint", "Workload/display expansion manifest", 6, "representative replay corpus", "Product claims need replay strata, assertions, per-stratum summaries, and retained-key joins.", "Fixed-character insertion is representative product latency.", "Add replay strata or recorded workload pilot with behavior assertions.",
+	"Chromium-internal visual endpoints are hardware/display latency", 12, "claim expansion", "blocked by endpoint", "Workload/display expansion manifest", 6, "external presentation observer", "Display claims need calibrated external endpoints joined to retained keys.", "Trace screenshots or paint events are user-visible display latency.", "Add OCR/template, compositor/present timestamp, or camera/display calibration.",
+	"Local q50 predicts pass/fail", 13, "external policy", "blocked externally", "CI topology retained-metric manifest", 1, "documented dashboard/reviewer threshold policy", "Pass/fail prediction needs CI artifacts plus the actual external threshold or reviewer policy.", "Repository-local q50 movement is the pass/fail gate.", "Join CodeVitals/reviewer policy to raw CI artifacts."
+) %>%
+	mutate(
+		claim_scope = factor(
+			claim_scope,
+			levels = c("benchmark artifact", "local decision", "CI actionability", "source change", "mechanism", "claim expansion", "external policy")
+		),
+		current_gate = factor(
+			current_gate,
+			levels = c("supported now", "supported locally", "blocked by manifest", "blocked by sidecar", "blocked by counters", "blocked by endpoint", "blocked externally")
+		),
+		required_manifest = factor(
+			required_manifest,
+			levels = c(
+				"current artifact",
+				"CI topology retained-metric manifest",
+				"Pattern readiness/resource manifest",
+				"Behavior-gated source prototype manifest",
+				"Retained-key sidecar acceptance manifest",
+				"CPU/QoS counter manifest",
+				"Workload/display expansion manifest"
+			)
+		),
+		claim_label = str_wrap(claim, width = 42),
+		claim_label = fct_reorder(claim_label, claim_order, .desc = TRUE),
+		gate_score = case_when(
+			current_gate == "supported now" ~ 5,
+			current_gate == "supported locally" ~ 4,
+			current_gate == "blocked by manifest" ~ 3,
+			current_gate == "blocked by sidecar" ~ 2,
+			current_gate == "blocked by counters" ~ 1.5,
+			current_gate == "blocked by endpoint" ~ 1,
+			current_gate == "blocked externally" ~ 0.5,
+			TRUE ~ NA_real_
+		)
+	)
+
+open_question_claim_gate_summary <- open_question_claim_gate_ledger %>%
+	count(claim_scope, current_gate, name = "claims") %>%
+	complete(claim_scope, current_gate, fill = list(claims = 0)) %>%
+	group_by(claim_scope) %>%
+	mutate(scope_claims = sum(claims)) %>%
+	ungroup() %>%
+	filter(scope_claims > 0)
+
+write_csv(
+	open_question_claim_gate_ledger %>%
+		select(
+			claim,
+			claim_order,
+			claim_scope,
+			current_gate,
+			required_manifest,
+			required_manifest_order,
+			external_dependency,
+			allowed_wording,
+			blocked_wording,
+			next_evidence
+		),
+	file.path(data_dir, "typing-delay-open-question-claim-gate-ledger.csv")
+)
+
+write_csv(
+	open_question_claim_gate_summary,
+	file.path(data_dir, "typing-delay-open-question-claim-gate-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_claim_gate_ledger,
+		aes(required_manifest, claim_label, fill = current_gate)
+	) +
+		geom_tile(color = "white", linewidth = 0.45) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Current gate") +
+		labs(
+			title = "Most broad claims are gated by a specific missing artifact",
+			subtitle = "Local benchmark claims are supported; CI, source, mechanism, product, and pass/fail claims need their matching manifest",
+			x = "Minimum artifact required",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(
+			axis.text.x = element_text(angle = 30, hjust = 1),
+			legend.position = "bottom",
+			legend.box = "vertical"
+		),
+	"218-open-question-claim-gates.png",
+	width = 13.4,
+	height = 8.2
+)
+
+save_plot(
+	ggplot(
+		open_question_claim_gate_summary,
+		aes(claim_scope, claims, fill = current_gate)
+	) +
+		geom_col(width = 0.72) +
+		coord_flip() +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Current gate") +
+		scale_y_continuous(breaks = scales::breaks_width(1)) +
+		labs(
+			title = "Supported claims are narrow; broad claims remain gated",
+			subtitle = "The open work is mostly claim expansion and actionability, not the local benchmark explanation",
+			x = "Claim scope",
+			y = "Number of claims"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"219-open-question-claim-gate-summary.png",
+	width = 11.4,
+	height = 6.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

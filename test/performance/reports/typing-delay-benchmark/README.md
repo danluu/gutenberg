@@ -1073,6 +1073,11 @@ The R script derives:
     close/expand conditions, dependencies, and claims unlocked.
 -   `data/typing-delay-open-question-closure-manifest-families.csv`: mapping
     from closure manifests to the evidence-debt families each one covers.
+-   `data/typing-delay-open-question-claim-gate-ledger.csv`: claim gate ledger
+    mapping each supported, conditional, or blocked claim to the minimum artifact
+    needed before making it.
+-   `data/typing-delay-open-question-claim-gate-summary.csv`: rollup of claim
+    gates by claim scope and current support level.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9512,6 +9517,30 @@ manifests; source optimization needs the behavior-gated prototype; mechanism
 naming needs sidecar acceptance before root counters; product or hardware-display
 claims need replay or external endpoints. A run that does not archive the fields
 listed in its manifest should not be used to close the question.
+
+The claim-gate ledger is the wording guardrail. It separates what the current
+benchmark can already say from the broader CI, source, mechanism, product, and
+pass/fail claims that still require a closure manifest.
+
+![Open question claim gates](figures/218-open-question-claim-gates.png)
+
+![Open question claim gate summary](figures/219-open-question-claim-gate-summary.png)
+
+| Claim class | Safe current wording | Blocked wording |
+| ----------- | -------------------- | ---------------- |
+| Benchmark artifact | the `1000ms` key-held cliff exists in this benchmark path, and held-key delay is a different metric family from complete-keypress-then-wait | the cliff is a product-wide latency rule or a hardware/display mechanism |
+| Local decision | local retained Typing q50 does not justify adding a startup wait | local macOS rows prove CI wait removal is safe |
+| CI actionability | CI wait or pattern-wait changes need topology/readiness manifests with failures, resources, first-key behavior, and environment metadata | q50 alone proves wait removal is reliable |
+| Source change | source optimization claims require behavior fixtures, compatibility fixtures, and source-span collapse before aggregate timing is cited | aggregate p50 or listener-count reduction proves semantic safety |
+| Mechanism | runtime or CPU/QoS names require retained-key sidecars and, for CPU/QoS, root counters | aggregate latency rows name V8, scheduler, P-core, frequency, QoS, cache, or runnable-latency causes |
+| Claim expansion | product/display claims require replay strata or calibrated external endpoints joined to retained keys | fixed-`x` insertion or Chromium-internal screenshots are representative product or hardware-display latency |
+| External policy | pass/fail prediction requires CI artifacts plus the actual dashboard or reviewer threshold policy | repository-local q50 movement is the pass/fail gate |
+
+That makes the remaining open questions less ambiguous. The current report can
+make narrow benchmark-artifact claims now. It can make local retained-q50
+decisions with local scope. Everything that affects CI policy, source changes,
+mechanism naming, product/display scope, or pass/fail prediction has a named gate
+and should stay out of the conclusion until that gate passes.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
