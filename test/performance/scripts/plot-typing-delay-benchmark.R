@@ -11249,6 +11249,100 @@ if (
 					)
 				)
 
+			chromium_runtime_sidecar_mvp_plan <- tribble(
+				~implementation_piece, ~phase_order, ~source_surface, ~required_change, ~first_validation, ~stop_condition, ~phase, ~implementation_burden_score, ~mechanism_unblock_score, ~observer_risk_score, ~plot_label,
+				"Protocol send wrapper",
+				1,
+				"test/performance/specs/typing-delay-benchmark.spec.js:3980-4160 runtime checkpoint branch",
+				"Wrap each direct CDP checkpoint command in a tiny logger that records command id, method, repeat index, sample index/window id, parameters fingerprint, start/end driver monotonic timestamps, result/error, execution context, and object id/group where present.",
+				"Trace-off raw-CDP wait, Runtime.evaluate x0/x1/x7/x17, Runtime.callFunctionOn x0/x1/x7/x17, and trace-off page.evaluate rows produce the expected command counts without changing retained p50 class ordering.",
+				"Stop before runtime tracing if logging changes the wait/checkpoint ordering or drops commands under repeat load.",
+				"sidecar first",
+				2.0, 5.0, 2.0, "send wrapper",
+				"Browser/driver timebase sync",
+				2,
+				"runStartedAtBrowserNowMs/runStoppedAtBrowserNowMs plus the proposed protocol command log",
+				"Record browser performance.now() sync points before and after each run, driver monotonic timestamps for every command, browser revision, and trace timebase metadata when tracing is later enabled.",
+				"Every command window can be mapped into the previous-keyup-to-next-keydown gap without negative durations or ambiguous window assignment.",
+				"Stop if short repeat loops cannot be aligned to the same browser key-gap timebase used by EventDispatch.",
+				"sidecar first",
+				2.4, 5.0, 3.0, "timebase",
+				"Key-gap window join",
+				3,
+				"traceEventsForKeyGaps(); delayRunSummaries records; extract-typing-delay-runtime-repeat.js",
+				"Assign a stable runtimeCheckpointWindowId to the inter-key gap after sample i, mark retained/throwaway status, and join protocol commands, EventDispatch, observed gap, delay mode, repeat count, and source-span ids to that window.",
+				"The extractor emits one row per retained key window plus command-count summaries; sample indices match existing latency rows exactly.",
+				"Stop if command windows can only be joined by aggregate run or if retained/throwaway indexing disagrees with existing records.",
+				"sidecar first",
+				2.6, 4.8, 3.0, "key windows",
+				"Raw artifact and extractor schema",
+				4,
+				"delayRunSummaries JSON; report data extractors",
+				"Append protocolCommandEvents to raw JSON and add a sidecar extractor that keeps per-command rows and per-window summaries without changing existing curated q50 output.",
+				"Existing runtime-repeat summaries remain byte-for-byte equivalent for latency fields, while the new CSV exposes command ids, counts, durations, contexts, and window joins.",
+				"Stop if adding sidecar rows changes the reporter's existing latency output or forces a new metric definition.",
+				"sidecar first",
+				3.0, 4.5, 2.0, "extractor",
+				"Trace-off acceptance matrix",
+				5,
+				"runtime repeat run manifest and current cdp-boundary summaries",
+				"Run the sidecar with tracing off first: x0/x1/x3/x7/x17 for Runtime.evaluate and Runtime.callFunctionOn, ordinary waits, and trace-off page.evaluate.",
+				"Class ordering survives, command-count/duration scales with repeat count, no retained command windows are missing, and sidecar overhead is bounded by matched no-sidecar rows.",
+				"Do not enable scheduler/V8 categories until the protocol-only observer passes.",
+				"acceptance gate",
+				3.5, 5.0, 4.0, "acceptance",
+				"Runtime trace category bundle",
+				6,
+				"packages/e2e-test-utils-playwright/src/metrics/index.ts startTracing options",
+				"Only after the trace-off sidecar passes, add an opt-in browser trace bundle for task queues, scheduler/input priority, V8 execution, microtask checkpoints if exposed, process/thread ids, and flow ids; record the exact category list in artifacts.",
+				"A per-window trace-state metric separates waits from runtime-repeat rows and tracks the x0/x1/x3/x7/x17 dose response while protocol-only ordering remains intact.",
+				"Reject named V8/scheduler/input-priority mechanisms if trace categories perturb ordering or fail to expose a state variable tied to retained key windows.",
+				"trace bundle",
+				4.3, 5.0, 5.0, "runtime trace",
+				"Trace-snapshot observer split",
+				7,
+				"trace-on keyboard/page.evaluate rows plus external protocol log",
+				"Use the sidecar or a separate low-overhead protocol log to record captureSnapshot/DOMSnapshot command windows for trace-on rows, without relying on Playwright tracing as the only observer.",
+				"Trace-on fast rows align with snapshot protocol windows and share the same runtime/scheduler state as high-repeat trace-off runtime checkpoints.",
+				"Do not generalize the trace-on fast band if the observer itself creates the state or if snapshot command windows are not joined to retained keys.",
+				"observer split",
+				4.6, 4.5, 5.0, "snapshot split",
+				"OS/native scale joins",
+				8,
+				"CPU/QoS sidecar; native runtime-repeat rows; Gutenberg source-span ids",
+				"Add renderer pid/thread ids, optional OS-counter sample ids, native scenario ids, Gutenberg fixture/source-span ids, and collector metadata after browser-side command and trace joins are stable.",
+				"Browser state remains predictive after matching OS counters, and native rows show only browser-scale movement while Gutenberg source spans explain amplification.",
+				"Keep the exact mechanism at OS/QoS or workload scope if browser trace state does not survive these joins.",
+				"deferred join",
+				5.0, 3.8, 4.0, "OS/native"
+			) %>%
+				mutate(
+					phase = factor(
+						phase,
+						levels = c("sidecar first", "acceptance gate", "trace bundle", "observer split", "deferred join")
+					),
+					label_x = implementation_burden_score + case_when(
+						plot_label == "send wrapper" ~ 0.16,
+						plot_label == "timebase" ~ 0.14,
+						plot_label == "key windows" ~ 0.16,
+						plot_label == "extractor" ~ 0.16,
+						plot_label == "acceptance" ~ 0.16,
+						plot_label == "runtime trace" ~ -0.92,
+						plot_label == "snapshot split" ~ -1.02,
+						TRUE ~ -0.78
+					),
+					label_y = mechanism_unblock_score + case_when(
+						plot_label == "send wrapper" ~ 0.06,
+						plot_label == "timebase" ~ -0.16,
+						plot_label == "key windows" ~ -0.18,
+						plot_label == "extractor" ~ -0.20,
+						plot_label == "acceptance" ~ 0.08,
+						plot_label == "runtime trace" ~ -0.14,
+						plot_label == "snapshot split" ~ -0.22,
+						TRUE ~ 0.14
+					)
+				)
+
 			chromium_runtime_claim_ladder_audit <- tribble(
 				~claim, ~claim_order, ~allowed_claim, ~current_evidence, ~blocked_overclaim, ~required_next_evidence, ~evidence_score, ~validation_burden_score, ~overclaim_risk_score, ~decision, ~plot_label,
 				"Benchmark input semantics",
@@ -11433,6 +11527,10 @@ if (
 				write_csv(
 					chromium_runtime_mechanism_decision_tree,
 					file.path(data_dir, "typing-delay-chromium-runtime-mechanism-decision-tree.csv")
+				)
+				write_csv(
+					chromium_runtime_sidecar_mvp_plan %>% select(-label_x, -label_y),
+					file.path(data_dir, "typing-delay-chromium-runtime-sidecar-mvp-plan.csv")
 				)
 				write_csv(
 					chromium_runtime_claim_ladder_audit %>% select(-label_x, -label_y),
@@ -11660,6 +11758,44 @@ if (
 					"185-runtime-mechanism-decision-tree.png",
 					width = 12,
 					height = 7
+				)
+
+				save_plot(
+					ggplot(
+						chromium_runtime_sidecar_mvp_plan,
+						aes(
+							implementation_burden_score,
+							mechanism_unblock_score,
+							color = phase,
+							shape = phase,
+							size = observer_risk_score
+						)
+					) +
+						geom_point(alpha = 0.94) +
+						geom_text(
+							aes(x = label_x, y = label_y, label = plot_label),
+							size = 3,
+							color = "grey20",
+							show.legend = FALSE
+						) +
+						scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+						scale_shape_manual(values = c(16, 17, 15, 8, 18), drop = FALSE) +
+						scale_size_continuous(range = c(2.8, 5.6), breaks = 2:5) +
+						scale_x_continuous(breaks = 1:5, limits = c(1.7, 5.35)) +
+						scale_y_continuous(breaks = 1:5, limits = c(3.4, 5.35)) +
+						labs(
+							title = "Runtime sidecar dry run comes before heavier traces",
+							subtitle = "First prove command timing and key-window joins with tracing off; only then add scheduler/V8 observers",
+							x = "implementation burden",
+							y = "mechanism unblock value",
+							color = "Phase",
+							shape = "Phase",
+							size = "observer risk"
+						) +
+						theme(legend.position = "bottom", legend.box = "vertical"),
+					"196-runtime-sidecar-mvp-plan.png",
+					width = 12.3,
+					height = 7.0
 				)
 		}
 
@@ -20458,7 +20594,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector and branch-aware compatibility audits narrow the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found. The branch-aware route must preserve dynamic store sets, registry-selector cross-store reads, parent registries, late store registration, render/subscription races, async queue cancellation, no-deps withSelect closures, generic stores, shallow-equality semantics, and public store-level subscribe semantics.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent and store-level subscribe notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes the branch-aware useSelect compatibility matrix plus marker-only source-span gates.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
-		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Harness-gap and falsification audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated Runtime.evaluate/Runtime.callFunctionOn remains the dose-response control, trace-on captureSnapshot remains the perturbation control, and the exact Chromium state is still unnamed.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Implement the runtime trace runbook with per-retained-key protocol-command timing, command counts, execution context/object lifecycle, scheduler/task-queue, V8/microtask, EventDispatch, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows.",
+		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "sidecar before trace", "Harness-gap, falsification, claim-ladder, and sidecar-MVP audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated Runtime.evaluate/Runtime.callFunctionOn remains the dose-response control, trace-on captureSnapshot remains the perturbation control, and the exact Chromium state is still unnamed.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Implement the trace-off protocol sidecar first: command wrapper, browser/driver timebase sync, key-gap window join, raw/extractor schema, and acceptance matrix proving class ordering survives. Only then add scheduler/task-queue, V8/microtask, trace-snapshot, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter joins; do not add more JS-level delay rows.",
 	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "privileged counter ladder", "Local counter feasibility audit makes the remaining mechanism test executable: the compact row set is known, powermetrics and trace expose the needed power/QoS/scheduler surfaces on this M3 Max host, but both require root and the benchmark still needs a per-retained-key sidecar before the counters are joinable.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Add helper-PID/key-window/collector sidecar first, then run compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root powermetrics; add root trace only if frequency/residency/QoS counters do not explain the split; do not add more unprivileged JS benchmark rows.",
 	"Calibrated presentation", "user-facing measurement", 5, 5, 4, "external calibration contract", "External-calibration runbook closes the claim boundary: Chromium-internal endpoints already align across RAF, Paint, DrawFrame, changed screenshots, and localized pixels, while compositor/display/OCR/camera claims require the same 990ms/1000ms/1300ms held-key and complete-keypress controls with observer-effect gates.", "Externally presented frame timestamp and semantic first-visible-glyph timing outside Chromium trace screenshots.", "Run the external calibration runbook only if the report needs hardware/display or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints.",
 	"Human/plugin workload", "workload coverage", 4, 4, 4, "replay contract", "Workload schema audit turns the open item into a concrete replay contract: event histories, document/session context, minimum strata, source spans, visual or behavior endpoints, and behavior assertions are required before ranking real product latency.", "Actual recorded human/plugin-heavy histories and before/after replay results for P2-like, long-session, composition, correction, selection, paste, transform, structural-edit, media/pattern-heavy, and plugin side-effect strata.", "Build the recorder/replayer around the schema contract; report per-stratum owner rankings and endpoint deltas before making product-latency claims.",
@@ -20498,6 +20634,7 @@ open_question_next_instrumentation_matrix <- tribble(
 					"OS counter contract",
 					"privileged counter ladder",
 					"replay contract",
+					"sidecar before trace",
 					"outside JS harness"
 				)
 			),
@@ -20527,6 +20664,32 @@ open_question_next_instrumentation_matrix <- tribble(
 			short_label == "Chromium runtime checkpoint" ~ 0.08,
 			short_label == "Calibrated presentation" ~ -0.08,
 			TRUE ~ 0
+		),
+		label_x = case_when(
+			short_label == "Chromium runtime checkpoint" ~ 4.18,
+			short_label == "CPU/QoS mechanism" ~ 3.82,
+			short_label == "Calibrated presentation" ~ 4.92,
+			short_label == "Human/plugin workload" ~ 4.00,
+			short_label == "Store subscriber partition" ~ 5.02,
+			short_label == "Pattern-loading wait" ~ 4.92,
+			short_label == "Low-risk selector guards" ~ 5.06,
+			short_label == "React render ownership" ~ 4.82,
+			short_label == "Input API phase boundary" ~ 4.88,
+			short_label == "Typing startup wait" ~ 4.98,
+			TRUE ~ plot_x
+		),
+		label_y = case_when(
+			short_label == "Chromium runtime checkpoint" ~ 5.34,
+			short_label == "CPU/QoS mechanism" ~ 5.15,
+			short_label == "Calibrated presentation" ~ 5.10,
+			short_label == "Human/plugin workload" ~ 4.24,
+			short_label == "Store subscriber partition" ~ 4.22,
+			short_label == "Pattern-loading wait" ~ 3.20,
+			short_label == "Low-risk selector guards" ~ 2.30,
+			short_label == "React render ownership" ~ 2.12,
+			short_label == "Input API phase boundary" ~ 1.26,
+			short_label == "Typing startup wait" ~ 1.08,
+			TRUE ~ plot_y + 0.18
 		)
 	)
 
@@ -20548,11 +20711,10 @@ save_plot(
 	) +
 		geom_point(alpha = 0.9) +
 		geom_text(
-			aes(label = short_label_wrapped),
+			aes(x = label_x, y = label_y, label = short_label_wrapped),
 			color = "grey20",
 			size = 3.1,
 			lineheight = 0.9,
-			nudge_y = 0.18,
 			show.legend = FALSE
 		) +
 		scale_x_continuous(
@@ -20585,6 +20747,7 @@ save_plot(
 				"external calibration contract" = 18,
 				"OS counter contract" = 6,
 				"replay contract" = 4,
+				"sidecar before trace" = 1,
 				"outside JS harness" = 1
 			)
 		) +
