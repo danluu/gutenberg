@@ -31,6 +31,17 @@ const MEASUREMENT_IDLE_WAIT_MS = Number.parseInt(
 		String( DEFAULT_BROWSER_IDLE_WAIT_MS ),
 	10
 );
+const PATTERN_READINESS_WAIT =
+	process.env.PERFORMANCE_PATTERN_READINESS_WAIT || 'fixed';
+const PATTERN_READINESS_TIMEOUT_MS = Number.parseInt(
+	process.env.PERFORMANCE_PATTERN_READINESS_TIMEOUT_MS ||
+		String( MEASUREMENT_IDLE_WAIT_MS ),
+	10
+);
+const PATTERN_READINESS_QUIET_WINDOW_MS = Number.parseInt(
+	process.env.PERFORMANCE_PATTERN_READINESS_QUIET_WINDOW_MS || '100',
+	10
+);
 const RESULTS_OUTPUT_DIR = process.env.SITE_EDITOR_RESULTS_OUTPUT_DIR;
 
 if (
@@ -57,6 +68,34 @@ if (
 	);
 }
 
+if (
+	! Number.isFinite( PATTERN_READINESS_TIMEOUT_MS ) ||
+	PATTERN_READINESS_TIMEOUT_MS < 0
+) {
+	throw new Error(
+		'PERFORMANCE_PATTERN_READINESS_TIMEOUT_MS must be a non-negative integer.'
+	);
+}
+
+if (
+	! Number.isFinite( PATTERN_READINESS_QUIET_WINDOW_MS ) ||
+	PATTERN_READINESS_QUIET_WINDOW_MS < 0
+) {
+	throw new Error(
+		'PERFORMANCE_PATTERN_READINESS_QUIET_WINDOW_MS must be a non-negative integer.'
+	);
+}
+
+if (
+	! [ 'fixed', 'block-patterns', 'block-patterns-resource-quiet' ].includes(
+		PATTERN_READINESS_WAIT
+	)
+) {
+	throw new Error(
+		'PERFORMANCE_PATTERN_READINESS_WAIT must be fixed, block-patterns, or block-patterns-resource-quiet.'
+	);
+}
+
 const results = {
 	serverResponse: [],
 	firstPaint: [],
@@ -73,8 +112,243 @@ const results = {
 	listViewOpen: [],
 	navigate: [],
 	loadPatterns: [],
+	loadPatternsReadiness: [],
 	loadPages: [],
 };
+
+async function waitForPatternReadiness( page ) {
+	const resourceCountBeforeWait = await page.evaluate(
+		() => performance.getEntriesByType( 'resource' ).length
+	);
+	const getResourceSummaries = async ( startIndex, endIndex ) =>
+		await page.evaluate(
+			( { start, end } ) =>
+				performance
+					.getEntriesByType( 'resource' )
+					.slice( start, end )
+					.map( ( entry ) => ( {
+						name: entry.name,
+						initiatorType: entry.initiatorType,
+						duration: entry.duration,
+						transferSize: entry.transferSize,
+					} ) ),
+			{ start: startIndex, end: endIndex }
+		);
+
+	if ( PATTERN_READINESS_WAIT === 'fixed' ) {
+		// Wait for the browser to be idle before starting the monitoring.
+		// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
+		await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
+		const resourceCountAfterWait = await page.evaluate(
+			() => performance.getEntriesByType( 'resource' ).length
+		);
+		return {
+			mode: PATTERN_READINESS_WAIT,
+			waitMs: MEASUREMENT_IDLE_WAIT_MS,
+			timeoutMs: MEASUREMENT_IDLE_WAIT_MS,
+			quietWindowMs: null,
+			timedOut: false,
+			resourceCountBeforeWait,
+			resourceCountAfterWait,
+			waitResourceDelta: resourceCountAfterWait - resourceCountBeforeWait,
+			waitResources: await getResourceSummaries(
+				resourceCountBeforeWait,
+				resourceCountAfterWait
+			),
+			hasFinishedResolution: null,
+			compatiblePatternCount: null,
+			totalPatternCount: null,
+			restPatternCount: null,
+			settingsPatternCount: null,
+			templateArea: null,
+			templateSlug: null,
+		};
+	}
+
+	return await page.evaluate(
+		async ( options ) => {
+			const { mode, timeoutMs, quietWindowMs } = options;
+			const sleep = ( ms ) =>
+				new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+			const startTime = performance.now();
+			const deadline = startTime + timeoutMs;
+			const browserResourceCountBeforeWait =
+				performance.getEntriesByType( 'resource' ).length;
+			let timedOut = false;
+			let resolverError = null;
+
+			function resourceSummaries( startIndex, endIndex ) {
+				return performance
+					.getEntriesByType( 'resource' )
+					.slice( startIndex, endIndex )
+					.map( ( entry ) => ( {
+						name: entry.name,
+						initiatorType: entry.initiatorType,
+						duration: entry.duration,
+						transferSize: entry.transferSize,
+					} ) );
+			}
+
+			function patternState() {
+				const { select } = window.wp.data;
+				const core = select( 'core' );
+				const editor = select( 'core/editor' );
+				const settings = editor.getEditorSettings?.() || {};
+				const postType = editor.getCurrentPostType?.();
+				const postId = editor.getCurrentPostId?.();
+				const record = core.getEditedEntityRecord?.(
+					'postType',
+					postType,
+					postId
+				);
+				const restPatterns = core.getBlockPatterns?.() || [];
+				const settingsPatterns =
+					settings.__experimentalAdditionalBlockPatterns ??
+					settings.__experimentalBlockPatterns ??
+					[];
+				const patterns = [ ...settingsPatterns, ...restPatterns ];
+				const excludedSources = [
+					'core',
+					'pattern-directory/core',
+					'pattern-directory/featured',
+				];
+				const templateArea = record?.area;
+				const templateSlug = record?.slug;
+				const compatiblePatterns = patterns.filter(
+					( pattern, index, items ) => {
+						if ( ! pattern?.name ) {
+							return false;
+						}
+						const duplicate =
+							index !==
+							items.findIndex(
+								( item ) => item?.name === pattern.name
+							);
+						if ( duplicate ) {
+							return false;
+						}
+						const navigationOverlayException =
+							templateArea === 'navigation-overlay' &&
+							pattern.blockTypes?.includes(
+								'core/template-part/navigation-overlay'
+							);
+						if (
+							! navigationOverlayException &&
+							excludedSources.includes( pattern.source )
+						) {
+							return false;
+						}
+						return (
+							pattern.templateTypes?.includes( templateSlug ) ||
+							pattern.blockTypes?.includes(
+								`core/template-part/${ templateArea }`
+							)
+						);
+					}
+				);
+
+				return {
+					hasFinishedResolution:
+						core.hasFinishedResolution?.( 'getBlockPatterns' ) ??
+						false,
+					isResolving:
+						core.isResolving?.( 'getBlockPatterns' ) ?? false,
+					compatiblePatternCount: compatiblePatterns.length,
+					totalPatternCount: patterns.length,
+					restPatternCount: restPatterns.length,
+					settingsPatternCount: settingsPatterns.length,
+					templateArea,
+					templateSlug,
+				};
+			}
+
+			try {
+				await Promise.race( [
+					window.wp.data.resolveSelect( 'core' ).getBlockPatterns(),
+					sleep( timeoutMs ).then( () => {
+						timedOut = true;
+					} ),
+				] );
+			} catch ( error ) {
+				resolverError = String( error );
+			}
+
+			let state = patternState();
+			while (
+				! timedOut &&
+				performance.now() < deadline &&
+				( ! state.hasFinishedResolution ||
+					state.compatiblePatternCount === 0 )
+			) {
+				await sleep( 25 );
+				state = patternState();
+			}
+
+			if (
+				! state.hasFinishedResolution ||
+				state.compatiblePatternCount === 0
+			) {
+				timedOut = true;
+			}
+
+			let quietWindowSatisfied = mode !== 'block-patterns-resource-quiet';
+			let quietWindowWaitMs = 0;
+			if ( ! timedOut && mode === 'block-patterns-resource-quiet' ) {
+				let lastResourceCount =
+					performance.getEntriesByType( 'resource' ).length;
+				let quietSince = performance.now();
+				const quietStartTime = quietSince;
+
+				while ( performance.now() < deadline ) {
+					await sleep( 25 );
+					const resourceCount =
+						performance.getEntriesByType( 'resource' ).length;
+					if ( resourceCount !== lastResourceCount ) {
+						lastResourceCount = resourceCount;
+						quietSince = performance.now();
+					}
+
+					if ( performance.now() - quietSince >= quietWindowMs ) {
+						quietWindowSatisfied = true;
+						break;
+					}
+				}
+
+				quietWindowWaitMs = performance.now() - quietStartTime;
+				if ( ! quietWindowSatisfied ) {
+					timedOut = true;
+				}
+			}
+
+			return {
+				mode,
+				waitMs: performance.now() - startTime,
+				timeoutMs,
+				quietWindowMs,
+				quietWindowSatisfied,
+				quietWindowWaitMs,
+				timedOut,
+				resolverError,
+				resourceCountBeforeWait: browserResourceCountBeforeWait,
+				resourceCountAfterWait:
+					performance.getEntriesByType( 'resource' ).length,
+				waitResourceDelta:
+					performance.getEntriesByType( 'resource' ).length -
+					browserResourceCountBeforeWait,
+				waitResources: resourceSummaries(
+					browserResourceCountBeforeWait,
+					performance.getEntriesByType( 'resource' ).length
+				),
+				...state,
+			};
+		},
+		{
+			mode: PATTERN_READINESS_WAIT,
+			timeoutMs: PATTERN_READINESS_TIMEOUT_MS,
+			quietWindowMs: PATTERN_READINESS_QUIET_WINDOW_MS,
+		}
+	);
+}
 
 test.describe( 'Site Editor Performance', () => {
 	test.use( {
@@ -111,6 +385,11 @@ test.describe( 'Site Editor Performance', () => {
 							browserIdleWait: DEFAULT_BROWSER_IDLE_WAIT_MS,
 							typingDelayMs: TYPING_DELAY_MS,
 							measurementIdleWaitMs: MEASUREMENT_IDLE_WAIT_MS,
+							patternReadinessWait: PATTERN_READINESS_WAIT,
+							patternReadinessTimeoutMs:
+								PATTERN_READINESS_TIMEOUT_MS,
+							patternReadinessQuietWindowMs:
+								PATTERN_READINESS_QUIET_WINDOW_MS,
 						},
 						results,
 					},
@@ -386,9 +665,8 @@ test.describe( 'Site Editor Performance', () => {
 						.click();
 				}
 
-				// Wait for the browser to be idle before starting the monitoring.
-				// eslint-disable-next-line no-restricted-syntax, playwright/no-wait-for-timeout
-				await page.waitForTimeout( MEASUREMENT_IDLE_WAIT_MS );
+				const readiness = await waitForPatternReadiness( page );
+				results.loadPatternsReadiness.push( readiness );
 
 				const startTime = performance.now();
 
@@ -444,6 +722,25 @@ test.describe( 'Site Editor Performance', () => {
 				const endTime = performance.now();
 
 				results.loadPatterns.push( endTime - startTime );
+				readiness.resourceCountAfterMeasurement = await page.evaluate(
+					() => performance.getEntriesByType( 'resource' ).length
+				);
+				readiness.measurementResourceDelta =
+					readiness.resourceCountAfterMeasurement -
+					readiness.resourceCountAfterWait;
+				readiness.measurementResources = await page.evaluate(
+					( startIndex ) =>
+						performance
+							.getEntriesByType( 'resource' )
+							.slice( startIndex )
+							.map( ( entry ) => ( {
+								name: entry.name,
+								initiatorType: entry.initiatorType,
+								duration: entry.duration,
+								transferSize: entry.transferSize,
+							} ) ),
+					readiness.resourceCountAfterWait
+				);
 
 				await page.keyboard.press( 'Escape' );
 			}

@@ -2884,6 +2884,10 @@ site_pattern_readiness_boundary_summary_path <- file.path(data_dir, "typing-dela
 site_pattern_readiness_risk_audit_path <- file.path(data_dir, "typing-delay-pattern-readiness-risk-audit.csv")
 site_pattern_short_wait_runs_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-runs.csv")
 site_pattern_short_wait_summary_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
+site_pattern_predicate_validation_samples_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-samples.csv")
+site_pattern_predicate_validation_runs_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-runs.csv")
+site_pattern_predicate_validation_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-summary.csv")
+site_pattern_predicate_validation_resource_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-resources.csv")
 
 read_site_pattern_short_wait_runs <- function() {
 	raw_dirs <- c(
@@ -2961,6 +2965,335 @@ if (!is.null(site_pattern_short_wait_runs_from_artifacts)) {
 			two_branch_saved_vs_1000ms_s = 20 * (1000 - measurement_idle_wait_ms) / 1000
 		)
 	write_csv(site_pattern_short_wait_summary, site_pattern_short_wait_summary_path)
+}
+
+read_site_pattern_predicate_validation <- function() {
+	raw_dir <- file.path(repo_root, "test/performance/artifacts/site-pattern-readiness-predicate-validation")
+	if (!dir.exists(raw_dir)) {
+		return(NULL)
+	}
+
+	run_dirs <- list.dirs(raw_dir, recursive = FALSE, full.names = TRUE)
+	sample_rows <- list()
+	run_rows <- list()
+	for (run_dir in run_dirs) {
+		run_name <- basename(run_dir)
+		match <- str_match(run_name, "^(.*)-r([0-9]+)$")
+		if (is.na(match[1, 1])) {
+			next
+		}
+		json_files <- list.files(run_dir, pattern = "^site-editor-results-.*\\.json$", full.names = TRUE)
+		if (length(json_files) == 0) {
+			next
+		}
+
+		raw <- fromJSON(json_files[[1]], flatten = TRUE)
+		values <- as.numeric(raw$results$loadPatterns)
+		readiness <- as_tibble(raw$results$loadPatternsReadiness)
+		condition <- match[1, 2]
+		local_run <- as.integer(match[1, 3])
+		if (nrow(readiness) == 0) {
+			readiness <- tibble(sample_index = seq_along(values))
+		}
+		if (!"quietWindowSatisfied" %in% names(readiness)) {
+			readiness$quietWindowSatisfied <- NA
+		}
+		if (!"compatiblePatternCount" %in% names(readiness)) {
+			readiness$compatiblePatternCount <- NA_real_
+		}
+		if (!"quietWindowWaitMs" %in% names(readiness)) {
+			readiness$quietWindowWaitMs <- NA_real_
+		}
+
+		samples <- readiness %>%
+			mutate(
+				condition = condition,
+				local_run = local_run,
+				sample_index = row_number(),
+				load_patterns_ms = values,
+				measurement_idle_wait_ms = raw$metadata$measurementIdleWaitMs %||% NA_real_,
+				pattern_readiness_wait = raw$metadata$patternReadinessWait %||% NA_character_,
+				pattern_readiness_timeout_ms = raw$metadata$patternReadinessTimeoutMs %||% NA_real_,
+				pattern_readiness_quiet_window_ms = raw$metadata$patternReadinessQuietWindowMs %||% NA_real_,
+				.before = 1
+			)
+		sample_rows[[length(sample_rows) + 1]] <- samples %>%
+			select(
+				condition,
+				local_run,
+				sample_index,
+				load_patterns_ms,
+				measurement_idle_wait_ms,
+				pattern_readiness_wait,
+				pattern_readiness_timeout_ms,
+				pattern_readiness_quiet_window_ms,
+				mode,
+				waitMs,
+				quietWindowWaitMs,
+				quietWindowSatisfied,
+				timedOut,
+				waitResourceDelta,
+				measurementResourceDelta,
+				compatiblePatternCount,
+				totalPatternCount,
+				restPatternCount,
+				settingsPatternCount,
+				templateSlug,
+				any_of("templateArea")
+			)
+
+		run_rows[[length(run_rows) + 1]] <- tibble(
+			condition = condition,
+			local_run = local_run,
+			measurement_idle_wait_ms = raw$metadata$measurementIdleWaitMs %||% NA_real_,
+			pattern_readiness_wait = raw$metadata$patternReadinessWait %||% NA_character_,
+			pattern_readiness_timeout_ms = raw$metadata$patternReadinessTimeoutMs %||% NA_real_,
+			pattern_readiness_quiet_window_ms = raw$metadata$patternReadinessQuietWindowMs %||% NA_real_,
+			retained_samples = length(values),
+			p10_ms = quant(values, 0.1),
+			p50_ms = quant(values, 0.5),
+			p90_ms = quant(values, 0.9),
+			mean_ms = mean(values),
+			sd_ms = sd(values),
+			median_readiness_wait_ms = median(samples$waitMs, na.rm = TRUE),
+			median_quiet_window_wait_ms = median(samples$quietWindowWaitMs, na.rm = TRUE),
+			median_wait_resource_delta = median(samples$waitResourceDelta, na.rm = TRUE),
+			median_measurement_resource_delta = median(samples$measurementResourceDelta, na.rm = TRUE),
+			timed_out_samples = sum(samples$timedOut, na.rm = TRUE),
+			quiet_window_satisfied_samples = sum(samples$quietWindowSatisfied, na.rm = TRUE),
+			median_compatible_pattern_count = median(samples$compatiblePatternCount, na.rm = TRUE)
+		)
+	}
+
+	if (length(sample_rows) == 0) {
+		return(NULL)
+	}
+
+	list(
+		samples = bind_rows(sample_rows),
+		runs = bind_rows(run_rows)
+	)
+}
+
+read_site_pattern_resource_detail <- function() {
+	raw_dir <- file.path(repo_root, "test/performance/artifacts/site-pattern-readiness-resource-detail")
+	if (!dir.exists(raw_dir)) {
+		return(NULL)
+	}
+
+	run_dirs <- list.dirs(raw_dir, recursive = TRUE, full.names = TRUE)
+	rows <- list()
+	for (run_dir in run_dirs) {
+		json_files <- list.files(run_dir, pattern = "^site-editor-results-.*\\.json$", full.names = TRUE)
+		if (length(json_files) == 0) {
+			next
+		}
+		run_name <- basename(run_dir)
+		raw <- fromJSON(json_files[[1]], flatten = TRUE)
+		readiness <- as_tibble(raw$results$loadPatternsReadiness)
+		for (phase in c("wait", "measurement")) {
+			resource_col <- paste0(phase, "Resources")
+			if (!resource_col %in% names(readiness)) {
+				next
+			}
+			for (sample_index in seq_len(nrow(readiness))) {
+				resources <- readiness[[resource_col]][[sample_index]]
+				if (is.null(resources) || nrow(resources) == 0) {
+					next
+				}
+				rows[[length(rows) + 1]] <- as_tibble(resources) %>%
+					mutate(
+						run_name = run_name,
+						sample_index = sample_index,
+						phase = phase,
+						condition = raw$metadata$patternReadinessWait %||% NA_character_,
+						.before = 1
+					)
+			}
+		}
+	}
+
+	if (length(rows) == 0) {
+		return(NULL)
+	}
+
+	bind_rows(rows) %>%
+		mutate(
+			resource_path = name %>%
+				str_replace("^https?://[^/]+", "") %>%
+				str_replace("\\?.*$", ""),
+			resource_endpoint = case_when(
+				str_detect(resource_path, "/wp-json/wp/v2/categories") ~ "categories",
+				str_detect(resource_path, "/wp-json/wp/v2/posts") ~ "posts",
+				str_detect(resource_path, "/wp-json/wp/v2/navigation") ~ "navigation",
+				str_detect(resource_path, "/wp-json/wp/v2/template-parts") ~ "template parts",
+				str_detect(resource_path, "/wp-json/wp/v2/types/post") ~ "post type",
+				str_detect(resource_path, "/wp-json/wp/v2/users") ~ "users",
+				str_detect(resource_path, "/wp-json/wp/v2/taxonomies/category") ~ "category taxonomy",
+				str_detect(resource_path, "/wp-json/wp-block-editor/v1/navigation-fallback") ~ "navigation fallback",
+				str_detect(resource_path, "/wp-json/wp/v2/pages") ~ "pages",
+				str_detect(resource_path, "/wp-json/wp/v2/menus") ~ "menus",
+				TRUE ~ resource_path
+			)
+		)
+}
+
+site_pattern_predicate_validation <- read_site_pattern_predicate_validation()
+if (!is.null(site_pattern_predicate_validation)) {
+	site_pattern_predicate_samples <- site_pattern_predicate_validation$samples %>%
+		mutate(
+			condition = factor(
+				condition,
+				levels = c(
+					"fixed-0",
+					"predicate-1000",
+					"block-patterns-resource-quiet",
+					"fixed-500",
+					"fixed-1000"
+				),
+				labels = c(
+					"fixed 0ms",
+					"block-pattern predicate",
+					"predicate + resource quiet",
+					"fixed 500ms",
+					"fixed 1000ms"
+				)
+			)
+		)
+	site_pattern_predicate_runs <- site_pattern_predicate_validation$runs %>%
+		mutate(
+			condition = factor(
+				condition,
+				levels = c(
+					"fixed-0",
+					"predicate-1000",
+					"block-patterns-resource-quiet",
+					"fixed-500",
+					"fixed-1000"
+				),
+				labels = c(
+					"fixed 0ms",
+					"block-pattern predicate",
+					"predicate + resource quiet",
+					"fixed 500ms",
+					"fixed 1000ms"
+				)
+			)
+		)
+
+	write_csv(site_pattern_predicate_samples, site_pattern_predicate_validation_samples_path)
+	write_csv(site_pattern_predicate_runs, site_pattern_predicate_validation_runs_path)
+
+	site_pattern_predicate_summary <- site_pattern_predicate_runs %>%
+		group_by(condition) %>%
+		summarise(
+			runs = n(),
+			median_run_p50_ms = median(p50_ms, na.rm = TRUE),
+			mean_run_p50_ms = mean(p50_ms, na.rm = TRUE),
+			run_to_run_q50_sd_ms = sd(p50_ms, na.rm = TRUE),
+			min_run_p50_ms = min(p50_ms, na.rm = TRUE),
+			max_run_p50_ms = max(p50_ms, na.rm = TRUE),
+			median_readiness_wait_ms = median(median_readiness_wait_ms, na.rm = TRUE),
+			median_wait_resource_delta = median(median_wait_resource_delta, na.rm = TRUE),
+			median_measurement_resource_delta = median(median_measurement_resource_delta, na.rm = TRUE),
+			timed_out_samples = sum(timed_out_samples, na.rm = TRUE),
+			quiet_window_satisfied_samples = sum(quiet_window_satisfied_samples, na.rm = TRUE),
+			median_compatible_pattern_count = median(median_compatible_pattern_count, na.rm = TRUE),
+			.groups = "drop"
+		)
+	write_csv(site_pattern_predicate_summary, site_pattern_predicate_validation_summary_path)
+
+	save_plot(
+		ggplot(site_pattern_predicate_runs, aes(condition, p50_ms, color = condition)) +
+			geom_point(size = 3, alpha = 0.86, position = position_jitter(width = 0.08, height = 0), show.legend = FALSE) +
+			stat_summary(fun = median, geom = "crossbar", width = 0.48, linewidth = 0.35, color = "grey20") +
+			scale_color_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "Block-pattern resolution alone does not replace the site-editor pattern sleep",
+				subtitle = "Full Loading Patterns runs; three runs per condition, 10 retained samples per run",
+				x = "Pre-click readiness strategy",
+				y = "Reported loadPatterns q50"
+			) +
+			theme(axis.text.x = element_text(angle = 18, hjust = 1)),
+		"153-site-pattern-readiness-predicate-validation.png",
+		width = 10.5,
+		height = 6
+	)
+
+	site_pattern_resource_shift <- site_pattern_predicate_summary %>%
+		select(condition, median_wait_resource_delta, median_measurement_resource_delta) %>%
+		pivot_longer(
+			cols = starts_with("median_"),
+			names_to = "phase",
+			values_to = "median_resource_delta"
+		) %>%
+		mutate(
+			phase = recode(
+				phase,
+				median_wait_resource_delta = "before timer",
+				median_measurement_resource_delta = "inside measurement"
+			),
+			phase = factor(phase, levels = c("before timer", "inside measurement"))
+		)
+
+	save_plot(
+		ggplot(site_pattern_resource_shift, aes(condition, median_resource_delta, color = phase, shape = phase)) +
+			geom_point(size = 3.3, alpha = 0.9, position = position_dodge(width = 0.45)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c("before timer" = 16, "inside measurement" = 17), drop = FALSE) +
+			labs(
+				title = "The fixed sleep moves setup resources out of the measured interval",
+				subtitle = "Median resource-entry deltas per retained sample",
+				x = "Pre-click readiness strategy",
+				y = "Resource entries",
+				color = "Resource phase",
+				shape = "Resource phase"
+			) +
+			theme(axis.text.x = element_text(angle = 18, hjust = 1), legend.position = "bottom"),
+		"154-site-pattern-readiness-resource-shift.png",
+		width = 10.5,
+		height = 6
+	)
+}
+
+site_pattern_resource_detail <- read_site_pattern_resource_detail()
+if (!is.null(site_pattern_resource_detail)) {
+	site_pattern_resource_detail_summary <- site_pattern_resource_detail %>%
+		group_by(phase, resource_endpoint) %>%
+		summarise(
+			resource_entries = n(),
+			total_duration_ms = sum(duration, na.rm = TRUE),
+			median_duration_ms = median(duration, na.rm = TRUE),
+			total_transfer_size = sum(transferSize, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		arrange(phase, desc(resource_entries))
+	write_csv(site_pattern_resource_detail_summary, site_pattern_predicate_validation_resource_path)
+
+	site_pattern_resource_detail_plot <- site_pattern_resource_detail_summary %>%
+		group_by(phase) %>%
+		slice_max(resource_entries, n = 8, with_ties = FALSE) %>%
+		ungroup() %>%
+		mutate(
+			resource_endpoint = fct_reorder(resource_endpoint, resource_entries)
+		)
+
+	save_plot(
+		ggplot(site_pattern_resource_detail_plot, aes(resource_endpoint, resource_entries, fill = phase)) +
+			geom_col(show.legend = FALSE, alpha = 0.9) +
+			coord_flip() +
+			facet_wrap(vars(phase), scales = "free_y") +
+			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "Resource-quiet wait is mostly moving REST setup requests",
+				subtitle = "One diagnostic predicate + resource-quiet run; top endpoints by resource-entry count",
+				x = "Endpoint",
+				y = "Resource entries"
+			),
+		"155-site-pattern-readiness-resource-detail.png",
+		width = 10,
+		height = 6.5
+	)
 }
 
 if (file.exists(site_pattern_alternating_wait_path)) {
@@ -4341,6 +4674,45 @@ if (file.exists(render_trace_samples_path) && file.exists(screenshot_trace_sampl
 		"126-visual-endpoint-drop-decomposition.png",
 		width = 12,
 		height = 7.4
+	)
+
+	presentation_calibration_contract_audit <- tribble(
+		~presentation_question, ~current_local_answer, ~what_is_closed, ~remaining_caveat, ~calibration_contract, ~decision,
+		"Is the cliff only a Chrome EventDispatch accounting artifact?",
+		"No.",
+		"Key-held 1000ms drops persist through editor input, second RAF, Paint, DrawFrame, first changed trace screenshot, and localized changed pixels.",
+		"These endpoints are still browser-derived and not an external display measurement.",
+		"No new calibration is needed for this internal-browser claim; keep reporting it as Chromium visual/render endpoint evidence, not hardware-to-screen latency.",
+		"closed locally",
+		"Is the changed trace screenshot unrelated to the typed character?",
+		"No for these runs.",
+		"Every decoded retained pixel-localization sample overlaps the target textbox and the typed x range in both input modes at 990ms, 1000ms, and 1300ms.",
+		"Pixel overlap is not OCR and does not semantically prove the glyph a user perceived.",
+		"An OCR or image-recognition pass should crop the DOM range, require recognition of the newly inserted glyph, and report first recognized-glyph timestamp against the same keydown/EventDispatch window.",
+		"semantic recognition only",
+		"Is post-EventDispatch rendering the main visual cliff?",
+		"No.",
+		"Paint and DrawFrame endpoint drops are about 12ms with only 0.2-0.8ms post-EventDispatch tail movement; first changed screenshots have a larger 2.3ms tail but still mostly follow EventDispatch.",
+		"A calibrated presentation pipeline could add compositor/display tail that these traces do not measure.",
+		"Compositor/presentation tracing should decompose keydown to EventDispatch, Paint/DrawFrame, compositor submit, swap/present, and screenshot/camera-visible glyph for the same retained samples.",
+		"tail bounded internally",
+		"Can trace screenshots be treated as screen presentation timestamps?",
+		"No.",
+		"Trace screenshots preserve the key-held shape and localize the changed pixels, but they are Chromium trace artifacts with endpoint-specific offsets.",
+		"Actual display presentation, scanout, compositor buffering, and panel timing are unmeasured.",
+		"Run compositor presentation traces or high-speed camera capture on the same 990ms, 1000ms, and 1300ms key-held and complete-keypress controls; success requires the 1000ms key-held drop to persist at first presented or first camera-visible glyph.",
+		"external calibration required",
+		"What can CI claim without external calibration?",
+		"That the held-key artifact propagates to Chromium internal visual endpoints, not that a user saw the glyph at that exact timestamp.",
+		"The complete-keypress-then-wait control stays flat while the held-key mode moves across multiple internal visual endpoints.",
+		"Hardware-to-screen latency and semantic first-visible-glyph timing remain outside the current evidence.",
+		"Keep CI/report language scoped to EventDispatch, render trace, and localized trace-screenshot endpoints unless an external presentation/OCR calibration is added.",
+		"claim scoped"
+	)
+
+	write_csv(
+		presentation_calibration_contract_audit,
+		file.path(data_dir, "typing-delay-presentation-calibration-contract-audit.csv")
 	)
 }
 
@@ -9628,6 +10000,40 @@ if (
 			"Is the checkpoint effect enough to explain Gutenberg-scale movement by itself?", "No.", "Native contenteditable moves only about 0.3-0.4ms while Gutenberg moves by several milliseconds.", "The browser/runtime trigger is real, but Gutenberg's data/RichText fanout supplies the scale.", "How much of the amplified cost survives realistic user/plugin workloads.", "Use real-workload replay for product lag; use Chromium tracing only for benchmark-artifact mechanism.", "split product from artifact"
 		)
 
+		chromium_runtime_trace_contract_audit <- tribble(
+			~contrast, ~current_local_evidence, ~what_is_closed, ~still_invisible_to_this_harness, ~required_trace_contract, ~decision,
+			"ordinary wait versus runtime checkpoint",
+			"Raw CDP ordinary waits through 5008ms stay around 21-24ms keypress p50, while Runtime.evaluate and Runtime.callFunctionOn checkpoints reach about 15-16ms at x7 and about 13ms at x17.",
+			"Elapsed post-keyup time, queued-JS drain, and generic browser rest are not sufficient explanations.",
+			"Which renderer/runtime state differs after protocol runtime work but not after sleeping.",
+			"Trace the same raw-CDP held-key path for wait 16ms, wait 1000ms, wait 5000ms, Runtime.evaluate x7/x17, and Runtime.callFunctionOn x7/x17; align prior keyup end, protocol command start/end, next keydown, and EventDispatch start/end.",
+			"do not add more ordinary-wait rows",
+			"single checkpoint versus repeated checkpoint",
+			"A single Runtime.evaluate, setTimeout(0), or RAF checkpoint improves only partway; repeated direct runtime calls produce a clear dose response across the tested repeat counts.",
+			"One generic task, timer, or frame boundary is not the missing boundary.",
+			"Whether repeated checkpoints are changing V8 microtask state, execution-context state, renderer scheduler priority, input queue state, cache/frequency state, or a combination.",
+			"Keep command payloads identical and vary only repeat count x0/x1/x3/x7/x17; record renderer main-thread task boundaries, V8 execution slices, microtask checkpoints if exposed, scheduler priority/queue slices if exposed, and the next EventDispatch duration.",
+			"browser/runtime trace only",
+			"direct CDP call versus Playwright utility path",
+			"Direct Runtime.callFunctionOn against globalThis stays near 19.4ms, Playwright page.evaluate trace-off is about 17.4-18.5ms, and locator.evaluate adds more protocol work and stays near 17.8-17.9ms.",
+			"The residual trace-off Playwright improvement is not just the CDP method name, awaitPromise/returnByValue/userGesture flags, or editor-frame targeting.",
+			"Which part of Playwright's utility execution path, context resolution, handle lifecycle, or added protocol-command count creates the residual checkpoint effect.",
+			"Trace direct Runtime.callFunctionOn, Playwright page.evaluate, page.evaluateHandle, and locator.evaluate with protocol-command markers, execution context IDs, and object-lifecycle markers around the same previous keyup to next keydown window.",
+			"explain residual only; not needed for CI helper choice",
+			"trace snapshot boundary",
+			"Trace-on per-key keyboard.press and trace-on raw CDP plus page.evaluate both hit about 11.3ms, while their trace-off versions are much slower.",
+			"The full per-key Playwright fast path is a trace-snapshot measurement perturbation, not evidence that per-key actions model human typing better.",
+			"Which captureSnapshot subcommand or renderer state transition creates the large speedup.",
+			"Compare trace-on captureSnapshot windows against trace-off runtime-repeat windows with a separate low-overhead protocol log; avoid using the same Playwright trace facility as both perturbation and observer unless the observer effect is explicitly controlled.",
+			"artifact mechanism, not product-lag work",
+			"native scale control",
+			"Native contenteditable moves only about 0.3-0.4ms across the runtime-repeat grid, while the Gutenberg large-post path moves by several milliseconds.",
+			"The browser checkpoint is real but cannot explain the Gutenberg-scale movement by itself.",
+			"How much checkpoint sensitivity survives real editing histories, plugins, composition, selection, and correction flows.",
+			"Use browser tracing to identify the artifact trigger; use recorded workload replay to decide product-lag relevance.",
+			"split artifact tracing from workload replay"
+		)
+
 		write_csv(
 			cdp_boundary_consolidated,
 			file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
@@ -9639,6 +10045,10 @@ if (
 		write_csv(
 			chromium_runtime_next_probe_audit,
 			file.path(data_dir, "typing-delay-chromium-runtime-next-probe-audit.csv")
+		)
+		write_csv(
+			chromium_runtime_trace_contract_audit,
+			file.path(data_dir, "typing-delay-chromium-runtime-trace-contract-audit.csv")
 		)
 
 		save_plot(
@@ -10602,6 +11012,52 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				"What should product optimization do with this?", "Keep it separate from source-level mitigations.", "Native/browser controls move less than 1ms while Gutenberg's broad input path moves by many milliseconds.", "System state modulates the path, but Gutenberg fanout supplies the scale.", "How real plugin/human workloads interact with the system state.", "Use workload replay for product lag and selector/subscriber prototypes for source mitigation; use OS counters for the benchmark artifact.", "split artifact from product"
 			)
 
+			cpu_qos_counter_contract_audit <- tribble(
+				~candidate_layer, ~why_it_remains_plausible, ~current_constraints, ~counter_or_trace_contract, ~would_support_if, ~would_weaken_if, ~decision,
+				"P-core or cluster frequency/residency",
+				"One ordinary or utility-QoS busy child is enough to move the no-op timer into the fast band, while background and maintenance QoS CPU remain slow despite consuming CPU.",
+				"Generic CPU load is ruled out, and adding more ordinary busy children is not monotonically better.",
+				"Capture per-core residency, cluster frequency, package power, and renderer process/core placement for no-op, ordinary CPU, nice CPU, utility CPU, taskpolicy -b, QoS background, QoS maintenance, and finite-burst gap-decay rows.",
+				"Fast rows share higher performance-cluster residency or frequency during the keydown/EventDispatch window, and finite-burst rows decay as that state decays.",
+				"Fast and slow QoS rows have the same frequency/residency and renderer placement during the measured key window.",
+				"first OS-counter target",
+				"Darwin scheduler or QoS placement",
+				"The fast/slow split follows ordinary/utility versus background/maintenance policy more closely than Unix nice or taskpolicy latency/throughput tiers.",
+				"`nice +20` remains fast; taskpolicy latency and throughput tiers remain fast; `taskpolicy -b`, QoS background, and QoS maintenance remain slow.",
+				"Use Instruments System Trace or equivalent to record thread QoS, runnable-to-running latency, context switches, core IDs, and scheduler priority for the browser renderer, GPU/compositor if relevant, and helper CPU processes.",
+				"Fast rows show lower renderer scheduling latency, different core placement, or different effective QoS/priority during key dispatch even when helper CPU duration is matched.",
+				"Renderer scheduling latency and effective QoS are indistinguishable across ordinary/utility and background/maintenance controls.",
+				"co-equal first target",
+				"Cache or memory hierarchy state",
+				"Recent CPU work lowers the measured Gutenberg input slice, and the broad Gutenberg path has thousands of small JS/data/RichText calls that could be sensitive to cache or memory latency.",
+				"External child CPU and worker CPU can move the path, so the explanation cannot require warming Gutenberg-specific JS objects directly.",
+				"Collect renderer cycles, instructions, cache misses, branch misses if available, and task-level CPU time around the same EventDispatch window for matched finite-burst and continuous-QoS rows.",
+				"Fast rows show lower renderer stall or miss rate during EventDispatch without a matching scheduler/frequency difference.",
+				"Renderer hardware-counter ratios are the same across fast and slow rows, or differences follow frequency/scheduling instead.",
+				"second-order target",
+				"Timer coalescing or wakeup latency",
+				"Finite CPU recency matters, and OS policy can change timer and wakeup behavior.",
+				"The measured movement is EventDispatch duration, not only time from timer/key scheduling to dispatch start; near-key no-CPU timers and delays stay slow.",
+				"Align timer fire time, helper work start/end, next keydown enqueue, EventDispatch start, and renderer thread wakeups with OS wakeup and timer-coalescing records.",
+				"Fast rows primarily reduce key enqueue-to-EventDispatch-start or renderer wakeup latency, with little change inside the EventDispatch work itself.",
+				"EventDispatch starts at comparable times but its internal JS/data/RichText work duration changes.",
+				"control, not leading theory",
+				"Chromium/browser scheduler state",
+				"Browser/runtime checkpoints and CPU/QoS controls both show that work charged to EventDispatch depends on state below Gutenberg selectors.",
+				"Current Chromium render traces capture visual pipeline endpoints, not scheduler state for task queues or input budgets.",
+				"Record Chromium scheduler/task-queue categories, renderer main-thread task boundaries, input task priority, V8 slices, and Gutenberg source spans in the same key windows used by the CPU/QoS controls.",
+				"Fast rows show different input-task priority, queueing, or task splitting while OS counters alone do not explain the split.",
+				"Browser scheduler traces are identical once OS frequency/residency/QoS counters are controlled.",
+				"pair with OS counters",
+				"Product/source mitigation path",
+				"Native contenteditable moves by less than 1ms while Gutenberg moves by many milliseconds, so source fanout supplies the scale.",
+				"System state modulates the benchmarked path but does not identify a safe Gutenberg code change.",
+				"Keep selector/subscriber prototypes and workload replay separate from OS-counter experiments; use the same source spans only to confirm product-scale amplification.",
+				"Source prototypes reduce the broad input work across both slow and fast system states.",
+				"Source changes only change the artifact under one system policy and regress behavior or workload replay.",
+				"separate artifact from product optimization"
+			)
+
 			write_csv(
 				system_mechanism_matrix,
 				file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
@@ -10609,6 +11065,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 			write_csv(
 				cpu_qos_next_probe_audit,
 				file.path(data_dir, "typing-delay-cpu-qos-next-probe-audit.csv")
+			)
+			write_csv(
+				cpu_qos_counter_contract_audit,
+				file.path(data_dir, "typing-delay-cpu-qos-counter-contract-audit.csv")
 			)
 
 			save_plot(
@@ -14535,6 +14995,67 @@ if (all(file.exists(react_render_boundary_inputs))) {
 			file.path(data_dir, "typing-delay-react-profiler-decision-audit.csv")
 		)
 
+		react_residual_profiler_plan_audit <- tribble(
+			~profiler_question, ~current_answer, ~why_now_or_not, ~measurement_contract, ~invalid_conclusion, ~decision,
+			"Should a React profiler run be used for cliff causality?",
+			"No.",
+			paste0(
+				"The input/EventDispatch slice already moves by ",
+				number(react_profiler_event_dispatch_ms, accuracy = 0.1),
+				"ms, while the largest post-EventDispatch visual/render tail is ",
+				number(react_profiler_post_tail_ms, accuracy = 0.1),
+				"ms."
+			),
+			"None for this claim; use the existing input, visual endpoint, useSelect subphase, and idle-queue evidence.",
+			"A large commit in a profiled run would not move the observed EventDispatch boundary backward in time.",
+			"Closed; do not run profiler to prove the 1000ms cliff.",
+			"When should profiler be used after selector guards?",
+			"After a concrete selector/subscriber patch changes the fanout shape.",
+			"Before that, the profiler would mostly rank consequences of the known store-root fanout rather than decide which invalidation boundary is safe.",
+			"Run before/after the exact patch, keep source-level subscriber-owner spans enabled, and attribute commits that start after the input EventDispatch/RichText span or after the async queue flush.",
+			"Do not treat reduced commit time as proof that a selector guard is semantically safe; behavior tests and owner spans still decide that.",
+			"Useful after the pattern-override patch and later invalidation prototypes.",
+			"What should async render-queue profiling measure?",
+			"Residual commit ownership after the input, not the low-band cause.",
+			paste0(
+				"renderQueue.add moves by only ",
+				number(react_profiler_render_queue_ms, accuracy = 0.1),
+				"ms, and the idle-drain chronology points the wrong way for the cliff."
+			),
+			"Capture queue insertion, idle callback start/end, commit start/end, and whether each idle flush crosses the following input.",
+			"Do not conclude that draining the queue before input explains the fast band; the measured probe already contradicts that.",
+			"Profile only for after-input product cost.",
+			"What should whole-cycle profiling use as workload?",
+			"Representative editing histories, not fixed-x cliff reproduction alone.",
+			"The fixed-x benchmark is a stressor for the input artifact; it is not a complete product workload model.",
+			"Profile replayed human/plugin-heavy sessions and compare whole-cycle commits against source-level data spans and visual endpoints.",
+			"Do not use a profiler result from fixed-x insertion to rank real plugin or composition workloads.",
+			"Defer until workload replay exists.",
+			"Can profiler answer the public data-subscription question?",
+			"No.",
+			"Branch-aware or selector-aware notification is a data-layer contract question; profiler commits are downstream symptoms.",
+			"Use profiler only after a data notification prototype exists, to check residual component owners and regressions.",
+			"Do not use profiler output to justify breaking isLastBlockChangePersistent useSelect notification semantics.",
+			"Keep data-contract work separate.",
+			"What is the acceptable profiler claim?",
+			"Component ownership of secondary after-input or whole-cycle cost.",
+			paste0(
+				"Chrome render-event tail is at most ",
+				number(react_profiler_chrome_tail_ms, accuracy = 0.1),
+				"ms and trace-screenshot tail is ",
+				number(react_profiler_post_tail_ms, accuracy = 0.1),
+				"ms in the current probes."
+			),
+			"Report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
+			"Do not report profiler commit ownership as the primary cause of the 11-16ms endpoint drop.",
+			"Useful later for product optimization."
+		)
+
+		write_csv(
+			react_residual_profiler_plan_audit,
+			file.path(data_dir, "typing-delay-react-residual-profiler-plan-audit.csv")
+		)
+
 		react_render_boundary_plot <- react_render_boundary_audit %>%
 			filter(claim != "priority queue drained before next input") %>%
 			mutate(
@@ -14573,19 +15094,115 @@ if (all(file.exists(react_render_boundary_inputs))) {
 	)
 }
 
+human_plugin_workload_contract_audit <- tribble(
+	~workload_question, ~current_answer, ~local_evidence, ~remaining_gap, ~replay_contract, ~decision,
+	"Can the current fixed-x large-post stressor explain the benchmark artifact?",
+	"Yes, for the artifact and source-boundary investigation.",
+	"The held-key 1000ms shape is reproduced across visual endpoints, source traces, CPU/QoS controls, and CDP boundary checks in the vanilla large-post fixture.",
+	"It is still one repeated character in one Core fixture, not a representative editor workload.",
+	"Keep this stressor as a diagnostic benchmark-artifact harness, but do not use it to rank product latency for plugin-heavy or realistic editing sessions.",
+	"diagnostic stressor only",
+	"Does the large cliff require Gutenberg-scale work?",
+	"Yes.",
+	"Native contenteditable controls move in the same direction but by less than 1ms; Gutenberg empty and large-post first-input controls amplify idle/system effects by about 4.6ms and 5.7ms; large-post listener totals are higher than empty-post totals.",
+	"Which Gutenberg, plugin, theme, and document-shape features amplify the path in realistic sessions.",
+	"Replay multiple document shapes with the same spans: empty post, large mixed post, long text-only post, media/pattern-heavy post, and plugin-heavy/P2-like documents.",
+	"scale requires workload coverage",
+	"Can source prototypes be judged on fixed-x insertion alone?",
+	"No.",
+	"Selector/subscriber audits identify likely text-update guards, but selection/tree/appender/template surfaces are known risk areas.",
+	"Real editing includes selection changes, block insertion/removal, navigation, undo/redo, paste, composition, transforms, and plugin side effects.",
+	"Each replay must include behavior assertions and source spans for text input, selection/caret changes, structural edits, async queue work, and visual endpoints before/after any selector/subscriber patch.",
+	"use replay before ranking product wins",
+	"What should be recorded from human/plugin-heavy sessions?",
+	"Per-sample histories, not only aggregate delay buckets.",
+	"The current report shows timing depends on event ordering, timer state, system state, API path, document scale, and source fanout.",
+	"Without histories, replay cannot tell whether a slow key follows composition, correction, navigation, async work, plugin hooks, or ordinary text insertion.",
+	"Record event type, key/text delta, inter-event gap, hold time if available, selection/caret state, block/clientId context, composition state, document size/type mix, plugin/theme set, session age, async queue markers, and source-span/visual endpoint IDs.",
+	"history schema first",
+	"How should replay decide whether the fixed-x findings generalize?",
+	"By stratifying rather than averaging everything into one score.",
+	"The fixed-x stressor isolates a known artifact; existing scenario/native controls prove absolute cost depends on fixture and path scale.",
+	"Plugin-heavy and long-session workloads may expose different hot owners, async tails, or selection/structure costs.",
+	"Report strata for ordinary text bursts, correction/backspace, IME/composition, selection/navigation, block operations, paste/transform, long-session idle return, and plugin-heavy side effects; compare owner rankings and endpoint drops against the fixed-x harness.",
+	"stratified replay required",
+	"What can CI change before workload replay exists?",
+	"Only benchmark-artifact choices and low-risk source patches with focused behavior tests.",
+	"The CI input-helper and presentation/runtime/system rows are already bounded locally; product ranking remains workload-limited.",
+	"A fixed-x win may not improve, and could regress, realistic sessions if it ignores selection, structure, plugin, or composition paths.",
+	"Use fixed-x results to choose measurement semantics and first low-risk patches; use workload replay to prioritize broader product work and React profiler runs.",
+	"do not overclaim product coverage"
+)
+
+write_csv(
+	human_plugin_workload_contract_audit,
+	file.path(data_dir, "typing-delay-human-plugin-workload-contract-audit.csv")
+)
+
+portability_validation_contract_audit <- tribble(
+	~portability_question, ~current_local_answer, ~evidence_already_available, ~remaining_gap, ~validation_contract, ~decision,
+	"Are the absolute p50 values portable enough for thresholds?",
+	"No.",
+	"Fresh-editor, randomized exact, dense n=50, container-fixture, and cross-browser timer-ordering runs preserve the main causal story, but they are all local to this machine family and related browser builds.",
+	"How p50, CV, and regime boundaries move across CI runner classes, browser revisions, containers, thermal state, and OS power policy.",
+	"Before changing thresholds, rerun a compact score set and diagnostic controls on CI and at least one comparable local/container variant; report both absolute p50 movement and whether qualitative ordering is preserved.",
+	"validation required before thresholds",
+	"Which compact row set should be portable-validation minimum?",
+	"Use discriminating rows, not the full dense sweep.",
+	"The report identifies a small set that exercises the major mechanisms: tap/complete-keypress, current CI held key, 990/1000/1010/1300 key-held boundary, 50ms/100ms hold controls, pattern 500ms/1000ms predicate fallback, runtime checkpoint controls, CPU/QoS controls, and visual endpoint controls.",
+	"Whether those rows are sufficient on every CI image or browser version.",
+	"Run the compact row set first; expand only if a row changes qualitative band, variance, or timer/runtime ordering.",
+	"compact validation first",
+	"Do fresh/randomized/exact local runs close ordering and setup confounds?",
+	"Mostly for local methodology, not for host portability.",
+	"Randomized exact Typing runs show 0ms, 1000ms, and 60000ms start waits are within local run-to-run volatility; fresh-editor runs preserve the 990/1000/1010/1300 shape; start-wait placement shows idle-after-setup affects first input.",
+	"Whether CI image startup, browser cache state, and runner scheduling produce different first-input and retained-sample behavior.",
+	"On CI, run exact-spec randomized blocks with fresh saved/reopened drafts and preserve per-run p50, CV, first-three-key distribution, throwaway policy, and suite elapsed time.",
+	"local confounds bounded",
+	"Do cross-browser checks make Chrome absolute numbers portable?",
+	"No.",
+	"Firefox and WebKit timer-timeline runs reproduce the Gutenberg timer ordering qualitatively, but their listener metrics differ from Chromium EventDispatch and WebKit's absolute drop is smaller.",
+	"How Chromium version, browser channel, and trace category behavior move the actual Chrome score.",
+	"Validate the score on the exact Playwright-bundled Chromium used in CI, then run browser-timeline diagnostics on other engines only as causal portability checks, not as threshold-equivalent scores.",
+	"causal portability only",
+	"Do container/fixture controls close environment portability?",
+	"No.",
+	"The Columns container fixture preserves the key-hold versus complete-keypress split, but it is a smaller document fixture, not a host-versus-container isolation experiment.",
+	"How Docker/wp-env resource limits, host CPU scheduling, storage, and browser sandboxing affect absolute p50 and CV.",
+	"Run the compact score set inside the same wp-env/container shape used by CI and on the local host variant when possible; record CPU model, core count, OS version, browser revision, container limits, and background-load state.",
+	"environment metadata required",
+	"How should OS power and scheduler sensitivity affect portability claims?",
+	"It makes absolute p50 portability especially fragile.",
+	"CPU/QoS controls show ordinary/utility CPU and background/maintenance CPU can put the same no-op timer into different latency bands.",
+	"Which CI and developer machines are in comparable frequency/residency/QoS states during typing samples.",
+	"Pair compact validation with the CPU/QoS counter contract or at least record power mode, thermal pressure if available, process QoS, and background CPU load.",
+	"power state must be recorded",
+	"What can be merged before portability validation?",
+	"Artifact-scoping fixes and low-risk source patches with behavior tests; not new absolute thresholds.",
+	"The local report already closes several semantic decisions: do not model human typing with held-key delay; use the fixed-character stressor as diagnostic; keep presentation claims scoped.",
+	"Whether the numeric acceptance band for CI should move.",
+	"Use local evidence for code-path choice and prototype order; require CI/mac/container/browser validation before changing score thresholds or making absolute latency claims.",
+	"separate decisions from thresholds"
+)
+
+write_csv(
+	portability_validation_contract_audit,
+	file.path(data_dir, "typing-delay-portability-validation-contract-audit.csv")
+)
+
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Current Typing has 0ms extra post-setup wait; repeated CI-comparable and exact-spec runs did not show retained-q50 stability gains from adding wait.", "Whether a different CI image shifts absolute numbers, not whether this local knob can speed up current Typing.", "No more Typing startup-wait runs unless the CI image or spec shape changes.",
-	"Pattern-loading wait", "CI engineering", 4, 3, 4, "validate before change", "Local exact short-wait data rejects 0/100ms, treats 250ms as only a predicate lower-bound signal, and makes 500ms the best fixed fallback; source/prototype audit says the valid predicate is no-arg getBlockPatterns resolution plus a compatible merged pattern list before Design / Transform, with preview rendering still measured.", "Whether the getBlockPatterns predicate or 500ms fallback is stable across CI, macOS versions, containers, and source-path changes in the Transform/Design panel.", "Prototype the getBlockPatterns readiness predicate with timeout/fallback and telemetry, then validate against 500ms and 1000ms in CI/mac/container.",
+	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "Pure getBlockPatterns readiness is rejected locally: it waited only 0.15ms, moved 0 resources before the timer, left about 25 resources inside measurement, and stayed in the slow band. getBlockPatterns plus a 100ms resource-quiet guard moved the same 19 setup resources as fixed 500/1000ms and matched the settled q50 band.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Do not switch to pure getBlockPatterns. Validate getBlockPatterns plus resource quiet with timeout/fallback telemetry against fixed 500ms and 1000ms in CI/mac/container.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "The compact follow-up closes the CI-facing boundary: ordinary locator.press is not a pressSequentially proxy, page.keyboard.press and per-key locator.focus both move short holds into the slow band, and pressSequentially belongs to the locator.type family.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings.",
 	"Low-risk selector guards", "product optimization", 4, 2, 4, "patch first row", "The source/prototype contract audit leaves pattern override as the only immediate local split: move the support-check useSelect behind the existing selected-block gate. Heading needs a shared capability signal; provider, inner-blocks, and BlockListItems need invalidation prototypes.", "Measured win after the pattern-override patch, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes.",
 	"Store subscriber partition", "product optimization", 4, 4, 5, "research after local guards", "The side-channel decision audit bounds the blocker: a private useBlockSync persistence channel can preserve the known in-tree semantic consumer, but the 23.2ms fanout win requires stopping the block-editor root update, which would break public isLastBlockChangePersistent useSelect notifications under today's store-level subscription model.", "A public selector notification policy or a branch/selector-aware @wordpress/data subscription mechanism that can notify isLastBlockChangePersistent consumers without waking unrelated block-editor selectors.", "After local guards, prototype the useBlockSync side channel only as a migration seam; do not claim the fanout win without resolving public selector notification compatibility.",
-	"React render ownership", "product optimization", 5, 3, 2, "secondary optimization", "Boundary and profiler decision audits close React rendering for cliff causality; renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Which components own the smaller after-input or whole-cycle cost after selector/subscriber work is separated.", "Use React profiler only for after-input or whole-cycle commit ownership, not as the primary 1000ms-cliff mechanism.",
-	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Raw CDP ordinary waits stay slow even at 5s; Runtime.evaluate/callFunctionOn checkpoints have a dose response; trace snapshots explain the full Playwright trace-on fast path; native contenteditable proves the browser effect is real but too small for Gutenberg scale.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints.", "Use Chromium scheduler/runtime trace categories around captureSnapshot and repeated Runtime.evaluate/Runtime.callFunctionOn windows, not more JS-level typing runs.",
-	"CPU/QoS mechanism", "system/browser", 3, 5, 3, "outside JS harness", "Finite CPU duration and end-to-keydown gap explain 71% of local p50 variation; ordinary/utility QoS activity can make the path fast while background/maintenance stays slow; no-CPU tasks, generic CPU burn, and taskpolicy tiering are ruled out.", "Exact hardware or OS scheduler layer: core residency, frequency, cache state, QoS scheduling, timer coalescing, or a mix.", "Use OS scheduler, power, and hardware-counter traces before adding more JS benchmark rows.",
-	"Calibrated presentation", "user-facing measurement", 4, 5, 4, "external calibration", "Paint, DrawFrame, RAF, and localized changed trace screenshots all preserve the key-held 1000ms drop; post-dispatch rendering is too small for the main cliff.", "Display presentation timestamp and semantic glyph recognition outside Chromium trace screenshots.", "Calibrate with compositor presentation traces, OCR on screenshots, or high-speed camera data before claiming hardware-to-screen latency.",
-	"Human/plugin workload", "workload coverage", 2, 4, 4, "needs workload data", "The benchmark is a vanilla large-post fixed-x stressor; native/minimal controls prove the large cliff needs Gutenberg-scale work.", "Whether plugin-heavy, P2-like, long-session, composition, correction, selection, and navigation workloads expose different hot paths.", "Record representative human/plugin-heavy sessions and replay them with per-sample histories instead of fixed-delay x insertion.",
-	"Portability of absolute numbers", "methodology", 3, 3, 3, "validation run", "Fresh-editor, randomized, exact-spec, and containerized local runs cover several confounders, but the report is still one local machine family.", "How much the absolute p50/CV values move across CI hosts, containers, browser versions, and OS power policy.", "Repeat the compact score runs and key diagnostic controls on CI/mac/container/browser-version variants before changing thresholds."
+	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
+	"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "The trace-contract audit closes the local benchmark choice: ordinary waits, generic task/frame checkpoints, Playwright utility semantics, and browser-only scale are all bounded; exact browser state remains below this JS harness.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints.", "Trace matched raw-CDP ordinary waits, repeated Runtime.evaluate/Runtime.callFunctionOn windows, and trace-on captureSnapshot windows with browser/runtime instrumentation; do not add more JS-level delay rows.",
+	"CPU/QoS mechanism", "system/browser", 4, 5, 3, "OS counter contract", "Counter-contract audit bounds the mechanism: near-key no-CPU tasks stay slow, finite CPU bursts are usually fast, continuous ordinary/utility CPU is fast, and background/maintenance CPU is slow; exact hardware/scheduler state remains below this JS harness.", "Exact split between P-core or cluster frequency/residency, Darwin scheduler/QoS placement, cache or memory hierarchy state, timer wakeup behavior, and Chromium scheduler state.", "Run the small discriminating CPU/QoS row set with OS scheduler, power, hardware-counter, and browser scheduler traces before adding more JS benchmark rows.",
+	"Calibrated presentation", "user-facing measurement", 5, 5, 4, "external calibration contract", "Presentation-calibration audit closes the internal-browser claim: the key-held 1000ms drop reaches RAF, Paint, DrawFrame, first changed trace screenshot, and localized typed-character pixels; post-EventDispatch tail is secondary.", "Compositor/display presentation timestamp and semantic first-visible-glyph recognition outside Chromium trace screenshots.", "Run compositor presentation traces, OCR/image recognition, or high-speed camera capture only if the report needs hardware-to-screen or semantic glyph timing; otherwise keep claims scoped to Chromium internal visual endpoints.",
+	"Human/plugin workload", "workload coverage", 3, 4, 4, "replay contract", "Workload-contract audit bounds the current harness: the fixed-character large-post stressor is valid for artifact and source-boundary investigation, and native/empty/large controls prove Gutenberg-scale amplification, but it cannot rank realistic product latency alone.", "Which plugin-heavy, P2-like, long-session, composition, correction, selection, navigation, paste, transform, and structural-edit strata expose different hot owners or async tails.", "Record representative human/plugin-heavy histories and replay stratified samples with source spans, behavior assertions, and visual endpoints instead of relying on one averaged fixed-character curve.",
+	"Portability of absolute numbers", "methodology", 4, 3, 3, "validation contract", "Portability-validation audit separates causal portability from threshold portability: fresh/randomized/exact, dense n=50, container-fixture, and cross-browser timer-ordering runs preserve the main story locally, but absolute p50/CV remain one machine family.", "How compact score rows and key diagnostics move across CI runner classes, Playwright Chromium revisions, wp-env/container limits, OS/browser versions, and power/QoS state.", "Run the compact discriminating row set on CI and comparable mac/container/browser variants with environment metadata before changing thresholds or making absolute latency claims."
 ) %>%
 	mutate(
 		category = factor(
@@ -14605,14 +15222,19 @@ open_question_next_instrumentation_matrix <- tribble(
 			levels = c(
 				"closed locally",
 				"validate before change",
+				"predicate validation",
 				"targeted follow-up only",
 				"patch first row",
 				"prototype first",
 				"research after local guards",
 				"secondary optimization",
 				"validation run",
+				"validation contract",
 				"needs workload data",
 				"external calibration",
+				"external calibration contract",
+				"OS counter contract",
+				"replay contract",
 				"outside JS harness"
 			)
 		),
@@ -14685,13 +15307,19 @@ save_plot(
 			values = c(
 				"closed locally" = 16,
 				"validate before change" = 17,
+				"predicate validation" = 17,
 				"targeted follow-up only" = 13,
+				"patch first row" = 0,
 				"prototype first" = 15,
 				"research after local guards" = 3,
 				"secondary optimization" = 7,
 				"validation run" = 8,
+				"validation contract" = 8,
 				"needs workload data" = 4,
 				"external calibration" = 18,
+				"external calibration contract" = 18,
+				"OS counter contract" = 6,
+				"replay contract" = 4,
 				"outside JS harness" = 1
 			)
 		) +

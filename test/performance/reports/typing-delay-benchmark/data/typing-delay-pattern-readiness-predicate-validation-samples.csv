@@ -1,0 +1,151 @@
+condition,local_run,sample_index,load_patterns_ms,measurement_idle_wait_ms,pattern_readiness_wait,pattern_readiness_timeout_ms,pattern_readiness_quiet_window_ms,mode,waitMs,quietWindowWaitMs,quietWindowSatisfied,timedOut,waitResourceDelta,measurementResourceDelta,compatiblePatternCount,totalPatternCount,restPatternCount,settingsPatternCount,templateSlug,templateArea
+predicate + resource quiet,1,1,693.3331670000002,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,320.2000000476837,319.7999999523163,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,1,2,636.2288330000001,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,299.2999999523163,299.19999980926514,TRUE,FALSE,16,6,4,68,68,0,home,NA
+predicate + resource quiet,1,3,815.7238339999994,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,284.40000009536743,284.2999999523163,TRUE,FALSE,16,7,4,68,68,0,home,NA
+predicate + resource quiet,1,4,754.1252089999998,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,313.69999980926514,313.59999990463257,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,1,5,754.2721249999995,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,279.2999999523163,279.09999990463257,TRUE,FALSE,17,7,4,68,68,0,home,NA
+predicate + resource quiet,1,6,1177.226958000001,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,289.2999999523163,289.2000000476837,TRUE,FALSE,19,8,4,68,68,0,home,NA
+predicate + resource quiet,1,7,762.1037079999987,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,325.7000000476837,325.5,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,1,8,777.6762499999968,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,336.7000000476837,336.60000014305115,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,1,9,744.5385419999984,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,289.7000000476837,289.60000014305115,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,1,10,704.3008330000011,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,290.30000019073486,290.2000000476837,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,2,1,670.0424579999999,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,292.60000014305115,292.40000009536743,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,2,2,714.7576250000002,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,317.40000009536743,317.2000000476837,TRUE,FALSE,17,7,4,68,68,0,home,NA
+predicate + resource quiet,2,3,736.4037499999995,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,312,311.7999999523163,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,2,4,784.2639589999999,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,308.09999990463257,307.89999985694885,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,2,5,677.2934999999998,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,284.19999980926514,284.09999990463257,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,2,6,768.0826660000002,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,284.60000014305115,284.40000009536743,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,2,7,733.8145420000001,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,301.19999980926514,301,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,2,8,639.3264579999995,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,364.7999999523163,364.59999990463257,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,2,9,754.5621659999997,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,298.2999999523163,298.19999980926514,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,2,10,735.3943749999999,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,301.2999999523163,301.09999990463257,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,3,1,678.4187499999998,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,284.7000000476837,284.59999990463257,TRUE,FALSE,16,6,4,68,68,0,home,NA
+predicate + resource quiet,3,2,694.9387079999997,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,327,326.90000009536743,TRUE,FALSE,17,7,4,68,68,0,home,NA
+predicate + resource quiet,3,3,619.9187079999992,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,330,329.90000009536743,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,3,4,738.3790000000008,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,331.7000000476837,331.60000014305115,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,3,5,754.4614579999998,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,305.7999999523163,305.59999990463257,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,3,6,725.6152089999996,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,330.7999999523163,330.59999990463257,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,3,7,802.3925830000007,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,292.40000009536743,292.2000000476837,TRUE,FALSE,19,8,4,68,68,0,home,NA
+predicate + resource quiet,3,8,629.4321249999994,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,279.60000014305115,279.5,TRUE,FALSE,19,6,4,68,68,0,home,NA
+predicate + resource quiet,3,9,767.1956659999996,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,338.40000009536743,338.2000000476837,TRUE,FALSE,19,7,4,68,68,0,home,NA
+predicate + resource quiet,3,10,713.7903750000005,0,block-patterns-resource-quiet,1000,100,block-patterns-resource-quiet,339,338.7999999523163,TRUE,FALSE,19,7,4,68,68,0,home,NA
+fixed 0ms,1,1,901.5224159999998,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,2,743.523083,0,fixed,0,NA,fixed,0,NA,NA,FALSE,0,24,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,3,738.656500000001,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,4,925.1500000000015,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,5,801.4919169999994,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,6,956.9637909999983,0,fixed,0,NA,fixed,0,NA,NA,FALSE,2,25,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,7,909.4949589999997,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,8,903.656541999997,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,9,864.4355829999986,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,1,10,816.0803749999977,0,fixed,0,NA,fixed,0,NA,NA,FALSE,2,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,1,810.069125,0,fixed,0,NA,fixed,0,NA,NA,FALSE,2,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,2,873.480708,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,3,849.3902500000004,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,4,897.4966669999994,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,5,750.8514999999989,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,6,892.3835419999996,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,7,798.7251250000008,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,8,823.2380000000012,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,9,778.8998749999992,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,2,10,888.0913330000003,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,1,795.0401670000001,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,2,784.1374169999999,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,3,896.9759579999991,0,fixed,0,NA,fixed,0,NA,NA,FALSE,2,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,4,913.7238750000015,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,5,927.5263329999998,0,fixed,0,NA,fixed,0,NA,NA,FALSE,2,24,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,6,870.5855410000004,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,23,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,7,1261.4841660000002,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,24,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,8,891.697791999999,0,fixed,0,NA,fixed,0,NA,NA,FALSE,2,24,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,9,801.9543749999975,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 0ms,3,10,869.4937920000011,0,fixed,0,NA,fixed,0,NA,NA,FALSE,3,22,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,1,787.9701249999998,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,2,727.0233750000007,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,3,846.9512079999986,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,8,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,4,742.3962080000001,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,5,750.6426670000001,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,6,763.279166999997,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,7,800.6739159999997,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,8,764.5540829999991,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,9,642.8739160000005,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,1,10,824.5212919999976,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,1,690.9452080000001,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,2,625.4357909999999,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,3,733.0202500000014,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,4,880.0607920000002,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,8,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,5,771.4003750000011,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,6,742.6651670000028,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,7,744.6902499999997,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,8,762.1361670000006,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,9,784.0873339999998,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,2,10,757.8814579999998,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,1,799.8904169999996,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,2,708.8306249999987,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,3,701.0463339999988,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,4,732.5451670000002,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,5,742.5869999999995,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,6,770.0480830000015,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,7,769.5780419999974,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,18,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,8,735.4592919999996,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,9,1235.7561659999992,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,9,NA,NA,NA,NA,NA,NA
+fixed 1000ms,3,10,757.3862499999996,1000,fixed,1000,NA,fixed,1000,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,1,784.2518330000003,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,2,784.2337920000009,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,8,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,3,723.4727079999993,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,4,743.1478330000009,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,5,770.9447920000002,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,6,862.5169999999998,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,7,747.4989580000001,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,8,687.7362499999981,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,9,777.4779580000031,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,1,10,711.2648750000008,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,1,768.5331669999996,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,2,778.6457920000003,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,3,717.6036670000012,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,4,847.7497500000009,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,5,786.0996670000004,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,6,809.4445410000008,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,7,761.0471660000003,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,8,850.8765830000011,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,9,749.292042000001,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,6,NA,NA,NA,NA,NA,NA
+fixed 500ms,2,10,785.5715419999979,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,1,787.5716670000002,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,2,780.8565419999995,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,8,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,3,747.5489170000001,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,4,678.7105420000007,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,5,742.3714579999996,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,6,795.6909999999989,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,7,876.111584000002,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,8,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,8,781.5513749999991,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,9,752.5702500000007,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,7,NA,NA,NA,NA,NA,NA
+fixed 500ms,3,10,792.4557079999977,500,fixed,500,NA,fixed,500,NA,NA,FALSE,19,8,NA,NA,NA,NA,NA,NA
+block-pattern predicate,1,1,892.7100829999999,0,block-patterns,1000,NA,block-patterns,0.2999999523162842,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,1,2,769.7453329999998,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,1,3,799.8066249999993,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,24,4,68,68,0,home,NA
+block-pattern predicate,1,4,802.6646669999991,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,23,4,68,68,0,home,NA
+block-pattern predicate,1,5,835.0016660000001,0,block-patterns,1000,NA,block-patterns,0.19999980926513672,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,1,6,1008.810207999999,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,27,4,68,68,0,home,NA
+block-pattern predicate,1,7,875.062582999999,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,1,8,770.9097079999992,0,block-patterns,1000,NA,block-patterns,0.3000001907348633,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,1,9,872.3684580000008,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,1,10,788.054957999997,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,2,1,850.1131249999999,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,2,2,843.0842910000001,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,23,4,68,68,0,home,NA
+block-pattern predicate,2,3,836.9572079999998,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,2,4,868.552334,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,2,5,859.7985410000001,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,2,6,806.2164590000011,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,2,7,746.0171669999982,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,2,8,867.5512080000008,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,23,4,68,68,0,home,NA
+block-pattern predicate,2,9,840.0937919999997,0,block-patterns,1000,NA,block-patterns,0.09999990463256836,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,2,10,851.859583999998,0,block-patterns,1000,NA,block-patterns,0.09999990463256836,NA,NA,FALSE,0,23,4,68,68,0,home,NA
+block-pattern predicate,3,1,818.265042,0,block-patterns,1000,NA,block-patterns,0.2999999523162842,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,3,2,816.454334,0,block-patterns,1000,NA,block-patterns,0.09999990463256836,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,3,3,732.1520830000009,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,3,4,837.809874999999,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,3,5,749.33270900000025,0,block-patterns,1000,NA,block-patterns,0.09999990463256836,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,3,6,869.5335419999992,0,block-patterns,1000,NA,block-patterns,0.09999990463256836,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,3,7,759.433916,0,block-patterns,1000,NA,block-patterns,0.10000014305114746,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,3,8,836.982,0,block-patterns,1000,NA,block-patterns,0.20000004768371582,NA,NA,FALSE,0,26,4,68,68,0,home,NA
+block-pattern predicate,3,9,746.2302920000002,0,block-patterns,1000,NA,block-patterns,0.09999990463256836,NA,NA,FALSE,0,25,4,68,68,0,home,NA
+block-pattern predicate,3,10,757.3002080000006,0,block-patterns,1000,NA,block-patterns,0.09999990463256836,NA,NA,FALSE,0,25,4,68,68,0,home,NA

@@ -636,6 +636,9 @@ The R script derives:
 -   `data/typing-delay-chromium-runtime-next-probe-audit.csv`: decision audit for
     the remaining Chromium runtime checkpoint question and the next
     browser-level probe that would resolve it.
+-   `data/typing-delay-chromium-runtime-trace-contract-audit.csv`: required
+    browser/runtime trace contrasts for the remaining Chromium checkpoint
+    mechanism.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -718,6 +721,11 @@ The R script derives:
 -   `data/typing-delay-pattern-readiness-prototype-audit.csv`: implementation
     audit for a `getBlockPatterns` readiness prototype, including resolver,
     compatibility-list, timeout, and measurement-boundary checks.
+-   `data/typing-delay-pattern-readiness-predicate-validation-*.csv`: full
+    `site-editor` Loading Patterns validation runs for fixed waits, a pure
+    `getBlockPatterns` predicate, and `getBlockPatterns` plus a resource-quiet
+    guard; includes per-sample resource movement and a resource-endpoint detail
+    audit.
 -   `data/typing-delay-pattern-readiness-risk-audit.csv`: per-run q50 range,
     bootstrap, and probe-hit risk audit for the remaining site-editor
     pattern-loading wait choices.
@@ -873,6 +881,9 @@ The R script derives:
 -   `data/typing-delay-visual-endpoint-decomposition-summary.csv`: derived
     split of the `1000ms` visual-endpoint drop into the EventDispatch slice and
     the post-EventDispatch visual/render tail.
+-   `data/typing-delay-presentation-calibration-contract-audit.csv`: decision
+    contract for the remaining compositor/display/OCR calibration caveat after
+    localized changed trace screenshots.
 -   `data/typing-delay-react-render-boundary-audit.csv`: derived join that
     bounds the remaining React/render caveat using visual endpoint
     decomposition, `useSelect` subphase deltas, paused listener-wrapper deltas,
@@ -880,9 +891,18 @@ The R script derives:
 -   `data/typing-delay-react-profiler-decision-audit.csv`: decision audit for
     the React-profiler open question, separating closed cliff-causality claims
     from later after-input ownership work.
+-   `data/typing-delay-react-residual-profiler-plan-audit.csv`: measurement
+    contract for the only remaining useful React-profiler work: residual
+    after-input and whole-cycle ownership after selector/subscriber changes.
 -   `data/typing-delay-open-question-next-instrumentation-matrix.csv`: ranked
     matrix of remaining questions, current answer strength, next-work cost, and
     recommended next instrumentation or prototype.
+-   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
+    contract for representative workload replay, including human/plugin-heavy
+    histories and strata missing from the fixed-character stressor.
+-   `data/typing-delay-portability-validation-contract-audit.csv`: decision
+    contract for validating absolute p50/CV portability before threshold or
+    absolute-latency changes.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
 -   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
@@ -894,6 +914,9 @@ The R script derives:
 -   `data/typing-delay-cpu-qos-next-probe-audit.csv`: decision audit for the
     remaining CPU/QoS question, separating closed benchmark explanations from
     OS/hardware counter work.
+-   `data/typing-delay-cpu-qos-counter-contract-audit.csv`: counter/trace
+    contract for discriminating P-core/frequency, scheduler/QoS, cache,
+    timer-wakeup, and browser-scheduler explanations.
 -   `data/typing-delay-wall-clock-fixed-sample-*.csv`: audit of fixed-sample
     delay sweeps versus equal wall-clock sampling budgets.
 
@@ -1767,7 +1790,7 @@ The stricter predicate audit is:
 | Fixed `250ms` wait | possible but volatile | It reaches the local readiness boundary, but q50 sd was `35.6ms`, the highest of the settled fixed waits. |
 | Fixed `500ms` wait | best fixed local candidate | It reaches the local readiness boundary, matches the `1000ms` q50 band, saves `10s` in the two-branch pattern metric, and had lower local q50 sd than `1000ms`. |
 | Current fixed `1000ms` wait | safe baseline | It preserves the current metric boundary but pays the full fixed sleep. |
-| State predicate before Design / Transform click | preferred prototype | It targets the actual boundary: background pattern data/readiness before the user action, with preview rendering left inside the measurement. |
+| State predicate before Design / Transform click | necessary but insufficient alone | The source-level hypothesis was valid to test, but the validation below shows `getBlockPatterns` readiness is already true and does not move the broader setup resources. |
 | Resource quiet window only | diagnostic support | Resource counts explain this local boundary, but are not a product contract. |
 | Wait for preview canvases | invalid predicate | The current benchmark measures the preview canvases rendering after the click, so waiting for them first would remove the measured workload. |
 
@@ -1786,7 +1809,7 @@ currently measuring.
 
 | Component | Role | Why |
 | --------- | ---- | --- |
-| `getBlockPatterns` resolution | primary predicate | It is the data dependency used by `useAvailablePatterns` before the Design panel opens. |
+| `getBlockPatterns` resolution | primary data predicate | It is the data dependency used by `useAvailablePatterns` before the Design panel opens, but the validation below shows it is not the full timing boundary. |
 | Design / Transform click | measurement start boundary | The spec starts timing before this click. |
 | Preview canvases and `core/pattern` replacement | invalid pre-waits | The spec waits for them after the click, so pre-waiting them would remove the measured workload. |
 | Pattern categories | optional guardrail | They are resolved for broader editor settings, but this path does not use them to build the measured template list. |
@@ -1806,14 +1829,48 @@ implies. A correct predicate should do more than poll a boolean:
 | Add timeout and telemetry | required guardrail | The fallback choice should be visible in the result instead of being folded into q50 noise. |
 | Treat pattern categories as optional | optional guardrail | Broader editor settings resolve them, but this measured Transform/Design template list is built from patterns and current template fields. |
 
-The prototype shape should therefore be a pre-click wait with explicit telemetry,
-not a replacement for the measured post-click work. In the browser context that
-means roughly: call `wp.data.resolveSelect( 'core' ).getBlockPatterns()`, confirm
-`wp.data.select( 'core' ).hasFinishedResolution( 'getBlockPatterns' )`, read
-`core/editor`'s current post type/id and the edited entity record, merge
-`getEditorSettings()` patterns with `getBlockPatterns()`, and require at least one
-compatible non-excluded pattern. Then start the timer and click Design /
-Transform exactly where the current spec does.
+That was the source-level hypothesis, so I implemented it as an opt-in
+measurement mode and ran the full `site-editor` Loading Patterns test. The
+validation used three 10-sample runs each for fixed `0ms`, fixed `500ms`, fixed
+`1000ms`, a pure `getBlockPatterns` predicate with a `1000ms` cap, and
+`getBlockPatterns` plus a `100ms` resource-quiet guard with the same cap.
+
+![Site-editor pattern readiness predicate validation](figures/153-site-pattern-readiness-predicate-validation.png)
+
+![Site-editor pattern readiness resource shift](figures/154-site-pattern-readiness-resource-shift.png)
+
+The pure `getBlockPatterns` predicate is not sufficient. It was already true in
+every retained sample: median predicate wait was only `0.15ms`, no sample timed
+out, and the compatible pattern count was `4`. But its median run q50 was
+`818.8ms`, much closer to fixed `0ms` (`881.1ms`) than to fixed `1000ms`
+(`751.3ms`) or fixed `500ms` (`781.2ms`). The resource counters explain why:
+the pure predicate moved `0` resource entries before the timer and left about
+`25` resource entries inside the measured interval. Fixed `500ms` and `1000ms`
+both moved about `19` entries before the timer and left about `7` inside the
+measurement.
+
+Adding a resource-quiet guard after the block-pattern predicate reproduced the
+fixed-wait boundary with much less waiting. The `getBlockPatterns` plus
+`100ms` quiet-window mode waited about `301ms` at the median, moved the same
+`19` resource entries before the timer, left the same `7` inside measurement,
+and reported a median run q50 of `734.6ms`. That disconfirms the earlier
+"block-pattern data readiness is the whole boundary" theory. The fixed sleep is
+not primarily waiting for the block-pattern REST resolver by the time the
+measured click is about to happen; it is giving broader editor REST setup work
+time to finish before the Design / Transform measurement starts.
+
+![Site-editor pattern readiness resource detail](figures/155-site-pattern-readiness-resource-detail.png)
+
+The URL-level diagnostic run makes the moved work concrete. The resource-quiet
+wait mostly moved REST setup requests: categories (`100` entries across the ten
+samples), navigation (`20`), post type, users, category taxonomy, navigation
+fallback, pages, template parts, and menus. The measured interval still contains
+the preview-driven work: mostly posts (`61` entries) and a few category requests.
+So a resource-quiet guard is a good local diagnostic and a plausible CI
+engineering replacement for the blind sleep, but it is not a clean semantic
+product predicate. If the benchmark replaces the fixed sleep, the honest next
+validation is `getBlockPatterns` plus resource quiet with timeout/fallback
+telemetry on CI/mac/container, not a pure `getBlockPatterns` wait.
 
 One more pass over the run-level q50s sharpens what is still open. The bootstrap
 intervals below resample reported run q50s, not individual retained samples, so
@@ -3999,6 +4056,43 @@ The next-probe audit for this open question is:
 | Do finite CPU duration and recency matter? | yes, descriptively | two-term finite-burst model has `R^2 = 0.71` with the expected signs | model does not identify the hardware mechanism or cover continuous QoS-clamped controls | pair finite-burst grid with per-core residency/frequency counters and process QoS state |
 | Is the exact hardware or scheduler layer identified? | no | current JS/browser traces can only name the narrowed boundary | exact split between core residency, frequency, cache, QoS scheduling, timer coalescing, and browser scheduler state | use OS/hardware counters first; add JS rows only to test a counter-backed hypothesis |
 | What should product optimization do with this? | keep it separate from source-level mitigations | native/browser controls move less than `1ms`; Gutenberg fanout supplies the scale | how real plugin/human workloads interact with this system state | use workload replay for product lag and selector/subscriber prototypes for source mitigation |
+
+### CPU/QoS Counter Contract
+
+The CPU/QoS mechanism is now bounded enough that the next experiment should be
+counter-driven. The local benchmark should not keep adding new no-op callbacks,
+external delay variants, or taskpolicy tier rows until an OS/browser trace points
+at a more specific mechanism. The rows already separate the important classes:
+near-key no-CPU tasks are slow (`24.3ms` median p50), finite CPU bursts are
+usually fast (`11.3ms` median p50), continuous ordinary/utility CPU is fast
+(`9.7ms` median p50), and continuous background/maintenance CPU is slow
+(`24.2ms` median p50).
+
+The remaining layers need different evidence:
+
+| Candidate layer | Why it remains plausible | What would support it | What would weaken it |
+| --------------- | ------------------------ | --------------------- | -------------------- |
+| P-core or cluster frequency/residency | one ordinary or utility-QoS busy child is enough, while background/maintenance CPU remains slow despite consuming CPU | fast rows share higher performance-cluster residency or frequency during keydown / `EventDispatch`, and finite-burst rows decay as that state decays | fast and slow QoS rows have the same frequency, residency, and renderer core placement |
+| Darwin scheduler or QoS placement | the split follows ordinary/utility versus background/maintenance policy more closely than Unix nice or taskpolicy latency/throughput tiers | fast rows show lower renderer runnable-to-running latency, different core placement, or different effective QoS/priority during key dispatch | renderer scheduling latency and effective QoS are indistinguishable across ordinary/utility and background/maintenance controls |
+| Cache or memory hierarchy state | Gutenberg's broad JS/data/RichText path could be sensitive to memory stalls | fast rows show lower renderer stall or miss rate during `EventDispatch` without a matching scheduler/frequency difference | renderer counter ratios are the same across fast and slow rows, or differences track frequency/scheduling instead |
+| Timer coalescing or wakeup latency | finite CPU recency matters and OS policy can change wakeup behavior | fast rows primarily reduce key enqueue-to-`EventDispatch` start or renderer wakeup latency | `EventDispatch` starts at comparable times but its internal JS/data/RichText work duration changes |
+| Chromium/browser scheduler state | runtime checkpoints and CPU/QoS controls both show state below Gutenberg selectors | fast rows show different input-task priority, queueing, or task splitting after OS counters are controlled | browser scheduler traces are identical once OS frequency/residency/QoS counters are controlled |
+
+That gives a concrete trace contract. Run the same small set of discriminating
+rows, not a broad new sweep: the no-op timer, continuous ordinary CPU,
+`nice +20`, `taskpolicy -c utility`, `taskpolicy -b`, QoS background, QoS
+maintenance, and the finite-burst gap-decay rows. For each retained sample,
+align helper work start/end, next keydown enqueue, `EventDispatch` start/end,
+renderer thread wakeups, process QoS, core IDs, frequency/residency, and the
+existing Gutenberg source spans. A positive result should explain both the
+continuous QoS split and the finite-burst decay; explaining only one of those is
+not enough to close the mechanism.
+
+The practical decision is unchanged but sharper. The system artifact should be
+studied with OS counters first. Product optimization should continue through
+selector/subscriber prototypes and workload replay, because the system state
+modulates the path but Gutenberg's broad input fanout supplies the user-visible
+scale.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -6298,6 +6392,37 @@ typing":
 | Can direct runtime checkpoints reproduce the trace-off residual? | yes, by dose response | a unique Playwright utility-script or locator semantic action is not required | V8 microtask state, renderer scheduler priority, input queue state, cache/frequency side effects, or a mix | hold raw CDP input fixed, vary checkpoint count, and trace around prior `keyup` / next `keydown` |
 | Is the browser checkpoint enough to explain Gutenberg-scale movement by itself? | no | native `contenteditable` moves only `0.3-0.4ms` while Gutenberg moves by several milliseconds | how much survives real plugin/human workloads | split artifact mechanism from product-lag work: Chromium tracing for the former, replayed workload traces for the latter |
 
+### Chromium Runtime Trace Contract
+
+The Chromium/runtime question is now narrow enough that another row in the
+JS-level delay sweep would not add much. The current harness already has the
+decisive negative controls: ordinary sleeps through `5008ms` stay slow, while
+shorter windows containing repeated runtime protocol work move the next
+`EventDispatch` slice substantially. The missing information is not "how many
+milliseconds passed after `keyup`"; it is which browser/runtime state differs
+after protocol runtime work but not after an ordinary wait.
+
+The existing browser-trace mode in this benchmark is render/screenshot oriented:
+it captures `devtools.timeline`, render pipeline events, and optional trace
+screenshots. That is enough for Paint/DrawFrame/screenshot endpoint alignment,
+but it is not a scheduler/runtime-state trace. The next useful probe therefore
+has a different contract:
+
+| Contrast | Current local answer | Required trace contract |
+| -------- | -------------------- | ----------------------- |
+| Ordinary wait versus runtime checkpoint | elapsed post-keyup time, queued-JS drain, and browser rest are ruled out; waits through `5008ms` stay around `21-24ms`, while runtime checkpoints reach about `13ms` at `x17` | trace the same raw-CDP held-key path for wait `16ms`, wait `1000ms`, wait `5000ms`, `Runtime.evaluate` `x7/x17`, and `Runtime.callFunctionOn` `x7/x17`; align prior `keyup` end, protocol command start/end, next `keydown`, and `EventDispatch` start/end |
+| Single checkpoint versus repeated checkpoint | one task/timer/frame checkpoint is not enough; the repeated direct runtime calls are the thing that produces the dose response | keep command payloads identical and vary only repeat count `x0/x1/x3/x7/x17`; record renderer main-thread tasks, V8 execution slices, microtask checkpoints if exposed, scheduler priority/queue slices if exposed, and next `EventDispatch` duration |
+| Direct CDP call versus Playwright utility path | the trace-off residual is not explained by CDP method name, `awaitPromise`/`returnByValue`/`userGesture`, or editor-frame targeting | trace direct `Runtime.callFunctionOn`, Playwright `page.evaluate()`, `page.evaluateHandle()`, and `locator.evaluate()` with protocol-command markers, execution-context IDs, and object-lifecycle markers in the same keyup-to-keydown window |
+| Trace snapshot boundary | the full trace-on per-key fast path is a Playwright trace-snapshot perturbation, not a human-typing model | compare trace-on `captureSnapshot` windows against trace-off runtime-repeat windows with a separate low-overhead protocol log; control for using the same Playwright trace facility as both perturbation and observer |
+| Native scale control | the browser checkpoint is real but too small to explain Gutenberg-scale movement by itself | use browser tracing to identify the artifact trigger; use recorded workload replay to decide product-lag relevance |
+
+That makes the decision boundary sharper. For choosing or explaining the CI
+typing helper, the Chromium row is closed: do not model human typing with a
+held-key delay or trace-on per-key Playwright action. For explaining the exact
+browser state, the next work is below this benchmark's DOM/React/data
+instrumentation. It needs browser/runtime tracing around the already-identified
+contrasts, not more Gutenberg delay points.
+
 ### Native Contenteditable Baseline
 
 The key-state traces show conditions that separate slow and fast Gutenberg
@@ -6901,6 +7026,26 @@ synthetic key-hold artifact propagates coherently, per retained key, to
 Chromium's internal visual/render endpoints and to localized changed trace
 screenshots.
 
+### Presentation Calibration Contract
+
+The presentation question is now narrow enough to separate into closed internal
+browser claims and still-open external display claims. The derived contract is
+in `data/typing-delay-presentation-calibration-contract-audit.csv`.
+
+| Presentation question | Current answer | Remaining caveat | Calibration contract |
+| --------------------- | -------------- | ---------------- | -------------------- |
+| Is the cliff only a Chrome `EventDispatch` accounting artifact? | no | endpoints are still browser-derived | no extra calibration is needed for the internal-browser claim; keep the wording scoped to Chromium visual/render endpoints |
+| Is the changed trace screenshot unrelated to the typed character? | no for these runs | pixel overlap is not OCR | crop the DOM `Range`, require recognition of the newly inserted glyph, and report first recognized-glyph timestamp against the same keydown / `EventDispatch` window |
+| Is post-`EventDispatch` rendering the main visual cliff? | no | a calibrated pipeline could add compositor/display tail | decompose keydown to `EventDispatch`, `Paint` / `DrawFrame`, compositor submit, swap/present, and screenshot/camera-visible glyph for the same retained samples |
+| Can trace screenshots be treated as screen presentation timestamps? | no | display presentation, scanout, compositor buffering, and panel timing are unmeasured | run compositor presentation traces or high-speed camera capture on the same `990ms`, `1000ms`, and `1300ms` key-held and complete-keypress controls |
+| What can CI claim without external calibration? | internal visual propagation, not exact user-visible glyph time | hardware-to-screen latency and first-visible-glyph timing remain outside the evidence | keep report language scoped unless external presentation/OCR calibration is added |
+
+This closes the common weak interpretations while preserving the real caveat.
+The current data is enough to say the held-key artifact reaches localized
+Chromium trace screenshots and that the endpoint movement is mostly already in
+the input/`EventDispatch` span. It is not enough to claim calibrated
+hardware-to-screen latency or semantic first-visible-glyph time.
+
 ### React/Render Boundary Audit
 
 I then joined the visual endpoint decomposition with the nested `useSelect`
@@ -6948,6 +7093,26 @@ notification fanout into post-input React rendering.
 | Can `useSelect` selector work or React's external-store listener explain it? | no | `useSelect.reactListener` moves by `0.1ms`, `mapSelect` by `0.25ms`, and the outer `onChange` wrapper by `1.0ms` | after a guard patch, use profiler to rank the selectors/components still recomputing |
 | Where is the remaining input-side React/data work? | broad subscriber fanout | `rootSubscribe` moves by `3.1ms` and Redux listener wrappers by `3.0ms`; resumed listener callbacks are not a common slow-path cause | collect subscriber-owner counts before changing data notification semantics |
 | What should a profiler run answer? | ownership of smaller residual work | Chrome render-event tail is at most `0.8ms`; trace-screenshot tail is `2.3ms` | capture production-like commit owners after RichText input and after async queue flushes |
+
+The residual-profiler plan is now narrow enough to state as a measurement
+contract. The derived audit is in
+`data/typing-delay-react-residual-profiler-plan-audit.csv`; the useful profiler
+work is:
+
+| Profiler question | Current answer | Measurement contract | Invalid conclusion |
+| ----------------- | -------------- | -------------------- | ------------------ |
+| Should a React profiler run be used for cliff causality? | No. EventDispatch already moves by `13.8ms`; the largest post-EventDispatch visual/render tail is `2.3ms`. | No new profiler run for this claim; use the existing input, visual endpoint, `useSelect` subphase, and idle-queue evidence. | A large commit in a profiled run would not move the already-observed EventDispatch boundary backward in time. |
+| When should profiler be used after selector guards? | After a concrete selector/subscriber patch changes the fanout shape. | Run before/after the exact patch, keep source-level subscriber-owner spans enabled, and attribute commits that start after the input EventDispatch/RichText span or after the async queue flush. | Reduced commit time is not proof that a selector guard is semantically safe; behavior tests and owner spans still decide that. |
+| What should async render-queue profiling measure? | Residual commit ownership after input, not the low-band cause. | Capture queue insertion, idle callback start/end, commit start/end, and whether each idle flush crosses the following input. | Do not conclude that draining the queue before input explains the fast band; the measured probe already contradicts that. |
+| What should whole-cycle profiling use as workload? | Representative editing histories, not fixed-`x` cliff reproduction alone. | Profile replayed human/plugin-heavy sessions and compare whole-cycle commits against source-level data spans and visual endpoints. | Do not use fixed-`x` insertion to rank real plugin, composition, correction, or navigation workloads. |
+| Can profiler answer the public data-subscription question? | No. Branch-aware or selector-aware notification is a data-layer contract question. | Use profiler only after a data notification prototype exists, to check residual component owners and regressions. | Do not use profiler output to justify breaking `isLastBlockChangePersistent()` `useSelect` notification semantics. |
+| What is the acceptable profiler claim? | Component ownership of secondary after-input or whole-cycle cost. | Report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs. | Do not report profiler commit ownership as the primary cause of the `11-16ms` endpoint drop. |
+
+This closes the remaining "should we profile React next?" question for the
+current benchmark. A profiler run can be useful, but only after a selector guard,
+store-notification prototype, or workload replay creates a new residual
+ownership question. Running it before that would mostly relabel already-measured
+store-root fanout as downstream component work.
 
 ## Trace Grouping Bug Avoided
 
@@ -7337,6 +7502,75 @@ visual/render tail; for first changed trace screenshot, the tail contributes
 whole-cycle attribution, but it is too small to be the primary cause of the
 `1000ms` cliff.
 
+### Human/Plugin Workload Contract
+
+The remaining workload question is not whether the current harness found a real
+artifact. It did. The held-key `1000ms` shape survives across visual endpoints,
+source traces, CPU/QoS controls, and CDP boundary checks in the vanilla
+large-post fixture. The narrower question is whether that fixed-character,
+large-post stressor is representative enough to rank product latency work.
+
+The current controls say no. They do show why Gutenberg matters: native
+`contenteditable` controls move in the same direction but by less than `1ms`,
+while Gutenberg empty and large-post first-input controls amplify idle/system
+effects by about `4.6ms` and `5.7ms`. The listener scenario controls also show
+that the large post carries more input-listener work than the empty post. That is
+enough to say the large visible swing needs Gutenberg-scale work; it is not
+enough to say which plugin, theme, document, or editing-history features dominate
+real user sessions.
+
+The workload replay contract is therefore:
+
+| Workload question | Current answer | Replay contract |
+| ----------------- | -------------- | --------------- |
+| Can the fixed-character large-post stressor explain the benchmark artifact? | yes, for artifact and source-boundary investigation | keep it as a diagnostic harness, but do not use it alone to rank plugin-heavy or realistic editing latency |
+| Does the large cliff require Gutenberg-scale work? | yes | replay empty, large mixed, long text-only, media/pattern-heavy, and plugin-heavy/P2-like documents with the same source spans |
+| Can source prototypes be judged on fixed-character insertion alone? | no | include behavior assertions and source spans for text input, selection/caret changes, structural edits, async queue work, and visual endpoints before/after patches |
+| What should be recorded from human/plugin-heavy sessions? | per-sample histories, not only aggregate delay buckets | record event type, text delta, inter-event gap, hold time if available, selection/caret state, block/clientId context, composition state, document shape, plugin/theme set, session age, async markers, and source-span/visual endpoint IDs |
+| How should replay decide whether findings generalize? | by strata | report ordinary text bursts, correction/backspace, IME/composition, selection/navigation, block operations, paste/transform, long-session idle return, and plugin-heavy side effects separately |
+
+That constrains what can change before workload replay exists. The fixed
+stressor is enough to choose measurement semantics, explain the CI artifact, and
+start low-risk selector/subscriber patches that have focused behavior tests. It
+is not enough to claim that a fixed-character win ranks real typing, P2-like
+editing, composition, correction, selection, navigation, or plugin-heavy
+workloads. Those need recorded histories and replayed samples, not another
+single averaged fixed-delay curve.
+
+### Portability Validation Contract
+
+The remaining portability question is not whether the local runs found the
+right causal shape. They did. The open question is whether the absolute p50/CV
+numbers are portable enough to set thresholds or make absolute latency claims.
+
+The local checks bound setup and ordering confounds. Randomized exact Typing
+runs put the retained run-p50 medians at `13.19ms`, `12.63ms`, and `13.07ms`
+for `0ms`, `1000ms`, and `60000ms` start waits, which is inside the observed
+local run-to-run spread. Fresh-editor start-settle runs preserve the important
+`990ms` / `1000ms` / `1010ms` / `1300ms` shape across `0s`, `10s`, and `60s`
+post-setup waits. Cross-browser timeline runs preserve timer ordering
+qualitatively: Chrome, Firefox, and WebKit clear the `990ms` timer before input
+often enough to keep it in the slow band, and fire the timer before input at
+`1000ms` / `1010ms`, but their input-span magnitudes differ. That makes the
+browser checks causal-portability evidence, not Chrome threshold evidence.
+
+The validation contract is:
+
+| Portability question | Current answer | Validation contract |
+| -------------------- | -------------- | ------------------- |
+| Are absolute p50 values portable enough for thresholds? | no; the current report is still one local machine family | rerun a compact score set and diagnostics on CI plus at least one comparable local/container variant, reporting absolute p50 movement and qualitative ordering preservation |
+| Which rows should be portable-validation minimum? | discriminating rows, not the full dense sweep | include tap/complete-keypress, current CI held key, the `990ms` / `1000ms` / `1010ms` / `1300ms` boundary, `50ms` / `100ms` hold controls, pattern `500ms` / `1000ms` readiness rows, runtime checkpoint controls, CPU/QoS controls, and visual endpoint controls |
+| Do fresh/randomized/exact local runs close setup confounds? | mostly for local methodology, not host portability | repeat exact-spec randomized blocks on CI with fresh saved/reopened drafts, per-run p50/CV, first-three-key distribution, throwaway policy, and suite elapsed time |
+| Do Firefox/WebKit make Chrome numbers portable? | no; they preserve timer ordering but not equivalent metrics | validate thresholds only on the exact Playwright-bundled Chromium used by CI; use other engines as causal checks |
+| Do container/fixture controls close environment portability? | no; the Columns fixture is not host-vs-container isolation | run the compact set inside the same wp-env/container shape used by CI and a local-host variant when possible |
+| How should power and scheduler sensitivity be handled? | as threshold-critical metadata | record CPU model, core count, OS version, browser revision, container limits, power mode, thermal pressure if available, process QoS, and background load |
+
+The practical split is that local evidence can justify measurement semantics,
+artifact scoping, prototype order, and low-risk patches with behavior tests. It
+does not justify moving CI thresholds or making absolute latency claims until
+the compact validation set has run across CI/mac/container/browser variants with
+environment metadata.
+
 ### Remaining Open Questions Matrix
 
 At this point, more runs of the same JS-level benchmark are not all equally
@@ -7351,16 +7585,16 @@ The high-level split is:
 | Question | Current answer | Next useful work |
 | -------- | -------------- | ---------------- |
 | Typing startup wait | locally closed; current Typing has no extra post-setup wait and added waits do not improve retained q50 stability | no more local startup-wait runs unless CI/spec shape changes |
-| Pattern-loading wait | bounded locally; `0/100ms` are rejected, `250ms` is only a predicate lower-bound signal, `500ms` is the best local fixed fallback, and source/prototype audit identifies no-arg `getBlockPatterns` resolution plus a compatible merged pattern list before Design / Transform as the valid predicate | prototype that predicate with timeout/fallback and telemetry, then validate against `500ms` and `1000ms` in CI/mac/container |
+| Pattern-loading wait | pure `getBlockPatterns` readiness is locally rejected; it was already true, waited only `0.15ms`, moved `0` resources before the timer, and stayed in the slow band. `getBlockPatterns` plus a `100ms` resource-quiet guard moved the same `19` setup resources as fixed `500ms` / `1000ms` and matched the settled q50 band | do not switch to pure `getBlockPatterns`; validate `getBlockPatterns` plus resource quiet with timeout/fallback telemetry against fixed `500ms` and `1000ms` in CI/mac/container |
 | Input API phase boundary | locally closed for the CI choice; `pressSequentially()` belongs with `locator.type()`, ordinary `locator.press()` is a checkpoint control, and the compact `page.keyboard.press()` / per-key locator-focus runs show the remaining split is action-order/runtime-state, not hold duration | no more local API-boundary runs unless the suite is choosing a final helper; then run that exact helper once under CI settings |
 | Low-risk selector guards | bounded enough to patch the first row; source/prototype contract audit says pattern override is the only immediate local split, while heading, provider, inner-blocks, and `BlockListItems` need shared-signal or invalidation prototypes | implement the pattern-override selected-only support-check split with focused behavior tests, then measure before moving to block-provider and inner-block structural prototypes |
 | Store subscriber partition | bounded to a compatibility blocker; a private `useBlockSync` side channel is a useful migration seam, but the `23.2ms` fanout win requires stopping the root update, which would break public `isLastBlockChangePersistent()` `useSelect` notifications under today's store-level subscription model | research after local guards; prototype the side channel only as a seam, and do not claim the fanout win without a public selector notification policy or branch-aware data subscription |
-| React render ownership | closed for cliff causality; still useful for secondary ownership | profiler only for after-input/whole-cycle commits after selector/subscriber work is separated |
-| Chromium runtime checkpoint | closed for benchmark-level CI choice; exact browser state remains open below this harness | Chromium scheduler/runtime tracing around `captureSnapshot` and repeated runtime-call windows, outside this JS harness |
-| CPU/QoS mechanism | narrowed to ordinary/utility-QoS CPU state interacting with Gutenberg's input path; exact hardware/scheduler layer remains open | OS scheduler, power, and hardware-counter traces before adding more JS benchmark rows |
-| Calibrated presentation | bounded through Paint/DrawFrame/localized trace screenshots | compositor presentation timestamps, OCR, or high-speed camera |
-| Human/plugin workload | not covered by fixed `x` insertion | record/replay representative plugin-heavy and human editing histories |
-| Portability of absolute numbers | partially bounded by local fresh/randomized/container checks | compact validation on CI hosts, containers, browser versions, and OS power policy |
+| React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
+| Chromium runtime checkpoint | closed for benchmark-level CI choice; trace-contract audit says ordinary waits, generic task/frame checkpoints, Playwright utility semantics, and browser-only scale are all bounded; exact browser state remains open below this harness | browser/runtime tracing around matched raw-CDP wait, repeated `Runtime.evaluate` / `Runtime.callFunctionOn`, and trace-on `captureSnapshot` windows; do not add more JS-level delay rows |
+| CPU/QoS mechanism | counter-contract audit bounds the mechanism: near-key no-CPU tasks stay slow, finite CPU bursts are usually fast, continuous ordinary/utility CPU is fast, and background/maintenance CPU is slow; exact hardware/scheduler state remains below this harness | run the small discriminating CPU/QoS row set with OS scheduler, power, hardware-counter, and browser scheduler traces before adding more JS benchmark rows |
+| Calibrated presentation | presentation-calibration audit closes the internal-browser claim: the key-held `1000ms` drop reaches RAF, `Paint`, `DrawFrame`, first changed trace screenshot, and localized typed-character pixels; post-`EventDispatch` tail is secondary | compositor presentation traces, OCR/image recognition, or high-speed camera only if the report needs hardware-to-screen or semantic glyph timing |
+| Human/plugin workload | workload-contract audit bounds the current harness: the fixed-character large-post stressor is valid for artifact/source-boundary investigation and native/empty/large controls prove Gutenberg-scale amplification, but it cannot rank realistic product latency alone | record representative human/plugin-heavy histories and replay stratified samples with source spans, behavior assertions, and visual endpoints |
+| Portability of absolute numbers | portability-validation audit separates causal portability from threshold portability: local fresh/randomized/exact, dense `n=50`, container-fixture, and cross-browser timer-ordering checks preserve the story, but p50/CV remain one machine family | compact discriminating row set on CI/mac/container/browser variants with environment metadata before thresholds |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
