@@ -1,0 +1,34 @@
+control_class,run_id,intervention,rewrite_timeout_ms,work_duration_p50_ms,work_end_to_keydown_p50_ms,latency_p50_ms
+near-key no CPU task,task_end_noop_timeout_1250_delay_1300,marker no-op,1250,0,53.40000009536743,24.5725
+near-key finite CPU burst,task_end_busy_20_timeout_1230_delay_1300,busy wait 20ms,1230,20,51,20.955
+near-key finite CPU burst,task_end_busy_40_timeout_1210_delay_1300,busy wait 40ms,1210,40,50.60000014305115,14.064
+near-key finite CPU burst,task_end_noop_busy_150_timeout_1100_delay_1300,no-op + busy wait 150ms,1100,150,51,11.337
+near-key finite CPU burst,task_end_worker_busy_150_timeout_1100_delay_1300,worker busy wait 150ms,1100,160.14999997615814,41.19999980926514,10.473
+near-key finite CPU burst,task_end_worker_busy_no_message_150_timeout_1100_delay_1300,"worker busy wait 150ms, no message",1100,151.20000004768372,50.10000014305115,10.3295
+near-key no CPU task,task_end_delayed_noop_150_timeout_1100_delay_1300,delayed no-op 150ms,1100,152.64999997615814,50.5,24.433999999999997
+near-key finite CPU burst,task_end_worker_busy_no_message_20_timeout_1230_delay_1300,"worker busy wait 20ms, no message",1230,21.700000047683716,50.69999980926514,15.506999999999998
+near-key finite CPU burst,task_end_worker_busy_no_message_40_timeout_1210_delay_1300,"worker busy wait 40ms, no message",1210,41.60000014305115,50.40000009536743,12.7825
+near-key finite CPU burst,task_end_worker_busy_no_message_80_timeout_1170_delay_1300,"worker busy wait 80ms, no message",1170,81.5,50.5,11.202
+near-key no CPU task,task_end_worker_delay_no_message_150_timeout_1100_delay_1300,"worker delay 150ms, no message",1100,151.34999990463257,52.59999990463257,24.4975
+near-key finite CPU burst,task_end_external_cpu_no_message_150_timeout_1100_delay_1300,"external CPU 150ms, no message",1100,150.20000004768372,50,8.91
+near-key finite CPU burst,task_end_external_cpu_no_message_20_timeout_1230_delay_1300,"external CPU 20ms, no message",1230,20.300000190734863,50.20000004768371,10.388000000000002
+near-key finite CPU burst,task_end_external_cpu_no_message_40_timeout_1210_delay_1300,"external CPU 40ms, no message",1210,40.29999995231629,49.90000009536743,9.75
+near-key finite CPU burst,task_end_external_cpu_no_message_80_timeout_1170_delay_1300,"external CPU 80ms, no message",1170,80.29999995231628,50,8.7555
+near-key no CPU task,task_end_external_delay_no_message_150_timeout_1100_delay_1300,"external delay 150ms, no message",1100,150.29999995231628,52.5,22.194
+near-key finite CPU burst,task_end_external_persistent_cpu_no_message_20_timeout_1230_delay_1300,"external persistent CPU 20ms, no message",1230,20.350000023841854,51.5,18.987
+near-key finite CPU burst,task_end_external_persistent_cpu_no_message_40_timeout_1210_delay_1300,"external persistent CPU 40ms, no message",1210,40.29999995231629,51,13.9875
+near-key finite CPU burst,task_end_external_persistent_cpu_no_message_80_timeout_1170_delay_1300,"external persistent CPU 80ms, no message",1170,80.29999995231628,50.5,12.094
+near-key finite CPU burst,task_end_external_persistent_cpu_no_message_150_timeout_1100_delay_1300,"external persistent CPU 150ms, no message",1100,150.29999995231628,50.39999985694885,11.3485
+near-key no CPU task,task_end_external_persistent_delay_no_message_150_timeout_1100_delay_1300,"external persistent delay 150ms, no message",1100,150.29999995231628,53.10000014305115,23.32
+continuous ordinary/utility CPU,task_end_external_background_cpu_noop_timeout_1250_delay_1300,"external background CPU, no-op timer",1250,0,50.59999990463257,9.0605
+near-key no CPU task,task_end_external_background_idle_noop_timeout_1250_delay_1300,"external background idle child, no-op timer",1250,0,53.29999995231629,24.2265
+continuous ordinary/utility CPU,task_end_external_background_cpu_2_noop_timeout_1250_delay_1300,"external background CPU x2, no-op timer",1250,0,50.40000009536743,9.984000000000002
+continuous ordinary/utility CPU,task_end_external_background_cpu_4_noop_timeout_1250_delay_1300,"external background CPU x4, no-op timer",1250,0,51.10000014305115,10.2715
+continuous ordinary/utility CPU,task_end_external_background_cpu_8_noop_timeout_1250_delay_1300,"external background CPU x8, no-op timer",1250,0,51.39999985694885,10.432
+continuous ordinary/utility CPU,task_end_external_background_nice_cpu_noop_timeout_1250_delay_1300,"external background nice CPU, no-op timer",1250,0,50.60000014305115,9.3355
+continuous background/maintenance CPU,task_end_external_background_taskpolicy_cpu_noop_timeout_1250_delay_1300,"external background taskpolicy CPU, no-op timer",1250,0,52.5,24.571
+continuous background/maintenance CPU,task_end_external_background_taskpolicy_cpu_4_noop_timeout_1250_delay_1300,"external background taskpolicy CPU x4, no-op timer",1250,0,52.40000009536743,23.9655
+continuous background/maintenance CPU,task_end_external_background_taskpolicy_cpu_8_noop_timeout_1250_delay_1300,"external background taskpolicy CPU x8, no-op timer",1250,0,52.29999995231629,24.176499999999997
+continuous ordinary/utility CPU,task_end_external_background_taskpolicy_utility_cpu_noop_timeout_1250_delay_1300,"external background taskpolicy utility CPU, no-op timer",1250,0,50.80000019073486,9.371
+continuous background/maintenance CPU,task_end_external_background_taskpolicy_qos_background_cpu_noop_timeout_1250_delay_1300,"external background taskpolicy QoS background CPU, no-op timer",1250,0,52.90000009536743,24.191
+continuous background/maintenance CPU,task_end_external_background_taskpolicy_maintenance_cpu_noop_timeout_1250_delay_1300,"external background taskpolicy maintenance CPU, no-op timer",1250,0,52.40000009536743,24.717

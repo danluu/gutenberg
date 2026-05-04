@@ -294,6 +294,15 @@ The short version:
     keep the no-op timer fast at `9.2-9.7ms`. That means the earlier slow rows
     are not caused by taskpolicy tiering in general; the slow split is specific
     to Darwin background priority and QoS background/maintenance clamps.
+-   A derived CPU/QoS audit puts the remaining controls on one scale. Near-key
+    no-CPU tasks stay slow (`24.3ms` median control p50), near-key finite CPU
+    bursts move low (`11.3ms`), continuous ordinary/utility CPU is also low
+    (`9.7ms`), and continuous background/maintenance-QoS CPU stays slow
+    (`24.2ms`). A simple descriptive model over the finite CPU-burst rows,
+    `latency ~ log1p(duration) + end-to-keydown gap`, has `R^2 = 0.71`. That is
+    not a hardware proof, but it quantifies the current boundary: CPU duration,
+    recency, and policy explain much more than timer ordering or Gutenberg
+    selector state alone.
 -   A native `contenteditable` busy-timer control shows the browser-level effect
     exists but is tiny in absolute terms. With native timer work ending about
     `50ms` before keydown, p50 input duration moves from `1.20ms` with no busy
@@ -682,9 +691,6 @@ The R script derives:
     CI-comparable held-key versus tap-then-wait runs at `0ms`, `100ms`,
     `250ms`, `500ms`, and `1000ms`, with reported-q50 run-to-run variance and
     runtime deltas.
--   `data/typing-delay-ci-hold-duration-*.csv`: same paired CI-comparable
-    settings, adding fixed `50ms` and `100ms` key holds followed by the
-    remaining post-keyup wait.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -755,6 +761,10 @@ The R script derives:
     render-trace, and trace-screenshot endpoints.
 -   `data/typing-delay-taskpolicy-tier-*.csv`: `taskpolicy -l` latency-tier and
     `taskpolicy -t` throughput-tier background CPU controls.
+-   `data/typing-delay-cpu-qos-control-*.csv`: derived near-key CPU/QoS control
+    summary for the remaining system-level open question.
+-   `data/typing-delay-finite-cpu-model-*.csv`: descriptive finite-CPU-burst
+    duration/proximity model coefficients and predictions.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -2805,6 +2815,53 @@ broader "taskpolicy latency/throughput tiering makes the CPU control slow"
 explanation. The supported statement is now narrower: on this machine, the slow
 background-CPU controls are specifically Darwin background priority and QoS
 background/maintenance clamps, not taskpolicy policy machinery in general.
+
+### Quantifying The CPU/QoS Boundary
+
+I then collapsed the CPU controls into a smaller falsification table, keeping
+only cases where the timer/control end is roughly `40-65ms` before the next
+keydown. That removes the obvious "the task was too far away" confound and puts
+the remaining open question on one scale.
+
+![CPU/QoS control summary](figures/120-cpu-qos-control-summary.png)
+
+| Control class | Controls | Median control p50 | Min-max control p50 |
+| ------------- | -------: | -----------------: | ------------------: |
+| near-key no CPU task | `6` | `24.3ms` | `22.2-24.6ms` |
+| near-key finite CPU burst | `16` | `11.3ms` | `8.8-21.0ms` |
+| continuous ordinary/utility CPU | `6` | `9.7ms` | `9.1-10.4ms` |
+| continuous background/maintenance CPU | `5` | `24.2ms` | `24.0-24.7ms` |
+
+That table is the most compact current answer to the remaining mechanism
+question. A near-key timer callback, worker lifetime, delayed task, IPC command,
+or idle child is not enough; the no-CPU controls stay in the slow band. CPU work
+near the key is usually enough; continuous ordinary, `nice +20`, or utility-QoS
+CPU is enough even when the timer callback is a zero-duration no-op.
+Background/maintenance-QoS CPU is not enough despite consuming CPU.
+
+I also fit a deliberately simple descriptive model to the finite CPU-burst rows:
+`latency_p50 ~ log1p(work_duration) + work_end_to_keydown_gap`. This is not a
+claim about the hardware mechanism; it is a check that the two variables the
+probes were designed to vary, duration and recency, explain a meaningful share
+of the remaining control results.
+
+![Finite CPU duration/proximity model](figures/121-finite-cpu-duration-proximity-model.png)
+
+The model has `R^2 = 0.71` over `22` finite CPU-control rows. The coefficients
+have the expected signs: longer CPU work predicts a lower next EventDispatch
+p50, and a larger gap from CPU-work end to keydown predicts a higher p50. The
+residuals also matter. Spawned external CPU is often faster than this two-term
+model predicts, probably because process-startup CPU is not captured in the
+page's expected-duration timestamp. Prestarted external CPU is the cleaner
+external-process control and still follows the same duration/proximity shape.
+
+This is as far as the current browser/JS benchmark can honestly go. It can prove
+that the `1000ms` cliff is not just a Chrome EventDispatch accounting issue and
+not just a Gutenberg persistence-state branch. It can also prove that recent
+ordinary/utility CPU activity changes the measured Gutenberg input path, while
+background/maintenance-QoS CPU does not. It cannot identify the hardware layer:
+P-core residency, cluster frequency, power management, timer coalescing, and
+Darwin scheduler/QoS policy remain below this trace setup.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -5366,11 +5423,16 @@ slow and fast bands without changing the DOM event payload or Gutenberg's coarse
 state at keydown. The new `taskpolicy` tier sweep narrows the system side: all
 `-l 0..5` latency tiers and all `-t 0..5` throughput tiers stay fast, while
 Darwin background priority and QoS background/maintenance clamps stay slow. The
-remaining mechanism is below this benchmark's normal JS instrumentation: likely
-CPU/QoS/power-state interaction with a broad Gutenberg input path, not one bad
-selector, one browser trace accounting quirk, or taskpolicy tiering in general.
-Proving that final layer would need hardware/browser-level instrumentation, not
-another small variation of the JS benchmark.
+new CPU/QoS audit quantifies the split: near-key no-CPU tasks stay slow
+(`24.3ms` median control p50), near-key finite CPU bursts are usually low
+(`11.3ms`), continuous ordinary/utility CPU is low (`9.7ms`), and continuous
+background/maintenance CPU stays slow (`24.2ms`). A two-variable finite-burst
+model using CPU duration and end-to-keydown gap explains `71%` of the p50
+variation in those controls. The remaining mechanism is therefore below this
+benchmark's normal JS instrumentation: likely CPU/QoS/power-state interaction
+with a broad Gutenberg input path, not one bad selector, one browser trace
+accounting quirk, taskpolicy tiering in general, or timer ordering alone.
+Proving that final layer would need hardware/browser-level instrumentation.
 
 The source-audited owner pass closes a smaller open question about the broad
 Gutenberg side of that path. The dominant low-level Redux listener rows are

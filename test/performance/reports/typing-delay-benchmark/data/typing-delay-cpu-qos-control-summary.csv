@@ -1,0 +1,5 @@
+control_class,control_count,latency_p50_median_ms,latency_p50_min_ms,latency_p50_max_ms,work_duration_median_ms,work_end_to_keydown_median_ms
+near-key no CPU task,6,24.33025,22.194,24.5725,150.29999995231628,52.85000002384186
+near-key finite CPU burst,16,11.342749999999999,8.7555,20.955,60.950000047683716,50.450000047683716
+continuous ordinary/utility CPU,6,9.677500000000002,9.0605,10.432,0,50.700000166893005
+continuous background/maintenance CPU,5,24.191,23.9655,24.717,0,52.40000009536743

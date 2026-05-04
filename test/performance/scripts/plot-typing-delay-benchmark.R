@@ -7984,6 +7984,215 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 		)
 	}
 
+	if (file.exists(task_end_proximity_summary_path)) {
+		task_end_cpu_controls <- read_csv(task_end_proximity_summary_path, show_col_types = FALSE) %>%
+			filter(delay_ms == 1300, rows_with_intervention_event > 0) %>%
+			mutate(
+				is_near_key = between(intervention_end_to_current_keydown_p50_ms, 40, 65),
+				is_background_control = str_detect(intervention, "background"),
+				is_no_cpu_delay_control =
+					intervention == "marker no-op" |
+					str_detect(intervention, "background idle") |
+					str_detect(intervention, "no CPU") |
+					(str_detect(intervention, "delay|delayed") & !str_detect(intervention, "busy|CPU")),
+				is_finite_cpu_control =
+					!is_background_control &
+					!str_detect(intervention, "normal marker|stop/start") &
+					!str_detect(intervention, "no CPU") &
+					str_detect(intervention, "busy wait|CPU"),
+				is_continuous_fast_cpu =
+					str_detect(intervention, "background") &
+					str_detect(intervention, "CPU|nice|utility") &
+					!str_detect(intervention, "taskpolicy CPU|QoS background|maintenance"),
+				is_continuous_background_qos_cpu =
+					str_detect(intervention, "taskpolicy CPU|QoS background|maintenance"),
+				cpu_audit_class = case_when(
+					is_no_cpu_delay_control ~ "near-key no CPU task",
+					is_finite_cpu_control ~ "near-key finite CPU burst",
+					is_continuous_fast_cpu ~ "continuous ordinary/utility CPU",
+					is_continuous_background_qos_cpu ~ "continuous background/maintenance CPU",
+					TRUE ~ NA_character_
+				),
+				cpu_audit_class = factor(
+					cpu_audit_class,
+					levels = c(
+						"near-key no CPU task",
+						"near-key finite CPU burst",
+						"continuous ordinary/utility CPU",
+						"continuous background/maintenance CPU"
+					)
+				)
+			)
+
+		cpu_qos_control_details <- task_end_cpu_controls %>%
+			filter(is_near_key, !is.na(cpu_audit_class)) %>%
+			transmute(
+				control_class = cpu_audit_class,
+				run_id,
+				intervention,
+				rewrite_timeout_ms,
+				work_duration_p50_ms = intervention_duration_p50_ms,
+				work_end_to_keydown_p50_ms = intervention_end_to_current_keydown_p50_ms,
+				latency_p50_ms
+			)
+
+		cpu_qos_control_summary <- cpu_qos_control_details %>%
+			group_by(control_class) %>%
+			summarise(
+				control_count = n(),
+				latency_p50_median_ms = median(latency_p50_ms),
+				latency_p50_min_ms = min(latency_p50_ms),
+				latency_p50_max_ms = max(latency_p50_ms),
+				work_duration_median_ms = median(work_duration_p50_ms),
+				work_end_to_keydown_median_ms = median(work_end_to_keydown_p50_ms),
+				.groups = "drop"
+			)
+
+		write_csv(
+			cpu_qos_control_details,
+			file.path(data_dir, "typing-delay-cpu-qos-control-details.csv")
+		)
+		write_csv(
+			cpu_qos_control_summary,
+			file.path(data_dir, "typing-delay-cpu-qos-control-summary.csv")
+		)
+
+		save_plot(
+			ggplot(
+				cpu_qos_control_summary,
+				aes(latency_p50_median_ms, fct_rev(control_class), color = control_class)
+			) +
+				geom_linerange(
+					aes(xmin = latency_p50_min_ms, xmax = latency_p50_max_ms),
+					linewidth = 1.2,
+					alpha = 0.75
+				) +
+				geom_point(size = 4.0, alpha = 0.95) +
+				geom_text(
+					aes(label = paste0("n=", control_count)),
+					nudge_y = 0.18,
+					size = 3.1,
+					show.legend = FALSE
+				) +
+				geom_vline(
+					xintercept = c(10, 24),
+					linetype = c("dotted", "dashed"),
+					color = brewer_color("Greys", 6, type = "seq", n = 9),
+					linewidth = 0.35
+				) +
+				scale_color_brewer(type = "qual", palette = "Set2", guide = "none", drop = FALSE) +
+				scale_x_continuous(breaks = seq(0, 30, 5), limits = c(0, 30)) +
+				labs(
+					title = "CPU policy, not near-key waiting, separates the remaining controls",
+					subtitle = "Fixed 1300ms key hold; timer/control end is about 50ms before keydown; bars are min-max across control p50s",
+					x = "Next EventDispatch duration, p50 (ms)",
+					y = NULL
+				),
+			"120-cpu-qos-control-summary.png",
+			width = 10.5,
+			height = 5.8
+		)
+
+		finite_cpu_model_data <- task_end_cpu_controls %>%
+			filter(is_finite_cpu_control, !is.na(intervention_end_to_current_keydown_p50_ms)) %>%
+			mutate(
+				work_origin = case_when(
+					str_detect(intervention, "^worker") ~ "worker CPU",
+					str_detect(intervention, "^external persistent") ~ "prestarted external CPU",
+					str_detect(intervention, "^external") ~ "spawned external CPU",
+					TRUE ~ "main-thread CPU"
+				),
+				work_origin = factor(
+					work_origin,
+					levels = c(
+						"main-thread CPU",
+						"worker CPU",
+						"spawned external CPU",
+						"prestarted external CPU"
+					)
+				)
+			)
+
+		if (nrow(finite_cpu_model_data) >= 4) {
+			finite_cpu_model <- lm(
+				latency_p50_ms ~ log1p(intervention_duration_p50_ms) +
+					intervention_end_to_current_keydown_p50_ms,
+				data = finite_cpu_model_data
+			)
+			finite_cpu_model_r_squared <- summary(finite_cpu_model)$r.squared
+			finite_cpu_model_coefficients <- as_tibble(
+				coef(summary(finite_cpu_model)),
+				rownames = "term"
+			)
+			finite_cpu_model_predictions <- finite_cpu_model_data %>%
+				mutate(
+					predicted_latency_p50_ms = as.numeric(predict(finite_cpu_model, newdata = finite_cpu_model_data)),
+					model_residual_ms = latency_p50_ms - predicted_latency_p50_ms,
+					model_r_squared = finite_cpu_model_r_squared
+				) %>%
+				select(
+					run_id,
+					intervention,
+					work_origin,
+					rewrite_timeout_ms,
+					work_duration_p50_ms = intervention_duration_p50_ms,
+					work_end_to_keydown_p50_ms = intervention_end_to_current_keydown_p50_ms,
+					latency_p50_ms,
+					predicted_latency_p50_ms,
+					model_residual_ms,
+					model_r_squared
+				)
+
+			write_csv(
+				finite_cpu_model_coefficients,
+				file.path(data_dir, "typing-delay-finite-cpu-model-coefficients.csv")
+			)
+			write_csv(
+				finite_cpu_model_predictions,
+				file.path(data_dir, "typing-delay-finite-cpu-model-predictions.csv")
+			)
+
+			save_plot(
+				ggplot(
+					finite_cpu_model_predictions,
+					aes(predicted_latency_p50_ms, latency_p50_ms, color = work_origin, shape = work_origin)
+				) +
+					geom_abline(
+						slope = 1,
+						intercept = 0,
+						linetype = "dashed",
+						color = brewer_color("Greys", 6, type = "seq", n = 9),
+						linewidth = 0.45
+					) +
+					geom_point(size = 3.2, alpha = 0.9) +
+					scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+					scale_shape_manual(values = c(
+						`main-thread CPU` = 16,
+						`worker CPU` = 15,
+						`spawned external CPU` = 17,
+						`prestarted external CPU` = 3
+					), drop = FALSE) +
+					scale_x_continuous(breaks = seq(5, 30, 5), limits = c(5, 30)) +
+					scale_y_continuous(breaks = seq(5, 30, 5), limits = c(5, 30)) +
+					labs(
+						title = "A simple duration/proximity model explains most finite CPU controls",
+						subtitle = sprintf(
+							"Descriptive fit: latency ~ log1p(duration) + end-to-keydown gap; R^2 = %.2f across %d control rows",
+							finite_cpu_model_r_squared,
+							nrow(finite_cpu_model_predictions)
+						),
+						x = "Model-predicted EventDispatch p50 (ms)",
+						y = "Observed EventDispatch p50 (ms)",
+						color = "CPU work origin",
+						shape = "CPU work origin"
+					),
+				"121-finite-cpu-duration-proximity-model.png",
+				width = 8.8,
+				height = 6.6
+			)
+		}
+	}
+
 	if (file.exists(native_busy_wait_control_summary_path)) {
 		native_busy_wait_control <- read_csv(native_busy_wait_control_summary_path, show_col_types = FALSE) %>%
 			mutate(
