@@ -1,0 +1,4 @@
+candidate,current_scope_ms,total_gates,covered_gates,partial_source_signal_gates,source_audited_gates,prototype_required_gates,split_key_blocker_gates,high_risk_uncovered_gates,max_risk_score,mean_proof_score,decision
+Pattern override selected-only split,3.5974944472395878,7,7,0,0,0,0,0,4,5,behavior-covered first patch
+Non-edited BlockListBlockProvider guard,3.4975648467210574,8,0,1,2,5,0,6,5,2,prototype with behavior gates
+useInnerBlocksProps structural guard,1.1000003814697266,6,0,1,0,3,2,3,5,1.8333333333333333,split before claiming full row

@@ -16348,11 +16348,11 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			file.path(data_dir, "typing-delay-selector-prototype-acceptance-gate-summary.csv")
 		)
 
-		save_plot(
-			ggplot(
-				selector_prototype_acceptance_gate_summary,
-				aes(prototype_owner, gates, fill = gate_class)
-			) +
+			save_plot(
+				ggplot(
+					selector_prototype_acceptance_gate_summary,
+					aes(prototype_owner, gates, fill = gate_class)
+				) +
 				geom_col(width = 0.66, color = "white", linewidth = 0.25) +
 				scale_fill_brewer(type = "qual", palette = "Paired", name = "Acceptance gate") +
 				scale_y_continuous(
@@ -16367,12 +16367,204 @@ if (file.exists(marker_allspan_action_summary_path)) {
 				) +
 				theme(legend.position = "bottom", legend.box = "vertical"),
 			"169-selector-prototype-acceptance-gates.png",
-			width = 12,
-			height = 7.2
-		)
+				width = 12,
+				height = 7.2
+			)
 
-		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
-			mutate(
+			selector_guard_behavior_gate_evidence <- tribble(
+				~candidate, ~gate, ~source_anchor, ~current_evidence, ~evidence_class, ~risk_score, ~proof_score, ~current_scope_ms, ~falsifier, ~decision,
+				"Pattern override selected-only split", "unselected blocks do not subscribe", "pattern-overrides.js:37-67; test/pattern-overrides.js:99-116", "focused unit test plus selected-only mount boundary", "covered", 3, 5, 3.5974944472395882, "Rendering an unselected supported block calls useSelect or shows pattern controls.", "behavior-covered first patch",
+				"Pattern override selected-only split", "selected unsupported block avoids store-backed controls", "pattern-overrides.js:51-67; test/pattern-overrides.js:118-134", "support check remains subscribed only while selected; unsupported selected blocks return null before ControlsWithStoreSubscription", "covered", 3, 5, 3.5974944472395882, "A selected unsupported block calls useBlockEditingMode or mounts PatternOverridesControls.", "behavior-covered first patch",
+				"Pattern override selected-only split", "selected supported block still shows controls", "pattern-overrides.js:67-123; test/pattern-overrides.js:136-159", "selected supported block mounts ControlsWithStoreSubscription and still shows PatternOverridesControls", "covered", 4, 5, 3.5974944472395882, "A selected supported paragraph with pattern source no longer shows the override controls.", "behavior-covered first patch",
+				"Pattern override selected-only split", "selection transition reads fresh settings", "pattern-overrides.js:42-67; test/pattern-overrides.js:161-191", "unselected blocks do not precompute support; newly selected blocks mount the child and read current settings", "covered", 4, 5, 3.5974944472395882, "A block selected after a settings change uses stale support state.", "behavior-covered first patch",
+				"Pattern override selected-only split", "selected support setting changes update live", "pattern-overrides.js:51-61; test/pattern-overrides.js:193-222", "the selected-only support-check useSelect remains live while selected", "covered", 4, 5, 3.5974944472395882, "Changing supported attributes while the block is selected does not change the visible controls.", "behavior-covered first patch",
+				"Pattern override selected-only split", "unsynced reset control stays gated", "pattern-overrides.js:95-121; test/pattern-overrides.js:224-256", "ResetOverridesControl remains behind the selected supported path and the unsynced pattern state", "covered", 4, 5, 3.5974944472395882, "The reset control appears for an unselected block or disappears for the selected unsynced case.", "behavior-covered first patch",
+				"Pattern override selected-only split", "post-patch source fanout collapse", "figures/150-pattern-override-postpatch-source-span-collapse.png", "rebuilt all-data-spans microscope saw one selected support-check metadata entry and one selected controls entry", "covered", 3, 5, 3.5974944472395882, "The support-check metadata count remains near per-block scale after rebuild.", "behavior-covered first patch",
+				"Non-edited BlockListBlockProvider guard", "edited block content and public attributes", "block.js:611-651; block.js:759-769; block.js:881-901", "source-audited only; edited block must still recompute because public BlockListBlock props expose block and attributes", "source-audited", 5, 2, 3.4975648467210574, "Typing changes the edited block text but the edited provider reuses stale attributes or block props.", "prototype with behavior gates",
+				"Non-edited BlockListBlockProvider guard", "unrelated text-only skip", "reducer.js:1911-1932; selectors.js:2973-2983", "lastBlockAttributesChange is a useful latest-action hint but not a complete invalidation contract", "partial source signal", 4, 3, 3.4975648467210574, "Unrelated providers still recompute for a same-action text update, or the fast path fires for a non-text action.", "prototype with behavior gates",
+				"Non-edited BlockListBlockProvider guard", "public filter compatibility", "block.js:870-904", "source-audited only; BlockListBlock is filtered and its props are public API", "source-audited", 5, 2, 3.4975648467210574, "A test editor.BlockListBlock filter observes stale block, attributes, isSelected, canMove, or canRemove.", "prototype with behavior gates",
+				"Non-edited BlockListBlockProvider guard", "selection, child selection, and caret state", "block.js:658-729", "source-audited only; selected blocks, ancestors, multi-selection, and initial caret need affected-set invalidation", "prototype required", 5, 2, 3.4975648467210574, "Selection, child selection, multi-selection, or caret movement leaves stale classes, controls, focus, or sync rendering.", "prototype with behavior gates",
+				"Non-edited BlockListBlockProvider guard", "drag, overlay, and highlight state", "block.js:716-728", "source-audited only; drag and overlay participants are not encoded by the text-action hint", "prototype required", 5, 1, 3.4975648467210574, "Starting or ending drag, overlay, or highlight changes visible affordances on a skipped block.", "prototype with behavior gates",
+				"Non-edited BlockListBlockProvider guard", "structure, duplicate warnings, and sections", "block.js:667-739", "source-audited only; index, section parent, and getBlocksByName can change without text attributes", "prototype required", 5, 2, 3.4975648467210574, "Insert, move, remove, replace, or duplicate unique blocks leaves stale order, section, or original-block warnings.", "prototype with behavior gates",
+				"Non-edited BlockListBlockProvider guard", "editing modes, template lock, and capabilities", "block.js:686-733", "source-audited only; template/content-only/capability state is mixed with public props and private context", "prototype required", 5, 2, 3.4975648467210574, "Template lock or content-only changes leave stale remove/move controls, disabled outline, or subtree state.", "prototype with behavior gates",
+				"Non-edited BlockListBlockProvider guard", "settings, device, visibility, and bindings", "block.js:614-651; block.js:752-859", "source-audited only; global settings, device type, metadata visibility, and binding support need split invalidation keys", "prototype required", 4, 2, 3.4975648467210574, "Device, preview, visibility metadata, or binding-support changes leave stale wrapper/context state.", "prototype with behavior gates",
+				"useInnerBlocksProps structural guard", "root drop-zone state", "inner-blocks/index.js:206-216; inner-blocks/index.js:290-302", "small source-clean slice keyed by zoom and section root", "partial source signal", 3, 3, 1.1000003814697266, "Root and section block lists both accept the same drag or both become disabled after zoom/section-root changes.", "split before claiming full row",
+				"useInnerBlocksProps structural guard", "child order and structural edits", "inner-blocks/index.js:122-132", "source-audited only; returned children include BlockListItems for the root", "prototype required", 5, 2, 1.1000003814697266, "Child insert, remove, or reorder leaves stale rows, placeholder, or appender state.", "split before claiming full row",
+				"useInnerBlocksProps structural guard", "parent template lock and editing mode", "inner-blocks/index.js:220-246; use-nested-settings-update.js:93-103", "source-audited only; lock and editing mode affect drop-zone and nested settings output", "prototype required", 5, 2, 1.1000003814697266, "Template lock or editing mode changes leave stale drop-zone or inserter behavior.", "split before claiming full row",
+				"useInnerBlocksProps structural guard", "identity, parent, type, and toolbar capture", "inner-blocks/index.js:218-246", "source-audited only; block name/type/support/root changes lack a cheap revision key", "prototype required", 4, 2, 1.1000003814697266, "Block transform, replacement, parent move, or support change leaves stale toolbar capture or block type props.", "split before claiming full row",
+				"useInnerBlocksProps structural guard", "layout and default-layout inheritance", "inner-blocks/index.js:102-119; inner-blocks/index.js:220-246", "known blocker until layout/settings dependencies are split; getBlockSettings can read current or ancestor settings plus global settings/filters", "split-key blocker", 5, 1, 1.1000003814697266, "Current or ancestor layout/settings changes leave stale defaultLayout, layout classes, or manual-placement behavior.", "split before claiming full row",
+				"useInnerBlocksProps structural guard", "nested settings side effect and controlled children", "inner-blocks/index.js:80-100; inner-blocks/index.js:154-157; use-nested-settings-update.js:98-188", "known blocker until side effects are preserved; render changes drive queued updateBlockListSettings and controlled blocks run useBlockSync", "split-key blocker", 4, 1, 1.1000003814697266, "Changing allowedBlocks, defaultBlock, directInsert, layout, or controlled value/onChange skips updateBlockListSettings or useBlockSync.", "split before claiming full row"
+			) %>%
+				mutate(
+					candidate = factor(
+						candidate,
+						levels = c(
+							"Pattern override selected-only split",
+							"Non-edited BlockListBlockProvider guard",
+							"useInnerBlocksProps structural guard"
+						)
+					),
+					evidence_class = factor(
+						evidence_class,
+						levels = c(
+							"covered",
+							"partial source signal",
+							"source-audited",
+							"prototype required",
+							"split-key blocker"
+						)
+					)
+				)
+
+			write_csv(
+				selector_guard_behavior_gate_evidence,
+				file.path(data_dir, "typing-delay-selector-guard-behavior-gate-evidence.csv")
+			)
+
+			selector_guard_behavior_gate_readiness <- selector_guard_behavior_gate_evidence %>%
+				group_by(candidate) %>%
+				summarize(
+					current_scope_ms = first(current_scope_ms),
+					total_gates = n(),
+					covered_gates = sum(evidence_class == "covered"),
+					partial_source_signal_gates = sum(evidence_class == "partial source signal"),
+					source_audited_gates = sum(evidence_class == "source-audited"),
+					prototype_required_gates = sum(evidence_class == "prototype required"),
+					split_key_blocker_gates = sum(evidence_class == "split-key blocker"),
+					high_risk_uncovered_gates = sum(risk_score >= 5 & proof_score < 5),
+					max_risk_score = max(risk_score),
+					mean_proof_score = mean(proof_score),
+					decision = first(decision),
+					.groups = "drop"
+				)
+
+			write_csv(
+				selector_guard_behavior_gate_readiness,
+				file.path(data_dir, "typing-delay-selector-guard-behavior-gate-readiness.csv")
+			)
+
+			selector_guard_behavior_gate_plot <- selector_guard_behavior_gate_evidence %>%
+				mutate(
+					plot_label = case_when(
+						gate == "post-patch source fanout collapse" ~ "fanout collapse",
+						gate == "unrelated text-only skip" ~ "text-only hint",
+						gate == "drag, overlay, and highlight state" ~ "drag/overlay",
+						gate == "layout and default-layout inheritance" ~ "layout key",
+						gate == "nested settings side effect and controlled children" ~ "side effects",
+						TRUE ~ NA_character_
+					),
+					label_x = case_when(
+						gate == "post-patch source fanout collapse" ~ proof_score - 0.18,
+						gate == "unrelated text-only skip" ~ proof_score - 0.05,
+						gate == "drag, overlay, and highlight state" ~ proof_score + 0.27,
+						gate == "layout and default-layout inheritance" ~ proof_score - 0.22,
+						gate == "nested settings side effect and controlled children" ~ proof_score + 0.23,
+						TRUE ~ NA_real_
+					),
+					label_y = case_when(
+						gate == "post-patch source fanout collapse" ~ risk_score + 0.18,
+						gate == "unrelated text-only skip" ~ risk_score + 0.18,
+						gate == "drag, overlay, and highlight state" ~ risk_score + 0.23,
+						gate == "layout and default-layout inheritance" ~ risk_score + 0.38,
+						gate == "nested settings side effect and controlled children" ~ risk_score + 0.18,
+						TRUE ~ NA_real_
+					)
+				)
+
+			save_plot(
+				ggplot(
+					selector_guard_behavior_gate_plot,
+					aes(
+						proof_score,
+						risk_score,
+						color = candidate,
+						shape = evidence_class,
+						size = current_scope_ms
+					)
+				) +
+					geom_jitter(width = 0.08, height = 0.06, alpha = 0.88) +
+					geom_text(
+						aes(label_x, label_y, label = plot_label),
+						size = 3,
+						color = "grey20",
+						na.rm = TRUE,
+						show.legend = FALSE
+					) +
+					scale_color_brewer(type = "qual", palette = "Dark2", name = "Prototype") +
+					scale_shape_manual(
+						values = c(16, 17, 15, 3, 4),
+						name = "Current evidence"
+					) +
+					scale_size_area(max_size = 7, labels = label_number(suffix = "ms"), name = "p50 scope") +
+					scale_x_continuous(
+						breaks = 1:5,
+						limits = c(0.7, 5.3),
+						labels = c(
+							"1" = "blocked",
+							"2" = "source only",
+							"3" = "partial signal",
+							"4" = "prototype",
+							"5" = "covered"
+						)
+					) +
+					scale_y_continuous(
+						breaks = 1:5,
+						limits = c(2.7, 5.35),
+						labels = c("1" = "low", "2" = "", "3" = "medium", "4" = "high", "5" = "must pass")
+					) +
+					labs(
+						title = "Selector guard evidence is strong only for the pattern patch",
+						subtitle = "Provider and inner-block rows still have high-risk gates with source-only evidence or known split-key blockers",
+						x = "Current proof level",
+						y = "Stale behavior risk"
+					) +
+					theme(legend.position = "bottom", legend.box = "vertical"),
+				"178-selector-guard-behavior-gate-evidence.png",
+				width = 12,
+				height = 7.4
+			)
+
+			selector_guard_behavior_gate_stack <- selector_guard_behavior_gate_evidence %>%
+				count(candidate, evidence_class, name = "gates")
+
+			save_plot(
+				ggplot(
+					selector_guard_behavior_gate_stack,
+					aes(gates, candidate, fill = evidence_class)
+				) +
+					geom_col(width = 0.66, color = "white", linewidth = 0.25) +
+					geom_text(
+						data = selector_guard_behavior_gate_readiness,
+						aes(
+							x = total_gates + 0.18,
+							y = candidate,
+							label = paste0(high_risk_uncovered_gates, " high-risk open")
+						),
+						inherit.aes = FALSE,
+						hjust = 0,
+						size = 3.15,
+						color = "grey20"
+					) +
+					scale_fill_brewer(type = "qual", palette = "Set2", name = "Current evidence") +
+					scale_x_continuous(
+						breaks = 0:8,
+						limits = c(0, 9.6),
+						expand = expansion(mult = c(0, 0.02))
+					) +
+					labs(
+						title = "Behavior gates separate the ready patch from prototypes",
+						subtitle = "Pattern override has behavior coverage and source-span confirmation; the next rows need behavior prototypes before p50 claims",
+						x = "Gate count",
+						y = NULL
+					) +
+					theme(legend.position = "bottom", legend.box = "vertical"),
+				"179-selector-guard-behavior-gate-readiness.png",
+				width = 12,
+				height = 7.2
+			)
+
+			store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
+				mutate(
 				plot_label = case_when(
 				design_option == "Source-feasible local selector guards" ~ "local guards",
 				design_option == "Persistence-aware useBlockSync side channel" ~ "useBlockSync side channel",
