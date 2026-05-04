@@ -34,9 +34,9 @@ covered by the known-fixes stack, not as a current PR-branch claim. Treat list
 moves as the only current-baseline bug class with valid remaining browser
 evidence, and as still requiring follow-up validation/fix work.
 
-The report file has been rewritten as a PR-description-style draft with this
-scope correction. It explicitly rejects the earlier overclaim that five bugs
-were fixed by the current PR branch against recent trunk plus all known fixes.
+The report file has been rewritten as a current-evidence summary suitable for a
+future PR description, with the scope limited to what the latest valid evidence
+supports.
 
 The failures were:
 
