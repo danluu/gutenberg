@@ -793,6 +793,8 @@ The R script derives:
     duration/proximity model coefficients and predictions.
 -   `data/typing-delay-system-mechanism-falsification-matrix.csv`: compact
     evidence matrix for the remaining system-level mechanism theories.
+-   `data/typing-delay-wall-clock-fixed-sample-*.csv`: audit of fixed-sample
+    delay sweeps versus equal wall-clock sampling budgets.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -1678,6 +1680,46 @@ means the n=10 graph was good enough to show that volatility depends on delay,
 but not good enough to rank individual delay buckets by volatility.
 
 ![CI-comparable coefficient of variation, n=50](figures/76-ci-comparable-coefficient-of-variation-0-1400-n50.png)
+
+#### Wall-Clock Budget Audit For Fixed-Sample Sweeps
+
+One remaining methodology caveat was whether the dense delay scans should be
+run with an equal wall-clock budget per delay instead of a fixed sample count.
+The existing full `0..1100ms` sweep has enough run-duration metadata to quantify
+that tradeoff without rerunning the browser.
+
+![Fixed-sample wall-clock audit](figures/130-fixed-sample-wall-clock-audit.png)
+
+The current run used 3 rounds and 10 retained samples per round, so each delay
+got 30 retained samples. But wall-clock exposure was not remotely equal: `0ms`
+used `0.58s`, `500ms` used `17.4s`, `1000ms` used `34.8s`, and `1100ms` used
+`37.0s`. The whole sweep took `35.3m`, which averages to `19.1s` per delay if
+the same total time were redistributed evenly.
+
+![Wall-clock equalized sample budget](figures/131-wall-clock-equalized-sample-budget.png)
+
+Selected projected retained sample counts, using the observed per-delay sample
+rates:
+
+| Delay | Current wall-clock | Current retained samples | Same-total equalized retained samples | `60s` equalized retained samples |
+| ----: | -----------------: | -----------------------: | ------------------------------------: | -------------------------------: |
+|   `0ms` |  `0.58s` | `30` | `977` | `3077` |
+| `100ms` |  `3.81s` | `30` | `150` |  `472` |
+| `500ms` | `17.4s` | `30` |  `33` |  `104` |
+| `990ms` | `33.7s` | `30` |  `17` |   `53` |
+| `1000ms` | `34.8s` | `30` |  `16` |   `52` |
+| `1100ms` | `37.0s` | `30` |  `15` |   `49` |
+
+So "equal wall-clock" is not automatically better. If the budget is held to the
+same total `35.3m`, equalization buys many more short-delay samples but reduces
+the high-delay buckets near the `1000ms` boundary below the current `n=30`. A
+`60s`-per-delay design gives at least about `49` retained samples even at
+`1100ms`, but costs `111m` for the `0..1100ms` sweep alone. The better future
+design is hybrid: set a minimum retained sample count for each delay, then add
+an equal or capped wall-clock budget if warmup/drift exposure is the specific
+question. A pure fixed-sample design is good for equal quantile sample count; a
+pure equal-time design is good for equal exposure, but it can weaken the slowest
+delay buckets unless total runtime increases.
 
 #### CI Reliability If Waits Are Reduced
 
@@ -5697,6 +5739,16 @@ per-keypress distribution and discard-policy sensitivity plots should stay in
 the report. The current q50 can therefore look stable even though the beginning
 of the input sequence is not representative of steady repeated typing.
 
+The fixed-sample methodology caveat is also now quantified. In the full
+`0..1100ms` sweep, every delay got 30 retained samples, but that meant only
+`0.58s` of wall-clock exposure at `0ms` and `37.0s` at `1100ms`. Equalizing to
+the same total `35.3m` sweep time would greatly increase short-delay samples but
+drop the `990ms..1100ms` buckets to only about `15-17` retained samples. A
+`60s`-per-delay run would keep at least about `49` samples at the slowest delay,
+but would cost `111m` for that one sweep. The next benchmark design should
+therefore be hybrid: minimum retained samples per delay plus an equal or capped
+wall-clock budget when drift/warmup exposure is the target.
+
 The startup-wait result is now strong for Typing and has a complete small
 non-Typing screen plus targeted follow-ups for the pattern-load exception. The
 exact and CI-comparable Typing runs say that adding post-setup wait does not buy
@@ -5879,8 +5931,11 @@ For CI:
 
 For investigation:
 
--   Run wall-clock-equalized benchmarks, e.g. 60 seconds per delay, instead of a
-    fixed number of samples per delay.
+-   For wall-clock-sensitive questions, use a hybrid sampling budget: minimum
+    retained samples per delay plus an equal or capped wall-clock target. The
+    audit above shows that equalizing to the same total runtime would undersample
+    the longest delays, while `60s` per delay would make one `0..1100ms` sweep
+    take about `111m`.
 -   Run fresh browser contexts and fresh posts for each delay when comparing delay
     values.
 -   Split the RichText `onInput` callback into source-level timing spans for

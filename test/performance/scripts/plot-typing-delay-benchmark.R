@@ -612,6 +612,149 @@ save_plot(
 	"04-coefficient-of-variation-by-delay.png"
 )
 
+wall_clock_fixed_sample_audit <- runs %>%
+	filter(run_id == "full_0_1100", !is.na(run_duration_ms)) %>%
+	group_by(run_id, run_label, delay_ms) %>%
+	summarise(
+		round_count = n(),
+		total_wall_clock_s = sum(run_duration_ms, na.rm = TRUE) / 1000,
+		run_duration_min_s = min(run_duration_ms, na.rm = TRUE) / 1000,
+		run_duration_max_s = max(run_duration_ms, na.rm = TRUE) / 1000,
+		.groups = "drop"
+	) %>%
+	left_join(
+		records %>%
+			filter(run_id == "full_0_1100", !is_throwaway) %>%
+			group_by(delay_ms) %>%
+			summarise(
+				retained_samples = n(),
+				latency_p50_ms = median(latency_ms, na.rm = TRUE),
+				latency_p10_ms = quant(latency_ms, 0.1),
+				latency_p90_ms = quant(latency_ms, 0.9),
+				latency_sd_ms = sd(latency_ms, na.rm = TRUE),
+				.groups = "drop"
+			),
+		by = "delay_ms"
+	)
+
+if (nrow(wall_clock_fixed_sample_audit) > 0) {
+	wall_clock_total_s <- sum(wall_clock_fixed_sample_audit$total_wall_clock_s)
+	wall_clock_equalized_same_total_s <- wall_clock_total_s / nrow(wall_clock_fixed_sample_audit)
+
+	wall_clock_fixed_sample_audit <- wall_clock_fixed_sample_audit %>%
+		mutate(
+			retained_samples_per_s = retained_samples / total_wall_clock_s,
+			fixed_sample_wall_clock_share = total_wall_clock_s / wall_clock_total_s,
+			fixed_sample_retained_sample_share = retained_samples / sum(retained_samples),
+			equalized_same_total_target_s = wall_clock_equalized_same_total_s,
+			projected_retained_same_total = retained_samples_per_s * equalized_same_total_target_s,
+			projected_retained_60s = retained_samples_per_s * 60
+		)
+
+	wall_clock_fixed_sample_summary <- wall_clock_fixed_sample_audit %>%
+		summarise(
+			delay_count = n(),
+			current_total_wall_clock_s = sum(total_wall_clock_s),
+			current_total_wall_clock_min = current_total_wall_clock_s / 60,
+			current_min_delay_wall_clock_s = min(total_wall_clock_s),
+			current_max_delay_wall_clock_s = max(total_wall_clock_s),
+			current_median_delay_wall_clock_s = median(total_wall_clock_s),
+			retained_samples_per_delay = median(retained_samples),
+			equalized_same_total_target_s = median(equalized_same_total_target_s),
+			equalized_60s_total_wall_clock_min = n() * 60 / 60,
+			projected_same_total_min_retained = min(projected_retained_same_total),
+			projected_same_total_max_retained = max(projected_retained_same_total),
+			projected_60s_min_retained = min(projected_retained_60s),
+			projected_60s_max_retained = max(projected_retained_60s)
+		)
+
+	write_csv(
+		wall_clock_fixed_sample_audit,
+		file.path(data_dir, "typing-delay-wall-clock-fixed-sample-audit.csv")
+	)
+	write_csv(
+		wall_clock_fixed_sample_summary,
+		file.path(data_dir, "typing-delay-wall-clock-fixed-sample-summary.csv")
+	)
+
+	save_plot(
+		ggplot(wall_clock_fixed_sample_audit, aes(delay_ms, total_wall_clock_s)) +
+			geom_point(size = 1.7, alpha = 0.9, color = brewer_color("Dark2", 2)) +
+			geom_hline(
+				yintercept = wall_clock_equalized_same_total_s,
+				linetype = "dashed",
+				color = brewer_color("Set1", 1),
+				linewidth = 0.45
+			) +
+			scale_x_continuous(breaks = seq(0, 1100, 100)) +
+			labs(
+				title = "Fixed samples per delay do not mean equal wall-clock exposure",
+				subtitle = sprintf(
+					"Full 0-1100ms sweep; dashed line is same-total equalized time: %.1fs per delay",
+					wall_clock_equalized_same_total_s
+				),
+				x = "Configured Playwright delay",
+				y = "Wall-clock seconds spent at delay"
+			),
+		"130-fixed-sample-wall-clock-audit.png",
+		width = 9,
+		height = 5.6
+	)
+
+	wall_clock_sample_budget <- wall_clock_fixed_sample_audit %>%
+		select(
+			delay_ms,
+			`current fixed sample count` = retained_samples,
+			`same total wall-clock, equalized` = projected_retained_same_total,
+			`60s per delay, equalized` = projected_retained_60s
+		) %>%
+		pivot_longer(
+			cols = -delay_ms,
+			names_to = "budget",
+			values_to = "projected_retained_samples"
+		) %>%
+		mutate(
+			budget = factor(
+				budget,
+				levels = c(
+					"current fixed sample count",
+					"same total wall-clock, equalized",
+					"60s per delay, equalized"
+				)
+			)
+		)
+
+	save_plot(
+		ggplot(
+			wall_clock_sample_budget,
+			aes(delay_ms, projected_retained_samples, color = budget, shape = budget)
+		) +
+			geom_point(size = 1.8, alpha = 0.86) +
+			scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+			scale_shape_manual(values = c(
+				`current fixed sample count` = 16,
+				`same total wall-clock, equalized` = 17,
+				`60s per delay, equalized` = 15
+			), drop = FALSE) +
+			scale_y_log10(
+				breaks = c(10, 30, 50, 100, 300, 1000, 3000),
+				labels = comma
+			) +
+			scale_x_continuous(breaks = seq(0, 1100, 100)) +
+			labs(
+				title = "Equal wall-clock budgets mostly buy short-delay samples",
+				subtitle = "Projected retained samples from observed sample rates in the full 0-1100ms sweep",
+				x = "Configured Playwright delay",
+				y = "Projected retained samples, log scale",
+				color = "Budget",
+				shape = "Budget"
+			),
+		"131-wall-clock-equalized-sample-budget.png",
+		width = 10,
+		height = 6
+	)
+}
+
 container_variance_curve <- by_delay %>%
 	filter(run_id %in% c("container_keyhold_0_2000_dense", "container_between_keys_0_2000_dense")) %>%
 	filter(!is.na(cv), is.finite(cv)) %>%
