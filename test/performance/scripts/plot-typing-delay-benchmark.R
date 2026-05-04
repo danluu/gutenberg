@@ -12321,4 +12321,159 @@ save_plot(
 	height = 8.4
 )
 
+pattern_wait_decision_inputs <- c(
+	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
+	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
+)
+if (all(file.exists(pattern_wait_decision_inputs))) {
+	pattern_readiness_boundary_existing <- read_csv(
+		file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
+		show_col_types = FALSE
+	)
+	pattern_short_wait_existing <- read_csv(
+		file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv"),
+		show_col_types = FALSE
+	)
+
+	pattern_current_q50 <- pattern_short_wait_existing %>%
+		filter(measurement_idle_wait_ms == 1000) %>%
+		summarize(current_q50 = median(median_reported_q50_ms, na.rm = TRUE), .groups = "drop") %>%
+		pull(current_q50)
+
+	if (length(pattern_current_q50) == 0 || !is.finite(pattern_current_q50)) {
+		pattern_current_q50 <- NA_real_
+	}
+
+	pattern_wait_decision_audit <- pattern_readiness_boundary_existing %>%
+		filter(waitMs %in% pattern_short_wait_existing$measurement_idle_wait_ms) %>%
+		left_join(
+			pattern_short_wait_existing,
+			by = c("waitMs" = "measurement_idle_wait_ms"),
+			suffix = c("_probe", "_exact")
+		) %>%
+		mutate(
+			exact_runs = coalesce(exact_runs_exact, exact_runs_probe),
+			exact_median_reported_q50_ms = coalesce(median_reported_q50_ms, exact_median_reported_q50_ms),
+			exact_run_to_run_q50_sd_ms = coalesce(run_to_run_q50_sd_ms, exact_run_to_run_q50_sd_ms),
+			two_branch_saved_vs_1000ms_s = coalesce(two_branch_saved_vs_1000ms_s_exact, two_branch_saved_vs_1000ms_s_probe),
+			wait_label = paste0(waitMs, "ms"),
+			q50_delta_vs_1000_ms = exact_median_reported_q50_ms - pattern_current_q50,
+			within_current_q50_band = abs(q50_delta_vs_1000_ms) <= 15,
+			resource_shift_ratio = median_wait_resource_delta / pmax(median_wait_resource_delta + median_measurement_resource_delta, 1),
+			decision = case_when(
+				waitMs %in% c(0, 100) ~ "reject fixed wait",
+				waitMs == 250 ~ "candidate but volatile",
+				waitMs == 500 ~ "best fixed local candidate",
+				waitMs == 750 ~ "settled but not better",
+				waitMs == 1000 ~ "current baseline",
+				TRUE ~ "diagnostic only"
+			),
+			decision_reason = case_when(
+				waitMs == 0 ~ "Readiness probe misses the boundary; exact q50 is much slower because setup/resource work is inside the measurement.",
+				waitMs == 100 ~ "Some readiness work moves earlier, but the probe still misses the boundary and exact q50 remains high.",
+				waitMs == 250 ~ "Probe boundary is hit and q50 matches current, but exact run-to-run q50 sd is the highest among settled fixed waits.",
+				waitMs == 500 ~ "Probe boundary is hit, q50 is in the current band, and exact run-to-run q50 sd is lower than the 1000ms baseline.",
+				waitMs == 750 ~ "Probe boundary is hit, but the local exact median is higher than both 500ms and 1000ms with only four exact runs.",
+				waitMs == 1000 ~ "Current behavior; keeps readiness work before the measured Design / Transform click but pays the full fixed sleep.",
+				TRUE ~ "Used only by the diagnostic probe, not the exact short-wait sweep."
+			),
+			production_predicate_implication = case_when(
+				waitMs %in% c(0, 100) ~ "Do not use this as a fixed replacement for site-editor pattern loading.",
+				waitMs == 250 ~ "Could be a lower bound for a readiness predicate, but needs CI validation before replacing the sleep.",
+				waitMs == 500 ~ "Best local fixed-wait replacement candidate if the benchmark keeps a sleep.",
+				waitMs == 750 ~ "No local reason to prefer this over 500ms.",
+				waitMs == 1000 ~ "Safe baseline but wastes 10s versus 500ms in the two-branch pattern metric.",
+				TRUE ~ "Probe-only row."
+			),
+			decision = factor(
+				decision,
+				levels = c(
+					"reject fixed wait",
+					"candidate but volatile",
+					"best fixed local candidate",
+					"settled but not better",
+					"current baseline",
+					"diagnostic only"
+				)
+			)
+		) %>%
+		arrange(waitMs)
+
+	write_csv(
+		pattern_wait_decision_audit,
+		file.path(data_dir, "typing-delay-pattern-readiness-decision-audit.csv")
+	)
+
+	pattern_readiness_predicate_candidates <- tribble(
+		~candidate, ~classification, ~evidence, ~risk, ~recommended_action,
+		"Fixed 0ms or 100ms wait", "reject", "Probe boundary hit rate is 0%; exact q50 is 96-146ms slower than the 1000ms baseline.", "Moves background pattern/resource work into the measured interval.", "Do not use for site-editor pattern loading.",
+		"Fixed 250ms wait", "possible but volatile", "Probe boundary hit rate is 100% and exact q50 matches the 1000ms band, but q50 sd is 35.6ms.", "May sit too close to the readiness boundary on slower CI hosts.", "Validate in CI/container before considering.",
+		"Fixed 500ms wait", "best fixed local candidate", "Probe boundary hit rate is 100%; exact q50 is 10.3ms lower than the 1000ms baseline with lower q50 sd.", "Still a blind sleep and may not track readiness on other hosts.", "Use only after CI/mac/container validation, or as a fallback cap for a predicate.",
+		"Current fixed 1000ms wait", "safe baseline", "Probe boundary hit rate is 100% and exact q50 is in the settled band.", "Pays 10s more than 500ms for this two-branch metric.", "Keep until a predicate or validated shorter fixed wait replaces it.",
+		"State predicate before Design / Transform click", "preferred prototype", "The intended boundary is background pattern data readiness, not preview-canvas rendering.", "Needs a correct semantic predicate and timeout fallback.", "Wait for pattern/category resolution before the user action; keep preview rendering inside measurement.",
+		"Resource quiet window only", "diagnostic support", "Resource counts explain the local boundary, but are not a stable product contract.", "Hard-codes host/network behavior and can mask the measured workload.", "Use only as a guardrail or validation signal, not the primary predicate.",
+		"Wait for preview canvases", "invalid predicate", "The current measured workload includes named preview canvases rendering after the click.", "Would remove the actual pattern-loading work from the benchmark.", "Do not use as the readiness predicate."
+	)
+
+	write_csv(
+		pattern_readiness_predicate_candidates,
+		file.path(data_dir, "typing-delay-pattern-readiness-predicate-candidates.csv")
+	)
+
+	pattern_wait_decision_plot <- pattern_wait_decision_audit %>%
+		filter(!is.na(exact_median_reported_q50_ms)) %>%
+		mutate(wait_label = factor(wait_label, levels = paste0(sort(waitMs), "ms")))
+
+	save_plot(
+		ggplot(
+			pattern_wait_decision_plot,
+			aes(
+				two_branch_saved_vs_1000ms_s,
+				exact_median_reported_q50_ms,
+				color = readiness_interpretation,
+				shape = decision,
+				size = exact_run_to_run_q50_sd_ms
+			)
+		) +
+			geom_hline(
+				yintercept = pattern_current_q50,
+				linetype = "dashed",
+				linewidth = 0.4,
+				color = "grey45"
+			) +
+			geom_point(alpha = 0.9) +
+			geom_text(
+				aes(label = wait_label),
+				size = 3.2,
+				color = "grey20",
+				nudge_y = 15,
+				show.legend = FALSE
+			) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Probe readiness") +
+			scale_shape_manual(
+				values = c(
+					"reject fixed wait" = 4,
+					"candidate but volatile" = 17,
+					"best fixed local candidate" = 16,
+					"settled but not better" = 15,
+					"current baseline" = 18,
+					"diagnostic only" = 1
+				),
+				drop = FALSE
+			) +
+			scale_size_area(max_size = 8, name = "run-to-run q50 sd (ms)") +
+			labs(
+				title = "500ms is the best local fixed-wait candidate for site-editor pattern loading",
+				subtitle = "Exact spec sweep joined to the readiness probe; dashed line is the current 1000ms q50",
+				x = "Two-branch explicit-wait time saved versus current 1000ms (s)",
+				y = "Exact reported q50, median across runs (ms)",
+				shape = "Decision"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"137-site-pattern-readiness-decision-audit.png",
+		width = 12,
+		height = 7.6
+	)
+}
+
 message("Wrote plots to: ", figure_dir)

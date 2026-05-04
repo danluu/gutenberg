@@ -693,6 +693,11 @@ The R script derives:
 -   `data/typing-delay-pattern-readiness-boundary-summary.csv`: joined
     site-editor pattern readiness-probe and exact short-wait summary that marks
     where the local readiness boundary appears.
+-   `data/typing-delay-pattern-readiness-decision-audit.csv`: fixed-wait
+    replacement decision audit for site-editor pattern loading, joining exact
+    short-wait q50s with the readiness probe.
+-   `data/typing-delay-pattern-readiness-predicate-candidates.csv`: predicate
+    candidate matrix for replacing the blind pattern-loading sleep.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -1649,6 +1654,40 @@ Gutenberg state, for example `core` pattern and category resolution
 quiet window if CI needs to preserve the current "after background readiness"
 semantics. The probe's "19 resources" threshold is evidence for the local
 boundary, not a value to bake into the benchmark.
+
+I then turned that into an explicit fixed-wait decision audit. This graph joins
+the exact short-wait spec result to the diagnostic readiness probe and plots the
+two-branch runtime saved against the reported q50. Point size is run-to-run q50
+sd, so a large point means a more volatile local estimate.
+
+![Site-editor pattern readiness decision audit](figures/137-site-pattern-readiness-decision-audit.png)
+
+| Wait | Probe readiness | Exact median q50 | Exact q50 sd | Two-branch saved vs `1000ms` | Decision |
+| ---: | --------------- | ---------------: | -----------: | ---------------------------: | -------- |
+| `0ms` | not settled | `876.1ms` | `27.6ms` | `20s` | reject fixed wait |
+| `100ms` | not settled | `826.5ms` | `28.7ms` | `18s` | reject fixed wait |
+| `250ms` | settled | `731.2ms` | `35.6ms` | `15s` | candidate but volatile |
+| `500ms` | settled | `720.0ms` | `17.2ms` | `10s` | best fixed local candidate |
+| `750ms` | settled | `753.8ms` | `20.1ms` | `5s` | settled but not better |
+| `1000ms` | settled | `730.3ms` | `27.6ms` | `0s` | current baseline |
+
+The stricter predicate audit is:
+
+| Candidate | Classification | Reason |
+| --------- | -------------- | ------ |
+| Fixed `0ms` or `100ms` wait | reject | The readiness probe misses the boundary and exact q50 remains `96-146ms` slower than the `1000ms` baseline. |
+| Fixed `250ms` wait | possible but volatile | It reaches the local readiness boundary, but q50 sd was `35.6ms`, the highest of the settled fixed waits. |
+| Fixed `500ms` wait | best fixed local candidate | It reaches the local readiness boundary, matches the `1000ms` q50 band, saves `10s` in the two-branch pattern metric, and had lower local q50 sd than `1000ms`. |
+| Current fixed `1000ms` wait | safe baseline | It preserves the current metric boundary but pays the full fixed sleep. |
+| State predicate before Design / Transform click | preferred prototype | It targets the actual boundary: background pattern data/readiness before the user action, with preview rendering left inside the measurement. |
+| Resource quiet window only | diagnostic support | Resource counts explain this local boundary, but are not a product contract. |
+| Wait for preview canvases | invalid predicate | The current benchmark measures the preview canvases rendering after the click, so waiting for them first would remove the measured workload. |
+
+This narrows the site-editor action item. `500ms` is the best local fixed-wait
+candidate if the benchmark keeps a sleep, but the better change is a semantic
+readiness predicate before the Design / Transform click. `250ms` is useful as a
+lower-bound signal for such a predicate, not as a recommended blind replacement
+without CI/mac/container validation.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
@@ -5918,7 +5957,11 @@ and not by `0ms` or `100ms`; exact q50 follows the same split. The predicate
 should not be the probe's resource count. It should preserve the current
 measurement boundary by waiting for background pattern data/readiness before the
 Design / Transform click, while leaving the preview-canvas rendering inside the
-measured interval.
+measured interval. The decision audit makes the fixed-wait recommendation more
+precise: `500ms` is the best local fixed-wait candidate, `250ms` is a possible
+lower bound for a predicate but is too volatile to recommend as a blind
+replacement without CI validation, and waiting for preview canvases is an
+invalid predicate because it would remove the measured workload.
 
 The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,
@@ -6137,9 +6180,10 @@ For CI:
     complete keypress if that is the intended workload.
 -   If the goal is "after rich text has persisted", wait on
     `isLastBlockChangePersistent()` explicitly and name the metric that way.
--   For site-editor pattern loading, do not replace the current wait with `0ms`.
-    Use an explicit readiness predicate for pattern previews, or separately
-    validate a shorter fixed wait such as `500ms`.
+-   For site-editor pattern loading, do not replace the current wait with `0ms`
+    or `100ms`. Prefer a semantic readiness predicate before the Design /
+    Transform click; if the suite keeps a fixed wait, `500ms` is the best local
+    candidate and still needs CI/mac/container validation.
 -   Store per-sample results and at least p50/p90/CV, not only averages.
 -   Keep trace-parser invariants: expected key groups, keydown count distribution,
     and event ordering.
