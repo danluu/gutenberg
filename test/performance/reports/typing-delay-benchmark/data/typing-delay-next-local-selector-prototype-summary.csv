@@ -1,0 +1,3 @@
+prototype_owner,current_total_ms,metadata_count,signal_groups,max_risk_score,ordinary_text_changed_groups,prototype_rule
+BlockListBlockProvider,301.5,1437,5,5,1,Per-clientId own-block plus selection/structure/settings invalidation; selection-only or component-only memo is unsafe.
+useInnerBlocksProps,66.3,580,4,5,1,Root/order/settings/editability dependency boundary; attributes-blind skip is unsafe because getBlockSettings can read layout settings from current or ancestor attributes.

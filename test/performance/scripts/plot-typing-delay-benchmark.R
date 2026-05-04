@@ -14598,6 +14598,190 @@ if (file.exists(marker_allspan_action_summary_path)) {
 			height = 7
 		)
 
+		next_local_selector_prototype_contract_audit <- tribble(
+			~prototype_owner, ~source_anchor, ~current_total_ms, ~metadata_count, ~signal_group, ~source_reads, ~ordinary_text_update_effect, ~must_invalidate_for, ~stale_failure_mode, ~prototype_implication, ~risk_score,
+			"BlockListBlockProvider",
+			"packages/block-editor/src/components/block-list/block.js:562-907",
+			301.5,
+			1437,
+			"own block identity and public attributes",
+			"getBlockWithoutAttributes, getBlockAttributes, block type, default class name, reusable status, validity, metadata.blockVisibility, metadata.patternName-adjacent variation state, bindable attributes",
+			"changes only for the edited block during ordinary paragraph typing; unrelated blocks should keep the same own identity/attribute result",
+			"same-client attribute updates, block replacement, validity changes, className changes, metadata visibility/binding changes, block name/type changes, and active variation changes",
+			"editor.BlockListBlock filters and PrivateBlockContext consumers see stale block/attributes/name/title/visibility/binding data for the block whose own state changed",
+			"Do not use a selection-only guard. The prototype needs a per-clientId own-block dependency boundary so the edited block updates while unrelated blocks reuse their prior output.",
+			5,
+			"BlockListBlockProvider",
+			"packages/block-editor/src/components/block-list/block.js:562-907",
+			301.5,
+			1437,
+			"selection, caret, overlay, and drag state",
+			"isBlockSelected, hasSelectedInnerBlock, isFirstMultiSelectedBlock, getMultiSelectedBlockClientIds, getSelectedBlocksInitialCaretPosition, isBlockHighlighted, isBlockBeingDragged, isDragging, active block overlay, full/partial multi-selection",
+			"mostly unchanged after the first typed key, but not invariant across real editing",
+			"select, deselect, multi-select, caret movement, child selection, drag start/end, overlay activation, highlight changes, and selection-unmergeable state changes",
+			"wrong controls, outline, overlay, drag affordance, selected styling, initial caret, or synchronous rendering behavior",
+			"The boundary must include a selection/interaction version that invalidates selected blocks, ancestors of selected blocks, and drag/overlay participants.",
+			5,
+			"BlockListBlockProvider",
+			"packages/block-editor/src/components/block-list/block.js:562-907",
+			301.5,
+			1437,
+			"structural, duplicate, and section context",
+			"getBlockIndex, getBlocksByName, getParentSectionBlock, isSectionBlock, getBlockName for multi-selected blocks, rootClientId/root template lock",
+			"unchanged by ordinary paragraph text",
+			"insert, remove, move, duplicate/unique-block changes, root changes, section-block parent changes, and root template-lock changes",
+			"stale index, stale originalBlockClientId warning, incorrect section controls, or wrong locked/movable/removable state",
+			"The prototype needs a structural/root version, not only own-attribute and selection keys.",
+			4,
+			"BlockListBlockProvider",
+			"packages/block-editor/src/components/block-list/block.js:562-907",
+			301.5,
+			1437,
+			"editing-mode, template, and capability state",
+			"getBlockEditingMode for client/root, canRemoveBlock, canMoveBlock, getTemplateLock, getEditedContentOnlySection, isSelectionEnabled, isBlockSubtreeDisabled, block support multiple/expose-controls",
+			"unchanged by ordinary paragraph text",
+			"template lock, editing mode, content-only section, permission/capability, block support, and subtree-disabled changes",
+			"stale editability, missing disabled outline, incorrect remove/move controls, or stale parent controls",
+			"Guard output must include editing/capability versions or explicitly prove those selectors are stable for the skipped action class.",
+			5,
+			"BlockListBlockProvider",
+			"packages/block-editor/src/components/block-list/block.js:562-907",
+			301.5,
+			1437,
+			"global settings, device, preview, and layout context",
+			"getSettings supportsLayout/isPreviewMode/device type/bindable attributes, blockVisibility hook input, block default class name",
+			"unchanged by ordinary paragraph text",
+			"preview-mode toggles, device type changes, block-editor settings changes, theme/layout support changes, binding-support settings changes, and visibility metadata changes",
+			"stale preview context, wrong wrapper class, stale visibility hiding, or stale binding affordance state",
+			"Keep settings/device/preview as separate invalidation keys; the pattern-override patch does not remove broader block-editor binding UI responsibilities.",
+			4,
+			"useInnerBlocksProps",
+			"packages/block-editor/src/components/inner-blocks/index.js:194-305",
+			66.3,
+			580,
+			"root drop-zone state",
+			"when clientId is absent: isZoomOut and getSectionRootClientId",
+			"unchanged by ordinary paragraph text",
+			"zoom in/out, auto-scaled zoom, and section-root changes",
+			"root and section block lists both behave as active drop zones or both become disabled",
+			"Root useInnerBlocksProps can be keyed by zoom/section-root state; ordinary text should not invalidate it.",
+			3,
+			"useInnerBlocksProps",
+			"packages/block-editor/src/components/inner-blocks/index.js:194-305",
+			66.3,
+			580,
+			"block identity, parent, type, and toolbar capture",
+			"getBlockName, getBlockRootClientId, getBlockType, hasBlockSupport('__experimentalExposeControlsToChildren')",
+			"unchanged by ordinary paragraph text unless the edited block is replaced or transformed",
+			"block transform/replacement, parent/root move, block type registration/support changes, and parent changes",
+			"wrong inner block component, stale toolbar capture, stale parentClientId, or wrong block type passed to InnerBlocks",
+			"Use a clientId identity/root key; do not recompute this path for unrelated text attribute changes.",
+			4,
+			"useInnerBlocksProps",
+			"packages/block-editor/src/components/inner-blocks/index.js:194-305",
+			66.3,
+			580,
+			"layout settings and default layout",
+			"getBlockSettings(clientId, 'layout'), block settings inherited from current block or ancestors, global __experimentalFeatures layout",
+			"unchanged by ordinary text attributes, but can change when layout/settings attributes on the block or ancestors change",
+			"layout attribute changes, ancestor settings changes, theme/global settings changes, and block supports settings changes",
+			"stale layout class/default layout, incorrect child layout behavior, or stale manual placement handling",
+			"The key must include layout/settings dependencies; getBlockSettings reads attributes of candidate ancestors, so an attributes-blind skip would be unsafe.",
+			5,
+			"useInnerBlocksProps",
+			"packages/block-editor/src/components/inner-blocks/index.js:194-305",
+			66.3,
+			580,
+			"editing mode, template lock, zoom, and drop-zone disablement",
+			"getBlockEditingMode, getTemplateLock(parentClientId), isZoomOut, getSectionRootClientId",
+			"unchanged by ordinary paragraph text",
+			"editing-mode changes, parent template-lock changes, zoom changes, section-root changes, and drop-zone option changes",
+			"drop zone accepts where it should not, refuses valid drops, or renders wrong lock state",
+			"The prototype must include editability/template/zoom dependencies and behavior tests for drop-zone state.",
+			5
+		) %>%
+			mutate(
+				prototype_owner = factor(
+					prototype_owner,
+					levels = c("BlockListBlockProvider", "useInnerBlocksProps")
+				)
+			)
+
+		write_csv(
+			next_local_selector_prototype_contract_audit,
+			file.path(data_dir, "typing-delay-next-local-selector-prototype-contract-audit.csv")
+		)
+
+		next_local_selector_prototype_summary <- next_local_selector_prototype_contract_audit %>%
+			group_by(prototype_owner) %>%
+			summarize(
+				current_total_ms = first(current_total_ms),
+				metadata_count = first(metadata_count),
+				signal_groups = n(),
+				max_risk_score = max(risk_score),
+				ordinary_text_changed_groups = sum(str_detect(ordinary_text_update_effect, "changes only|unless the edited block")),
+				prototype_rule = case_when(
+					first(as.character(prototype_owner)) == "BlockListBlockProvider" ~ "Per-clientId own-block plus selection/structure/settings invalidation; selection-only or component-only memo is unsafe.",
+					first(as.character(prototype_owner)) == "useInnerBlocksProps" ~ "Root/order/settings/editability dependency boundary; attributes-blind skip is unsafe because getBlockSettings can read layout settings from current or ancestor attributes.",
+					TRUE ~ "Needs prototype contract."
+				),
+				.groups = "drop"
+			)
+
+		write_csv(
+			next_local_selector_prototype_summary,
+			file.path(data_dir, "typing-delay-next-local-selector-prototype-summary.csv")
+		)
+
+		next_local_selector_prototype_plot <- next_local_selector_prototype_contract_audit %>%
+			mutate(
+				signal_group_wrapped = str_wrap(signal_group, width = 34),
+				signal_group_wrapped = fct_reorder(signal_group_wrapped, risk_score)
+			)
+
+		save_plot(
+			ggplot(
+				next_local_selector_prototype_plot,
+				aes(
+					risk_score,
+					signal_group_wrapped,
+					color = prototype_owner,
+					shape = prototype_owner,
+					size = metadata_count
+				)
+			) +
+				geom_point(alpha = 0.88) +
+				facet_grid(
+					prototype_owner ~ .,
+					scales = "free_y",
+					space = "free_y"
+				) +
+				scale_color_brewer(type = "qual", palette = "Set1", name = "Prototype owner") +
+				scale_shape_manual(
+					values = c(
+						"BlockListBlockProvider" = 16,
+						"useInnerBlocksProps" = 17
+					),
+					name = "Prototype owner"
+				) +
+				scale_size_area(max_size = 8, labels = label_number(), name = "metadata entries") +
+				scale_x_continuous(
+					breaks = 1:5,
+					limits = c(2.6, 5.35),
+					labels = c("1" = "low", "2" = "", "3" = "medium", "4" = "high", "5" = "must test")
+				) +
+				labs(
+					title = "Next selector prototypes need explicit invalidation boundaries",
+					subtitle = "Provider is hotter but has public filter props; inner-blocks is smaller but getBlockSettings can read ancestor layout attributes",
+					x = "Stale-UI risk if skipped incorrectly",
+					y = NULL
+				) +
+				theme(legend.position = "bottom", legend.box = "vertical"),
+			"152-next-local-selector-prototype-contract.png",
+			width = 12,
+			height = 7.2
+		)
+
 		store_boundary_source_feasibility_plot <- store_boundary_source_feasibility %>%
 		mutate(
 			plot_label = case_when(
@@ -16117,7 +16301,7 @@ open_question_next_instrumentation_matrix <- tribble(
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, or reported statistic changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor 0ms versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry.",
 	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract narrows the deployment choice: pure getBlockPatterns is rejected locally, getBlockPatterns plus resource quiet is the first replacement candidate, fixed 500ms is only a validated fallback, and fixed 1000ms remains the conservative baseline if either replacement changes the metric boundary.", "Whether the resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; whether a source-specific readiness signal can replace generic resource quieting.", "Run the contract in CI/mac/container lanes with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry before changing the fixed wait.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
-	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps, while several other per-block rows are cold high-mount rows.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus behavior-validated invalidation keys for the provider, inner-blocks, and BlockListItems prototypes.", "Prototype BlockListBlockProvider first, then useInnerBlocksProps; keep BlockListItems as a validation prototype and do not prioritize cold high-mount rows without a hot benchmark window.",
+	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps, and the next-prototype contract maps the required invalidation keys for Provider and useInnerBlocksProps.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, and layout/settings inheritance.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys, then useInnerBlocksProps with root/order/settings/editability keys; keep BlockListItems as a validation prototype and do not prioritize cold high-mount rows without a hot benchmark window.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates.",
 	"React render ownership", "product optimization", 5, 2, 2, "secondary optimization", "Boundary and residual-profiler audits close React rendering for cliff causality; EventDispatch already contains the primary movement, while renderQueue.add, React external-store listener, selector recompute, and post-EventDispatch rendering are all secondary.", "Only component ownership of residual after-input or whole-cycle cost after a selector guard, store-notification prototype, or workload replay changes the work being attributed.", "Do not profile for the 1000ms cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and matched source-span IDs.",
 		"Chromium runtime checkpoint", "automation/browser", 4, 5, 4, "outside JS harness", "Runtime trace runbook makes the remaining browser-state question concrete: ordinary waits are the slow negative control, repeated Runtime.evaluate/Runtime.callFunctionOn rows are the dose-response control, trace-on captureSnapshot rows isolate the perturbation, and native rows bound browser-only scale.", "Which Chromium renderer/runtime scheduler state is changed by captureSnapshot and repeated runtime-call checkpoints, and whether that state is scheduler queueing, V8/microtask execution, browser input priority, OS power state, or trace observer side effect.", "Run the runtime trace runbook with per-sample protocol-command, scheduler/task-queue, V8/microtask, EventDispatch, source-span, browser revision, trace-category, and observer-configuration alignment; do not add more JS-level delay rows.",

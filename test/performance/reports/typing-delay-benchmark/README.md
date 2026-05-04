@@ -875,6 +875,9 @@ The R script derives:
 -   `data/typing-delay-postpatch-residual-owner-*.csv`: source-map-resolved
     residual `useSelect` owner audit from the post-patch all-data-spans
     microscope, separating hot block-list owners from cold high-mount rows.
+-   `data/typing-delay-next-local-selector-prototype-*.csv`: invalidation
+    contract for the next local selector prototypes,
+    `BlockListBlockProvider` and `useInnerBlocksProps`.
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
@@ -5259,6 +5262,35 @@ should be `BlockListBlockProvider`, followed by `useInnerBlocksProps`.
 selection, visibility, zoom, preview, or appender state would be user-visible.
 The cold high-mount rows should not be prioritized just because they have large
 mount counts; they need a benchmark window where they are actually hot.
+
+I then expanded that into the concrete prototype contract. The main correction:
+`BlockListBlockProvider` cannot be optimized as "only selected blocks matter".
+It passes public `editor.BlockListBlock` filter props, including `block`,
+`attributes`, `name`, `isValid`, `canMove`, `canRemove`, and selection state.
+That means the edited block must still update on ordinary typing, and any block
+whose own attributes, identity, selection, structure, editability, or settings
+changed must update. The skippable path is unrelated blocks whose selected-prop
+dependencies did not change.
+
+![Next local selector prototype contract](figures/152-next-local-selector-prototype-contract.png)
+
+| Prototype | Hot residual scope | Why a naive skip is unsafe | Required boundary |
+| --------- | -----------------: | -------------------------- | ----------------- |
+| `BlockListBlockProvider` | `301.5ms` / `1,437` metadata entries | public filter props expose own `block` and `attributes`; private context owns selection, drag/overlay, editability, section, binding, visibility, and device state | per-`clientId` own-block dependency plus separate selection/interaction, structure/root, editability/capability, and settings/device invalidation keys |
+| `useInnerBlocksProps` | `66.3ms` / `580` metadata entries | `getBlockSettings( clientId, 'layout' )` can read layout settings from the current block or ancestors, so an attributes-blind skip can stale layout/default-layout output | root/order/settings/editability boundary covering block identity, parent/root, template lock, zoom/section root, block support, and layout/settings changes |
+
+The test gap is also different for the two rows. A provider prototype must cover
+ordinary typing in the edited block, ordinary typing in unrelated blocks,
+selection and multi-selection, child selection, block move/remove/replace,
+variation/title changes, block visibility metadata, content-only/template modes,
+drag/overlay/highlight, and at least one `editor.BlockListBlock` filter fixture
+that observes public props. An inner-blocks prototype must cover root and nested
+drop zones, zoom out, section root, parent template lock, editing mode, child
+insert/remove/reorder, block type/support changes, and layout settings inherited
+from the block or an ancestor. Component-only memoization is not the interesting
+prototype for either row; the measured cost is the per-store-change selector
+work, so the prototype needs a dependency boundary that lets unrelated text
+updates reuse prior selected output.
 
 I then pushed on the largest uncounted selector row: `BlockListItems`. The source
 audit makes the split sharper. `BlockListItems` does not read paragraph content
