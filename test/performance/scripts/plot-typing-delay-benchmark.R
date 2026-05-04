@@ -10141,6 +10141,113 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		width = 12.5,
 		height = 7.4
 	)
+
+	redux_owner_other_breakdown <- redux_listener_owner_source_summary %>%
+		anti_join(
+			redux_owner_source_audit_sites,
+			by = c("source_path", "source_line")
+		) %>%
+		mutate(
+			source_label = paste0(source_path, ":", source_line),
+			other_owner_bucket = case_when(
+				source_path %in% c(
+					"packages/block-editor/src/hooks/layout.js",
+					"packages/block-editor/src/components/use-settings/index.js",
+					"packages/editor/src/components/provider/use-block-editor-settings.js",
+					"packages/block-editor/src/components/use-block-display-information/index.js",
+					"packages/block-editor/src/hooks/block-bindings.js",
+					"packages/block-editor/src/components/block-alignment-control/use-available-alignments.js",
+					"packages/block-editor/src/hooks/block-hooks.js"
+				) ~ "settings / block support",
+				str_detect(source_path, "media|image") ~ "media / image settings",
+				str_detect(source_path, "color|background|typography|dimensions|custom-css|block-title|block-card|block-visibility|block-variation") ~ "block-attribute style hooks",
+				str_detect(source_path, "selection|writing-flow|block-tools|typewriter|block-breadcrumb|inspector|sidebar|collab|document-bar|header|post-title|preview-dropdown|layout/index|visual-editor|start-page|iframe|editor-styles|skip-to-selected") ~ "selection / editor chrome",
+				str_detect(source_path, "block-directory|footnotes") ~ "block directory / global count",
+				TRUE ~ "other singleton"
+			),
+			text_update_relevance = case_when(
+				other_owner_bucket == "settings / block support" ~ "probably skippable settings",
+				other_owner_bucket == "media / image settings" ~ "probably skippable settings",
+				other_owner_bucket == "block directory / global count" ~ "probably unchanged global",
+				other_owner_bucket == "block-attribute style hooks" ~ "possibly relevant singleton",
+				other_owner_bucket == "selection / editor chrome" ~ "selection/chrome validation",
+				TRUE ~ "unknown singleton"
+			),
+			optimization_note = case_when(
+				other_owner_bucket == "settings / block support" ~ "Reads settings, block support, block name, or block settings; ordinary paragraph text should not change most returned values.",
+				other_owner_bucket == "media / image settings" ~ "Mostly media/image capability and settings checks; not a typing-specific path.",
+				other_owner_bucket == "block directory / global count" ~ "Global block-directory or block-type count checks; ordinary typing should not change counts.",
+				other_owner_bucket == "block-attribute style hooks" ~ "Some rows read block attributes, but they are singleton/p50-zero in this trace and are not another high-fanout text path.",
+				other_owner_bucket == "selection / editor chrome" ~ "Selection, editor chrome, iframe, sidebar, or layout UI selectors; validate behavior before skipping.",
+				TRUE ~ "Long-tail singleton; leave out of the first optimization pass."
+			)
+		) %>%
+		select(
+			source_path,
+			source_line,
+			source_label,
+			source_name,
+			other_owner_bucket,
+			text_update_relevance,
+			listener_duration_p50_ms,
+			listener_duration_p90_ms,
+			listener_duration_sum_ms,
+			listener_count_p50,
+			use_select_instances_max,
+			optimization_note,
+			source_snippet
+		) %>%
+		arrange(desc(listener_duration_p50_ms), desc(listener_count_p50), source_label)
+
+	write_csv(
+		redux_owner_other_breakdown,
+		file.path(data_dir, "typing-delay-redux-listener-other-owner-breakdown.csv")
+	)
+
+	redux_owner_other_bucket_summary <- redux_owner_other_breakdown %>%
+		group_by(other_owner_bucket, text_update_relevance, optimization_note) %>%
+		summarize(
+			listener_duration_p50_sum_ms = sum(listener_duration_p50_ms, na.rm = TRUE),
+			listener_duration_p90_sum_ms = sum(listener_duration_p90_ms, na.rm = TRUE),
+			listener_count_p50_sum = sum(listener_count_p50, na.rm = TRUE),
+			source_sites = n(),
+			nonzero_p50_sites = sum(listener_duration_p50_ms > 0, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		arrange(desc(listener_duration_p50_sum_ms), desc(listener_count_p50_sum))
+
+	write_csv(
+		redux_owner_other_bucket_summary,
+		file.path(data_dir, "typing-delay-redux-listener-other-owner-bucket-summary.csv")
+	)
+
+	save_plot(
+		ggplot(
+			redux_owner_other_bucket_summary %>%
+				mutate(
+					other_owner_bucket = fct_reorder(other_owner_bucket, listener_duration_p50_sum_ms)
+				),
+			aes(listener_duration_p50_sum_ms, other_owner_bucket, fill = text_update_relevance)
+		) +
+			geom_col(width = 0.68, alpha = 0.92) +
+			geom_text(
+				aes(label = paste0(source_sites, " sites / ", label_number()(listener_count_p50_sum), " calls")),
+				hjust = -0.05,
+				size = 3.2
+			) +
+			scale_fill_brewer(type = "qual", palette = "Set2", name = "Text-update relevance") +
+			scale_x_continuous(expand = expansion(mult = c(0, 0.22))) +
+			labs(
+				title = "The residual mapped listener bucket is a small mixed tail",
+				subtitle = "Breakdown of the 62 source-mapped owners outside the top audited marker-window sites",
+				x = "Redux listener duration, p50 sum (ms)",
+				y = NULL
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"125-redux-listener-other-owner-breakdown.png",
+		width = 12.5,
+		height = 6.8
+	)
 }
 
 marker_allspan_action_summary_path <- file.path(data_dir, "typing-delay-marker-allspan-action-summary.csv")

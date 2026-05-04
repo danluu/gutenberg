@@ -1,0 +1,7 @@
+other_owner_bucket,text_update_relevance,optimization_note,listener_duration_p50_sum_ms,listener_duration_p90_sum_ms,listener_count_p50_sum,source_sites,nonzero_p50_sites
+settings / block support,probably skippable settings,"Reads settings, block support, block name, or block settings; ordinary paragraph text should not change most returned values.",0.6000001430511475,0.8400004863739015,154,7,5
+selection / editor chrome,selection/chrome validation,"Selection, editor chrome, iframe, sidebar, or layout UI selectors; validate behavior before skipping.",0.5999996662139893,1.0799995899200439,30,30,5
+block directory / global count,probably unchanged global,Global block-directory or block-type count checks; ordinary typing should not change counts.,0.09999990463256836,0.10000009536743164,3,3,1
+media / image settings,probably skippable settings,Mostly media/image capability and settings checks; not a typing-specific path.,0,0.16000022888183596,52,3,0
+other singleton,unknown singleton,Long-tail singleton; leave out of the first optimization pass.,0,0.23999996185302735,12,9,0
+block-attribute style hooks,possibly relevant singleton,"Some rows read block attributes, but they are singleton/p50-zero in this trace and are not another high-fanout text path.",0,0.08000011444091798,10,10,0

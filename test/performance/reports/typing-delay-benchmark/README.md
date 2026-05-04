@@ -740,6 +740,8 @@ The R script derives:
     validation.
 -   `data/typing-delay-redux-listener-guard-candidates.csv`: risk-ranked
     concrete guard/prototype candidates for the audited text-update fanout.
+-   `data/typing-delay-redux-listener-other-owner-*.csv`: residual breakdown
+    of the `Other mapped owners` bucket from the source audit.
 -   `data/typing-delay-marker-state-fanout-summary.csv`: derived marker-action
     control joining the action summaries with the exact store-root state effect
     for normal marker, raw unknown action, and mark-next controls.
@@ -3672,6 +3674,32 @@ a `BlockListItems` structural-version guard. Only after those local guards are
 understood should the broader store-partition or branch-aware subscriber
 notification design be considered.
 
+I also broke down the residual `Other mapped owners` row so that it is not a
+black box. That row is small: `1.3ms` p50 across `62` source-mapped sites and
+`261` p50 listener calls. The nonzero p50 cost is split between
+settings/block-support checks and editor chrome / selection validators. The
+block-attribute style-hook rows that could plausibly depend on a block's
+attributes are singleton or low-count rows with `0.0ms` p50 in this trace, so the
+tail does not hide another large text-specific fanout.
+
+![Redux listener other owner breakdown](figures/125-redux-listener-other-owner-breakdown.png)
+
+| Residual bucket | p50 duration | Calls | Source sites | Interpretation |
+| --------------- | -----------: | ----: | -----------: | -------------- |
+| settings / block support | `0.6ms` | `154` | `7` | mostly settings, block support, block name, or block-settings checks |
+| selection / editor chrome | `0.6ms` | `30` | `30` | singleton selection, sidebar, iframe, layout, and editor UI validators |
+| block directory / global count | `0.1ms` | `3` | `3` | global block-directory or block-count checks |
+| media / image settings | `0.0ms` | `52` | `3` | image/media settings checks with only p90 blips |
+| other singleton | `0.0ms` | `12` | `9` | long-tail singleton callbacks |
+| block-attribute style hooks | `0.0ms` | `10` | `10` | possible attribute readers, but not a high-fanout p50 contributor here |
+
+This closes the useful part of the residual-owner question. The first
+optimization pass should not chase the long tail. If a later pass revisits it,
+the only plausible groups are settings/block-support selectors and
+selection/editor-chrome validators, and both are smaller than the already
+identified pattern-override, non-edited block-provider, and `BlockListItems`
+buckets.
+
 The next source check makes the mismatch exact. The marker action itself is just
 `{ type: 'MARK_LAST_CHANGE_AS_PERSISTENT' }`
 (`packages/block-editor/src/store/actions.js:1638-1640`). In
@@ -5597,6 +5625,13 @@ instances; treat `BlockListItems` as a high-risk validation prototype because it
 is selection/tree/appender-sensitive; leave the broader store-partition or
 branch-aware notification design until after local guards prove the shape of the
 win.
+
+The residual-owner follow-up closes the suspicion that the `unknown/mixed` tail
+might hide another large text-specific path. It does not. The tail is `1.3ms`
+p50 total; `0.6ms` is settings/block-support work, `0.6ms` is editor chrome or
+selection-validation work, and the possible block-attribute style-hook rows are
+`0.0ms` p50 here. That makes the prototype order more robust: optimize the
+already identified high-fanout rows first, not the residual source-mapped tail.
 
 The marker-state fanout control makes the store boundary even clearer. The
 normal marker changes only `blocks.isPersistentChange`; the audited hot owner
