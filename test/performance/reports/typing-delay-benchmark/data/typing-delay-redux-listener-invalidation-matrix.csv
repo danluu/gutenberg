@@ -1,0 +1,26 @@
+source_site,state_category,text_update_relevance,notes,marker_before_input_listener_duration_p50_ms,marker_before_input_listener_count_p50
+BlockListItems useSelect,target block text attributes,not read,The selector does not read content attributes.,5.299999952316284,580
+BlockListItems useSelect,selection / caret,possibly relevant,Reads selected block ids and selected-root/appender state.,5.299999952316284,580
+BlockListItems useSelect,block order / tree shape,probably unchanged,Reads child order and visible-block set; normal text insertion does not insert/remove/reorder blocks.,5.299999952316284,580
+BlockListItems useSelect,global/editor settings,probably unchanged,"Reads preview mode, zoom state, template lock, editing mode, and inserter capability.",5.299999952316284,580
+BlockListItems useSelect,block type / global count,not read,No block-type count scan in this selector.,5.299999952316284,580
+Pattern override support HOC,target block text attributes,not read,"The selector checks block name support, not content.",3.5999996662139893,1437
+Pattern override support HOC,selection / caret,not read,Selected state is used outside this useSelect result.,3.5999996662139893,1437
+Pattern override support HOC,block order / tree shape,not read,No block order or tree traversal.,3.5999996662139893,1437
+Pattern override support HOC,global/editor settings,probably unchanged,Reads __experimentalBlockBindingsSupportedAttributes from editor settings.,3.5999996662139893,1437
+Pattern override support HOC,block type / global count,probably unchanged,Uses props.name; ordinary paragraph content insertion does not change block names.,3.5999996662139893,1437
+BlockListBlockProvider useSelect,target block text attributes,relevant for one block,The selected paragraph instance reads its own attributes; the other block instances do not need the new text value.,3.500000476837158,1437
+BlockListBlockProvider useSelect,selection / caret,possibly relevant,"Reads selection, multi-selection, selected-caret position, selected ancestry, and overlay state.",3.500000476837158,1437
+BlockListBlockProvider useSelect,block order / tree shape,probably unchanged,"Reads block index, same-name blocks, section ancestry, and movement/removal capability.",3.500000476837158,1437
+BlockListBlockProvider useSelect,global/editor settings,probably unchanged,"Reads block-editor settings, template locks, editing modes, and device/preview state.",3.500000476837158,1437
+BlockListBlockProvider useSelect,block type / global count,probably unchanged,"Reads block type, variation, and same-name block list; ordinary text insertion keeps block identity/count stable.",3.500000476837158,1437
+useInnerBlocksProps useSelect,target block text attributes,not read,"The selector reads wrapper/block-list state, not RichText content.",1.1000003814697266,580
+useInnerBlocksProps useSelect,selection / caret,not read,Selection is not part of this selector's returned value.,1.1000003814697266,580
+useInnerBlocksProps useSelect,block order / tree shape,probably unchanged,Reads parent/root ids and block settings; text insertion does not change child order.,1.1000003814697266,580
+useInnerBlocksProps useSelect,global/editor settings,probably unchanged,"Reads zoom, template lock, editing mode, section root, and block settings.",1.1000003814697266,580
+useInnerBlocksProps useSelect,block type / global count,probably unchanged,Reads block name/type; ordinary text insertion keeps block type stable.,1.1000003814697266,580
+HeadingEdit anchor useSelect,target block text attributes,not read,"Heading content is used by the component, but this useSelect only computes canGenerateAnchors.",0.4999997615814209,202
+HeadingEdit anchor useSelect,selection / caret,not read,No selection reads.,0.4999997615814209,202
+HeadingEdit anchor useSelect,block order / tree shape,probably unchanged,"The global count selector depends on block order and identities, not attributes.",0.4999997615814209,202
+HeadingEdit anchor useSelect,global/editor settings,probably unchanged,Reads settings.generateAnchors.,0.4999997615814209,202
+HeadingEdit anchor useSelect,block type / global count,probably unchanged,Reads global table-of-contents block count; typing does not change that count.,0.4999997615814209,202

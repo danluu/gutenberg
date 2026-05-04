@@ -183,7 +183,13 @@ The short version:
     top audited marker-window sites are per-rendered-block, per-`BlockEdit`,
     per-block-list, per-inner-blocks, and per-heading subscriptions. Together
     they account for `14.0ms` of `15.3ms` source-mapped listener time, but each
-    callback is only `~2-9us`.
+    callback is only `~2-9us`. A follow-up selector-dependency matrix shows why
+    this is an invalidation-surface problem: most of the hot subscribed reads are
+    block order/tree, global settings, block type/count, or selection state that
+    either should not change on a one-character paragraph text insertion or is
+    only indirectly related. The only direct text-attribute read is the
+    `BlockListBlockProvider` instance for the edited paragraph; the other
+    `~1436` block instances are still woken.
 -   A dense timer-to-key gap scan adds another constraint. In the normal-marker
     and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
     low when the timer callback is roughly `40-100ms` before the next keydown,
@@ -694,6 +700,10 @@ The R script derives:
     grouping for the same low-level Redux listener owner data.
 -   `data/typing-delay-redux-listener-source-audit.csv`: code-audited source
     scope summary for the dominant low-level Redux listener owner sites.
+-   `data/typing-delay-redux-listener-invalidation-matrix.csv`: manual
+    source-audit matrix classifying whether each hot subscribed state category
+    is directly relevant, indirectly relevant, probably unchanged, or not read
+    during ordinary paragraph text insertion.
 -   `data/typing-delay-use-select-phase-accounting.csv`: trace-all-data-spans
     comparison of rootSubscribe, Redux listener wrappers, `useSelect.onChange`,
     and `useSelect.mapSelect`.
@@ -3441,6 +3451,43 @@ whether their own mapped value changed. For most blocks, the semantic answer is
 probably "no"; the measured cost is paying to ask that question thousands of
 times.
 
+The fixture count lines up with that interpretation. The large-post asset has
+`1,436` existing blocks (`638` paragraphs, `393` list items, `202` headings,
+`95` lists, `91` quotes, and `17` images), and the benchmark inserts one more
+paragraph before typing. The per-`BlockEdit` and per-rendered-block listener
+counts are therefore `1,437`, which is one wakeup per block in the fixture even
+though the typed character changes only the inserted paragraph.
+
+![Redux listener invalidation matrix](figures/116-redux-listener-invalidation-matrix.png)
+
+The selector-dependency audit makes the optimization target more specific:
+
+-   `BlockListBlockProvider` is the only top site with a direct text-attribute
+    dependency, and that is direct only for the one edited paragraph. The other
+    `~1436` instances are woken to check block identity, selection, block type,
+    order, section ancestry, and capability state.
+-   `BlockListItems` and `useInnerBlocksProps` are mostly block-list, layout,
+    order, visibility, zoom, and editing-mode subscriptions. Those are important
+    for structural editor changes, but an ordinary character inserted into an
+    existing paragraph should not change the block tree.
+-   `Pattern override support HOC` is mounted per `BlockEdit` wrapper but reads
+    global block-editor settings plus `props.name`; it does not read content.
+    Waking this once per block on every text input looks like avoidable broad
+    invalidation unless those settings or block names are changing.
+-   `HeadingEdit`'s hot `useSelect` reads anchor settings and the global
+    table-of-contents block count. The `202` heading instances are woken when
+    typing in a paragraph even though neither heading count nor global settings
+    should change.
+
+That disconfirms a stronger "these are all necessary per-character checks"
+reading. Some subscription wakeups are plausibly necessary because selection and
+caret state can move on input. But most of the measured hot surface is either
+global, block-tree structural, or block-identity work. The likely product
+direction is not to micro-optimize these callbacks; it is to avoid waking
+thousands of store-level subscribers whose selected state cannot change for a
+text-only attribute update, or to split text-update-sensitive state from
+block-tree/global invalidations.
+
 This supports a code-level theory:
 
 -   `useSelect` invalidates its cached value on store update before rerunning
@@ -5191,6 +5238,17 @@ Gutenberg part of the artifact is a coarse invalidation surface, not a single
 slow selector body. The remaining product question is which of those broad
 subscriptions can be made less sensitive to ordinary text updates without
 breaking block-list and selection behavior.
+
+The new selector-dependency matrix answers that one level deeper. The hottest
+per-`BlockEdit` and per-rendered-block rows line up with the fixture's `1,437`
+blocks, while the actual typed character changes one inserted paragraph. Most
+hot subscribed reads are not content reads at all: they are global settings,
+block-tree/order, block type/count, visibility/layout, or selection/caret state.
+The one direct content read is the edited paragraph's own
+`BlockListBlockProvider`; the thousands of other block instances are woken to
+prove their selected values did not change. The credible optimization target is
+therefore selective invalidation / subscription partitioning for text-only
+attribute updates, not callback-body tuning.
 
 The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:

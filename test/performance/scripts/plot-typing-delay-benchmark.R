@@ -9347,6 +9347,91 @@ if (file.exists(redux_listener_owner_summary_path)) {
 		width = 12,
 		height = 7
 	)
+
+	redux_owner_invalidation_matrix <- tribble(
+		~source_site, ~state_category, ~text_update_relevance, ~notes,
+		"BlockListItems useSelect", "target block text attributes", "not read", "The selector does not read content attributes.",
+		"BlockListItems useSelect", "selection / caret", "possibly relevant", "Reads selected block ids and selected-root/appender state.",
+		"BlockListItems useSelect", "block order / tree shape", "probably unchanged", "Reads child order and visible-block set; normal text insertion does not insert/remove/reorder blocks.",
+		"BlockListItems useSelect", "global/editor settings", "probably unchanged", "Reads preview mode, zoom state, template lock, editing mode, and inserter capability.",
+		"BlockListItems useSelect", "block type / global count", "not read", "No block-type count scan in this selector.",
+		"Pattern override support HOC", "target block text attributes", "not read", "The selector checks block name support, not content.",
+		"Pattern override support HOC", "selection / caret", "not read", "Selected state is used outside this useSelect result.",
+		"Pattern override support HOC", "block order / tree shape", "not read", "No block order or tree traversal.",
+		"Pattern override support HOC", "global/editor settings", "probably unchanged", "Reads __experimentalBlockBindingsSupportedAttributes from editor settings.",
+		"Pattern override support HOC", "block type / global count", "probably unchanged", "Uses props.name; ordinary paragraph content insertion does not change block names.",
+		"BlockListBlockProvider useSelect", "target block text attributes", "relevant for one block", "The selected paragraph instance reads its own attributes; the other block instances do not need the new text value.",
+		"BlockListBlockProvider useSelect", "selection / caret", "possibly relevant", "Reads selection, multi-selection, selected-caret position, selected ancestry, and overlay state.",
+		"BlockListBlockProvider useSelect", "block order / tree shape", "probably unchanged", "Reads block index, same-name blocks, section ancestry, and movement/removal capability.",
+		"BlockListBlockProvider useSelect", "global/editor settings", "probably unchanged", "Reads block-editor settings, template locks, editing modes, and device/preview state.",
+		"BlockListBlockProvider useSelect", "block type / global count", "probably unchanged", "Reads block type, variation, and same-name block list; ordinary text insertion keeps block identity/count stable.",
+		"useInnerBlocksProps useSelect", "target block text attributes", "not read", "The selector reads wrapper/block-list state, not RichText content.",
+		"useInnerBlocksProps useSelect", "selection / caret", "not read", "Selection is not part of this selector's returned value.",
+		"useInnerBlocksProps useSelect", "block order / tree shape", "probably unchanged", "Reads parent/root ids and block settings; text insertion does not change child order.",
+		"useInnerBlocksProps useSelect", "global/editor settings", "probably unchanged", "Reads zoom, template lock, editing mode, section root, and block settings.",
+		"useInnerBlocksProps useSelect", "block type / global count", "probably unchanged", "Reads block name/type; ordinary text insertion keeps block type stable.",
+		"HeadingEdit anchor useSelect", "target block text attributes", "not read", "Heading content is used by the component, but this useSelect only computes canGenerateAnchors.",
+		"HeadingEdit anchor useSelect", "selection / caret", "not read", "No selection reads.",
+		"HeadingEdit anchor useSelect", "block order / tree shape", "probably unchanged", "The global count selector depends on block order and identities, not attributes.",
+		"HeadingEdit anchor useSelect", "global/editor settings", "probably unchanged", "Reads settings.generateAnchors.",
+		"HeadingEdit anchor useSelect", "block type / global count", "probably unchanged", "Reads global table-of-contents block count; typing does not change that count."
+	) %>%
+		left_join(
+			redux_owner_source_audit %>%
+				select(
+					source_site,
+					marker_before_input_listener_duration_p50_ms,
+					marker_before_input_listener_count_p50
+				),
+			by = "source_site"
+		) %>%
+		mutate(
+			state_category = factor(
+				state_category,
+				levels = c(
+					"target block text attributes",
+					"selection / caret",
+					"block order / tree shape",
+					"global/editor settings",
+					"block type / global count"
+				)
+			),
+			text_update_relevance = factor(
+				text_update_relevance,
+				levels = c(
+					"relevant for one block",
+					"possibly relevant",
+					"probably unchanged",
+					"not read"
+				)
+			),
+			source_site = fct_reorder(source_site, marker_before_input_listener_duration_p50_ms, .na_rm = TRUE)
+		)
+
+	write_csv(
+		redux_owner_invalidation_matrix,
+		file.path(data_dir, "typing-delay-redux-listener-invalidation-matrix.csv")
+	)
+
+	save_plot(
+		ggplot(redux_owner_invalidation_matrix, aes(state_category, source_site, fill = text_update_relevance)) +
+			geom_tile(color = "white", linewidth = 0.6) +
+			scale_fill_brewer(type = "qual", palette = "Set2", drop = FALSE) +
+			labs(
+				title = "Most hot subscriptions read state that should not change on a text-only update",
+				subtitle = "Manual source audit of the top marker-window Redux listener owners; rows ordered by marker p50 cost",
+				x = NULL,
+				y = NULL,
+				fill = "Ordinary text insertion relevance"
+			) +
+			theme(
+				axis.text.x = element_text(angle = 25, hjust = 1),
+				legend.position = "bottom"
+			),
+		"116-redux-listener-invalidation-matrix.png",
+		width = 12,
+		height = 6.8
+	)
 }
 
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
