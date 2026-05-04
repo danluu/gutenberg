@@ -2,12 +2,14 @@
 
 Date: 2026-05-02
 
+Latest follow-up: 2026-05-04
+
 Analysis branch:
 `codex/rtc-websocket-failure-analysis-report-20260502`
 
 Fix branch analyzed:
 `codex/rtc-websocket-e2e-explanation-20260502-pr` at
-`c2f5e5a775e295d86066485c674eac0f6a811a84`
+`87a680ece2e8805693b34f10287f4115ce932e7e`
 
 ## Scope
 
@@ -26,6 +28,17 @@ runs, and non-Playwright unit coverage.
 The failures were not Yjs convergence bugs. Yjs replicated the operations it was
 given. The failures came from Gutenberg converting stale or insufficiently
 rebased WordPress entity state into fresh Yjs operations.
+
+Follow-up validation on 2026-05-04 corrected one operational ambiguity: source
+commits alone are not enough for browser validation in these worktrees. The
+`/private/tmp/gutenberg-latest-known-ws-pr-combined` worktree contained the
+source changes but did not contain built `core-data`/`sync` plugin assets, so
+its browser failures were not valid evidence against the product fixes. A built
+comparison worktree, `/private/tmp/gutenberg-pr-combined-unit-compare`, served
+the sync/core-data fixes. There, the title reload repro passed 5/5, while the
+concurrent list-item move repro still failed 1/10. The title failure should be
+treated as likely fixed by the PR-style branch; concurrent list moves still need
+follow-up.
 
 For #21, a reload could receive the correct unsaved peer title, but a
 resolver-triggered CRDT persistence save was already in flight with the stale

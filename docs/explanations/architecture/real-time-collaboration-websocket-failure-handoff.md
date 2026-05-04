@@ -2,6 +2,8 @@
 
 Date: 2026-05-03
 
+Latest follow-up: 2026-05-04
+
 Analysis branch:
 `codex/rtc-websocket-failure-analysis-report-20260502`
 
@@ -9,7 +11,7 @@ Primary fix branch:
 `codex/rtc-websocket-e2e-explanation-20260502-pr`
 
 Primary fix commit:
-`c2f5e5a775e295d86066485c674eac0f6a811a84`
+`87a680ece2e8805693b34f10287f4115ce932e7e`
 
 Repository remote for preserved work:
 `danluu`
@@ -19,6 +21,16 @@ Repository remote for preserved work:
 The two requested WebSocket-specific RTC failures have been analyzed, reproduced,
 fixed on a PR-style branch, documented, and pushed to the `danluu` remote. No PR
 has been created.
+
+Follow-up validation on 2026-05-04 found that browser results from
+`/private/tmp/gutenberg-latest-known-ws-pr-combined` should not be used as
+product-fix evidence because that worktree/container did not have built
+`build/scripts/core-data` or `build/scripts/sync` assets. The built comparison
+worktree `/private/tmp/gutenberg-pr-combined-unit-compare` did serve the
+core-data/sync fixes: the title reload repro passed 5/5 there, while the
+concurrent list-item move repro still failed 1/10. Treat title as likely fixed
+by the current PR-style branch and list moves as still requiring follow-up
+validation/fix work.
 
 The failures were:
 
@@ -43,9 +55,12 @@ These branches are pushed to `danluu`:
     -   Current purpose: preserved analysis branch for another agent.
 -   `codex/rtc-websocket-e2e-explanation-20260502-pr`
     -   PR-style implementation branch.
-    -   Head: `c2f5e5a775e295d86066485c674eac0f6a811a84`.
+    -   Head: `87a680ece2e8805693b34f10287f4115ce932e7e`.
     -   Contains separate commits for the local WebSocket suite, non-Playwright
         regression coverage, Playwright repros, and the fix.
+-   `codex/rtc-websocket-e2e-tests-20260502`
+    -   Test-only branch for the local WebSocket suite and Playwright repros.
+    -   Head on `danluu`: `cbb630e754f03f0e8f870f1d115617c30f75784d`.
 -   `try/ws-same-user-title-reload-loss`
     -   Bug-specific preserved branch for #21.
     -   Preserved at `5d968eb9e7e6ee92cd50c90774b2d392e6ebf199`.
@@ -56,10 +71,10 @@ These branches are pushed to `danluu`:
 The PR-style branch has these commits on top of `origin/trunk`:
 
 ```text
-9c1211ed2b0 Add local RTC WebSocket e2e suite
-829e19c87cd Add sync manager bootstrap update regression test
-c35c72b1f96 Add WebSocket collaboration Playwright repros
-c2f5e5a775e Fix WebSocket collaboration bootstrap sync
+77132ffead0 Add local RTC WebSocket e2e suite
+cbb630e754f Add WebSocket collaboration Playwright repros
+c72cbb4a0e8 Fix WebSocket collaboration bootstrap sync
+87a680ece2e Preserve rebased block fields in RTC merge
 ```
 
 The analysis branch then adds:
@@ -102,8 +117,13 @@ Analysis docs:
 
 Headless repro videos created during the investigation:
 
--   `/tmp/gutenberg-ws-repro-videos/ws-same-user-title-reload-loss.mp4`
--   `/tmp/gutenberg-ws-repro-videos/ws-concurrent-list-item-move-loss.mp4`
+-   `/private/tmp/gutenberg-ws-repro-videos/ws-same-user-title-reload-loss.mp4`
+-   `/private/tmp/gutenberg-ws-repro-videos/ws-natural-same-user-title-reload-stale-writeback-loss.mp4`
+-   `/private/tmp/gutenberg-ws-repro-videos/ws-concurrent-list-item-move-loss.mp4`
+-   `/private/tmp/gutenberg-ws-unfixed-repro-videos-20260504/ws-bootstrap-title-context.mp4`
+-   `/private/tmp/gutenberg-ws-unfixed-repro-videos-20260504/ws-concurrent-list-item-move-loss.mp4`
+-   `/private/tmp/gutenberg-ws-other-repro-videos-20260504/table-duplicate-row-content-loss.mp4`
+-   `/private/tmp/gutenberg-ws-other-repro-videos-20260504/rtc-undo-wrong-synced-entity-side-by-side-annotated.mp4`
 
 Trace logs from the deeper analysis:
 
