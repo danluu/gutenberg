@@ -197,7 +197,14 @@ The short version:
     then shows what "wake" means in the next input: all compared interventions
     wake `4544` `useSelect.onChange` callbacks, but `3828` of those go only to
     async `renderQueue.add`; `716` synchronously run `onStoreChange`,
-    `updateValue`, and `mapSelect`.
+    `updateValue`, and `mapSelect`. A priority-queue idle probe closes one more
+    version of that open question: the `renderQueue.add` work is really
+    scheduled through `requestIdleCallback`, but whether that idle queue drains
+    before the next RichText input does not predict the low band. In the probe,
+    all three retained `1000ms` intervals with a following input had an idle
+    flush finish after that following input started, while all three `1300ms`
+    intervals drained before the following input and were still in the slower
+    retained-p50 band.
 -   A dense timer-to-key gap scan adds another constraint. In the normal-marker
     and `stopTyping(); startTyping()` runs, the following EventDispatch slice is
     low when the timer callback is roughly `40-100ms` before the next keydown,
@@ -675,6 +682,9 @@ The R script derives:
     CI-comparable held-key versus tap-then-wait runs at `0ms`, `100ms`,
     `250ms`, `500ms`, and `1000ms`, with reported-q50 run-to-run variance and
     runtime deltas.
+-   `data/typing-delay-ci-hold-duration-*.csv`: same paired CI-comparable
+    settings, adding fixed `50ms` and `100ms` key holds followed by the
+    remaining post-keyup wait.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -718,6 +728,10 @@ The R script derives:
 -   `data/typing-delay-use-select-subscriber-outcome-summary.csv`: next-input
     `useSelect` wakeup funnel splitting woken subscribers into async queued
     updates and synchronous `onStoreChange` / `updateValue` / `mapSelect` work.
+-   `data/typing-delay-priority-queue-idle-events.csv` and
+    `data/typing-delay-priority-queue-idle-summary.csv`: targeted early
+    `requestIdleCallback` probe for the `@wordpress/priority-queue` idle flushes
+    created by `useSelect`'s async `renderQueue.add` path.
 -   `data/typing-delay-use-select-phase-accounting.csv`: trace-all-data-spans
     comparison of rootSubscribe, Redux listener wrappers, `useSelect.onChange`,
     and `useSelect.mapSelect`.
@@ -3575,6 +3589,49 @@ not yet identify the React component render owners for the async queued work
 after the input slice. That remains a React-render attribution question, not a
 selector-count question.
 
+I then checked a narrower version of that render-queue caveat: maybe the low
+band appears when the async `renderQueue.add` work has drained before the next
+input. This needed an instrumentation fix. The older scheduler trace reported
+zero `requestIdleCallback` events, not because the priority queue never uses
+idle callbacks, but because `@wordpress/priority-queue` captures
+`window.requestIdleCallback` at module import time
+(`packages/priority-queue/src/request-idle-callback.ts:17-21` and
+`packages/priority-queue/src/index.ts:91-130`). The benchmark's previous
+scheduler wrapper was installed after the editor scripts had loaded, so it
+missed the function reference already held by the priority queue. I added an
+init-script idle wrapper for scheduler-traced runs, then ran a small targeted
+probe at `1000ms` and `1300ms` with scheduler, RichText, and all-data-span
+tracing.
+
+![Priority-queue idle timing](figures/119-priority-queue-idle-timing.png)
+
+The probe sees the expected priority-queue stack:
+`wp-priority-queue`'s `runWaitingList` callback is scheduled from
+`wp-data`'s `renderQueue.add` path. But the result disconfirms the simple
+"idle queue drained before the next input, therefore the next input is faster"
+theory:
+
+| Delay | Retained intervals with following input | Intervals with idle flush crossing following input | Priority idle callbacks | callbacks crossing following input | full retained latency p50 |
+| -----: | --------------------------------------: | -------------------------------------------------: | ----------------------: | --------------------------------: | ------------------------: |
+| `1000ms` | `3` | `3` | `14` | `3` | `19.8ms` |
+| `1300ms` | `3` | `0` | `11` | `0` | `24.4ms` |
+
+In this trace-heavy probe, the `1000ms` retained p50 is still lower than
+`1300ms`, but every retained `1000ms` interval that has a following input has a
+priority-queue idle callback scheduled before that following input and finishing
+after that following RichText input has already started. At `1300ms`, the idle
+flushes finish before the following input. So "the async render queue drained
+before the next input" is not the cause of the `1000ms` low band. It is actually
+more true for the slower `1300ms` case.
+
+This also tightens what remains open. The current data can prove that
+`renderQueue.add` enqueues idle work and that idle work is real, but the
+fast/slow decision is not explained by the idle queue merely having drained
+before the next RichText input. React render ownership may still matter for
+whole-cycle cost after the measured input, but it is no longer a plausible
+standalone explanation for why the `1000ms` EventDispatch/RichText path is in
+the low band.
+
 This supports a code-level theory:
 
 -   `useSelect` invalidates its cached value on store update before rerunning
@@ -5354,9 +5411,15 @@ no-op, raw-unknown, mark-next, stop/start, and selection-toggle controls. In eac
 case `3828` callbacks only queue async work and `716` synchronously run
 `onStoreChange`, `updateValue`, and `mapSelect`. The faster paths are therefore
 not faster because they do less selector-count work in the measured input. The
-remaining React-side open question is specifically about the ownership and cost
-of queued async render work outside the EventDispatch slice, not about how many
-selectors run synchronously in the slice.
+priority-queue idle probe closes the next simple render-queue version: the
+`renderQueue.add` callbacks are real `requestIdleCallback` work, but the `1000ms`
+low band is not caused by that idle work having drained before the next input.
+In the probe, the lower full retained-p50 `1000ms` run had priority-queue idle
+callbacks crossing the following RichText input in all three retained intervals
+with a following input; the slower `1300ms` run drained them before the following
+input. The remaining React-side open question is therefore about whole-cycle
+render ownership/cost after the measured input, not about selector counts,
+enqueue counts, or a drained-before-input idle queue.
 
 The most user-facing open question is narrower again. The visual proxy shows
 that the key-hold `1000ms` drop reaches editor-canvas input and next-frame timing:

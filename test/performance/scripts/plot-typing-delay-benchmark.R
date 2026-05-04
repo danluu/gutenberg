@@ -9658,6 +9658,135 @@ if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_inpu
 	)
 }
 
+priority_queue_idle_events_path <- file.path(data_dir, "typing-delay-priority-queue-idle-events.csv")
+if (file.exists(priority_queue_idle_events_path)) {
+	priority_queue_idle_events <- read_csv(priority_queue_idle_events_path, show_col_types = FALSE) %>%
+		mutate(
+			delay_label = paste0(delay_ms, "ms"),
+			sample_label = paste0("sample ", sample_index),
+			crossing_label = if_else(
+				crosses_next_input,
+				"finishes after next input starts",
+				"finishes before next input starts"
+			)
+		)
+
+	priority_queue_idle_intervals <- priority_queue_idle_events %>%
+		filter(!is_throwaway, has_next_input) %>%
+		group_by(delay_ms, delay_label, sample_index, sample_label) %>%
+		summarise(
+			next_input_after_input_end_ms = first(next_input_after_input_end_ms),
+			latency_ms = first(latency_ms),
+			keypress_ms = first(keypress_ms),
+			render_queue_add_count_in_interval = first(render_queue_add_count_in_interval),
+			render_queue_add_duration_in_interval_ms = first(render_queue_add_duration_in_interval_ms),
+			priority_idle_callbacks = n(),
+			priority_idle_callback_duration_ms = sum(idle_callback_duration_ms, na.rm = TRUE),
+			last_idle_finished_after_input_end_ms = max(finished_after_input_end_ms, na.rm = TRUE),
+			any_idle_crosses_next_input = any(crosses_next_input),
+			crossing_idle_callbacks = sum(crosses_next_input),
+			.groups = "drop"
+		)
+
+	priority_queue_idle_summary <- priority_queue_idle_intervals %>%
+		group_by(delay_ms) %>%
+		summarise(
+			retained_intervals_with_next_input = n(),
+			intervals_with_idle_crossing_next_input = sum(any_idle_crosses_next_input),
+			priority_idle_callbacks = sum(priority_idle_callbacks),
+			priority_idle_callbacks_crossing_next_input = sum(crossing_idle_callbacks),
+			latency_p50_ms = median(latency_ms, na.rm = TRUE),
+			keypress_p50_ms = median(keypress_ms, na.rm = TRUE),
+			render_queue_add_count_p50 = median(render_queue_add_count_in_interval, na.rm = TRUE),
+			render_queue_add_duration_p50_ms = median(render_queue_add_duration_in_interval_ms, na.rm = TRUE),
+			priority_idle_callback_duration_p50_ms = median(priority_idle_callback_duration_ms, na.rm = TRUE),
+			last_idle_finished_after_input_end_p50_ms = median(last_idle_finished_after_input_end_ms, na.rm = TRUE),
+			next_input_after_input_end_p50_ms = median(next_input_after_input_end_ms, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		left_join(
+			priority_queue_idle_events %>%
+				filter(!is_throwaway) %>%
+				distinct(delay_ms, sample_index, latency_ms, keypress_ms) %>%
+				group_by(delay_ms) %>%
+				summarise(
+					retained_samples = n(),
+					latency_all_retained_p50_ms = median(latency_ms, na.rm = TRUE),
+					keypress_all_retained_p50_ms = median(keypress_ms, na.rm = TRUE),
+					.groups = "drop"
+				),
+			by = "delay_ms"
+		)
+
+	write_csv(
+		priority_queue_idle_summary,
+		file.path(data_dir, "typing-delay-priority-queue-idle-summary.csv")
+	)
+
+	priority_queue_idle_plot_events <- priority_queue_idle_events %>%
+		filter(!is_throwaway, has_next_input) %>%
+		mutate(
+			sample_label = fct_rev(factor(sample_label)),
+			delay_label = factor(delay_label, levels = paste0(sort(unique(delay_ms)), "ms")),
+			crossing_label = factor(
+				crossing_label,
+				levels = c(
+					"finishes before next input starts",
+					"finishes after next input starts"
+				)
+			)
+		)
+
+	priority_queue_idle_plot_inputs <- priority_queue_idle_intervals %>%
+		mutate(
+			sample_label = fct_rev(factor(sample_label)),
+			delay_label = factor(delay_label, levels = paste0(sort(unique(delay_ms)), "ms"))
+		)
+
+	save_plot(
+		ggplot(priority_queue_idle_plot_events, aes(y = sample_label)) +
+			geom_segment(
+				aes(
+					x = fired_after_input_end_ms,
+					xend = finished_after_input_end_ms,
+					yend = sample_label,
+					color = crossing_label
+				),
+				linewidth = 2.2,
+				alpha = 0.88
+			) +
+			geom_point(
+				aes(x = scheduled_after_input_end_ms),
+				shape = 21,
+				size = 2.1,
+				stroke = 0.55,
+				fill = "white",
+				color = "#404040",
+				alpha = 0.8
+			) +
+			geom_point(
+				data = priority_queue_idle_plot_inputs,
+				aes(x = next_input_after_input_end_ms, y = sample_label),
+				inherit.aes = FALSE,
+				shape = 124,
+				size = 8,
+				stroke = 1.2,
+				color = "#111111"
+			) +
+			facet_wrap(vars(delay_label), ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = NULL) +
+			labs(
+				title = "Priority-queue idle flushes do not explain the 1000ms low band",
+				subtitle = "White dots show idle scheduling, colored bars show idle callback execution, black ticks show the next RichText input start",
+				x = "ms after current RichText input ends",
+				y = NULL
+			),
+		"119-priority-queue-idle-timing.png",
+		width = 12,
+		height = 7
+	)
+}
+
 if (exists("marker_allspan_input_batch_path") && file.exists(marker_allspan_input_batch_path)) {
 	use_select_phase_accounting <- read_csv(marker_allspan_input_batch_path, show_col_types = FALSE) %>%
 		filter(intervention %in% marker_allspan_core_interventions) %>%

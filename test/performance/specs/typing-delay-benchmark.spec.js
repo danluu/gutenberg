@@ -1695,6 +1695,110 @@ test.describe( 'Typing delay benchmark', () => {
 			}
 		}
 
+		async function setupSchedulerTracingInitScript() {
+			if ( ! traceSchedulers ) {
+				return;
+			}
+
+			await page.addInitScript( () => {
+				if ( window.__typingBenchmarkEarlyIdleTracingInstalled ) {
+					return;
+				}
+
+				const originalRequestIdleCallback =
+					window.__typingBenchmarkOriginalRequestIdleCallback ||
+					window.requestIdleCallback?.bind( window );
+				const originalCancelIdleCallback =
+					window.__typingBenchmarkOriginalCancelIdleCallback ||
+					window.cancelIdleCallback?.bind( window );
+
+				if ( ! originalRequestIdleCallback ) {
+					return;
+				}
+
+				window.__typingBenchmarkOriginalRequestIdleCallback =
+					originalRequestIdleCallback;
+				window.__typingBenchmarkOriginalCancelIdleCallback =
+					originalCancelIdleCallback;
+				window.__typingBenchmarkSchedulerEvents =
+					window.__typingBenchmarkSchedulerEvents || [];
+				window.__typingBenchmarkSchedulerEventId =
+					window.__typingBenchmarkSchedulerEventId || 0;
+
+				function callbackSource( callback ) {
+					return typeof callback === 'function'
+						? Function.prototype.toString
+								.call( callback )
+								.slice( 0, 240 )
+						: String( callback ).slice( 0, 240 );
+				}
+
+				function stackTrace() {
+					return new Error().stack?.slice( 0, 1000 );
+				}
+
+				function nextSchedulerEventId() {
+					window.__typingBenchmarkSchedulerEventId++;
+					return window.__typingBenchmarkSchedulerEventId;
+				}
+
+				window.requestIdleCallback = ( callback, options ) => {
+					const event = {
+						id: nextSchedulerEventId(),
+						type: 'requestIdleCallback',
+						scheduledAtMs: performance.now(),
+						timeoutMs: options?.timeout,
+						callbackSource: callbackSource( callback ),
+						stack: stackTrace(),
+						wrapperPhase: 'init-script',
+					};
+					window.__typingBenchmarkSchedulerEvents.push( event );
+
+					const idleId = originalRequestIdleCallback(
+						function wrappedTypingBenchmarkEarlyIdleCallback(
+							deadline
+						) {
+							event.firedAtMs = performance.now();
+							event.didTimeout = deadline.didTimeout;
+							event.timeRemainingMs = deadline.timeRemaining();
+							try {
+								return callback.call( this, deadline );
+							} finally {
+								event.finishedAtMs = performance.now();
+							}
+						},
+						options
+					);
+					event.nativeId = Number( idleId );
+					return idleId;
+				};
+
+				window.cancelIdleCallback = ( idleId ) => {
+					const numericIdleId = Number( idleId );
+					for (
+						let i =
+							window.__typingBenchmarkSchedulerEvents.length - 1;
+						i >= 0;
+						i--
+					) {
+						const event =
+							window.__typingBenchmarkSchedulerEvents[ i ];
+						if (
+							event.type === 'requestIdleCallback' &&
+							event.nativeId === numericIdleId &&
+							event.clearedAtMs === undefined
+						) {
+							event.clearedAtMs = performance.now();
+							break;
+						}
+					}
+					return originalCancelIdleCallback?.( idleId );
+				};
+
+				window.__typingBenchmarkEarlyIdleTracingInstalled = true;
+			} );
+		}
+
 		async function resetVisualLatencyTracing() {
 			if ( ! traceVisualLatency ) {
 				return;
@@ -3633,6 +3737,7 @@ setInterval(() => {}, 2147483647);
 		await setupRichTextSpanTracingInitScript();
 		await setupDataSpanTracingInitScript();
 		await setupVisualLatencyTracingInitScript();
+		await setupSchedulerTracingInitScript();
 		if ( ! freshEditorPerDelay ) {
 			editorSetup = await setupEditor();
 		}
