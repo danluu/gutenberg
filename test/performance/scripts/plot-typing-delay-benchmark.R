@@ -2939,6 +2939,9 @@ site_pattern_predicate_validation_samples_path <- file.path(data_dir, "typing-de
 site_pattern_predicate_validation_runs_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-runs.csv")
 site_pattern_predicate_validation_summary_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-summary.csv")
 site_pattern_predicate_validation_resource_path <- file.path(data_dir, "typing-delay-pattern-readiness-predicate-validation-resources.csv")
+post_pattern_wait_matrix_samples_path <- file.path(data_dir, "typing-delay-post-pattern-wait-matrix-samples.csv")
+post_pattern_wait_matrix_runs_path <- file.path(data_dir, "typing-delay-post-pattern-wait-matrix-runs.csv")
+post_pattern_wait_matrix_summary_path <- file.path(data_dir, "typing-delay-post-pattern-wait-matrix-summary.csv")
 
 read_site_pattern_short_wait_runs <- function() {
 	raw_dirs <- c(
@@ -3187,6 +3190,80 @@ read_site_pattern_resource_detail <- function() {
 				TRUE ~ resource_path
 			)
 		)
+}
+
+read_post_pattern_wait_matrix <- function() {
+	artifact_root <- file.path(repo_root, "test/performance/artifacts")
+	if (!dir.exists(artifact_root)) {
+		return(NULL)
+	}
+
+	raw_dirs <- list.dirs(artifact_root, recursive = FALSE, full.names = TRUE) %>%
+		keep(~ str_detect(basename(.x), "^post-pattern-wait-matrix-[0-9]+$"))
+	if (length(raw_dirs) == 0) {
+		return(NULL)
+	}
+
+	sample_rows <- list()
+	run_rows <- list()
+	for (raw_dir in raw_dirs) {
+		run_set <- basename(raw_dir)
+		run_dirs <- list.dirs(raw_dir, recursive = FALSE, full.names = TRUE)
+		for (run_dir in run_dirs) {
+			run_name <- basename(run_dir)
+			match <- str_match(run_name, "^wait-([0-9]+)-run-([0-9]+)$")
+			if (is.na(match[1, 1])) {
+				next
+			}
+			json_files <- list.files(run_dir, pattern = "^post-editor-results-.*\\.json$", full.names = TRUE)
+			if (length(json_files) == 0) {
+				next
+			}
+
+			raw <- fromJSON(json_files[[1]], flatten = TRUE)
+			values <- as.numeric(raw$results$loadPatterns)
+			if (length(values) == 0) {
+				next
+			}
+			measurement_idle_wait_ms <- as.integer(raw$metadata$measurementIdleWaitMs %||% match[1, 2])
+			local_run <- as.integer(match[1, 3])
+
+			sample_rows[[length(sample_rows) + 1]] <- tibble(
+				run_set = run_set,
+				local_run = local_run,
+				measurement_idle_wait_ms = measurement_idle_wait_ms,
+				sample_index = seq_along(values),
+				load_patterns_ms = values
+			)
+
+			run_rows[[length(run_rows) + 1]] <- tibble(
+				run_set = run_set,
+				local_run = local_run,
+				measurement_idle_wait_ms = measurement_idle_wait_ms,
+				retained_samples = length(values),
+				p10_ms = quant(values, 0.1),
+				p25_ms = quant(values, 0.25),
+				p50_ms = quant(values, 0.5),
+				p75_ms = quant(values, 0.75),
+				p90_ms = quant(values, 0.9),
+				mean_ms = mean(values),
+				sd_ms = sd(values),
+				min_ms = min(values),
+				max_ms = max(values)
+			)
+		}
+	}
+
+	if (length(run_rows) == 0) {
+		return(NULL)
+	}
+
+	list(
+		samples = bind_rows(sample_rows) %>%
+			arrange(measurement_idle_wait_ms, local_run, sample_index),
+		runs = bind_rows(run_rows) %>%
+			arrange(measurement_idle_wait_ms, local_run)
+	)
 }
 
 site_pattern_predicate_validation <- read_site_pattern_predicate_validation()
@@ -16667,7 +16744,7 @@ write_csv(
 open_question_next_instrumentation_matrix <- tribble(
 	~short_label, ~category, ~current_answer_strength, ~next_work_cost, ~impact_score, ~decision, ~current_answer, ~remaining_unknown, ~recommended_next_step,
 	"Typing startup wait", "CI engineering", 5, 1, 2, "closed locally", "Change-trigger contract closes the operational question: current Typing has 0ms extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation.", "Whether a future CI image, helper family, trace placement, retained/throwaway policy, or reported statistic changes enough to invalidate the exact-spec anchor.", "Do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor 0ms versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry.",
-	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract now has to be split by spec: Site Editor loadPatterns has an opt-in getBlockPatterns/resource-quiet predicate path and fixed 500ms is the best local fixed fallback, but Post Editor loadPatterns still has only a fixed pre-inserter wait and uses injected local patterns rather than the REST pattern resolver. A generic loadPatterns wait claim hides two different readiness contracts.", "Whether the Site Editor resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; separately, whether Post Editor loadPatterns can remove or reduce its 1000ms fixed wait without changing its local-pattern/inserter metric boundary.", "Validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; separately run Post Editor loadPatterns at 0/250/500/1000ms plus any source-specific inserter/pattern-tab readiness predicate before claiming full loadPatterns wait savings.",
+	"Pattern-loading wait", "CI engineering", 5, 3, 4, "predicate validation", "CI validation contract now has to be split by spec: Site Editor loadPatterns has an opt-in getBlockPatterns/resource-quiet predicate path and fixed 500ms is the best local fixed fallback, while a focused Post Editor loadPatterns matrix favors 0ms over the current fixed pre-inserter wait. A generic loadPatterns wait claim hides two different readiness contracts.", "Whether the Site Editor resource-quiet guard or fixed 500ms fallback is stable across CI, macOS versions, containers, and source-path changes; separately, whether the Post Editor 0ms result is portable across CI/mac/container lanes without preview/canvas misses, first-iteration artifacts, or resource movement.", "Validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; validate Post Editor 0ms against 1000ms with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full loadPatterns wait savings.",
 		"Input API phase boundary", "CI engineering", 5, 1, 3, "closed locally", "CI helper decision contract closes the practical boundary: type() and pressSequentially are the same helper family when target/options match, ordinary locator.press is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper.", "Only the lower-level Playwright/Chromium runtime mechanism remains: progress.wait versus harness setTimeout, utility-world focus/checkpoint work, and their scheduler interaction.", "No more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition.",
 	"Low-risk selector guards", "product optimization", 5, 2, 4, "first row source-span confirmed", "The pattern-override selected-only patch is implemented locally and now has a rebuilt all-data-spans microscope result: the editor-side support-check useSelect appears as one selected metadata entry, and the selected ControlsWithStoreSubscription path appears as one metadata entry. A source-map residual audit shows the remaining hot owners are BlockListBlockProvider, BlockListItems, and useInnerBlocksProps; the next-prototype and store-signal audits show that Provider and useInnerBlocksProps need explicit private revision or affected-set keys, not just existing broad selectors.", "Aggregate before/after p50 for the pattern patch if a production magnitude claim is needed, plus implementation evidence that the provider and inner-block prototypes preserve public filter props, selection/structure/editability/settings invalidation, layout/settings inheritance, and any new private revision/affected-set selector semantics.", "Prototype BlockListBlockProvider first with per-clientId own-block plus selection/structure/settings keys; use lastBlockAttributesChange only as an attribute fast path, not a full contract. Then prototype useInnerBlocksProps with root/order/settings/editability keys, including inherited layout settings.",
 		"Store subscriber partition", "product optimization", 5, 4, 5, "research after local guards", "Public-selector and branch-aware compatibility audits narrow the viable paths: keeping the root notification is compatible but no-win, a private useBlockSync side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware @wordpress/data subscriptions are the only compatibility-preserving fanout route found. The branch-aware route must preserve dynamic store sets, registry-selector cross-store reads, parent registries, late store registration, render/subscription races, async queue cancellation, no-deps withSelect closures, generic stores, shallow-equality semantics, and public store-level subscribe semantics.", "Whether the project accepts a broad data-layer selector/branch-aware subscription prototype, keeps root notification semantics and forgoes the 23.2ms fanout win, or explicitly changes/deprecates public isLastBlockChangePersistent and store-level subscribe notification behavior.", "After local guards, prototype the useBlockSync side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes the branch-aware useSelect compatibility matrix plus marker-only source-span gates.",
@@ -17198,10 +17275,10 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 			22,
 			"not implemented",
 			"One editor instance with injected local `__experimentalAdditionalBlockPatterns`; waits before opening the inserter, then measures clicking the local Test pattern category and waiting for preview canvases' first blocks.",
-			"The Site Editor REST-pattern predicate does not map cleanly: the patterns are injected into editor settings, not fetched from the block-patterns REST resolver, and the fixed wait may be guarding inserter/sidebar/render setup instead.",
-			"Run a separate post-editor loadPatterns matrix for 0ms, 250ms, 500ms, and 1000ms plus any source-specific inserter/pattern-tab readiness predicate; report retained q50, q50 sd, preview/canvas misses, first-iteration behavior, and resource movement.",
+			"Separate local matrix with eight runs per wait shows no q50 or stability reason to keep the fixed wait: 0ms median run q50 is 345.6ms with 1.8ms run-to-run q50 sd, while 1000ms is 349.5ms with 2.4ms sd.",
+			"Validate Post Editor loadPatterns 0ms versus 1000ms on CI/mac/container lanes with retained q50, run-to-run q50 sd, p90/mean, preview/canvas misses, first-iteration behavior, and source/resource telemetry before removing the wait in CI.",
 			5,
-			"separate validation required",
+			"CI validation required",
 			"shared metric name",
 			"test/performance/config/performance-reporter.ts:36,116",
 			"Both specs append to `results.loadPatterns`, and the reporter curates each suite by q25/q50/q75.",
@@ -17232,6 +17309,7 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 					decision,
 					levels = c(
 						"predicate validation",
+						"CI validation required",
 						"separate validation required",
 						"split reporting required",
 						"out of pattern scope"
@@ -17250,8 +17328,8 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 				post_editor_two_branch_wait_s = two_branch_wait_s[spec_metric == "post-editor loadPatterns"],
 				combined_load_patterns_two_branch_wait_s = two_branch_wait_s[spec_metric == "shared metric name"],
 				other_nontyping_two_branch_wait_s = two_branch_wait_s[spec_metric == "other non-Typing sleeps"],
-				key_conclusion = "Pattern-loading wait is not one contract: Site Editor has an opt-in predicate path, while Post Editor loadPatterns still needs separate validation because it uses injected local patterns and a different setup boundary.",
-				recommended_next_step = "Validate Site Editor block-patterns-resource-quiet/fixed-500 against fixed-1000, and separately run Post Editor loadPatterns 0/250/500/1000 plus source-specific readiness checks before claiming the full loadPatterns wait savings.",
+				key_conclusion = "Pattern-loading wait is not one contract: Site Editor has an opt-in predicate path, while Post Editor loadPatterns uses injected local patterns and the local matrix now favors removing the fixed wait.",
+				recommended_next_step = "Validate Site Editor block-patterns-resource-quiet/fixed-500 against fixed-1000; validate Post Editor loadPatterns 0ms against fixed-1000 in CI/mac/container lanes before claiming full loadPatterns wait savings.",
 				.groups = "drop"
 			)
 
@@ -17283,6 +17361,7 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 				scale_shape_manual(
 					values = c(
 						"predicate validation" = 16,
+						"CI validation required" = 17,
 						"separate validation required" = 17,
 						"split reporting required" = 15,
 						"out of pattern scope" = 3
@@ -17293,7 +17372,7 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 				scale_x_continuous(labels = label_number(suffix = "s")) +
 				labs(
 					title = "Pattern-loading wait must be split by spec",
-					subtitle = "Site Editor has a predicate path; Post Editor loadPatterns and other non-Typing sleeps need separate validation",
+					subtitle = "Site Editor has a predicate path; Post Editor now has a local 0ms candidate; other non-Typing sleeps are separate",
 					x = "Two-branch fixed-wait exposure at current 1000ms wait",
 					y = NULL
 				) +
@@ -17415,6 +17494,142 @@ if (all(file.exists(pattern_wait_decision_inputs))) {
 		width = 12,
 		height = 7.6
 	)
-}
+	}
 
-message("Wrote plots to: ", figure_dir)
+	post_pattern_wait_matrix <- read_post_pattern_wait_matrix()
+	if (!is.null(post_pattern_wait_matrix)) {
+		post_pattern_wait_samples <- post_pattern_wait_matrix$samples %>%
+			mutate(
+				wait_label = factor(
+					paste0(measurement_idle_wait_ms, "ms"),
+					levels = paste0(sort(unique(measurement_idle_wait_ms)), "ms")
+				)
+			)
+		post_pattern_wait_runs <- post_pattern_wait_matrix$runs %>%
+			mutate(
+				wait_label = factor(
+					paste0(measurement_idle_wait_ms, "ms"),
+					levels = paste0(sort(unique(measurement_idle_wait_ms)), "ms")
+				)
+			)
+
+		write_csv(post_pattern_wait_samples, post_pattern_wait_matrix_samples_path)
+		write_csv(post_pattern_wait_runs, post_pattern_wait_matrix_runs_path)
+
+		post_pattern_wait_summary <- post_pattern_wait_runs %>%
+			group_by(measurement_idle_wait_ms) %>%
+			summarise(
+				runs = n(),
+				retained_samples_per_run = median(retained_samples),
+				total_retained_samples = sum(retained_samples),
+				median_run_q50_ms = median(p50_ms, na.rm = TRUE),
+				mean_run_q50_ms = mean(p50_ms, na.rm = TRUE),
+				run_to_run_q50_sd_ms = sd(p50_ms, na.rm = TRUE),
+				median_run_mean_ms = median(mean_ms, na.rm = TRUE),
+				median_run_p90_ms = median(p90_ms, na.rm = TRUE),
+				median_within_run_sd_ms = median(sd_ms, na.rm = TRUE),
+				min_run_q50_ms = min(p50_ms, na.rm = TRUE),
+				max_run_q50_ms = max(p50_ms, na.rm = TRUE),
+				.groups = "drop"
+			) %>%
+			mutate(
+				two_branch_explicit_wait_s = 22 * measurement_idle_wait_ms / 1000,
+				two_branch_saved_vs_1000ms_s = 22 * (1000 - measurement_idle_wait_ms) / 1000
+			)
+
+		post_pattern_baseline_q50 <- post_pattern_wait_summary %>%
+			filter(measurement_idle_wait_ms == 1000) %>%
+			pull(median_run_q50_ms)
+		post_pattern_baseline_sd <- post_pattern_wait_summary %>%
+			filter(measurement_idle_wait_ms == 1000) %>%
+			pull(run_to_run_q50_sd_ms)
+		if (length(post_pattern_baseline_q50) == 0 || !is.finite(post_pattern_baseline_q50)) {
+			post_pattern_baseline_q50 <- NA_real_
+		}
+		if (length(post_pattern_baseline_sd) == 0 || !is.finite(post_pattern_baseline_sd)) {
+			post_pattern_baseline_sd <- NA_real_
+		}
+
+		post_pattern_wait_summary <- post_pattern_wait_summary %>%
+			mutate(
+				q50_delta_vs_1000ms_ms = median_run_q50_ms - post_pattern_baseline_q50,
+				q50_sd_delta_vs_1000ms_ms = run_to_run_q50_sd_ms - post_pattern_baseline_sd,
+				local_decision = case_when(
+					measurement_idle_wait_ms == 0 ~ "best local candidate",
+					measurement_idle_wait_ms == 1000 ~ "current baseline",
+					TRUE ~ "no local benefit"
+				)
+			)
+		write_csv(post_pattern_wait_summary, post_pattern_wait_matrix_summary_path)
+
+		save_plot(
+			ggplot(post_pattern_wait_runs, aes(wait_label, p50_ms, color = wait_label)) +
+				geom_jitter(width = 0.11, height = 0, size = 2.4, alpha = 0.82, show.legend = FALSE) +
+				stat_summary(fun = median, geom = "crossbar", width = 0.46, linewidth = 0.35, color = "grey20") +
+				scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+				labs(
+					title = "Post-editor pattern loading does not need the fixed wait locally",
+					subtitle = "Exact Loading Patterns spec path; eight runs per wait, 10 retained samples per run",
+					x = "MEASUREMENT_IDLE_WAIT_MS before opening the inserter",
+					y = "Reported loadPatterns q50"
+				),
+			"157-post-pattern-wait-matrix-q50.png",
+			width = 9.2,
+			height = 5.8
+		)
+
+		post_pattern_wait_tradeoff <- post_pattern_wait_summary %>%
+			select(
+				measurement_idle_wait_ms,
+				two_branch_saved_vs_1000ms_s,
+				median_run_q50_ms,
+				run_to_run_q50_sd_ms,
+				median_run_p90_ms
+			) %>%
+			pivot_longer(
+				cols = c(median_run_q50_ms, run_to_run_q50_sd_ms, median_run_p90_ms),
+				names_to = "statistic",
+				values_to = "value_ms"
+			) %>%
+			mutate(
+				statistic = factor(
+					statistic,
+					levels = c("median_run_q50_ms", "median_run_p90_ms", "run_to_run_q50_sd_ms"),
+					labels = c("median reported q50", "median reported p90", "run-to-run q50 sd")
+				),
+				wait_label = factor(
+					paste0(measurement_idle_wait_ms, "ms"),
+					levels = paste0(sort(unique(measurement_idle_wait_ms)), "ms")
+				)
+			)
+
+		save_plot(
+			ggplot(
+				post_pattern_wait_tradeoff,
+				aes(two_branch_saved_vs_1000ms_s, value_ms, color = wait_label)
+			) +
+				geom_point(size = 3.2, alpha = 0.9) +
+				geom_text(
+					aes(label = wait_label),
+					size = 3.1,
+					color = "grey20",
+					nudge_y = 0.8,
+					show.legend = FALSE
+				) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Wait") +
+				scale_x_continuous(labels = label_number(suffix = "s")) +
+				facet_wrap(vars(statistic), scales = "free_y", ncol = 1) +
+				labs(
+					title = "Post-editor pattern wait is pure cost in the local matrix",
+					subtitle = "Saving the full 22s two-branch wait does not worsen the reported q50 or q50 volatility here",
+					x = "Two-branch fixed-wait time saved versus current 1000ms",
+					y = "Metric value"
+				) +
+				theme(legend.position = "bottom"),
+			"158-post-pattern-wait-runtime-reliability.png",
+			width = 9.5,
+			height = 8.2
+		)
+	}
+
+	message("Wrote plots to: ", figure_dir)

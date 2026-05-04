@@ -744,6 +744,9 @@ The R script derives:
     split between Site Editor `loadPatterns`, Post Editor `loadPatterns`, and
     other non-Typing fixed sleeps that must not inherit the same predicate
     claim.
+-   `data/typing-delay-post-pattern-wait-matrix-*.csv`: focused Post Editor
+    `loadPatterns` wait matrix at `0ms`, `250ms`, `500ms`, and `1000ms`, using
+    the exact spec path with 8 runs per wait and 10 retained samples per run.
 -   `data/typing-delay-ci-comparable-0-1400-dense-*.csv`: CI-comparable dense
     delay sweep from `0ms` to `1400ms` in `10ms` steps, using a fresh
     saved/reopened large-post draft per delay and 10 retained samples plus 1
@@ -1990,18 +1993,39 @@ clicking the local `Test` pattern category.
 | Row | Two-branch fixed-wait exposure | Current conclusion |
 | --- | -----------------------------: | ------------------ |
 | Site Editor `loadPatterns` | `20s` | predicate path exists; validate `getBlockPatterns` plus resource quiet and fixed `500ms` against fixed `1000ms` |
-| Post Editor `loadPatterns` | `22s` | separate validation required; Site Editor's REST-pattern predicate does not map cleanly to injected local patterns |
+| Post Editor `loadPatterns` | `22s` | local matrix favors `0ms`; validate against fixed `1000ms` in CI/mac/container lanes before removing the wait |
 | Combined `loadPatterns` name | `42s` | split reporting required; one metric name hides two readiness contracts |
 | Other non-Typing sleeps | `110s` | out of pattern scope; pattern-readiness evidence should not be used to remove these waits |
 
 That makes the open CI action more precise. Do not claim the full `42s`
 two-branch `loadPatterns` wait saving from the Site Editor predicate alone. The
 Site Editor candidate should be validated with readiness telemetry as above.
-Post Editor needs its own matrix, at minimum fixed `0ms`, `250ms`, `500ms`, and
-`1000ms`, plus any source-specific predicate for the inserter/pattern-tab
-state. That run should report retained q50, q50 sd, first-iteration behavior,
-preview/canvas misses, and resource movement. The other non-Typing sleeps are a
-third bucket and need metric-specific repeated runs.
+I then ran the separate Post Editor matrix using the exact
+`post-editor.spec.js` Loading Patterns path. The test injects local
+`__experimentalAdditionalBlockPatterns`, waits before opening the global
+inserter, starts the timer only after the Patterns tab is open, clicks the local
+`Test` category, and waits for each preview canvas' first block. That is why the
+Site Editor REST-pattern predicate is not the right model for this path.
+
+![Post Editor pattern wait q50](figures/157-post-pattern-wait-matrix-q50.png)
+
+![Post Editor pattern wait runtime and reliability](figures/158-post-pattern-wait-runtime-reliability.png)
+
+| Wait | Runs | Retained samples | Median run q50 | Run-to-run q50 sd | Median run p90 | Two-branch wait saved vs `1000ms` |
+| ---: | ---: | ---------------: | -------------: | ----------------: | -------------: | -------------------------------: |
+| `0ms` | `8` | `80` | `345.6ms` | `1.8ms` | `363.5ms` | `22.0s` |
+| `250ms` | `8` | `80` | `347.5ms` | `3.2ms` | `367.7ms` | `16.5s` |
+| `500ms` | `8` | `80` | `348.0ms` | `1.5ms` | `365.8ms` | `11.0s` |
+| `1000ms` | `8` | `80` | `349.5ms` | `2.3ms` | `362.4ms` | `0.0s` |
+
+Locally, Post Editor `loadPatterns` is the opposite of the Site Editor pattern
+case: the fixed wait is pure wall-clock cost in the measured q50 view. Removing
+it saves `22s` in the normal two-branch comparison and does not increase the
+reported q50 or q50 volatility in these 32 focused runs. The deployment gate is
+now portability, not diagnosis: validate `0ms` versus fixed `1000ms` on the
+same CI/mac/container lanes with retained q50, q50 sd, p90/mean, first-iteration
+behavior, preview/canvas misses, and source/resource telemetry. The other
+non-Typing sleeps are a third bucket and need metric-specific repeated runs.
 
 One naming trap in the plain Typing helper: `BROWSER_IDLE_WAIT = 1000` is the
 delay passed to `target.type()`, not a separate wait before that Typing benchmark
@@ -7786,6 +7810,14 @@ lower bound for a predicate but is too volatile to recommend as a blind
 replacement without CI validation, and waiting for preview canvases is an
 invalid predicate because it would remove the measured workload.
 
+The Post Editor `loadPatterns` follow-up splits that exception in two. The Site
+Editor result does not apply directly because Post Editor injects local patterns
+into editor settings and measures the local `Test` category. In the focused Post
+Editor matrix, `0ms` had a lower median run q50 than `1000ms` (`345.6ms` versus
+`349.5ms`) and lower run-to-run q50 sd (`1.8ms` versus `2.3ms`). That makes
+Post Editor `0ms` the local candidate, while Site Editor still needs the
+predicate or fixed-`500ms` validation path.
+
 The key-hold `1000ms` / `1300ms` explanation is narrower than the original
 Chrome/EventDispatch story. The visible cost is Gutenberg RichText/data fanout,
 but recent ordinary/utility CPU activity can move that measured path between
@@ -8112,7 +8144,7 @@ The high-level split is:
 | Question | Current answer | Next useful work |
 | -------- | -------------- | ---------------- |
 | Typing startup wait | change-trigger contract closes the operational question: current Typing has `0ms` extra post-setup wait, added waits do not improve retained-q50 stability, first-input/tail questions need a separate statistic, and non-Typing sleeps need metric-specific validation | do not add a Typing startup wait under the current metric; reopen only on a trigger change, then run exact post-editor `0ms` versus candidate-wait checks with reporter, first-key, retained-q50, tail, and runtime telemetry |
-| Pattern-loading wait | CI validation contract narrows the deployment choice: pure `getBlockPatterns` is rejected locally, `getBlockPatterns` plus resource quiet is the first replacement candidate, fixed `500ms` is only a validated fallback, and fixed `1000ms` remains the conservative baseline if either replacement changes the metric boundary | run the contract in CI/mac/container lanes with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry before changing the fixed wait |
+| Pattern-loading wait | CI validation contract has to stay split by spec: Site Editor still needs predicate/fixed-`500ms` validation, while the focused Post Editor matrix favors `0ms` over the current fixed pre-inserter wait | validate Site Editor with predicate wait, timeout/fallback, resource movement, endpoint-group, retained-count, preview/canvas, q50 range, and environment telemetry; validate Post Editor `0ms` against `1000ms` with retained q50, q50 sd, p90/mean, first-iteration behavior, and source/resource telemetry before claiming full `loadPatterns` wait savings |
 | Input API phase boundary | CI helper decision contract closes the practical boundary: `type()` and `pressSequentially()` are the same helper family when target/options match, ordinary `locator.press()` is only a checkpoint control, helper-family switches are metric-definition changes, and realistic hold choices must be scoped inside the selected helper | no more broad API-boundary sweeps; if the suite changes helper spelling, run one exact CI-settings check, and if it changes helper family, treat it as a new metric definition |
 | Low-risk selector guards | the pattern-override selected-only patch is implemented locally and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry, with `ControlsWithStoreSubscription` still gated to one selected controls entry; focused unit coverage covers unselected, selected-supported, selected-unsupported, selection-transition, selected-settings, and unsynced-reset paths | move to the non-edited `BlockListBlockProvider` and `useInnerBlocksProps` prototypes; run aggregate before/after p50 only if a production magnitude claim is needed |
 | Store subscriber partition | public-selector design runbook narrows the viable paths: keeping the root notification is compatible but no-win, a private `useBlockSync` side channel is a behavior seam but no-win, an external slot fails subscribed compatibility, and selector-aware or branch-aware `@wordpress/data` subscriptions are the only compatibility-preserving fanout route found | after local guards, prototype the `useBlockSync` side channel only as a behavior seam; claim no fanout win until a data-layer notification prototype passes subscribed-selector compatibility tests and marker-only fanout/source-span gates |
