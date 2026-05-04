@@ -4718,9 +4718,17 @@ ci_hold_duration_sample_path <- file.path(data_dir, "typing-delay-ci-hold-durati
 ci_hold_duration_run_path <- file.path(data_dir, "typing-delay-ci-hold-duration-runs.csv")
 ci_hold_duration_summary_path <- file.path(data_dir, "typing-delay-ci-hold-duration-summary.csv")
 ci_hold_duration_runtime_path <- file.path(data_dir, "typing-delay-ci-hold-duration-runtime-reliability.csv")
+ci_hold_duration_round_robustness_path <- file.path(data_dir, "typing-delay-ci-hold-duration-round-robustness.csv")
+ci_hold_duration_round_sign_path <- file.path(data_dir, "typing-delay-ci-hold-duration-round-sign-check.csv")
+ci_hold_duration_leave_one_path <- file.path(data_dir, "typing-delay-ci-hold-duration-leave-one-round.csv")
+ci_hold_duration_leave_one_summary_path <- file.path(data_dir, "typing-delay-ci-hold-duration-leave-one-round-summary.csv")
+ci_hold_duration_event_shape_path <- file.path(data_dir, "typing-delay-ci-hold-duration-event-shape.csv")
+ci_hold_duration_sample_position_path <- file.path(data_dir, "typing-delay-ci-hold-duration-sample-position.csv")
 ci_hold_duration_artifact_dirs <- c(
-	`50ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-50ms"),
-	`100ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-100ms")
+	`current CI held key` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-keyboard"),
+	`100ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-hold-100"),
+	`50ms hold then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-hold-50"),
+	`tap then wait` = file.path(repo_root, "test/performance/artifacts/typing-delay-ci-hold-duration-between-keys")
 )
 ci_hold_duration_json_paths <- map_chr(ci_hold_duration_artifact_dirs, function(artifact_dir) {
 	paths <- Sys.glob(file.path(artifact_dir, "typing-delay-benchmark-*.json"))
@@ -4730,35 +4738,22 @@ ci_hold_duration_json_paths <- map_chr(ci_hold_duration_artifact_dirs, function(
 	paths[[which.max(file.info(paths)$mtime)]]
 })
 
-if (nrow(ci_key_mode_samples) > 0 && all(!is.na(ci_hold_duration_json_paths))) {
-	ci_hold_duration_base_samples <- ci_key_mode_samples %>%
-		filter(input_mode %in% c("current CI held key", "tap then wait")) %>%
-		mutate(
-			run_key = case_when(
-				input_mode == "current CI held key" ~ "keyboard",
-				input_mode == "tap then wait" ~ "between-keys",
-				TRUE ~ NA_character_
-			),
-			requested_hold_ms = case_when(
-				input_mode == "current CI held key" ~ delay_ms,
-				input_mode == "tap then wait" ~ 0,
-				TRUE ~ NA_real_
-			),
-			effective_hold_ms = requested_hold_ms,
-			post_keyup_wait_ms = case_when(
-				input_mode == "current CI held key" ~ 0,
-				input_mode == "tap then wait" ~ delay_ms,
-				TRUE ~ NA_real_
-			)
-		)
-
-	ci_hold_duration_fixed_samples <- imap_dfr(ci_hold_duration_json_paths, function(json_path, input_mode) {
+if (all(!is.na(ci_hold_duration_json_paths))) {
+	ci_hold_duration_samples <- imap_dfr(ci_hold_duration_json_paths, function(json_path, input_mode) {
 		raw <- fromJSON(json_path, flatten = TRUE)
-		requested_hold_ms <- raw$metadata$keyHoldMs %||% NA_real_
+		requested_hold_ms <- case_when(
+			raw$metadata$delayMode == "keyboard" ~ NA_real_,
+			raw$metadata$delayMode == "between-keys" ~ 0,
+			TRUE ~ as.numeric(raw$metadata$keyHoldMs %||% NA_real_)
+		)
 		as_tibble(raw$records) %>%
 			transmute(
 				input_mode,
-				run_key = paste0("hold_", requested_hold_ms),
+				run_key = case_when(
+					raw$metadata$delayMode == "keyboard" ~ "keyboard",
+					raw$metadata$delayMode == "between-keys" ~ "between-keys",
+					TRUE ~ paste0("hold_", requested_hold_ms)
+				),
 				delay_mode = raw$metadata$delayMode,
 				requested_hold_ms = requested_hold_ms,
 				json_path = sub(paste0(repo_root, "/"), "", json_path, fixed = TRUE),
@@ -4767,6 +4762,7 @@ if (nrow(ci_key_mode_samples) > 0 && all(!is.na(ci_hold_duration_json_paths))) {
 				editor_setup_index = editorSetupIndex,
 				sample_index = sampleIndex,
 				is_throwaway = isThrowaway,
+				keydown_event_count = keydownEventCount,
 				latency_ms = latencyMs,
 				keydown_ms = keydownMs,
 				keypress_ms = keypressMs,
@@ -4776,14 +4772,17 @@ if (nrow(ci_key_mode_samples) > 0 && all(!is.na(ci_hold_duration_json_paths))) {
 	}) %>%
 		mutate(
 			requested_hold_ms = as.numeric(requested_hold_ms),
-			effective_hold_ms = pmin(requested_hold_ms, delay_ms),
-			post_keyup_wait_ms = pmax(delay_ms - effective_hold_ms, 0)
+			effective_hold_ms = case_when(
+				delay_mode == "keyboard" ~ delay_ms,
+				delay_mode == "between-keys" ~ 0,
+				TRUE ~ pmin(requested_hold_ms, delay_ms)
+			),
+			post_keyup_wait_ms = case_when(
+				delay_mode == "keyboard" ~ 0,
+				delay_mode == "between-keys" ~ delay_ms,
+				TRUE ~ pmax(delay_ms - effective_hold_ms, 0)
+			)
 		)
-
-	ci_hold_duration_samples <- bind_rows(
-		ci_hold_duration_base_samples,
-		ci_hold_duration_fixed_samples
-	)
 	write_csv(ci_hold_duration_samples, ci_hold_duration_sample_path)
 } else if (file.exists(ci_hold_duration_sample_path)) {
 	ci_hold_duration_samples <- read_csv(ci_hold_duration_sample_path, show_col_types = FALSE)
@@ -4793,6 +4792,33 @@ if (nrow(ci_key_mode_samples) > 0 && all(!is.na(ci_hold_duration_json_paths))) {
 
 if (nrow(ci_hold_duration_samples) > 0) {
 	ci_hold_duration_retained <- ci_hold_duration_samples %>% filter(!is_throwaway)
+	ci_hold_duration_event_shape <- ci_hold_duration_samples %>%
+		group_by(input_mode, delay_ms, round) %>%
+		summarize(
+			expected_key_groups = n(),
+			observed_key_groups = sum(!is.na(latency_ms)),
+			keydown_events = sum(keydown_event_count, na.rm = TRUE),
+			keypress_events = sum(!is.na(keypress_ms)),
+			keyup_events = sum(!is.na(keyup_ms)),
+			.groups = "drop"
+		)
+	write_csv(ci_hold_duration_event_shape, ci_hold_duration_event_shape_path)
+
+	ci_hold_duration_sample_position <- ci_hold_duration_retained %>%
+		filter(
+			input_mode == "current CI held key",
+			delay_ms %in% c(250, 500),
+			sample_index %in% c(1, 10)
+		) %>%
+		group_by(delay_ms, sample_index) %>%
+		summarize(
+			median_latency_ms = median(latency_ms),
+			median_keypress_ms = median(keypress_ms),
+			sample_count = n(),
+			.groups = "drop"
+		)
+	write_csv(ci_hold_duration_sample_position, ci_hold_duration_sample_position_path)
+
 	ci_hold_duration_runs <- ci_hold_duration_retained %>%
 		group_by(
 			input_mode,
@@ -4920,6 +4946,111 @@ if (nrow(ci_hold_duration_samples) > 0) {
 		"95b-ci-key-hold-duration-p50-comparison.png",
 		width = 10.2,
 		height = 5.9
+	)
+
+	ci_hold_duration_round_robustness <- ci_hold_duration_runs %>%
+		filter(delay_ms %in% c(250, 500, 1000)) %>%
+		mutate(input_mode = factor(input_mode, levels = ci_hold_duration_levels)) %>%
+		group_by(delay_ms, input_mode) %>%
+		summarize(
+			run_count = n(),
+			median_run_q50_ms = median(reported_q50_ms),
+			run_q50_sd_ms = sd(reported_q50_ms),
+			drop_round_2_median_run_q50_ms = median(reported_q50_ms[round != 2]),
+			min_run_q50_ms = min(reported_q50_ms),
+			max_run_q50_ms = max(reported_q50_ms),
+			.groups = "drop"
+		)
+	write_csv(ci_hold_duration_round_robustness, ci_hold_duration_round_robustness_path)
+
+	ci_hold_duration_round_wide <- ci_hold_duration_runs %>%
+		filter(delay_ms %in% c(250, 500)) %>%
+		select(delay_ms, round, input_mode, reported_q50_ms) %>%
+		pivot_wider(names_from = input_mode, values_from = reported_q50_ms)
+
+	ci_hold_duration_round_sign <- tibble(
+		comparison_mode = c("tap then wait", "50ms hold then wait", "100ms hold then wait")
+	) %>%
+		rowwise() %>%
+		mutate(
+			delay_set = "250ms and 500ms",
+			round_comparisons = nrow(ci_hold_duration_round_wide),
+			full_hold_higher = sum(ci_hold_duration_round_wide[["current CI held key"]] > ci_hold_duration_round_wide[[comparison_mode]], na.rm = TRUE),
+			full_hold_not_higher = round_comparisons - full_hold_higher,
+			full_hold_higher_share = full_hold_higher / round_comparisons,
+			exception_rounds = paste(
+				ci_hold_duration_round_wide$round[
+					ci_hold_duration_round_wide[["current CI held key"]] <= ci_hold_duration_round_wide[[comparison_mode]]
+				],
+				collapse = ";"
+			)
+		) %>%
+		ungroup()
+	write_csv(ci_hold_duration_round_sign, ci_hold_duration_round_sign_path)
+
+	ci_hold_duration_leave_one <- expand_grid(
+		delay_ms = c(250, 500, 1000),
+		comparison_mode = c("tap then wait", "50ms hold then wait", "100ms hold then wait"),
+		dropped_round = sort(unique(ci_hold_duration_runs$round))
+	) %>%
+		mutate(
+			full_hold_minus_comparison_ms = pmap_dbl(
+				list(delay_ms, comparison_mode, dropped_round),
+				function(delay_value, comparison_value, dropped_round_value) {
+					round_medians <- ci_hold_duration_runs %>%
+						filter(delay_ms == delay_value, round != dropped_round_value) %>%
+						group_by(input_mode) %>%
+						summarize(median_run_q50_ms = median(reported_q50_ms), .groups = "drop")
+					round_medians$median_run_q50_ms[round_medians$input_mode == "current CI held key"] -
+						round_medians$median_run_q50_ms[round_medians$input_mode == comparison_value]
+				}
+			)
+		)
+	write_csv(ci_hold_duration_leave_one, ci_hold_duration_leave_one_path)
+
+	ci_hold_duration_leave_one_summary <- ci_hold_duration_leave_one %>%
+		group_by(delay_ms, comparison_mode) %>%
+		summarize(
+			min_full_hold_minus_comparison_ms = min(full_hold_minus_comparison_ms),
+			max_full_hold_minus_comparison_ms = max(full_hold_minus_comparison_ms),
+			.groups = "drop"
+		)
+	write_csv(ci_hold_duration_leave_one_summary, ci_hold_duration_leave_one_summary_path)
+
+	ci_hold_duration_round_plot <- ci_hold_duration_runs %>%
+		filter(delay_ms %in% c(250, 500, 1000)) %>%
+		mutate(
+			input_mode = factor(input_mode, levels = ci_hold_duration_levels),
+			delay_label = factor(paste0(delay_ms, "ms"), levels = c("250ms", "500ms", "1000ms"))
+		)
+
+	save_plot(
+		ggplot(
+			ci_hold_duration_round_plot,
+			aes(round, reported_q50_ms, color = input_mode, shape = input_mode)
+		) +
+			geom_point(
+				position = position_dodge(width = 0.42),
+				size = 2.6,
+				alpha = 0.92
+			) +
+			facet_wrap(vars(delay_label), nrow = 1) +
+			scale_x_continuous(breaks = sort(unique(ci_hold_duration_round_plot$round))) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Input mode") +
+			scale_shape_manual(
+				values = c(16, 17, 15, 3),
+				name = "Input mode"
+			) +
+			labs(
+				title = "The full-hold result survives the low shuffled round",
+				subtitle = "Each point is one run q50; round 2 is low for several 250ms/500ms modes, so p50 should be read with run-level spread",
+				x = "Round",
+				y = "Run q50 latency (ms)"
+			) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"143-ci-key-hold-duration-round-q50.png",
+		width = 11.8,
+		height = 5.8
 	)
 }
 

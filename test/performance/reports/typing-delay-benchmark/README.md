@@ -716,7 +716,8 @@ The R script derives:
     runtime deltas.
 -   `data/typing-delay-ci-hold-duration-*.csv`: same paired CI-comparable
     settings, adding fixed `50ms` and `100ms` key holds followed by the
-    remaining post-keyup wait.
+    remaining post-keyup wait, plus event-shape, sample-position, round-level
+    robustness, sign-check, and leave-one-round sensitivity summaries.
 -   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
     and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-wait-vs-checkpoint-summary.csv`: derived comparison
@@ -1874,21 +1875,116 @@ also avoids the current full-delay synthetic hold.
 ![CI key-hold duration p50 comparison](figures/95b-ci-key-hold-duration-p50-comparison.png)
 
 The fixed-hold run closes the realistic-hold subquestion: a short physical hold
-does not reproduce the current full-delay held-key slow band. At `250ms` and
-`500ms`, the current full-hold mode reports `33.0ms` and `36.9ms` p50, while
-`50ms` / `100ms` holds followed by post-keyup waits stay in the `10.4-13.9ms`
-range, close to tap-then-wait. So the problem is not "the key is down briefly";
-it is the synthetic benchmark holding the key down for the whole configured
-delay.
+does not reproduce the full-delay held-key slow band. In the fresh four-mode
+rerun, the current full-hold mode is clearly above tap-then-wait at `250ms` and
+`500ms`, while `50ms` / `100ms` holds followed by post-keyup waits stay much
+closer to tap mode. So the problem is not "the key is down briefly"; it is the
+synthetic benchmark holding the key down for the whole configured delay.
 
-Selected fixed-hold p50s:
+Selected fixed-hold rows from the fresh four-mode rerun:
 
-| Input mode | `100ms` | `250ms` | `500ms` | `1000ms` |
-| ---------- | ------: | ------: | ------: | -------: |
-| current CI held key | `14.0ms` | `33.0ms` | `36.9ms` | `17.3ms` |
-| `100ms` hold then wait | `10.0ms` | `10.4ms` | `12.3ms` | `10.6ms` |
-| `50ms` hold then wait | `11.0ms` | `12.6ms` | `13.9ms` | `11.5ms` |
-| tap then wait | `11.5ms` | `12.7ms` | `12.1ms` | `11.0ms` |
+| Input mode | `100ms` p50 / q50 sd | `250ms` p50 / q50 sd | `500ms` p50 / q50 sd | `1000ms` p50 / q50 sd |
+| ---------- | -------------------: | -------------------: | -------------------: | --------------------: |
+| current CI held key | `11.2ms` / `1.16ms` | `18.7ms` / `6.25ms` | `18.0ms` / `5.42ms` | `13.5ms` / `3.24ms` |
+| `100ms` hold then wait | `12.2ms` / `0.58ms` | `14.5ms` / `1.03ms` | `14.6ms` / `0.69ms` | `11.2ms` / `0.81ms` |
+| `50ms` hold then wait | `11.2ms` / `0.98ms` | `12.4ms` / `2.66ms` | `12.8ms` / `1.95ms` | `12.4ms` / `0.53ms` |
+| tap then wait | `9.8ms` / `0.29ms` | `11.5ms` / `2.41ms` | `11.8ms` / `2.03ms` | `10.9ms` / `1.53ms` |
+
+There are two remaining cautions. First, the short-hold choice is not stable
+enough to rank `50ms` versus `100ms`: `100ms` is slower at `250ms` and `500ms`,
+but faster at `1000ms`. Treat both as "short hold, mostly tap-like" unless a
+repeat sweep shows a consistent ordering. Second, changing from full hold to a
+short hold at the same `1000ms` key-to-key delay only saves `9-9.5s` in the
+two-branch Typing runtime model; the large runtime savings come from reducing
+the configured key-to-key delay, not from making the physical hold realistic.
+
+Looking at per-round q50s makes the remaining open questions clearer. The
+`250ms` / `500ms` full-hold points are not a single stable slow regime in this
+rerun: round 2 was low (`9.75ms` and `9.77ms`) while the other rounds were much
+higher. Dropping that shuffled round leaves full hold at `19.1ms` for `250ms`
+and `19.7ms` for `500ms`, still above the short-hold and tap modes, but with
+less apparent drama than the aggregate graph. So the robust conclusion is the
+ordering by regime, not the exact p50 height of a single point.
+
+| Open question | Current evidence | What would settle it |
+| ------------- | ---------------- | -------------------- |
+| Does a realistic short hold reproduce the full-hold artifact? | No. `50ms` / `100ms` holds are much closer to tap mode than to full hold at `250ms` and `500ms`. | A repeat blocked sweep would tighten the size estimate, but is unlikely to reverse the regime conclusion. |
+| Is `50ms` better than `100ms`? | Not settled. `100ms` is higher at `250ms` and `500ms`, but lower at `1000ms`; run-to-run effects are comparable to the differences. | Repeat with more rounds, or randomize/interleave hold durations within each delay. |
+| Is fixed `100ms` hold identical to current CI at `100ms` delay? | Not exactly. Both have `100ms` effective hold and no post-keyup wait, but the code paths differ: current CI uses the `type()` path, while fixed hold uses explicit `keyboard.down()` / wait / `keyboard.up()` after focusing the paragraph. The observed p50 difference is about `1ms`, within run variance. | Add an exact-path fixed-hold mode that uses the same target entry point where possible, or run paired traces at `100ms`. |
+| Are setup/order effects contaminating the graph? | Yes enough to be visible. Round 2 was low for several `250ms` / `500ms` points, and full-hold `1000ms` had one retained `303ms` outlier. P50 survives better than CV, but the run-to-run q50 sd should be read alongside p50. | Interleave modes, clean posts between delay runs, or report median-of-run-medians with more rounds. |
+| Does realistic hold materially reduce CI runtime at `1000ms`? | Only modestly. At `1000ms`, tap is `100s`, `50ms` hold is `100.5s`, `100ms` hold is `101s`, and current full hold is `110s` in the two-branch Typing model. | Runtime savings require reducing the configured key-to-key delay; hold realism mostly changes the measured regime. |
+
+The round-level sign test is a better stress check than the aggregate graph.
+Across the two clearest delay points, `250ms` and `500ms`, full hold is above tap
+in `7/8` round-level comparisons, above `50ms` hold in `7/8`, and above `100ms`
+hold in `6/8`. The exception is concentrated in the low shuffled round, not
+spread evenly across the run.
+
+![CI key-hold duration round q50](figures/143-ci-key-hold-duration-round-q50.png)
+
+Alternative summaries tell the same story:
+
+| Delay | Summary | tap | `50ms` hold | `100ms` hold | full hold |
+| ----: | ------- | --: | ----------: | -----------: | --------: |
+| `250ms` | median of run q50s | `12.6ms` | `13.1ms` | `14.3ms` | `19.0ms` |
+| `250ms` | drop shuffled round 2 | `11.4ms` | `14.2ms` | `14.5ms` | `19.1ms` |
+| `500ms` | median of run q50s | `11.6ms` | `13.1ms` | `14.4ms` | `18.2ms` |
+| `500ms` | drop shuffled round 2 | `12.0ms` | `13.4ms` | `14.7ms` | `19.7ms` |
+| `1000ms` | median of run q50s | `11.6ms` | `12.8ms` | `11.1ms` | `12.9ms` |
+| `1000ms` | drop shuffled round 2 | `12.1ms` | `12.9ms` | `10.9ms` | `13.8ms` |
+
+That makes `250ms` / `500ms` the useful discriminator. At `1000ms`, the modes are
+closer and the full-hold run has a retained `303ms` keypress outlier, so p90 and
+CV are contaminated even though the p50 remains usable. Also, the current-CI
+`100ms` row and the fixed-`100ms` row should not be treated as a precise A/B
+test: both have a `100ms` effective hold and no post-keyup wait, but the current
+CI path uses the `type()` entry point while fixed hold uses explicit
+`keyboard.down()` / wait / `keyboard.up()`. The observed `~1ms` difference is
+small relative to run variance and far smaller than the `250ms` / `500ms`
+full-hold uplift.
+
+The leave-one-round sensitivity check sets the confidence boundary. At `250ms`,
+dropping any single round leaves full hold `5.2-7.7ms` above tap, `4.8-7.1ms`
+above `50ms` hold, and `4.5-5.0ms` above `100ms` hold. At `500ms`, the
+corresponding ranges are `5.5-7.7ms`, `3.3-7.0ms`, and `2.0-5.6ms`. At
+`1000ms`, the ranges are much weaker: full-minus-tap is `-0.1..2.7ms` and
+full-minus-`50ms` is `-0.9..1.2ms`. That is why the realistic-hold conclusion
+should be based on the `250ms` / `500ms` rows, not on `1000ms`.
+
+The lower-level event checks narrow the remaining explanations. All four modes
+produced the same high-level event shape at every delay: `11` expected key
+groups, `11` observed key groups, `22` keydown events, `11` keypress events, and
+`11` keyup events. So the short-hold and tap runs are not faster because they
+skip a DOM event. The difference is also not mainly keydown / keyup bookkeeping:
+at `250ms`, the total p50 / keypress p50 pairs were `11.5ms` / `11.4ms` for
+tap, `12.5ms` / `12.2ms` for `50ms` hold, `14.5ms` / `14.2ms` for `100ms`
+hold, and `18.7ms` / `18.3ms` for current CI full hold. At `500ms`, the same
+pairs were `11.8ms` / `11.6ms`, `12.8ms` / `12.6ms`, `14.6ms` / `14.3ms`, and
+`17.9ms` / `17.1ms`. The full-hold uplift is therefore showing up in the
+measured keypress interval itself.
+
+Sample position explains part of why a single p50 point should not be
+overinterpreted. In the current-CI full-hold run, the first retained sample was
+still low at both discriminator delays: `10.3ms` at `250ms` and `10.8ms` at
+`500ms`. Later retained samples moved into the slower regime, for example sample
+10 was `20.9ms` at `250ms` and `18.4ms` at `500ms`. This makes the throwaway and
+sample-position policy relevant to the exact p50, but it does not remove the
+full-hold effect: the slower retained samples are what push the `250ms` /
+`500ms` full-hold medians above tap and short-hold modes.
+
+The remaining experimental gap is code-path equivalence, not hold realism. A
+better follow-up would add a `locator-press-fixed-hold-then-wait` mode that uses
+the paragraph locator's press path with a fixed `delay` for the hold, then waits
+for the remainder before the next key. Local Playwright `1.58.2` source shows
+why this is the next useful check: `locator.pressSequentially()` delegates to
+`type()` in `playwright-core/lib/client/locator.js`;
+element `type()` focuses the element and calls `page.keyboard.type()`, element
+`press()` focuses the element and calls `page.keyboard.press()`
+in `playwright-core/lib/server/dom.js`; and keyboard `type()` loops through
+US-keyboard characters by calling `keyboard.press(char, { delay })` in
+`playwright-core/lib/server/input.js`. A locator-press mode would therefore stay
+on the same element-targeted press path as closely as possible while still
+separating key hold from post-keyup wait.
 
 ![CI held-key versus tap runtime/reliability](figures/96-ci-key-mode-runtime-reliability.png)
 

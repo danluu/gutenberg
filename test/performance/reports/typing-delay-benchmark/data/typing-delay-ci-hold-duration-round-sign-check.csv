@@ -1,0 +1,4 @@
+comparison_mode,delay_set,round_comparisons,full_hold_higher,full_hold_not_higher,full_hold_higher_share,exception_rounds
+tap then wait,250ms and 500ms,8,7,1,0.875,2
+50ms hold then wait,250ms and 500ms,8,7,1,0.875,2
+100ms hold then wait,250ms and 500ms,8,6,2,0.75,2;2

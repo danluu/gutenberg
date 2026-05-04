@@ -1,0 +1,81 @@
+input_mode,delay_ms,round,expected_key_groups,observed_key_groups,keydown_events,keypress_events,keyup_events
+100ms hold then wait,0,0,11,11,22,11,11
+100ms hold then wait,0,1,11,11,22,11,11
+100ms hold then wait,0,2,11,11,22,11,11
+100ms hold then wait,0,3,11,11,22,11,11
+100ms hold then wait,100,0,11,11,22,11,11
+100ms hold then wait,100,1,11,11,22,11,11
+100ms hold then wait,100,2,11,11,22,11,11
+100ms hold then wait,100,3,11,11,22,11,11
+100ms hold then wait,250,0,11,11,22,11,11
+100ms hold then wait,250,1,11,11,22,11,11
+100ms hold then wait,250,2,11,11,22,11,11
+100ms hold then wait,250,3,11,11,22,11,11
+100ms hold then wait,500,0,11,11,22,11,11
+100ms hold then wait,500,1,11,11,22,11,11
+100ms hold then wait,500,2,11,11,22,11,11
+100ms hold then wait,500,3,11,11,22,11,11
+100ms hold then wait,1000,0,11,11,22,11,11
+100ms hold then wait,1000,1,11,11,22,11,11
+100ms hold then wait,1000,2,11,11,22,11,11
+100ms hold then wait,1000,3,11,11,22,11,11
+50ms hold then wait,0,0,11,11,22,11,11
+50ms hold then wait,0,1,11,11,22,11,11
+50ms hold then wait,0,2,11,11,22,11,11
+50ms hold then wait,0,3,11,11,22,11,11
+50ms hold then wait,100,0,11,11,22,11,11
+50ms hold then wait,100,1,11,11,22,11,11
+50ms hold then wait,100,2,11,11,22,11,11
+50ms hold then wait,100,3,11,11,22,11,11
+50ms hold then wait,250,0,11,11,22,11,11
+50ms hold then wait,250,1,11,11,22,11,11
+50ms hold then wait,250,2,11,11,22,11,11
+50ms hold then wait,250,3,11,11,22,11,11
+50ms hold then wait,500,0,11,11,22,11,11
+50ms hold then wait,500,1,11,11,22,11,11
+50ms hold then wait,500,2,11,11,22,11,11
+50ms hold then wait,500,3,11,11,22,11,11
+50ms hold then wait,1000,0,11,11,22,11,11
+50ms hold then wait,1000,1,11,11,22,11,11
+50ms hold then wait,1000,2,11,11,22,11,11
+50ms hold then wait,1000,3,11,11,22,11,11
+current CI held key,0,0,11,11,22,11,11
+current CI held key,0,1,11,11,22,11,11
+current CI held key,0,2,11,11,22,11,11
+current CI held key,0,3,11,11,22,11,11
+current CI held key,100,0,11,11,22,11,11
+current CI held key,100,1,11,11,22,11,11
+current CI held key,100,2,11,11,22,11,11
+current CI held key,100,3,11,11,22,11,11
+current CI held key,250,0,11,11,22,11,11
+current CI held key,250,1,11,11,22,11,11
+current CI held key,250,2,11,11,22,11,11
+current CI held key,250,3,11,11,22,11,11
+current CI held key,500,0,11,11,22,11,11
+current CI held key,500,1,11,11,22,11,11
+current CI held key,500,2,11,11,22,11,11
+current CI held key,500,3,11,11,22,11,11
+current CI held key,1000,0,11,11,22,11,11
+current CI held key,1000,1,11,11,22,11,11
+current CI held key,1000,2,11,11,22,11,11
+current CI held key,1000,3,11,11,22,11,11
+tap then wait,0,0,11,11,22,11,11
+tap then wait,0,1,11,11,22,11,11
+tap then wait,0,2,11,11,22,11,11
+tap then wait,0,3,11,11,22,11,11
+tap then wait,100,0,11,11,22,11,11
+tap then wait,100,1,11,11,22,11,11
+tap then wait,100,2,11,11,22,11,11
+tap then wait,100,3,11,11,22,11,11
+tap then wait,250,0,11,11,22,11,11
+tap then wait,250,1,11,11,22,11,11
+tap then wait,250,2,11,11,22,11,11
+tap then wait,250,3,11,11,22,11,11
+tap then wait,500,0,11,11,22,11,11
+tap then wait,500,1,11,11,22,11,11
+tap then wait,500,2,11,11,22,11,11
+tap then wait,500,3,11,11,22,11,11
+tap then wait,1000,0,11,11,22,11,11
+tap then wait,1000,1,11,11,22,11,11
+tap then wait,1000,2,11,11,22,11,11
+tap then wait,1000,3,11,11,22,11,11
