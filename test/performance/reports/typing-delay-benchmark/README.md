@@ -1022,6 +1022,10 @@ The R script derives:
 -   `data/typing-delay-open-question-priority-scorecard.csv`: next-action
     scorecard ranking remaining work by information gain, decision urgency,
     execution cost, prerequisite state, and risk of acting prematurely.
+-   `data/typing-delay-open-question-priority-sensitivity.csv`: alternate
+    scoring scenarios for the next-action priority scorecard.
+-   `data/typing-delay-open-question-priority-sensitivity-summary.csv`: rank
+    stability summary across priority scoring scenarios.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9189,6 +9193,25 @@ useful next artifacts from busywork.
 | After sidecar | Run CPU/QoS sidecar plus `powermetrics`, and run the trace-off protocol sidecar. | These can name lower-level mechanisms; doing them before sidecar acceptance would risk observer artifacts and unjoinable counter rows. |
 | Wait for prerequisite | Store-notification partition, threshold-policy join, workload replay, and external display calibration. | Each is useful only after a narrower source guard, CI artifact, product-claim need, or display-claim need exists. |
 | Do not do now | Repeat broad local startup/API sweeps under unchanged settings. | The questions are closed locally unless a helper, browser, trace placement, throwaway policy, or reported statistic changes. |
+
+I also checked whether this priority order is an artifact of that scoring
+formula. I rescored the same rows with seven alternate formulas: baseline,
+risk-adjusted, decision-first, information-first, cost-skeptical,
+artifact-ready-biased, and mechanism-unblock-biased. This is still a judgment
+model, but it catches the obvious failure mode where one arbitrary weighting
+drives the recommendation.
+
+![Open question priority sensitivity](figures/202-open-question-priority-sensitivity.png)
+
+The result is stable enough for the near-term choice:
+
+| Action | Sensitivity result |
+| ------ | ------------------ |
+| Compact CI-topology validation | Always first or tied for first-tier across the scenarios. |
+| Behavior-gated selector guard | Always first-tier; it remains the cheapest useful engineering artifact. |
+| Shared retained-key sidecar | Middle-ranked unless the formula explicitly favors mechanism unblocking, where it moves up. This matches the dependency map: design it after the first two actions, before root counters or browser tracing. |
+| CPU/QoS, runtime sidecar, workload replay, display calibration | Valuable only behind their prerequisites or claim expansion; their lower rank is caused by artifact burden, not because the questions are unimportant. |
+| Broad local startup/API sweeps | Bottom-ranked under every scoring scenario unless a trigger changes. |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

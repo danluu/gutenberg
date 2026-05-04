@@ -1,0 +1,11 @@
+plot_label,next_action,priority_band,prerequisite_state,median_rank,best_rank,worst_rank,top_two_count,top_three_count,bottom_three_count,scenario_count,sensitivity_result
+CI topology,Run compact CI-topology validation,do first,artifact-ready,1,1,2,7,7,0,7,robust top-two
+CPU/QoS,Run CPU/QoS sidecar acceptance then powermetrics,after sidecar,needs sidecar,7,7,7,0,0,0,7,stable middle
+display,Run external display calibration,claim-dependent,needs external endpoint,9,9,9,0,0,7,7,robust bottom-three
+no sweep,Repeat broad local startup/API sweeps,do not do now,closed unless triggered,10,10,10,0,0,7,7,robust bottom-three
+runtime,Run trace-off protocol sidecar,after sidecar,needs sidecar,8,8,8,0,0,7,7,robust bottom-three
+selector,Prototype the next behavior-gated selector guard,do first,artifact-ready,2,1,2,7,7,0,7,robust top-two
+sidecar,Implement shared retained-key sidecar schema,do after first two,needs sidecar,5,4,6,0,0,0,7,stable middle
+store fanout,Prototype store notification partition only after first guard,wait for guard,needs prototype evidence,6,5,6,0,0,0,7,stable middle
+threshold,Join threshold policy to CI artifacts,after CI artifact,needs CI artifact,3,3,3,0,7,0,7,robust top-three
+workload,Build workload replay MVP,claim-dependent,needs workload,4,4,5,0,0,0,7,stable middle

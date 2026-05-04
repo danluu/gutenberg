@@ -21384,6 +21384,132 @@ save_plot(
 	height = 7.6
 )
 
+open_question_priority_scenarios <- tribble(
+	~scenario, ~scenario_label, ~scenario_order, ~score_description,
+	"baseline", "baseline", 1, "information gain times decision urgency divided by execution cost",
+	"risk_adjusted", "risk adjusted", 2, "baseline score weighted by risk if a premature shortcut is taken",
+	"decision_first", "decision first", 3, "decision urgency squared, then information gain, divided by cost",
+	"information_first", "information first", 4, "information gain squared, then urgency, divided by cost",
+	"cost_skeptical", "cost skeptical", 5, "baseline numerator divided by cost to the 1.5 power",
+	"artifact_ready_bonus", "artifact ready", 6, "baseline score with a bonus for actions whose first artifact can start now",
+	"mechanism_unblock_bonus", "mechanism unblock", 7, "baseline score with a bonus for shared sidecar and mechanism-unblocking work"
+)
+
+open_question_priority_sensitivity <- open_question_priority_scorecard %>%
+	select(-label_x, -label_y) %>%
+	crossing(open_question_priority_scenarios) %>%
+	mutate(
+		scenario_score = case_when(
+			scenario == "baseline" ~ priority_score,
+			scenario == "risk_adjusted" ~
+				(expected_information_gain_score * decision_urgency_score * premature_action_risk_score) /
+					(execution_cost_score * 5),
+			scenario == "decision_first" ~
+				(decision_urgency_score^2 * expected_information_gain_score) /
+					(execution_cost_score * 5),
+			scenario == "information_first" ~
+				(expected_information_gain_score^2 * decision_urgency_score) /
+					(execution_cost_score * 5),
+			scenario == "cost_skeptical" ~
+				(expected_information_gain_score * decision_urgency_score) /
+					(execution_cost_score^1.5),
+			scenario == "artifact_ready_bonus" ~ priority_score * case_when(
+				prerequisite_state == "artifact-ready" ~ 1.2,
+				prerequisite_state == "closed unless triggered" ~ 0.2,
+				TRUE ~ 0.75
+			),
+			scenario == "mechanism_unblock_bonus" ~ priority_score * case_when(
+				plot_label == "sidecar" ~ 1.5,
+				plot_label %in% c("CPU/QoS", "runtime") ~ 1.15,
+				priority_band == "do not do now" ~ 0.25,
+				TRUE ~ 1
+			),
+			TRUE ~ priority_score
+		)
+	) %>%
+	group_by(scenario) %>%
+	arrange(desc(scenario_score), execution_cost_score, desc(expected_information_gain_score), .by_group = TRUE) %>%
+	mutate(
+		scenario_rank = row_number(),
+		scenario_count = n(),
+		is_top_two = scenario_rank <= 2,
+		is_top_three = scenario_rank <= 3,
+		is_bottom_three = scenario_rank >= scenario_count - 2
+	) %>%
+	ungroup()
+
+open_question_priority_sensitivity_summary <- open_question_priority_sensitivity %>%
+	group_by(plot_label, next_action, priority_band, prerequisite_state) %>%
+	summarize(
+		median_rank = median(scenario_rank),
+		best_rank = min(scenario_rank),
+		worst_rank = max(scenario_rank),
+		top_two_count = sum(is_top_two),
+		top_three_count = sum(is_top_three),
+		bottom_three_count = sum(is_bottom_three),
+		scenario_count = n(),
+		.groups = "drop"
+	) %>%
+	mutate(
+		sensitivity_result = case_when(
+			top_two_count >= 5 ~ "robust top-two",
+			top_three_count >= 5 ~ "robust top-three",
+			bottom_three_count >= 5 ~ "robust bottom-three",
+			worst_rank - best_rank <= 2 ~ "stable middle",
+			TRUE ~ "formula-sensitive"
+		)
+	)
+
+write_csv(
+	open_question_priority_sensitivity,
+	file.path(data_dir, "typing-delay-open-question-priority-sensitivity.csv")
+)
+write_csv(
+	open_question_priority_sensitivity_summary,
+	file.path(data_dir, "typing-delay-open-question-priority-sensitivity-summary.csv")
+)
+
+open_question_priority_sensitivity_plot <- open_question_priority_sensitivity %>%
+	left_join(
+		open_question_priority_sensitivity_summary %>%
+			select(plot_label, median_rank, sensitivity_result),
+		by = "plot_label"
+	) %>%
+	mutate(
+		scenario_label = fct_reorder(scenario_label, scenario_order),
+		plot_label = fct_reorder(plot_label, median_rank, .desc = TRUE)
+	)
+
+save_plot(
+	ggplot(
+		open_question_priority_sensitivity_plot,
+		aes(scenario_label, plot_label, fill = scenario_rank)
+	) +
+		geom_tile(color = "white", linewidth = 0.45) +
+		geom_text(aes(label = scenario_rank), size = 3.2, color = "grey10") +
+		scale_fill_distiller(
+			type = "div",
+			palette = "RdYlGn",
+			direction = -1,
+			breaks = c(1, 3, 5, 7, 10),
+			name = "Rank\n(1 = first)"
+		) +
+		labs(
+			title = "Priority ranking is stable for the top and bottom open-question actions",
+			subtitle = "Cells show rank under alternate score formulas; CI topology and selector guard stay first-tier, broad local sweeps stay last",
+			x = "Scoring scenario",
+			y = "Action"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(
+			axis.text.x = element_text(angle = 22, hjust = 1),
+			legend.position = "bottom"
+		),
+	"202-open-question-priority-sensitivity.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
