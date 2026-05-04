@@ -1046,6 +1046,9 @@ The R script derives:
     matrix showing which current conclusions can be overturned by remaining
     open questions, which can only be narrowed, and which require new claim
     scope.
+-   `data/typing-delay-open-question-instrumentation-portfolio.csv`: portfolio
+    view that groups remaining open questions into shared artifacts and
+    separates decision-changing bundles from claim-expansion-only bundles.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9347,6 +9350,25 @@ So the remaining open questions do not all have equal leverage. The highest-risk
 rows are CI topology, pattern readiness, and selector behavior because they can
 change near-term decisions. Runtime, CPU/QoS, workload, and display work are
 important only if the claim widens beyond the current benchmark artifact.
+
+That makes the next-run portfolio smaller than the list of open questions. The
+right unit is a shared artifact bundle, not one benchmark per question.
+
+![Open question instrumentation portfolio](figures/209-open-question-instrumentation-portfolio.png)
+
+| Bundle | Questions it covers | Portfolio decision |
+| ------ | ------------------- | ------------------ |
+| Compact CI topology artifact | startup waits, threshold portability, retained q50 stability, first-key tails, failures, resources, and some pattern wait actionability | run first because it covers the highest-risk decision rows |
+| Pattern readiness/resource artifact | Site Editor/Post Editor pattern-loading sleeps, preview/canvas behavior, resource quiet, and fallback policy | run with or immediately after the compact CI artifact if wait removal is being considered |
+| Behavior-gated source prototype | selector/source guards and the prerequisite for store-partition work | run as the first source-code artifact; aggregate p50 follows behavior/source-span gates |
+| Shared retained-key sidecar | runtime mechanism and CPU/QoS mechanism join keys | design after the first two decision bundles; run before any root counters or browser trace naming |
+| Workload/display expansion artifacts | product workload and calibrated presentation claims | defer until the report needs product-latency or hardware/display claims |
+
+This is the practical portfolio: run the compact CI topology bundle and the
+behavior-gated source prototype before spending time on lower-layer mechanism
+naming. Pattern readiness belongs near CI because it is a wait-removal decision,
+not a mechanism hunt. The sidecar is still useful, but it should be treated as a
+shared prerequisite for mechanism naming, not as eight separate delay sweeps.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

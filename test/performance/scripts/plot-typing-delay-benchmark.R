@@ -22249,6 +22249,121 @@ save_plot(
 	height = 7.4
 )
 
+open_question_instrumentation_portfolio <- tribble(
+	~artifact_bundle, ~sequencing_order, ~portfolio_lane, ~questions_covered, ~first_run_artifact, ~separate_followup_if, ~artifact_burden_score, ~question_coverage_score, ~decision_leverage_score, ~observer_risk_score, ~plot_label,
+	"Compact CI topology artifact", 1, "run first",
+	"startup waits; threshold portability; retained q50 stability; first-key tails; failures; resources; partial pattern wait actionability",
+	"Real Performance Tests topology artifact with raw retained samples, q25/q50/q75/cnt, first-key distributions, failures, resources, environment metadata, and per-run order.",
+	"CI ordering, variance, failures, first-key tails, or resource placement differs from local rows.",
+	3.2, 6.8, 5.0, 4.8, "CI topology",
+	"Pattern readiness/resource artifact", 2, "run with CI",
+	"Site Editor and Post Editor pattern-loading sleeps; preview/canvas behavior; resource quiet; fallback policy",
+	"Per-spec readiness/resource artifact with source-specific predicates, timeout/fallback logs, retained samples, preview/canvas/actionability counts, and lane metadata.",
+	"Readiness differs by spec/lane or moves resources into the measured window.",
+	3.0, 4.4, 4.2, 4.2, "patterns",
+	"Behavior-gated source prototype", 3, "run first",
+	"selector/source guards; prerequisite for store partition; aggregate p50 eligibility",
+	"Focused behavior fixtures plus source-span microscope for the next hot owner, followed by matched aggregate p50 only after behavior and source spans pass.",
+	"Behavior gates fail, source-span fanout does not collapse, or the aggregate win appears without source evidence.",
+	2.4, 4.8, 4.6, 3.8, "source",
+	"Shared retained-key sidecar", 4, "after first two",
+	"runtime mechanism; CPU/QoS mechanism; key-window joins; observer overhead",
+	"Unprivileged helper/key-window/renderer/collector/command schema with clock sync and no root collectors.",
+	"Join coverage or class ordering fails, or the sidecar perturbs the row ordering.",
+	4.2, 4.0, 3.4, 5.0, "sidecar",
+	"CPU/QoS counter bundle", 5, "after sidecar",
+	"frequency/residency/QoS/power/runnable-state mechanism naming",
+	"Compact sidecar-accepted manifest under root powermetrics, with root trace only if counters do not separate rows.",
+	"Powermetrics cannot separate classes or trace overhead changes ordering.",
+	5.0, 2.6, 2.4, 5.0, "CPU/QoS",
+	"Workload/display expansion artifacts", 6, "claim-dependent",
+	"representative product workload; external glyph/display timing; claim expansion beyond fixed-x and Chromium-internal endpoints",
+	"Replay strata and external calibration only for product-latency, semantic-glyph, presented-frame, or hardware-display claims.",
+	"The report needs product or display claims and the current benchmark artifact is no longer enough.",
+	4.8, 3.0, 2.4, 4.5, "claim expansion"
+) %>%
+	mutate(
+		portfolio_lane = factor(
+			portfolio_lane,
+			levels = c("run first", "run with CI", "after first two", "after sidecar", "claim-dependent")
+		),
+		portfolio_efficiency_score = (question_coverage_score * decision_leverage_score) / artifact_burden_score,
+		label_x = artifact_burden_score + case_when(
+			plot_label == "source" ~ -0.35,
+			plot_label == "CI topology" ~ 0.12,
+			plot_label == "patterns" ~ -0.2,
+			plot_label == "sidecar" ~ 0.12,
+			plot_label == "CPU/QoS" ~ -0.42,
+			TRUE ~ -0.55
+		),
+		label_y = question_coverage_score + case_when(
+			plot_label == "source" ~ 0.18,
+			plot_label == "CI topology" ~ -0.22,
+			plot_label == "patterns" ~ -0.2,
+			plot_label == "sidecar" ~ 0.18,
+			plot_label == "CPU/QoS" ~ 0.18,
+			TRUE ~ -0.2
+		)
+	)
+
+write_csv(
+	open_question_instrumentation_portfolio %>%
+		select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-instrumentation-portfolio.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_instrumentation_portfolio,
+		aes(
+			artifact_burden_score,
+			question_coverage_score,
+			color = portfolio_lane,
+			shape = portfolio_lane,
+			size = decision_leverage_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Portfolio lane") +
+		scale_shape_manual(
+			values = c(
+				"run first" = 16,
+				"run with CI" = 17,
+				"after first two" = 15,
+				"after sidecar" = 18,
+				"claim-dependent" = 7
+			),
+			name = "Portfolio lane"
+		) +
+		scale_size_area(max_size = 6.6, breaks = 2:5, name = "Decision leverage") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(2.0, 5.25),
+			labels = c("1" = "tiny", "2" = "local", "3" = "CI", "4" = "sidecar", "5" = "root/replay")
+		) +
+		scale_y_continuous(
+			breaks = 1:7,
+			limits = c(2.1, 7.15)
+		) +
+		labs(
+			title = "A few shared artifacts cover most remaining decision risk",
+			subtitle = "Run CI topology and behavior-gated source work before lower-layer mechanism naming or claim-expansion artifacts",
+			x = "Artifact burden",
+			y = "Open-question coverage"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"209-open-question-instrumentation-portfolio.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
