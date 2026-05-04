@@ -654,6 +654,11 @@ The R script derives:
 -   `data/typing-delay-chromium-runtime-mechanism-decision-tree.csv`: staged
     runtime mechanism ladder: trace-off protocol sidecar, scheduler/V8 trace,
     snapshot observer split, OS-counter alignment, scale gate, and report gate.
+-   `data/typing-delay-chromium-runtime-claim-ladder-audit.csv`: claim-boundary
+    audit for Chromium runtime findings, separating closed benchmark semantics,
+    falsified wait/DOM theories, supported automation artifacts, open browser
+    state mechanisms, OS-counter confounds, Gutenberg scale amplification, and
+    product-workload relevance.
 -   `data/typing-delay-marker-intervention-*.csv`: marker intervention samples,
     summaries, and timer/action counts.
 -   `data/typing-delay-marker-action-*.csv`: marker intervention action-duration
@@ -7420,6 +7425,35 @@ to explain Gutenberg-scale latency by itself. The exact Chromium state remains
 open until the benchmark records the per-key protocol and runtime/scheduler
 sidecar above.
 
+### Chromium Runtime Claim Ladder
+
+The runtime-checkpoint row now has enough negative controls that the remaining
+risk is overclaiming. The valid claim is not "we found the Chromium scheduler
+state." The valid claim is "automation-inserted runtime checkpoints change the
+measured Gutenberg input slice, and the exact lower-level browser state remains
+unnamed." The derived claim audit is in
+`data/typing-delay-chromium-runtime-claim-ladder-audit.csv`.
+
+![Chromium runtime claim ladder](figures/190-chromium-runtime-claim-ladder.png)
+
+| Claim | Current status | Boundary |
+| ----- | -------------- | -------- |
+| Benchmark input semantics | closed locally | held-key delay and trace-on per-key Playwright actions are automation stressors, not human typing models |
+| Elapsed wait / DOM payload | ruled out | corrected CDP packets, matched DOM signatures, and ordinary waits through about `5008ms` stay slow |
+| Runtime checkpoint dose response | supported artifact | repeated direct runtime calls move the measured slice, but do not name V8, microtasks, scheduler, or OS state |
+| Trace snapshot perturbation | supported artifact | trace-on `captureSnapshot` explains the full per-key fast band, but needs an external protocol log before naming the snapshot subcommand/state |
+| Exact Chromium runtime state | still unnamed | requires trace-off protocol sidecar plus scheduler/V8/microtask/input-priority state per retained key |
+| OS power/QoS/cache layer | open confound | requires OS-counter joins before claiming the mechanism is purely Chromium-internal |
+| Gutenberg scale amplification | supported for scale | native moves only sub-millisecond; Gutenberg source fanout supplies the multi-millisecond scale |
+| Product-latency relevance | separate workload question | needs workload replay before ranking real user/plugin editing latency |
+
+This tightens the next-step rule. More JS-level delay rows are not useful for
+the runtime mechanism. The first needed implementation is a trace-off protocol
+sidecar that records command timing, command count, context/object lifecycle, and
+timebase alignment without changing row ordering. Only after that should a
+scheduler/V8/microtask trace or OS-counter join be used to name the state. Until
+then, the report should keep the Chromium row at the artifact-boundary level.
+
 ### Native Contenteditable Baseline
 
 The key-state traces show conditions that separate slow and fast Gutenberg
@@ -8867,7 +8901,7 @@ The high-level split is:
 | Low-risk selector guards | behavior-gate audit closes the first-patch question: the pattern-override selected-only patch is implemented locally, covered by focused unit tests, and the rebuilt all-data-spans microscope confirms the support-check `useSelect` now appears as one selected metadata entry; the provider row has only source evidence plus a partial `lastBlockAttributesChange` hint, and the inner-blocks row has one clean root/drop-zone slice but known layout/default-layout and side-effect blockers | prototype `BlockListBlockProvider` first as a narrow latest-attribute-action fast path with public-filter, edited-block, selection, structure, editability, settings, visibility, and binding gates; split `useInnerBlocksProps` into root/drop-zone versus full-hook work, preserving identity/root, layout/default-layout, nested-settings, and controlled-inner-block gates; run aggregate before/after p50 only after behavior gates and source spans pass |
 | Store subscriber partition | prototype-gate audit refines the compatibility path: the marker wakes `4,501` Redux-store listeners at p50 and `4,498` are `useSelect`, so the best fanout prototype is not an external persistence slot or narrowed public `registry.subscribe`; it is an internal dependency-filtered `useSelect` lane that preserves public root subscribe semantics, wakes `isLastBlockChangePersistent()` consumers, skips unrelated selectors, and proves listener-count collapse in a marker-only source-span run | after local guards, prototype the `useBlockSync` side channel only as a behavior-only path; for a fanout claim, require public `registry.subscribe` fixtures, persistence-selector `useSelect` fixtures, unrelated-selector skip fixtures, dynamic/cross-store/race/async gates, plugin/public subscriber smoke, and marker-only source-span collapse; do not claim timing from a side channel alone |
 | React render ownership | closed for cliff causality; residual-profiler plan says profiling is useful only after a selector guard, store-notification prototype, or workload replay creates a new after-input / whole-cycle ownership question | do not profile for the `1000ms` cliff; later profiler runs must report commit owners with input-window boundaries, async-queue boundaries, build/profiling mode, and source-span IDs |
-| Chromium runtime checkpoint | harness-gap, falsification, and protocol-sidecar audits make the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not add more JS-level delay rows |
+| Chromium runtime checkpoint | claim-ladder audit makes the boundary explicit: elapsed wait, DOM key payload, one generic task/frame checkpoint, and native browser-only scale are locally rejected; repeated `Runtime.evaluate` / `Runtime.callFunctionOn` remains the dose-response control, trace-on `captureSnapshot` remains the perturbation control, Gutenberg source fanout supplies the scale, and the exact Chromium state is still unnamed | implement trace-off per-retained-key protocol-command timing first and prove row ordering is unchanged; then add scheduler/task-queue, V8/microtask, `EventDispatch`, source-span, browser revision, trace-category, observer-configuration, and optional OS-counter alignment; do not name V8/scheduler/OS state and do not add more JS-level delay rows until the sidecar exists |
 | CPU/QoS mechanism | local counter feasibility plus the join-contract audit make the remaining mechanism executable but not yet named: the compact row set is known, `powermetrics` and `trace` expose the needed power/QoS/scheduler surfaces on this M3 Max host, but a root run without retained-key/helper/renderer/collector joins would still only prove class-level correlation | add the sidecar and run it unprivileged first to prove every retained key joins to helper policy, renderer identity, EventDispatch timing, and collector windows without changing class ordering; then run the compact no-CPU, ordinary/utility, background/maintenance, fresh finite, and stale finite rows under root `powermetrics`; add root `trace` only if frequency/residency/QoS counters do not explain the split |
 | Calibrated presentation | external-calibration runbook plus claim ladder closes the wording boundary: Chromium-internal endpoints already align across RAF, `Paint`, `DrawFrame`, changed screenshots, and localized pixels; semantic glyph, presented-frame, camera-visible, and hardware/display claims are explicitly blocked until joined external observers preserve the same key-held shape and complete-keypress control | keep claims scoped to Chromium internal visual propagation unless the report needs hardware/display or semantic glyph timing; if it does, run the external calibration ladder with OCR/template matching, compositor/present timestamps, or camera/display capture joined per retained key |
 | Human/plugin workload | workload schema plus strata-coverage audits now separate artifact/source-boundary claims from product-latency claims: fixed-`x` insertion only partially covers ordinary text bursts and first-input idle return, while correction, selection, paste, structure, IME, media/pattern, and plugin-heavy strata are missing | implement the four-phase MVP: harness plumbing, synthetic replay executor, assertion packs, then recorded workload pilot; start synthetic coverage with ordinary text, correction, selection, paste, and block-structure strata, but require recorded or specialized pilots before product-ranking claims for IME, long-session idle return, and plugin-heavy/P2-like histories |

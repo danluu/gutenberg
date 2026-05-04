@@ -11084,6 +11084,155 @@ if (
 					)
 				)
 
+			chromium_runtime_claim_ladder_audit <- tribble(
+				~claim, ~claim_order, ~allowed_claim, ~current_evidence, ~blocked_overclaim, ~required_next_evidence, ~evidence_score, ~validation_burden_score, ~overclaim_risk_score, ~decision, ~plot_label,
+				"Benchmark input semantics",
+				1,
+				"Use the current evidence to choose benchmark semantics: held-key delay and trace-on per-key Playwright actions are automation stressors, not human typing models.",
+				"Raw CDP held-key reproduces the slow band; trace-on per-key Playwright actions insert snapshot work; complete-keypress/tap rows are a different metric family.",
+				"Claiming trace-on per-key Playwright actions are more realistic because they are faster.",
+				"One exact CI-helper compatibility check if the helper spelling changes; otherwise no more broad JS delay rows.",
+				5,
+				1,
+				2,
+				"closed benchmark decision",
+				"benchmark semantics",
+				"Elapsed wait / DOM payload",
+				2,
+				"Say elapsed post-keyup waiting, raw CDP packet shape, and DOM key-event payload do not explain the fast path in the current evidence.",
+				"Corrected raw-CDP packets and matched DOM signatures stay slow; ordinary waits through about 5008ms stay in the 21-24ms keypress band.",
+				"Explaining runtime-repeat or trace-on fast rows as the browser merely having more time to rest.",
+				"None unless a new browser build changes the ordinary-wait controls.",
+				5,
+				1,
+				1,
+				"ruled out",
+				"wait / DOM",
+				"Runtime checkpoint dose response",
+				3,
+				"Say repeated direct Runtime.evaluate or Runtime.callFunctionOn checkpoints change the measured Gutenberg input slice.",
+				"Direct runtime repeats move raw CDP from about 21.5ms to about 15-16ms at x7 and about 13ms at x17.",
+				"Naming V8, microtasks, scheduler priority, or OS state from p50 dose response alone.",
+				"Trace-off protocol sidecar first; then per-retained-key scheduler/V8 trace that tracks x0/x1/x3/x7/x11/x17.",
+				4,
+				4,
+				4,
+				"supported artifact",
+				"runtime repeats",
+				"Trace snapshot perturbation",
+				4,
+				"Say default trace-on Playwright per-key calls are a measurement perturbation and explain the full low-latency band in those rows.",
+				"Trace-on per-key keyboard.press and trace-on raw CDP plus page.evaluate hit about 11.3ms; trace-off versions are much slower, and protocol logs show captureSnapshot between keys.",
+				"Using Playwright tracing as both the perturbation and the only observer, or treating snapshot-inserted work as user typing.",
+				"Separate low-overhead protocol log and trace-on/off observer controls that isolate captureSnapshot or related snapshot commands.",
+				4,
+				4,
+				4,
+				"supported artifact",
+				"trace snapshots",
+				"Exact Chromium runtime state",
+				5,
+				"Leave the exact Chromium state unnamed for now.",
+				"Current artifacts identify wait/checkpoint contrasts but do not include scheduler queues, V8 execution, microtask checkpoints, input priority, or aligned OS counters.",
+				"Calling the mechanism V8, microtasks, scheduler, input priority, cache, or power state without a recorded per-key state variable.",
+				"Protocol sidecar plus runtime scheduler/V8 trace that predicts fast and slow retained samples across wait/checkpoint, dose-response, and snapshot rows.",
+				2,
+				5,
+				5,
+				"unnamed mechanism",
+				"unnamed Chromium state",
+				"V8 or microtask mechanism",
+				6,
+				"Treat V8/microtask as an open candidate, not a conclusion.",
+				"Runtime commands are sufficient to move the path, but current traces do not expose V8 execution or microtask slices in the key window.",
+				"Inferring V8 or microtask state from command count alone.",
+				"V8 execution and microtask checkpoint events aligned to previous keyup, runtime commands, next keydown, and EventDispatch.",
+				2,
+				5,
+				5,
+				"requires trace",
+				"V8 / microtask",
+				"Renderer scheduler or input priority",
+				7,
+				"Treat scheduler/input-priority as an open candidate, not a conclusion.",
+				"Runtime checkpoint and CPU/QoS controls both imply state below Gutenberg selectors, but current trace categories are render/screenshot oriented.",
+				"Explaining the split as queueing or priority without task queue, priority, thread, or EventDispatch alignment.",
+				"Chromium task queue, scheduler priority, input task state, process/thread ids, and main-thread task boundaries per retained key.",
+				2,
+				5,
+				5,
+				"requires trace",
+				"scheduler / priority",
+				"OS power/QoS/cache layer",
+				8,
+				"Treat OS power/QoS/cache as a lower-layer candidate that can explain or confound the runtime trace result.",
+				"Separate CPU/QoS controls move the same Gutenberg path between latency bands, but runtime-repeat rows are not joined to OS counters.",
+				"Calling the checkpoint mechanism purely Chromium-internal before matching frequency, residency, QoS, scheduler, and cache state.",
+				"Optional OS-counter join with renderer pid/thread, powermetrics or trace sample ids, frequency/residency/QoS, and source spans.",
+				3,
+				5,
+				4,
+				"requires counters",
+				"OS / QoS",
+				"Gutenberg fanout amplification",
+				9,
+				"Say the browser checkpoint is real but Gutenberg source fanout supplies the multi-millisecond scale.",
+				"Native contenteditable moves only about 0.3-0.4ms under the same runtime-repeat grid; Gutenberg large-post rows move by several milliseconds.",
+				"Claiming the browser checkpoint alone explains product-scale latency.",
+				"Matched browser trace plus Gutenberg source spans and native listener spans on the same runtime rows.",
+				5,
+				3,
+				3,
+				"supported scale",
+				"Gutenberg scale",
+				"Product-latency relevance",
+				10,
+				"Keep user/plugin product-latency ranking separate from the benchmark-artifact mechanism.",
+				"Current rows use a vanilla large-post fixed-x insertion stressor; workload audits show correction, selection, paste, IME, media/pattern, long-session, and plugin-heavy strata are missing.",
+				"Using the runtime checkpoint artifact to rank real editing workloads or plugin-heavy sessions.",
+				"Recorded or synthetic workload replay with behavior assertions, visual/source endpoints, and per-stratum owner rankings.",
+				3,
+				4,
+				5,
+				"separate workload",
+				"product workload"
+			) %>%
+				mutate(
+					decision = factor(
+						decision,
+						levels = c(
+							"closed benchmark decision",
+							"ruled out",
+							"supported artifact",
+							"supported scale",
+							"requires trace",
+							"requires counters",
+							"separate workload",
+							"unnamed mechanism"
+						)
+					),
+					label_x = validation_burden_score + case_when(
+						claim == "Runtime checkpoint dose response" ~ -0.25,
+						claim == "Trace snapshot perturbation" ~ 0.18,
+						claim == "Exact Chromium runtime state" ~ -0.42,
+						claim == "V8 or microtask mechanism" ~ -0.28,
+						claim == "Renderer scheduler or input priority" ~ 0.28,
+						claim == "OS power/QoS/cache layer" ~ 0.18,
+						claim == "Product-latency relevance" ~ 0.26,
+						TRUE ~ 0.1
+					),
+					label_y = overclaim_risk_score + case_when(
+						claim == "Runtime checkpoint dose response" ~ -0.25,
+						claim == "Trace snapshot perturbation" ~ 0.22,
+						claim == "Exact Chromium runtime state" ~ 0.28,
+						claim == "V8 or microtask mechanism" ~ -0.18,
+						claim == "Renderer scheduler or input priority" ~ 0.2,
+						claim == "OS power/QoS/cache layer" ~ -0.2,
+						claim == "Product-latency relevance" ~ 0.24,
+						TRUE ~ 0.12
+					)
+				)
+
 			write_csv(
 				cdp_boundary_consolidated,
 				file.path(data_dir, "typing-delay-cdp-boundary-consolidated.csv")
@@ -11120,6 +11269,67 @@ if (
 					chromium_runtime_mechanism_decision_tree,
 					file.path(data_dir, "typing-delay-chromium-runtime-mechanism-decision-tree.csv")
 				)
+				write_csv(
+					chromium_runtime_claim_ladder_audit %>% select(-label_x, -label_y),
+					file.path(data_dir, "typing-delay-chromium-runtime-claim-ladder-audit.csv")
+				)
+
+			save_plot(
+				ggplot(
+					chromium_runtime_claim_ladder_audit,
+					aes(
+						validation_burden_score,
+						overclaim_risk_score,
+						color = decision,
+						shape = decision,
+						size = evidence_score
+					)
+				) +
+					geom_point(alpha = 0.9) +
+					geom_text(
+						aes(label_x, label_y, label = str_wrap(plot_label, width = 13)),
+						size = 3,
+						color = "grey20",
+						lineheight = 0.9,
+						show.legend = FALSE
+					) +
+					scale_color_brewer(type = "qual", palette = "Dark2", name = "Allowed claim") +
+					scale_shape_manual(
+						values = c(
+							"closed benchmark decision" = 16,
+							"ruled out" = 15,
+							"supported artifact" = 17,
+							"supported scale" = 18,
+							"requires trace" = 7,
+							"requires counters" = 8,
+							"separate workload" = 3,
+							"unnamed mechanism" = 4
+						),
+						name = "Allowed claim",
+						drop = FALSE
+					) +
+					scale_size_area(max_size = 8, breaks = 2:5, name = "Evidence strength") +
+					scale_x_continuous(
+						breaks = 1:5,
+						limits = c(0.65, 5.55),
+						labels = c("1" = "none", "2" = "small", "3" = "matched rows", "4" = "sidecar", "5" = "trace/counters")
+					) +
+					scale_y_continuous(
+						breaks = 1:5,
+						limits = c(0.65, 5.65),
+						labels = c("1" = "low", "2" = "metric", "3" = "scale", "4" = "mechanism", "5" = "overclaims state")
+					) +
+					labs(
+						title = "Chromium runtime evidence supports an artifact boundary, not a named browser state yet",
+						subtitle = "Allowed claims after wait, CDP checkpoint, trace snapshot, runtime-repeat, and native controls",
+						x = "Validation burden before making the claim",
+						y = "Risk if overstated"
+					) +
+					theme(legend.position = "bottom", legend.box = "vertical"),
+				"190-chromium-runtime-claim-ladder.png",
+				width = 12.5,
+				height = 7.6
+			)
 
 		save_plot(
 			ggplot(
