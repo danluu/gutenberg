@@ -1036,6 +1036,9 @@ The R script derives:
     information ranking for remaining unknowns, combining residual risk, impact
     if wrong, cost to close, and whether the answer can change a near-term
     decision.
+-   `data/typing-delay-open-question-stop-rules.csv`: stop-rule matrix for the
+    remaining open questions, mapping each one to the minimum closing evidence
+    and the result that should force broader instrumentation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9275,6 +9278,24 @@ instead of changing an immediate engineering decision.
 | 3 | Pattern-loading wait | High value because a wrong predicate can silently move readiness work into measurement. | Validate source-specific readiness and resource quiet before removing fixed sleeps. |
 | 4 | Store subscriber partition | Medium value, but only after a narrower selector/source artifact exists. | Do not start with a broad data-layer partition; first prove the local owner and compatibility gates. |
 | 5-8 | Workload, CPU/QoS, runtime, and presentation endpoints | Lower immediate value because they mainly bound mechanism or product-scope claims unless the report expands beyond the current benchmark artifact. | Keep them as claim-limiters; run them only when a product-latency, hardware-display, or named-system-mechanism claim is actually needed. |
+
+The stop-rule version is the guardrail against overfitting. Each row needs a
+pre-declared close condition and an expand condition. If the close condition
+passes, stop investigating that question for this report. If the expand
+condition happens, do not explain it away with the existing aggregate p50 data.
+
+![Open question stop rules](figures/206-open-question-stop-rules.png)
+
+| Question | Stop when this is true | Expand if this happens |
+| -------- | ---------------------- | ---------------------- |
+| CI topology / startup waits | real Performance Tests topology preserves row ordering, retained counts, failures, first-key tails, and resource placement | CI changes ordering, variance, failures, or resource timing relative to local rows |
+| Pattern-loading wait | source-specific readiness plus resource quiet preserves preview/canvas behavior and retained samples across lanes | hidden readiness work, preview/canvas failure, or resource movement enters the measured window |
+| Selector/source guards | behavior fixtures pass and source-span fanout collapses for the targeted owner before aggregate p50 is cited | behavior changes, source spans do not collapse, or the aggregate win appears without source evidence |
+| Store subscriber partition | public subscription, dynamic dependency, race, and persistence-selector fixtures pass with listener-count collapse | any compatibility fixture fails or the filtered lane changes public `@wordpress/data` semantics |
+| Runtime mechanism | trace-off sidecar preserves class ordering and joins a differentiating runtime state to retained key windows | observer placement perturbs ordering or no joined runtime field separates fast and slow classes |
+| CPU/QoS mechanism | sidecar plus `powermetrics` separates fast and slow classes by frequency, residency, QoS, power, or runnable state | counters do not separate rows, requiring root trace or an empirical-only conclusion |
+| Product workload | replay strata show the same owner/effect pattern for the product claim being made | correction, selection, paste, structure, IME, media/pattern, or plugin-heavy strata diverge |
+| Presentation endpoint | external glyph/display timing agrees with Chromium-internal screenshot/paint endpoints for retained keys | external endpoint ordering differs or cannot be joined without perturbing the benchmark |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -21815,6 +21815,146 @@ save_plot(
 	height = 7.4
 )
 
+open_question_stop_rules <- tribble(
+	~question, ~stop_when_true, ~expand_if, ~decision_if_pass, ~minimum_artifact, ~stop_rule_strictness_score, ~expansion_blast_radius_score, ~artifact_maturity_score, ~plot_label,
+	"CI topology / startup waits",
+	"Real Performance Tests topology preserves row ordering, retained counts, failures, first-key tails, and resource placement.",
+	"CI changes ordering, variance, failures, or resource timing relative to local rows.",
+	"Change wait policy only after the real topology artifact passes.",
+	"Raw CI retained samples plus q25/q50/q75/cnt, failures, first-key distributions, resources, and environment metadata.",
+	5.0, 5.0, 3.1, "CI topology",
+	"Pattern-loading wait",
+	"Source-specific readiness plus resource quiet preserves preview/canvas behavior and retained samples across lanes.",
+	"Hidden readiness work, preview/canvas failure, or resource movement enters the measured window.",
+	"Remove fixed sleeps only for the specs whose readiness predicate passes.",
+	"Per-spec readiness/resource artifact with fallback logs and preview/canvas/actionability counts.",
+	4.6, 4.5, 3.0, "patterns",
+	"Selector/source guards",
+	"Behavior fixtures pass and source-span fanout collapses for the targeted owner before aggregate p50 is cited.",
+	"Behavior changes, source spans do not collapse, or the aggregate win appears without source evidence.",
+	"Land only behavior-gated source guards with matching source-span collapse.",
+	"Focused unit/behavior fixtures plus source-span microscope and matched aggregate check.",
+	4.4, 4.2, 3.5, "selector",
+	"Store subscriber partition",
+	"Public subscription, dynamic dependency, race, and persistence-selector fixtures pass with listener-count collapse.",
+	"Any compatibility fixture fails or the filtered lane changes public @wordpress/data semantics.",
+	"Prototype only after narrower source ownership is proved.",
+	"Compatibility fixture suite plus marker-only listener/source-span collapse.",
+	5.0, 4.8, 2.2, "store",
+	"Runtime mechanism",
+	"Trace-off sidecar preserves class ordering and joins a differentiating runtime state to retained key windows.",
+	"Observer placement perturbs ordering or no joined runtime field separates fast and slow classes.",
+	"Name Chromium/runtime state only when the sidecar join passes.",
+	"Trace-off protocol sidecar with runtime checkpoints, timebase sync, and retained-key joins.",
+	4.0, 3.8, 2.0, "runtime",
+	"CPU/QoS mechanism",
+	"Sidecar plus powermetrics separates fast and slow classes by frequency, residency, QoS, power, or runnable state.",
+	"Counters do not separate rows, requiring root trace or an empirical-only conclusion.",
+	"Name CPU/QoS mechanism only after counter separation; otherwise keep empirical CPU-state sensitivity.",
+	"Accepted sidecar plus root powermetrics and optional root trace fallback.",
+	4.2, 4.0, 1.9, "CPU/QoS",
+	"Product workload",
+	"Replay strata show the same owner/effect pattern for the product claim being made.",
+	"Correction, selection, paste, structure, IME, media/pattern, or plugin-heavy strata diverge.",
+	"Generalize only to covered strata; keep fixed-x claims scoped otherwise.",
+	"Synthetic and recorded replay strata with assertions, endpoints, and per-stratum source spans.",
+	4.7, 4.6, 2.4, "workload",
+	"Presentation endpoint",
+	"External glyph/display timing agrees with Chromium-internal screenshot/paint endpoints for retained keys.",
+	"External endpoint ordering differs or cannot be joined without perturbing the benchmark.",
+	"Claim only Chromium-internal visual propagation unless external calibration passes.",
+	"External OCR/template/present/camera calibration joined per retained key.",
+	4.3, 3.4, 2.1, "display"
+) %>%
+	left_join(
+		open_question_value_of_information %>%
+			mutate(question = as.character(question)) %>%
+			select(question, value_rank, close_now_class, value_of_information_score),
+		by = "question"
+	) %>%
+	mutate(
+		close_now_class = fct_relevel(
+			close_now_class,
+			"close before acting",
+			"close after prerequisite",
+			"track as claim boundary"
+		),
+		label_x = artifact_maturity_score + case_when(
+			plot_label == "selector" ~ 0.1,
+			plot_label == "CI topology" ~ 0.1,
+			plot_label == "patterns" ~ -0.2,
+			plot_label == "store" ~ 0.12,
+			TRUE ~ 0.08
+		),
+		label_y = stop_rule_strictness_score + case_when(
+			plot_label == "CI topology" ~ 0.13,
+			plot_label == "patterns" ~ -0.16,
+			plot_label == "selector" ~ -0.18,
+			plot_label == "store" ~ -0.14,
+			plot_label == "runtime" ~ -0.18,
+			plot_label == "CPU/QoS" ~ 0.15,
+			plot_label == "workload" ~ 0.15,
+			TRUE ~ 0.16
+		)
+	)
+
+write_csv(
+	open_question_stop_rules %>%
+		select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-stop-rules.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_stop_rules,
+		aes(
+			artifact_maturity_score,
+			stop_rule_strictness_score,
+			color = close_now_class,
+			shape = close_now_class,
+			size = expansion_blast_radius_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Value class") +
+		scale_shape_manual(
+			values = c(
+				"close before acting" = 16,
+				"close after prerequisite" = 17,
+				"track as claim boundary" = 15
+			),
+			name = "Value class"
+		) +
+		scale_size_area(max_size = 6.6, breaks = 3:5, name = "Expand blast radius") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.6, 3.8),
+			labels = c("1" = "not ready", "2" = "sidecar/design", "3" = "artifact ready", "4" = "validated", "5" = "settled")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(3.5, 5.25),
+			labels = c("1" = "loose", "2" = "bounded", "3" = "specific", "4" = "strict", "5" = "predeclared")
+		) +
+		labs(
+			title = "Open questions need explicit stop and expand rules",
+			subtitle = "High-value rows should close only on predeclared artifact gates; claim-boundary rows should not block benchmark conclusions",
+			x = "Artifact maturity",
+			y = "Stop-rule strictness"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"206-open-question-stop-rules.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
