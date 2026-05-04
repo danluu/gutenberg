@@ -1032,6 +1032,10 @@ The R script derives:
 -   `data/typing-delay-open-question-residual-risk-ledger.csv`: residual-risk
     ledger for remaining questions, mapping each unknown to the likely wrong
     conclusion if acted on prematurely.
+-   `data/typing-delay-open-question-value-of-information.csv`: value-of-
+    information ranking for remaining unknowns, combining residual risk, impact
+    if wrong, cost to close, and whether the answer can change a near-term
+    decision.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9256,6 +9260,21 @@ near-term engineering decision. For runtime, CPU/QoS, presentation, and workload
 claims, the remaining risk mostly changes the claim boundary: the current
 benchmark artifact is still useful, but it should not be generalized beyond the
 observer it actually contains.
+
+The value-of-information version of the same ledger makes the stop/go line
+clearer. I scored each remaining unknown by residual risk times impact if wrong,
+divided by cost to close, with a penalty for rows that only refine claim wording
+instead of changing an immediate engineering decision.
+
+![Open question value of information](figures/205-open-question-value-of-information.png)
+
+| Rank | Unknown to close | Value-of-information result | Practical consequence |
+| ---- | ---------------- | --------------------------- | --------------------- |
+| 1 | CI topology / startup waits | Highest value because it can directly change wait-removal, variance, failure, and threshold-portability decisions. | Run the compact real-topology artifact before changing CI waits or claiming CI stability from local rows. |
+| 2 | Selector/source guards | High value because the closure artifact is cheap and can change source-level optimization choices. | Prototype only behind behavior gates and source-span collapse; aggregate p50 is secondary. |
+| 3 | Pattern-loading wait | High value because a wrong predicate can silently move readiness work into measurement. | Validate source-specific readiness and resource quiet before removing fixed sleeps. |
+| 4 | Store subscriber partition | Medium value, but only after a narrower selector/source artifact exists. | Do not start with a broad data-layer partition; first prove the local owner and compatibility gates. |
+| 5-8 | Workload, CPU/QoS, runtime, and presentation endpoints | Lower immediate value because they mainly bound mechanism or product-scope claims unless the report expands beyond the current benchmark artifact. | Keep them as claim-limiters; run them only when a product-latency, hardware-display, or named-system-mechanism claim is actually needed. |
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

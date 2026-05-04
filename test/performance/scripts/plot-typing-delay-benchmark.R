@@ -21734,6 +21734,87 @@ save_plot(
 	height = 7.4
 )
 
+open_question_value_of_information <- open_question_residual_risk_ledger %>%
+	select(-label_x, -label_y) %>%
+	mutate(
+		action_multiplier = case_when(
+			action_class == "changes decision" ~ 1.2,
+			action_class == "needs prerequisite" ~ 0.9,
+			TRUE ~ 0.55
+		),
+		value_of_information_score =
+			(residual_unknown_risk_score * impact_if_wrong_score * action_multiplier) /
+				cost_to_close_score,
+		close_now_class = case_when(
+			value_of_information_score >= 6 ~ "close before acting",
+			value_of_information_score >= 4 ~ "close after prerequisite",
+			TRUE ~ "track as claim boundary"
+		)
+	) %>%
+	arrange(desc(value_of_information_score), cost_to_close_score) %>%
+	mutate(
+		value_rank = row_number(),
+		plot_label = fct_reorder(plot_label, value_of_information_score)
+	)
+
+write_csv(
+	open_question_value_of_information,
+	file.path(data_dir, "typing-delay-open-question-value-of-information.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_value_of_information,
+		aes(
+			cost_to_close_score,
+			value_of_information_score,
+			color = close_now_class,
+			shape = risk_family,
+			size = impact_if_wrong_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(label = plot_label),
+			nudge_x = 0.08,
+			nudge_y = 0.16,
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Decision value") +
+		scale_shape_manual(
+			values = c(
+				"CI reliability" = 16,
+				"source safety" = 17,
+				"mechanism naming" = 15,
+				"claim expansion" = 18
+			),
+			name = "Risk family"
+		) +
+		scale_size_area(max_size = 6.4, breaks = 3:5, name = "Impact if wrong") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(2.15, 5.3),
+			labels = c("1" = "tiny", "2" = "local", "3" = "CI", "4" = "sidecar/replay", "5" = "root/external")
+		) +
+		scale_y_continuous(
+			breaks = c(0, 2, 4, 6, 8, 10),
+			limits = c(0.6, 10.2)
+		) +
+		labs(
+			title = "Highest-value open questions are the ones that can change near-term decisions",
+			subtitle = "Score = residual risk x impact if wrong x decision multiplier / cost to close",
+			x = "Cost to close",
+			y = "Value-of-information score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"205-open-question-value-of-information.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
