@@ -1070,6 +1070,9 @@ The R script derives:
     ladder for the first counter-backed CPU/QoS run.
 -   `data/typing-delay-cpu-qos-counter-join-contract.csv`: per-retained-key
     join contract for helper, renderer, collector, and counter windows.
+-   `data/typing-delay-cpu-qos-sidecar-mvp-plan.csv`: concrete implementation
+    and acceptance plan for the unprivileged CPU/QoS sidecar dry run that must
+    pass before root `powermetrics` or `trace` collection.
 -   `data/typing-delay-cpu-qos-counter-decision-tree.csv`: staged decision
     tree for sidecar, root `powermetrics`, root `trace`, browser trace, and
     fallback counter work.
@@ -4600,6 +4603,25 @@ The join fields that have to exist before the first root run are:
 | Collector sample join | collector run id, `powermetrics` plist path, trace path, sample begin/end, sample id, notification ids, sample interval | converts privileged samples from run-level correlations into per-key evidence |
 | Observer overhead sentinels | with/without collector rows, collector pid, collector CPU, dropped samples, class-order preservation | root collectors and tracing can perturb the scheduler and power state under test |
 | Environment and power metadata | AC/battery state, low-power mode, thermal pressure, OS build, core counts, container state, browser build | prevents pooling runs from different host states as if they were equivalent |
+
+The sidecar MVP makes "add the sidecar" concrete. The first run is deliberately
+unprivileged: prove that the benchmark can attach helper, renderer, collector,
+and retained-key windows without changing the already-known class ordering.
+Only then should a root `powermetrics` or `trace` collector be added.
+
+![CPU/QoS sidecar MVP plan](figures/197-cpu-qos-sidecar-mvp-plan.png)
+
+| Implementation piece | First change | Acceptance gate | Stop condition |
+| -------------------- | ------------ | --------------- | -------------- |
+| Compact row manifest lock | Freeze the first sidecar manifest to no-CPU slow, ordinary/utility fast, background/maintenance slow, fresh finite, stale finite, and one matched no-helper control. | The sidecar dry run reproduces the known class ordering before any privileged collector is attached. | Stop if the manifest no longer separates the known fast and slow classes before counters are added. |
+| Helper process wrapper | Log helper pid, process group, command, nice/taskpolicy/QoS policy, launch/start/end timestamps, CPU duration, exit status, and output paths. | Every helper-backed retained key joins to exactly one helper lifetime and policy row; no-helper rows explicitly record no helper. | Stop if helper policy or lifetime can only be inferred from the run label. |
+| Retained key-window sidecar | Emit a stable window id with run id, delay, mode, sample index, retained/throwaway status, q50 inclusion, key timings, `EventDispatch`, and browser/host clock sync. | `100%` of retained q50-contributing keys match existing latency records. | Stop before root collectors if retained-key joins are missing or alter q50 output. |
+| Renderer/browser identity | Record browser pid, renderer pid, main thread id if available, target id, frame id, browser revision, and fixture metadata. | Each retained key can be attributed to the foreground renderer that handled the input. | Stop if counters would describe only browser-wide or wrong-process state. |
+| Collector placeholder schema | Add collector run id placeholders, intended plist/trace paths, sample interval, notification labels, and observer configuration. | Sidecar-only artifacts contain all join columns that later root collector files will fill. | Stop if collector fields change the artifact schema in a way that affects curated metrics. |
+| Sidecar-only acceptance run | Run the compact manifest with sidecar enabled and privileged collectors disabled. | Class ordering survives, all retained windows join to helper and renderer fields, and overhead is bounded by matched no-sidecar rows. | Do not run root `powermetrics` if the sidecar alone perturbs the benchmark. |
+| Root `powermetrics` triage | After the sidecar passes, collect `100ms` plist samples with tasks, cpu_power, thermal, sfi, pstates, process QoS/tier/AMP/IPC/wait-time fields. | One sampled OS state predicts ordinary/utility fast rows and finite decay while absent from no-CPU and background/maintenance slow rows. | Escalate to root `trace` if frequency/residency/QoS counters do not separate rows or miss key windows. |
+| Root system trace escalation | Only after `powermetrics` is insufficient, record scheduler/QoS trace rows with the same sidecar windows and notification labels. | Runnable latency, processor selection, wakeup, or effective QoS explains the residual after matching `powermetrics` state. | Do not claim Darwin scheduler/QoS placement if trace overhead changes class ordering or counters still do not join per key. |
+| Browser/cache fallback | Only after OS counters fail, add browser scheduler/task-queue traces or lower-level renderer counters joined to the same key windows. | Browser queue/cache/stall state predicts residual latency after OS frequency, residency, and scheduler state are controlled. | Keep the mechanism unnamed if browser/cache rows need unrelated explanations or observer controls fail. |
 
 That produces a stricter decision tree:
 

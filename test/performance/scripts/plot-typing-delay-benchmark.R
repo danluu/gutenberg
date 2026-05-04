@@ -13016,6 +13016,92 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 								)
 							)
 
+						cpu_qos_sidecar_mvp_plan <- tribble(
+							~implementation_piece, ~phase_order, ~source_surface, ~required_change, ~first_validation, ~stop_condition, ~phase, ~implementation_burden_score, ~mechanism_unblock_score, ~observer_risk_score, ~plot_label,
+							"Compact row manifest lock", 1,
+							"typing-delay-cpu-qos-control-summary.csv; typing-delay-finite-cpu-model-*.csv",
+							"Freeze the first sidecar manifest to no-CPU slow, ordinary/utility fast, background/maintenance slow, fresh finite, stale finite, and one matched no-helper control.",
+							"The sidecar dry run reproduces the known class ordering before any privileged collector is attached.",
+							"Stop if the manifest no longer separates the known fast and slow classes before counters are added.",
+							"sidecar first", 1.8, 4.5, 2.0, "manifest",
+							"Helper process wrapper", 2,
+							"external CPU helper launch path used by task-end / CPU controls",
+							"Record helper pid, process group, command, nice/taskpolicy/QoS policy, launch/start/end timestamps, CPU duration, exit status, and stderr/stdout paths for each retained-key window.",
+							"Every helper-backed retained key joins to exactly one helper lifetime and policy row; no-helper rows explicitly record no helper.",
+							"Stop if helper policy or lifetime can only be inferred from the run label.",
+							"sidecar first", 2.6, 5.0, 3.0, "helper",
+							"Retained key-window sidecar", 3,
+							"delayRunSummaries records; EventDispatch/key event extraction",
+							"Emit a stable window id with run id, delay, delay mode, sample index, retained/throwaway status, q50 inclusion, keydown/keypress/keyup enqueue times, EventDispatch start/end, and browser/host clock sync.",
+							"100% of retained q50-contributing keys have key-window fields and match existing latency records.",
+							"Stop before root collectors if retained-key joins are missing or alter q50 output.",
+							"sidecar first", 2.8, 5.0, 3.0, "key windows",
+							"Renderer/browser identity", 4,
+							"Playwright browser/process metadata; CDP target/session metadata",
+							"Record browser pid, renderer pid, main thread id if available, target id, frame id, browser revision, and page URL/document fixture metadata per run.",
+							"Each retained key can be attributed to the foreground renderer that handled the input.",
+							"Stop if powermetrics/trace would describe only browser-wide or wrong-process counters.",
+							"sidecar first", 3.0, 4.8, 3.5, "renderer",
+							"Collector placeholder schema", 5,
+							"benchmark raw JSON and report extractor schema",
+							"Before root collection, add collector run id placeholders, intended powermetrics plist path, trace path, sample interval, notification labels, and observer configuration fields.",
+							"Sidecar-only artifacts contain all join columns that later root collector files will fill.",
+							"Stop if adding collector fields forces an incompatible artifact schema or changes curated metrics.",
+							"sidecar first", 3.2, 4.6, 3.5, "collector ids",
+							"Sidecar-only acceptance run", 6,
+							"compact CPU/QoS manifest with collectors disabled",
+							"Run the compact manifest with the sidecar enabled and privileged collectors disabled.",
+							"Class ordering survives, all retained windows join to helper and renderer fields, and sidecar overhead is bounded by matched no-sidecar rows.",
+							"Do not run root powermetrics if the sidecar alone perturbs the benchmark.",
+							"acceptance gate", 3.8, 5.0, 4.0, "acceptance",
+							"Root powermetrics triage", 7,
+							"powermetrics tasks/cpu_power plist output",
+							"After the sidecar passes, collect 100ms plist samples with tasks, cpu_power, thermal, sfi, pstates, process QoS/tier/AMP/IPC/wait-time fields.",
+							"One sampled OS state predicts ordinary/utility fast rows and finite decay while absent from no-CPU and background/maintenance slow rows.",
+							"Escalate to root trace if frequency/residency/QoS counters do not separate the rows or sampling misses key windows.",
+							"root counters", 4.4, 5.0, 5.0, "powermetrics",
+							"Root system trace escalation", 8,
+							"trace record scheduling/qos/processor-selection plans",
+							"Only after powermetrics is insufficient, record scheduler/QoS trace rows with the same sidecar windows and notification labels.",
+							"Runnable latency, processor selection, wakeup, or effective QoS explains the residual after matching powermetrics state.",
+							"Do not claim Darwin scheduler/QoS placement if trace overhead changes class ordering or counters still do not join per key.",
+							"root counters", 4.8, 4.6, 5.0, "system trace",
+							"Browser/cache fallback", 9,
+							"Chromium scheduler trace; lower-level renderer counters",
+							"Only after OS counters fail, add browser scheduler/task-queue traces or lower-level renderer counters joined to the same key windows.",
+							"Browser queue/cache/stall state predicts residual latency after OS frequency, residency, and scheduler state are controlled.",
+							"Keep the mechanism unnamed if browser/cache rows need unrelated explanations or observer controls fail.",
+							"deferred", 5.0, 3.8, 4.5, "browser/cache"
+						) %>%
+							mutate(
+								phase = factor(
+									phase,
+									levels = c("sidecar first", "acceptance gate", "root counters", "deferred")
+								),
+								label_x = implementation_burden_score + case_when(
+									plot_label == "manifest" ~ 0.12,
+									plot_label == "helper" ~ 0.16,
+									plot_label == "key windows" ~ 0.16,
+									plot_label == "renderer" ~ 0.16,
+									plot_label == "collector ids" ~ 0.16,
+									plot_label == "acceptance" ~ 0.16,
+									plot_label == "powermetrics" ~ -0.98,
+									plot_label == "system trace" ~ -0.94,
+									TRUE ~ -0.85
+								),
+								label_y = mechanism_unblock_score + case_when(
+									plot_label == "manifest" ~ -0.12,
+									plot_label == "helper" ~ 0.08,
+									plot_label == "key windows" ~ -0.12,
+									plot_label == "renderer" ~ -0.18,
+									plot_label == "collector ids" ~ -0.20,
+									plot_label == "acceptance" ~ 0.10,
+									plot_label == "powermetrics" ~ -0.14,
+									plot_label == "system trace" ~ -0.18,
+									TRUE ~ 0.14
+								)
+							)
+
 						cpu_qos_counter_decision_tree <- tribble(
 							~stage, ~stage_order, ~question_answered, ~required_inputs, ~advance_condition, ~fallback_condition, ~mechanism_value_score, ~collection_burden_score, ~decision, ~plot_label,
 							"Sidecar-only dry run", 1,
@@ -13195,6 +13281,10 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 								cpu_qos_counter_join_contract %>% select(-label_x, -label_y),
 								file.path(data_dir, "typing-delay-cpu-qos-counter-join-contract.csv")
 							)
+							write_csv(
+								cpu_qos_sidecar_mvp_plan %>% select(-label_x, -label_y),
+								file.path(data_dir, "typing-delay-cpu-qos-sidecar-mvp-plan.csv")
+							)
 						write_csv(
 							cpu_qos_counter_decision_tree,
 							file.path(data_dir, "typing-delay-cpu-qos-counter-decision-tree.csv")
@@ -13327,6 +13417,44 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						"182-cpu-qos-counter-join-contract.png",
 						width = 12,
 						height = 7
+					)
+
+					save_plot(
+						ggplot(
+							cpu_qos_sidecar_mvp_plan,
+							aes(
+								implementation_burden_score,
+								mechanism_unblock_score,
+								color = phase,
+								shape = phase,
+								size = observer_risk_score
+							)
+						) +
+							geom_point(alpha = 0.94) +
+							geom_text(
+								aes(x = label_x, y = label_y, label = plot_label),
+								size = 3,
+								color = "grey20",
+								show.legend = FALSE
+							) +
+							scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+							scale_shape_manual(values = c(16, 17, 15, 18), drop = FALSE) +
+							scale_size_continuous(range = c(2.8, 5.6), breaks = 2:5) +
+							scale_x_continuous(breaks = 1:5, limits = c(1.55, 5.35)) +
+							scale_y_continuous(breaks = 1:5, limits = c(3.35, 5.35)) +
+							labs(
+								title = "CPU/QoS counters need a sidecar dry run before sudo",
+								subtitle = "First prove helper, renderer, collector, and retained-key joins without root collectors",
+								x = "implementation burden",
+								y = "mechanism unblock value",
+								color = "Phase",
+								shape = "Phase",
+								size = "observer risk"
+							) +
+							theme(legend.position = "bottom", legend.box = "vertical"),
+						"197-cpu-qos-sidecar-mvp-plan.png",
+						width = 12.3,
+						height = 7.0
 					)
 
 					save_plot(
