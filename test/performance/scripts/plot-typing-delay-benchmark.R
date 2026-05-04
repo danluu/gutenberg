@@ -8715,6 +8715,96 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 				height = 6.6
 			)
 		}
+
+		system_mechanism_matrix <- tribble(
+			~candidate_theory, ~status, ~evidence_strength, ~strongest_measurement, ~implication, ~remaining_gap,
+			"Chrome EventDispatch accounting artifact only", "ruled out", 5,
+			"Key-held visual endpoints drop with EventDispatch: DrawFrame, Paint, RAF, and changed screenshots all move in the same direction.",
+			"The cliff is not just a Chromium trace-slice labeling problem.",
+			"Visual endpoints are still browser-derived; a camera/display probe would be the external check.",
+			"Gutenberg 1000ms timer callback existence is enough", "ruled out", 5,
+			"Near-key no-CPU controls stay slow: median control p50 is 24.3ms across six controls.",
+			"A callback, worker lifetime, delayed task, IPC shape, or idle child close to keydown does not by itself produce the fast band.",
+			"Timer ordering still determines which regime is sampled, but it is not a sufficient mechanism.",
+			"Any external CPU burn anywhere is enough", "ruled out", 5,
+			"Continuous background/maintenance CPU stays slow: median control p50 is 24.2ms despite real CPU consumption.",
+			"The CPU explanation is policy-sensitive, not generic load-sensitive.",
+			"The exact lower-level boundary needs OS scheduler and power counters.",
+			"taskpolicy tiering in general explains the split", "ruled out", 4,
+			"`taskpolicy -l 0..5` and `taskpolicy -t 0..5` all stay in the fast 9.2-9.7ms band.",
+			"The slow cases are specific to Darwin background priority and QoS background/maintenance clamps.",
+			"Need OS-level traces to distinguish QoS scheduling from power-state effects.",
+			"A large native/browser input effect is sufficient", "ruled out for large cliff", 4,
+			"Native contenteditable moves in the same direction, but only from 1.20ms to 0.49ms.",
+			"Browser/system state can modulate input cost, but Gutenberg's heavier path amplifies it into a 10ms+ cliff.",
+			"Native controls do not identify which Gutenberg subscriptions are product-actionable.",
+			"Recent finite CPU duration/proximity explains finite controls", "supported boundary", 4,
+			"The two-term finite-burst model has R^2 = 0.71; longer CPU work and smaller end-to-keydown gaps predict lower p50.",
+			"Duration and recency are real descriptive variables, not coincidental labels.",
+			"The model is descriptive and does not identify P-core residency, frequency, cache, or scheduler state.",
+			"Ordinary/utility-QoS CPU activity puts the path in the fast band", "supported boundary", 5,
+			"Continuous ordinary/nice/utility CPU controls are low: median control p50 is 9.7ms, with utility at 9.4ms.",
+			"The remaining system claim is specifically ordinary/utility-QoS CPU state interacting with the foreground browser/editor path.",
+			"Requires external counters to prove which CPU/QoS/power-state component is causal.",
+			"Gutenberg broad input path amplifies the system state", "supported boundary", 4,
+			"Source traces find thousands of small data/RichText listener calls; native controls show only a sub-1ms version of the same direction.",
+			"The product-visible cliff needs Gutenberg's broad input/subscriber path, not just native DOM event overhead.",
+			"Exact source-level mitigation still needs an implementation prototype and regression check.",
+			"Exact hardware or scheduler layer is identified", "still open", 2,
+			"No current JS/browser trace includes per-core residency, frequency, cache, or scheduler/QoS transition counters.",
+			"The honest current answer stops at a narrowed system-boundary hypothesis.",
+			"Needs hardware counters, OS scheduler/QoS traces, or browser traces with OS scheduling categories."
+		) %>%
+			mutate(
+				status = factor(
+					status,
+					levels = c(
+						"ruled out",
+						"ruled out for large cliff",
+						"supported boundary",
+						"still open"
+					)
+				),
+				theory_order = row_number(),
+				candidate_theory_wrapped = str_wrap(candidate_theory, width = 42)
+			)
+
+		write_csv(
+			system_mechanism_matrix,
+			file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
+		)
+
+		save_plot(
+			ggplot(
+				system_mechanism_matrix,
+				aes(
+					evidence_strength,
+					fct_reorder(candidate_theory_wrapped, theory_order, .desc = TRUE),
+					color = status,
+					shape = status
+				)
+			) +
+				geom_point(size = 4.3, alpha = 0.95) +
+				scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+				scale_shape_manual(values = c(
+					`ruled out` = 4,
+					`ruled out for large cliff` = 13,
+					`supported boundary` = 16,
+					`still open` = 1
+				), drop = FALSE) +
+				scale_x_continuous(breaks = 1:5, limits = c(1, 5.4)) +
+				labs(
+					title = "Most broad system-level explanations are already ruled out",
+					subtitle = "Qualitative evidence matrix from visual, native, CPU/QoS, and taskpolicy controls",
+					x = "Evidence strength from existing controls (1-5)",
+					y = NULL,
+					color = "Status",
+					shape = "Status"
+				),
+			"129-system-mechanism-falsification-matrix.png",
+			width = 11.5,
+			height = 7.3
+		)
 	}
 
 	if (file.exists(native_busy_wait_control_summary_path)) {

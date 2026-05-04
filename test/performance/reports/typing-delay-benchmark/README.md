@@ -791,6 +791,8 @@ The R script derives:
     summary for the remaining system-level open question.
 -   `data/typing-delay-finite-cpu-model-*.csv`: descriptive finite-CPU-burst
     duration/proximity model coefficients and predictions.
+-   `data/typing-delay-system-mechanism-falsification-matrix.csv`: compact
+    evidence matrix for the remaining system-level mechanism theories.
 
 One subtle benchmark bug was fixed during the investigation: an earlier version
 re-clicked the paragraph via an "Empty block" accessible name before each delay.
@@ -2953,6 +2955,35 @@ ordinary/utility CPU activity changes the measured Gutenberg input path, while
 background/maintenance-QoS CPU does not. It cannot identify the hardware layer:
 P-core residency, cluster frequency, power management, timer coalescing, and
 Darwin scheduler/QoS policy remain below this trace setup.
+
+### System Mechanism Falsification Matrix
+
+I turned the remaining system-level question into a small evidence matrix. This
+does not make the last hardware/scheduler layer disappear; it says which broad
+explanations are already incompatible with the controls above and which narrower
+claim still survives.
+
+![System mechanism falsification matrix](figures/129-system-mechanism-falsification-matrix.png)
+
+| Candidate theory | Current status | Strongest current measurement |
+| ---------------- | -------------- | ----------------------------- |
+| Chrome `EventDispatch` accounting artifact only | ruled out | Key-held RAF, render-trace, and changed-screenshot endpoints all move with `EventDispatch`. |
+| The `1000ms` timer callback existing is enough | ruled out | Near-key no-CPU task controls stay slow: median control p50 `24.3ms`. |
+| Any external CPU burn anywhere is enough | ruled out | Background/maintenance-QoS CPU controls stay slow: median control p50 `24.2ms`. |
+| `taskpolicy` tiering in general explains the split | ruled out | `taskpolicy -l 0..5` and `taskpolicy -t 0..5` all stay fast in the `9.2-9.7ms` band. |
+| A large native/browser input effect is sufficient | ruled out for the large cliff | Native `contenteditable` moves in the same direction, but only from `1.20ms` to `0.49ms`. |
+| Recent finite CPU duration/proximity explains finite controls | supported boundary | The two-variable finite-burst model explains `71%` of finite-control p50 variation. |
+| Ordinary/utility-QoS CPU activity puts the path in the fast band | supported boundary | Continuous ordinary, `nice +20`, and utility-QoS CPU controls are low: median control p50 `9.7ms`. |
+| Gutenberg broad input path amplifies the system state | supported boundary | Native controls show only a sub-`1ms` effect; Gutenberg source traces show thousands of small RichText/data listener calls. |
+| Exact hardware or scheduler layer is identified | still open | The current trace setup has no per-core residency, frequency, cache, or scheduler/QoS transition counters. |
+
+That is the narrower current answer: the large cliff requires Gutenberg's broad
+input path and is modulated by recent ordinary/utility-QoS CPU state. It is not
+generic timer ordering, generic callback existence, generic CPU load, generic
+`taskpolicy` behavior, or a trace-only Chrome artifact. Closing the final layer
+would need measurements outside this JS/browser harness: hardware counters,
+Darwin scheduler/QoS traces, or browser traces that include OS scheduling and
+power-state categories.
 
 The CPU gap-decay sweep confirms the "recent" part:
 
@@ -5709,10 +5740,13 @@ new CPU/QoS audit quantifies the split: near-key no-CPU tasks stay slow
 background/maintenance CPU stays slow (`24.2ms`). A two-variable finite-burst
 model using CPU duration and end-to-keydown gap explains `71%` of the p50
 variation in those controls. The remaining mechanism is therefore below this
-benchmark's normal JS instrumentation: likely CPU/QoS/power-state interaction
-with a broad Gutenberg input path, not one bad selector, one browser trace
-accounting quirk, taskpolicy tiering in general, or timer ordering alone.
-Proving that final layer would need hardware/browser-level instrumentation.
+benchmark's normal JS instrumentation. The new falsification matrix makes the
+remaining claim more precise: the surviving explanation is ordinary/utility-QoS
+CPU state interacting with Gutenberg's broad input path. It is not one bad
+selector, one browser trace accounting quirk, timer callback existence, generic
+CPU load, taskpolicy tiering in general, or timer ordering alone. Proving the
+final layer would need hardware/browser-level instrumentation below this JS
+harness.
 
 The source-audited owner pass closes a smaller open question about the broad
 Gutenberg side of that path. The dominant low-level Redux listener rows are
