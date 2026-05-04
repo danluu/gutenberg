@@ -21614,6 +21614,126 @@ save_plot(
 	height = 7.4
 )
 
+open_question_residual_risk_ledger <- tribble(
+	~question, ~risk_family, ~action_class, ~residual_unknown, ~wrong_conclusion_if_acted_now, ~current_decision_readiness_score, ~residual_unknown_risk_score, ~impact_if_wrong_score, ~cost_to_close_score, ~plot_label,
+	"CI topology / startup waits", "CI reliability", "changes decision",
+	"Whether local row ordering, first-key tails, retained counts, failures, and resource movement survive the real Performance Tests topology.",
+	"Local wait-removal looks stable but increases CI volatility or shifts async work into measurement.",
+	3.2, 4.8, 5.0, 3.0, "CI topology",
+	"Pattern-loading wait", "CI reliability", "changes decision",
+	"Whether the source-specific predicate preserves preview/canvas behavior and resource quiet across lanes.",
+	"Fixed sleeps are removed while hidden readiness work becomes the new benchmark input.",
+	3.0, 4.2, 4.2, 3.2, "patterns",
+	"Selector/source guards", "source safety", "changes decision",
+	"Whether behavior gates and source-span fanout collapse before aggregate p50 moves.",
+	"A timing win is credited to a selector optimization that actually changed editor semantics.",
+	3.5, 3.8, 4.4, 2.4, "selector",
+	"Store subscriber partition", "source safety", "needs prerequisite",
+	"Whether public subscription semantics and dynamic dependency cases survive a filtered lane.",
+	"A lower listener count is mistaken for a compatible @wordpress/data contract.",
+	2.4, 4.5, 4.8, 4.0, "store",
+	"Runtime mechanism", "mechanism naming", "claim-boundary only",
+	"Which trace-off Chromium/runtime state joins to the retained key windows without perturbing ordering.",
+	"A delay-dependent artifact is named as V8, scheduler, or tracing behavior without a stable observer.",
+	2.8, 4.6, 3.6, 4.6, "runtime",
+	"CPU/QoS mechanism", "mechanism naming", "claim-boundary only",
+	"Whether frequency, residency, QoS, cache, or runnable-latency counters separate the fast/slow classes.",
+	"A machine-specific power or scheduler phase is overfit into a Gutenberg-level explanation.",
+	2.6, 4.8, 3.8, 5.0, "CPU/QoS",
+	"Product workload", "claim expansion", "claim-boundary only",
+	"Whether correction, selection, paste, block-structure, IME, media, pattern, and plugin-heavy histories have the same owners.",
+	"Fixed-x latency is treated as representative product latency.",
+	2.2, 4.4, 4.6, 4.2, "workload",
+	"Presentation endpoint", "claim expansion", "claim-boundary only",
+	"Whether external glyph/display timing agrees with Chromium-internal screenshots and paint endpoints.",
+	"Browser-internal visual propagation is described as user-visible display latency.",
+	2.8, 3.6, 3.2, 4.4, "display"
+) %>%
+	mutate(
+		action_class = factor(
+			action_class,
+			levels = c("changes decision", "needs prerequisite", "claim-boundary only")
+		),
+		risk_family = factor(
+			risk_family,
+			levels = c("CI reliability", "source safety", "mechanism naming", "claim expansion")
+		),
+		label_x = current_decision_readiness_score + case_when(
+			plot_label == "selector" ~ 0.12,
+			plot_label == "CI topology" ~ -0.32,
+			plot_label == "patterns" ~ -0.25,
+			plot_label == "display" ~ 0.12,
+			TRUE ~ 0.12
+		),
+		label_y = residual_unknown_risk_score + case_when(
+			plot_label == "selector" ~ -0.24,
+			plot_label == "CI topology" ~ 0.16,
+			plot_label == "patterns" ~ -0.22,
+			plot_label == "store" ~ 0.18,
+			plot_label == "runtime" ~ -0.22,
+			plot_label == "CPU/QoS" ~ 0.18,
+			plot_label == "workload" ~ -0.2,
+			TRUE ~ 0.18
+		)
+	)
+
+write_csv(
+	open_question_residual_risk_ledger %>%
+		select(-label_x, -label_y),
+	file.path(data_dir, "typing-delay-open-question-residual-risk-ledger.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_residual_risk_ledger,
+		aes(
+			current_decision_readiness_score,
+			residual_unknown_risk_score,
+			color = risk_family,
+			shape = action_class,
+			size = impact_if_wrong_score
+		)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = plot_label),
+			size = 3,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Set2", name = "Risk family") +
+		scale_shape_manual(
+			values = c(
+				"changes decision" = 16,
+				"needs prerequisite" = 17,
+				"claim-boundary only" = 15
+			),
+			name = "How it matters"
+		) +
+		scale_size_area(max_size = 6.5, breaks = 3:5, name = "Impact if wrong") +
+		scale_x_continuous(
+			breaks = 1:5,
+			limits = c(1.8, 3.85),
+			labels = c("1" = "not ready", "2" = "weak", "3" = "design artifact", "4" = "act locally", "5" = "act broadly")
+		) +
+		scale_y_continuous(
+			breaks = 1:5,
+			limits = c(3.2, 5.15),
+			labels = c("1" = "low", "2" = "bounded", "3" = "moderate", "4" = "high", "5" = "decision-risk")
+		) +
+		labs(
+			title = "Remaining unknowns mostly decide scope, not the 1000ms cliff story",
+			subtitle = "CI topology, pattern readiness, and source safety can change near-term decisions; mechanism and product rows mainly bound claims",
+			x = "Current decision readiness",
+			y = "Residual unknown risk"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"204-open-question-residual-risk-ledger.png",
+	width = 12.8,
+	height = 7.4
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

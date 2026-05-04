@@ -1029,6 +1029,9 @@ The R script derives:
 -   `data/typing-delay-open-question-execution-runbook.csv`: executable
     runbook for the highest-priority remaining open questions, with artifact
     shape, acceptance gate, stop/expand rule, and premature-work guard.
+-   `data/typing-delay-open-question-residual-risk-ledger.csv`: residual-risk
+    ledger for remaining questions, mapping each unknown to the likely wrong
+    conclusion if acted on prematurely.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9228,6 +9231,31 @@ need concrete artifacts, not another generic request for more samples.
 | Shared retained-key sidecar schema | Unprivileged key-window/helper/renderer/collector/command schema with clock sync and no root collectors. | Every retained q50-contributing key joins to the expected helper, renderer, command, and collector placeholder rows without changing class ordering. | If join coverage or class ordering fails, do not run root counters or browser trace categories. |
 | CPU/QoS counter run | Compact manifest under root `powermetrics` after sidecar acceptance. | Frequency/residency/QoS/power state separates ordinary/utility fast rows from no-CPU and background/maintenance rows. | If `powermetrics` cannot separate rows, escalate to root `trace`; if trace also fails, keep only empirical CPU-state sensitivity. |
 | Trace-off protocol sidecar | Runtime command sidecar joined to retained key gaps and runtime-repeat controls. | Repeated runtime checkpoints reproduce the dose response without observer perturbation and expose joinable runtime/scheduler fields. | If the sidecar perturbs ordering or fields do not separate rows, stop naming Chromium internals. |
+
+The remaining uncertainty is not symmetric. Some open questions can change an
+engineering decision now; others can only change the wording of a mechanism
+claim. I split those risks explicitly so the report does not treat every
+unknown as equally blocking.
+
+![Open question residual risk ledger](figures/204-open-question-residual-risk-ledger.png)
+
+| Question | Residual unknown | Likely wrong conclusion if acted on now |
+| -------- | ---------------- | --------------------------------------- |
+| CI topology / startup waits | whether local row ordering, first-key tails, retained counts, failures, and resource movement survive the real Performance Tests topology | local wait-removal looks stable but increases CI volatility or shifts async work into measurement |
+| Pattern-loading wait | whether the source-specific predicate preserves preview/canvas behavior and resource quiet across lanes | fixed sleeps are removed while hidden readiness work becomes the new benchmark input |
+| Selector/source guards | whether behavior gates and source-span fanout collapse before aggregate p50 moves | a timing win is credited to a selector optimization that actually changed editor semantics |
+| Store subscriber partition | whether public subscription semantics and dynamic dependency cases survive a filtered lane | a lower listener count is mistaken for a compatible `@wordpress/data` contract |
+| Runtime mechanism | which trace-off Chromium/runtime state joins to the retained key windows without perturbing ordering | a delay-dependent artifact is named as V8, scheduler, or tracing behavior without a stable observer |
+| CPU/QoS mechanism | whether frequency, residency, QoS, cache, or runnable-latency counters separate the fast/slow classes | a machine-specific power or scheduler phase is overfit into a Gutenberg-level explanation |
+| Product workload | whether correction, selection, paste, block-structure, IME, media, pattern, and plugin-heavy histories have the same owners | fixed-`x` latency is treated as representative product latency |
+| Presentation endpoint | whether external glyph/display timing agrees with Chromium-internal screenshots and paint endpoints | browser-internal visual propagation is described as user-visible display latency |
+
+This changes what "deeper analysis" should mean. For CI topology, pattern
+loading, selector guards, and store partitioning, the remaining risk can change a
+near-term engineering decision. For runtime, CPU/QoS, presentation, and workload
+claims, the remaining risk mostly changes the claim boundary: the current
+benchmark artifact is still useful, but it should not be generalized beyond the
+observer it actually contains.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
