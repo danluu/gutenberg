@@ -12087,8 +12087,8 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 							)
 						)
 
-					cpu_qos_counter_first_run_plan <- tribble(
-						~phase, ~phase_order, ~purpose, ~minimum_rows, ~collector, ~pass_condition, ~failure_or_expansion_trigger, ~implementation_status, ~plot_label,
+						cpu_qos_counter_first_run_plan <- tribble(
+							~phase, ~phase_order, ~purpose, ~minimum_rows, ~collector, ~pass_condition, ~failure_or_expansion_trigger, ~implementation_status, ~plot_label,
 						"Add benchmark sidecar", 1,
 						"Make OS/browser samples joinable to retained keys instead of only class medians.",
 						"all compact rows",
@@ -12130,12 +12130,133 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 							implementation_status = factor(
 								implementation_status,
 								levels = c("code change", "blocked: root", "harness work", "not started")
+								)
 							)
-						)
 
-				write_csv(
-					system_mechanism_matrix,
-					file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
+						cpu_qos_counter_join_contract <- tribble(
+							~join_surface, ~required_fields, ~why_required, ~current_state, ~failure_mode_if_missing, ~add_before_root_run, ~mechanism_value_score, ~join_blocker_score, ~plot_label,
+							"Retained key window identity",
+							"run id; branch; delay; delay mode; sample index; retained/throwaway status; q50 inclusion; typed character",
+							"Anchors every OS/browser counter sample to the same retained key that contributes to the benchmark q50.",
+							"Partial: raw key timing exists in benchmark artifacts, but the compact CPU/QoS rows do not yet carry stable retained-key join ids.",
+							"Root counters can only be compared as class medians, which is too weak for a mechanism claim.",
+							TRUE, 5, 5, "retained key",
+							"Input and EventDispatch timebase",
+							"keydown/keypress/keyup enqueue times; EventDispatch start/end; browser monotonic clock; host wall-clock mapping",
+							"Separates queueing or wakeup changes from listener-duration changes and makes sampled counters overlap the measured slice.",
+							"Partial: Chromium traces have EventDispatch slices, but they are not currently joined to OS-counter sample ids.",
+							"A fast row could be misread as faster JS work when only input enqueue or wakeup timing moved.",
+							TRUE, 5, 5, "timebase",
+							"Helper process lifetime and policy",
+							"helper pid; process group; launch/start/end; command; nice/taskpolicy/QoS policy; CPU duration; exit status",
+							"The decisive local split is policy-sensitive CPU: ordinary/utility rows are fast while background/maintenance rows stay slow.",
+							"Partial: helper mode names are recorded, but per-retained-key PID, lifetime, and effective policy are not.",
+							"The observed fast/slow split could be joined to the wrong helper or wrong policy window.",
+							TRUE, 5, 4, "helper pid",
+							"Renderer and browser process identity",
+							"renderer pid; browser pid; main thread id if available; page target/frame id; browser revision",
+							"Process-level counters need to identify the foreground renderer that handled the measured input.",
+							"Partial: browser revision and trace target exist in some artifacts; renderer pid/thread id is not a stable sidecar field.",
+							"Powermetrics or trace samples may describe the wrong process or aggregate away the foreground renderer.",
+							TRUE, 5, 4, "renderer pid",
+							"Collector sample join",
+							"collector run id; powermetrics plist path; trace file path; sample begin/end; sample id; notification ids; sample interval",
+							"Turns privileged sampled counters into per-key evidence instead of a run-level correlation.",
+							"Missing: current artifacts do not record collector filenames, sample ids, or trace notifications.",
+							"Counter rows cannot be audited against individual retained keys or source-span windows.",
+							TRUE, 5, 5, "sample ids",
+							"Observer overhead sentinels",
+							"with/without collector control rows; collector pid; collector CPU; dropped samples; class-order preservation",
+							"Root collectors and browser tracing can perturb exactly the scheduler and power state under test.",
+							"Partial: existing no-trace/trace controls cover some browser-trace effects, but not root counter overhead.",
+							"A counter-backed mechanism could be an artifact of the observer changing the class ordering.",
+							TRUE, 4, 4, "overhead",
+							"Environment and power metadata",
+							"AC/battery state; low-power mode; thermal pressure; OS build; core counts; container state; browser build",
+							"Power and scheduler hypotheses are host-state sensitive and need portability context.",
+							"Partial: local host metadata is in the report, but not in a per-run sidecar schema.",
+							"Runs from different host states can be pooled as if they were equivalent.",
+							TRUE, 3, 3, "environment",
+							"Source-span and browser scheduler ids",
+							"Gutenberg source-span ids; V8 slices; task queue ids; protocol command timing; scheduler trace categories",
+							"Needed only if OS counters do not explain the split and the claim moves to Chromium scheduler state.",
+							"Partial: Gutenberg source spans exist; scheduler/runtime categories are not in the compact counter run.",
+							"Browser-scheduler explanations would be unjoinable to the measured input windows.",
+							FALSE, 4, 3, "browser ids"
+						) %>%
+							mutate(
+								add_before_root_run = factor(
+									if_else(add_before_root_run, "required before first root run", "after OS-counter split"),
+									levels = c("required before first root run", "after OS-counter split")
+								),
+								label_x = case_when(
+									plot_label == "retained key" ~ 5.12,
+									plot_label == "timebase" ~ 4.68,
+									plot_label == "sample ids" ~ 4.68,
+									plot_label == "helper pid" ~ 5.12,
+									plot_label == "renderer pid" ~ 4.68,
+									TRUE ~ mechanism_value_score + 0.08
+								),
+								label_y = case_when(
+									plot_label == "retained key" ~ 5.08,
+									plot_label == "timebase" ~ 4.92,
+									plot_label == "sample ids" ~ 5.24,
+									plot_label == "helper pid" ~ 4.06,
+									plot_label == "renderer pid" ~ 3.84,
+									TRUE ~ join_blocker_score + 0.08
+								)
+							)
+
+						cpu_qos_counter_decision_tree <- tribble(
+							~stage, ~stage_order, ~question_answered, ~required_inputs, ~advance_condition, ~fallback_condition, ~mechanism_value_score, ~collection_burden_score, ~decision, ~plot_label,
+							"Sidecar-only dry run", 1,
+							"Can every retained key be joined to helper, browser, and collector windows without changing the benchmark result?",
+							"retained-key id; input/EventDispatch timebase; helper pid/policy; renderer pid; collector file placeholders",
+							"100% of retained keys have join fields, and the compact q50 class ordering matches the existing uninstrumented run.",
+							"Do not run root counters yet; fix join fields or observer overhead first.",
+							5, 2, "do first", "sidecar",
+							"Root powermetrics compact rows", 2,
+							"Do frequency, cluster residency, process QoS, AMP counters, or thermal/power state distinguish fast and slow classes?",
+							"sidecar join plus no-CPU slow, ordinary/utility fast, background/maintenance slow, fresh finite, and stale finite rows",
+							"One sampled OS state predicts ordinary/utility fast rows and finite decay while absent from no-CPU and background/maintenance slow rows.",
+							"If sampling cadence misses key windows or counters do not separate rows, add system trace.",
+							5, 4, "first root run", "powermetrics",
+							"Root system trace split", 3,
+							"If powermetrics is insufficient, do runnable latency, QoS placement, wakeup timing, or processor selection explain the rows?",
+							"same compact rows with trace notifications joined to retained keys",
+							"Scheduler/QoS timing predicts the same fast/slow split after accounting for frequency and residency.",
+							"If trace overhead changes class ordering or scheduler state still does not separate rows, test browser scheduler state.",
+							5, 5, "conditional", "trace",
+							"Chromium scheduler trace", 4,
+							"After OS state is controlled, do browser queue, task priority, V8, or runtime slices explain the residual?",
+							"matched browser runtime/scheduler categories plus source spans and OS-counter alignment",
+							"Browser queue/task state predicts residual latency when OS frequency/residency/QoS does not.",
+							"If browser trace duplicates the OS split or perturbs the path, keep the mechanism at the OS-counter layer.",
+							4, 4, "conditional", "browser",
+							"Cache or memory fallback", 5,
+							"If OS and browser scheduling are both insufficient, is the remaining split a cache/memory hierarchy effect?",
+							"lower-level counters or specialized profiler support joined to retained EventDispatch windows",
+							"Renderer stall or miss ratios separate fast and slow rows without matching frequency, QoS, or scheduler differences.",
+							"Do not claim cache/memory from JS timing alone.",
+							3, 5, "fallback only", "cache",
+							"Mechanism report gate", 6,
+							"Is there one named state variable that predicts all discriminating rows?",
+							"joined per-key table containing all successful compact rows and observer controls",
+							"No-CPU slow, ordinary/utility fast, background/maintenance slow, and finite decay all follow the same recorded state.",
+							"If only medians agree or different row families need unrelated explanations, leave the mechanism unnamed.",
+							5, 3, "report gate", "gate"
+						) %>%
+							mutate(
+								stage = factor(stage, levels = stage),
+								decision = factor(
+									decision,
+									levels = c("do first", "first root run", "conditional", "fallback only", "report gate")
+								)
+							)
+
+					write_csv(
+						system_mechanism_matrix,
+						file.path(data_dir, "typing-delay-system-mechanism-falsification-matrix.csv")
 				)
 			write_csv(
 				cpu_qos_next_probe_audit,
@@ -12153,10 +12274,18 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 						cpu_qos_local_counter_feasibility_audit,
 						file.path(data_dir, "typing-delay-cpu-qos-local-counter-feasibility-audit.csv")
 					)
-					write_csv(
-						cpu_qos_counter_first_run_plan,
-						file.path(data_dir, "typing-delay-cpu-qos-counter-first-run-plan.csv")
-					)
+						write_csv(
+							cpu_qos_counter_first_run_plan,
+							file.path(data_dir, "typing-delay-cpu-qos-counter-first-run-plan.csv")
+						)
+							write_csv(
+								cpu_qos_counter_join_contract %>% select(-label_x, -label_y),
+								file.path(data_dir, "typing-delay-cpu-qos-counter-join-contract.csv")
+							)
+						write_csv(
+							cpu_qos_counter_decision_tree,
+							file.path(data_dir, "typing-delay-cpu-qos-counter-decision-tree.csv")
+						)
 
 			save_plot(
 				ggplot(
@@ -12221,9 +12350,9 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 					height = 7
 				)
 
-				save_plot(
-					ggplot(
-						cpu_qos_counter_first_run_plan,
+					save_plot(
+						ggplot(
+							cpu_qos_counter_first_run_plan,
 						aes(phase_order, phase, color = implementation_status, shape = implementation_status)
 					) +
 						geom_point(size = 4, alpha = 0.95) +
@@ -12246,10 +12375,82 @@ if (file.exists(marker_summary_path) && file.exists(marker_samples_path)) {
 							shape = "Implementation state"
 						),
 					"173-cpu-qos-counter-first-run-plan.png",
-					width = 12,
-					height = 6.8
-				)
-		}
+						width = 12,
+						height = 6.8
+					)
+
+					save_plot(
+						ggplot(
+							cpu_qos_counter_join_contract,
+							aes(
+								mechanism_value_score,
+								join_blocker_score,
+								color = add_before_root_run,
+								shape = add_before_root_run
+							)
+						) +
+							geom_point(size = 4, alpha = 0.95) +
+							geom_text(
+								aes(x = label_x, y = label_y, label = plot_label),
+								size = 3,
+								show.legend = FALSE
+							) +
+							scale_color_brewer(type = "qual", palette = "Dark2", drop = FALSE) +
+							scale_shape_manual(values = c(16, 17), drop = FALSE) +
+							scale_x_continuous(breaks = 1:5, limits = c(1, 5.7)) +
+							scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+							labs(
+								title = "Root CPU/QoS counters need joinable key windows first",
+								subtitle = "Higher x means more decisive for the mechanism; higher y means a larger false-correlation risk if missing",
+								x = "mechanism value (1 = weak, 5 = decisive)",
+								y = "join blocker if absent (1 = low, 5 = severe)",
+								color = "Timing",
+								shape = "Timing"
+							),
+						"182-cpu-qos-counter-join-contract.png",
+						width = 12,
+						height = 7
+					)
+
+					save_plot(
+						ggplot(
+							cpu_qos_counter_decision_tree,
+							aes(
+								stage_order,
+								collection_burden_score,
+								color = decision,
+								shape = decision,
+								size = mechanism_value_score
+							)
+						) +
+							geom_point(alpha = 0.94) +
+							geom_text(
+								aes(label = plot_label),
+								nudge_x = 0.09,
+								nudge_y = 0.08,
+								size = 3,
+								show.legend = FALSE,
+								check_overlap = TRUE
+							) +
+							scale_color_brewer(type = "qual", palette = "Set1", drop = FALSE) +
+							scale_shape_manual(values = c(16, 17, 15, 8, 18), drop = FALSE) +
+							scale_size_continuous(range = c(2.8, 6), breaks = 1:5) +
+							scale_x_continuous(breaks = 1:6, limits = c(0.8, 6.8)) +
+							scale_y_continuous(breaks = 1:5, limits = c(1, 5.5)) +
+							labs(
+								title = "The CPU/QoS mechanism ladder starts with a sidecar, not sudo",
+								subtitle = "Root collectors come after the benchmark can join retained keys to helpers, renderers, and counter samples",
+								x = "stage order",
+								y = "collection burden (1 = low, 5 = high)",
+								color = "Decision",
+								shape = "Decision",
+								size = "mechanism value"
+							),
+						"183-cpu-qos-counter-decision-tree.png",
+						width = 12,
+						height = 7
+					)
+			}
 
 	if (file.exists(native_busy_wait_control_summary_path)) {
 		native_busy_wait_control <- read_csv(native_busy_wait_control_summary_path, show_col_types = FALSE) %>%
