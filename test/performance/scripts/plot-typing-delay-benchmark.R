@@ -6976,6 +6976,82 @@ if (file.exists(runtime_repeat_summary_path)) {
 	)
 }
 
+dip_1500_summary_path <- file.path(data_dir, "typing-delay-1500-dip-summary.csv")
+if (file.exists(dip_1500_summary_path)) {
+	dip_1500_summary <- read_csv(dip_1500_summary_path, show_col_types = FALSE) %>%
+		mutate(
+			run_label = factor(
+				run_label,
+				levels = c(
+					"Original dense 1110-2000ms n=5",
+					"Original paired trace n=8",
+					"Same-shape Gutenberg 1110-1600ms n=5",
+					"Focused Gutenberg 1450-1600ms n=16",
+					"Original native key-hold n=8",
+					"Focused native 1450-1600ms n=16"
+				)
+			),
+			scenario_label = factor(
+				scenario_label,
+				levels = c("large post", "native contenteditable")
+			),
+			run_plot_label = recode(
+				as.character(run_label),
+				`Original dense 1110-2000ms n=5` = "Old dense n=5",
+				`Original paired trace n=8` = "Old paired n=8",
+				`Same-shape Gutenberg 1110-1600ms n=5` = "Same-shape rerun n=5",
+				`Focused Gutenberg 1450-1600ms n=16` = "Focused rerun n=16",
+				`Original native key-hold n=8` = "Old native n=8",
+				`Focused native 1450-1600ms n=16` = "Focused native n=16"
+			)
+		)
+
+	save_plot(
+		ggplot(
+			dip_1500_summary,
+			aes(delay_ms, latency_p50_ms, color = run_plot_label, shape = source)
+		) +
+			annotate(
+				"rect",
+				xmin = 1510,
+				xmax = 1550,
+				ymin = -Inf,
+				ymax = Inf,
+				alpha = 0.08,
+				fill = "gray45"
+			) +
+			geom_errorbar(
+				aes(ymin = latency_p10_ms, ymax = latency_p90_ms),
+				width = 1.8,
+				alpha = 0.45
+			) +
+			geom_point(size = 2.9, alpha = 0.92) +
+			facet_wrap(~scenario_label, scales = "free_y", ncol = 1) +
+			scale_color_brewer(type = "qual", palette = "Dark2") +
+			scale_x_continuous(breaks = seq(1450, 1600, by = 30)) +
+			labs(
+				title = "The old 1510-1550ms trough did not reproduce",
+				subtitle = "Shaded band marks the previously observed trough; points are p50 with p10-p90 bars",
+				x = "Held-key delay (ms)",
+				y = "EventDispatch latency p50 (ms)",
+				color = "Run",
+				shape = "Source"
+			) +
+			guides(
+				color = guide_legend(nrow = 2, byrow = TRUE),
+				shape = guide_legend(nrow = 1, byrow = TRUE)
+			) +
+			theme(
+				legend.position = "bottom",
+				legend.box = "vertical",
+				legend.text = element_text(size = 9)
+			),
+		"25h-1500-dip-recheck.png",
+		width = 13,
+		height = 9
+	)
+}
+
 native_runtime_repeat_summary_path <- file.path(data_dir, "typing-delay-native-runtime-repeat-summary.csv")
 if (file.exists(runtime_repeat_summary_path) && file.exists(native_runtime_repeat_summary_path)) {
 	gutenberg_runtime_repeat <- read_csv(runtime_repeat_summary_path, show_col_types = FALSE) %>%

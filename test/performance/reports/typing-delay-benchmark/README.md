@@ -14,6 +14,11 @@ The short version:
     crosses a different editor-state boundary.
 -   The `2000ms` point is slower than the `1000-1110ms` fast band, but it is not
     uniquely slow. It is part of a later high-latency plateau.
+-   The old dense extension's `1510-1550ms` trough did not reproduce in a focused
+    recheck. A `1450..1600ms` n=16 Gutenberg rerun stayed near `24ms`, a
+    same-shape n=5 rerun also stayed near `24ms`, and a native-contenteditable
+    rerun stayed near `1ms`. Treat the old trough as volatile run-specific
+    browser/editor phase behavior, not as a stable delay regime.
 -   The later high-latency plateau is mostly an artifact of how Playwright applies
     `keyboard.type(..., { delay })`: for US-keyboard characters it holds the key
     down for the delay, then sends `keyup`.
@@ -639,6 +644,8 @@ The R script derives:
     CI-comparable held-key versus tap-then-wait runs at `0ms`, `100ms`,
     `250ms`, `500ms`, and `1000ms`, with reported-q50 run-to-run variance and
     runtime deltas.
+-   `data/typing-delay-1500-dip-*.csv`: historical and focused recheck samples
+    and summaries for the old `1510-1550ms` held-key trough.
 -   `data/typing-delay-native-busy-wait-control-*.csv`: native
     `contenteditable` controls with the same timer-end proximity but different
     timer busy-wait durations.
@@ -3822,12 +3829,14 @@ In the scheduler/action trace:
 | `1550ms` |                                                     `~551ms` |       `12.6ms` |
 | `1580ms` |                                                     `~584ms` |       `16.5ms` |
 
-The relationship is not perfectly monotonic; the `1510-1550ms` dip remains a
-browser/event-loop phase effect rather than a clean editor-state transition. But
-the comparison with `between-keys` and `after-persistence` is enough to say that
-the `1200-2000ms` plateau is not a normal "pause between characters" effect. It
-is tied to holding a synthetic key down while Gutenberg's one-second rich-text
-timer fires.
+The relationship in that historical run was not perfectly monotonic; it had a
+`1510-1550ms` dip that did not fit the simple timer-to-keydown-gap story. A
+later focused recheck below did not reproduce that trough, so it should be
+treated as volatile rather than as a stable delay regime. The comparison with
+`between-keys` and `after-persistence` is still enough to say that the
+`1200-2000ms` plateau is not a normal "pause between characters" effect. It is
+tied to holding a synthetic key down while Gutenberg's one-second rich-text timer
+fires.
 
 ### Paired Trace: Previous Key State
 
@@ -3879,10 +3888,44 @@ previous synthetic key was still down. That is the best current explanation for
 why a `1200ms` Playwright delay is slow while a complete keypress followed by a
 `1200ms` wait is not.
 
-This still does not fully explain the `1510-1550ms` dip. It says what condition
-is necessary for the slow plateau in these runs, and it narrows the visible cost
-to `keypress` dispatch, but there is still browser/editor phase behavior inside
-the key-hold condition.
+This does not make the old `1510-1550ms` dip causal. It says what condition is
+necessary for the slow plateau in these runs, and it narrows the visible cost to
+`keypress` dispatch. The focused recheck in the next section found that the dip
+itself was not stable.
+
+### Rechecking The 1510-1550ms Trough
+
+The old dense extension and paired trace both had a low band around
+`1510-1550ms`. I reran that region three ways:
+
+1. focused Gutenberg key-hold, `1450..1600ms` every `10ms`, 16 retained samples
+   plus 1 throwaway, with timer/gap tracing;
+2. same-shape Gutenberg key-hold, `1110..1600ms` every `10ms`, 5 retained
+   samples plus 1 throwaway, to match the old dense extension's low-sample shape
+   and run-up;
+3. focused native `contenteditable` key-hold, `1450..1600ms` every `10ms`, 16
+   retained samples plus 1 throwaway.
+
+![1500ms dip recheck](figures/25h-1500-dip-recheck.png)
+
+Selected latency p50s:
+
+| Run | Scenario | 1500 | 1510 | 1520 | 1550 | 1580 | 1600 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Old dense n=5 | Gutenberg | `17.0ms` | `11.3ms` | `11.0ms` | `12.8ms` | `15.4ms` | `18.8ms` |
+| Old paired n=8 | Gutenberg | - | `13.8ms` | - | `12.6ms` | `16.4ms` | - |
+| Same-shape rerun n=5 | Gutenberg | `24.9ms` | `24.8ms` | `23.7ms` | `24.1ms` | `24.0ms` | `24.0ms` |
+| Focused rerun n=16 | Gutenberg | `24.0ms` | `23.7ms` | `24.0ms` | `24.5ms` | `24.7ms` | `24.4ms` |
+| Old native n=8 | native | - | `1.05ms` | - | `0.71ms` | `1.13ms` | - |
+| Focused native n=16 | native | `1.04ms` | `1.01ms` | `1.06ms` | `1.08ms` | `1.03ms` | `1.19ms` |
+
+The trough did not survive either Gutenberg recheck. It was present in two old
+historical traces, and the old native control had a small low point at `1550ms`,
+but neither a more-sampled focused run nor a same-shape low-sample replication
+reproduced it. The safest statement is that `1510-1550ms` was a run-specific
+volatile browser/editor phase sample, not a stable timing boundary like the
+`990ms -> 1000ms` transition. It should not be used to infer a separate editor
+state transition.
 
 ### Causality Check: Keyup Gap
 
@@ -5411,6 +5454,9 @@ The key runs used in this report were:
     draft per delay, 10 retained samples and 1 throwaway sample per delay.
 -   `ci_typing_0_1400_dense_n50`: same CI-comparable dense sweep and delay
     grid, but with 50 retained samples and 1 throwaway sample per delay.
+-   `dip_focus_gutenberg_n16`, `dip_replication_gutenberg_n5`, and
+    `dip_focus_native_n16`: focused rechecks of the old `1510-1550ms`
+    held-key trough.
 -   `native_busy_0_timeout_1250_delay_1300`,
     `native_busy_20_timeout_1230_delay_1300`,
     `native_busy_40_timeout_1210_delay_1300`, and
@@ -5490,6 +5536,12 @@ The compact marker-intervention CSVs were extracted with:
 
 ```sh
 node test/performance/scripts/extract-typing-delay-marker-intervention.js
+```
+
+The compact `1510-1550ms` trough recheck CSVs were extracted with:
+
+```sh
+Rscript test/performance/scripts/extract-typing-delay-1500-dip.R
 ```
 
 ## References
