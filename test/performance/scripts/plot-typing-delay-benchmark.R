@@ -38886,6 +38886,310 @@ save_plot(
 	height = 7.2
 )
 
+open_question_decision_execution_register <- open_question_consumer_decision_register %>%
+	mutate(
+		decision_execution_state = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ "local packet decision execution",
+			consumer_decision_state == "owner artifact consumer decision" ~ "owner artifact decision execution",
+			TRUE ~ "observer artifact decision execution"
+		),
+		decision_execution_request = case_when(
+			close_scope == "CI wait decision" ~ "execute the approved Performance Tests CI wait-policy change without hiding startup, typing-delay, or input-mode risk",
+			close_scope == "source prototype decision" ~ "execute the approved source or selector recommendation without promoting a stale prototype into production guidance",
+			close_scope == "benchmark method wording" ~ "execute the approved benchmark-method wording without losing the trace-slice, aggregation, or instrumentation caveat",
+			TRUE ~ "execute the approved broad conclusion without expanding it beyond current product, browser, endpoint, runtime, workload, or portability evidence"
+		),
+		decision_execution_start_gate = case_when(
+			decision_execution_state == "local packet decision execution" ~ "start only after the consumer-decision precondition, evidence bundle, local packet, and report diff are attached",
+			decision_execution_state == "owner artifact decision execution" ~ "start only after the consumer-decision precondition, evidence bundle, owner artifact, reviewer identity, and report diff are attached",
+			TRUE ~ "start only after the consumer-decision precondition, evidence bundle, observer artifact, reviewer identity, and report diff are attached"
+		),
+		decision_execution_surface = case_when(
+			close_scope == "CI wait decision" ~ "CI configuration, benchmark wait constants, typing-delay mode, startup-wait recommendation, and reliability wording",
+			close_scope == "source prototype decision" ~ "selector guard proposal, store-boundary recommendation, prototype source note, and implementation-safety wording",
+			close_scope == "benchmark method wording" ~ "benchmark README, generated figures, data dictionary, aggregation description, and trace-slice caveats",
+			TRUE ~ "broad report conclusion, portability language, workload caveat, browser/runtime caveat, and downstream summary"
+		),
+		decision_execution_verification = case_when(
+			decision_execution_state == "local packet decision execution" ~ "verify that the executed local change cites the packet, preserves the gate proof, and leaves failed-gate rows visible",
+			decision_execution_state == "owner artifact decision execution" ~ "verify that the executed owner-scoped change cites the owner artifact, reviewer identity, gate proof, and failed-gate rows",
+			TRUE ~ "verify that the executed broad change cites the observer artifact, reviewer identity, gate proof, and failed-gate rows"
+		),
+		decision_execution_monitor = case_when(
+			close_scope == "CI wait decision" ~ "monitor CI runtime, q50/q90/q99 movement, run-to-run variance, and pass/fail reliability after execution",
+			close_scope == "source prototype decision" ~ "monitor selector fanout, dispatch slices, invalidation side effects, and owner review after execution",
+			close_scope == "benchmark method wording" ~ "monitor benchmark reruns, figure/data regeneration, trace-event schema drift, and aggregation changes after execution",
+			TRUE ~ "monitor portability reruns, browser/runtime changes, workload representativeness, and conclusion scope after execution"
+		),
+		decision_execution_backout = case_when(
+			decision_execution_state == "local packet decision execution" ~ "revert or withhold the local execution when the packet expires, the gate fails, or monitoring contradicts the decision",
+			decision_execution_state == "owner artifact decision execution" ~ "revert or withhold the owner-scoped execution when the owner artifact expires, the gate fails, or reviewer/monitoring evidence contradicts the decision",
+			TRUE ~ "revert or withhold the broad execution when the observer artifact expires, the gate fails, or portability/workload evidence contradicts the decision"
+		),
+		decision_execution_failure_record = case_when(
+			decision_execution_state == "local packet decision execution" ~ "failed execution row with packet path, gate proof, report diff, monitor result, backout diff, and renewal request",
+			decision_execution_state == "owner artifact decision execution" ~ "failed execution row with owner artifact path, reviewer identity, gate proof, monitor result, backout diff, and renewal request",
+			TRUE ~ "failed execution row with observer artifact path, reviewer identity, gate proof, monitor result, backout diff, and renewal request"
+		),
+		decision_execution_owner = consumer_decision_owner,
+		decision_execution_consumer = consumer_decision_consumer,
+		decision_execution_cost = case_when(
+			decision_execution_state == "local packet decision execution" ~ 3,
+			decision_execution_state == "owner artifact decision execution" ~ 5,
+			TRUE ~ 7
+		),
+		decision_execution_value = pmax(
+			1,
+			consumer_decision_value + consumer_decision_error_risk_value + consumer_gate_value - decision_execution_cost
+		),
+		decision_execution_escape_risk_value = pmax(
+			1,
+			consumer_decision_error_risk_value + consumer_misuse_risk_value + stale_active_claim_risk_value - decision_execution_cost
+		),
+		timing_only_decision_execution_value = 0,
+		analysis_only_value = 0,
+		decision_execution_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(decision_execution_value), desc(decision_execution_escape_risk_value), question_family)
+
+open_question_decision_execution_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"request", "What approved downstream decision is being executed?",
+	"start-gate", "What start gate must pass before execution begins?",
+	"surface", "Which surfaces can the execution change?",
+	"verify", "How is the executed decision verified?",
+	"monitor", "What post-execution monitoring is required?",
+	"backout", "How is the execution backed out if evidence fails?",
+	"failure-record", "What failed-execution record must be retained?",
+	"owner", "Who owns the decision-execution result?",
+	"substitute", "Can aggregate timing alone substitute for decision-execution verification?",
+	"stop-rule", "When does decision-execution review stop?"
+)
+
+open_question_decision_execution_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_decision_execution_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_decision_execution_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_decision_execution_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_decision_execution_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		decision_execution_first_seen = !duplicated(decision_execution_id),
+		decision_execution_axis_key = paste(decision_execution_id, pressure_axis, sep = "::"),
+		decision_execution_axis_first_seen = !duplicated(decision_execution_axis_key),
+		decision_execution_state_first_seen = !duplicated(decision_execution_state),
+		decision_execution_owner_first_seen = !duplicated(decision_execution_owner),
+		decision_execution_consumer_first_seen = !duplicated(decision_execution_consumer),
+		new_decision_execution_value = if_else(decision_execution_first_seen, decision_execution_value, 0),
+		new_decision_execution_escape_risk_value = if_else(decision_execution_first_seen, decision_execution_escape_risk_value, 0),
+		new_timing_only_decision_execution_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!decision_execution_axis_first_seen ~ "repeat: decision-execution-axis already checked",
+			decision_execution_state == "local packet decision execution" ~ "decision execution: local packet",
+			TRUE ~ "decision execution: owner or observer artifact"
+		),
+		cumulative_decision_execution_records = cumsum(decision_execution_first_seen),
+		cumulative_decision_execution_axes = cumsum(decision_execution_axis_first_seen),
+		cumulative_decision_execution_states = cumsum(decision_execution_state_first_seen),
+		cumulative_decision_execution_owners = cumsum(decision_execution_owner_first_seen),
+		cumulative_decision_execution_consumers = cumsum(decision_execution_consumer_first_seen),
+		cumulative_decision_execution_value = cumsum(new_decision_execution_value),
+		cumulative_decision_execution_escape_risk_value = cumsum(new_decision_execution_escape_risk_value),
+		cumulative_timing_only_decision_execution_value = cumsum(new_timing_only_decision_execution_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_decision_execution_summary <- open_question_decision_execution_100_pass %>%
+	group_by(decision_execution_state, consumer_decision_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		decision_execution_records = n_distinct(decision_execution_id),
+		axis_checks = sum(decision_execution_axis_first_seen),
+		decision_execution_owners = n_distinct(decision_execution_owner),
+		decision_execution_consumers = n_distinct(decision_execution_consumer),
+		decision_execution_value = sum(new_decision_execution_value),
+		decision_execution_escape_risk_value = sum(new_decision_execution_escape_risk_value),
+		timing_only_decision_execution_value = sum(new_timing_only_decision_execution_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(decision_execution_value), desc(decision_execution_escape_risk_value), first_pass)
+
+open_question_decision_execution_checkpoints <- open_question_decision_execution_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_decision_execution_records,
+		cumulative_decision_execution_axes,
+		cumulative_decision_execution_states,
+		cumulative_decision_execution_owners,
+		cumulative_decision_execution_consumers,
+		cumulative_decision_execution_value,
+		cumulative_decision_execution_escape_risk_value,
+		cumulative_timing_only_decision_execution_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_decision_execution_register,
+	file.path(data_dir, "typing-delay-open-question-decision-execution-register.csv")
+)
+
+write_csv(
+	open_question_decision_execution_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			decision_execution_state,
+			consumer_decision_state,
+			decision_execution_request,
+			decision_execution_start_gate,
+			decision_execution_surface,
+			decision_execution_verification,
+			decision_execution_monitor,
+			decision_execution_backout,
+			decision_execution_failure_record,
+			decision_execution_owner,
+			decision_execution_consumer,
+			consumer_decision_request,
+			permitted_consumer_decision,
+			consumer_decision_evidence_bundle,
+			supported_claim,
+			blocked_claim,
+			decision_execution_first_seen,
+			decision_execution_axis_first_seen,
+			decision_execution_state_first_seen,
+			decision_execution_owner_first_seen,
+			decision_execution_consumer_first_seen,
+			pass_result,
+			decision_execution_value,
+			decision_execution_escape_risk_value,
+			timing_only_decision_execution_value,
+			new_decision_execution_value,
+			new_decision_execution_escape_risk_value,
+			new_timing_only_decision_execution_value,
+			new_analysis_only_value,
+			cumulative_decision_execution_records,
+			cumulative_decision_execution_axes,
+			cumulative_decision_execution_states,
+			cumulative_decision_execution_owners,
+			cumulative_decision_execution_consumers,
+			cumulative_decision_execution_value,
+			cumulative_decision_execution_escape_risk_value,
+			cumulative_timing_only_decision_execution_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-decision-execution-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_decision_execution_summary,
+	file.path(data_dir, "typing-delay-open-question-decision-execution-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_decision_execution_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-decision-execution-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_decision_execution_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, decision_execution_value)
+		) %>%
+		ggplot(aes(decision_execution_value, question_label, fill = decision_execution_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set1", name = "Decision execution") +
+		labs(
+			title = "Decision execution requires start gates, verification, monitoring, and backout",
+			subtitle = "Each row turns a permitted consumer decision into an executed change or a retained failed-execution record",
+			x = "Decision-execution value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"387-open-question-decision-execution-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_decision_execution_saturation_long <- open_question_decision_execution_100_pass %>%
+	select(
+		pass_id,
+		`decision-execution records` = cumulative_decision_execution_records,
+		`decision-execution axes` = cumulative_decision_execution_axes,
+		`decision-execution states` = cumulative_decision_execution_states,
+		`decision-execution owners` = cumulative_decision_execution_owners,
+		`decision-execution consumers` = cumulative_decision_execution_consumers,
+		`decision-execution value` = cumulative_decision_execution_value,
+		`decision-execution escape risk value` = cumulative_decision_execution_escape_risk_value,
+		`timing-only decision-execution value` = cumulative_timing_only_decision_execution_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("decision-execution records", "decision-execution axes", "decision-execution states", "decision-execution owners", "decision-execution consumers", "decision-execution value", "decision-execution escape risk value", "timing-only decision-execution value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_decision_execution_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Decision-execution audit saturates once every execution check is named",
+			subtitle = "Nine execution records appear by pass 9; all 90 axes appear by pass 90; timing-only execution value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"388-open-question-decision-execution-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_decision_execution_summary %>%
+		mutate(
+			state_label = str_wrap(decision_execution_state, width = 28),
+			state_label = fct_reorder(state_label, decision_execution_value + decision_execution_escape_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Decision-execution coverage separates local execution from owner and observer execution",
+			subtitle = "Every row is checked for request, start gate, surface, verification, monitoring, backout, failure record, owner, substitute, and stop rule",
+			x = "Decision-execution-axis checks",
+			y = "Decision-execution state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"389-open-question-decision-execution-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

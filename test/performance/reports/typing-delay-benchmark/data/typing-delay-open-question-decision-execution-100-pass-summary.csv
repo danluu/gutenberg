@@ -1,0 +1,7 @@
+decision_execution_state,consumer_decision_state,pass_result,passes,first_pass,decision_execution_records,axis_checks,decision_execution_owners,decision_execution_consumers,decision_execution_value,decision_execution_escape_risk_value,timing_only_decision_execution_value,analysis_only_value
+local packet decision execution,local packet consumer decision,decision execution: local packet,40,1,4,40,4,3,14428338,8680239,0,0
+owner artifact decision execution,owner artifact consumer decision,decision execution: owner or observer artifact,20,5,2,20,2,2,2884977,1735628,0,0
+observer artifact decision execution,observer artifact consumer decision,decision execution: owner or observer artifact,30,7,3,30,3,3,1782119,1072114,0,0
+local packet decision execution,local packet consumer decision,repeat: decision-execution-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact decision execution,owner artifact consumer decision,repeat: decision-execution-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact decision execution,observer artifact consumer decision,repeat: decision-execution-axis already checked,3,97,3,0,3,3,0,0,0,0

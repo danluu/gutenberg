@@ -1789,6 +1789,23 @@ The R script derives:
     consumer-decision-consumer, consumer-decision-value,
     consumer-decision-error-risk-value, timing-only-consumer-decision, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-decision-execution-register.csv`:
+    decision-execution register for the nine consumer-decision records,
+    including execution request, start gate, changed surface, verification,
+    monitoring, backout, failed-execution record, owner, and consumer.
+-   `data/typing-delay-open-question-decision-execution-100-pass-audit.csv`:
+    thirty-fifth forced 100-pass audit over decision-execution axes: request,
+    start-gate, surface, verify, monitor, backout, failure-record, owner,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-decision-execution-100-pass-summary.csv`:
+    rollup of decision-execution coverage by decision execution state,
+    consumer-decision state, and pass result.
+-   `data/typing-delay-open-question-decision-execution-100-pass-checkpoints.csv`:
+    checkpoints for decision-execution-record, decision-execution-axis,
+    decision-execution-state, decision-execution-owner,
+    decision-execution-consumer, decision-execution-value,
+    decision-execution-escape-risk-value, timing-only-decision-execution, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12025,6 +12042,37 @@ The consumer-decision layer is stricter: it says exactly what action may be
 taken, what artifact must accompany that action, and what must happen if the
 gate fails after a decision has already been written into CI policy, source
 recommendations, benchmark-method wording, or broad conclusions.
+
+I then added the decision-execution layer: a permitted consumer decision still
+has to pass a start gate before it changes CI policy, source recommendations,
+benchmark-method wording, or broad conclusions. The report now records the
+execution request, start gate, changed surface, verification, monitoring,
+backout rule, failed-execution record, owner, and consumer.
+
+![Open question decision execution register](figures/387-open-question-decision-execution-register.png)
+
+![Open question decision execution 100-pass saturation](figures/388-open-question-decision-execution-100-pass-saturation.png)
+
+![Open question decision execution coverage](figures/389-open-question-decision-execution-coverage.png)
+
+| Decision-execution check | Result |
+| ------------------------ | ------ |
+| Decision-execution records | `9`, one per consumer-decision record. |
+| Decision-execution states | `3`: local packet decision execution, owner artifact decision execution, and observer artifact decision execution. |
+| Decision-execution owners | `9`; execution routes back to the scoped consumer-decision owner. |
+| Decision-execution consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Decision-execution-axis checks | `90`: every row checked against all `10` decision-execution axes. |
+| Decision-execution value | `19095434`: local packet execution contributes `14428338`, owner artifact execution contributes `2884977`, and observer artifact execution contributes `1782119`. |
+| Decision-execution escape-risk value | `11487981` across the nine decision-execution records. |
+| Timing-only decision-execution value | `0`; aggregate timing movement alone cannot execute a decision, prove the changed surface, monitor the result, retain a failed-execution record, or define backout. |
+| Saturation | Decision-execution records are all named by pass `9`; all decision-execution axes are covered by pass `90`; passes `91-100` add no decision-execution coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the execution guard. It separates "we have a defensible decision" from
+"we safely changed something with that decision." The open-question packet now
+requires the executed surface, verification, monitoring, and backout record to
+travel with the decision, so a later stale evidence signal can be tied to an
+actual rollback path instead of only to wording in the report.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

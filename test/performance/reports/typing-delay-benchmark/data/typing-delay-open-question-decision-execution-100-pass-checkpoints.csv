@@ -1,0 +1,10 @@
+pass_id,cumulative_decision_execution_records,cumulative_decision_execution_axes,cumulative_decision_execution_states,cumulative_decision_execution_owners,cumulative_decision_execution_consumers,cumulative_decision_execution_value,cumulative_decision_execution_escape_risk_value,cumulative_timing_only_decision_execution_value,cumulative_analysis_only_value
+1,1,1,1,1,1,3978570,2393550,0,0
+5,5,5,2,5,4,16048603,9655006,0,0
+9,9,9,3,9,8,19095434,11487981,0,0
+10,9,10,3,9,8,19095434,11487981,0,0
+20,9,20,3,9,8,19095434,11487981,0,0
+50,9,50,3,9,8,19095434,11487981,0,0
+90,9,90,3,9,8,19095434,11487981,0,0
+91,9,90,3,9,8,19095434,11487981,0,0
+100,9,90,3,9,8,19095434,11487981,0,0
