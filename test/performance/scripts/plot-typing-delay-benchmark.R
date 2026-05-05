@@ -24807,6 +24807,220 @@ save_plot(
 	height = 8.2
 )
 
+open_question_experiment_budget <- tribble(
+	~artifact, ~lane, ~execution_band, ~engineering_burden, ~runtime_burden, ~environment_burden, ~observer_risk, ~decision_leverage, ~claim_expansion, ~prerequisite, ~stop_rule, ~defer_rule,
+	"Per-keypress retained/throwaway distributions", "CI/readiness", "run next", 2, 2, 3, 1, 5, 1, "CI-comparable topology available", "separate retained typing from idle-input metric if key-position tails remain", "do not add a startup wait to hide first-input tails",
+	"Real Performance Tests startup-wait artifact", "CI/readiness", "run next", 3, 3, 4, 2, 5, 1, "access to the current Performance Tests topology", "wait reduction is eligible only if q50, failures, retries, resources, and first-key tails pass", "do not change CI waits from local q50 alone",
+	"Pattern predicate plus resource-quiet validation", "CI/readiness", "run next", 3, 3, 3, 2, 5, 1, "site/post pattern-loading fixtures", "keep fixed fallback unless predicate and resource quiet preserve preview/canvas/readiness", "do not remove pattern sleeps globally",
+	"Matched tap/short-hold/held-key controls", "Benchmark artifact", "run next if wording changes", 2, 2, 2, 1, 4, 1, "same startup state and retained-key filter", "narrow input-shape wording if tap or short hold reproduces the cliff", "do not repeat dense held-key sweeps without a changed input mode",
+	"Controlled cross-browser dip grid", "Benchmark artifact", "run next if portability is disputed", 3, 3, 3, 2, 3, 2, "same key mode, persistence markers, and retained-key rules", "split browser-specific wording if any browser loses the controlled dip", "do not name one-browser mechanisms from aggregate rows",
+	"Selector behavior fixtures plus source spans", "Source/code", "run next", 3, 2, 2, 1, 5, 1, "targeted hot owner and fixtures scoped", "cite timing only after behavior passes and source spans collapse", "do not cite aggregate p50 as source safety",
+	"Public subscriber compatibility matrix", "Source/code", "run after selector guard", 4, 2, 2, 2, 5, 1, "public subscribe, persistence selector, dynamic dependency, and cross-store cases", "block public-path fanout changes on any compatibility failure", "do not change registry notification semantics for marker timing alone",
+	"Passive retained-key sidecar acceptance", "Sidecar/mechanism", "run after decision artifacts", 4, 3, 3, 4, 4, 2, "stable key-window ids and observer-off baseline", "mechanism work proceeds only if joins are complete and ordering is unchanged", "do not run root counters or trace before sidecar acceptance",
+	"Runtime checkpoint sidecar", "Sidecar/mechanism", "defer until mechanism claim needed", 4, 3, 3, 4, 3, 3, "accepted passive sidecar", "keep empirical wording unless runtime checkpoint fields join retained keys without perturbation", "do not spend more JS delay rows on mechanism naming",
+	"CPU/QoS root counters", "CPU/QoS", "defer until sidecar passes", 4, 3, 5, 4, 3, 3, "accepted passive sidecar and permission for root counters", "name CPU/QoS only if joined counters separate classes without perturbing them", "do not run privileged counters before passive joins pass",
+	"Workload replay strata", "Claim expansion", "defer until product claim", 5, 4, 3, 3, 4, 5, "claim scope widens beyond fixed-x artifact", "generalize only to strata that reproduce owners and effects with assertions passing", "do not average missing strata into fixed-x q50",
+	"External display endpoint", "Claim expansion", "defer until display claim", 5, 4, 5, 4, 3, 5, "claim scope widens beyond Chromium-internal endpoints", "claim display timing only if calibrated endpoint preserves ordering", "do not call screenshots physical display timing",
+	"Dashboard/reviewer policy join", "External policy", "run after CI artifact", 3, 2, 4, 1, 4, 3, "archived CI artifacts and access to policy/dashboard decisions", "predict pass/fail only after policy matches raw artifact movement", "do not infer pass/fail from printed q50"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		execution_band = factor(
+			execution_band,
+			levels = c(
+				"run next",
+				"run next if wording changes",
+				"run next if portability is disputed",
+				"run after selector guard",
+				"run after CI artifact",
+				"run after decision artifacts",
+				"defer until mechanism claim needed",
+				"defer until sidecar passes",
+				"defer until product claim",
+				"defer until display claim"
+			)
+		),
+		artifact_label = str_wrap(artifact, width = 30),
+		total_burden = engineering_burden + runtime_burden + environment_burden + observer_risk,
+		near_term_value = decision_leverage * 2 - engineering_burden - environment_burden - observer_risk - claim_expansion,
+		label_x = total_burden + case_when(
+			artifact == "Per-keypress retained/throwaway distributions" ~ -0.8,
+			artifact == "Selector behavior fixtures plus source spans" ~ 0.2,
+			artifact == "Public subscriber compatibility matrix" ~ 0.1,
+			artifact == "Pattern predicate plus resource-quiet validation" ~ 0.0,
+			artifact == "Real Performance Tests startup-wait artifact" ~ 0.2,
+			artifact == "Matched tap/short-hold/held-key controls" ~ -0.15,
+			artifact == "Controlled cross-browser dip grid" ~ -0.2,
+			artifact == "Dashboard/reviewer policy join" ~ -0.1,
+			artifact == "Passive retained-key sidecar acceptance" ~ 0.15,
+			artifact == "Runtime checkpoint sidecar" ~ 0.0,
+			artifact == "CPU/QoS root counters" ~ 0.15,
+			artifact == "Workload replay strata" ~ -0.05,
+			artifact == "External display endpoint" ~ 0.0,
+			TRUE ~ 0
+		),
+		label_y = decision_leverage + case_when(
+			artifact == "Per-keypress retained/throwaway distributions" ~ 0.34,
+			artifact == "Selector behavior fixtures plus source spans" ~ 0.54,
+			artifact == "Public subscriber compatibility matrix" ~ 0.48,
+			artifact == "Pattern predicate plus resource-quiet validation" ~ 0.52,
+			artifact == "Real Performance Tests startup-wait artifact" ~ 0.34,
+			artifact == "Matched tap/short-hold/held-key controls" ~ 0.22,
+			artifact == "Controlled cross-browser dip grid" ~ 0.32,
+			artifact == "Dashboard/reviewer policy join" ~ 0.24,
+			artifact == "Passive retained-key sidecar acceptance" ~ 0.25,
+			artifact == "Runtime checkpoint sidecar" ~ 0.25,
+			artifact == "CPU/QoS root counters" ~ 0.20,
+			artifact == "Workload replay strata" ~ 0.22,
+			artifact == "External display endpoint" ~ 0.22,
+			TRUE ~ 0.2
+		),
+		budget_class = case_when(
+			execution_band == "run next" ~ "frontier",
+			str_detect(as.character(execution_band), "^run") ~ "conditional",
+			TRUE ~ "defer"
+		),
+		budget_class = factor(budget_class, levels = c("frontier", "conditional", "defer"))
+	)
+
+open_question_experiment_budget_long <- open_question_experiment_budget %>%
+	select(
+		artifact,
+		artifact_label,
+		lane,
+		engineering_burden,
+		runtime_burden,
+		environment_burden,
+		observer_risk,
+		decision_leverage,
+		claim_expansion
+	) %>%
+	pivot_longer(
+		cols = c(
+			engineering_burden,
+			runtime_burden,
+			environment_burden,
+			observer_risk,
+			decision_leverage,
+			claim_expansion
+		),
+		names_to = "dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		dimension = recode(
+			dimension,
+			engineering_burden = "engineering burden",
+			runtime_burden = "runtime burden",
+			environment_burden = "environment burden",
+			observer_risk = "observer risk",
+			decision_leverage = "decision leverage",
+			claim_expansion = "claim expansion"
+		),
+		dimension = factor(
+			dimension,
+			levels = c("engineering burden", "runtime burden", "environment burden", "observer risk", "decision leverage", "claim expansion")
+		),
+		artifact_label = fct_reorder(artifact_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_experiment_budget_summary <- open_question_experiment_budget %>%
+	count(lane, budget_class, name = "artifacts") %>%
+	group_by(lane) %>%
+	mutate(lane_artifacts = sum(artifacts)) %>%
+	ungroup()
+
+write_csv(
+	open_question_experiment_budget %>%
+		select(
+			artifact,
+			lane,
+			execution_band,
+			budget_class,
+			engineering_burden,
+			runtime_burden,
+			environment_burden,
+			observer_risk,
+			decision_leverage,
+			claim_expansion,
+			total_burden,
+			near_term_value,
+			prerequisite,
+			stop_rule,
+			defer_rule
+		),
+	file.path(data_dir, "typing-delay-open-question-experiment-budget.csv")
+)
+
+write_csv(
+	open_question_experiment_budget_long,
+	file.path(data_dir, "typing-delay-open-question-experiment-budget-long.csv")
+)
+
+write_csv(
+	open_question_experiment_budget_summary,
+	file.path(data_dir, "typing-delay-open-question-experiment-budget-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_experiment_budget_long, aes(dimension, artifact_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.65, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "OrRd", direction = 1, name = "Score") +
+		labs(
+			title = "The remaining experiments differ more by burden and claim scope than by sample count",
+			subtitle = "Frontier work has high decision leverage without high claim-expansion or observer burden",
+			x = "Budget dimension",
+			y = "Candidate artifact"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"242-open-question-experiment-budget.png",
+	width = 13.4,
+	height = 8.6
+)
+
+save_plot(
+	ggplot(
+		open_question_experiment_budget,
+		aes(total_burden, decision_leverage, color = budget_class, shape = lane, size = claim_expansion)
+	) +
+		geom_point(alpha = 0.92) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = str_wrap(artifact, width = 16)),
+			size = 2.55,
+			color = "grey20",
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Set1", name = "Execution class") +
+		scale_shape_manual(
+			values = c(
+				"Benchmark artifact" = 16,
+				"CI/readiness" = 17,
+				"Source/code" = 15,
+				"Sidecar/mechanism" = 18,
+				"CPU/QoS" = 7,
+				"Claim expansion" = 8,
+				"External policy" = 4
+			),
+			name = "Lane"
+		) +
+		scale_size_area(max_size = 6.2, breaks = 1:5, name = "Claim expansion") +
+		scale_x_continuous(breaks = seq(6, 18, by = 2), limits = c(5.5, 18.5)) +
+		scale_y_continuous(breaks = 1:5, limits = c(2.5, 5.85)) +
+		labs(
+			title = "Run the high-leverage low-expansion frontier before mechanism and product work",
+			subtitle = "CI readiness and source safety artifacts sit on the actionable frontier; display, replay, and root counters are deferred",
+			x = "Total burden score",
+			y = "Decision leverage"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"243-open-question-execution-frontier.png",
+	width = 13.0,
+	height = 8.0
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

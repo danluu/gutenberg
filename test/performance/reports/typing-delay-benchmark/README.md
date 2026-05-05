@@ -1149,6 +1149,14 @@ The R script derives:
     evidence-type scores used for the marginal-evidence heatmap.
 -   `data/typing-delay-open-question-marginal-evidence-summary.csv`: rollup of
     recommended next evidence by claim lane.
+-   `data/typing-delay-open-question-experiment-budget.csv`: execution-budget
+    audit for remaining open-question artifacts, including engineering/runtime/
+    environment burden, observer risk, decision leverage, claim expansion, stop
+    rules, and deferral rules.
+-   `data/typing-delay-open-question-experiment-budget-long.csv`: long-form
+    budget-dimension scores used for the experiment-budget heatmap.
+-   `data/typing-delay-open-question-experiment-budget-summary.csv`: rollup of
+    frontier, conditional, and deferred artifacts by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9911,6 +9919,26 @@ variables unchanged. The next useful runs are targeted controls or artifacts:
 CI topology and per-keypress distributions for wait decisions, behavior and
 compatibility fixtures for source changes, sidecars for mechanism names, and
 external/replay/policy joins only if the report intentionally broadens its claim.
+
+The experiment-budget audit turns that into an execution frontier. The important
+distinction is not "more samples versus fewer samples"; it is whether the
+artifact has high decision leverage without high observer risk, environment
+burden, or claim-expansion scope.
+
+![Open question experiment budget](figures/242-open-question-experiment-budget.png)
+
+![Open question execution frontier](figures/243-open-question-execution-frontier.png)
+
+| Execution class | Artifacts | Stop or defer rule |
+| --------------- | --------- | ------------------ |
+| Frontier: run next | per-keypress retained/throwaway distributions; real Performance Tests startup-wait artifact; pattern predicate plus resource-quiet validation; selector behavior fixtures plus source spans | stop as soon as q50, failures, resources, retries, first-key tails, behavior fixtures, or source spans fail the gate |
+| Conditional | matched tap/short-hold/held-key controls; controlled cross-browser grid; public subscriber compatibility matrix; passive retained-key sidecar acceptance; dashboard/reviewer policy join | run only if wording changes, portability is disputed, selector guards pass, mechanism naming is still needed, or CI policy claims are being made |
+| Deferred | runtime checkpoint sidecar; CPU/QoS root counters; workload replay strata; external display endpoint | defer until the claim explicitly widens to runtime/OS mechanism, product workload, or physical display timing |
+
+This is the current budget-aware answer to what remains open. The actionable
+frontier is CI/readiness plus source safety. Mechanism and product/display work
+is not wrong, but it is expensive and should not be used to delay the narrower
+benchmark conclusions unless the report intentionally makes those broader claims.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

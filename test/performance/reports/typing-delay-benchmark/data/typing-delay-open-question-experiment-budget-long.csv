@@ -1,0 +1,139 @@
+artifact,artifact_label,lane,dimension,score
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,engineering burden,2
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,runtime burden,2
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,environment burden,3
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,observer risk,1
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,decision leverage,5
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,claim expansion,1
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,engineering burden,3
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,runtime burden,3
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,environment burden,4
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,observer risk,2
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,decision leverage,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,claim expansion,1
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,engineering burden,3
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,runtime burden,3
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,environment burden,3
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,observer risk,2
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,decision leverage,5
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,claim expansion,1
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,engineering burden,2
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,runtime burden,2
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,environment burden,2
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,observer risk,1
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,decision leverage,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,claim expansion,1
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,engineering burden,3
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,runtime burden,3
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,environment burden,3
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,observer risk,2
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,decision leverage,3
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,claim expansion,2
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,engineering burden,3
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,runtime burden,2
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,environment burden,2
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,observer risk,1
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,decision leverage,5
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,claim expansion,1
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,engineering burden,4
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,runtime burden,2
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,environment burden,2
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,observer risk,2
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,decision leverage,5
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,claim expansion,1
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,engineering burden,4
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,runtime burden,3
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,environment burden,3
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,observer risk,4
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,decision leverage,4
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,claim expansion,2
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,engineering burden,4
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,runtime burden,3
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,environment burden,3
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,observer risk,4
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,decision leverage,3
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,claim expansion,3
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,engineering burden,4
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,runtime burden,3
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,environment burden,5
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,observer risk,4
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,decision leverage,3
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,claim expansion,3
+Workload replay strata,Workload replay strata,Claim expansion,engineering burden,5
+Workload replay strata,Workload replay strata,Claim expansion,runtime burden,4
+Workload replay strata,Workload replay strata,Claim expansion,environment burden,3
+Workload replay strata,Workload replay strata,Claim expansion,observer risk,3
+Workload replay strata,Workload replay strata,Claim expansion,decision leverage,4
+Workload replay strata,Workload replay strata,Claim expansion,claim expansion,5
+External display endpoint,External display endpoint,Claim expansion,engineering burden,5
+External display endpoint,External display endpoint,Claim expansion,runtime burden,4
+External display endpoint,External display endpoint,Claim expansion,environment burden,5
+External display endpoint,External display endpoint,Claim expansion,observer risk,4
+External display endpoint,External display endpoint,Claim expansion,decision leverage,3
+External display endpoint,External display endpoint,Claim expansion,claim expansion,5
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,engineering burden,3
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,runtime burden,2
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,environment burden,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,observer risk,1
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,decision leverage,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,claim expansion,3

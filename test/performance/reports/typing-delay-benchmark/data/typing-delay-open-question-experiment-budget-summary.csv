@@ -1,0 +1,10 @@
+lane,budget_class,artifacts,lane_artifacts
+Benchmark artifact,conditional,2,2
+CI/readiness,frontier,3,3
+Source/code,frontier,1,2
+Source/code,conditional,1,2
+Sidecar/mechanism,conditional,1,2
+Sidecar/mechanism,defer,1,2
+CPU/QoS,defer,1,1
+Claim expansion,defer,2,2
+External policy,conditional,1,1
