@@ -78,6 +78,7 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 export type MergeCursorPosition = WPBlockSelection | null;
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+const previousBlocksByYArray = new WeakMap< YBlocks, Block[] >();
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -155,6 +156,172 @@ function makeBlocksSerializable( blocks: Block[] ): Block[] {
 			innerBlocks: makeBlocksSerializable( innerBlocks ),
 		};
 	} );
+}
+
+function getBlockClientId( block: Block ): string | undefined {
+	return 'string' === typeof block.clientId && block.clientId
+		? block.clientId
+		: undefined;
+}
+
+function getClientIdsIfEveryBlockHasUniqueId(
+	blocks: Block[]
+): string[] | null {
+	const ids: string[] = [];
+	const seenIds = new Set< string >();
+
+	for ( const block of blocks ) {
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId || seenIds.has( clientId ) ) {
+			return null;
+		}
+
+		ids.push( clientId );
+		seenIds.add( clientId );
+	}
+
+	return ids;
+}
+
+function findBlockIndexByClientId( blocks: Block[], clientId: string ): number {
+	return blocks.findIndex(
+		( block ) => getBlockClientId( block ) === clientId
+	);
+}
+
+function getRemoteBlockInsertIndex(
+	currentBlocks: Block[],
+	currentIndex: number,
+	blocksToSync: Block[],
+	blockIdsToSync: Set< string >
+): number {
+	for ( let index = currentIndex - 1; index >= 0; index-- ) {
+		const previousClientId = getBlockClientId( currentBlocks[ index ] );
+
+		if ( previousClientId && blockIdsToSync.has( previousClientId ) ) {
+			const previousIndex = findBlockIndexByClientId(
+				blocksToSync,
+				previousClientId
+			);
+
+			return -1 === previousIndex
+				? blocksToSync.length
+				: previousIndex + 1;
+		}
+	}
+
+	for (
+		let index = currentIndex + 1;
+		index < currentBlocks.length;
+		index++
+	) {
+		const nextClientId = getBlockClientId( currentBlocks[ index ] );
+
+		if ( nextClientId && blockIdsToSync.has( nextClientId ) ) {
+			const nextIndex = findBlockIndexByClientId(
+				blocksToSync,
+				nextClientId
+			);
+
+			return -1 === nextIndex ? blocksToSync.length : nextIndex;
+		}
+	}
+
+	return blocksToSync.length;
+}
+
+function reconcileStaleLocalBlocks(
+	yblocks: YBlocks,
+	localBlocksToSync: Block[]
+): Block[] {
+	const previousBlocks = previousBlocksByYArray.get( yblocks );
+
+	if ( ! previousBlocks ) {
+		return localBlocksToSync;
+	}
+
+	const localClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( localBlocksToSync );
+	const previousClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( previousBlocks );
+	const currentBlocks = yblocks.toJSON() as Block[];
+	const currentClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( currentBlocks );
+
+	if ( ! localClientIds || ! previousClientIds || ! currentClientIds ) {
+		return localBlocksToSync;
+	}
+
+	const localClientIdSet = new Set( localClientIds );
+	const previousClientIdSet = new Set( previousClientIds );
+	const currentClientIdSet = new Set( currentClientIds );
+
+	const remotelyDeletedClientIds = new Set(
+		previousClientIds.filter(
+			( clientId ) =>
+				localClientIdSet.has( clientId ) &&
+				! currentClientIdSet.has( clientId )
+		)
+	);
+	const blocksToSync = localBlocksToSync.filter( ( block ) => {
+		const clientId = getBlockClientId( block );
+		return ! clientId || ! remotelyDeletedClientIds.has( clientId );
+	} );
+	const blockIdsToSync = new Set(
+		blocksToSync
+			.map( ( block ) => getBlockClientId( block ) )
+			.filter( ( clientId ): clientId is string => !! clientId )
+	);
+
+	currentBlocks.forEach( ( currentBlock, currentIndex ) => {
+		const clientId = getBlockClientId( currentBlock );
+
+		if (
+			! clientId ||
+			localClientIdSet.has( clientId ) ||
+			previousClientIdSet.has( clientId ) ||
+			blockIdsToSync.has( clientId )
+		) {
+			return;
+		}
+
+		const insertIndex = getRemoteBlockInsertIndex(
+			currentBlocks,
+			currentIndex,
+			blocksToSync,
+			blockIdsToSync
+		);
+		blocksToSync.splice( insertIndex, 0, currentBlock );
+		blockIdsToSync.add( clientId );
+	} );
+
+	return blocksToSync;
+}
+
+/**
+ * Mark the current CRDT block list as the editor-visible base.
+ *
+ * The editor sends full block snapshots back to the CRDT layer. If a remote
+ * block exists in the CRDT document but is missing from a local snapshot, that
+ * can mean either "the local editor is stale" or "the local user deleted the
+ * remote block after seeing it." Advancing this base when CRDT blocks are
+ * delivered to the editor lets mergeCrdtBlocks distinguish those cases. The
+ * marker also recurses into innerBlocks because mergeCrdtBlocks reconciles
+ * nested block arrays with the same stale-local rules.
+ *
+ * @param yblocks Blocks from the CRDT document.
+ */
+export function markCrdtBlocksAsSyncedBase( yblocks: YBlocks ): void {
+	previousBlocksByYArray.set( yblocks, yblocks.toJSON() as Block[] );
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const innerBlocks = yblocks.get( index ).get( 'innerBlocks' );
+
+		if ( innerBlocks instanceof Y.Array ) {
+			markCrdtBlocksAsSyncedBase( innerBlocks as YBlocks );
+		}
+	}
 }
 
 /**
@@ -434,8 +601,12 @@ export function mergeCrdtBlocks(
 		);
 	}
 
-	const incomingBlocksToSync =
+	const localBlocksToSync =
 		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const incomingBlocksToSync = reconcileStaleLocalBlocks(
+		yblocks,
+		localBlocksToSync
+	);
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -648,6 +819,8 @@ export function mergeCrdtBlocks(
 		}
 		knownClientIds.add( clientId );
 	}
+
+	previousBlocksByYArray.set( yblocks, localBlocksToSync );
 }
 
 /**

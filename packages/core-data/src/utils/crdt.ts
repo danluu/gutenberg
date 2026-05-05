@@ -23,6 +23,7 @@ import { BaseAwareness } from '../awareness/base-awareness';
 import {
 	type Block,
 	deserializeBlockAttributes,
+	markCrdtBlocksAsSyncedBase,
 	mergeCrdtBlocks,
 	type MergeCursorPosition,
 	mergeRichTextUpdate,
@@ -426,6 +427,10 @@ export function getPostChangesFromCRDTDoc(
 	// plain strings (from Y.Text.toJSON()). Convert them back to RichTextData
 	// so block edit components receive the same types as locally-created blocks.
 	if ( changes.blocks ) {
+		const yblocks = ymap.get( 'blocks' );
+		if ( yblocks instanceof Y.Array ) {
+			markCrdtBlocksAsSyncedBase( yblocks );
+		}
 		changes.blocks = deserializeBlockAttributes(
 			changes.blocks as Block[]
 		);
