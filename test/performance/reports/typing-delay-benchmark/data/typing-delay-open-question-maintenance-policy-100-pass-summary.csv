@@ -1,0 +1,7 @@
+maintenance_mode,freshness_state,pass_result,passes,first_pass,policies,axis_checks,maintenance_owners,maintenance_value,triage_value,routine_timing_maintenance_value,analysis_only_value,max_stale_reuse_risk
+local packet maintenance,refresh by local packet rerun,maintenance policy: local packet,40,1,4,40,3,492,388,0,0,5
+owner artifact maintenance,refresh by owner artifact,maintenance policy: owner or observer,20,5,2,20,2,63,87,0,0,4
+observer artifact maintenance,refresh by observer artifact,maintenance policy: owner or observer,30,7,3,30,3,27,53,0,0,5
+local packet maintenance,refresh by local packet rerun,repeat: maintenance-axis already checked,5,91,4,0,3,0,0,0,0,5
+owner artifact maintenance,refresh by owner artifact,repeat: maintenance-axis already checked,2,95,2,0,2,0,0,0,0,4
+observer artifact maintenance,refresh by observer artifact,repeat: maintenance-axis already checked,3,97,3,0,3,0,0,0,0,5

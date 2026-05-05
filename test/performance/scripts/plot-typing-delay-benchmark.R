@@ -33059,6 +33059,285 @@ save_plot(
 	height = 7.2
 )
 
+open_question_maintenance_policy <- open_question_freshness_monitor %>%
+	mutate(
+		maintenance_mode = case_when(
+			freshness_state == "refresh by local packet rerun" ~ "local packet maintenance",
+			freshness_state == "refresh by owner artifact" ~ "owner artifact maintenance",
+			TRUE ~ "observer artifact maintenance"
+		),
+		actionable_signal = case_when(
+			question_family == "Startup wait and first-key tails" ~ "Performance Tests topology, statistic, lane, wait, resource, failure, or early-key field changes",
+			question_family == "Pattern wait replacement" ~ "pattern readiness predicate, target lane, preview/canvas, p90, resource, or failure field changes",
+			question_family == "Selector/source guard" ~ "selector owner, behavior fixture, or targeted source span changes",
+			question_family == "Input-mode realism" ~ "helper action, hold duration, browser/platform repeat, or aggregation semantics change",
+			question_family == "Store-subscriber partition" ~ "public store notification API, import surface, subscriber ordering, or compatibility fixture changes",
+			question_family == "CI pass/fail policy" ~ "dashboard, displayed statistic, threshold, noisy-metric rule, or reviewer policy changes",
+			question_family == "Product workload generalization" ~ "workload stratum, replay script, plugin/theme context, or fixture setup changes",
+			question_family == "Browser endpoint and display presentation" ~ "browser visual endpoint, display pipeline, clock sync, or calibration method changes",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "runtime, OS scheduler, sidecar overhead, counter source, or class-ordering control changes",
+			TRUE ~ freshness_trigger
+		),
+		maintenance_action = case_when(
+			maintenance_mode == "local packet maintenance" ~ "rerun the named packet and compare old/new invariant, acceptance, and residual-risk fields",
+			maintenance_mode == "owner artifact maintenance" ~ "request the owner artifact and compare old/new policy or compatibility fields",
+			TRUE ~ "request the observer/workload artifact and compare old/new calibration, replay, or counter fields"
+		),
+		ignore_signal = case_when(
+			maintenance_mode == "local packet maintenance" ~ "aggregate q50 movement without a stale trigger or missing required packet field",
+			maintenance_mode == "owner artifact maintenance" ~ "local timing movement without API, compatibility, dashboard, or reviewer-policy evidence",
+			TRUE ~ "internal timing movement without external endpoint, workload, replay, sidecar, or counter evidence"
+		),
+		escalation_policy = case_when(
+			false_fresh_risk >= 5 ~ "escalate stale evidence reuse before widening wording",
+			false_stale_risk >= 4 ~ "de-duplicate noisy stale alarms before rerunning expensive observer work",
+			TRUE ~ "rerun the local packet only when the trigger names changed fields"
+		),
+		maintenance_archive = case_when(
+			maintenance_mode == "local packet maintenance" ~ "old/new packet CSV, changed-field manifest, acceptance result, and report wording diff",
+			maintenance_mode == "owner artifact maintenance" ~ "old/new owner artifact, changed-field manifest, reviewer decision, and report wording diff",
+			TRUE ~ "old/new observer artifact, calibration or replay diff, perturbation control, and report wording diff"
+		),
+		maintenance_owner = residual_risk_owner,
+		maintenance_cost = case_when(
+			maintenance_mode == "local packet maintenance" ~ 2,
+			maintenance_mode == "owner artifact maintenance" ~ 4,
+			TRUE ~ 5
+		),
+		noise_risk = false_stale_risk,
+		stale_reuse_risk = false_fresh_risk,
+		maintenance_value = pmax(
+			1,
+			freshness_value + stale_reuse_risk - maintenance_cost
+		),
+		triage_value = pmax(
+			1,
+			revalidation_value + stale_reuse_risk + noise_risk - maintenance_cost
+		),
+		routine_timing_maintenance_value = 0,
+		analysis_only_value = 0,
+		maintenance_policy_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(maintenance_value), desc(triage_value), question_family)
+
+open_question_maintenance_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"detect", "Which changed field creates an actionable stale signal?",
+	"triage", "What should happen when the signal fires?",
+	"ignore", "Which signal should be ignored as non-actionable churn?",
+	"owner", "Who triages the maintenance event?",
+	"packet", "Which packet or owner artifact refreshes the claim?",
+	"archive", "What old/new archive proves maintenance was done?",
+	"escalate", "When does stale evidence reuse or noisy stale alarms escalate?",
+	"cost", "What makes the maintenance event cheap or expensive?",
+	"substitute", "Can a routine aggregate timing-only rerun substitute?",
+	"stop-rule", "When does the maintenance loop close?"
+)
+
+open_question_maintenance_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_maintenance_policy)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_maintenance_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_maintenance_policy %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_maintenance_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		maintenance_policy_first_seen = !duplicated(maintenance_policy_id),
+		maintenance_axis_key = paste(maintenance_policy_id, pressure_axis, sep = "::"),
+		maintenance_axis_first_seen = !duplicated(maintenance_axis_key),
+		maintenance_mode_first_seen = !duplicated(maintenance_mode),
+		new_maintenance_value = if_else(maintenance_policy_first_seen, maintenance_value, 0),
+		new_triage_value = if_else(maintenance_policy_first_seen, triage_value, 0),
+		new_routine_timing_maintenance_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!maintenance_axis_first_seen ~ "repeat: maintenance-axis already checked",
+			maintenance_mode == "local packet maintenance" ~ "maintenance policy: local packet",
+			TRUE ~ "maintenance policy: owner or observer"
+		),
+		cumulative_maintenance_policies = cumsum(maintenance_policy_first_seen),
+		cumulative_maintenance_axes = cumsum(maintenance_axis_first_seen),
+		cumulative_maintenance_modes = cumsum(maintenance_mode_first_seen),
+		cumulative_maintenance_value = cumsum(new_maintenance_value),
+		cumulative_triage_value = cumsum(new_triage_value),
+		cumulative_routine_timing_maintenance_value = cumsum(new_routine_timing_maintenance_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_maintenance_summary <- open_question_maintenance_100_pass %>%
+	group_by(maintenance_mode, freshness_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		policies = n_distinct(maintenance_policy_id),
+		axis_checks = sum(maintenance_axis_first_seen),
+		maintenance_owners = n_distinct(maintenance_owner),
+		maintenance_value = sum(new_maintenance_value),
+		triage_value = sum(new_triage_value),
+		routine_timing_maintenance_value = sum(new_routine_timing_maintenance_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_stale_reuse_risk = max(stale_reuse_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(maintenance_value), desc(triage_value), first_pass)
+
+open_question_maintenance_checkpoints <- open_question_maintenance_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_maintenance_policies,
+		cumulative_maintenance_axes,
+		cumulative_maintenance_modes,
+		cumulative_maintenance_value,
+		cumulative_triage_value,
+		cumulative_routine_timing_maintenance_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_maintenance_policy,
+	file.path(data_dir, "typing-delay-open-question-maintenance-policy.csv")
+)
+
+write_csv(
+	open_question_maintenance_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			maintenance_mode,
+			freshness_state,
+			actionable_signal,
+			maintenance_action,
+			ignore_signal,
+			escalation_policy,
+			maintenance_archive,
+			maintenance_owner,
+			maintenance_policy_first_seen,
+			maintenance_axis_first_seen,
+			maintenance_mode_first_seen,
+			pass_result,
+			maintenance_value,
+			triage_value,
+			routine_timing_maintenance_value,
+			new_maintenance_value,
+			new_triage_value,
+			new_routine_timing_maintenance_value,
+			new_analysis_only_value,
+			cumulative_maintenance_policies,
+			cumulative_maintenance_axes,
+			cumulative_maintenance_modes,
+			cumulative_maintenance_value,
+			cumulative_triage_value,
+			cumulative_routine_timing_maintenance_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-maintenance-policy-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_maintenance_summary,
+	file.path(data_dir, "typing-delay-open-question-maintenance-policy-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_maintenance_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-maintenance-policy-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_maintenance_policy %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, maintenance_value)
+		) %>%
+		ggplot(aes(maintenance_value, question_label, fill = maintenance_mode)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Maintenance mode") +
+		labs(
+			title = "Maintenance policy turns stale signals into packet refreshes",
+			subtitle = "Routine timing-only reruns are explicitly ignored unless a named stale trigger fires",
+			x = "Maintenance value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"327-open-question-maintenance-policy.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_maintenance_saturation_long <- open_question_maintenance_100_pass %>%
+	select(
+		pass_id,
+		`maintenance policies` = cumulative_maintenance_policies,
+		`maintenance axes` = cumulative_maintenance_axes,
+		`maintenance modes` = cumulative_maintenance_modes,
+		`maintenance value` = cumulative_maintenance_value,
+		`triage value` = cumulative_triage_value,
+		`routine timing maintenance value` = cumulative_routine_timing_maintenance_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("maintenance policies", "maintenance axes", "maintenance modes", "maintenance value", "triage value", "routine timing maintenance value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_maintenance_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Maintenance-policy audit saturates once stale-signal handling is named",
+			subtitle = "Nine policies appear by pass 9; all 90 maintenance axes appear by pass 90; routine timing maintenance value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"328-open-question-maintenance-policy-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_maintenance_summary %>%
+		mutate(
+			mode_label = str_wrap(maintenance_mode, width = 28),
+			mode_label = fct_reorder(mode_label, maintenance_value + triage_value)
+		) %>%
+		ggplot(aes(axis_checks, mode_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Maintenance coverage separates local packet refresh from owner and observer upkeep",
+			subtitle = "Every policy is checked for detect, triage, ignore, owner, packet, archive, escalation, cost, substitute, and stop rule",
+			x = "Maintenance-axis checks",
+			y = "Maintenance mode"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"329-open-question-maintenance-policy-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

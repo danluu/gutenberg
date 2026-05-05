@@ -1482,6 +1482,19 @@ The R script derives:
     checkpoints for freshness-monitor, freshness-axis, freshness-state,
     freshness-value, revalidation-value, timing-only-refresh, and analysis-only
     saturation.
+-   `data/typing-delay-open-question-maintenance-policy.csv`: maintenance
+    policy table for the nine freshness monitors, including actionable signal,
+    maintenance action, ignore signal, escalation policy, archive, and owner.
+-   `data/typing-delay-open-question-maintenance-policy-100-pass-audit.csv`:
+    fifteenth forced 100-pass audit over maintenance axes: detect, triage,
+    ignore, owner, packet, archive, escalate, cost, substitute, and stop-rule.
+-   `data/typing-delay-open-question-maintenance-policy-100-pass-summary.csv`:
+    rollup of maintenance coverage by maintenance mode, freshness state, and
+    pass result.
+-   `data/typing-delay-open-question-maintenance-policy-100-pass-checkpoints.csv`:
+    checkpoints for maintenance-policy, maintenance-axis, maintenance-mode,
+    maintenance-value, triage-value, routine-timing-maintenance, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11123,6 +11136,33 @@ This makes the report maintainable over time. Freshness is event-triggered:
 topology, helper, source, policy, workload, endpoint, runtime, or counter changes
 trigger the matching packet refresh. Periodic or repeated aggregate timing runs
 are not a freshness policy for claims that depend on missing fields or owners.
+
+I then added the maintenance-policy layer: once a freshness signal fires, what is
+actionable, what should be ignored as churn, who triages it, what packet or owner
+artifact refreshes the claim, and what archive closes the maintenance loop.
+
+![Open question maintenance policy](figures/327-open-question-maintenance-policy.png)
+
+![Open question maintenance policy 100-pass saturation](figures/328-open-question-maintenance-policy-100-pass-saturation.png)
+
+![Open question maintenance policy coverage](figures/329-open-question-maintenance-policy-coverage.png)
+
+| Maintenance-policy check | Result |
+| ------------------------ | ------ |
+| Maintenance policies | `9`, one per freshness monitor. |
+| Maintenance modes | `3`: local packet maintenance, owner artifact maintenance, and observer artifact maintenance. |
+| Maintenance owners | `8`; the target-CI startup and pattern-wait policies share the Performance Tests runtime reviewer. |
+| Maintenance-axis checks | `90`: every policy checked against all `10` maintenance axes. |
+| Maintenance value | `582`: local packet maintenance contributes `492`, owner artifact maintenance contributes `63`, and observer artifact maintenance contributes `27`. |
+| Triage value | `528` across the nine policies. |
+| Routine timing maintenance value | `0`; aggregate q50-only movement without a named stale trigger is explicitly ignored. |
+| Saturation | Maintenance policies are all named by pass `9`; all maintenance axes are covered by pass `90`; passes `91-100` add no maintenance coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This turns the open-question follow-up into upkeep rather than churn. A stale
+signal triggers a packet refresh, owner artifact, or observer artifact. A routine
+timing-only rerun is not a maintenance action unless it is attached to the
+fields named by the packet.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
