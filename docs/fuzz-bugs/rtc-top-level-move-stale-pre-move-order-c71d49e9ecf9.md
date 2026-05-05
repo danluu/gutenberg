@@ -56,6 +56,16 @@ fixed branch then passed the focused regression tests, the full
 `crdt-blocks.ts` unit suite, JS lint for the touched files, and the natural-user
 Playwright repro on the same HTTP transport.
 
+Pass 41 rebased both branches onto `origin/trunk` at `02bfdaa5ca9`, which is
+PR #77980's HTTP polling compaction fix for offline reconnects. That upstream
+change does not touch `crdt-blocks.ts`. Applying only the non-Playwright
+regression-test commit to the new trunk still fails the stale top-level move
+case and the same-array-reference reorder case with the stale order
+`[Inserted, Emoji, Another]`. The rebased fix branch passes the full
+`crdt-blocks.ts` unit suite and JS lint, and the same natural-user Playwright
+repro passed before the rebase; the rebase only added the unrelated server-side
+compaction change beneath the three repro/fix commits.
+
 The narrowest pass-39 proof is lower than Playwright: applying only the
 regression-test commit to the known-fixes base shows that the base already
 survives the pure stale-snapshot interleaving when each editor emits a fresh
