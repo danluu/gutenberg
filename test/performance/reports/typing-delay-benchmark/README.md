@@ -1672,6 +1672,23 @@ The R script derives:
     monitoring-owner, dashboard-consumer, monitoring-value,
     stale-exception-risk-value, timing-only-monitoring, and analysis-only
     saturation.
+-   `data/typing-delay-open-question-exception-retirement-register.csv`:
+    exception-retirement register for the nine exception-monitoring records,
+    including retirement trigger, report action, archive record, successor
+    requirement, removal check, notification target, revival barrier, and
+    residual-risk statement.
+-   `data/typing-delay-open-question-exception-retirement-100-pass-audit.csv`:
+    twenty-eighth forced 100-pass audit over exception-retirement axes:
+    trigger, action, archive, successor, remove, notify, barrier, risk,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-exception-retirement-100-pass-summary.csv`:
+    rollup of exception-retirement coverage by retirement state,
+    exception-monitoring state, and pass result.
+-   `data/typing-delay-open-question-exception-retirement-100-pass-checkpoints.csv`:
+    checkpoints for retirement-record, retirement-axis, retirement-state,
+    retirement-owner, notification-target, retirement-value,
+    stale-wording-prevention-value, timing-only-retirement, and analysis-only
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11691,6 +11708,38 @@ This is the anti-staleness layer. Exception management blocks silent waivers at
 creation time; exception monitoring blocks the later failure mode where a narrow
 temporary exception becomes stale but remains in the report as if it were still
 approved evidence.
+
+I then added the exception-retirement layer: after an exception is closed,
+expired, superseded, or removed, the report now says what event retires it, what
+wording action is required, what archival record preserves the old evidence,
+what successor evidence is needed before wording can return, what removal check
+proves the exception no longer supports current claims, who is notified, what
+barrier prevents accidental revival, and what residual-risk statement remains.
+
+![Open question exception retirement register](figures/366-open-question-exception-retirement-register.png)
+
+![Open question exception retirement 100-pass saturation](figures/367-open-question-exception-retirement-100-pass-saturation.png)
+
+![Open question exception retirement coverage](figures/368-open-question-exception-retirement-coverage.png)
+
+| Exception-retirement check | Result |
+| -------------------------- | ------ |
+| Retirement records | `9`, one per exception-monitoring record. |
+| Retirement states | `3`: local packet exception retirement, owner artifact exception retirement, and observer artifact exception retirement. |
+| Retirement owners | `9`; retirement and accidental-revival review route back to the scoped monitoring owner. |
+| Notification targets | `8`; the target-CI startup and pattern-wait questions both notify the Performance Tests CI wait policy. |
+| Retirement-axis checks | `90`: every row checked against all `10` exception-retirement axes. |
+| Exception-retirement value | `288846`: local packet retirement contributes `218257`, owner artifact retirement contributes `43639`, and observer artifact retirement contributes `26950`. |
+| Stale-wording prevention value | `221534` across the nine exception-retirement records. |
+| Timing-only retirement value | `0`; aggregate timing movement alone cannot retire wording, archive the exception, name successor evidence, prove removal, notify consumers, block revival, or state residual risk. |
+| Saturation | Retirement records are all named by pass `9`; all retirement axes are covered by pass `90`; passes `91-100` add no exception-retirement coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the deletion layer. Monitoring catches stale temporary exceptions, but
+retirement is the step that removes them from the active reasoning path. A
+retired exception can remain as historical evidence, but it cannot support a
+current CI, source, method, browser, runtime, workload, or product claim unless
+a fresh successor artifact passes the relevant controls.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

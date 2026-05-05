@@ -36804,6 +36804,304 @@ save_plot(
 	height = 7.2
 )
 
+open_question_exception_retirement_register <- open_question_exception_monitoring_register %>%
+	mutate(
+		retirement_state = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "local packet exception retirement",
+			monitoring_state == "owner artifact exception monitoring" ~ "owner artifact exception retirement",
+			TRUE ~ "observer artifact exception retirement"
+		),
+		retirement_trigger = case_when(
+			retirement_state == "local packet exception retirement" ~ "local exception expires, successor packet passes, or the unsupported local timing wording is removed",
+			retirement_state == "owner artifact exception retirement" ~ "owner exception expires, owner-approved successor artifact passes, or unsupported owner-scoped wording is removed",
+			TRUE ~ "observer exception expires, observer-approved successor artifact passes, or unsupported broad wording is removed"
+		),
+		retirement_action = case_when(
+			retirement_state == "local packet exception retirement" ~ "remove or replace the local temporary wording, close the exception row, and link the successor packet or unsupported-note",
+			retirement_state == "owner artifact exception retirement" ~ "remove or replace the owner-scoped temporary wording, close the exception row, and link the owner-approved successor artifact or unsupported-note",
+			TRUE ~ "remove or replace broad temporary wording, close the exception row, and link the observer-approved successor artifact or unsupported-note"
+		),
+		archive_record = case_when(
+			retirement_state == "local packet exception retirement" ~ "archived exception record, failed control evidence, successor packet or removal diff, report link, and figure hashes",
+			retirement_state == "owner artifact exception retirement" ~ "archived exception record, failed owner evidence, owner-approved successor or removal diff, reviewer identity, and report link",
+			TRUE ~ "archived exception record, failed observer evidence, observer-approved successor or removal diff, reviewer identity, and report link"
+		),
+		successor_requirement = case_when(
+			retirement_state == "local packet exception retirement" ~ "successor packet must pass packet controls before local timing wording can be restored",
+			retirement_state == "owner artifact exception retirement" ~ "successor owner artifact must pass owner controls before owner-scoped wording can be restored",
+			TRUE ~ "successor observer artifact must pass observer controls before broad wording can be restored"
+		),
+		removal_check = case_when(
+			retirement_state == "local packet exception retirement" ~ "report no longer cites the temporary local exception as support for CI, source, method, or local timing wording",
+			retirement_state == "owner artifact exception retirement" ~ "report no longer cites the temporary owner exception as support for owner-scoped wording",
+			TRUE ~ "report no longer cites the temporary observer exception as support for product, browser, endpoint, runtime, or workload wording"
+		),
+		notification_target = dashboard_consumer,
+		revival_barrier = case_when(
+			retirement_state == "local packet exception retirement" ~ "retired local wording can return only through a fresh packet, control-effectiveness pass, and report diff",
+			retirement_state == "owner artifact exception retirement" ~ "retired owner wording can return only through owner-approved successor evidence, control-effectiveness pass, and report diff",
+			TRUE ~ "retired broad wording can return only through observer-approved successor evidence, control-effectiveness pass, and report diff"
+		),
+		residual_risk_statement = case_when(
+			retirement_state == "local packet exception retirement" ~ "retired local exception remains historical evidence only; it cannot support current timing or CI claims",
+			retirement_state == "owner artifact exception retirement" ~ "retired owner exception remains historical evidence only; it cannot support current owner-scoped claims",
+			TRUE ~ "retired observer exception remains historical evidence only; it cannot support current broad product or runtime claims"
+		),
+		retirement_owner = monitoring_owner,
+		retirement_cost = case_when(
+			retirement_state == "local packet exception retirement" ~ 2,
+			retirement_state == "owner artifact exception retirement" ~ 4,
+			TRUE ~ 5
+		),
+		retirement_value = pmax(
+			1,
+			monitoring_value + stale_exception_risk_value + false_closure_risk - retirement_cost
+		),
+		stale_wording_prevention_value = pmax(
+			1,
+			stale_exception_risk_value + exception_value + stale_reuse_risk - retirement_cost
+		),
+		timing_only_retirement_value = 0,
+		analysis_only_value = 0,
+		exception_retirement_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(retirement_value), desc(stale_wording_prevention_value), question_family)
+
+open_question_exception_retirement_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"trigger", "What event retires the exception?",
+	"action", "What report action removes or replaces the temporary wording?",
+	"archive", "What archival record preserves the retired exception?",
+	"successor", "What successor evidence is required before wording can return?",
+	"remove", "What check proves the retired exception no longer supports current wording?",
+	"notify", "Which consumer is notified that the exception retired?",
+	"barrier", "What barrier prevents retired wording from reviving accidentally?",
+	"risk", "What residual-risk statement remains after retirement?",
+	"substitute", "Can aggregate timing alone substitute for exception retirement?",
+	"stop-rule", "When does exception-retirement review stop?"
+)
+
+open_question_exception_retirement_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_exception_retirement_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_exception_retirement_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_exception_retirement_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_exception_retirement_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		retirement_first_seen = !duplicated(exception_retirement_id),
+		retirement_axis_key = paste(exception_retirement_id, pressure_axis, sep = "::"),
+		retirement_axis_first_seen = !duplicated(retirement_axis_key),
+		retirement_state_first_seen = !duplicated(retirement_state),
+		retirement_owner_first_seen = !duplicated(retirement_owner),
+		notification_target_first_seen = !duplicated(notification_target),
+		new_retirement_value = if_else(retirement_first_seen, retirement_value, 0),
+		new_stale_wording_prevention_value = if_else(retirement_first_seen, stale_wording_prevention_value, 0),
+		new_timing_only_retirement_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!retirement_axis_first_seen ~ "repeat: retirement-axis already checked",
+			retirement_state == "local packet exception retirement" ~ "exception retirement: local packet",
+			TRUE ~ "exception retirement: owner or observer artifact"
+		),
+		cumulative_retirement_records = cumsum(retirement_first_seen),
+		cumulative_retirement_axes = cumsum(retirement_axis_first_seen),
+		cumulative_retirement_states = cumsum(retirement_state_first_seen),
+		cumulative_retirement_owners = cumsum(retirement_owner_first_seen),
+		cumulative_notification_targets = cumsum(notification_target_first_seen),
+		cumulative_retirement_value = cumsum(new_retirement_value),
+		cumulative_stale_wording_prevention_value = cumsum(new_stale_wording_prevention_value),
+		cumulative_timing_only_retirement_value = cumsum(new_timing_only_retirement_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_exception_retirement_summary <- open_question_exception_retirement_100_pass %>%
+	group_by(retirement_state, monitoring_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		retirement_records = n_distinct(exception_retirement_id),
+		axis_checks = sum(retirement_axis_first_seen),
+		retirement_owners = n_distinct(retirement_owner),
+		notification_targets = n_distinct(notification_target),
+		retirement_value = sum(new_retirement_value),
+		stale_wording_prevention_value = sum(new_stale_wording_prevention_value),
+		timing_only_retirement_value = sum(new_timing_only_retirement_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(retirement_value), desc(stale_wording_prevention_value), first_pass)
+
+open_question_exception_retirement_checkpoints <- open_question_exception_retirement_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_retirement_records,
+		cumulative_retirement_axes,
+		cumulative_retirement_states,
+		cumulative_retirement_owners,
+		cumulative_notification_targets,
+		cumulative_retirement_value,
+		cumulative_stale_wording_prevention_value,
+		cumulative_timing_only_retirement_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_exception_retirement_register,
+	file.path(data_dir, "typing-delay-open-question-exception-retirement-register.csv")
+)
+
+write_csv(
+	open_question_exception_retirement_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			retirement_state,
+			monitoring_state,
+			retirement_trigger,
+			retirement_action,
+			archive_record,
+			successor_requirement,
+			removal_check,
+			notification_target,
+			revival_barrier,
+			residual_risk_statement,
+			retirement_owner,
+			supported_claim,
+			blocked_claim,
+			retirement_first_seen,
+			retirement_axis_first_seen,
+			retirement_state_first_seen,
+			retirement_owner_first_seen,
+			notification_target_first_seen,
+			pass_result,
+			retirement_value,
+			stale_wording_prevention_value,
+			timing_only_retirement_value,
+			new_retirement_value,
+			new_stale_wording_prevention_value,
+			new_timing_only_retirement_value,
+			new_analysis_only_value,
+			cumulative_retirement_records,
+			cumulative_retirement_axes,
+			cumulative_retirement_states,
+			cumulative_retirement_owners,
+			cumulative_notification_targets,
+			cumulative_retirement_value,
+			cumulative_stale_wording_prevention_value,
+			cumulative_timing_only_retirement_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-exception-retirement-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_exception_retirement_summary,
+	file.path(data_dir, "typing-delay-open-question-exception-retirement-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_exception_retirement_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-exception-retirement-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_exception_retirement_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, retirement_value)
+		) %>%
+		ggplot(aes(retirement_value, question_label, fill = retirement_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Exception retirement") +
+		labs(
+			title = "Exception retirement removes stale temporary wording from current claims",
+			subtitle = "Each row names trigger, report action, archive record, successor evidence, removal check, notification, revival barrier, and residual risk",
+			x = "Exception-retirement value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"366-open-question-exception-retirement-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_exception_retirement_saturation_long <- open_question_exception_retirement_100_pass %>%
+	select(
+		pass_id,
+		`retirement records` = cumulative_retirement_records,
+		`retirement axes` = cumulative_retirement_axes,
+		`retirement states` = cumulative_retirement_states,
+		`retirement owners` = cumulative_retirement_owners,
+		`notification targets` = cumulative_notification_targets,
+		`retirement value` = cumulative_retirement_value,
+		`stale-wording prevention value` = cumulative_stale_wording_prevention_value,
+		`timing-only retirement value` = cumulative_timing_only_retirement_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("retirement records", "retirement axes", "retirement states", "retirement owners", "notification targets", "retirement value", "stale-wording prevention value", "timing-only retirement value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_exception_retirement_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Exception-retirement audit saturates once removal, archive, and revival barriers are named",
+			subtitle = "Nine retirement records appear by pass 9; all 90 axes appear by pass 90; timing-only retirement value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"367-open-question-exception-retirement-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_exception_retirement_summary %>%
+		mutate(
+			state_label = str_wrap(retirement_state, width = 28),
+			state_label = fct_reorder(state_label, retirement_value + stale_wording_prevention_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Exception-retirement coverage separates local packet removals from owner and observer removals",
+			subtitle = "Every row is checked for trigger, action, archive, successor, remove, notify, barrier, risk, substitute, and stop rule",
+			x = "Retirement-axis checks",
+			y = "Exception retirement state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"368-open-question-exception-retirement-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

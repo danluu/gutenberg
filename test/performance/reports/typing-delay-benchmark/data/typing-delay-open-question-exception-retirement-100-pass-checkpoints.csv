@@ -1,0 +1,10 @@
+pass_id,cumulative_retirement_records,cumulative_retirement_axes,cumulative_retirement_states,cumulative_retirement_owners,cumulative_notification_targets,cumulative_retirement_value,cumulative_stale_wording_prevention_value,cumulative_timing_only_retirement_value,cumulative_analysis_only_value
+1,1,1,1,1,1,60184,46155,0,0
+5,5,5,2,5,4,242766,186181,0,0
+9,9,9,3,9,8,288846,221534,0,0
+10,9,10,3,9,8,288846,221534,0,0
+20,9,20,3,9,8,288846,221534,0,0
+50,9,50,3,9,8,288846,221534,0,0
+90,9,90,3,9,8,288846,221534,0,0
+91,9,90,3,9,8,288846,221534,0,0
+100,9,90,3,9,8,288846,221534,0,0

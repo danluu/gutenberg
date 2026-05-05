@@ -1,0 +1,7 @@
+retirement_state,monitoring_state,pass_result,passes,first_pass,retirement_records,axis_checks,retirement_owners,notification_targets,retirement_value,stale_wording_prevention_value,timing_only_retirement_value,analysis_only_value
+local packet exception retirement,local packet exception monitoring,exception retirement: local packet,40,1,4,40,4,3,218257,167382,0,0
+owner artifact exception retirement,owner artifact exception monitoring,exception retirement: owner or observer artifact,20,5,2,20,2,2,43639,33473,0,0
+observer artifact exception retirement,observer artifact exception monitoring,exception retirement: owner or observer artifact,30,7,3,30,3,3,26950,20679,0,0
+local packet exception retirement,local packet exception monitoring,repeat: retirement-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact exception retirement,owner artifact exception monitoring,repeat: retirement-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact exception retirement,observer artifact exception monitoring,repeat: retirement-axis already checked,3,97,3,0,3,3,0,0,0,0
