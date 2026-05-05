@@ -34181,6 +34181,297 @@ save_plot(
 	height = 7.2
 )
 
+open_question_provenance_register <- open_question_evidence_ledger %>%
+	mutate(
+		provenance_state = case_when(
+			ledger_state == "local packet evidence ledger" ~ "local packet provenance",
+			ledger_state == "owner artifact evidence ledger" ~ "owner artifact provenance",
+			TRUE ~ "observer artifact provenance"
+		),
+		source_authority = case_when(
+			provenance_state == "local packet provenance" ~ "local packet artifact plus Performance Tests script, fixture, environment metadata, and signoff owner",
+			provenance_state == "owner artifact provenance" ~ "owner artifact plus compatibility or policy scope, reviewer decision, and archive location",
+			TRUE ~ "observer artifact plus calibration, replay, counter, or endpoint control and archive location"
+		),
+		version_pin_required = case_when(
+			question_family == "Startup wait and first-key tails" ~ "branch SHA, performance script SHA, WordPress fixture, browser build, Node/npm version, wp-env image, runner class, and artifact timestamp",
+			question_family == "Pattern wait replacement" ~ "branch SHA, readiness predicate source span, fixture, preview/canvas target, browser build, runner class, and artifact timestamp",
+			question_family == "Selector/source guard" ~ "branch SHA, selector source span, guarded implementation SHA, behavior fixture, package boundary, and compatibility fixture",
+			question_family == "Input-mode realism" ~ "branch SHA, helper implementation, browser build, platform repeat settings, stimulus stratum, and aggregation script SHA",
+			question_family == "Store-subscriber partition" ~ "owner artifact revision, public data API revision, import-surface revision, subscriber-ordering fixture, and compatibility result",
+			question_family == "CI pass/fail policy" ~ "workflow revision, dashboard revision, threshold source, reviewer-policy revision, artifact schema, and consumer surface",
+			question_family == "Product workload generalization" ~ "recording or replay revision, workload stratum, plugin/theme versions, fixture setup, and coverage manifest",
+			question_family == "Browser endpoint and display presentation" ~ "browser build, endpoint instrumentation revision, display pipeline metadata, clock-sync method, and calibration artifact",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "browser/runtime build, OS scheduler metadata, QoS control revision, sidecar revision, counter source, and class-ordering control",
+			TRUE ~ "artifact revision, source revision, fixture revision, environment metadata, and timestamp"
+		),
+		integrity_check = case_when(
+			provenance_state == "local packet provenance" ~ "artifact checksum, schema check, required-field non-null check, row-count check, and negative-control comparison",
+			provenance_state == "owner artifact provenance" ~ "owner artifact checksum, reviewer identity, scope diff, compatibility or policy schema check, and archive link",
+			TRUE ~ "observer artifact checksum, calibration or replay-control check, counter schema check, perturbation-control check, and archive link"
+		),
+		reproduction_path = case_when(
+			provenance_state == "local packet provenance" ~ "rerun the named packet from the pinned branch and compare required fields, checksums, and negative control",
+			provenance_state == "owner artifact provenance" ~ "request or regenerate the owner artifact from the pinned owner revision and compare policy or compatibility scope",
+			TRUE ~ "regenerate the observer artifact from the pinned replay, calibration, endpoint, sidecar, or counter control"
+		),
+		chain_of_custody = case_when(
+			provenance_state == "local packet provenance" ~ "local runner creates packet, script writes CSV/PNG, Performance Tests reviewer signs closure, report links archived diff",
+			provenance_state == "owner artifact provenance" ~ "owner creates artifact, reviewer signs scope, report links compatibility or policy diff and rollback rule",
+			TRUE ~ "observer creates artifact, reviewer signs calibration/replay/counter scope, report links control diff and rollback rule"
+		),
+		provenance_gap = case_when(
+			provenance_state == "local packet provenance" ~ "missing version pins or negative controls make the local decision non-reproducible",
+			provenance_state == "owner artifact provenance" ~ "missing owner revision or reviewer scope makes local timing evidence unusable for the owner claim",
+			TRUE ~ "missing replay, endpoint, counter, or calibration version keeps the broad claim open"
+		),
+		independent_audit = case_when(
+			provenance_state == "local packet provenance" ~ "independent rerun on the pinned branch must reproduce the disposition or keep the row open",
+			provenance_state == "owner artifact provenance" ~ "independent owner review must reproduce the compatibility or policy scope",
+			TRUE ~ "independent observer review must reproduce the calibration, replay, endpoint, or counter scope"
+		),
+		provenance_cost = case_when(
+			provenance_state == "local packet provenance" ~ 2,
+			provenance_state == "owner artifact provenance" ~ 4,
+			TRUE ~ 5
+		),
+		provenance_value = pmax(
+			1,
+			ledger_value + traceability_value + false_closure_risk - provenance_cost
+		),
+		reproducibility_value = pmax(
+			1,
+			traceability_value + reopen_value + stale_reuse_risk - provenance_cost
+		),
+		timing_only_provenance_value = 0,
+		analysis_only_value = 0,
+		provenance_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(provenance_value), desc(reproducibility_value), question_family)
+
+open_question_provenance_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"source", "What source of authority creates the evidence row?",
+	"version", "Which source, fixture, runtime, and environment versions are pinned?",
+	"integrity", "What checksum, schema, or required-field check detects corruption?",
+	"reproduce", "How can an independent reviewer regenerate or compare the artifact?",
+	"custody", "What chain of custody ties artifact creation to report wording?",
+	"reviewer", "Who can independently audit the provenance record?",
+	"schema", "Which fields must be present before the row supports a claim?",
+	"gap", "What claim is blocked when provenance is missing?",
+	"substitute", "Can aggregate timing alone substitute for provenance?",
+	"stop-rule", "When does provenance review stop?"
+)
+
+open_question_provenance_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_provenance_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_provenance_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_provenance_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_provenance_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		provenance_first_seen = !duplicated(provenance_id),
+		provenance_axis_key = paste(provenance_id, pressure_axis, sep = "::"),
+		provenance_axis_first_seen = !duplicated(provenance_axis_key),
+		provenance_state_first_seen = !duplicated(provenance_state),
+		new_provenance_value = if_else(provenance_first_seen, provenance_value, 0),
+		new_reproducibility_value = if_else(provenance_first_seen, reproducibility_value, 0),
+		new_timing_only_provenance_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!provenance_axis_first_seen ~ "repeat: provenance-axis already checked",
+			provenance_state == "local packet provenance" ~ "provenance: local packet",
+			TRUE ~ "provenance: owner or observer artifact"
+		),
+		cumulative_provenance_records = cumsum(provenance_first_seen),
+		cumulative_provenance_axes = cumsum(provenance_axis_first_seen),
+		cumulative_provenance_states = cumsum(provenance_state_first_seen),
+		cumulative_provenance_value = cumsum(new_provenance_value),
+		cumulative_reproducibility_value = cumsum(new_reproducibility_value),
+		cumulative_timing_only_provenance_value = cumsum(new_timing_only_provenance_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_provenance_summary <- open_question_provenance_100_pass %>%
+	group_by(provenance_state, ledger_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		provenance_records = n_distinct(provenance_id),
+		axis_checks = sum(provenance_axis_first_seen),
+		signoff_owners = n_distinct(signoff_required),
+		ledger_consumers = n_distinct(ledger_consumer),
+		provenance_value = sum(new_provenance_value),
+		reproducibility_value = sum(new_reproducibility_value),
+		timing_only_provenance_value = sum(new_timing_only_provenance_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(provenance_value), desc(reproducibility_value), first_pass)
+
+open_question_provenance_checkpoints <- open_question_provenance_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_provenance_records,
+		cumulative_provenance_axes,
+		cumulative_provenance_states,
+		cumulative_provenance_value,
+		cumulative_reproducibility_value,
+		cumulative_timing_only_provenance_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_provenance_register,
+	file.path(data_dir, "typing-delay-open-question-provenance-register.csv")
+)
+
+write_csv(
+	open_question_provenance_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			provenance_state,
+			ledger_state,
+			source_authority,
+			version_pin_required,
+			integrity_check,
+			reproduction_path,
+			chain_of_custody,
+			provenance_gap,
+			independent_audit,
+			supported_claim,
+			blocked_claim,
+			signoff_required,
+			ledger_consumer,
+			provenance_first_seen,
+			provenance_axis_first_seen,
+			provenance_state_first_seen,
+			pass_result,
+			provenance_value,
+			reproducibility_value,
+			timing_only_provenance_value,
+			new_provenance_value,
+			new_reproducibility_value,
+			new_timing_only_provenance_value,
+			new_analysis_only_value,
+			cumulative_provenance_records,
+			cumulative_provenance_axes,
+			cumulative_provenance_states,
+			cumulative_provenance_value,
+			cumulative_reproducibility_value,
+			cumulative_timing_only_provenance_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-provenance-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_provenance_summary,
+	file.path(data_dir, "typing-delay-open-question-provenance-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_provenance_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-provenance-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_provenance_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, provenance_value)
+		) %>%
+		ggplot(aes(provenance_value, question_label, fill = provenance_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Provenance state") +
+		labs(
+			title = "Provenance pins each evidence row to source, versions, and custody",
+			subtitle = "Each remaining claim names authority, version pins, integrity checks, reproduction path, and blocked wording",
+			x = "Provenance value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"339-open-question-provenance-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_provenance_saturation_long <- open_question_provenance_100_pass %>%
+	select(
+		pass_id,
+		`provenance records` = cumulative_provenance_records,
+		`provenance axes` = cumulative_provenance_axes,
+		`provenance states` = cumulative_provenance_states,
+		`provenance value` = cumulative_provenance_value,
+		`reproducibility value` = cumulative_reproducibility_value,
+		`timing-only provenance value` = cumulative_timing_only_provenance_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("provenance records", "provenance axes", "provenance states", "provenance value", "reproducibility value", "timing-only provenance value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_provenance_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Provenance audit saturates once authority, pins, and custody are named",
+			subtitle = "Nine provenance records appear by pass 9; all 90 provenance axes appear by pass 90; timing-only provenance value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"340-open-question-provenance-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_provenance_summary %>%
+		mutate(
+			state_label = str_wrap(provenance_state, width = 28),
+			state_label = fct_reorder(state_label, provenance_value + reproducibility_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Provenance coverage separates local packets from owner and observer artifact chains",
+			subtitle = "Every row is checked for source, version, integrity, reproduction, custody, reviewer, schema, gap, substitute, and stop rule",
+			x = "Provenance-axis checks",
+			y = "Provenance state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"341-open-question-provenance-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1,0 +1,7 @@
+provenance_state,ledger_state,pass_result,passes,first_pass,provenance_records,axis_checks,signoff_owners,ledger_consumers,provenance_value,reproducibility_value,timing_only_provenance_value,analysis_only_value
+local packet provenance,local packet evidence ledger,provenance: local packet,40,1,4,40,4,3,2673,850,0,0
+owner artifact provenance,owner artifact evidence ledger,provenance: owner or observer artifact,20,5,2,20,2,2,492,188,0,0
+observer artifact provenance,observer artifact evidence ledger,provenance: owner or observer artifact,30,7,3,30,3,3,281,112,0,0
+local packet provenance,local packet evidence ledger,repeat: provenance-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact provenance,owner artifact evidence ledger,repeat: provenance-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact provenance,observer artifact evidence ledger,repeat: provenance-axis already checked,3,97,3,0,3,3,0,0,0,0

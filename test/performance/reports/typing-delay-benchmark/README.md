@@ -1537,6 +1537,20 @@ The R script derives:
 -   `data/typing-delay-open-question-evidence-ledger-100-pass-checkpoints.csv`:
     checkpoints for ledger-record, ledger-axis, ledger-state, ledger-value,
     traceability-value, timing-only-ledger, and analysis-only saturation.
+-   `data/typing-delay-open-question-provenance-register.csv`: provenance
+    register for the nine evidence-ledger rows, including source authority,
+    version pins, integrity checks, reproduction path, chain of custody,
+    provenance gap, and independent audit rule.
+-   `data/typing-delay-open-question-provenance-100-pass-audit.csv`:
+    nineteenth forced 100-pass audit over provenance axes: source, version,
+    integrity, reproduce, custody, reviewer, schema, gap, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-provenance-100-pass-summary.csv`: rollup
+    of provenance coverage by provenance state, ledger state, and pass result.
+-   `data/typing-delay-open-question-provenance-100-pass-checkpoints.csv`:
+    checkpoints for provenance-record, provenance-axis, provenance-state,
+    provenance-value, reproducibility-value, timing-only-provenance, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11290,6 +11304,36 @@ we say?" is no longer hidden in prose: look up the row, inspect the supported
 claim, required fields, blocked claim, consumer, archive, and linked falsifier.
 If the row is missing those fields, the wording stays blocked even if another
 aggregate timing run completes.
+
+I then added the provenance layer: each evidence row now names the authority
+that creates it, the versions that must be pinned, the integrity checks that
+detect corruption, the reproduction path, the chain of custody, and the
+provenance gap that keeps wording blocked.
+
+![Open question provenance register](figures/339-open-question-provenance-register.png)
+
+![Open question provenance 100-pass saturation](figures/340-open-question-provenance-100-pass-saturation.png)
+
+![Open question provenance coverage](figures/341-open-question-provenance-coverage.png)
+
+| Provenance check | Result |
+| ---------------- | ------ |
+| Provenance records | `9`, one per evidence-ledger row. |
+| Provenance states | `3`: local packet provenance, owner artifact provenance, and observer artifact provenance. |
+| Signoff owners | `9`; provenance review stays tied to the scoped evidence owner. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Provenance-axis checks | `90`: every row checked against all `10` provenance axes. |
+| Provenance value | `3446`: local packet provenance contributes `2673`, owner artifact provenance contributes `492`, and observer artifact provenance contributes `281`. |
+| Reproducibility value | `1150` across the nine provenance records. |
+| Timing-only provenance value | `0`; aggregate timing alone does not pin source, fixture, runtime, environment, checksum, schema, custody, or reproduction path. |
+| Saturation | Provenance records are all named by pass `9`; all provenance axes are covered by pass `90`; passes `91-100` add no provenance coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This closes another class of open-question ambiguity: not just "which artifact
+supports the claim?", but "can someone else identify and reproduce that exact
+artifact later?" Without the source authority, version pins, integrity checks,
+and custody chain, the row is not reproducible evidence and the related claim
+stays blocked.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
