@@ -25172,6 +25172,157 @@ save_plot(
 	height = 8.2
 )
 
+open_question_frontier_handoff_contract <- tribble(
+	~artifact, ~lane, ~handoff_class, ~consumer, ~required_outputs, ~minimum_unit, ~acceptance_decision, ~reject_decision, ~ambiguous_result_rule, ~raw_rows_required, ~metadata_required, ~failure_retention_required, ~control_pairing_required, ~joinability_required, ~decision_rule_required,
+	"Per-keypress retained/throwaway distributions", "CI/readiness", "frontier", "CI metric owner", "per-key rows, retained aggregate, throwaway flag, key position, run metadata", "every generated key, including throwaway, first retained, later retained, failures, retries, and missing keys", "split retained typing from idle-input metric if key-position tails remain", "do not add startup wait solely to hide first-key tails", "if aggregate and per-key rows disagree, per-key rows define a separate metric rather than being averaged into q50", 5, 4, 5, 4, 3, 5,
+	"Real Performance Tests startup-wait artifact", "CI/readiness", "frontier", "CI runtime owner", "raw retained rows, failures, retries, resources, first-key tails, run order, environment metadata", "each startup-wait arm in the real Performance Tests topology", "candidate wait reduction only if q50 and all readiness fields pass", "block wait reduction if failures, retries, resources, first-key tails, or retained counts regress", "if q50 improves but readiness regresses, readiness vetoes the q50 win", 5, 5, 5, 5, 4, 5,
+	"Pattern predicate plus resource-quiet validation", "CI/readiness", "frontier", "pattern-loading benchmark owner", "predicate fire time, fixed-wait controls, resource quiet, preview/canvas checks, failures, retained rows", "each site/post pattern-loading row, including predicate misses and late resources", "replace fixed wait only if predicate plus resource quiet preserves readiness and behavior", "keep fixed fallback if predicate fires before preview/canvas/resource stability", "predicate-only and predicate-plus-resource-quiet must be reported separately", 5, 4, 5, 5, 4, 5,
+	"Selector behavior fixtures plus source spans", "Source/code", "frontier", "source optimization owner", "behavior fixture results, targeted source-span rows, owner span count/time, aggregate p50 as secondary", "all behavior fixtures and every source-span row for the targeted owner", "cite timing only after behavior passes and targeted source span collapses", "do not cite aggregate timing if behavior fails or source span does not collapse", "aggregate p50 can only explain residual impact after source-span gate passes", 5, 4, 5, 4, 4, 5,
+	"Public subscriber compatibility matrix", "Source/code", "conditional", "data-layer API owner", "public subscribe fixtures, persistence selector fixtures, dynamic/cross-store cases, marker-only fanout", "all compatibility fixtures including plugin/public subscriber smoke and async/race cases", "consider fanout work only if compatibility passes and marker-only fanout collapses", "veto public-path fanout on any compatibility failure", "private side-channel wins do not imply public subscriber compatibility", 5, 4, 5, 4, 4, 5,
+	"Matched tap/short-hold/held-key controls", "Benchmark artifact", "conditional", "benchmark wording owner", "delay rows by key mode, persistence markers, startup state, retained-key rule, browser revision", "matched tap, fixed short hold, and held-key rows under the same filtering", "keep input-shape wording if only held key has the cliff", "narrow or reopen wording if tap or short hold reproduces the cliff", "key-mode arms must not be pooled before the mode-specific decision", 5, 4, 4, 5, 3, 4,
+	"Controlled cross-browser dip grid", "Benchmark artifact", "conditional", "browser-portability owner", "per-browser delay curves, key mode, persistence markers, browser revisions, retained rows", "each browser lane under the same key-mode and inclusion rules", "keep shared benchmark-ordering wording only if controlled dip persists across browser lanes", "split browser wording if any lane loses the controlled dip", "browser-specific failures narrow mechanism wording before aggregate comparison", 5, 5, 4, 5, 3, 4,
+	"Passive retained-key sidecar acceptance", "Sidecar/mechanism", "conditional", "mechanism owner", "observer-off/on paired rows, retained-key joins, clock sync, renderer/helper identity, ordering checks", "every retained key in observer-off and passive-sidecar runs", "mechanism work may proceed only if joins are complete and ordering is unchanged", "do not run root counters or trace if passive sidecar perturbs ordering", "observer overhead failures require fixing the sidecar, not interpreting counters", 5, 5, 5, 5, 5, 5,
+	"Dashboard/reviewer policy join", "External policy", "conditional", "CI policy owner", "raw CI artifacts, displayed q50, dashboard/reviewer decision, noisy-metric handling", "each archived artifact with its displayed and reviewed outcome", "make pass/fail claims only after policy matches raw artifact movement", "do not predict pass/fail from printed q50 alone", "unjoined policy rows keep q50 as evidence production, not a gate", 4, 5, 4, 4, 4, 5
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		handoff_class = factor(handoff_class, levels = c("frontier", "conditional", "deferred")),
+		artifact_label = str_wrap(artifact, width = 30),
+		total_handoff_risk = raw_rows_required + metadata_required + failure_retention_required + control_pairing_required + joinability_required + decision_rule_required,
+		handoff_priority = total_handoff_risk + if_else(handoff_class == "frontier", 4, 0),
+		handoff_action = case_when(
+			handoff_class == "frontier" ~ "must ship with next run",
+			total_handoff_risk >= 28 ~ "required if run",
+			decision_rule_required >= 5 ~ "lock decision rule",
+			TRUE ~ "record minimum controls"
+		),
+		handoff_action = factor(
+			handoff_action,
+			levels = c("record minimum controls", "lock decision rule", "required if run", "must ship with next run")
+		)
+	)
+
+open_question_frontier_handoff_long <- open_question_frontier_handoff_contract %>%
+	select(
+		artifact,
+		artifact_label,
+		lane,
+		raw_rows_required,
+		metadata_required,
+		failure_retention_required,
+		control_pairing_required,
+		joinability_required,
+		decision_rule_required
+	) %>%
+	pivot_longer(
+		cols = c(
+			raw_rows_required,
+			metadata_required,
+			failure_retention_required,
+			control_pairing_required,
+			joinability_required,
+			decision_rule_required
+		),
+		names_to = "handoff_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		handoff_dimension = recode(
+			handoff_dimension,
+			raw_rows_required = "raw rows",
+			metadata_required = "metadata",
+			failure_retention_required = "failure retention",
+			control_pairing_required = "control pairing",
+			joinability_required = "joinability",
+			decision_rule_required = "decision rule"
+		),
+		handoff_dimension = factor(
+			handoff_dimension,
+			levels = c("raw rows", "metadata", "failure retention", "control pairing", "joinability", "decision rule")
+		),
+		artifact_label = fct_reorder(artifact_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_frontier_handoff_summary <- open_question_frontier_handoff_contract %>%
+	count(lane, handoff_action, name = "artifacts") %>%
+	group_by(lane) %>%
+	mutate(lane_artifacts = sum(artifacts)) %>%
+	ungroup()
+
+write_csv(
+	open_question_frontier_handoff_contract %>%
+		select(
+			artifact,
+			lane,
+			handoff_class,
+			consumer,
+			required_outputs,
+			minimum_unit,
+			acceptance_decision,
+			reject_decision,
+			ambiguous_result_rule,
+			raw_rows_required,
+			metadata_required,
+			failure_retention_required,
+			control_pairing_required,
+			joinability_required,
+			decision_rule_required,
+			total_handoff_risk,
+			handoff_priority,
+			handoff_action
+		),
+	file.path(data_dir, "typing-delay-open-question-frontier-handoff-contract.csv")
+)
+
+write_csv(
+	open_question_frontier_handoff_long,
+	file.path(data_dir, "typing-delay-open-question-frontier-handoff-long.csv")
+)
+
+write_csv(
+	open_question_frontier_handoff_summary,
+	file.path(data_dir, "typing-delay-open-question-frontier-handoff-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_frontier_handoff_long, aes(handoff_dimension, artifact_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.7, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "BuPu", direction = 1, name = "Requirement") +
+		labs(
+			title = "Next artifacts need raw rows, controls, joins, and locked decisions to be useful",
+			subtitle = "The handoff contract turns open questions into reusable artifacts instead of one-off benchmark runs",
+			x = "Handoff requirement",
+			y = "Candidate artifact"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"246-open-question-frontier-handoff-contract.png",
+	width = 13.4,
+	height = 8.4
+)
+
+save_plot(
+	ggplot(
+		open_question_frontier_handoff_contract %>%
+			mutate(artifact_label = fct_reorder(artifact_label, handoff_priority)),
+		aes(handoff_priority, artifact_label, fill = handoff_action)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Accent", name = "Handoff action") +
+		labs(
+			title = "Frontier runs must ship with complete handoff artifacts",
+			subtitle = "Priority combines handoff risk with whether the run sits on the actionable frontier",
+			x = "Handoff priority",
+			y = "Candidate artifact"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"247-open-question-handoff-priority.png",
+	width = 12.8,
+	height = 8.0
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1166,6 +1166,15 @@ The R script derives:
     multiplicity, and protocol-burden scores used for the protocol heatmap.
 -   `data/typing-delay-open-question-preregistration-protocol-summary.csv`:
     rollup of protocol actions by claim lane.
+-   `data/typing-delay-open-question-frontier-handoff-contract.csv`: handoff
+    contract for the next frontier and conditional artifacts, including required
+    outputs, minimum units, accepting/rejecting decisions, and ambiguous-result
+    rules.
+-   `data/typing-delay-open-question-frontier-handoff-long.csv`: long-form
+    handoff requirement scores for raw rows, metadata, failure retention,
+    controls, joins, and decision rules.
+-   `data/typing-delay-open-question-frontier-handoff-summary.csv`: rollup of
+    handoff actions by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9970,6 +9979,28 @@ forbidden interpretation before each run.
 This means the next runs should be protocol-locked, not just targeted. If a row
 is worth running, it is worth deciding in advance which rows count, which endpoint
 is primary, which failures stay in the dataset, and what result stops the claim.
+
+The handoff contract is the operational version of the protocol. A next run is
+not complete just because it prints a q50 or a pass/fail line. It has to leave
+behind the raw rows, metadata, controls, joins, and decision rule needed by the
+next reader to recompute the result and see why the conclusion follows.
+
+![Open question frontier handoff contract](figures/246-open-question-frontier-handoff-contract.png)
+
+![Open question handoff priority](figures/247-open-question-handoff-priority.png)
+
+| Handoff target | Must ship with the run | Ambiguous-result rule |
+| -------------- | ---------------------- | --------------------- |
+| Per-keypress distributions | every generated key, throwaway flag, first-retained/later-retained labels, failures, retries, missing keys, run metadata, and retained aggregate | if aggregate q50 and per-key rows disagree, split the metric rather than averaging the disagreement away |
+| Startup-wait artifact | raw retained rows, failures, retries, resources, first-key tails, run order, and environment metadata for each wait arm | readiness fields veto a q50 win |
+| Pattern predicate validation | predicate fire times, fixed-wait controls, resource quiet, preview/canvas checks, failures, and retained rows | predicate-only and predicate-plus-resource-quiet arms must be reported separately |
+| Selector source-safety run | behavior fixture results, source-span rows for the targeted owner, owner span count/time, and aggregate p50 as secondary | aggregate p50 only explains residual impact after behavior and source-span gates pass |
+| Compatibility, sidecar, and policy joins | compatibility fixtures, observer-off/on joins, clock sync, dashboard/reviewer decisions, and the locked decision rule | private-side-channel, sidecar, or q50 wins do not imply public compatibility, passive observation, or pass/fail policy |
+
+This closes another practical loophole in the open-question plan. The frontier
+artifacts must be complete enough to be consumed by someone who did not run them.
+Otherwise they become another ambiguous benchmark run instead of evidence that
+can close or narrow an open question.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

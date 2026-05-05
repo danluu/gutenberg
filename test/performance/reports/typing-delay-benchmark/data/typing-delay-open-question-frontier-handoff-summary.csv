@@ -1,0 +1,7 @@
+lane,handoff_action,artifacts,lane_artifacts
+Benchmark artifact,record minimum controls,2,2
+CI/readiness,must ship with next run,3,3
+Source/code,lock decision rule,1,2
+Source/code,must ship with next run,1,2
+Sidecar/mechanism,required if run,1,1
+External policy,lock decision rule,1,1

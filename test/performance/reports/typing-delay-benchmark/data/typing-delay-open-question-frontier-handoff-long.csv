@@ -1,0 +1,115 @@
+artifact,artifact_label,lane,handoff_dimension,score
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,raw rows,5
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,metadata,4
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,failure retention,5
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,control pairing,4
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,joinability,3
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,decision rule,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,raw rows,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,metadata,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,failure retention,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,control pairing,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,joinability,4
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,decision rule,5
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,raw rows,5
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,metadata,4
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,failure retention,5
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,control pairing,5
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,joinability,4
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,decision rule,5
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,raw rows,5
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,metadata,4
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,failure retention,5
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,control pairing,4
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,joinability,4
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,decision rule,5
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,raw rows,5
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,metadata,4
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,failure retention,5
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,control pairing,4
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,joinability,4
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,decision rule,5
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,raw rows,5
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,metadata,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,failure retention,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,control pairing,5
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,joinability,3
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,decision rule,4
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,raw rows,5
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,metadata,5
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,failure retention,4
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,control pairing,5
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,joinability,3
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,decision rule,4
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,raw rows,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,metadata,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,failure retention,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,control pairing,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,joinability,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,decision rule,5
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,raw rows,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,metadata,5
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,failure retention,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,control pairing,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,joinability,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,decision rule,5
