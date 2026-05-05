@@ -1,0 +1,7 @@
+closure_governance_state,audit_trail,pass_result,passes,first_pass,closure_records,axis_checks,signoff_owners,governance_value,wording_change_value,timing_only_governance_value,analysis_only_value,max_stale_reuse_risk
+local closure governance,local packet audit trail,closure governance: local packet,40,1,4,40,4,891,380,0,0,5
+owner signoff governance,owner signoff audit trail,closure governance: owner or observer signoff,20,5,2,20,2,150,83,0,0,4
+observer signoff governance,observer artifact audit trail,closure governance: owner or observer signoff,30,7,3,30,3,80,38,0,0,5
+local closure governance,local packet audit trail,repeat: closure-axis already checked,5,91,4,0,4,0,0,0,0,5
+owner signoff governance,owner signoff audit trail,repeat: closure-axis already checked,2,95,2,0,2,0,0,0,0,4
+observer signoff governance,observer artifact audit trail,repeat: closure-axis already checked,3,97,3,0,3,0,0,0,0,5

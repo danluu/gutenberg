@@ -1,0 +1,10 @@
+pass_id,cumulative_closure_records,cumulative_closure_axes,cumulative_closure_governance_states,cumulative_governance_value,cumulative_wording_change_value,cumulative_timing_only_governance_value,cumulative_analysis_only_value
+1,1,1,1,247,105,0,0
+5,5,5,2,977,427,0,0
+9,9,9,3,1121,501,0,0
+10,9,10,3,1121,501,0,0
+20,9,20,3,1121,501,0,0
+50,9,50,3,1121,501,0,0
+90,9,90,3,1121,501,0,0
+91,9,90,3,1121,501,0,0
+100,9,90,3,1121,501,0,0

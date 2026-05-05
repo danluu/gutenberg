@@ -1495,6 +1495,20 @@ The R script derives:
     checkpoints for maintenance-policy, maintenance-axis, maintenance-mode,
     maintenance-value, triage-value, routine-timing-maintenance, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-closure-governance.csv`: closure
+    governance table for the nine maintenance policies, including required
+    closure record, signoff owner, wording rule, rollback trigger, audit trail,
+    and stop rule.
+-   `data/typing-delay-open-question-closure-governance-100-pass-audit.csv`:
+    sixteenth forced 100-pass audit over closure axes: record, signoff, wording,
+    rollback, archive, owner, stale, mixed, substitute, and stop-rule.
+-   `data/typing-delay-open-question-closure-governance-100-pass-summary.csv`:
+    rollup of closure coverage by governance state, audit trail, and pass
+    result.
+-   `data/typing-delay-open-question-closure-governance-100-pass-checkpoints.csv`:
+    checkpoints for closure-record, closure-axis, closure-governance-state,
+    governance-value, wording-change-value, timing-only-governance, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11163,6 +11177,33 @@ This turns the open-question follow-up into upkeep rather than churn. A stale
 signal triggers a packet refresh, owner artifact, or observer artifact. A routine
 timing-only rerun is not a maintenance action unless it is attached to the
 fields named by the packet.
+
+I then added the closure-governance layer: what record is required to close the
+question, who signs off, what report wording can change, what rolls the closure
+back, and whether another timing-only run can substitute for that audit trail.
+
+![Open question closure governance](figures/330-open-question-closure-governance.png)
+
+![Open question closure governance 100-pass saturation](figures/331-open-question-closure-governance-100-pass-saturation.png)
+
+![Open question closure governance coverage](figures/332-open-question-closure-governance-coverage.png)
+
+| Closure-governance check | Result |
+| ------------------------ | ------ |
+| Closure records | `9`, one per maintenance policy. |
+| Closure governance states | `3`: local closure governance, owner signoff governance, and observer signoff governance. |
+| Signoff owners | `9`; the target-CI startup and pattern-wait questions now have separate runtime and wait-policy signoff owners. |
+| Closure-axis checks | `90`: every record checked against all `10` closure axes. |
+| Governance value | `1121`: local closure governance contributes `891`, owner signoff governance contributes `150`, and observer signoff governance contributes `80`. |
+| Wording-change value | `501` across the nine closure records. |
+| Timing-only governance value | `0`; another aggregate timing-only rerun cannot sign off a closure, authorize report wording, or replace the archived record. |
+| Saturation | Closure records are all named by pass `9`; all closure axes are covered by pass `90`; passes `91-100` add no closure coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the final audit-trail layer for the remaining open questions. Closure is
+not a new q50, p90, or volatility number. It is a signed old/new packet or owner
+artifact, plus an explicit wording rule and rollback trigger. If that record is
+missing, the question stays open even if another timing run looks clean.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

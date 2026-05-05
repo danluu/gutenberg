@@ -33338,6 +33338,282 @@ save_plot(
 	height = 7.2
 )
 
+open_question_closure_governance <- open_question_maintenance_policy %>%
+	mutate(
+		closure_governance_state = case_when(
+			maintenance_mode == "local packet maintenance" ~ "local closure governance",
+			maintenance_mode == "owner artifact maintenance" ~ "owner signoff governance",
+			TRUE ~ "observer signoff governance"
+		),
+		closure_record_required = case_when(
+			maintenance_mode == "local packet maintenance" ~ "packet CSV, old/new invariant diff, acceptance result, residual-risk diff, and report wording diff",
+			maintenance_mode == "owner artifact maintenance" ~ "owner artifact, old/new compatibility or policy diff, reviewer decision, and report wording diff",
+			TRUE ~ "observer artifact, calibration or replay diff, perturbation control, reviewer decision, and report wording diff"
+		),
+		signoff_required = case_when(
+			question_family == "Startup wait and first-key tails" ~ "Performance Tests runtime reviewer",
+			question_family == "Pattern wait replacement" ~ "Performance Tests wait-policy reviewer",
+			question_family == "Selector/source guard" ~ "selector-source owner",
+			question_family == "Input-mode realism" ~ "benchmark-method reviewer",
+			question_family == "Store-subscriber partition" ~ "data API compatibility reviewer",
+			question_family == "CI pass/fail policy" ~ "CI dashboard and policy reviewer",
+			question_family == "Product workload generalization" ~ "workload replay reviewer",
+			question_family == "Browser endpoint and display presentation" ~ "presentation endpoint reviewer",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "runtime and counter reviewer",
+			TRUE ~ maintenance_owner
+		),
+		wording_change_allowed = case_when(
+			close_scope == "CI wait decision" ~ "allowed only for the CI lane, statistic, wait setting, and pass/fail rule whose archived packet passed",
+			close_scope == "source prototype decision" ~ "allowed only for the selector owner and behavior fixture whose source-span and compatibility gates passed",
+			close_scope == "benchmark method wording" ~ "allowed only for the stimulus stratum whose hold, tap, repeat, and aggregation semantics were reported separately",
+			TRUE ~ "allowed only inside the owner or observer artifact scope that was signed off"
+		),
+		rollback_trigger = case_when(
+			maintenance_mode == "local packet maintenance" ~ rejection_gate,
+			maintenance_mode == "owner artifact maintenance" ~ escalation_trigger,
+			TRUE ~ retraction_trigger
+		),
+		audit_trail = case_when(
+			maintenance_mode == "local packet maintenance" ~ "local packet audit trail",
+			maintenance_mode == "owner artifact maintenance" ~ "owner signoff audit trail",
+			TRUE ~ "observer artifact audit trail"
+		),
+		closure_stop_rule = case_when(
+			maintenance_mode == "local packet maintenance" ~ "close when the named packet passes and the report links the packet, diff, and wording change",
+			maintenance_mode == "owner artifact maintenance" ~ "close when the owner artifact is archived and the reviewer decision accepts or rejects the scoped claim",
+			TRUE ~ "close when the observer artifact and perturbation control are archived and the scoped claim is accepted or rejected"
+		),
+		governance_value = pmax(
+			1,
+			maintenance_value + triage_value + stale_reuse_risk - maintenance_cost
+		),
+		wording_change_value = pmax(
+			1,
+			claim_safety_value + acceptance_value + residual_severity + false_fresh_risk - ambiguity_risk - maintenance_cost
+		),
+		timing_only_governance_value = 0,
+		analysis_only_value = 0,
+		closure_governance_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(governance_value), desc(wording_change_value), question_family)
+
+open_question_closure_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"record", "What closure record must exist before the question can be closed?",
+	"signoff", "Who has to accept the record or explicitly leave the claim open?",
+	"wording", "What report wording may change after closure?",
+	"rollback", "What later observation rolls back the closure?",
+	"archive", "Where is the old/new evidence trail preserved?",
+	"owner", "Who owns stale or disputed closure evidence?",
+	"stale", "Which future change makes the closure stale?",
+	"mixed", "What happens when the closure evidence is mixed?",
+	"substitute", "Can another aggregate timing-only run substitute for governance?",
+	"stop-rule", "When does the closure loop stop?"
+)
+
+open_question_closure_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_closure_governance)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_closure_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_closure_governance %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_closure_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		closure_governance_first_seen = !duplicated(closure_governance_id),
+		closure_axis_key = paste(closure_governance_id, pressure_axis, sep = "::"),
+		closure_axis_first_seen = !duplicated(closure_axis_key),
+		closure_governance_state_first_seen = !duplicated(closure_governance_state),
+		new_governance_value = if_else(closure_governance_first_seen, governance_value, 0),
+		new_wording_change_value = if_else(closure_governance_first_seen, wording_change_value, 0),
+		new_timing_only_governance_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!closure_axis_first_seen ~ "repeat: closure-axis already checked",
+			closure_governance_state == "local closure governance" ~ "closure governance: local packet",
+			TRUE ~ "closure governance: owner or observer signoff"
+		),
+		cumulative_closure_records = cumsum(closure_governance_first_seen),
+		cumulative_closure_axes = cumsum(closure_axis_first_seen),
+		cumulative_closure_governance_states = cumsum(closure_governance_state_first_seen),
+		cumulative_governance_value = cumsum(new_governance_value),
+		cumulative_wording_change_value = cumsum(new_wording_change_value),
+		cumulative_timing_only_governance_value = cumsum(new_timing_only_governance_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_closure_summary <- open_question_closure_100_pass %>%
+	group_by(closure_governance_state, audit_trail, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		closure_records = n_distinct(closure_governance_id),
+		axis_checks = sum(closure_axis_first_seen),
+		signoff_owners = n_distinct(signoff_required),
+		governance_value = sum(new_governance_value),
+		wording_change_value = sum(new_wording_change_value),
+		timing_only_governance_value = sum(new_timing_only_governance_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_stale_reuse_risk = max(stale_reuse_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(governance_value), desc(wording_change_value), first_pass)
+
+open_question_closure_checkpoints <- open_question_closure_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_closure_records,
+		cumulative_closure_axes,
+		cumulative_closure_governance_states,
+		cumulative_governance_value,
+		cumulative_wording_change_value,
+		cumulative_timing_only_governance_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_closure_governance,
+	file.path(data_dir, "typing-delay-open-question-closure-governance.csv")
+)
+
+write_csv(
+	open_question_closure_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			closure_governance_state,
+			closure_record_required,
+			signoff_required,
+			wording_change_allowed,
+			rollback_trigger,
+			audit_trail,
+			closure_stop_rule,
+			closure_governance_first_seen,
+			closure_axis_first_seen,
+			closure_governance_state_first_seen,
+			pass_result,
+			governance_value,
+			wording_change_value,
+			timing_only_governance_value,
+			new_governance_value,
+			new_wording_change_value,
+			new_timing_only_governance_value,
+			new_analysis_only_value,
+			cumulative_closure_records,
+			cumulative_closure_axes,
+			cumulative_closure_governance_states,
+			cumulative_governance_value,
+			cumulative_wording_change_value,
+			cumulative_timing_only_governance_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-closure-governance-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_closure_summary,
+	file.path(data_dir, "typing-delay-open-question-closure-governance-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_closure_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-closure-governance-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_closure_governance %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, governance_value)
+		) %>%
+		ggplot(aes(governance_value, question_label, fill = closure_governance_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Closure governance") +
+		labs(
+			title = "Closure requires a signed audit trail, not another timing-only rerun",
+			subtitle = "Each open question needs a closure record, signoff owner, wording rule, rollback trigger, and archive",
+			x = "Governance value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"330-open-question-closure-governance.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_closure_saturation_long <- open_question_closure_100_pass %>%
+	select(
+		pass_id,
+		`closure records` = cumulative_closure_records,
+		`closure axes` = cumulative_closure_axes,
+		`closure governance states` = cumulative_closure_governance_states,
+		`governance value` = cumulative_governance_value,
+		`wording change value` = cumulative_wording_change_value,
+		`timing-only governance value` = cumulative_timing_only_governance_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("closure records", "closure axes", "closure governance states", "governance value", "wording change value", "timing-only governance value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_closure_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Closure-governance audit saturates once records, owners, and rollback rules are named",
+			subtitle = "Nine closure records appear by pass 9; all 90 closure axes appear by pass 90; timing-only governance value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"331-open-question-closure-governance-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_closure_summary %>%
+		mutate(
+			state_label = str_wrap(closure_governance_state, width = 28),
+			state_label = fct_reorder(state_label, governance_value + wording_change_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Closure coverage separates local packet closure from owner and observer signoff",
+			subtitle = "Every record is checked for record, signoff, wording, rollback, archive, owner, stale, mixed, substitute, and stop rule",
+			x = "Closure-axis checks",
+			y = "Closure governance"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"332-open-question-closure-governance-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
