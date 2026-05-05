@@ -26,6 +26,7 @@ import {
 	mergeCrdtBlocks,
 	type MergeCursorPosition,
 	mergeRichTextUpdate,
+	recordCrdtBlocksLocalSnapshot,
 	type YBlock,
 	type YBlocks,
 } from './crdt-blocks';
@@ -426,9 +427,14 @@ export function getPostChangesFromCRDTDoc(
 	// plain strings (from Y.Text.toJSON()). Convert them back to RichTextData
 	// so block edit components receive the same types as locally-created blocks.
 	if ( changes.blocks ) {
-		changes.blocks = deserializeBlockAttributes(
-			changes.blocks as Block[]
-		);
+		const blocks = deserializeBlockAttributes( changes.blocks as Block[] );
+		const yblocks = ymap.get( 'blocks' );
+
+		if ( yblocks instanceof Y.Array ) {
+			recordCrdtBlocksLocalSnapshot( yblocks, blocks );
+		}
+
+		changes.blocks = blocks;
 	}
 
 	// Meta changes must be merged with the edited record since not all meta
