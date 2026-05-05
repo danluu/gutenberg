@@ -1453,6 +1453,21 @@ The R script derives:
     checkpoints for handoff-contract, handoff-axis, handoff-state,
     contract-value, local-execution, owner/observer-handoff,
     timing-only-substitute, and analysis-only saturation.
+-   `data/typing-delay-open-question-residual-risk-register.csv`: residual-risk
+    and claim-wording table for the nine handoff contracts, including allowed
+    wording, forbidden wording, residual risk, retraction trigger, and pass/fail
+    wording.
+-   `data/typing-delay-open-question-residual-risk-100-pass-audit.csv`:
+    thirteenth forced 100-pass audit over residual-risk axes: allowed,
+    forbidden, risk, retract, pass-wording, fail-wording, mixed, owner,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-residual-risk-100-pass-summary.csv`:
+    rollup of residual-risk coverage by residual claim state, close scope, and
+    pass result.
+-   `data/typing-delay-open-question-residual-risk-100-pass-checkpoints.csv`:
+    checkpoints for residual-risk, residual-axis, residual-claim-state,
+    residual-risk-value, claim-safety, local-repeat-reduction, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11037,6 +11052,35 @@ This makes the remaining work executable. The local packets need commands,
 fields, and archived acceptance records. The broader claims need owner or
 observer handoffs. None of those should be reopened as generic uncertainty about
 the local `1000ms` held-key cliff.
+
+I then added the residual-risk layer: after the handoff contracts exist, what
+wording is allowed now, what wording remains forbidden, what observation retracts
+or narrows the claim, and whether another local timing-only run reduces the
+remaining risk.
+
+![Open question residual risk register](figures/321-open-question-residual-risk-register.png)
+
+![Open question residual risk 100-pass saturation](figures/322-open-question-residual-risk-100-pass-saturation.png)
+
+![Open question residual risk coverage](figures/323-open-question-residual-risk-coverage.png)
+
+| Residual-risk check | Result |
+| ------------------- | ------ |
+| Residual risks | `9`, one per handoff contract. |
+| Residual claim states | `3`: decision pending local packet, claim blocked on owner, and claim blocked on observer. |
+| Risk owners | `8`; the target-CI startup and pattern-wait risks share the Performance Tests runtime reviewer. |
+| Residual-risk axis checks | `90`: every residual risk checked against all `10` wording/risk axes. |
+| Residual-risk value | `534`, concentrated in the four local-decision risks (`462`) rather than the broader blocked claims (`72`). |
+| Claim-safety value | `263` across the nine risks. |
+| Local repeat reduces residual value | `0`; another aggregate q50-only run does not change allowed wording, forbidden wording, retraction triggers, or owner/observer dependencies. |
+| Saturation | Residual risks are all named by pass `9`; all residual-risk axes are covered by pass `90`; passes `91-100` add no residual-risk coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the claim-wording boundary for the report. The local `1000ms` held-key
+cliff remains a scoped benchmark fact. The remaining risk is about CI wait
+decisions, source-patch safety, stimulus wording, and broader compatibility,
+policy, workload, display, or mechanism claims. Those risks retire only through
+their packet artifacts or handoffs, not by adding another aggregate q50 run.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

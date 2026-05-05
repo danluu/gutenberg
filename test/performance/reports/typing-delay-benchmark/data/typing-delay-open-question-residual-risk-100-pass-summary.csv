@@ -1,0 +1,11 @@
+residual_claim_state,close_scope,pass_result,passes,first_pass,residual_risks,axis_checks,risk_owners,residual_risk_value,claim_safety_value,local_repeat_reduces_residual_value,analysis_only_value,max_wording_risk
+decision pending local packet,CI wait decision,residual risk: local packet wording,20,2,2,20,1,239,102,0,0,3
+decision pending local packet,source prototype decision,residual risk: local packet wording,10,1,1,10,1,129,53,0,0,3
+decision pending local packet,benchmark method wording,residual risk: local packet wording,10,4,1,10,1,94,38,0,0,3
+claim blocked on owner,broader claim wording,residual risk: broader claim wording,20,5,2,20,2,57,46,0,0,4
+claim blocked on observer,broader claim wording,residual risk: broader claim wording,30,7,3,30,3,15,24,0,0,5
+decision pending local packet,source prototype decision,repeat: residual-risk axis already checked,2,91,1,0,1,0,0,0,0,3
+decision pending local packet,CI wait decision,repeat: residual-risk axis already checked,2,92,2,0,1,0,0,0,0,3
+decision pending local packet,benchmark method wording,repeat: residual-risk axis already checked,1,94,1,0,1,0,0,0,0,3
+claim blocked on owner,broader claim wording,repeat: residual-risk axis already checked,2,95,2,0,2,0,0,0,0,4
+claim blocked on observer,broader claim wording,repeat: residual-risk axis already checked,3,97,3,0,3,0,0,0,0,5

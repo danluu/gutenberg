@@ -32467,6 +32467,315 @@ save_plot(
 	height = 7.2
 )
 
+open_question_residual_risk_register <- open_question_handoff_contract %>%
+	mutate(
+		residual_claim_state = case_when(
+			handoff_state == "execute packet locally" ~ "decision pending local packet",
+			handoff_state == "handoff to owner" ~ "claim blocked on owner",
+			TRUE ~ "claim blocked on observer"
+		),
+		allowed_claim_now = case_when(
+			question_family == "Startup wait and first-key tails" ~ "the current artifact supports retained typing q50 wording, not first-input or wait-removal wording",
+			question_family == "Pattern wait replacement" ~ "the current artifact supports the local wait/readiness caveat, not a blanket shorter-wait policy",
+			question_family == "Selector/source guard" ~ "the current artifact supports benchmark causality, not source-patch safety",
+			question_family == "Input-mode realism" ~ "the current artifact supports held-key stimulus wording, not generic tap typing",
+			question_family == "Store-subscriber partition" ~ "the current artifact supports private timing pressure, not public API partition safety",
+			question_family == "CI pass/fail policy" ~ "the current artifact supports repository q50 evidence, not dashboard pass/fail prediction",
+			question_family == "Product workload generalization" ~ "the current artifact supports fixed-character large-post wording, not product-wide typing lag",
+			question_family == "Browser endpoint and display presentation" ~ "the current artifact supports Chromium-internal endpoint wording, not physical display latency",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "the current artifact supports empirical timing bands, not named runtime or OS mechanism",
+			TRUE ~ current_answer
+		),
+		forbidden_claim_now = case_when(
+			question_family == "Startup wait and first-key tails" ~ "startup wait removal is safe for all users or first input is represented by retained q50",
+			question_family == "Pattern wait replacement" ~ "a shorter wait is safe without target-lane readiness/resource/p90 vetoes",
+			question_family == "Selector/source guard" ~ "a selector/source patch is safe because aggregate timing improves",
+			question_family == "Input-mode realism" ~ "held-key rows represent taps, IME, platform repeat, or all typing stimuli",
+			question_family == "Store-subscriber partition" ~ "private side-channel timing proves public subscriber compatibility",
+			question_family == "CI pass/fail policy" ~ "repository-local q50 movement predicts CI pass/fail outcome",
+			question_family == "Product workload generalization" ~ "fixed-x insertion represents product-wide editor typing latency",
+			question_family == "Browser endpoint and display presentation" ~ "internal Paint/RAF/DrawFrame timing is physical display timing",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "the timing bands prove a P-core, QoS, GC, scheduler, or cache mechanism",
+			TRUE ~ current_do_not_do
+		),
+		residual_risk = case_when(
+			question_family == "Startup wait and first-key tails" ~ "early-key and idle-return latency can still diverge from retained q50",
+			question_family == "Pattern wait replacement" ~ "target lanes can move readiness or resource work into measurement",
+			question_family == "Selector/source guard" ~ "source patch can change behavior while improving aggregate timing",
+			question_family == "Input-mode realism" ~ "helper or platform repeat semantics can be mistaken for user taps",
+			question_family == "Store-subscriber partition" ~ "public subscriber order or compatibility can break under partitioning",
+			question_family == "CI pass/fail policy" ~ "dashboard or reviewer policy can use a different statistic or noisy rule",
+			question_family == "Product workload generalization" ~ "real workload strata can reverse rank order or tail behavior",
+			question_family == "Browser endpoint and display presentation" ~ "external display endpoint can disagree with internal trace endpoints",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "passive counters can fail to separate timing classes or perturb ordering",
+			TRUE ~ critical_path_blocker
+		),
+		retraction_trigger = case_when(
+			handoff_state == "execute packet locally" ~ rejection_gate,
+			handoff_state == "handoff to owner" ~ escalation_trigger,
+			TRUE ~ escalation_trigger
+		),
+		wording_after_pass = case_when(
+			close_scope == "CI wait decision" ~ "state the passing CI wait policy only for lanes and statistics whose vetoes passed",
+			close_scope == "source prototype decision" ~ "state source-patch safety only for the owner whose behavior and source-span gates passed",
+			close_scope == "benchmark method wording" ~ "state stimulus-specific results without merging hold, tap, short-hold, or repeat",
+			TRUE ~ "widen only to the owner/observer artifact that passed"
+		),
+		wording_after_fail = case_when(
+			close_scope == "CI wait decision" ~ "keep the current wait or split out a separate first-input/readiness metric",
+			close_scope == "source prototype decision" ~ "keep source claims out of the benchmark explanation",
+			close_scope == "benchmark method wording" ~ "keep held-key wording and report separate stimulus strata",
+			TRUE ~ "keep the current local-only claim and leave broader wording blocked"
+		),
+		residual_risk_owner = case_when(
+			handoff_state == "execute packet locally" ~ review_owner,
+			TRUE ~ review_owner
+		),
+		residual_severity = case_when(
+			close_scope == "CI wait decision" ~ 5,
+			close_scope == "source prototype decision" ~ 5,
+			close_scope == "benchmark method wording" ~ 4,
+			handoff_state == "handoff to owner" ~ 4,
+			TRUE ~ 3
+		),
+		wording_risk = case_when(
+			handoff_state == "execute packet locally" ~ 3,
+			handoff_state == "handoff to owner" ~ 4,
+			TRUE ~ 5
+		),
+		residual_risk_value = pmax(
+			1,
+			closure_value + residual_severity + wording_risk - coordination_cost
+		),
+		claim_safety_value = pmax(
+			1,
+			acceptance_value + strictness_score + residual_severity - ambiguity_risk
+		),
+		local_repeat_reduces_residual_value = 0,
+		analysis_only_value = 0,
+		residual_risk_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(residual_risk_value), desc(claim_safety_value), question_family)
+
+open_question_residual_risk_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"allowed", "What wording is allowed before the packet closes?",
+	"forbidden", "What wording remains forbidden?",
+	"risk", "What residual risk remains?",
+	"retract", "What observation retracts or narrows the claim?",
+	"pass-wording", "What wording is allowed after a pass?",
+	"fail-wording", "What wording is required after a fail?",
+	"mixed", "How does mixed evidence narrow the claim?",
+	"owner", "Who owns the residual risk?",
+	"substitute", "Can a timing-only rerun reduce the residual risk?",
+	"stop-rule", "When is the residual risk retired?"
+)
+
+open_question_residual_risk_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_residual_risk_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_residual_risk_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_residual_risk_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_residual_risk_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		residual_risk_first_seen = !duplicated(residual_risk_id),
+		residual_axis_key = paste(residual_risk_id, pressure_axis, sep = "::"),
+		residual_axis_first_seen = !duplicated(residual_axis_key),
+		residual_claim_state_first_seen = !duplicated(residual_claim_state),
+		new_residual_risk_value = if_else(residual_risk_first_seen, residual_risk_value, 0),
+		new_claim_safety_value = if_else(residual_risk_first_seen, claim_safety_value, 0),
+		new_local_repeat_reduces_residual_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!residual_axis_first_seen ~ "repeat: residual-risk axis already checked",
+			handoff_state == "execute packet locally" ~ "residual risk: local packet wording",
+			TRUE ~ "residual risk: broader claim wording"
+		),
+		cumulative_residual_risks = cumsum(residual_risk_first_seen),
+		cumulative_residual_axes = cumsum(residual_axis_first_seen),
+		cumulative_residual_claim_states = cumsum(residual_claim_state_first_seen),
+		cumulative_residual_risk_value = cumsum(new_residual_risk_value),
+		cumulative_claim_safety_value = cumsum(new_claim_safety_value),
+		cumulative_local_repeat_reduces_residual_value = cumsum(new_local_repeat_reduces_residual_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_residual_risk_summary <- open_question_residual_risk_100_pass %>%
+	group_by(residual_claim_state, close_scope, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		residual_risks = n_distinct(residual_risk_id),
+		axis_checks = sum(residual_axis_first_seen),
+		risk_owners = n_distinct(residual_risk_owner),
+		residual_risk_value = sum(new_residual_risk_value),
+		claim_safety_value = sum(new_claim_safety_value),
+		local_repeat_reduces_residual_value = sum(new_local_repeat_reduces_residual_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_wording_risk = max(wording_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(residual_risk_value), desc(claim_safety_value), first_pass)
+
+open_question_residual_risk_checkpoints <- open_question_residual_risk_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_residual_risks,
+		cumulative_residual_axes,
+		cumulative_residual_claim_states,
+		cumulative_residual_risk_value,
+		cumulative_claim_safety_value,
+		cumulative_local_repeat_reduces_residual_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_residual_risk_register,
+	file.path(data_dir, "typing-delay-open-question-residual-risk-register.csv")
+)
+
+write_csv(
+	open_question_residual_risk_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			residual_claim_state,
+			close_scope,
+			allowed_claim_now,
+			forbidden_claim_now,
+			residual_risk,
+			retraction_trigger,
+			wording_after_pass,
+			wording_after_fail,
+			residual_risk_owner,
+			residual_risk_first_seen,
+			residual_axis_first_seen,
+			residual_claim_state_first_seen,
+			pass_result,
+			residual_risk_value,
+			claim_safety_value,
+			local_repeat_reduces_residual_value,
+			new_residual_risk_value,
+			new_claim_safety_value,
+			new_local_repeat_reduces_residual_value,
+			new_analysis_only_value,
+			cumulative_residual_risks,
+			cumulative_residual_axes,
+			cumulative_residual_claim_states,
+			cumulative_residual_risk_value,
+			cumulative_claim_safety_value,
+			cumulative_local_repeat_reduces_residual_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-residual-risk-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_residual_risk_summary,
+	file.path(data_dir, "typing-delay-open-question-residual-risk-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_residual_risk_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-residual-risk-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_residual_risk_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, residual_risk_value)
+		) %>%
+		ggplot(aes(residual_risk_value, question_label, fill = residual_claim_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Residual claim state") +
+		labs(
+			title = "Residual risk is mostly claim wording, not the local cliff",
+			subtitle = "Local packets can still move decisions; broader risks stay blocked until owner or observer artifacts exist",
+			x = "Residual risk value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"321-open-question-residual-risk-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_residual_risk_saturation_long <- open_question_residual_risk_100_pass %>%
+	select(
+		pass_id,
+		`residual risks` = cumulative_residual_risks,
+		`residual axes` = cumulative_residual_axes,
+		`residual claim states` = cumulative_residual_claim_states,
+		`residual risk value` = cumulative_residual_risk_value,
+		`claim safety value` = cumulative_claim_safety_value,
+		`local repeat reduces residual value` = cumulative_local_repeat_reduces_residual_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("residual risks", "residual axes", "residual claim states", "residual risk value", "claim safety value", "local repeat reduces residual value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_residual_risk_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Residual-risk audit saturates once claim wording and retraction triggers are named",
+			subtitle = "Nine residual risks appear by pass 9; all 90 wording axes appear by pass 90; local repeats never reduce residual value",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"322-open-question-residual-risk-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_residual_risk_summary %>%
+		mutate(
+			state_label = str_wrap(residual_claim_state, width = 28),
+			state_label = fct_reorder(state_label, residual_risk_value + claim_safety_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Residual-risk coverage separates local decisions from blocked broader claims",
+			subtitle = "Every claim is checked for allowed wording, forbidden wording, risk, retraction, pass/fail wording, owner, substitute, and stop rule",
+			x = "Residual-risk axis checks",
+			y = "Residual claim state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"323-open-question-residual-risk-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
