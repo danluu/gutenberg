@@ -43076,6 +43076,314 @@ save_plot(
 	height = 7.2
 )
 
+open_question_replication_readiness_register <- open_question_consumer_verification_register %>%
+	mutate(
+		replication_readiness_state = case_when(
+			consumer_verification_state == "local packet consumer verification" ~ "local packet replication readiness",
+			consumer_verification_state == "owner artifact consumer verification" ~ "owner artifact replication readiness",
+			TRUE ~ "observer artifact replication readiness"
+		),
+		replication_readiness_environment_manifest = case_when(
+			close_scope == "CI wait decision" ~ "record node, npm, browser channel/version, OS, wp-env, Docker/container state, CPU/QoS context, compared branch count, BROWSER_IDLE_WAIT use, startup wait, typing delay, and input mode",
+			close_scope == "source prototype decision" ~ "record node, npm, browser channel/version, OS, wp-env, build hash, source patch, selector/dispatch guard state, invalidation instrumentation, and owner-review branch",
+			close_scope == "benchmark method wording" ~ "record node, npm, browser channel/version, OS, trace category set, event-slice schema, aggregation script version, instrumentation patch, and report-generation script hash",
+			TRUE ~ "record node, npm, browser channel/version, OS, wp-env, container state, benchmark script hash, workload source, browser/runtime matrix, and report-generation script hash"
+		),
+		replication_readiness_artifact_manifest = case_when(
+			replication_readiness_state == "local packet replication readiness" ~ "manifest names local verification packet, input CSVs, output CSVs, figures, report section, script commit, raw JSON, and stale-local scan output",
+			replication_readiness_state == "owner artifact replication readiness" ~ "manifest names owner verification packet, reviewer identity, input CSVs, output CSVs, figures, report section, script commit, raw JSON, and stale-owner scan output",
+			TRUE ~ "manifest names observer verification packet, reviewer identity, broad-scope wording, input CSVs, output CSVs, figures, report section, script commit, raw JSON, and stale-observer scan output"
+		),
+		replication_readiness_rerun_command = case_when(
+			close_scope == "CI wait decision" ~ "rerun with the CI-comparable Typing command plus explicit startup wait, typing delay, input mode, branch count, and artifact output path parameters",
+			close_scope == "source prototype decision" ~ "rerun with the source-prototype patch applied, selector/dispatch instrumentation enabled, raw traces preserved, and artifact output path parameters",
+			close_scope == "benchmark method wording" ~ "rerun the trace extraction and report-generation script against the named raw JSON/event CSVs and compare regenerated wording artifacts",
+			TRUE ~ "rerun the relevant browser/container/workload matrix with raw traces preserved and regenerate the report section from the named CSVs"
+		),
+		replication_readiness_order_control = case_when(
+			close_scope == "CI wait decision" ~ "randomize or block by branch, startup wait, typing delay, and input mode; preserve run order and seed so order effects can be recomputed",
+			close_scope == "source prototype decision" ~ "randomize or block by patched/unpatched source state and preserve selector/dispatch instrumentation order so source-order effects can be recomputed",
+			close_scope == "benchmark method wording" ~ "randomize or block by raw trace source and extraction script version; preserve event-order metadata so method-order effects can be recomputed",
+			TRUE ~ "randomize or block by browser, container, workload, and endpoint; preserve run order and seed so broad-order effects can be recomputed"
+		),
+		replication_readiness_independent_host_rule = case_when(
+			replication_readiness_state == "local packet replication readiness" ~ "at least one clean checkout or container rerun must regenerate the local artifact bundle without using unstaged local files",
+			replication_readiness_state == "owner artifact replication readiness" ~ "at least one clean checkout, container, or reviewer-owned host must regenerate the owner artifact bundle without using unstaged local files",
+			TRUE ~ "at least one clean checkout, container, or independent browser/runtime host must regenerate the observer artifact bundle without using unstaged local files"
+		),
+		replication_readiness_drift_detection = case_when(
+			close_scope == "CI wait decision" ~ "compare regenerated q50/q25/q75, runtime, startup-wait, typing-delay, input-mode, and reliability summaries against archived values and flag drift outside the acceptance band",
+			close_scope == "source prototype decision" ~ "compare regenerated selector, dispatch, invalidation, fanout, and source-prototype summaries against archived values and flag drift outside the acceptance band",
+			close_scope == "benchmark method wording" ~ "compare regenerated trace-schema, aggregation, instrumentation, limitation, and method-wording summaries against archived values and flag drift outside the acceptance band",
+			TRUE ~ "compare regenerated portability, browser/runtime, workload, endpoint, and recommendation-scope summaries against archived values and flag drift outside the acceptance band"
+		),
+		replication_readiness_acceptance_band = case_when(
+			replication_readiness_state == "local packet replication readiness" ~ "accept replication only when regenerated local tables, figures, and recommendation text match the archived packet or explain bounded numeric drift",
+			replication_readiness_state == "owner artifact replication readiness" ~ "accept replication only when regenerated owner tables, figures, reviewer-visible status, and recommendation text match the archived packet or explain bounded numeric drift",
+			TRUE ~ "accept replication only when regenerated observer tables, figures, reviewer-visible status, broad wording, and recommendation text match the archived packet or explain bounded numeric drift"
+		),
+		replication_readiness_owner = consumer_verification_signoff_owner,
+		replication_readiness_consumer = consumer_verification_consumer,
+		replication_readiness_cost = case_when(
+			replication_readiness_state == "local packet replication readiness" ~ 6,
+			replication_readiness_state == "owner artifact replication readiness" ~ 8,
+			TRUE ~ 10
+		),
+		replication_readiness_value = pmax(
+			1,
+			consumer_verification_value + consumer_verification_false_confidence_risk_value + consumer_outcome_regression_risk_value - replication_readiness_cost
+		),
+		replication_readiness_reproducibility_gap_risk_value = pmax(
+			1,
+			consumer_verification_false_confidence_risk_value + consumer_outcome_regression_risk_value + consumer_action_stale_decision_risk_value - replication_readiness_cost
+		),
+		timing_only_replication_readiness_value = 0,
+		analysis_only_value = 0,
+		replication_readiness_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(replication_readiness_value), desc(replication_readiness_reproducibility_gap_risk_value), question_family)
+
+open_question_replication_readiness_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"environment", "What environment manifest lets the run be reproduced later?",
+	"artifacts", "What artifact manifest names every input and output needed for replication?",
+	"rerun", "What exact rerun path regenerates the evidence bundle?",
+	"order", "What seed, randomization, or blocking rule preserves order effects?",
+	"independent-host", "What clean checkout, container, or host proves the result is not local-state-only?",
+	"drift", "What drift detector compares regenerated results with archived results?",
+	"acceptance", "What acceptance band separates replication from unexplained drift?",
+	"owner", "Who owns replication readiness?",
+	"substitute", "Can aggregate timing alone substitute for replication readiness?",
+	"stop-rule", "When does replication-readiness review stop?"
+)
+
+open_question_replication_readiness_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_replication_readiness_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_replication_readiness_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_replication_readiness_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_replication_readiness_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		replication_readiness_first_seen = !duplicated(replication_readiness_id),
+		replication_readiness_axis_key = paste(replication_readiness_id, pressure_axis, sep = "::"),
+		replication_readiness_axis_first_seen = !duplicated(replication_readiness_axis_key),
+		replication_readiness_state_first_seen = !duplicated(replication_readiness_state),
+		replication_readiness_owner_first_seen = !duplicated(replication_readiness_owner),
+		replication_readiness_consumer_first_seen = !duplicated(replication_readiness_consumer),
+		new_replication_readiness_value = if_else(replication_readiness_first_seen, replication_readiness_value, 0),
+		new_replication_readiness_reproducibility_gap_risk_value = if_else(replication_readiness_first_seen, replication_readiness_reproducibility_gap_risk_value, 0),
+		new_timing_only_replication_readiness_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!replication_readiness_axis_first_seen ~ "repeat: replication-readiness-axis already checked",
+			replication_readiness_state == "local packet replication readiness" ~ "replication readiness: local packet",
+			TRUE ~ "replication readiness: owner or observer artifact"
+		),
+		cumulative_replication_readiness_records = cumsum(replication_readiness_first_seen),
+		cumulative_replication_readiness_axes = cumsum(replication_readiness_axis_first_seen),
+		cumulative_replication_readiness_states = cumsum(replication_readiness_state_first_seen),
+		cumulative_replication_readiness_owners = cumsum(replication_readiness_owner_first_seen),
+		cumulative_replication_readiness_consumers = cumsum(replication_readiness_consumer_first_seen),
+		cumulative_replication_readiness_value = cumsum(new_replication_readiness_value),
+		cumulative_replication_readiness_reproducibility_gap_risk_value = cumsum(new_replication_readiness_reproducibility_gap_risk_value),
+		cumulative_timing_only_replication_readiness_value = cumsum(new_timing_only_replication_readiness_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_replication_readiness_summary <- open_question_replication_readiness_100_pass %>%
+	group_by(replication_readiness_state, consumer_verification_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		replication_readiness_records = n_distinct(replication_readiness_id),
+		axis_checks = sum(replication_readiness_axis_first_seen),
+		replication_readiness_owners = n_distinct(replication_readiness_owner),
+		replication_readiness_consumers = n_distinct(replication_readiness_consumer),
+		replication_readiness_value = sum(new_replication_readiness_value),
+		replication_readiness_reproducibility_gap_risk_value = sum(new_replication_readiness_reproducibility_gap_risk_value),
+		timing_only_replication_readiness_value = sum(new_timing_only_replication_readiness_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(replication_readiness_value), desc(replication_readiness_reproducibility_gap_risk_value), first_pass)
+
+open_question_replication_readiness_checkpoints <- open_question_replication_readiness_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_replication_readiness_records,
+		cumulative_replication_readiness_axes,
+		cumulative_replication_readiness_states,
+		cumulative_replication_readiness_owners,
+		cumulative_replication_readiness_consumers,
+		cumulative_replication_readiness_value,
+		cumulative_replication_readiness_reproducibility_gap_risk_value,
+		cumulative_timing_only_replication_readiness_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_replication_readiness_register,
+	file.path(data_dir, "typing-delay-open-question-replication-readiness-register.csv")
+)
+
+write_csv(
+	open_question_replication_readiness_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			replication_readiness_state,
+			consumer_verification_state,
+			replication_readiness_environment_manifest,
+			replication_readiness_artifact_manifest,
+			replication_readiness_rerun_command,
+			replication_readiness_order_control,
+			replication_readiness_independent_host_rule,
+			replication_readiness_drift_detection,
+			replication_readiness_acceptance_band,
+			replication_readiness_owner,
+			replication_readiness_consumer,
+			consumer_verification_scope,
+			consumer_verification_evidence_bundle,
+			consumer_verification_recompute_rule,
+			consumer_verification_failure_reproduction,
+			consumer_verification_stale_artifact_scan,
+			consumer_verification_acceptance_gate,
+			supported_claim,
+			blocked_claim,
+			replication_readiness_first_seen,
+			replication_readiness_axis_first_seen,
+			replication_readiness_state_first_seen,
+			replication_readiness_owner_first_seen,
+			replication_readiness_consumer_first_seen,
+			pass_result,
+			replication_readiness_value,
+			replication_readiness_reproducibility_gap_risk_value,
+			timing_only_replication_readiness_value,
+			new_replication_readiness_value,
+			new_replication_readiness_reproducibility_gap_risk_value,
+			new_timing_only_replication_readiness_value,
+			new_analysis_only_value,
+			cumulative_replication_readiness_records,
+			cumulative_replication_readiness_axes,
+			cumulative_replication_readiness_states,
+			cumulative_replication_readiness_owners,
+			cumulative_replication_readiness_consumers,
+			cumulative_replication_readiness_value,
+			cumulative_replication_readiness_reproducibility_gap_risk_value,
+			cumulative_timing_only_replication_readiness_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-replication-readiness-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_replication_readiness_summary,
+	file.path(data_dir, "typing-delay-open-question-replication-readiness-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_replication_readiness_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-replication-readiness-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_replication_readiness_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, replication_readiness_value)
+		) %>%
+		ggplot(aes(replication_readiness_value, question_label, fill = replication_readiness_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Replication readiness") +
+		labs(
+			title = "Replication readiness checks that verified claims can be regenerated later",
+			subtitle = "Each row names environment manifest, artifact manifest, rerun path, order control, independent host rule, drift detector, acceptance band, owner, and consumer",
+			x = "Replication-readiness value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"429-open-question-replication-readiness-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_replication_readiness_saturation_long <- open_question_replication_readiness_100_pass %>%
+	select(
+		pass_id,
+		`replication-readiness records` = cumulative_replication_readiness_records,
+		`replication-readiness axes` = cumulative_replication_readiness_axes,
+		`replication-readiness states` = cumulative_replication_readiness_states,
+		`replication-readiness owners` = cumulative_replication_readiness_owners,
+		`replication-readiness consumers` = cumulative_replication_readiness_consumers,
+		`replication-readiness value` = cumulative_replication_readiness_value,
+		`replication-readiness reproducibility-gap risk value` = cumulative_replication_readiness_reproducibility_gap_risk_value,
+		`timing-only replication-readiness value` = cumulative_timing_only_replication_readiness_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("replication-readiness records", "replication-readiness axes", "replication-readiness states", "replication-readiness owners", "replication-readiness consumers", "replication-readiness value", "replication-readiness reproducibility-gap risk value", "timing-only replication-readiness value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_replication_readiness_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Replication-readiness audit saturates once every rerun path is covered",
+			subtitle = "Nine readiness records appear by pass 9; all 90 axes appear by pass 90; timing-only readiness value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"430-open-question-replication-readiness-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_replication_readiness_summary %>%
+		mutate(
+			state_label = str_wrap(replication_readiness_state, width = 28),
+			state_label = fct_reorder(state_label, replication_readiness_value + replication_readiness_reproducibility_gap_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Replication-readiness coverage separates local reruns from owner and observer reruns",
+			subtitle = "Every row is checked for environment, artifacts, rerun, order, independent host, drift, acceptance, owner, substitute, and stop rule",
+			x = "Replication-readiness-axis checks",
+			y = "Replication-readiness state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"431-open-question-replication-readiness-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

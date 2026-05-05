@@ -1,0 +1,7 @@
+replication_readiness_state,consumer_verification_state,pass_result,passes,first_pass,replication_readiness_records,axis_checks,replication_readiness_owners,replication_readiness_consumers,replication_readiness_value,replication_readiness_reproducibility_gap_risk_value,timing_only_replication_readiness_value,analysis_only_value
+local packet replication readiness,local packet consumer verification,replication readiness: local packet,40,1,4,40,4,3,36053829494,19502434629,0,0
+owner artifact replication readiness,owner artifact consumer verification,replication readiness: owner or observer artifact,20,5,2,20,2,2,7209005878,3899534880,0,0
+observer artifact replication readiness,observer artifact consumer verification,replication readiness: owner or observer artifact,30,7,3,30,3,3,4453043178,2408764443,0,0
+local packet replication readiness,local packet consumer verification,repeat: replication-readiness-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact replication readiness,owner artifact consumer verification,repeat: replication-readiness-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact replication readiness,observer artifact consumer verification,repeat: replication-readiness-axis already checked,3,97,3,0,3,3,0,0,0,0

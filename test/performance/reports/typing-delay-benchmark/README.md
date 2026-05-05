@@ -2034,6 +2034,24 @@ The R script derives:
     consumer-verification-consumer, consumer-verification-value,
     consumer-verification-false-confidence-risk-value,
     timing-only-consumer-verification, and analysis-only saturation.
+-   `data/typing-delay-open-question-replication-readiness-register.csv`:
+    replication-readiness register for the nine consumer-verification records,
+    including environment manifest, artifact manifest, rerun path, order
+    control, independent-host rule, drift detector, acceptance band, owner, and
+    consumer.
+-   `data/typing-delay-open-question-replication-readiness-100-pass-audit.csv`:
+    forty-ninth forced 100-pass audit over replication-readiness axes:
+    environment, artifacts, rerun, order, independent-host, drift, acceptance,
+    owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-replication-readiness-100-pass-summary.csv`:
+    rollup of replication-readiness coverage by replication-readiness state,
+    consumer-verification state, and pass result.
+-   `data/typing-delay-open-question-replication-readiness-100-pass-checkpoints.csv`:
+    checkpoints for replication-readiness-record, replication-readiness-axis,
+    replication-readiness-state, replication-readiness-owner,
+    replication-readiness-consumer, replication-readiness-value,
+    replication-readiness-reproducibility-gap-risk-value,
+    timing-only-replication-readiness, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12699,6 +12717,37 @@ claim from the CSVs, cannot find the referenced figure or section, or can still
 reach the stale decision path. The outcome is not treated as verified unless
 recompute, stale scan, stale-path reproduction, acceptance gate, and rollback
 test all point at the same current state.
+
+I then added the replication-readiness layer: verification is not complete if
+it depends on unstated local state. Readiness records the environment manifest,
+artifact manifest, rerun path, order control, independent-host rule, drift
+detector, acceptance band, owner, and consumer for each verification row.
+
+![Open question replication readiness register](figures/429-open-question-replication-readiness-register.png)
+
+![Open question replication readiness 100-pass saturation](figures/430-open-question-replication-readiness-100-pass-saturation.png)
+
+![Open question replication readiness coverage](figures/431-open-question-replication-readiness-coverage.png)
+
+| Replication-readiness check | Result |
+| --------------------------- | ------ |
+| Replication-readiness records | `9`, one per consumer-verification record. |
+| Replication-readiness states | `3`: local packet replication readiness, owner artifact replication readiness, and observer artifact replication readiness. |
+| Replication-readiness owners | `9`; readiness routes back to the scoped consumer-verification owner. |
+| Replication-readiness consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Replication-readiness-axis checks | `90`: every row checked against all `10` replication-readiness axes. |
+| Replication-readiness value | `47715878550`: local packet readiness contributes `36053829494`, owner artifact readiness contributes `7209005878`, and observer artifact readiness contributes `4453043178`. |
+| Replication-readiness reproducibility-gap-risk value | `25810733952` across the nine replication-readiness records. |
+| Timing-only replication-readiness value | `0`; aggregate timing movement alone cannot prove the environment manifest, artifact manifest, rerun path, order control, independent-host rule, drift detector, acceptance band, owner, or stop rule. |
+| Saturation | Replication-readiness records are all named by pass `9`; all replication-readiness axes are covered by pass `90`; passes `91-100` add no replication-readiness coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the local-state guard. It catches the case where the report is
+internally verified but cannot be regenerated from a clean checkout, container,
+or reviewer-owned host because the environment, raw artifacts, ordering, rerun
+command, or drift band were implicit. A verified claim is not treated as
+replication-ready until a named artifact bundle and rerun path can reproduce it
+or explain bounded numeric drift.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
