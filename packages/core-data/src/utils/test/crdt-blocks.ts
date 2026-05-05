@@ -988,6 +988,103 @@ describe( 'crdt-blocks', () => {
 			expect( updatedContent.toString() ).toBe( 'Updated deep' );
 		} );
 
+		it( 'does not graft group children onto a heading after a stale top-level move snapshot', () => {
+			const paragraph = ( clientId: string, content: string ): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+			const heading = (): Block => ( {
+				name: 'core/heading',
+				attributes: {
+					content: 'Seed 952922 structured content',
+					level: 3,
+				},
+				innerBlocks: [],
+				clientId: 'heading',
+			} );
+			const group = (): Block => ( {
+				name: 'core/group',
+				attributes: {},
+				innerBlocks: [
+					paragraph(
+						'group-paragraph-inserted',
+						'Seed 952922 step 2 user 1 paragraph 220953'
+					),
+					paragraph(
+						'group-paragraph-alpha',
+						'Nested group paragraph alpha.'
+					),
+					paragraph(
+						'group-paragraph-beta',
+						'Nested group paragraph beta.'
+					),
+				],
+				clientId: 'group',
+			} );
+			const list = (): Block => ( {
+				name: 'core/list',
+				attributes: {},
+				innerBlocks: [
+					paragraph(
+						'list-item-1',
+						'List item one for block movement.'
+					),
+					paragraph(
+						'list-item-2',
+						'List item two for delete coverage.'
+					),
+				],
+				clientId: 'list',
+			} );
+			const quote = (): Block => ( {
+				name: 'core/quote',
+				attributes: {
+					value: '<p>Nested update seed 952922 step 0 user 1 264840</p>',
+				},
+				innerBlocks: [],
+				clientId: 'quote',
+			} );
+			const getNames = ( blocks: Block[] ) =>
+				blocks.map( ( block ) => block.name );
+
+			const preMoveBlocks = [ quote(), heading(), group(), list() ];
+			const postMoveBlocks = [ quote(), group(), list(), heading() ];
+
+			mergeCrdtBlocks( yblocks, preMoveBlocks, null );
+
+			const remoteDoc = new Y.Doc();
+			const remoteYBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+			mergeCrdtBlocks( remoteYBlocks, preMoveBlocks, null );
+
+			mergeCrdtBlocks( yblocks, postMoveBlocks, null );
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// The receiving editor can still emit its last local full-block
+			// snapshot after applying the remote top-level move.
+			mergeCrdtBlocks( remoteYBlocks, preMoveBlocks, null );
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			const localBlocks = yblocks.toJSON() as Block[];
+			const remoteBlocks = remoteYBlocks.toJSON() as Block[];
+
+			expect( getNames( localBlocks ) ).toEqual( [
+				'core/quote',
+				'core/group',
+				'core/list',
+				'core/heading',
+			] );
+			expect( getNames( remoteBlocks ) ).toEqual(
+				getNames( localBlocks )
+			);
+			expect( remoteBlocks[ 3 ].innerBlocks ).toEqual( [] );
+			expect( remoteBlocks[ 1 ].innerBlocks ).toHaveLength( 3 );
+
+			remoteDoc.destroy();
+		} );
+
 		it( 'handles null and undefined attribute values', () => {
 			const blocksWithNullAttrs: Block[] = [
 				{
