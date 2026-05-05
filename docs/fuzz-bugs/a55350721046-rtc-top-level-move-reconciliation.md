@@ -83,6 +83,18 @@ Received: inserted paragraph, emoji paragraph, another paragraph
 
 That isolates the remaining source-manifest failure to the original `serializableBlocksCache`. The cache keys only on the incoming block array object. If the editor reuses that array object after a real top-level move, `mergeCrdtBlocks()` can reuse the old serialized snapshot and never observe the user move. The browser repro's final divergence is consistent with that: one editor applies the move, while the other keeps the stale pre-move order and then the positional merge/duplicate-clientId cleanup drops the intervening sibling.
 
+Pass 39 isolated the cache more directly. In a temporary known-fixes-base worktree with only the regression-test commit applied, the same-array-reference reorder test failed. Applying only this minimal code change:
+
+```diff
+-const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+ ...
+-	const localBlocksToSync =
+-		serializableBlocksCache.get( incomingBlocks ) ?? [];
++	const localBlocksToSync = makeBlocksSerializable( incomingBlocks );
+```
+
+made the same test pass, and the three focused regressions passed together. That rules out the later stale-snapshot reconciliation as the remaining blocker for this signature and pins the observed known-fixes-base failure on the cache hiding a real reorder.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
