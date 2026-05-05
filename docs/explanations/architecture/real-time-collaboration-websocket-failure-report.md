@@ -25,10 +25,14 @@ plus the known RTC fixes from `latest-known-ws-repro-with-tests`, rebuilt with
 provider on port `18991`.
 
 That current-baseline run gives valid user-visible evidence for one bug still
-failing after recent trunk plus the known fixes and addressed by the current
-PR branch:
+failing after recent trunk plus the known fixes:
 
 - same-user title reload loss/corruption.
+
+A later focused verification against `latest-known-ws-pr-combined` at
+`aa48ddde13a75896b8431467fd0da1236063e1ba` also reproduced title loss, with
+both browser panes converging to stale saved title text. Treat the title fix
+status as open, not confirmed fixed by the current PR branch.
 
 The duplicate-table run does still expose a stale internal table attribute on
 Browser B, but the original table video was invalid as user-visible evidence:
@@ -77,9 +81,9 @@ Results:
 Fresh annotated video for the current-baseline user-visible failure:
 
 - title reload loss:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-repro.mp4`;
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-wrong-convergence.mp4`;
 - title action log:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-action-log.md`.
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-wrong-convergence-action-log.md`.
 
 Fresh annotated video for the residual table follow-up repro:
 
@@ -92,6 +96,9 @@ Superseded artifacts that should not be cited as current proof:
 
 - `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-annotated.mp4`
   was a stitched still artifact, not an action video;
+- `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-repro.mp4`
+  used misleading wording for the same trace; the visible failure is stale-title
+  convergence, not a final Browser A vs. Browser B title split;
 - `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-content-loss-current-known-fixes.mp4`
   asserted table loss from a stale internal value while the visible table
   content was still correct.
@@ -104,7 +111,7 @@ but they are not proof from the latest current-baseline rerun:
 
 ## Current Findings
 
-### 1. Same-user title reload loss/corruption (PR-fixed claim)
+### 1. Same-user title reload loss/corruption (open)
 
 Natural user flow:
 
@@ -113,15 +120,21 @@ Natural user flow:
 3. Browser B observes the edit, makes a normal edit, reloads, and reconnects.
 4. Expected: Browser B keeps Browser A's unsaved title.
 5. Actual on the current known-fixes baseline: Browser B either reverts to
-   `RTC same-user reload initial initial` or produces duplicated/corrupted title
-   text such as `RTC same-user unsunsaveved tittle before reloade before reload`.
+   stale saved title text such as `RTC same-user reload initial initial` or
+   produces duplicated/corrupted title text such as
+   `RTC same-user unsunsaveved tittle before reloade before reload`.
+6. Actual in the corrected trace video: both panes first show the intended
+   unsaved title, then after reload both panes converge to stale saved title
+   text. The failure is wrong convergence/loss, not a final A/B title split.
 
 Current evidence:
 
 - failed 5/5 in
   `/private/tmp/gutenberg-rerun-defaultws-20260504/title-video-source-rerun.log`;
 - fresh trace-derived annotated video:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-repro.mp4`.
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-wrong-convergence.mp4`;
+- focused run against `latest-known-ws-pr-combined` also failed:
+  `/tmp/gutenberg-title-ws-combined-20260504/run.log`.
 
 How it was introduced:
 
@@ -157,11 +170,13 @@ Known fix
 the latest WebSocket run still found a failing same-user title path when combined
 with the current WebSocket bootstrap behavior.
 
-The PR fixes this by making CRDT-document persistence saves pass
+The intended fix direction remains making CRDT-document persistence saves pass
 `__unstableSkipSyncUpdate`, so the save marker can be recorded without applying
-stale REST fields to the collaborative document. It also fixes the WebSocket
-test provider handshake so a joining/reloading peer is not considered ready
-until it has received a real room snapshot or peer-state response.
+stale REST fields to the collaborative document, plus ensuring a joining or
+reloading WebSocket peer is not considered ready until it has received a real
+room snapshot or peer-state response. Because the focused combined-branch run
+still reproduced title loss, this needs another code fix or a corrected
+verification run before being claimed as fixed by the PR branch.
 
 ### 2. Duplicate table row follow-up divergence (not PR-fixed)
 
