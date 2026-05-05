@@ -30378,6 +30378,277 @@ save_plot(
 	height = 7.2
 )
 
+open_question_packet_invariant_gate <- open_question_packet_execution_contract %>%
+	mutate(
+		invariant_family = case_when(
+			packet_kind == "local source packet" ~ "source and behavior identity",
+			packet_kind == "target-topology packet" ~ "topology and sample identity",
+			packet_kind == "compatibility packet" ~ "public compatibility identity",
+			packet_kind == "policy packet" ~ "policy consumer identity",
+			packet_kind == "workload packet" ~ "workload stratum identity",
+			packet_kind == "external endpoint packet" ~ "endpoint calibration identity",
+			packet_kind == "observer packet" ~ "observer non-perturbation identity",
+			TRUE ~ "claim identity"
+		),
+		invariant_statement = case_when(
+			question_family == "Selector/source guard" ~ "The same behavior fixture, source owner, and targeted source span must be present in baseline and guarded runs.",
+			question_family == "Pattern wait replacement" ~ "The wait or predicate must be the only readiness knob that changes; readiness, preview/canvas, resource, failure, q50, and p90 fields must be joinable per run.",
+			question_family == "Startup wait and first-key tails" ~ "Startup wait is independent from inter-key delay, and retained, discarded, first-retained, failure, and resource fields must remain separable.",
+			question_family == "Input-mode realism" ~ "Tap, short-hold, held-key, and platform-repeat rows must be labeled before aggregation.",
+			question_family == "Store-subscriber partition" ~ "The public import/subscriber surface must be enumerated before timing evidence is used.",
+			question_family == "CI pass/fail policy" ~ "The policy consumer, displayed q50, raw artifact, and reviewer/dashboard outcome must be joined for the same run.",
+			question_family == "Product workload generalization" ~ "The replay stratum, fixture setup, plugin/theme context, and retained rows must identify the workload being generalized.",
+			question_family == "Browser endpoint and display presentation" ~ "External endpoint timestamps must be clock-synced and joined to the same retained key windows as internal endpoints.",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "Sidecar counters must preserve class ordering in off/on controls and join to the same retained key windows.",
+			TRUE ~ required_raw_fields
+		),
+		break_signal = case_when(
+			question_family == "Selector/source guard" ~ "aggregate timing moves while behavior fails, source owner changes, or targeted source span does not move",
+			question_family == "Pattern wait replacement" ~ "q50 improves while p90, readiness, resource quiet, preview/canvas, or failure fields regress or are missing",
+			question_family == "Startup wait and first-key tails" ~ "retained q50 is reported without first-retained, discarded, failure, or resource fields",
+			question_family == "Input-mode realism" ~ "held-key, tap, repeat, or hold-duration rows are merged before interpretation",
+			question_family == "Store-subscriber partition" ~ "private side-channel timing is treated as public compatibility evidence",
+			question_family == "CI pass/fail policy" ~ "repository q50 is treated as pass/fail without dashboard or reviewer outcome",
+			question_family == "Product workload generalization" ~ "fixed-character rows are used to claim product-wide workload behavior",
+			question_family == "Browser endpoint and display presentation" ~ "internal Paint/RAF/DrawFrame endpoint is treated as physical display timing without calibration",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "observer changes timing class or counters are not joined per retained key",
+			TRUE ~ invalid_if_missing
+		),
+		recovery_action = case_when(
+			can_start_without_external_owner ~ "rerun packet with invariant fields archived; otherwise keep prior scoped claim",
+			packet_kind == "compatibility packet" ~ "stop timing interpretation and build compatibility matrix first",
+			packet_kind == "policy packet" ~ "stop pass/fail wording and join policy consumer first",
+			packet_kind == "workload packet" ~ "stop product-wide wording and define replay stratum first",
+			packet_kind == "external endpoint packet" ~ "stop display wording and calibrate endpoint first",
+			packet_kind == "observer packet" ~ "stop mechanism wording and prove sidecar non-perturbation first",
+			TRUE ~ "narrow claim to fields that passed"
+		),
+		invariant_scope = case_when(
+			can_start_without_external_owner ~ "local executable invariant",
+			TRUE ~ "blocked external invariant"
+		),
+		invariant_severity = case_when(
+			packet_kind %in% c("local source packet", "target-topology packet") ~ 5,
+			packet_kind %in% c("compatibility packet", "policy packet") ~ 4,
+			TRUE ~ 3
+		),
+		repair_cost = case_when(
+			can_start_without_external_owner ~ 2,
+			packet_kind %in% c("compatibility packet", "policy packet") ~ 4,
+			TRUE ~ 5
+		),
+		invariant_gate_value = pmax(1, invariant_severity + wrong_action_risk - repair_cost),
+		analysis_only_value = 0,
+		invariant_gate_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(invariant_gate_value), desc(invariant_severity), question_family)
+
+open_question_packet_invariant_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"completeness", "Are all required raw fields present?",
+	"joinability", "Can retained rows, key windows, and packet metadata be joined?",
+	"baseline", "Does the unchanged baseline reproduce before intervention?",
+	"perturbation", "Does the observer or harness preserve class ordering?",
+	"stratification", "Are stimulus, topology, workload, or policy strata separated?",
+	"threshold", "Are pass/fail or tolerance thresholds predeclared?",
+	"negative-control", "Does the artifact include the negative control that catches the wrong story?",
+	"archive", "Can a reviewer recompute the interpretation from archived data?",
+	"ownership", "Is the consumer/owner identified before the claim is made?",
+	"reopen", "Is the reopen trigger explicit if the invariant later breaks?"
+)
+
+open_question_packet_invariant_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_packet_invariant_gate)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_packet_invariant_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_packet_invariant_gate %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_packet_invariant_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		invariant_first_seen = !duplicated(invariant_gate_id),
+		invariant_axis_key = paste(invariant_gate_id, pressure_axis, sep = "::"),
+		invariant_axis_first_seen = !duplicated(invariant_axis_key),
+		invariant_family_first_seen = !duplicated(invariant_family),
+		new_invariant_gate_value = if_else(invariant_first_seen, invariant_gate_value, 0),
+		new_invariant_axis_value = if_else(invariant_axis_first_seen, 1, 0),
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!invariant_axis_first_seen ~ "repeat: invariant-axis already checked",
+			invariant_scope == "local executable invariant" ~ "gate: local packet invariant",
+			TRUE ~ "gate: blocked external invariant"
+		),
+		cumulative_invariants = cumsum(invariant_first_seen),
+		cumulative_invariant_axes = cumsum(invariant_axis_first_seen),
+		cumulative_invariant_families = cumsum(invariant_family_first_seen),
+		cumulative_gate_value = cumsum(new_invariant_gate_value),
+		cumulative_axis_coverage_value = cumsum(new_invariant_axis_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_packet_invariant_summary <- open_question_packet_invariant_100_pass %>%
+	group_by(invariant_scope, invariant_family, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		invariants = n_distinct(invariant_gate_id),
+		axis_checks = sum(invariant_axis_first_seen),
+		gate_value = sum(new_invariant_gate_value),
+		axis_coverage_value = sum(new_invariant_axis_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_invariant_severity = max(invariant_severity, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(gate_value), desc(axis_coverage_value), first_pass)
+
+open_question_packet_invariant_checkpoints <- open_question_packet_invariant_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_invariants,
+		cumulative_invariant_axes,
+		cumulative_invariant_families,
+		cumulative_gate_value,
+		cumulative_axis_coverage_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_packet_invariant_gate,
+	file.path(data_dir, "typing-delay-open-question-packet-invariant-gate.csv")
+)
+
+write_csv(
+	open_question_packet_invariant_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			packet_kind,
+			invariant_scope,
+			invariant_family,
+			invariant_statement,
+			break_signal,
+			recovery_action,
+			invariant_first_seen,
+			invariant_axis_first_seen,
+			invariant_family_first_seen,
+			pass_result,
+			invariant_gate_value,
+			new_invariant_gate_value,
+			new_invariant_axis_value,
+			new_analysis_only_value,
+			cumulative_invariants,
+			cumulative_invariant_axes,
+			cumulative_invariant_families,
+			cumulative_gate_value,
+			cumulative_axis_coverage_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-packet-invariant-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_packet_invariant_summary,
+	file.path(data_dir, "typing-delay-open-question-packet-invariant-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_packet_invariant_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-packet-invariant-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_packet_invariant_gate %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, invariant_gate_value)
+		) %>%
+		ggplot(aes(invariant_gate_value, question_label, fill = invariant_scope)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Invariant scope") +
+		labs(
+			title = "Packet results are only trustworthy if their invariants hold",
+			subtitle = "Local executable packets carry the highest invariant value because they can change action immediately",
+			x = "Invariant gate value",
+			y = "Packet"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"300-open-question-packet-invariant-gates.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_packet_invariant_saturation_long <- open_question_packet_invariant_100_pass %>%
+	select(
+		pass_id,
+		`invariants` = cumulative_invariants,
+		`invariant-axis checks` = cumulative_invariant_axes,
+		`invariant families` = cumulative_invariant_families,
+		`gate value` = cumulative_gate_value,
+		`axis coverage value` = cumulative_axis_coverage_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("invariants", "invariant-axis checks", "invariant families", "gate value", "axis coverage value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_packet_invariant_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.65) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Invariant pressure test saturates after all packet-axis checks are enumerated",
+			subtitle = "Nine packet invariants appear by pass 9; all 90 packet-axis checks appear by pass 90; analysis-only value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"301-open-question-packet-invariant-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_packet_invariant_summary %>%
+		mutate(
+			family_label = str_wrap(invariant_family, width = 26),
+			family_label = fct_reorder(family_label, axis_coverage_value)
+		) %>%
+		ggplot(aes(axis_coverage_value, family_label, fill = invariant_scope)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Invariant scope") +
+		labs(
+			title = "Invariant coverage separates local gates from blocked external gates",
+			subtitle = "The 100 passes cover every packet against every pressure axis, but do not create new analysis-only work",
+			x = "Invariant-axis coverage value",
+			y = "Invariant family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"302-open-question-packet-invariant-coverage.png",
+	width = 12.8,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

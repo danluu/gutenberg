@@ -1,0 +1,10 @@
+pass_id,cumulative_invariants,cumulative_invariant_axes,cumulative_invariant_families,cumulative_gate_value,cumulative_axis_coverage_value,cumulative_analysis_only_value
+1,1,1,1,8,1,0
+5,5,5,3,35,5,0
+9,9,9,7,44,9,0
+10,9,10,7,44,10,0
+20,9,20,7,44,20,0
+50,9,50,7,44,50,0
+90,9,90,7,44,90,0
+91,9,90,7,44,90,0
+100,9,90,7,44,90,0

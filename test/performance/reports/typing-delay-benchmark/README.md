@@ -1364,6 +1364,18 @@ The R script derives:
 -   `data/typing-delay-open-question-packet-outcome-100-pass-checkpoints.csv`:
     checkpoints for outcome-rule, packet, outcome-case, retirement-value, and
     analysis-only-value saturation.
+-   `data/typing-delay-open-question-packet-invariant-gate.csv`: invariant gate
+    table for the packet contracts, including invariant statements, break
+    signals, recovery actions, and local versus blocked scope.
+-   `data/typing-delay-open-question-packet-invariant-100-pass-audit.csv`: sixth
+    forced 100-pass audit over packet invariants and pressure axes: completeness,
+    joinability, baseline, perturbation, stratification, threshold,
+    negative-control, archive, ownership, and reopen.
+-   `data/typing-delay-open-question-packet-invariant-100-pass-summary.csv`:
+    rollup of invariant gates by scope, family, pass result, and coverage value.
+-   `data/typing-delay-open-question-packet-invariant-100-pass-checkpoints.csv`:
+    checkpoints for invariant, invariant-axis, invariant-family, gate-value,
+    axis-coverage, and analysis-only-value saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10757,6 +10769,32 @@ This closes the interpretation loophole for the packet layer. Once a packet is
 run, its result should move to one of three bins: act/retire on a scoped pass,
 narrow on mixed evidence, or reject/retire the candidate path on failure. More
 analysis without one of those packet results cannot change the outcome rule.
+
+I then added invariant gates for trusting those packet outcomes. This is the
+evidence-quality layer: before a packet can pass, fail, or narrow a claim, its
+required raw fields must be present, joinable, stratified, archived, and protected
+against observer perturbation or post-hoc threshold movement.
+
+![Open question packet invariant gates](figures/300-open-question-packet-invariant-gates.png)
+
+![Open question packet invariant 100-pass saturation](figures/301-open-question-packet-invariant-100-pass-saturation.png)
+
+![Open question packet invariant coverage](figures/302-open-question-packet-invariant-coverage.png)
+
+| Invariant check | Result |
+| --------------- | ------ |
+| Packet invariants | `9`, one per packet contract. |
+| Invariant families | `7`: source/behavior, topology/sample, public compatibility, policy consumer, workload stratum, endpoint calibration, and observer non-perturbation. |
+| Invariant-axis checks | `90`: every packet checked against all `10` pressure axes. |
+| Saturation | Invariants are all named by pass `9`; all packet-axis checks are covered by pass `90`; passes `91-100` add no invariant coverage. |
+| Gate value | `44`, concentrated in local topology/sample and source/behavior gates. |
+| Analysis-only value | `0` through pass `100`. |
+
+This guards against the next easy mistake: running one of the packets and then
+accepting an unjoinable or under-specified result. A packet result is not
+interpretable until its invariant holds. If the invariant breaks, the recovery is
+to rerun with the required fields or narrow back to the prior scoped claim, not
+to promote the aggregate timing number.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,15 @@
+invariant_scope,invariant_family,pass_result,passes,first_pass,invariants,axis_checks,gate_value,axis_coverage_value,analysis_only_value,max_invariant_severity
+local executable invariant,topology and sample identity,gate: local packet invariant,30,1,3,30,22,30,0,5
+local executable invariant,source and behavior identity,gate: local packet invariant,10,2,1,10,8,10,0,5
+blocked external invariant,public compatibility identity,gate: blocked external invariant,10,5,1,10,5,10,0,4
+blocked external invariant,policy consumer identity,gate: blocked external invariant,10,6,1,10,4,10,0,4
+blocked external invariant,endpoint calibration identity,gate: blocked external invariant,10,7,1,10,2,10,0,3
+blocked external invariant,workload stratum identity,gate: blocked external invariant,10,8,1,10,2,10,0,3
+blocked external invariant,observer non-perturbation identity,gate: blocked external invariant,10,9,1,10,1,10,0,3
+local executable invariant,topology and sample identity,repeat: invariant-axis already checked,4,91,3,0,0,0,0,5
+local executable invariant,source and behavior identity,repeat: invariant-axis already checked,1,92,1,0,0,0,0,5
+blocked external invariant,public compatibility identity,repeat: invariant-axis already checked,1,95,1,0,0,0,0,4
+blocked external invariant,policy consumer identity,repeat: invariant-axis already checked,1,96,1,0,0,0,0,4
+blocked external invariant,endpoint calibration identity,repeat: invariant-axis already checked,1,97,1,0,0,0,0,3
+blocked external invariant,workload stratum identity,repeat: invariant-axis already checked,1,98,1,0,0,0,0,3
+blocked external invariant,observer non-perturbation identity,repeat: invariant-axis already checked,1,99,1,0,0,0,0,3
