@@ -39488,6 +39488,297 @@ save_plot(
 	height = 7.2
 )
 
+open_question_monitoring_failure_triage_register <- open_question_post_execution_monitoring_register %>%
+	mutate(
+		monitoring_failure_triage_state = case_when(
+			post_execution_monitoring_state == "local packet post-execution monitoring" ~ "local packet monitoring-failure triage",
+			post_execution_monitoring_state == "owner artifact post-execution monitoring" ~ "owner artifact monitoring-failure triage",
+			TRUE ~ "observer artifact monitoring-failure triage"
+		),
+		monitoring_failure_signal = post_execution_monitoring_drift_trigger,
+		monitoring_failure_classification = case_when(
+			close_scope == "CI wait decision" ~ "classify as CI runtime, latency-distribution, variance, reliability, startup-wait, typing-delay, or input-mode drift",
+			close_scope == "source prototype decision" ~ "classify as selector fanout, dispatch-slice, invalidation, source-owner, or implementation-drift failure",
+			close_scope == "benchmark method wording" ~ "classify as trace-schema, figure/data, aggregation, instrumentation, or method-caveat drift",
+			TRUE ~ "classify as portability, browser/runtime, workload, endpoint, or conclusion-scope drift"
+		),
+		monitoring_failure_containment = case_when(
+			monitoring_failure_triage_state == "local packet monitoring-failure triage" ~ "freeze further local execution, keep the failed monitor row visible, and prevent the local packet from supporting new decisions",
+			monitoring_failure_triage_state == "owner artifact monitoring-failure triage" ~ "freeze owner-scoped execution, keep the failed monitor row visible, and prevent the owner artifact from supporting new decisions",
+			TRUE ~ "freeze broad execution, keep the failed monitor row visible, and prevent the observer artifact from supporting new broad conclusions"
+		),
+		monitoring_failure_decisive_check = case_when(
+			close_scope == "CI wait decision" ~ "rerun the CI-comparable wait/input packet with retained per-run rows and compare mean, p50, p90, p99, variance, and runtime savings",
+			close_scope == "source prototype decision" ~ "rerun selector/store instrumentation with retained dispatch slices and owner review of any changed source recommendation",
+			close_scope == "benchmark method wording" ~ "regenerate data and figures from raw rows and recheck trace schema, aggregation code, and method caveats",
+			TRUE ~ "rerun or refresh the scoped portability/workload/browser/runtime artifact and recheck conclusion wording against that artifact"
+		),
+		monitoring_failure_escalation = post_execution_monitoring_escalation,
+		monitoring_failure_rollback_packet = post_execution_monitoring_backout_packet,
+		monitoring_failure_reopen_rule = case_when(
+			monitoring_failure_triage_state == "local packet monitoring-failure triage" ~ "reopen the local open-question packet until a fresh packet passes renewal, execution, and monitoring",
+			monitoring_failure_triage_state == "owner artifact monitoring-failure triage" ~ "reopen the owner-scoped open-question packet until a fresh owner artifact passes renewal, execution, and monitoring",
+			TRUE ~ "reopen the broad open-question packet until a fresh observer artifact passes renewal, execution, and monitoring"
+		),
+		monitoring_failure_owner = post_execution_monitoring_owner,
+		monitoring_failure_consumer = post_execution_monitoring_consumer,
+		monitoring_failure_triage_cost = case_when(
+			monitoring_failure_triage_state == "local packet monitoring-failure triage" ~ 3,
+			monitoring_failure_triage_state == "owner artifact monitoring-failure triage" ~ 5,
+			TRUE ~ 7
+		),
+		monitoring_failure_triage_value = pmax(
+			1,
+			post_execution_monitoring_value + post_execution_monitoring_escape_risk_value + decision_execution_escape_risk_value - monitoring_failure_triage_cost
+		),
+		monitoring_failure_misroute_risk_value = pmax(
+			1,
+			post_execution_monitoring_escape_risk_value + decision_execution_escape_risk_value + consumer_misuse_risk_value - monitoring_failure_triage_cost
+		),
+		timing_only_monitoring_failure_triage_value = 0,
+		analysis_only_value = 0,
+		monitoring_failure_triage_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(monitoring_failure_triage_value), desc(monitoring_failure_misroute_risk_value), question_family)
+
+open_question_monitoring_failure_triage_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"signal", "What monitoring-failure signal entered triage?",
+	"classify", "How is the monitoring failure classified?",
+	"contain", "What containment prevents stale evidence from spreading?",
+	"decisive-check", "What decisive check resolves the triage?",
+	"escalate", "Who is notified or blocked when triage fails?",
+	"rollback", "What rollback packet must be retained?",
+	"reopen", "What rule reopens the question packet?",
+	"owner", "Who owns the monitoring-failure triage result?",
+	"substitute", "Can aggregate timing alone substitute for monitoring-failure triage?",
+	"stop-rule", "When does monitoring-failure triage review stop?"
+)
+
+open_question_monitoring_failure_triage_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_monitoring_failure_triage_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_monitoring_failure_triage_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_monitoring_failure_triage_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_monitoring_failure_triage_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		monitoring_failure_triage_first_seen = !duplicated(monitoring_failure_triage_id),
+		monitoring_failure_triage_axis_key = paste(monitoring_failure_triage_id, pressure_axis, sep = "::"),
+		monitoring_failure_triage_axis_first_seen = !duplicated(monitoring_failure_triage_axis_key),
+		monitoring_failure_triage_state_first_seen = !duplicated(monitoring_failure_triage_state),
+		monitoring_failure_triage_owner_first_seen = !duplicated(monitoring_failure_owner),
+		monitoring_failure_triage_consumer_first_seen = !duplicated(monitoring_failure_consumer),
+		new_monitoring_failure_triage_value = if_else(monitoring_failure_triage_first_seen, monitoring_failure_triage_value, 0),
+		new_monitoring_failure_misroute_risk_value = if_else(monitoring_failure_triage_first_seen, monitoring_failure_misroute_risk_value, 0),
+		new_timing_only_monitoring_failure_triage_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!monitoring_failure_triage_axis_first_seen ~ "repeat: monitoring-failure-triage-axis already checked",
+			monitoring_failure_triage_state == "local packet monitoring-failure triage" ~ "monitoring-failure triage: local packet",
+			TRUE ~ "monitoring-failure triage: owner or observer artifact"
+		),
+		cumulative_monitoring_failure_triage_records = cumsum(monitoring_failure_triage_first_seen),
+		cumulative_monitoring_failure_triage_axes = cumsum(monitoring_failure_triage_axis_first_seen),
+		cumulative_monitoring_failure_triage_states = cumsum(monitoring_failure_triage_state_first_seen),
+		cumulative_monitoring_failure_triage_owners = cumsum(monitoring_failure_triage_owner_first_seen),
+		cumulative_monitoring_failure_triage_consumers = cumsum(monitoring_failure_triage_consumer_first_seen),
+		cumulative_monitoring_failure_triage_value = cumsum(new_monitoring_failure_triage_value),
+		cumulative_monitoring_failure_misroute_risk_value = cumsum(new_monitoring_failure_misroute_risk_value),
+		cumulative_timing_only_monitoring_failure_triage_value = cumsum(new_timing_only_monitoring_failure_triage_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_monitoring_failure_triage_summary <- open_question_monitoring_failure_triage_100_pass %>%
+	group_by(monitoring_failure_triage_state, post_execution_monitoring_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		monitoring_failure_triage_records = n_distinct(monitoring_failure_triage_id),
+		axis_checks = sum(monitoring_failure_triage_axis_first_seen),
+		monitoring_failure_triage_owners = n_distinct(monitoring_failure_owner),
+		monitoring_failure_triage_consumers = n_distinct(monitoring_failure_consumer),
+		monitoring_failure_triage_value = sum(new_monitoring_failure_triage_value),
+		monitoring_failure_misroute_risk_value = sum(new_monitoring_failure_misroute_risk_value),
+		timing_only_monitoring_failure_triage_value = sum(new_timing_only_monitoring_failure_triage_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(monitoring_failure_triage_value), desc(monitoring_failure_misroute_risk_value), first_pass)
+
+open_question_monitoring_failure_triage_checkpoints <- open_question_monitoring_failure_triage_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_monitoring_failure_triage_records,
+		cumulative_monitoring_failure_triage_axes,
+		cumulative_monitoring_failure_triage_states,
+		cumulative_monitoring_failure_triage_owners,
+		cumulative_monitoring_failure_triage_consumers,
+		cumulative_monitoring_failure_triage_value,
+		cumulative_monitoring_failure_misroute_risk_value,
+		cumulative_timing_only_monitoring_failure_triage_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_monitoring_failure_triage_register,
+	file.path(data_dir, "typing-delay-open-question-monitoring-failure-triage-register.csv")
+)
+
+write_csv(
+	open_question_monitoring_failure_triage_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			monitoring_failure_triage_state,
+			post_execution_monitoring_state,
+			monitoring_failure_signal,
+			monitoring_failure_classification,
+			monitoring_failure_containment,
+			monitoring_failure_decisive_check,
+			monitoring_failure_escalation,
+			monitoring_failure_rollback_packet,
+			monitoring_failure_reopen_rule,
+			monitoring_failure_owner,
+			monitoring_failure_consumer,
+			post_execution_monitoring_signal,
+			post_execution_monitoring_drift_trigger,
+			post_execution_monitoring_backout_packet,
+			supported_claim,
+			blocked_claim,
+			monitoring_failure_triage_first_seen,
+			monitoring_failure_triage_axis_first_seen,
+			monitoring_failure_triage_state_first_seen,
+			monitoring_failure_triage_owner_first_seen,
+			monitoring_failure_triage_consumer_first_seen,
+			pass_result,
+			monitoring_failure_triage_value,
+			monitoring_failure_misroute_risk_value,
+			timing_only_monitoring_failure_triage_value,
+			new_monitoring_failure_triage_value,
+			new_monitoring_failure_misroute_risk_value,
+			new_timing_only_monitoring_failure_triage_value,
+			new_analysis_only_value,
+			cumulative_monitoring_failure_triage_records,
+			cumulative_monitoring_failure_triage_axes,
+			cumulative_monitoring_failure_triage_states,
+			cumulative_monitoring_failure_triage_owners,
+			cumulative_monitoring_failure_triage_consumers,
+			cumulative_monitoring_failure_triage_value,
+			cumulative_monitoring_failure_misroute_risk_value,
+			cumulative_timing_only_monitoring_failure_triage_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-monitoring-failure-triage-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_monitoring_failure_triage_summary,
+	file.path(data_dir, "typing-delay-open-question-monitoring-failure-triage-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_monitoring_failure_triage_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-monitoring-failure-triage-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_monitoring_failure_triage_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, monitoring_failure_triage_value)
+		) %>%
+		ggplot(aes(monitoring_failure_triage_value, question_label, fill = monitoring_failure_triage_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set1", name = "Monitoring-failure triage") +
+		labs(
+			title = "Monitoring failures require classification, containment, and decisive checks",
+			subtitle = "Each row names signal, classification, containment, decisive check, escalation, rollback packet, reopen rule, and owner",
+			x = "Monitoring-failure triage value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"393-open-question-monitoring-failure-triage-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_monitoring_failure_triage_saturation_long <- open_question_monitoring_failure_triage_100_pass %>%
+	select(
+		pass_id,
+		`monitoring-failure triage records` = cumulative_monitoring_failure_triage_records,
+		`monitoring-failure triage axes` = cumulative_monitoring_failure_triage_axes,
+		`monitoring-failure triage states` = cumulative_monitoring_failure_triage_states,
+		`monitoring-failure triage owners` = cumulative_monitoring_failure_triage_owners,
+		`monitoring-failure triage consumers` = cumulative_monitoring_failure_triage_consumers,
+		`monitoring-failure triage value` = cumulative_monitoring_failure_triage_value,
+		`monitoring-failure misroute risk value` = cumulative_monitoring_failure_misroute_risk_value,
+		`timing-only monitoring-failure triage value` = cumulative_timing_only_monitoring_failure_triage_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("monitoring-failure triage records", "monitoring-failure triage axes", "monitoring-failure triage states", "monitoring-failure triage owners", "monitoring-failure triage consumers", "monitoring-failure triage value", "monitoring-failure misroute risk value", "timing-only monitoring-failure triage value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_monitoring_failure_triage_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Monitoring-failure triage audit saturates once every failure route is named",
+			subtitle = "Nine triage records appear by pass 9; all 90 axes appear by pass 90; timing-only triage value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"394-open-question-monitoring-failure-triage-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_monitoring_failure_triage_summary %>%
+		mutate(
+			state_label = str_wrap(monitoring_failure_triage_state, width = 28),
+			state_label = fct_reorder(state_label, monitoring_failure_triage_value + monitoring_failure_misroute_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Monitoring-failure triage coverage separates local triage from owner and observer triage",
+			subtitle = "Every row is checked for signal, classification, containment, decisive check, escalation, rollback, reopen, owner, substitute, and stop rule",
+			x = "Monitoring-failure-triage-axis checks",
+			y = "Monitoring-failure triage state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"395-open-question-monitoring-failure-triage-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

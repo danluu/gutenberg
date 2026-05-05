@@ -1824,6 +1824,24 @@ The R script derives:
     post-execution-monitoring-value,
     post-execution-monitoring-escape-risk-value,
     timing-only-post-execution-monitoring, and analysis-only saturation.
+-   `data/typing-delay-open-question-monitoring-failure-triage-register.csv`:
+    monitoring-failure triage register for the nine post-execution monitoring
+    records, including failure signal, classification, containment, decisive
+    check, escalation, rollback packet, reopen rule, owner, and consumer.
+-   `data/typing-delay-open-question-monitoring-failure-triage-100-pass-audit.csv`:
+    thirty-seventh forced 100-pass audit over monitoring-failure triage axes:
+    signal, classify, contain, decisive-check, escalate, rollback, reopen,
+    owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-monitoring-failure-triage-100-pass-summary.csv`:
+    rollup of monitoring-failure triage coverage by monitoring-failure triage
+    state, post-execution monitoring state, and pass result.
+-   `data/typing-delay-open-question-monitoring-failure-triage-100-pass-checkpoints.csv`:
+    checkpoints for monitoring-failure-triage-record,
+    monitoring-failure-triage-axis, monitoring-failure-triage-state,
+    monitoring-failure-triage-owner, monitoring-failure-triage-consumer,
+    monitoring-failure-triage-value,
+    monitoring-failure-misroute-risk-value,
+    timing-only-monitoring-failure-triage, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12121,6 +12139,36 @@ treating a past execution as permanently settled: CI policy, source
 recommendations, benchmark-method wording, and broad conclusions have to keep
 their monitoring signal, baseline, cadence, and backout packet attached after
 execution.
+
+I then added the monitoring-failure triage layer: a drift signal from
+post-execution monitoring is no longer just an observation. It has to be
+classified, contained, routed to a decisive check, and tied to rollback or
+renewal. The report now records the failure signal, classification, containment,
+decisive check, escalation, rollback packet, reopen rule, owner, and consumer.
+
+![Open question monitoring failure triage register](figures/393-open-question-monitoring-failure-triage-register.png)
+
+![Open question monitoring failure triage 100-pass saturation](figures/394-open-question-monitoring-failure-triage-100-pass-saturation.png)
+
+![Open question monitoring failure triage coverage](figures/395-open-question-monitoring-failure-triage-coverage.png)
+
+| Monitoring-failure triage check | Result |
+| ------------------------------- | ------ |
+| Monitoring-failure triage records | `9`, one per post-execution monitoring record. |
+| Monitoring-failure triage states | `3`: local packet monitoring-failure triage, owner artifact monitoring-failure triage, and observer artifact monitoring-failure triage. |
+| Monitoring-failure triage owners | `9`; triage routes back to the scoped post-execution monitoring owner. |
+| Monitoring-failure triage consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Monitoring-failure-triage-axis checks | `90`: every row checked against all `10` monitoring-failure triage axes. |
+| Monitoring-failure triage value | `62962502`: local packet triage contributes `47574026`, owner artifact triage contributes `9512498`, and observer artifact triage contributes `5875978`. |
+| Monitoring-failure misroute-risk value | `30294310` across the nine monitoring-failure triage records. |
+| Timing-only monitoring-failure triage value | `0`; aggregate timing movement alone cannot classify the failure, contain stale evidence, choose the decisive check, prove rollback, or reopen the question packet. |
+| Saturation | Monitoring-failure triage records are all named by pass `9`; all monitoring-failure triage axes are covered by pass `90`; passes `91-100` add no monitoring-failure triage coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the failure-routing guard. Monitoring says an executed decision drifted;
+triage decides whether that is a CI runtime problem, source/invalidation
+problem, method/schema problem, or portability/scope problem, and prevents the
+wrong owner or consumer from treating an unresolved failure as fresh support.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

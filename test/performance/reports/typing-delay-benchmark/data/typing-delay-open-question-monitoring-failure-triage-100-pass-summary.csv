@@ -1,0 +1,7 @@
+monitoring_failure_triage_state,post_execution_monitoring_state,pass_result,passes,first_pass,monitoring_failure_triage_records,axis_checks,monitoring_failure_triage_owners,monitoring_failure_triage_consumers,monitoring_failure_triage_value,monitoring_failure_misroute_risk_value,timing_only_monitoring_failure_triage_value,analysis_only_value
+local packet monitoring-failure triage,local packet post-execution monitoring,monitoring-failure triage: local packet,40,1,4,40,4,3,47574026,22890187,0,0
+owner artifact monitoring-failure triage,owner artifact post-execution monitoring,monitoring-failure triage: owner or observer artifact,20,5,2,20,2,2,9512498,4576924,0,0
+observer artifact monitoring-failure triage,observer artifact post-execution monitoring,monitoring-failure triage: owner or observer artifact,30,7,3,30,3,3,5875978,2827199,0,0
+local packet monitoring-failure triage,local packet post-execution monitoring,repeat: monitoring-failure-triage-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact monitoring-failure triage,owner artifact post-execution monitoring,repeat: monitoring-failure-triage-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact monitoring-failure triage,observer artifact post-execution monitoring,repeat: monitoring-failure-triage-axis already checked,3,97,3,0,3,3,0,0,0,0
