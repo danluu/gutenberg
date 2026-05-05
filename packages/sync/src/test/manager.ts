@@ -33,7 +33,7 @@ import type {
 	RecordHandlers,
 	SyncConfig,
 } from '../types';
-import { serializeCrdtDoc } from '../utils';
+import { deserializeCrdtDoc, serializeCrdtDoc } from '../utils';
 
 // Mock dependencies.
 jest.mock( '../providers', () => ( {
@@ -416,6 +416,107 @@ describe( 'SyncManager', () => {
 				// Verify that the CRDT doc was persisted.
 				expect( mockHandlers.persistCRDTDoc ).toHaveBeenCalledTimes(
 					1
+				);
+			} );
+
+			it( 'serializes the record being saved instead of an older local CRDT snapshot', async () => {
+				const manager = createSyncManager();
+				const staleRecord = {
+					...mockRecord,
+					title: 'Initial title',
+				};
+				const recordBeingSaved = {
+					...mockRecord,
+					title: 'Customer title',
+				};
+
+				mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
+					( ydoc: CRDTDoc, changes: Partial< ObjectData > ) => {
+						const recordMap =
+							ydoc.getMap< unknown >( CRDT_RECORD_MAP_KEY );
+
+						Object.entries( changes ).forEach(
+							( [ key, value ] ) => {
+								recordMap.set( key, value );
+							}
+						);
+					}
+				);
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					staleRecord,
+					mockHandlers
+				);
+
+				const serialized = await (
+					manager.createPersistedCRDTDoc as (
+						objectType: string,
+						objectId: string,
+						options?: { record?: ObjectData }
+					) => Promise< string | null >
+				 )( 'post', '123', { record: recordBeingSaved } );
+				const doc = deserializeCrdtDoc( serialized ?? '' );
+
+				expect(
+					doc?.getMap( CRDT_RECORD_MAP_KEY ).get( 'title' )
+				).toBe( 'Customer title' );
+			} );
+
+			it( 'serializes the current edited record when the save payload is partial', async () => {
+				const manager = createSyncManager();
+				const staleRecord = {
+					...mockRecord,
+					title: 'Initial title',
+					content: 'Initial content',
+				};
+				const editedRecord = {
+					...mockRecord,
+					title: 'Customer title',
+					content: 'Active body edit',
+				};
+
+				mockHandlers.getEditedRecord = jest.fn(
+					async () => editedRecord
+				);
+				mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
+					( ydoc: CRDTDoc, changes: Partial< ObjectData > ) => {
+						const recordMap =
+							ydoc.getMap< unknown >( CRDT_RECORD_MAP_KEY );
+
+						Object.entries( changes ).forEach(
+							( [ key, value ] ) => {
+								recordMap.set( key, value );
+							}
+						);
+					}
+				);
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					staleRecord,
+					mockHandlers
+				);
+
+				const serialized = await (
+					manager.createPersistedCRDTDoc as (
+						objectType: string,
+						objectId: string,
+						options?: { record?: ObjectData }
+					) => Promise< string | null >
+				 )( 'post', '123', {
+					record: { id: '123', content: 'Active body edit' },
+				} );
+				const doc = deserializeCrdtDoc( serialized ?? '' );
+				const recordMap = doc?.getMap( CRDT_RECORD_MAP_KEY );
+
+				expect( recordMap?.get( 'title' ) ).toBe( 'Customer title' );
+				expect( recordMap?.get( 'content' ) ).toBe(
+					'Active body edit'
 				);
 			} );
 		} );
@@ -825,6 +926,51 @@ describe( 'SyncManager', () => {
 			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
 				title: 'Title from remote peer',
 			} );
+		} );
+
+		it( 'passes the persisted record when remote updates are diffed', async () => {
+			let capturedDoc: Y.Doc | null = null;
+			const persistedRecord = {
+				...mockRecord,
+				title: 'Persisted title',
+			};
+			mockHandlers.getPersistedRecord = jest.fn(
+				async () => persistedRecord
+			);
+			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+				capturedDoc = ydoc;
+				return mockProviderResult;
+			} );
+
+			const manager = createSyncManager();
+
+			await manager.load(
+				mockSyncConfig,
+				'post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+
+			jest.clearAllMocks();
+
+			const remoteDoc = new Y.Doc();
+			remoteDoc
+				.getMap( CRDT_RECORD_MAP_KEY )
+				.set( 'title', 'Title from remote peer' );
+			Y.applyUpdateV2(
+				capturedDoc as unknown as Y.Doc,
+				Y.encodeStateAsUpdateV2( remoteDoc )
+			);
+			remoteDoc.destroy();
+
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			expect( mockSyncConfig.getChangesFromCRDTDoc ).toHaveBeenCalledWith(
+				expect.any( Y.Doc ),
+				mockRecord,
+				persistedRecord
+			);
 		} );
 
 		it( 'does not edit the local record for local transactions', async () => {
