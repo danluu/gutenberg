@@ -29756,6 +29756,310 @@ save_plot(
 	height = 7.8
 )
 
+open_question_packet_execution_contract <- open_question_artifact_decomposition %>%
+	mutate(
+		execution_unit = case_when(
+			question_family == "Selector/source guard" ~ "one source branch plus behavior fixtures and source-span before/after run",
+			question_family == "Pattern wait replacement" ~ "one Performance Tests topology run crossing fixed wait/predicate with readiness and p90 veto fields",
+			question_family == "Startup wait and first-key tails" ~ "one Performance Tests topology startup-wait grid with key-position fields",
+			question_family == "Input-mode realism" ~ "one matched-stimulus topology run with tap, short-hold, held-key, and repeat controls",
+			question_family == "Store-subscriber partition" ~ "one compatibility matrix before any public partition timing run",
+			question_family == "CI pass/fail policy" ~ "one archive join from raw artifacts to dashboard/reviewer outcome",
+			question_family == "Product workload generalization" ~ "one replay schema plus one recorded or plugin-heavy workload stratum",
+			question_family == "Browser endpoint and display presentation" ~ "one calibrated external endpoint joined to retained-key windows",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "one passive sidecar counter join against retained-key windows",
+			TRUE ~ smallest_next_packet
+		),
+		required_raw_fields = case_when(
+			packet_kind == "local source packet" ~ "behavior fixture status; source-span id; before/after source duration; aggregate q50 only after source pass",
+			packet_kind == "target-topology packet" & str_detect(question_family, "Startup") ~ "wait; run id; retained rows; discarded row; key index; q50; mean; p90; failures; resource counters",
+			packet_kind == "target-topology packet" & str_detect(question_family, "Pattern") ~ "wait or predicate; readiness marker; resource-quiet marker; q50; p90; failures; preview/canvas status",
+			packet_kind == "target-topology packet" ~ "stimulus mode; hold duration; platform-repeat marker; retained rows; q50; p90; failures",
+			packet_kind == "compatibility packet" ~ "public import surface; subscriber ordering fixture; private/public boundary; compatibility pass/fail",
+			packet_kind == "policy packet" ~ "raw artifact id; displayed q50; dashboard status; reviewer action; noisy-metric handling",
+			packet_kind == "workload packet" ~ "workload stratum; replay script id; plugin/theme context; retained rows; q50; p90; failure state",
+			packet_kind == "external endpoint packet" ~ "external timestamp; key window id; trace endpoint timestamp; clock sync; dropped-frame or capture quality marker",
+			packet_kind == "observer packet" ~ "key window id; sidecar timestamp; CPU frequency; runnable count; thermal/QoS state; trace/EventDispatch join",
+			TRUE ~ first_verification_field
+		),
+		pre_run_gate = case_when(
+			packet_kind == "local source packet" ~ "behavior fixtures compile and fail on a deliberately unsafe guard",
+			packet_kind == "target-topology packet" ~ "target topology preserves current baseline artifact fields before changing the wait or stimulus",
+			packet_kind == "compatibility packet" ~ "public/private API boundary is listed before performance measurement",
+			packet_kind == "policy packet" ~ "policy consumer and artifact archive are available",
+			packet_kind == "workload packet" ~ "replay schema has stable stratum labels and deterministic fixture setup",
+			packet_kind == "external endpoint packet" ~ "clock sync and capture quality are measured before interpreting latency",
+			packet_kind == "observer packet" ~ "sidecar off/on control does not move retained q50/p90 class",
+			TRUE ~ "claim wording is fixed before execution"
+		),
+		invalid_if_missing = case_when(
+			packet_kind == "local source packet" ~ "behavior status or targeted source-span movement",
+			packet_kind == "target-topology packet" ~ "failure/resource/tail/key-position fields",
+			packet_kind == "compatibility packet" ~ "public compatibility result",
+			packet_kind == "policy packet" ~ "dashboard or reviewer outcome",
+			packet_kind == "workload packet" ~ "stratum label and replay script",
+			packet_kind == "external endpoint packet" ~ "clock sync or external endpoint timestamp",
+			packet_kind == "observer packet" ~ "sidecar off/on perturbation control",
+			TRUE ~ "consumer and field bundle"
+		),
+		execution_readiness = case_when(
+			packet_kind == "local source packet" ~ 5,
+			packet_kind == "target-topology packet" ~ 4,
+			packet_kind == "compatibility packet" ~ 2,
+			packet_kind == "policy packet" ~ 1,
+			packet_kind %in% c("workload packet", "external endpoint packet", "observer packet") ~ 1,
+			TRUE ~ 1
+		),
+		execution_burden = case_when(
+			packet_kind == "local source packet" ~ 3,
+			packet_kind == "target-topology packet" ~ 3,
+			packet_kind == "compatibility packet" ~ 4,
+			packet_kind == "policy packet" ~ 5,
+			packet_kind %in% c("workload packet", "external endpoint packet", "observer packet") ~ 5,
+			TRUE ~ 4
+		),
+		local_execution_value = if_else(
+			can_start_without_external_owner,
+			pmax(0, decomposition_priority + execution_readiness - execution_burden),
+			0
+		),
+		blocked_execution_value = if_else(
+			can_start_without_external_owner,
+			0,
+			pmax(0, blocker_score + wrong_action_risk - execution_readiness)
+		),
+		execution_band = case_when(
+			local_execution_value >= 15 ~ "run first locally",
+			local_execution_value >= 10 ~ "run locally after harness wiring",
+			blocked_execution_value >= 8 ~ "blocked but important",
+			TRUE ~ "blocked claim support"
+		)
+	) %>%
+	arrange(desc(local_execution_value), desc(blocked_execution_value), question_family)
+
+open_question_packet_execution_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"contract", "Is the execution unit small enough to run and review?",
+	"raw-fields", "Are the raw fields sufficient to reproduce the decision?",
+	"pre-run", "What must pass before the measurement is trusted?",
+	"veto", "Which missing field invalidates the result?",
+	"baseline", "Does the unchanged baseline reproduce before the new packet runs?",
+	"randomization", "Does run order or topology need randomization?",
+	"consumer", "Who can act on the result?",
+	"archive", "Can a later reviewer recompute the decision from archived rows?",
+	"perturbation", "Does the observer or harness change the measured class?",
+	"stop-rule", "When does the packet stop needing more analysis?"
+)
+
+open_question_packet_execution_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_packet_execution_contract)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_packet_execution_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_packet_execution_contract %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_packet_execution_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		execution_unit_first_seen = !duplicated(execution_unit),
+		raw_field_bundle_first_seen = !duplicated(required_raw_fields),
+		local_packet_first_seen = execution_unit_first_seen & can_start_without_external_owner,
+		blocked_packet_first_seen = execution_unit_first_seen & !can_start_without_external_owner,
+		new_local_execution_value = if_else(local_packet_first_seen, local_execution_value, 0),
+		new_blocked_execution_value = if_else(blocked_packet_first_seen, blocked_execution_value, 0),
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!execution_unit_first_seen ~ "repeat: execution unit already named",
+			local_packet_first_seen ~ "executable: local packet",
+			packet_kind == "compatibility packet" ~ "blocked: compatibility packet",
+			packet_kind == "policy packet" ~ "blocked: policy packet",
+			packet_kind %in% c("workload packet", "external endpoint packet", "observer packet") ~ "blocked: external packet",
+			TRUE ~ "blocked: claim packet"
+		),
+		cumulative_execution_units = cumsum(execution_unit_first_seen),
+		cumulative_raw_field_bundles = cumsum(raw_field_bundle_first_seen),
+		cumulative_local_execution_value = cumsum(new_local_execution_value),
+		cumulative_blocked_execution_value = cumsum(new_blocked_execution_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_packet_execution_summary <- open_question_packet_execution_100_pass %>%
+	group_by(execution_band, packet_kind, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		execution_units = n_distinct(execution_unit),
+		raw_field_bundles = n_distinct(required_raw_fields),
+		local_execution_value = sum(new_local_execution_value),
+		blocked_execution_value = sum(new_blocked_execution_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_execution_readiness = max(execution_readiness, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(local_execution_value), desc(blocked_execution_value), first_pass)
+
+open_question_packet_execution_checkpoints <- open_question_packet_execution_100_pass %>%
+	filter(pass_id %in% c(1, 4, 5, 9, 10, 20, 25, 50, 75, 100)) %>%
+	select(
+		pass_id,
+		cumulative_execution_units,
+		cumulative_raw_field_bundles,
+		cumulative_local_execution_value,
+		cumulative_blocked_execution_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_packet_execution_contract,
+	file.path(data_dir, "typing-delay-open-question-packet-execution-contract.csv")
+)
+
+write_csv(
+	open_question_packet_execution_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			packet_kind,
+			execution_band,
+			execution_unit,
+			required_raw_fields,
+			pre_run_gate,
+			invalid_if_missing,
+			pass_condition,
+			fail_condition,
+			current_do_not_do,
+			stop_rule,
+			execution_unit_first_seen,
+			raw_field_bundle_first_seen,
+			local_packet_first_seen,
+			blocked_packet_first_seen,
+			pass_result,
+			local_execution_value,
+			blocked_execution_value,
+			new_local_execution_value,
+			new_blocked_execution_value,
+			new_analysis_only_value,
+			cumulative_execution_units,
+			cumulative_raw_field_bundles,
+			cumulative_local_execution_value,
+			cumulative_blocked_execution_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-packet-execution-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_packet_execution_summary,
+	file.path(data_dir, "typing-delay-open-question-packet-execution-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_packet_execution_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-packet-execution-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_packet_execution_contract %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, local_execution_value + blocked_execution_value)
+		) %>%
+		select(question_label, local_execution_value, blocked_execution_value) %>%
+		pivot_longer(
+			cols = c(local_execution_value, blocked_execution_value),
+			names_to = "execution_value_type",
+			values_to = "execution_value"
+		) %>%
+		mutate(
+			execution_value_type = recode(
+				execution_value_type,
+				local_execution_value = "local executable value",
+				blocked_execution_value = "blocked external value"
+			)
+		) %>%
+		ggplot(aes(execution_value, question_label, fill = execution_value_type)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set1", name = "Execution value") +
+		labs(
+			title = "Open packets split into locally executable work and blocked external work",
+			subtitle = "Local value is concentrated in selector/source and target-topology packets; blocked value needs another owner or observer",
+			x = "Execution value",
+			y = "Packet"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"294-open-question-packet-execution-readiness.png",
+	width = 12.8,
+	height = 7.8
+)
+
+open_question_packet_execution_saturation_long <- open_question_packet_execution_100_pass %>%
+	select(
+		pass_id,
+		`execution units` = cumulative_execution_units,
+		`raw field bundles` = cumulative_raw_field_bundles,
+		`local execution value` = cumulative_local_execution_value,
+		`blocked execution value` = cumulative_blocked_execution_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("execution units", "raw field bundles", "local execution value", "blocked execution value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_packet_execution_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.75) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Execution-readiness audit saturates once the packet contracts are named",
+			subtitle = "The next work is execution of named packets; analysis-only value remains zero through 100 passes",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"295-open-question-packet-execution-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_packet_execution_summary %>%
+		mutate(
+			result_label = str_wrap(pass_result, width = 28),
+			result_label = fct_reorder(result_label, passes)
+		) %>%
+		ggplot(aes(passes, result_label, fill = pass_result)) +
+		geom_col(width = 0.72, show.legend = FALSE) +
+		scale_fill_brewer(type = "qual", palette = "Paired") +
+		labs(
+			title = "Most forced execution-readiness passes are repeats after the first packet sweep",
+			subtitle = "Useful non-repeat rows are executable local packets or blocked packets with named missing owners",
+			x = "Forced passes",
+			y = "Pass result"
+		) +
+		theme_minimal(base_size = 12),
+	"296-open-question-packet-execution-pass-results.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1,0 +1,15 @@
+execution_band,packet_kind,pass_result,passes,first_pass,execution_units,raw_field_bundles,local_execution_value,blocked_execution_value,analysis_only_value,max_execution_readiness
+run locally after harness wiring,target-topology packet,executable: local packet,3,2,3,3,39,0,0,4
+run first locally,local source packet,executable: local packet,1,1,1,1,18,0,0,5
+blocked but important,external endpoint packet,blocked: external packet,1,5,1,1,0,8,0,1
+blocked but important,policy packet,blocked: policy packet,1,6,1,1,0,8,0,1
+blocked but important,workload packet,blocked: external packet,1,7,1,1,0,8,0,1
+blocked claim support,observer packet,blocked: external packet,1,8,1,1,0,7,0,1
+blocked claim support,compatibility packet,blocked: compatibility packet,1,9,1,1,0,7,0,2
+run first locally,local source packet,repeat: execution unit already named,11,10,1,1,0,0,0,5
+run locally after harness wiring,target-topology packet,repeat: execution unit already named,30,11,3,3,0,0,0,4
+blocked but important,external endpoint packet,repeat: execution unit already named,10,14,1,1,0,0,0,1
+blocked but important,policy packet,repeat: execution unit already named,10,15,1,1,0,0,0,1
+blocked but important,workload packet,repeat: execution unit already named,10,16,1,1,0,0,0,1
+blocked claim support,observer packet,repeat: execution unit already named,10,17,1,1,0,0,0,1
+blocked claim support,compatibility packet,repeat: execution unit already named,10,18,1,1,0,0,0,2

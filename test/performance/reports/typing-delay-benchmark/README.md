@@ -1339,6 +1339,19 @@ The R script derives:
 -   `data/typing-delay-open-question-artifact-decomposition-100-pass-checkpoints.csv`:
     checkpoints for packet, packet-kind, packet-priority, and analysis-only-value
     saturation.
+-   `data/typing-delay-open-question-packet-execution-contract.csv`: execution
+    contract for the remaining artifact packets, including required raw fields,
+    pre-run gates, invalidating omissions, and local versus blocked execution
+    value.
+-   `data/typing-delay-open-question-packet-execution-100-pass-audit.csv`:
+    fourth forced 100-pass audit over execution-readiness lenses: contract,
+    raw fields, pre-run gates, veto fields, baseline reproduction,
+    randomization, consumer, archive, perturbation, and stop rule.
+-   `data/typing-delay-open-question-packet-execution-100-pass-summary.csv`:
+    rollup of execution-readiness pass results by packet kind and execution band.
+-   `data/typing-delay-open-question-packet-execution-100-pass-checkpoints.csv`:
+    checkpoints for execution-unit, raw-field-bundle, local-value,
+    blocked-value, and analysis-only-value saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10683,6 +10696,32 @@ pattern, and input mode, or prototype the selector/source guard behind behavior
 fixtures. The store partition, CI pass/fail, runtime/QoS, display, and workload
 questions remain real, but they require their named compatibility, policy,
 observer, display, or replay packets before another analysis pass can move them.
+
+I then audited whether those packets are ready to execute. This pass turns each
+packet into an execution contract: the smallest execution unit, the raw fields
+that must be archived, the pre-run gate, and the field whose absence invalidates
+the result.
+
+![Open question packet execution readiness](figures/294-open-question-packet-execution-readiness.png)
+
+![Open question packet execution 100-pass saturation](figures/295-open-question-packet-execution-100-pass-saturation.png)
+
+![Open question packet execution pass results](figures/296-open-question-packet-execution-pass-results.png)
+
+| Execution-readiness check | Result |
+| ------------------------- | ------ |
+| Execution units | `9`, matching the nine packet contracts. |
+| Raw-field bundles | `9`; every packet has a distinct field bundle that must be archived. |
+| Locally executable value | `57`, all from four packets: selector/source guard (`18`), pattern wait (`14`), startup wait (`14`), and input-mode controls (`11`). |
+| Blocked execution value | `38`, from display, pass/fail policy, workload replay, runtime/QoS, and store-compatibility packets. |
+| Saturation | Local executable value saturates by pass `4`; all execution units saturate by pass `9`; passes `10-100` add no execution unit or raw-field bundle. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the execution answer to the repeated-open-question loop. The four local
+packets are ready for implementation or measurement work once their harness
+wiring is done. The five blocked packets are not made better by another timing
+or prose pass: they need an external policy consumer, compatibility design,
+passive observer, calibrated display endpoint, or replay workload artifact.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
