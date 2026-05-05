@@ -25481,6 +25481,157 @@ save_plot(
 	height = 8.0
 )
 
+open_question_theory_triage <- tribble(
+	~theory, ~lane, ~disposition, ~supporting_evidence, ~disconfirming_evidence, ~surviving_claim, ~next_decisive_observation, ~support_score, ~falsification_score, ~residual_uncertainty_score, ~decision_impact_score, ~overclaim_risk_score,
+	"Plotting or sample artifact", "Benchmark artifact", "rejected", "Dense sweeps, targeted randomized rows, fresh-editor rows, and volatility plots reproduce the shape.", "The drop survives multiple run shapes and does not depend on one graph or one aggregate.", "The cliff is a real benchmark artifact.", "None unless a future helper/browser revision changes the row ordering.", 1, 5, 1, 2, 2,
+	"Held-key metric-definition effect", "Benchmark artifact", "supported", "Held-key and complete-keypress/tap rows have different delay curves under matched conditions.", "Observed physical hold duration and post-keyup gap do not explain the whole split.", "The held-key helper path is a different metric from keypress-then-wait.", "Repeat exact CI helper rows only if the suite changes helper family or Playwright semantics.", 5, 4, 1, 5, 3,
+	"Gutenberg persistence as ordering boundary", "Benchmark artifact", "bounded", "Persistence markers, timer rewrites, and marker/no-op/raw-action controls put the transition near the rich-text persistence boundary.", "Simple claims that any timer, raw store action, or direct callback work explains the drop are rejected.", "Persistence timing is an ordering marker for the held-key transition.", "Per-retained-key task/runtime joins if the claim expands from ordering marker to exact mechanism.", 5, 4, 3, 4, 4,
+	"Timer callback shifts work out of next key", "Benchmark artifact", "rejected wording", "The timer fires near the transition, which made this theory tempting.", "The current artifacts do not show that the callback performs work that would otherwise be charged to the next key, and several store-work controls reject that shortcut.", "Do not use this as a causal explanation; keep the wording at ordering marker.", "A joined task trace showing callback work, next-key work, and counterfactual work placement would be required.", 2, 4, 2, 5, 5,
+	"Chrome EventDispatch accounting only", "Browser portability", "rejected wording", "Chrome EventDispatch slices move with the cliff.", "Firefox preserves a similar controlled dip, so Chrome-only accounting is too narrow.", "Chrome EventDispatch is one measured endpoint, not the whole cause.", "Same-grid browser/runtime sidecar only if naming browser-specific mechanisms matters.", 3, 4, 3, 3, 4,
+	"Complete-keypress or human typing has the same 1000ms cliff", "Benchmark artifact", "rejected", "Complete-keypress/tap rows provide the direct comparison.", "Tap and keypress-then-wait rows do not reproduce the held-key curve as the same metric.", "The current cliff claim is held-key specific.", "Representative workload replay if product typing behavior is the claim.", 2, 5, 2, 4, 5,
+	"Ordinary sleep or queued-JS drain is sufficient", "Runtime boundary", "rejected", "Longer post-keyup waits and ordinary waits were plausible after the first runtime-checkpoint rows.", "Raw CDP ordinary waits through multi-second delays do not reproduce the same fast class.", "Elapsed rest time by itself is insufficient.", "No more ordinary-wait extensions unless a browser/helper revision changes the row ordering.", 2, 5, 1, 2, 3,
+	"React render or post-EventDispatch work causes the cliff", "Source/code", "rejected for cliff", "React/render work exists after input and can affect whole-cycle latency.", "The main movement is already inside the EventDispatch/input slice; post-EventDispatch visual/render tails are too small for primary cliff causality.", "React profiling is useful only for residual ownership after a source change.", "Matched profiler/unprofiled rows only after a selector or store-notification patch changes the fanout shape.", 2, 5, 2, 3, 4,
+	"Broad data subscriber fanout supplies much of the editable-scale cost", "Source/code", "supported", "Source spans and listener wrapper audits identify broad block-editor/root subscriber fanout.", "Single-owner and selector-body-only explanations are rejected; compatibility still constrains fixes.", "Fanout is a source-cost target, not the lower-level runtime mechanism.", "Behavior-gated selector/source-span prototype and public compatibility fixtures.", 5, 4, 3, 4, 4,
+	"Runtime checkpoint/browser scheduler state separates fast and slow rows", "Runtime boundary", "open mechanism", "Runtime-repeat and checkpoint controls preserve a dose response below ordinary JS rows.", "Elapsed wait, DOM payload, generic task/frame checkpoint, and native-only explanations are not enough.", "An unnamed browser/runtime state remains plausible.", "Trace-off protocol sidecar with key-window joins and observer-on/off ordering controls.", 4, 4, 5, 3, 5,
+	"CPU/QoS or power state modulates absolute latency", "CPU/QoS", "open mechanism", "External CPU and taskpolicy/QoS controls move absolute latency and preserve several class orderings.", "Nice/taskpolicy machinery in general and CPU burn anywhere are too broad.", "A narrower system-state influence is plausible but unnamed.", "Accepted retained-key sidecar followed by root powermetrics or trace counters.", 4, 4, 5, 3, 5,
+	"Startup wait determines the typing result", "CI/readiness", "rejected as primary", "Startup-wait matrices and per-key rows directly test waiting before measurement.", "Added startup waits do not improve retained q50 stability enough to justify them under the current typing metric.", "Initial-key/user-idle latency is a separate metric from retained typing q50.", "CI topology artifact only if wait removal affects readiness, failures, resources, or first-key tails.", 2, 4, 2, 4, 4,
+	"Pattern fixed wait can be removed everywhere from local q50 alone", "CI/readiness", "rejected wording", "Local matrices find shorter waits and 0ms candidates in some paths.", "Site Editor, Post Editor, preview/canvas, resources, actionability, and container/CI topology are different contracts.", "Some fixed waits are likely reducible, but rollout is gated by readiness and topology.", "Real Performance Tests artifact retaining failures, resources, preview/canvas, run order, and environment metadata.", 3, 4, 4, 5, 5,
+	"Store subscriber partition is safe because timing improves", "Source/code", "rejected wording", "Marker fanout creates a large timing target.", "Public store subscription, persistence selector behavior, dynamic dependencies, and plugin compatibility are semantic gates.", "Timing can motivate a prototype, but not prove a data-layer API change.", "Public compatibility matrix plus marker-only listener-collapse artifact.", 3, 4, 4, 4, 5
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Runtime boundary", "CPU/QoS", "Browser portability")),
+		disposition = factor(disposition, levels = c("supported", "bounded", "open mechanism", "rejected as primary", "rejected for cliff", "rejected wording", "rejected")),
+		theory_label = str_wrap(theory, width = 32),
+		theory_priority = residual_uncertainty_score + decision_impact_score + overclaim_risk_score - falsification_score,
+		action = case_when(
+			disposition == "supported" ~ "use with scoped wording",
+			disposition == "bounded" ~ "do not name mechanism",
+			disposition == "open mechanism" ~ "requires new observer",
+			disposition %in% c("rejected wording", "rejected as primary", "rejected for cliff") ~ "block overclaim",
+			TRUE ~ "close for current claim"
+		),
+		action = factor(
+			action,
+			levels = c("close for current claim", "use with scoped wording", "do not name mechanism", "block overclaim", "requires new observer")
+		)
+	)
+
+open_question_theory_triage_long <- open_question_theory_triage %>%
+	select(
+		theory,
+		theory_label,
+		lane,
+		disposition,
+		support_score,
+		falsification_score,
+		residual_uncertainty_score,
+		decision_impact_score,
+		overclaim_risk_score
+	) %>%
+	pivot_longer(
+		cols = c(
+			support_score,
+			falsification_score,
+			residual_uncertainty_score,
+			decision_impact_score,
+			overclaim_risk_score
+		),
+		names_to = "theory_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		theory_dimension = recode(
+			theory_dimension,
+			support_score = "support",
+			falsification_score = "falsification",
+			residual_uncertainty_score = "residual uncertainty",
+			decision_impact_score = "decision impact",
+			overclaim_risk_score = "overclaim risk"
+		),
+		theory_dimension = factor(
+			theory_dimension,
+			levels = c("support", "falsification", "residual uncertainty", "decision impact", "overclaim risk")
+		),
+		theory_label = fct_reorder(theory_label, as.numeric(disposition), .desc = TRUE)
+	)
+
+open_question_theory_triage_summary <- open_question_theory_triage %>%
+	count(lane, disposition, action, name = "theories") %>%
+	group_by(lane) %>%
+	mutate(lane_theories = sum(theories)) %>%
+	ungroup()
+
+write_csv(
+	open_question_theory_triage %>%
+		select(
+			theory,
+			lane,
+			disposition,
+			action,
+			supporting_evidence,
+			disconfirming_evidence,
+			surviving_claim,
+			next_decisive_observation,
+			support_score,
+			falsification_score,
+			residual_uncertainty_score,
+			decision_impact_score,
+			overclaim_risk_score,
+			theory_priority
+		),
+	file.path(data_dir, "typing-delay-open-question-theory-triage.csv")
+)
+
+write_csv(
+	open_question_theory_triage_long,
+	file.path(data_dir, "typing-delay-open-question-theory-triage-long.csv")
+)
+
+write_csv(
+	open_question_theory_triage_summary,
+	file.path(data_dir, "typing-delay-open-question-theory-triage-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_theory_triage_long, aes(theory_dimension, theory_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.45, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "GnBu", direction = 1, name = "Score") +
+		labs(
+			title = "Theory triage separates rejected explanations from observer-blocked mechanisms",
+			subtitle = "More samples help little for rows whose remaining uncertainty is an unobserved runtime, system, compatibility, or readiness field",
+			x = "Theory dimension",
+			y = "Candidate explanation"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"250-open-question-theory-triage.png",
+	width = 13.8,
+	height = 9.0
+)
+
+save_plot(
+	ggplot(
+		open_question_theory_triage %>%
+			mutate(theory_label = fct_reorder(theory_label, theory_priority)),
+		aes(theory_priority, theory_label, fill = action)
+	) +
+		geom_col(width = 0.72) +
+		geom_vline(xintercept = 0, color = "grey72", linewidth = 0.45) +
+		scale_fill_brewer(type = "qual", palette = "Set1", name = "Current action") +
+		labs(
+			title = "The remaining high-priority theories need new fields, not another broad sweep",
+			subtitle = "Priority increases with residual uncertainty, decision impact, and overclaim risk, and decreases with falsification strength",
+			x = "Theory priority",
+			y = "Candidate explanation"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"251-open-question-theory-priority.png",
+	width = 13.2,
+	height = 8.6
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1,0 +1,14 @@
+lane,disposition,action,theories,lane_theories
+Benchmark artifact,supported,use with scoped wording,1,5
+Benchmark artifact,bounded,do not name mechanism,1,5
+Benchmark artifact,rejected wording,block overclaim,1,5
+Benchmark artifact,rejected,close for current claim,2,5
+CI/readiness,rejected as primary,block overclaim,1,2
+CI/readiness,rejected wording,block overclaim,1,2
+Source/code,supported,use with scoped wording,1,3
+Source/code,rejected for cliff,block overclaim,1,3
+Source/code,rejected wording,block overclaim,1,3
+Runtime boundary,open mechanism,requires new observer,1,2
+Runtime boundary,rejected,close for current claim,1,2
+CPU/QoS,open mechanism,requires new observer,1,1
+Browser portability,rejected wording,block overclaim,1,1

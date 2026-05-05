@@ -1184,6 +1184,14 @@ The R script derives:
     gap, and decision risk.
 -   `data/typing-delay-open-question-claim-proof-chain-summary.csv`: rollup of
     proof status and next action by claim lane.
+-   `data/typing-delay-open-question-theory-triage.csv`: theory-level triage of
+    proposed explanations, including supporting evidence, disconfirming evidence,
+    surviving claim, next decisive observation, and current action.
+-   `data/typing-delay-open-question-theory-triage-long.csv`: long-form theory
+    scores for support, falsification, residual uncertainty, decision impact, and
+    overclaim risk.
+-   `data/typing-delay-open-question-theory-triage-summary.csv`: rollup of theory
+    disposition and current action by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10039,6 +10047,36 @@ still-open pieces are not excuses to keep inventing mechanisms. They are claim
 boundaries: name a runtime/OS mechanism only after joined observers, reduce CI
 waits only after readiness gates, and broaden to product/display/pass-fail claims
 only after those endpoints are actually measured.
+
+The theory triage turns that into a more direct answer. Each row is a candidate
+explanation that came up during the benchmark investigation, scored by support,
+falsification, residual uncertainty, decision impact, and overclaim risk.
+
+![Open question theory triage](figures/250-open-question-theory-triage.png)
+
+![Open question theory priority](figures/251-open-question-theory-priority.png)
+
+| Candidate explanation | Current disposition | What remains |
+| --------------------- | ------------------- | ------------ |
+| Plotting or sample artifact | rejected | no current follow-up unless a helper or browser revision changes the row ordering |
+| Held-key metric-definition effect | supported | keep the claim scoped to held-key benchmark semantics; rerun only if CI changes helper family |
+| Gutenberg persistence as ordering boundary | bounded | persistence timing marks the transition, but does not name the lower-level browser/runtime/system mechanism |
+| Timer callback shifts work out of the next key | rejected wording | would need a joined task trace proving callback work, next-key work, and counterfactual placement |
+| Chrome `EventDispatch` accounting only | rejected wording | Firefox makes Chrome-only wording too narrow; Chrome remains the threshold lane, not the whole explanation |
+| Complete-keypress or human typing has the same cliff | rejected for the current artifact | representative workload replay is needed before product-typing wording |
+| Ordinary sleep or queued-JS drain is sufficient | rejected | more ordinary waits are not useful unless the helper or browser changes |
+| React render/post-`EventDispatch` work causes the cliff | rejected for cliff causality | React profiling is useful only for residual ownership after a source change |
+| Broad subscriber fanout supplies much of the editable-scale cost | supported as a source-cost target | behavior fixtures and source-span collapse still gate any patch |
+| Runtime checkpoint or CPU/QoS state names the exact mechanism | open mechanism | requires passive retained-key sidecars, then runtime fields or root counters joined per retained key |
+| Startup wait, pattern wait, and store-partition rollout claims | rejected as q50-only conclusions | readiness, CI topology, compatibility, and policy artifacts decide rollout |
+
+This is the most compact theory-level status I can justify from the current
+artifacts. The high-priority unresolved rows are not "run more of the same
+benchmark"; they are missing-field problems. Runtime and CPU/QoS explanations
+need retained-key sidecars and counters. CI wait changes need readiness and
+topology fields. Source changes need behavior and compatibility fields. The
+timer-work explanation should stay out of the report unless a future joined trace
+actually proves that work placement.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

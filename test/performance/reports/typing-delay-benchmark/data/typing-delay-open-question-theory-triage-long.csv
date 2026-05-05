@@ -1,0 +1,156 @@
+theory,theory_label,lane,disposition,theory_dimension,score
+Plotting or sample artifact,Plotting or sample artifact,Benchmark artifact,rejected,support,1
+Plotting or sample artifact,Plotting or sample artifact,Benchmark artifact,rejected,falsification,5
+Plotting or sample artifact,Plotting or sample artifact,Benchmark artifact,rejected,residual uncertainty,1
+Plotting or sample artifact,Plotting or sample artifact,Benchmark artifact,rejected,decision impact,2
+Plotting or sample artifact,Plotting or sample artifact,Benchmark artifact,rejected,overclaim risk,2
+Held-key metric-definition effect,"Held-key metric-definition
+effect",Benchmark artifact,supported,support,5
+Held-key metric-definition effect,"Held-key metric-definition
+effect",Benchmark artifact,supported,falsification,4
+Held-key metric-definition effect,"Held-key metric-definition
+effect",Benchmark artifact,supported,residual uncertainty,1
+Held-key metric-definition effect,"Held-key metric-definition
+effect",Benchmark artifact,supported,decision impact,5
+Held-key metric-definition effect,"Held-key metric-definition
+effect",Benchmark artifact,supported,overclaim risk,3
+Gutenberg persistence as ordering boundary,"Gutenberg persistence as
+ordering boundary",Benchmark artifact,bounded,support,5
+Gutenberg persistence as ordering boundary,"Gutenberg persistence as
+ordering boundary",Benchmark artifact,bounded,falsification,4
+Gutenberg persistence as ordering boundary,"Gutenberg persistence as
+ordering boundary",Benchmark artifact,bounded,residual uncertainty,3
+Gutenberg persistence as ordering boundary,"Gutenberg persistence as
+ordering boundary",Benchmark artifact,bounded,decision impact,4
+Gutenberg persistence as ordering boundary,"Gutenberg persistence as
+ordering boundary",Benchmark artifact,bounded,overclaim risk,4
+Timer callback shifts work out of next key,"Timer callback shifts work out
+of next key",Benchmark artifact,rejected wording,support,2
+Timer callback shifts work out of next key,"Timer callback shifts work out
+of next key",Benchmark artifact,rejected wording,falsification,4
+Timer callback shifts work out of next key,"Timer callback shifts work out
+of next key",Benchmark artifact,rejected wording,residual uncertainty,2
+Timer callback shifts work out of next key,"Timer callback shifts work out
+of next key",Benchmark artifact,rejected wording,decision impact,5
+Timer callback shifts work out of next key,"Timer callback shifts work out
+of next key",Benchmark artifact,rejected wording,overclaim risk,5
+Chrome EventDispatch accounting only,"Chrome EventDispatch accounting
+only",Browser portability,rejected wording,support,3
+Chrome EventDispatch accounting only,"Chrome EventDispatch accounting
+only",Browser portability,rejected wording,falsification,4
+Chrome EventDispatch accounting only,"Chrome EventDispatch accounting
+only",Browser portability,rejected wording,residual uncertainty,3
+Chrome EventDispatch accounting only,"Chrome EventDispatch accounting
+only",Browser portability,rejected wording,decision impact,3
+Chrome EventDispatch accounting only,"Chrome EventDispatch accounting
+only",Browser portability,rejected wording,overclaim risk,4
+Complete-keypress or human typing has the same 1000ms cliff,"Complete-keypress or human
+typing has the same 1000ms cliff",Benchmark artifact,rejected,support,2
+Complete-keypress or human typing has the same 1000ms cliff,"Complete-keypress or human
+typing has the same 1000ms cliff",Benchmark artifact,rejected,falsification,5
+Complete-keypress or human typing has the same 1000ms cliff,"Complete-keypress or human
+typing has the same 1000ms cliff",Benchmark artifact,rejected,residual uncertainty,2
+Complete-keypress or human typing has the same 1000ms cliff,"Complete-keypress or human
+typing has the same 1000ms cliff",Benchmark artifact,rejected,decision impact,4
+Complete-keypress or human typing has the same 1000ms cliff,"Complete-keypress or human
+typing has the same 1000ms cliff",Benchmark artifact,rejected,overclaim risk,5
+Ordinary sleep or queued-JS drain is sufficient,"Ordinary sleep or queued-JS
+drain is sufficient",Runtime boundary,rejected,support,2
+Ordinary sleep or queued-JS drain is sufficient,"Ordinary sleep or queued-JS
+drain is sufficient",Runtime boundary,rejected,falsification,5
+Ordinary sleep or queued-JS drain is sufficient,"Ordinary sleep or queued-JS
+drain is sufficient",Runtime boundary,rejected,residual uncertainty,1
+Ordinary sleep or queued-JS drain is sufficient,"Ordinary sleep or queued-JS
+drain is sufficient",Runtime boundary,rejected,decision impact,2
+Ordinary sleep or queued-JS drain is sufficient,"Ordinary sleep or queued-JS
+drain is sufficient",Runtime boundary,rejected,overclaim risk,3
+React render or post-EventDispatch work causes the cliff,"React render or
+post-EventDispatch work causes
+the cliff",Source/code,rejected for cliff,support,2
+React render or post-EventDispatch work causes the cliff,"React render or
+post-EventDispatch work causes
+the cliff",Source/code,rejected for cliff,falsification,5
+React render or post-EventDispatch work causes the cliff,"React render or
+post-EventDispatch work causes
+the cliff",Source/code,rejected for cliff,residual uncertainty,2
+React render or post-EventDispatch work causes the cliff,"React render or
+post-EventDispatch work causes
+the cliff",Source/code,rejected for cliff,decision impact,3
+React render or post-EventDispatch work causes the cliff,"React render or
+post-EventDispatch work causes
+the cliff",Source/code,rejected for cliff,overclaim risk,4
+Broad data subscriber fanout supplies much of the editable-scale cost,"Broad data subscriber
+fanout supplies much of the
+editable-scale cost",Source/code,supported,support,5
+Broad data subscriber fanout supplies much of the editable-scale cost,"Broad data subscriber
+fanout supplies much of the
+editable-scale cost",Source/code,supported,falsification,4
+Broad data subscriber fanout supplies much of the editable-scale cost,"Broad data subscriber
+fanout supplies much of the
+editable-scale cost",Source/code,supported,residual uncertainty,3
+Broad data subscriber fanout supplies much of the editable-scale cost,"Broad data subscriber
+fanout supplies much of the
+editable-scale cost",Source/code,supported,decision impact,4
+Broad data subscriber fanout supplies much of the editable-scale cost,"Broad data subscriber
+fanout supplies much of the
+editable-scale cost",Source/code,supported,overclaim risk,4
+Runtime checkpoint/browser scheduler state separates fast and slow rows,"Runtime checkpoint/browser
+scheduler state separates fast
+and slow rows",Runtime boundary,open mechanism,support,4
+Runtime checkpoint/browser scheduler state separates fast and slow rows,"Runtime checkpoint/browser
+scheduler state separates fast
+and slow rows",Runtime boundary,open mechanism,falsification,4
+Runtime checkpoint/browser scheduler state separates fast and slow rows,"Runtime checkpoint/browser
+scheduler state separates fast
+and slow rows",Runtime boundary,open mechanism,residual uncertainty,5
+Runtime checkpoint/browser scheduler state separates fast and slow rows,"Runtime checkpoint/browser
+scheduler state separates fast
+and slow rows",Runtime boundary,open mechanism,decision impact,3
+Runtime checkpoint/browser scheduler state separates fast and slow rows,"Runtime checkpoint/browser
+scheduler state separates fast
+and slow rows",Runtime boundary,open mechanism,overclaim risk,5
+CPU/QoS or power state modulates absolute latency,"CPU/QoS or power state modulates
+absolute latency",CPU/QoS,open mechanism,support,4
+CPU/QoS or power state modulates absolute latency,"CPU/QoS or power state modulates
+absolute latency",CPU/QoS,open mechanism,falsification,4
+CPU/QoS or power state modulates absolute latency,"CPU/QoS or power state modulates
+absolute latency",CPU/QoS,open mechanism,residual uncertainty,5
+CPU/QoS or power state modulates absolute latency,"CPU/QoS or power state modulates
+absolute latency",CPU/QoS,open mechanism,decision impact,3
+CPU/QoS or power state modulates absolute latency,"CPU/QoS or power state modulates
+absolute latency",CPU/QoS,open mechanism,overclaim risk,5
+Startup wait determines the typing result,"Startup wait determines the
+typing result",CI/readiness,rejected as primary,support,2
+Startup wait determines the typing result,"Startup wait determines the
+typing result",CI/readiness,rejected as primary,falsification,4
+Startup wait determines the typing result,"Startup wait determines the
+typing result",CI/readiness,rejected as primary,residual uncertainty,2
+Startup wait determines the typing result,"Startup wait determines the
+typing result",CI/readiness,rejected as primary,decision impact,4
+Startup wait determines the typing result,"Startup wait determines the
+typing result",CI/readiness,rejected as primary,overclaim risk,4
+Pattern fixed wait can be removed everywhere from local q50 alone,"Pattern fixed wait can be
+removed everywhere from local
+q50 alone",CI/readiness,rejected wording,support,3
+Pattern fixed wait can be removed everywhere from local q50 alone,"Pattern fixed wait can be
+removed everywhere from local
+q50 alone",CI/readiness,rejected wording,falsification,4
+Pattern fixed wait can be removed everywhere from local q50 alone,"Pattern fixed wait can be
+removed everywhere from local
+q50 alone",CI/readiness,rejected wording,residual uncertainty,4
+Pattern fixed wait can be removed everywhere from local q50 alone,"Pattern fixed wait can be
+removed everywhere from local
+q50 alone",CI/readiness,rejected wording,decision impact,5
+Pattern fixed wait can be removed everywhere from local q50 alone,"Pattern fixed wait can be
+removed everywhere from local
+q50 alone",CI/readiness,rejected wording,overclaim risk,5
+Store subscriber partition is safe because timing improves,"Store subscriber partition is
+safe because timing improves",Source/code,rejected wording,support,3
+Store subscriber partition is safe because timing improves,"Store subscriber partition is
+safe because timing improves",Source/code,rejected wording,falsification,4
+Store subscriber partition is safe because timing improves,"Store subscriber partition is
+safe because timing improves",Source/code,rejected wording,residual uncertainty,4
+Store subscriber partition is safe because timing improves,"Store subscriber partition is
+safe because timing improves",Source/code,rejected wording,decision impact,4
+Store subscriber partition is safe because timing improves,"Store subscriber partition is
+safe because timing improves",Source/code,rejected wording,overclaim risk,5
