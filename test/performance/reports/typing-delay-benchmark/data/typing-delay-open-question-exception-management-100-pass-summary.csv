@@ -1,0 +1,7 @@
+exception_state,control_effectiveness_state,pass_result,passes,first_pass,exception_records,axis_checks,exception_owners,ledger_consumers,exception_value,risk_acceptance_value,timing_only_exception_value,analysis_only_value
+local packet exception management,local packet control effectiveness,exception management: local packet,40,1,4,40,4,3,74544,50845,0,0
+owner artifact exception management,owner artifact control effectiveness,exception management: owner or observer artifact,20,5,2,20,2,2,14913,10160,0,0
+observer artifact exception management,observer artifact control effectiveness,exception management: owner or observer artifact,30,7,3,30,3,3,9219,6259,0,0
+local packet exception management,local packet control effectiveness,repeat: exception-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact exception management,owner artifact control effectiveness,repeat: exception-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact exception management,observer artifact control effectiveness,repeat: exception-axis already checked,3,97,3,0,3,3,0,0,0,0

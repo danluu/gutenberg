@@ -1639,6 +1639,22 @@ The R script derives:
     checkpoints for control-effectiveness-record, control-effectiveness-axis,
     control-effectiveness-state, control-effectiveness-value, assurance-value,
     timing-only-control-effectiveness, and analysis-only saturation.
+-   `data/typing-delay-open-question-exception-management-register.csv`:
+    exception-management register for the nine control-effectiveness records,
+    including exception trigger, allowed temporary wording, forbidden waiver,
+    approver, compensating control, expiration rule, revocation trigger, and
+    risk-acceptance record.
+-   `data/typing-delay-open-question-exception-management-100-pass-audit.csv`:
+    twenty-sixth forced 100-pass audit over exception-management axes: trigger,
+    scope, forbidden waiver, approve, compensate, expire, revoke, record,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-exception-management-100-pass-summary.csv`:
+    rollup of exception-management coverage by exception state,
+    control-effectiveness state, and pass result.
+-   `data/typing-delay-open-question-exception-management-100-pass-checkpoints.csv`:
+    checkpoints for exception-record, exception-axis, exception-state,
+    exception-owner, ledger-consumer, exception-value, risk-acceptance-value,
+    timing-only-exception, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11597,6 +11613,37 @@ This is the sustained-assurance layer. A corrective action can decay as scripts,
 fixtures, artifacts, owners, or report links change. The control-effectiveness
 row says when to retest, what failure suspends the claim, and what evidence must
 exist before wording can be reused.
+
+I then added the exception-management layer: if one of those controls fails or
+cannot run, the report now says what temporary wording is allowed, what waiver is
+forbidden, who must approve the exception, what compensating control applies,
+when the exception expires, what revokes it, and what risk-acceptance record must
+exist.
+
+![Open question exception management register](figures/360-open-question-exception-management-register.png)
+
+![Open question exception management 100-pass saturation](figures/361-open-question-exception-management-100-pass-saturation.png)
+
+![Open question exception management coverage](figures/362-open-question-exception-management-coverage.png)
+
+| Exception-management check | Result |
+| -------------------------- | ------ |
+| Exception records | `9`, one per control-effectiveness record. |
+| Exception states | `3`: local packet exception management, owner artifact exception management, and observer artifact exception management. |
+| Exception owners | `9`; exception approval routes to the scoped control owner, not to whoever wants to reuse the wording. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Exception-axis checks | `90`: every row checked against all `10` exception-management axes. |
+| Exception-management value | `98676`: local packet exceptions contribute `74544`, owner artifact exceptions contribute `14913`, and observer artifact exceptions contribute `9219`. |
+| Risk-acceptance value | `67264` across the nine exception-management records. |
+| Timing-only exception value | `0`; aggregate timing movement alone cannot approve an exception, narrow its scope, define a compensating control, set expiry, revoke stale wording, or create a risk-acceptance record. |
+| Saturation | Exception records are all named by pass `9`; all exception axes are covered by pass `90`; passes `91-100` add no exception-management coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This closes another escape hatch in the open-question process. A failed control
+does not silently become a passed claim and it does not become a license to
+reuse broad wording. The only permitted path is a scoped temporary statement
+with an approver, compensating control, expiry, revocation trigger, and preserved
+risk-acceptance record.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

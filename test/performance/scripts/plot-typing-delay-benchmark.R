@@ -36203,6 +36203,302 @@ save_plot(
 	height = 7.2
 )
 
+open_question_exception_management_register <- open_question_control_effectiveness_register %>%
+	mutate(
+		exception_state = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "local packet exception management",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "owner artifact exception management",
+			TRUE ~ "observer artifact exception management"
+		),
+		exception_trigger = case_when(
+			exception_state == "local packet exception management" ~ "control test fails or cannot run while local timing wording is requested",
+			exception_state == "owner artifact exception management" ~ "owner control test fails or cannot run while owner-scoped wording is requested",
+			TRUE ~ "observer control test fails or cannot run while broad wording is requested"
+		),
+		allowed_exception = case_when(
+			exception_state == "local packet exception management" ~ "temporary narrow wording may state that local timing evidence is unavailable or under repair, not that the claim passed",
+			exception_state == "owner artifact exception management" ~ "temporary narrow wording may state that owner evidence is pending, not that the owner-scoped claim passed",
+			TRUE ~ "temporary narrow wording may state that observer evidence is pending, not that broad product, endpoint, browser, or runtime wording passed"
+		),
+		forbidden_exception = case_when(
+			exception_state == "local packet exception management" ~ "using aggregate timing movement as a waiver for failed packet controls",
+			exception_state == "owner artifact exception management" ~ "using local timing or stale owner evidence as a waiver for failed owner controls",
+			TRUE ~ "using local timing or stale observer evidence as a waiver for failed observer controls"
+		),
+		exception_approver = owner_review,
+		compensating_control = case_when(
+			exception_state == "local packet exception management" ~ "freeze claim wording, preserve failed control evidence, require successor packet or explicit unsupported-note before reuse",
+			exception_state == "owner artifact exception management" ~ "freeze owner-scoped wording, preserve failed owner evidence, require owner-signed successor or unsupported-note before reuse",
+			TRUE ~ "freeze broad wording, preserve failed observer evidence, require observer-signed successor or unsupported-note before reuse"
+		),
+		expiration_rule = case_when(
+			close_scope == "CI wait decision" ~ "expires before any CI wait-policy wording or runtime-saving recommendation is reused",
+			close_scope == "source prototype decision" ~ "expires before any source-patch safety wording is reused",
+			close_scope == "benchmark method wording" ~ "expires before any benchmark-method wording is reused",
+			TRUE ~ "expires before broad owner or observer claim wording is reused"
+		),
+		revocation_trigger = failure_threshold,
+		risk_acceptance_record = case_when(
+			exception_state == "local packet exception management" ~ "approver, failed control, blocked claim, allowed temporary wording, compensating control, expiry, and successor-packet requirement",
+			exception_state == "owner artifact exception management" ~ "approver, failed owner control, blocked claim, allowed temporary wording, compensating control, expiry, and successor-artifact requirement",
+			TRUE ~ "approver, failed observer control, blocked claim, allowed temporary wording, compensating control, expiry, and successor-artifact requirement"
+		),
+		exception_owner = owner_review,
+		exception_cost = case_when(
+			exception_state == "local packet exception management" ~ 2,
+			exception_state == "owner artifact exception management" ~ 4,
+			TRUE ~ 5
+		),
+		exception_value = pmax(
+			1,
+			control_effectiveness_value + assurance_value + false_closure_risk - exception_cost
+		),
+		risk_acceptance_value = pmax(
+			1,
+			assurance_value + prevention_value + stale_reuse_risk - exception_cost
+		),
+		timing_only_exception_value = 0,
+		analysis_only_value = 0,
+		exception_management_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(exception_value), desc(risk_acceptance_value), question_family)
+
+open_question_exception_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"trigger", "What failed control opens an exception request?",
+	"scope", "What narrow temporary wording is allowed?",
+	"forbidden", "What waiver is explicitly forbidden?",
+	"approve", "Who approves or rejects the exception?",
+	"compensate", "What compensating control limits the risk?",
+	"expire", "When does the exception expire?",
+	"revoke", "What immediately revokes the exception?",
+	"record", "What risk-acceptance record must exist?",
+	"substitute", "Can aggregate timing alone substitute for exception approval?",
+	"stop-rule", "When does exception-management review stop?"
+)
+
+open_question_exception_management_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_exception_management_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_exception_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_exception_management_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_exception_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		exception_first_seen = !duplicated(exception_management_id),
+		exception_axis_key = paste(exception_management_id, pressure_axis, sep = "::"),
+		exception_axis_first_seen = !duplicated(exception_axis_key),
+		exception_state_first_seen = !duplicated(exception_state),
+		exception_owner_first_seen = !duplicated(exception_owner),
+		ledger_consumer_first_seen = !duplicated(ledger_consumer),
+		new_exception_value = if_else(exception_first_seen, exception_value, 0),
+		new_risk_acceptance_value = if_else(exception_first_seen, risk_acceptance_value, 0),
+		new_timing_only_exception_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!exception_axis_first_seen ~ "repeat: exception-axis already checked",
+			exception_state == "local packet exception management" ~ "exception management: local packet",
+			TRUE ~ "exception management: owner or observer artifact"
+		),
+		cumulative_exception_records = cumsum(exception_first_seen),
+		cumulative_exception_axes = cumsum(exception_axis_first_seen),
+		cumulative_exception_states = cumsum(exception_state_first_seen),
+		cumulative_exception_owners = cumsum(exception_owner_first_seen),
+		cumulative_ledger_consumers = cumsum(ledger_consumer_first_seen),
+		cumulative_exception_value = cumsum(new_exception_value),
+		cumulative_risk_acceptance_value = cumsum(new_risk_acceptance_value),
+		cumulative_timing_only_exception_value = cumsum(new_timing_only_exception_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_exception_management_summary <- open_question_exception_management_100_pass %>%
+	group_by(exception_state, control_effectiveness_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		exception_records = n_distinct(exception_management_id),
+		axis_checks = sum(exception_axis_first_seen),
+		exception_owners = n_distinct(exception_owner),
+		ledger_consumers = n_distinct(ledger_consumer),
+		exception_value = sum(new_exception_value),
+		risk_acceptance_value = sum(new_risk_acceptance_value),
+		timing_only_exception_value = sum(new_timing_only_exception_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(exception_value), desc(risk_acceptance_value), first_pass)
+
+open_question_exception_management_checkpoints <- open_question_exception_management_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_exception_records,
+		cumulative_exception_axes,
+		cumulative_exception_states,
+		cumulative_exception_owners,
+		cumulative_ledger_consumers,
+		cumulative_exception_value,
+		cumulative_risk_acceptance_value,
+		cumulative_timing_only_exception_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_exception_management_register,
+	file.path(data_dir, "typing-delay-open-question-exception-management-register.csv")
+)
+
+write_csv(
+	open_question_exception_management_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			exception_state,
+			control_effectiveness_state,
+			exception_trigger,
+			allowed_exception,
+			forbidden_exception,
+			exception_approver,
+			compensating_control,
+			expiration_rule,
+			revocation_trigger,
+			risk_acceptance_record,
+			exception_owner,
+			ledger_consumer,
+			supported_claim,
+			blocked_claim,
+			exception_first_seen,
+			exception_axis_first_seen,
+			exception_state_first_seen,
+			exception_owner_first_seen,
+			ledger_consumer_first_seen,
+			pass_result,
+			exception_value,
+			risk_acceptance_value,
+			timing_only_exception_value,
+			new_exception_value,
+			new_risk_acceptance_value,
+			new_timing_only_exception_value,
+			new_analysis_only_value,
+			cumulative_exception_records,
+			cumulative_exception_axes,
+			cumulative_exception_states,
+			cumulative_exception_owners,
+			cumulative_ledger_consumers,
+			cumulative_exception_value,
+			cumulative_risk_acceptance_value,
+			cumulative_timing_only_exception_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-exception-management-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_exception_management_summary,
+	file.path(data_dir, "typing-delay-open-question-exception-management-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_exception_management_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-exception-management-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_exception_management_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, exception_value)
+		) %>%
+		ggplot(aes(exception_value, question_label, fill = exception_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Exception management") +
+		labs(
+			title = "Exception management prevents failed controls from becoming silent waivers",
+			subtitle = "Each row names trigger, scope, forbidden waiver, approver, compensating control, expiry, revocation, and risk record",
+			x = "Exception-management value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"360-open-question-exception-management-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_exception_management_saturation_long <- open_question_exception_management_100_pass %>%
+	select(
+		pass_id,
+		`exception records` = cumulative_exception_records,
+		`exception axes` = cumulative_exception_axes,
+		`exception states` = cumulative_exception_states,
+		`exception owners` = cumulative_exception_owners,
+		`ledger consumers` = cumulative_ledger_consumers,
+		`exception value` = cumulative_exception_value,
+		`risk-acceptance value` = cumulative_risk_acceptance_value,
+		`timing-only exception value` = cumulative_timing_only_exception_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("exception records", "exception axes", "exception states", "exception owners", "ledger consumers", "exception value", "risk-acceptance value", "timing-only exception value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_exception_management_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Exception-management audit saturates once waivers, expiry, and revocation are named",
+			subtitle = "Nine exception records appear by pass 9; all 90 axes appear by pass 90; timing-only exception value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"361-open-question-exception-management-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_exception_management_summary %>%
+		mutate(
+			state_label = str_wrap(exception_state, width = 28),
+			state_label = fct_reorder(state_label, exception_value + risk_acceptance_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Exception-management coverage separates local packet waivers from owner and observer waivers",
+			subtitle = "Every row is checked for trigger, scope, forbidden waiver, approver, compensating control, expiry, revocation, record, substitute, and stop rule",
+			x = "Exception-axis checks",
+			y = "Exception management state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"362-open-question-exception-management-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

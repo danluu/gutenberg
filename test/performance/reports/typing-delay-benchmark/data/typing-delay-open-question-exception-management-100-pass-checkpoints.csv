@@ -1,0 +1,10 @@
+pass_id,cumulative_exception_records,cumulative_exception_axes,cumulative_exception_states,cumulative_exception_owners,cumulative_ledger_consumers,cumulative_exception_value,cumulative_risk_acceptance_value,cumulative_timing_only_exception_value,cumulative_analysis_only_value
+1,1,1,1,1,1,20555,14021,0,0
+5,5,5,2,5,4,82919,56552,0,0
+9,9,9,3,9,8,98676,67264,0,0
+10,9,10,3,9,8,98676,67264,0,0
+20,9,20,3,9,8,98676,67264,0,0
+50,9,50,3,9,8,98676,67264,0,0
+90,9,90,3,9,8,98676,67264,0,0
+91,9,90,3,9,8,98676,67264,0,0
+100,9,90,3,9,8,98676,67264,0,0
