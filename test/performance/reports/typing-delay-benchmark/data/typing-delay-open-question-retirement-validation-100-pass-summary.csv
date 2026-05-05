@@ -1,0 +1,7 @@
+retirement_validation_state,uncertainty_retirement_state,pass_result,passes,first_pass,retirement_validation_records,axis_checks,retirement_validation_owners,retirement_validation_consumers,retirement_validation_value,retirement_validation_unclosed_transfer_risk_value,timing_only_retirement_validation_value,analysis_only_value
+local packet retirement validation,local packet uncertainty retirement,retirement validation: local packet,40,1,4,40,4,3,410788990346,223247939893,0,0
+owner artifact retirement validation,owner artifact uncertainty retirement,retirement validation: owner or observer artifact,20,5,2,20,2,2,82137744556,44638689662,0,0
+observer artifact retirement validation,observer artifact uncertainty retirement,retirement validation: owner or observer artifact,30,7,3,30,3,3,50736942705,27573567426,0,0
+local packet retirement validation,local packet uncertainty retirement,repeat: retirement-validation-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact retirement validation,owner artifact uncertainty retirement,repeat: retirement-validation-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact retirement validation,observer artifact uncertainty retirement,repeat: retirement-validation-axis already checked,3,97,3,0,3,3,0,0,0,0

@@ -1,0 +1,10 @@
+pass_id,cumulative_retirement_validation_records,cumulative_retirement_validation_axes,cumulative_retirement_validation_states,cumulative_retirement_validation_owners,cumulative_retirement_validation_consumers,cumulative_retirement_validation_value,cumulative_retirement_validation_unclosed_transfer_risk_value,cumulative_timing_only_retirement_validation_value,cumulative_analysis_only_value
+1,1,1,1,1,1,113273845616,61559957234,0,0
+5,5,5,2,5,4,456919374563,248318020844,0,0
+9,9,9,3,9,8,543663677607,295460196981,0,0
+10,9,10,3,9,8,543663677607,295460196981,0,0
+20,9,20,3,9,8,543663677607,295460196981,0,0
+50,9,50,3,9,8,543663677607,295460196981,0,0
+90,9,90,3,9,8,543663677607,295460196981,0,0
+91,9,90,3,9,8,543663677607,295460196981,0,0
+100,9,90,3,9,8,543663677607,295460196981,0,0

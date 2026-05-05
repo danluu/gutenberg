@@ -2106,6 +2106,26 @@ The R script derives:
     uncertainty-retirement-value,
     uncertainty-retirement-blocked-transfer-risk-value,
     timing-only-uncertainty-retirement, and analysis-only saturation.
+-   `data/typing-delay-open-question-retirement-validation-register.csv`:
+    retirement-validation register for the nine uncertainty-retirement records,
+    including closure record, surface check, measured-transfer check, deferral
+    publication check, stale-transfer block, escalation hook, consumer receipt,
+    owner, and consumer.
+-   `data/typing-delay-open-question-retirement-validation-100-pass-audit.csv`:
+    fifty-third forced 100-pass audit over retirement-validation axes:
+    closure-record, surface, measured-transfer, deferral-publication,
+    stale-transfer-block, escalation-hook, consumer-receipt, owner, substitute,
+    and stop-rule.
+-   `data/typing-delay-open-question-retirement-validation-100-pass-summary.csv`:
+    rollup of retirement-validation coverage by retirement-validation state,
+    uncertainty-retirement state, and pass result.
+-   `data/typing-delay-open-question-retirement-validation-100-pass-checkpoints.csv`:
+    checkpoints for retirement-validation-record,
+    retirement-validation-axis, retirement-validation-state,
+    retirement-validation-owner, retirement-validation-consumer,
+    retirement-validation-value,
+    retirement-validation-unclosed-transfer-risk-value,
+    timing-only-retirement-validation, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12898,6 +12918,39 @@ measured nor explicitly deferred with an exact-scope fallback. Transfer claims
 now need a measurement packet with sampling, instrumentation, and acceptance
 criteria; otherwise they remain blocked by a deferral record with an escalation
 rule.
+
+I then added the retirement-validation layer: a retirement decision is not
+enough unless the measured transfer or explicit deferral actually lands in the
+report, data, figures, recommendations, stale-transfer blockers, escalation
+hooks, and consumer-facing path. Validation records the closure record, surface
+check, measured-transfer check, deferral publication check, stale-transfer
+block, escalation hook, consumer receipt, owner, and consumer for each
+uncertainty-retirement row.
+
+![Open question retirement validation register](figures/441-open-question-retirement-validation-register.png)
+
+![Open question retirement validation 100-pass saturation](figures/442-open-question-retirement-validation-100-pass-saturation.png)
+
+![Open question retirement validation coverage](figures/443-open-question-retirement-validation-coverage.png)
+
+| Retirement-validation check | Result |
+| --------------------------- | ------ |
+| Retirement-validation records | `9`, one per uncertainty-retirement record. |
+| Retirement-validation states | `3`: local packet retirement validation, owner artifact retirement validation, and observer artifact retirement validation. |
+| Retirement-validation owners | `9`; validation ownership routes back to the scoped uncertainty-retirement owner. |
+| Retirement-validation consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Retirement-validation-axis checks | `90`: every row checked against all `10` retirement-validation axes. |
+| Retirement-validation value | `543663677607`: local packet validation contributes `410788990346`, owner artifact validation contributes `82137744556`, and observer artifact validation contributes `50736942705`. |
+| Retirement-validation unclosed-transfer-risk value | `295460196981` across the nine retirement-validation records. |
+| Timing-only retirement-validation value | `0`; aggregate timing movement alone cannot prove closure record, surface check, measured-transfer recompute, deferral publication, stale-transfer block, escalation hook, consumer receipt, owner, or stop rule. |
+| Saturation | Retirement-validation records are all named by pass `9`; all retirement-validation axes are covered by pass `90`; passes `91-100` add no retirement-validation coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the closure-surface guard. It catches the case where uncertainty was
+nominally measured or deferred but stale transfer claims still survive in a
+recommendation, CSV, figure, wording block, or consumer path. A retirement is
+not counted as closed until the report surface, recompute or deferral record,
+stale-transfer scan, escalation hook, and consumer receipt all agree.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

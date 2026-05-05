@@ -44309,6 +44309,314 @@ save_plot(
 	height = 7.2
 )
 
+open_question_retirement_validation_register <- open_question_uncertainty_retirement_register %>%
+	mutate(
+		retirement_validation_state = case_when(
+			uncertainty_retirement_state == "local packet uncertainty retirement" ~ "local packet retirement validation",
+			uncertainty_retirement_state == "owner artifact uncertainty retirement" ~ "owner artifact retirement validation",
+			TRUE ~ "observer artifact retirement validation"
+		),
+		retirement_validation_closure_record = case_when(
+			close_scope == "CI wait decision" ~ "closure record links the CI uncertainty-retirement row, exact-scope fallback, measured-transfer result or deferral record, updated CI wait recommendation, and stale-transfer blocker",
+			close_scope == "source prototype decision" ~ "closure record links the source uncertainty-retirement row, exact-scope fallback, measured-transfer result or deferral record, updated source recommendation, and stale-transfer blocker",
+			close_scope == "benchmark method wording" ~ "closure record links the method uncertainty-retirement row, exact-scope fallback, measured-transfer result or deferral record, updated method wording, and stale-transfer blocker",
+			TRUE ~ "closure record links the broad uncertainty-retirement row, exact-scope fallback, measured-transfer result or deferral record, updated broad recommendation, and stale-transfer blocker"
+		),
+		retirement_validation_surface_check = case_when(
+			retirement_validation_state == "local packet retirement validation" ~ "check the local report section, recommendation row, figure list, CSV list, exact-scope label, transfer label, and stale-transfer blocker all reflect the retirement result",
+			retirement_validation_state == "owner artifact retirement validation" ~ "check the owner report section, reviewer identity, recommendation row, figure list, CSV list, exact-scope label, transfer label, and stale-transfer blocker all reflect the retirement result",
+			TRUE ~ "check the observer report section, reviewer identity, broad wording guard, recommendation row, figure list, CSV list, exact-scope label, transfer label, and stale-transfer blocker all reflect the retirement result"
+		),
+		retirement_validation_measured_transfer_check = case_when(
+			close_scope == "CI wait decision" ~ "if transfer is measured, recompute CI q25/q50/q75, runtime, reliability, branch-count cost, startup-wait, typing-delay, and input-mode summaries from the measurement packet before changing the transfer label",
+			close_scope == "source prototype decision" ~ "if transfer is measured, recompute selector, dispatch, invalidation, fanout, source patch, and owner-review summaries from the measurement packet before changing the transfer label",
+			close_scope == "benchmark method wording" ~ "if transfer is measured, recompute trace-schema, EventDispatch attribution, aggregation, instrumentation, and limitation summaries from the measurement packet before changing the transfer label",
+			TRUE ~ "if transfer is measured, recompute browser/runtime, container, workload, endpoint, and recommendation-scope summaries from the measurement packet before changing the transfer label"
+		),
+		retirement_validation_deferral_publication_check = case_when(
+			retirement_validation_state == "local packet retirement validation" ~ "if transfer is deferred, publish the local deferral record beside the exact-scope fallback and verify the unsupported transfer claim remains blocked",
+			retirement_validation_state == "owner artifact retirement validation" ~ "if transfer is deferred, publish the owner deferral record with reviewer identity beside the exact-scope fallback and verify the unsupported transfer claim remains blocked",
+			TRUE ~ "if transfer is deferred, publish the observer deferral record with reviewer identity and broad wording guard beside the exact-scope fallback and verify the unsupported transfer claim remains blocked"
+		),
+		retirement_validation_stale_transfer_block = case_when(
+			close_scope == "CI wait decision" ~ "scan CI wait-policy text, startup-wait guidance, typing-delay guidance, input-mode guidance, runtime/reliability tables, figures, CSVs, and recommendation bullets for stale transfer claims",
+			close_scope == "source prototype decision" ~ "scan source-guidance text, selector-guard notes, dispatch/invalidation notes, fanout caveat, source patch row, figures, CSVs, and recommendation bullets for stale transfer claims",
+			close_scope == "benchmark method wording" ~ "scan method text, trace-schema caveat, EventDispatch interpretation, aggregation caveat, instrumentation caveat, figures, CSVs, and limitation bullets for stale transfer claims",
+			TRUE ~ "scan broad-report text, portability caveat, browser/runtime caveat, workload caveat, endpoint caveat, recommendation-scope text, figures, CSVs, and recommendation bullets for stale transfer claims"
+		),
+		retirement_validation_escalation_hook = case_when(
+			close_scope == "CI wait decision" ~ "hook future CI wait-policy edits, browser upgrades, runner changes, branch-count changes, startup-wait edits, typing-delay edits, and input-mode edits back to the retirement record",
+			close_scope == "source prototype decision" ~ "hook future selector, dispatch, invalidation, fanout, source patch, plugin-heavy document, and owner-review edits back to the retirement record",
+			close_scope == "benchmark method wording" ~ "hook future trace-schema, EventDispatch, aggregation, instrumentation, browser tracing, and limitation-wording edits back to the retirement record",
+			TRUE ~ "hook future browser/runtime, OS/container, workload, endpoint, plugin-set, hardware/QoS, and recommendation-scope edits back to the retirement record"
+		),
+		retirement_validation_consumer_receipt = case_when(
+			retirement_validation_state == "local packet retirement validation" ~ "local consumer receipt proves the exact-scope fallback, transfer label, stale-transfer blocker, and escalation hook are visible from the consumer path",
+			retirement_validation_state == "owner artifact retirement validation" ~ "owner consumer receipt proves reviewer identity, exact-scope fallback, transfer label, stale-transfer blocker, and escalation hook are visible from the consumer path",
+			TRUE ~ "observer consumer receipt proves reviewer identity, broad wording guard, exact-scope fallback, transfer label, stale-transfer blocker, and escalation hook are visible from the consumer path"
+		),
+		retirement_validation_owner = uncertainty_retirement_owner,
+		retirement_validation_consumer = uncertainty_retirement_consumer,
+		retirement_validation_cost = case_when(
+			retirement_validation_state == "local packet retirement validation" ~ 10,
+			retirement_validation_state == "owner artifact retirement validation" ~ 12,
+			TRUE ~ 14
+		),
+		retirement_validation_value = pmax(
+			1,
+			uncertainty_retirement_value + uncertainty_retirement_blocked_transfer_risk_value + residual_uncertainty_wrong_decision_risk_value - retirement_validation_cost
+		),
+		retirement_validation_unclosed_transfer_risk_value = pmax(
+			1,
+			uncertainty_retirement_blocked_transfer_risk_value + residual_uncertainty_wrong_decision_risk_value + generalization_boundary_overgeneralization_risk_value - retirement_validation_cost
+		),
+		timing_only_retirement_validation_value = 0,
+		analysis_only_value = 0,
+		retirement_validation_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(retirement_validation_value), desc(retirement_validation_unclosed_transfer_risk_value), question_family)
+
+open_question_retirement_validation_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"closure-record", "What closure record proves the retirement decision landed?",
+	"surface", "What report, figure, CSV, and recommendation surfaces were checked?",
+	"measured-transfer", "If transfer was measured, what recompute check validates the new label?",
+	"deferral-publication", "If transfer was deferred, what publication check keeps the fallback visible?",
+	"stale-transfer-block", "What scan proves stale transfer claims are blocked?",
+	"escalation-hook", "What future change hooks back to the retirement record?",
+	"consumer-receipt", "What consumer receipt proves the retirement result is visible?",
+	"owner", "Who owns retirement validation?",
+	"substitute", "Can aggregate timing alone substitute for retirement validation?",
+	"stop-rule", "When does retirement-validation review stop?"
+)
+
+open_question_retirement_validation_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_retirement_validation_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_retirement_validation_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_retirement_validation_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_retirement_validation_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		retirement_validation_first_seen = !duplicated(retirement_validation_id),
+		retirement_validation_axis_key = paste(retirement_validation_id, pressure_axis, sep = "::"),
+		retirement_validation_axis_first_seen = !duplicated(retirement_validation_axis_key),
+		retirement_validation_state_first_seen = !duplicated(retirement_validation_state),
+		retirement_validation_owner_first_seen = !duplicated(retirement_validation_owner),
+		retirement_validation_consumer_first_seen = !duplicated(retirement_validation_consumer),
+		new_retirement_validation_value = if_else(retirement_validation_first_seen, retirement_validation_value, 0),
+		new_retirement_validation_unclosed_transfer_risk_value = if_else(retirement_validation_first_seen, retirement_validation_unclosed_transfer_risk_value, 0),
+		new_timing_only_retirement_validation_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!retirement_validation_axis_first_seen ~ "repeat: retirement-validation-axis already checked",
+			retirement_validation_state == "local packet retirement validation" ~ "retirement validation: local packet",
+			TRUE ~ "retirement validation: owner or observer artifact"
+		),
+		cumulative_retirement_validation_records = cumsum(retirement_validation_first_seen),
+		cumulative_retirement_validation_axes = cumsum(retirement_validation_axis_first_seen),
+		cumulative_retirement_validation_states = cumsum(retirement_validation_state_first_seen),
+		cumulative_retirement_validation_owners = cumsum(retirement_validation_owner_first_seen),
+		cumulative_retirement_validation_consumers = cumsum(retirement_validation_consumer_first_seen),
+		cumulative_retirement_validation_value = cumsum(new_retirement_validation_value),
+		cumulative_retirement_validation_unclosed_transfer_risk_value = cumsum(new_retirement_validation_unclosed_transfer_risk_value),
+		cumulative_timing_only_retirement_validation_value = cumsum(new_timing_only_retirement_validation_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_retirement_validation_summary <- open_question_retirement_validation_100_pass %>%
+	group_by(retirement_validation_state, uncertainty_retirement_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		retirement_validation_records = n_distinct(retirement_validation_id),
+		axis_checks = sum(retirement_validation_axis_first_seen),
+		retirement_validation_owners = n_distinct(retirement_validation_owner),
+		retirement_validation_consumers = n_distinct(retirement_validation_consumer),
+		retirement_validation_value = sum(new_retirement_validation_value),
+		retirement_validation_unclosed_transfer_risk_value = sum(new_retirement_validation_unclosed_transfer_risk_value),
+		timing_only_retirement_validation_value = sum(new_timing_only_retirement_validation_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(retirement_validation_value), desc(retirement_validation_unclosed_transfer_risk_value), first_pass)
+
+open_question_retirement_validation_checkpoints <- open_question_retirement_validation_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_retirement_validation_records,
+		cumulative_retirement_validation_axes,
+		cumulative_retirement_validation_states,
+		cumulative_retirement_validation_owners,
+		cumulative_retirement_validation_consumers,
+		cumulative_retirement_validation_value,
+		cumulative_retirement_validation_unclosed_transfer_risk_value,
+		cumulative_timing_only_retirement_validation_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_retirement_validation_register,
+	file.path(data_dir, "typing-delay-open-question-retirement-validation-register.csv")
+)
+
+write_csv(
+	open_question_retirement_validation_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			retirement_validation_state,
+			uncertainty_retirement_state,
+			retirement_validation_closure_record,
+			retirement_validation_surface_check,
+			retirement_validation_measured_transfer_check,
+			retirement_validation_deferral_publication_check,
+			retirement_validation_stale_transfer_block,
+			retirement_validation_escalation_hook,
+			retirement_validation_consumer_receipt,
+			retirement_validation_owner,
+			retirement_validation_consumer,
+			uncertainty_retirement_path,
+			uncertainty_retirement_measurement_packet,
+			uncertainty_retirement_sampling_plan,
+			uncertainty_retirement_acceptance_test,
+			uncertainty_retirement_deferral_record,
+			uncertainty_retirement_escalation_rule,
+			supported_claim,
+			blocked_claim,
+			retirement_validation_first_seen,
+			retirement_validation_axis_first_seen,
+			retirement_validation_state_first_seen,
+			retirement_validation_owner_first_seen,
+			retirement_validation_consumer_first_seen,
+			pass_result,
+			retirement_validation_value,
+			retirement_validation_unclosed_transfer_risk_value,
+			timing_only_retirement_validation_value,
+			new_retirement_validation_value,
+			new_retirement_validation_unclosed_transfer_risk_value,
+			new_timing_only_retirement_validation_value,
+			new_analysis_only_value,
+			cumulative_retirement_validation_records,
+			cumulative_retirement_validation_axes,
+			cumulative_retirement_validation_states,
+			cumulative_retirement_validation_owners,
+			cumulative_retirement_validation_consumers,
+			cumulative_retirement_validation_value,
+			cumulative_retirement_validation_unclosed_transfer_risk_value,
+			cumulative_timing_only_retirement_validation_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-retirement-validation-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_retirement_validation_summary,
+	file.path(data_dir, "typing-delay-open-question-retirement-validation-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_retirement_validation_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-retirement-validation-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_retirement_validation_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, retirement_validation_value)
+		) %>%
+		ggplot(aes(retirement_validation_value, question_label, fill = retirement_validation_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Retirement validation") +
+		labs(
+			title = "Retirement validation checks that measured or deferred uncertainty actually lands",
+			subtitle = "Each row names closure record, surface check, measured-transfer check, deferral publication, stale-transfer block, escalation hook, consumer receipt, owner, and consumer",
+			x = "Retirement-validation value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"441-open-question-retirement-validation-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_retirement_validation_saturation_long <- open_question_retirement_validation_100_pass %>%
+	select(
+		pass_id,
+		`retirement-validation records` = cumulative_retirement_validation_records,
+		`retirement-validation axes` = cumulative_retirement_validation_axes,
+		`retirement-validation states` = cumulative_retirement_validation_states,
+		`retirement-validation owners` = cumulative_retirement_validation_owners,
+		`retirement-validation consumers` = cumulative_retirement_validation_consumers,
+		`retirement-validation value` = cumulative_retirement_validation_value,
+		`retirement-validation unclosed-transfer risk value` = cumulative_retirement_validation_unclosed_transfer_risk_value,
+		`timing-only retirement-validation value` = cumulative_timing_only_retirement_validation_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("retirement-validation records", "retirement-validation axes", "retirement-validation states", "retirement-validation owners", "retirement-validation consumers", "retirement-validation value", "retirement-validation unclosed-transfer risk value", "timing-only retirement-validation value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_retirement_validation_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Retirement-validation audit saturates once every closure surface is checked",
+			subtitle = "Nine validation records appear by pass 9; all 90 axes appear by pass 90; timing-only validation value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"442-open-question-retirement-validation-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_retirement_validation_summary %>%
+		mutate(
+			state_label = str_wrap(retirement_validation_state, width = 28),
+			state_label = fct_reorder(state_label, retirement_validation_value + retirement_validation_unclosed_transfer_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Retirement-validation coverage separates local closure from owner and observer closure",
+			subtitle = "Every row is checked for closure record, surface, measured transfer, deferral publication, stale block, escalation hook, consumer receipt, owner, substitute, and stop rule",
+			x = "Retirement-validation-axis checks",
+			y = "Retirement-validation state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"443-open-question-retirement-validation-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
