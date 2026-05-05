@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Page, BrowserContext } from '@playwright/test';
+import type { Page, BrowserContext, Route } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -37,6 +37,7 @@ interface NormalizedBlock {
 interface NormalizedCollaborativeState {
 	blocks: NormalizedBlock[];
 	crdtDocument: string | null;
+	serializedContent: string;
 	title: string;
 }
 
@@ -53,6 +54,11 @@ export const SECOND_USER: UserCredentials = {
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
+
+function isSyncRequestRoute( route: Route ) {
+	const request = route.request();
+	return request.method() === 'POST' && request.url().includes( 'wp-sync' );
+}
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -165,11 +171,9 @@ export default class CollaborationUtils {
 	async waitForMutualDiscovery( { timeout }: { timeout?: number } = {} ) {
 		const pages = this.allPages;
 		const resolvedTimeout = timeout ?? 10000 + pages.length * 2500;
+		const roomName = await this.getCurrentPostRoomName( this.primaryPage );
 
 		if ( USE_TEST_WS_PROVIDER ) {
-			const roomName = await this.getCurrentPostRoomName(
-				this.primaryPage
-			);
 			await Promise.all(
 				pages.map( ( pg ) =>
 					this.waitForTestWebSocketAwarenessPeerCount(
@@ -193,11 +197,12 @@ export default class CollaborationUtils {
 
 		await Promise.all(
 			pages.map( ( pg ) =>
-				pg
-					.getByRole( 'button', {
-						name: /Collaborators list/,
-					} )
-					.waitFor( { timeout: resolvedTimeout } )
+				this.waitForAwarenessPeerCount(
+					pg,
+					pages.length,
+					resolvedTimeout,
+					roomName
+				)
 			)
 		);
 		await Promise.all(
@@ -228,6 +233,58 @@ export default class CollaborationUtils {
 		);
 	}
 
+	/**
+	 * Wait until the sync transport reports the expected number of clients in
+	 * the requested room's awareness payload.
+	 *
+	 * Some repros exercise lower-level sync behavior before the rendered
+	 * collaborator presence UI has enough display metadata to show the
+	 * "Collaborators list" button. The transport-level awareness count is the
+	 * synchronization gate these repros actually need.
+	 *
+	 * @param page              The Playwright page to wait on.
+	 * @param expectedPeerCount Expected number of awareness clients.
+	 * @param timeout           Maximum wait time in ms.
+	 * @param roomName          Optional room name to require.
+	 */
+	async waitForAwarenessPeerCount(
+		page: Page,
+		expectedPeerCount: number,
+		timeout: number,
+		roomName?: string
+	) {
+		await page.waitForResponse(
+			async ( response ) => {
+				if (
+					! response.url().includes( 'wp-sync' ) ||
+					response.status() !== 200
+				) {
+					return false;
+				}
+
+				const body = await response.json().catch( () => null );
+				return (
+					body?.rooms?.some(
+						( room: {
+							room?: string;
+							awareness?: Record< string, unknown >;
+						} ) =>
+							( ! roomName || room.room === roomName ) &&
+							room.awareness &&
+							Object.keys( room.awareness ).length >=
+								expectedPeerCount
+					) ?? false
+				);
+			},
+			{ timeout }
+		);
+	}
+
+	/**
+	 * Return the collaboration room name for the current post.
+	 *
+	 * @param page The Playwright page to read from.
+	 */
 	async getCurrentPostRoomName( page: Page ): Promise< string > {
 		const postId = await page.evaluate(
 			() =>
@@ -439,6 +496,49 @@ export default class CollaborationUtils {
 		}
 	}
 
+	async routeNextSyncRequest(
+		page: Page,
+		onMatch: ( route: Route ) => Promise< void >
+	) {
+		let handled = false;
+		const handler = async ( route: Route ) => {
+			if ( handled || ! isSyncRequestRoute( route ) ) {
+				await route.fallback();
+				return;
+			}
+
+			handled = true;
+			try {
+				await onMatch( route );
+			} finally {
+				await page.unroute( '**/*', handler );
+			}
+		};
+
+		await page.route( '**/*', handler );
+	}
+
+	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		await this.routeNextSyncRequest( page, async ( route ) => {
+			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
+			await route.fallback();
+		} );
+	}
+
+	async failNextSyncRequest( page: Page, status: number ) {
+		await this.routeNextSyncRequest( page, async ( route ) => {
+			await route.fulfill( {
+				status,
+				contentType: 'application/json',
+				body: JSON.stringify( {
+					code: 'rtc_fuzz_injected_sync_failure',
+					message: 'Injected sync failure from RTC browser fuzzer.',
+					data: { status },
+				} ),
+			} );
+		} );
+	}
+
 	/**
 	 * Returns a normalized view of the current collaborative editor state for
 	 * equality checks across participants.
@@ -491,6 +591,8 @@ export default class CollaborationUtils {
 							.select( 'core/editor' )
 							.getEditedPostAttribute( 'title' ) ?? '',
 					blocks: normalizeBlocks( blocks ),
+					serializedContent:
+						( window as any ).wp.blocks.serialize( blocks ) ?? '',
 					crdtDocument: includePersistedDoc
 						? record?.meta?._crdt_document ?? null
 						: null,
