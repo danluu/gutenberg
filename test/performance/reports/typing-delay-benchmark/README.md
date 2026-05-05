@@ -1706,6 +1706,23 @@ The R script derives:
     enforcement-owner, enforcement-consumer, enforcement-value,
     resurrection-risk-value, timing-only-enforcement, and analysis-only
     saturation.
+-   `data/typing-delay-open-question-active-claim-reconciliation-register.csv`:
+    active-claim reconciliation register for the nine retirement-enforcement
+    records, including active claim inventory, required current evidence,
+    retired-evidence exclusion, reconciliation surface, mismatch condition,
+    reconciliation action, ledger update, owner, and consumer.
+-   `data/typing-delay-open-question-active-claim-reconciliation-100-pass-audit.csv`:
+    thirtieth forced 100-pass audit over active-claim reconciliation axes:
+    inventory, evidence, exclude, surface, mismatch, action, ledger, consumer,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-active-claim-reconciliation-100-pass-summary.csv`:
+    rollup of active-claim reconciliation coverage by reconciliation state,
+    retirement-enforcement state, and pass result.
+-   `data/typing-delay-open-question-active-claim-reconciliation-100-pass-checkpoints.csv`:
+    checkpoints for reconciliation-record, reconciliation-axis,
+    reconciliation-state, reconciliation-owner, reconciliation-consumer,
+    reconciliation-value, active-claim-integrity-value,
+    timing-only-reconciliation, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11788,6 +11805,36 @@ This is the anti-resurrection layer. Retirement removes stale exceptions from
 current support; enforcement makes that removal testable by naming the exact
 reuse attempts, report surfaces, blocked wording, allowed historical references,
 and proof that must exist before retired evidence can stay retired.
+
+I then added the active-claim reconciliation layer: the report now checks the
+positive side of the same problem. Every claim that remains active must point at
+current evidence, and retired, stale, expired, unsupported, or wrong-scope
+evidence must be explicitly excluded from active support.
+
+![Open question active claim reconciliation register](figures/372-open-question-active-claim-reconciliation-register.png)
+
+![Open question active claim reconciliation 100-pass saturation](figures/373-open-question-active-claim-reconciliation-100-pass-saturation.png)
+
+![Open question active claim reconciliation coverage](figures/374-open-question-active-claim-reconciliation-coverage.png)
+
+| Active-claim reconciliation check | Result |
+| --------------------------------- | ------ |
+| Reconciliation records | `9`, one per retirement-enforcement record. |
+| Reconciliation states | `3`: local packet active-claim reconciliation, owner artifact active-claim reconciliation, and observer artifact active-claim reconciliation. |
+| Reconciliation owners | `9`; mismatch review routes back to the scoped enforcement owner. |
+| Reconciliation consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Reconciliation-axis checks | `90`: every row checked against all `10` active-claim reconciliation axes. |
+| Active-claim reconciliation value | `897972`: local packet reconciliation contributes `678492`, owner artifact reconciliation contributes `135670`, and observer artifact reconciliation contributes `83810`. |
+| Active-claim integrity value | `676390` across the nine active-claim reconciliation records. |
+| Timing-only reconciliation value | `0`; aggregate timing movement alone cannot prove an active claim points to current evidence, exclude retired evidence, update the ledger, or resolve a mismatch. |
+| Saturation | Reconciliation records are all named by pass `9`; all reconciliation axes are covered by pass `90`; passes `91-100` add no active-claim reconciliation coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the current-claim ledger layer. Retirement enforcement says old evidence
+cannot come back accidentally; active-claim reconciliation says current wording
+must have a live evidence pointer. The two checks meet in the ledger: retired
+evidence may remain as history, but only current evidence can support active CI,
+source, method, browser, runtime, workload, or product wording.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,7 @@
+reconciliation_state,enforcement_state,pass_result,passes,first_pass,reconciliation_records,axis_checks,reconciliation_owners,reconciliation_consumers,reconciliation_value,active_claim_integrity_value,timing_only_reconciliation_value,analysis_only_value
+local packet active-claim reconciliation,local packet retirement enforcement,active-claim reconciliation: local packet,40,1,4,40,4,3,678492,511080,0,0
+owner artifact active-claim reconciliation,owner artifact retirement enforcement,active-claim reconciliation: owner or observer artifact,20,5,2,20,2,2,135670,102191,0,0
+observer artifact active-claim reconciliation,observer artifact retirement enforcement,active-claim reconciliation: owner or observer artifact,30,7,3,30,3,3,83810,63119,0,0
+local packet active-claim reconciliation,local packet retirement enforcement,repeat: reconciliation-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact active-claim reconciliation,owner artifact retirement enforcement,repeat: reconciliation-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact active-claim reconciliation,observer artifact retirement enforcement,repeat: reconciliation-axis already checked,3,97,3,0,3,3,0,0,0,0

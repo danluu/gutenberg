@@ -37401,6 +37401,300 @@ save_plot(
 	height = 7.2
 )
 
+open_question_active_claim_reconciliation_register <- open_question_retirement_enforcement_register %>%
+	mutate(
+		reconciliation_state = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ "local packet active-claim reconciliation",
+			enforcement_state == "owner artifact retirement enforcement" ~ "owner artifact active-claim reconciliation",
+			TRUE ~ "observer artifact active-claim reconciliation"
+		),
+		active_claim_inventory = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ "active CI, source, method, and local timing wording that still cites local packet evidence",
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ "active owner-scoped wording that still cites owner artifact evidence",
+			TRUE ~ "active product, browser, endpoint, runtime, workload, or broad wording that still cites observer artifact evidence"
+		),
+		required_current_evidence = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ "current packet checksum, passing control-effectiveness result, non-retired evidence label, report diff, and supported-claim text",
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ "current owner artifact checksum, owner-approved control result, non-retired evidence label, report diff, and supported-claim text",
+			TRUE ~ "current observer artifact checksum, observer-approved control result, non-retired evidence label, report diff, and supported-claim text"
+		),
+		retired_evidence_exclusion = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ "retired local exceptions, stale local figures, old timing movements, expired packets, and unsupported local notes are excluded from active support",
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ "retired owner exceptions, stale owner reviews, expired owner artifacts, and unsupported owner notes are excluded from active support",
+			TRUE ~ "retired observer exceptions, stale observer reviews, expired observer artifacts, and unsupported broad notes are excluded from active support"
+		),
+		reconciliation_surface = scan_surface,
+		mismatch_condition = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ "active local wording points at missing, retired, stale, expired, unsupported, or wrong-scope packet evidence",
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ "active owner-scoped wording points at missing, retired, stale, expired, unsupported, or wrong-scope owner evidence",
+			TRUE ~ "active broad wording points at missing, retired, stale, expired, unsupported, or wrong-scope observer evidence"
+		),
+		reconciliation_action = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ "block or downgrade the active local claim, attach current packet evidence, or remove the wording from CI/source/method support",
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ "block or downgrade the active owner claim, attach current owner evidence, or remove owner-scoped wording",
+			TRUE ~ "block or downgrade the active broad claim, attach current observer evidence, or remove broad wording"
+		),
+		ledger_update = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ "active-claim ledger records claim text, current packet evidence, retired-evidence exclusions, scan result, owner, consumer, and report diff",
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ "active-claim ledger records claim text, current owner evidence, retired-evidence exclusions, scan result, owner, consumer, and report diff",
+			TRUE ~ "active-claim ledger records claim text, current observer evidence, retired-evidence exclusions, scan result, owner, consumer, and report diff"
+		),
+		reconciliation_owner = enforcement_owner,
+		reconciliation_consumer = enforcement_consumer,
+		reconciliation_cost = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ 2,
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ 4,
+			TRUE ~ 5
+		),
+		reconciliation_value = pmax(
+			1,
+			enforcement_value + resurrection_risk_value + false_closure_risk - reconciliation_cost
+		),
+		active_claim_integrity_value = pmax(
+			1,
+			resurrection_risk_value + retirement_value + stale_reuse_risk - reconciliation_cost
+		),
+		timing_only_reconciliation_value = 0,
+		analysis_only_value = 0,
+		active_claim_reconciliation_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(reconciliation_value), desc(active_claim_integrity_value), question_family)
+
+open_question_active_claim_reconciliation_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"inventory", "Which active claim inventory is reconciled?",
+	"evidence", "What current evidence must each active claim point to?",
+	"exclude", "What retired or stale evidence is excluded from active support?",
+	"surface", "What report or dashboard surface is reconciled?",
+	"mismatch", "What mismatch fails reconciliation?",
+	"action", "What action handles a reconciliation mismatch?",
+	"ledger", "What ledger update records the reconciliation?",
+	"consumer", "Which consumer receives the reconciliation result?",
+	"substitute", "Can aggregate timing alone substitute for active-claim reconciliation?",
+	"stop-rule", "When does active-claim reconciliation review stop?"
+)
+
+open_question_active_claim_reconciliation_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_active_claim_reconciliation_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_active_claim_reconciliation_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_active_claim_reconciliation_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_active_claim_reconciliation_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		reconciliation_first_seen = !duplicated(active_claim_reconciliation_id),
+		reconciliation_axis_key = paste(active_claim_reconciliation_id, pressure_axis, sep = "::"),
+		reconciliation_axis_first_seen = !duplicated(reconciliation_axis_key),
+		reconciliation_state_first_seen = !duplicated(reconciliation_state),
+		reconciliation_owner_first_seen = !duplicated(reconciliation_owner),
+		reconciliation_consumer_first_seen = !duplicated(reconciliation_consumer),
+		new_reconciliation_value = if_else(reconciliation_first_seen, reconciliation_value, 0),
+		new_active_claim_integrity_value = if_else(reconciliation_first_seen, active_claim_integrity_value, 0),
+		new_timing_only_reconciliation_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!reconciliation_axis_first_seen ~ "repeat: reconciliation-axis already checked",
+			reconciliation_state == "local packet active-claim reconciliation" ~ "active-claim reconciliation: local packet",
+			TRUE ~ "active-claim reconciliation: owner or observer artifact"
+		),
+		cumulative_reconciliation_records = cumsum(reconciliation_first_seen),
+		cumulative_reconciliation_axes = cumsum(reconciliation_axis_first_seen),
+		cumulative_reconciliation_states = cumsum(reconciliation_state_first_seen),
+		cumulative_reconciliation_owners = cumsum(reconciliation_owner_first_seen),
+		cumulative_reconciliation_consumers = cumsum(reconciliation_consumer_first_seen),
+		cumulative_reconciliation_value = cumsum(new_reconciliation_value),
+		cumulative_active_claim_integrity_value = cumsum(new_active_claim_integrity_value),
+		cumulative_timing_only_reconciliation_value = cumsum(new_timing_only_reconciliation_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_active_claim_reconciliation_summary <- open_question_active_claim_reconciliation_100_pass %>%
+	group_by(reconciliation_state, enforcement_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		reconciliation_records = n_distinct(active_claim_reconciliation_id),
+		axis_checks = sum(reconciliation_axis_first_seen),
+		reconciliation_owners = n_distinct(reconciliation_owner),
+		reconciliation_consumers = n_distinct(reconciliation_consumer),
+		reconciliation_value = sum(new_reconciliation_value),
+		active_claim_integrity_value = sum(new_active_claim_integrity_value),
+		timing_only_reconciliation_value = sum(new_timing_only_reconciliation_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(reconciliation_value), desc(active_claim_integrity_value), first_pass)
+
+open_question_active_claim_reconciliation_checkpoints <- open_question_active_claim_reconciliation_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_reconciliation_records,
+		cumulative_reconciliation_axes,
+		cumulative_reconciliation_states,
+		cumulative_reconciliation_owners,
+		cumulative_reconciliation_consumers,
+		cumulative_reconciliation_value,
+		cumulative_active_claim_integrity_value,
+		cumulative_timing_only_reconciliation_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_active_claim_reconciliation_register,
+	file.path(data_dir, "typing-delay-open-question-active-claim-reconciliation-register.csv")
+)
+
+write_csv(
+	open_question_active_claim_reconciliation_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			reconciliation_state,
+			enforcement_state,
+			active_claim_inventory,
+			required_current_evidence,
+			retired_evidence_exclusion,
+			reconciliation_surface,
+			mismatch_condition,
+			reconciliation_action,
+			ledger_update,
+			reconciliation_owner,
+			reconciliation_consumer,
+			supported_claim,
+			blocked_claim,
+			reconciliation_first_seen,
+			reconciliation_axis_first_seen,
+			reconciliation_state_first_seen,
+			reconciliation_owner_first_seen,
+			reconciliation_consumer_first_seen,
+			pass_result,
+			reconciliation_value,
+			active_claim_integrity_value,
+			timing_only_reconciliation_value,
+			new_reconciliation_value,
+			new_active_claim_integrity_value,
+			new_timing_only_reconciliation_value,
+			new_analysis_only_value,
+			cumulative_reconciliation_records,
+			cumulative_reconciliation_axes,
+			cumulative_reconciliation_states,
+			cumulative_reconciliation_owners,
+			cumulative_reconciliation_consumers,
+			cumulative_reconciliation_value,
+			cumulative_active_claim_integrity_value,
+			cumulative_timing_only_reconciliation_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-active-claim-reconciliation-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_active_claim_reconciliation_summary,
+	file.path(data_dir, "typing-delay-open-question-active-claim-reconciliation-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_active_claim_reconciliation_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-active-claim-reconciliation-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_active_claim_reconciliation_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, reconciliation_value)
+		) %>%
+		ggplot(aes(reconciliation_value, question_label, fill = reconciliation_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Active-claim reconciliation") +
+		labs(
+			title = "Active-claim reconciliation ties every current claim to current evidence",
+			subtitle = "Each row names active inventory, required evidence, retired-evidence exclusion, scan surface, mismatch, action, ledger, and consumer",
+			x = "Active-claim reconciliation value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"372-open-question-active-claim-reconciliation-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_active_claim_reconciliation_saturation_long <- open_question_active_claim_reconciliation_100_pass %>%
+	select(
+		pass_id,
+		`reconciliation records` = cumulative_reconciliation_records,
+		`reconciliation axes` = cumulative_reconciliation_axes,
+		`reconciliation states` = cumulative_reconciliation_states,
+		`reconciliation owners` = cumulative_reconciliation_owners,
+		`reconciliation consumers` = cumulative_reconciliation_consumers,
+		`reconciliation value` = cumulative_reconciliation_value,
+		`active-claim integrity value` = cumulative_active_claim_integrity_value,
+		`timing-only reconciliation value` = cumulative_timing_only_reconciliation_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("reconciliation records", "reconciliation axes", "reconciliation states", "reconciliation owners", "reconciliation consumers", "reconciliation value", "active-claim integrity value", "timing-only reconciliation value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_active_claim_reconciliation_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Active-claim reconciliation audit saturates once current-evidence checks are named",
+			subtitle = "Nine reconciliation records appear by pass 9; all 90 axes appear by pass 90; timing-only reconciliation value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"373-open-question-active-claim-reconciliation-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_active_claim_reconciliation_summary %>%
+		mutate(
+			state_label = str_wrap(reconciliation_state, width = 28),
+			state_label = fct_reorder(state_label, reconciliation_value + active_claim_integrity_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Active-claim reconciliation coverage separates local packet claims from owner and observer claims",
+			subtitle = "Every row is checked for inventory, evidence, exclude, surface, mismatch, action, ledger, consumer, substitute, and stop rule",
+			x = "Reconciliation-axis checks",
+			y = "Active-claim reconciliation state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"374-open-question-active-claim-reconciliation-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

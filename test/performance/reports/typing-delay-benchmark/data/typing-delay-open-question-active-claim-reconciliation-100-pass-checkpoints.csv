@@ -1,0 +1,10 @@
+pass_id,cumulative_reconciliation_records,cumulative_reconciliation_axes,cumulative_reconciliation_states,cumulative_reconciliation_owners,cumulative_reconciliation_consumers,cumulative_reconciliation_value,cumulative_active_claim_integrity_value,cumulative_timing_only_reconciliation_value,cumulative_analysis_only_value
+1,1,1,1,1,1,187092,140929,0,0
+5,5,5,2,5,4,754687,568473,0,0
+9,9,9,3,9,8,897972,676390,0,0
+10,9,10,3,9,8,897972,676390,0,0
+20,9,20,3,9,8,897972,676390,0,0
+50,9,50,3,9,8,897972,676390,0,0
+90,9,90,3,9,8,897972,676390,0,0
+91,9,90,3,9,8,897972,676390,0,0
+100,9,90,3,9,8,897972,676390,0,0
