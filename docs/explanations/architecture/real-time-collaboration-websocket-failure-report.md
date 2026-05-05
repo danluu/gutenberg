@@ -105,8 +105,17 @@ Superseded artifacts that should not be cited as current proof:
 - `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence.mp4`
   showed a schematic table rendering instead of full editor viewports.
 
-Existing list-move videos are still useful for the user-visible failure shape,
-but they are not proof from the latest current-baseline rerun:
+The clearest list-move video is an annotated rebuild of attempt 4 from the
+existing list-move artifact. It shows both natural toolbar moves being applied
+locally, then each browser losing the other browser's independent move:
+
+- clearer list attempt-4 video:
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-concurrent-list-item-move-loss-test4-annotated.mp4`;
+- clearer list attempt-4 action log:
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-concurrent-list-item-move-loss-test4-annotated-action-log.md`.
+
+This annotated list video is useful for the user-visible failure shape, but it
+is not proof from the latest current-baseline rerun:
 
 - `/private/tmp/gutenberg-ws-unfixed-repro-videos-20260504/ws-concurrent-list-item-move-loss.mp4`;
 - `/private/tmp/gutenberg-ws-repro-videos/ws-concurrent-list-item-move-loss.mp4`.
@@ -288,8 +297,12 @@ Current evidence status:
   timed out clicking the natural toolbar move buttons before the order assertion;
 - earlier trace-level evidence showed the real failure: a stale whole-`blocks`
   write from one editor overwrote a remote whole-`blocks` move from the other;
-- existing videos show the user-visible failure shape, but should not be cited
-  as proof from the latest rebuilt current-baseline run.
+- the clearer annotated video shows that attempt 4 of the existing list video
+  exposes the bug: Browser A ends with `Alpha, Beta, Gamma, Epsilon, Delta, Zeta`
+  and Browser B ends with `Alpha, Gamma, Beta, Delta, Epsilon, Zeta`, while the
+  correct merged order is `Alpha, Gamma, Beta, Epsilon, Delta, Zeta`;
+- the list videos should not be cited as proof from the latest rebuilt
+  current-baseline run.
 
 How it was introduced:
 
