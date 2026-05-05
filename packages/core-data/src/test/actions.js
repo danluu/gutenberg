@@ -33,6 +33,7 @@ jest.mock( '../batch', () => {
 jest.mock( '../sync', () => ( {
 	getSyncManager: jest.fn(),
 	LOCAL_EDITOR_ORIGIN: 'local-editor',
+	LOCAL_UNDO_IGNORED_ORIGIN: 'gutenberg-undo-ignored',
 } ) );
 
 describe( 'editEntityRecord', () => {
@@ -318,7 +319,16 @@ describe( 'editEntityRecord', () => {
 					},
 				},
 				'local-editor',
-				{ isNewUndoLevel: true }
+				{
+					baseRecord: {
+						id: 1,
+						meta: {
+							existingKey: 'existingValue',
+							editedKey: 'editedValue',
+						},
+					},
+					isNewUndoLevel: true,
+				}
 			);
 		} );
 
@@ -360,7 +370,13 @@ describe( 'editEntityRecord', () => {
 					},
 				},
 				'local-editor',
-				{ isNewUndoLevel: true }
+				{
+					baseRecord: {
+						id: 1,
+						meta: { key1: 'value1' },
+					},
+					isNewUndoLevel: true,
+				}
 			);
 
 			// But the local store dispatch should still receive undefined for the cleaned edit
@@ -416,7 +432,14 @@ describe( 'editEntityRecord', () => {
 					},
 				},
 				'local-editor',
-				{ isNewUndoLevel: true }
+				{
+					baseRecord: {
+						id: 1,
+						title: 'Original Title',
+						meta: { existingKey: 'existingValue' },
+					},
+					isNewUndoLevel: true,
+				}
 			);
 		} );
 
@@ -811,6 +834,58 @@ describe( 'saveEntityRecord', () => {
 		);
 
 		expect( result ).toBe( updatedRecord );
+	} );
+
+	it( 'marks synced records as saved without applying skipped server responses', async () => {
+		const post = { id: 10, title: 'stale local title' };
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+			},
+		];
+		const select = {
+			getRawEntityRecord: () => ( {
+				id: 10,
+				title: 'persisted title',
+			} ),
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+		const syncManager = {
+			update: jest.fn(),
+		};
+		getSyncManager.mockReturnValue( syncManager );
+
+		const updatedRecord = {
+			id: 10,
+			title: {
+				raw: 'stale server title',
+				rendered: 'stale server title',
+			},
+		};
+		apiFetch.mockImplementation( () => updatedRecord );
+
+		await saveEntityRecord( 'postType', 'post', post, {
+			__unstableSkipSyncUpdate: true,
+		} )( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			updatedRecord,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			{},
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
 	} );
 
 	it( 'throws on error when throwOnError is true', async () => {

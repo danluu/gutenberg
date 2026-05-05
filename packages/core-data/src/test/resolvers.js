@@ -232,7 +232,7 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).not.toHaveBeenCalled();
 	} );
 
-	it( 'persistCRDTDoc fetches edited record and saves full entity record', async () => {
+	it( 'persistCRDTDoc fetches edited record and saves only entity meta', async () => {
 		const POST_RECORD = { id: 1, title: 'Test Post', meta: {} };
 		const EDITED_RECORD = { id: 1, title: 'Edited Post', meta: {} };
 		const POST_RESPONSE = {
@@ -285,7 +285,8 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			EDITED_RECORD
+			{ id: 1, meta: {} },
+			{ __unstableSkipSyncUpdate: true }
 		);
 	} );
 
@@ -336,7 +337,8 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			POST_RECORD
+			{ id: 1, meta: {} },
+			{ __unstableSkipSyncUpdate: true }
 		);
 	} );
 
