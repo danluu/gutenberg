@@ -32776,6 +32776,289 @@ save_plot(
 	height = 7.2
 )
 
+open_question_freshness_monitor <- open_question_residual_risk_register %>%
+	mutate(
+		freshness_state = case_when(
+			handoff_state == "execute packet locally" ~ "refresh by local packet rerun",
+			handoff_state == "handoff to owner" ~ "refresh by owner artifact",
+			TRUE ~ "refresh by observer artifact"
+		),
+		freshness_trigger = stale_trigger,
+		freshness_cadence = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement") ~ "event-triggered on Performance Tests topology, wait, readiness, statistic, or lane change",
+			question_family == "Selector/source guard" ~ "event-triggered on selector owner, fixture, or source-span change",
+			question_family == "Input-mode realism" ~ "event-triggered on helper, browser, platform repeat, or hold-duration semantic change",
+			question_family == "Store-subscriber partition" ~ "event-triggered on public store API or import-surface change",
+			question_family == "CI pass/fail policy" ~ "event-triggered on dashboard, threshold, noisy-metric, or reviewer policy change",
+			question_family == "Product workload generalization" ~ "event-triggered on replay stratum, plugin/theme context, or workload-fixture change",
+			question_family == "Browser endpoint and display presentation" ~ "event-triggered on browser endpoint, display pipeline, or calibration change",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "event-triggered on browser/runtime, OS scheduler, sidecar, or counter-source change",
+			TRUE ~ "event-triggered on monitor signal"
+		),
+		revalidation_packet = case_when(
+			handoff_state == "execute packet locally" ~ handoff_title,
+			handoff_state == "handoff to owner" ~ handoff_title,
+			TRUE ~ handoff_title
+		),
+		revalidation_acceptance = case_when(
+			handoff_state == "execute packet locally" ~ acceptance_gate,
+			handoff_state == "handoff to owner" ~ acceptance_gate,
+			TRUE ~ acceptance_gate
+		),
+		freshness_archive = case_when(
+			handoff_state == "execute packet locally" ~ "new packet CSV plus old/new invariant, acceptance, and residual-risk diff",
+			handoff_state == "handoff to owner" ~ "new owner artifact plus old/new compatibility or policy diff",
+			TRUE ~ "new observer/workload artifact plus old/new calibration or replay diff"
+		),
+		false_stale_risk = case_when(
+			handoff_state == "execute packet locally" ~ 2,
+			handoff_state == "handoff to owner" ~ 3,
+			TRUE ~ 4
+		),
+		false_fresh_risk = case_when(
+			close_scope == "CI wait decision" ~ 5,
+			close_scope == "source prototype decision" ~ 5,
+			close_scope == "benchmark method wording" ~ 4,
+			handoff_state == "handoff to owner" ~ 4,
+			TRUE ~ 5
+		),
+		refresh_cost = case_when(
+			handoff_state == "execute packet locally" ~ 2,
+			handoff_state == "handoff to owner" ~ 4,
+			TRUE ~ 5
+		),
+		freshness_value = pmax(
+			1,
+			residual_risk_value + false_fresh_risk + false_stale_risk - refresh_cost
+		),
+		revalidation_value = pmax(
+			1,
+			claim_safety_value + acceptance_value + false_fresh_risk - refresh_cost
+		),
+		timing_only_refresh_value = 0,
+		analysis_only_value = 0,
+		freshness_monitor_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(freshness_value), desc(revalidation_value), question_family)
+
+open_question_freshness_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"trigger", "What future change makes the evidence stale?",
+	"cadence", "Is freshness event-triggered rather than periodic churn?",
+	"owner", "Who owns the freshness check?",
+	"packet", "Which packet refreshes the claim?",
+	"acceptance", "What acceptance rule must the refresh satisfy?",
+	"archive", "What old/new diff proves freshness?",
+	"false-stale", "What creates noisy stale alarms?",
+	"false-fresh", "What creates unsafe stale evidence reuse?",
+	"substitute", "Can an aggregate timing-only rerun refresh the claim?",
+	"stop-rule", "When does the freshness monitor retire?"
+)
+
+open_question_freshness_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_freshness_monitor)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_freshness_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_freshness_monitor %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_freshness_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		freshness_monitor_first_seen = !duplicated(freshness_monitor_id),
+		freshness_axis_key = paste(freshness_monitor_id, pressure_axis, sep = "::"),
+		freshness_axis_first_seen = !duplicated(freshness_axis_key),
+		freshness_state_first_seen = !duplicated(freshness_state),
+		new_freshness_value = if_else(freshness_monitor_first_seen, freshness_value, 0),
+		new_revalidation_value = if_else(freshness_monitor_first_seen, revalidation_value, 0),
+		new_timing_only_refresh_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!freshness_axis_first_seen ~ "repeat: freshness-axis already checked",
+			handoff_state == "execute packet locally" ~ "freshness: local packet",
+			TRUE ~ "freshness: owner or observer packet"
+		),
+		cumulative_freshness_monitors = cumsum(freshness_monitor_first_seen),
+		cumulative_freshness_axes = cumsum(freshness_axis_first_seen),
+		cumulative_freshness_states = cumsum(freshness_state_first_seen),
+		cumulative_freshness_value = cumsum(new_freshness_value),
+		cumulative_revalidation_value = cumsum(new_revalidation_value),
+		cumulative_timing_only_refresh_value = cumsum(new_timing_only_refresh_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_freshness_summary <- open_question_freshness_100_pass %>%
+	group_by(freshness_state, residual_claim_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		monitors = n_distinct(freshness_monitor_id),
+		axis_checks = sum(freshness_axis_first_seen),
+		risk_owners = n_distinct(residual_risk_owner),
+		freshness_value = sum(new_freshness_value),
+		revalidation_value = sum(new_revalidation_value),
+		timing_only_refresh_value = sum(new_timing_only_refresh_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_false_fresh_risk = max(false_fresh_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(freshness_value), desc(revalidation_value), first_pass)
+
+open_question_freshness_checkpoints <- open_question_freshness_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_freshness_monitors,
+		cumulative_freshness_axes,
+		cumulative_freshness_states,
+		cumulative_freshness_value,
+		cumulative_revalidation_value,
+		cumulative_timing_only_refresh_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_freshness_monitor,
+	file.path(data_dir, "typing-delay-open-question-freshness-monitor.csv")
+)
+
+write_csv(
+	open_question_freshness_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			freshness_state,
+			residual_claim_state,
+			freshness_trigger,
+			freshness_cadence,
+			revalidation_packet,
+			revalidation_acceptance,
+			freshness_archive,
+			residual_risk_owner,
+			freshness_monitor_first_seen,
+			freshness_axis_first_seen,
+			freshness_state_first_seen,
+			pass_result,
+			freshness_value,
+			revalidation_value,
+			timing_only_refresh_value,
+			new_freshness_value,
+			new_revalidation_value,
+			new_timing_only_refresh_value,
+			new_analysis_only_value,
+			cumulative_freshness_monitors,
+			cumulative_freshness_axes,
+			cumulative_freshness_states,
+			cumulative_freshness_value,
+			cumulative_revalidation_value,
+			cumulative_timing_only_refresh_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-freshness-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_freshness_summary,
+	file.path(data_dir, "typing-delay-open-question-freshness-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_freshness_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-freshness-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_freshness_monitor %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, freshness_value)
+		) %>%
+		ggplot(aes(freshness_value, question_label, fill = freshness_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Freshness state") +
+		labs(
+			title = "Freshness checks are event-triggered packet refreshes",
+			subtitle = "A timing-only rerun does not refresh stale source, policy, workload, display, or mechanism claims",
+			x = "Freshness value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"324-open-question-freshness-monitor.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_freshness_saturation_long <- open_question_freshness_100_pass %>%
+	select(
+		pass_id,
+		`freshness monitors` = cumulative_freshness_monitors,
+		`freshness axes` = cumulative_freshness_axes,
+		`freshness states` = cumulative_freshness_states,
+		`freshness value` = cumulative_freshness_value,
+		`revalidation value` = cumulative_revalidation_value,
+		`timing-only refresh value` = cumulative_timing_only_refresh_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("freshness monitors", "freshness axes", "freshness states", "freshness value", "revalidation value", "timing-only refresh value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_freshness_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Freshness audit saturates once stale triggers and refresh packets are named",
+			subtitle = "Nine monitors appear by pass 9; all 90 freshness axes appear by pass 90; timing-only refresh value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"325-open-question-freshness-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_freshness_summary %>%
+		mutate(
+			state_label = str_wrap(freshness_state, width = 28),
+			state_label = fct_reorder(state_label, freshness_value + revalidation_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Freshness coverage separates local packet reruns from owner and observer refreshes",
+			subtitle = "Every monitor is checked for trigger, cadence, owner, packet, acceptance, archive, false-stale, false-fresh, substitute, and stop rule",
+			x = "Freshness-axis checks",
+			y = "Freshness state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"326-open-question-freshness-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

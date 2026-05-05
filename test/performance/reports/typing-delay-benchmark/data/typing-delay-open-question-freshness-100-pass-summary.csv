@@ -1,0 +1,7 @@
+freshness_state,residual_claim_state,pass_result,passes,first_pass,monitors,axis_checks,risk_owners,freshness_value,revalidation_value,timing_only_refresh_value,analysis_only_value,max_false_fresh_risk
+refresh by local packet rerun,decision pending local packet,freshness: local packet,40,1,4,40,3,481,369,0,0,5
+refresh by owner artifact,claim blocked on owner,freshness: owner or observer packet,20,5,2,20,2,63,81,0,0,4
+refresh by observer artifact,claim blocked on observer,freshness: owner or observer packet,30,7,3,30,3,27,41,0,0,5
+refresh by local packet rerun,decision pending local packet,repeat: freshness-axis already checked,5,91,4,0,3,0,0,0,0,5
+refresh by owner artifact,claim blocked on owner,repeat: freshness-axis already checked,2,95,2,0,2,0,0,0,0,4
+refresh by observer artifact,claim blocked on observer,repeat: freshness-axis already checked,3,97,3,0,3,0,0,0,0,5

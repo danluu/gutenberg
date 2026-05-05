@@ -1,0 +1,10 @@
+pass_id,cumulative_freshness_monitors,cumulative_freshness_axes,cumulative_freshness_states,cumulative_freshness_value,cumulative_revalidation_value,cumulative_timing_only_refresh_value,cumulative_analysis_only_value
+1,1,1,1,134,102,0,0
+5,5,5,2,518,415,0,0
+9,9,9,3,571,491,0,0
+10,9,10,3,571,491,0,0
+20,9,20,3,571,491,0,0
+50,9,50,3,571,491,0,0
+90,9,90,3,571,491,0,0
+91,9,90,3,571,491,0,0
+100,9,90,3,571,491,0,0

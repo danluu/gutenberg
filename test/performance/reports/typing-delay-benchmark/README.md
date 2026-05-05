@@ -1468,6 +1468,20 @@ The R script derives:
     checkpoints for residual-risk, residual-axis, residual-claim-state,
     residual-risk-value, claim-safety, local-repeat-reduction, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-freshness-monitor.csv`: freshness monitor
+    table for the nine residual-risk entries, including stale trigger, cadence,
+    revalidation packet, acceptance rule, archive, and false-stale/false-fresh
+    risk.
+-   `data/typing-delay-open-question-freshness-100-pass-audit.csv`: fourteenth
+    forced 100-pass audit over freshness axes: trigger, cadence, owner, packet,
+    acceptance, archive, false-stale, false-fresh, substitute, and stop-rule.
+-   `data/typing-delay-open-question-freshness-100-pass-summary.csv`: rollup of
+    freshness coverage by freshness state, residual claim state, and pass
+    result.
+-   `data/typing-delay-open-question-freshness-100-pass-checkpoints.csv`:
+    checkpoints for freshness-monitor, freshness-axis, freshness-state,
+    freshness-value, revalidation-value, timing-only-refresh, and analysis-only
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11081,6 +11095,34 @@ cliff remains a scoped benchmark fact. The remaining risk is about CI wait
 decisions, source-patch safety, stimulus wording, and broader compatibility,
 policy, workload, display, or mechanism claims. Those risks retire only through
 their packet artifacts or handoffs, not by adding another aggregate q50 run.
+
+I then added the freshness-monitor layer: after claim wording is scoped, what
+future change makes the evidence stale, which packet refreshes it, what archive
+proves the old/new diff, and whether an aggregate timing-only rerun can refresh
+the claim.
+
+![Open question freshness monitor](figures/324-open-question-freshness-monitor.png)
+
+![Open question freshness 100-pass saturation](figures/325-open-question-freshness-100-pass-saturation.png)
+
+![Open question freshness coverage](figures/326-open-question-freshness-coverage.png)
+
+| Freshness check | Result |
+| --------------- | ------ |
+| Freshness monitors | `9`, one per residual-risk entry. |
+| Freshness states | `3`: refresh by local packet rerun, refresh by owner artifact, and refresh by observer artifact. |
+| Risk owners | `8`; the target-CI startup and pattern-wait freshness monitors share the Performance Tests runtime reviewer. |
+| Freshness-axis checks | `90`: every monitor checked against all `10` freshness axes. |
+| Freshness value | `571`: local packet refreshes contribute `481`, owner artifacts contribute `63`, and observer artifacts contribute `27`. |
+| Revalidation value | `491` across the nine monitors. |
+| Timing-only refresh value | `0`; an aggregate q50-only rerun does not refresh stale source, policy, workload, display, mechanism, or CI-wait evidence. |
+| Saturation | Freshness monitors are all named by pass `9`; all freshness axes are covered by pass `90`; passes `91-100` add no freshness coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This makes the report maintainable over time. Freshness is event-triggered:
+topology, helper, source, policy, workload, endpoint, runtime, or counter changes
+trigger the matching packet refresh. Periodic or repeated aggregate timing runs
+are not a freshness policy for claims that depend on missing fields or owners.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
