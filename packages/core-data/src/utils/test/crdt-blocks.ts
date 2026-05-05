@@ -362,6 +362,164 @@ describe( 'crdt-blocks', () => {
 			expect( content1.toString() ).toBe( 'First' );
 		} );
 
+		it( 'preserves a remotely inserted block and the moved sibling after a stale top-level move', () => {
+			const heading = {
+				name: 'core/heading',
+				attributes: { content: 'Heading' },
+				innerBlocks: [],
+				clientId: 'heading',
+			};
+			const emoji = {
+				name: 'core/paragraph',
+				attributes: { content: 'Emoji and multibyte' },
+				innerBlocks: [],
+				clientId: 'emoji',
+			};
+			const another = {
+				name: 'core/paragraph',
+				attributes: { content: 'Another paragraph' },
+				innerBlocks: [],
+				clientId: 'another',
+			};
+			const inserted = {
+				name: 'core/paragraph',
+				attributes: { content: 'Inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted',
+			};
+
+			const initialBlocks = [ heading, emoji, another ];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			const remoteDoc = new Y.Doc();
+			const remoteBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// User A deletes the first block.
+			mergeCrdtBlocks( yblocks, [ emoji, another ], null );
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// User B inserts a block before the paragraph that User A will move.
+			mergeCrdtBlocks( remoteBlocks, [ inserted, emoji, another ], null );
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			// User A moves the emoji paragraph down below its sibling.
+			mergeCrdtBlocks( yblocks, [ inserted, another, emoji ], null );
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// The receiving editor may still emit the last local full-block
+			// snapshot it had before applying the remote move. That stale
+			// snapshot must not undo the move or duplicate either sibling.
+			mergeCrdtBlocks( remoteBlocks, [ inserted, emoji, another ], null );
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			const expectedContents = [
+				'Inserted paragraph',
+				'Another paragraph',
+				'Emoji and multibyte',
+			];
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				)
+			).toEqual( expectedContents );
+			expect(
+				( remoteBlocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				)
+			).toEqual( expectedContents );
+
+			remoteDoc.destroy();
+		} );
+
+		it( 'preserves a remotely inserted heading and the moved paragraph after a stale top-level move', () => {
+			const deletedHeading = {
+				name: 'core/heading',
+				attributes: { content: 'Deleted heading' },
+				innerBlocks: [],
+				clientId: 'deleted-heading',
+			};
+			const movedParagraph = {
+				name: 'core/paragraph',
+				attributes: { content: 'Moved paragraph' },
+				innerBlocks: [],
+				clientId: 'moved-paragraph',
+			};
+			const siblingParagraph = {
+				name: 'core/paragraph',
+				attributes: { content: 'Sibling paragraph' },
+				innerBlocks: [],
+				clientId: 'sibling-paragraph',
+			};
+			const insertedHeading = {
+				name: 'core/heading',
+				attributes: { content: 'Inserted heading' },
+				innerBlocks: [],
+				clientId: 'inserted-heading',
+			};
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ deletedHeading, movedParagraph, siblingParagraph ],
+				null
+			);
+
+			const remoteDoc = new Y.Doc();
+			const remoteBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// User A deletes the original heading.
+			mergeCrdtBlocks(
+				yblocks,
+				[ movedParagraph, siblingParagraph ],
+				null
+			);
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// User B inserts a heading before the paragraph that User A will move.
+			mergeCrdtBlocks(
+				remoteBlocks,
+				[ insertedHeading, movedParagraph, siblingParagraph ],
+				null
+			);
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			// User A moves the paragraph down below its sibling.
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedHeading, siblingParagraph, movedParagraph ],
+				null
+			);
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// The receiving editor may still emit the full block snapshot it had
+			// before applying the remote move. The inserted heading should stay
+			// once, and the moved paragraph must not replace its sibling.
+			mergeCrdtBlocks(
+				remoteBlocks,
+				[ insertedHeading, movedParagraph, siblingParagraph ],
+				null
+			);
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			const expectedBlocks = [
+				[ 'core/heading', 'Inserted heading' ],
+				[ 'core/paragraph', 'Sibling paragraph' ],
+				[ 'core/paragraph', 'Moved paragraph' ],
+			];
+			const getBlockSummary = ( blocks: YBlocks ) =>
+				( blocks.toJSON() as Block[] ).map( ( block ) => [
+					block.name,
+					block.attributes.content,
+				] );
+
+			expect( getBlockSummary( yblocks ) ).toEqual( expectedBlocks );
+			expect( getBlockSummary( remoteBlocks ) ).toEqual( expectedBlocks );
+
+			remoteDoc.destroy();
+		} );
+
 		it( 'creates Y.Text for rich-text attributes', () => {
 			const blocks: Block[] = [
 				{
