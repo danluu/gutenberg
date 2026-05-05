@@ -1,6 +1,6 @@
 # Distinct Manifest Rerun Status
 
-Updated: 2026-05-05T10:24:37.640Z
+Updated: 2026-05-05T10:39:42.743Z
 
 This is the local rerun status for the distinct-bug manifest on refreshed base
 `try/fuzz-fixed-base-20260505`.
@@ -69,51 +69,51 @@ Live state:
 
 Current progress:
 
-- Attempted: 65 of 184
-- Remaining: 119
-- Passed: 29
-- Failed: 35
+- Attempted: 79 of 184
+- Remaining: 105
+- Passed: 33
+- Failed: 45
 - Missing spec: 0
 - Timed out: 2
 - Skipped: 0
-- HTTP records completed: 29
-- WebSocket records completed: 35
-- Runner status updated at: `2026-05-05T10:23:32.888Z`
+- HTTP records completed: 36
+- WebSocket records completed: 42
+- Runner status updated at: `2026-05-05T10:39:15.108Z`
 - Completed at: `not complete`
 - Stop reason: `running`
-- Current index: 64
-- Current bug type: `rtc_collab_heading_group_tree_corruption_after_move_into_group_then_top_level_move`
-- Current signature: `9a90b69f2672`
-- Current transport: `websocket`
-- Current spec: `test/e2e/specs/editor/collaboration/triage-5d01e9eb73c9-realistic.spec.ts`
+- Current index: 78
+- Current bug type: `rtc_heading_insert_position_diverges_across_collaborators`
+- Current signature: `0c33bad2fdd0`
+- Current transport: `http`
+- Current spec: `test/e2e/specs/editor/collaboration/triage-0c33bad2fdd0-realistic.spec.ts`
 
 Recent full-run results:
 
-- passed: `rtc_chained_top_level_reorder_drops_heading_and_duplicates_adjacent_paragraph` (`2f1615fef9d1`, http)
-- passed: `rtc_checkpoint_body_reverts_to_prior_checkpoint_while_title_advances` (`a88b8bf04f5f`, websocket)
-- failed: `rtc_checkpoint_reload_followup_body_edit_desync` (`e3ab170829f6`, websocket)
-- failed: `rtc_checkpoint_reload_heading_insert_duplicates_baseline_suffix` (`c07bdb1e2373`, http)
-- failed: `rtc_checkpoint_reload_trailing_table_delete_lost` (`baa3b9ef6312`, websocket)
-- passed: `rtc_checkpoint_save_oscillates_between_corrupted_title_and_empty_content_after_reload` (`e1b81f6e98b9`, http)
-- failed: `rtc_checkpoint_save_reload_partial_serialized_body_behind_visible_block_tree` (`549d46417342`, http)
-- failed: `rtc_checkpoint_save_reload_persisted_markup_corruption` (`9f310b30e0b7`, http)
-- passed: `rtc_checkpoint_save_stale_full_record_clobbers_fields` (`7d6faa1f8935`, http)
-- passed: `rtc_checkpoint_second_save_content_collapse_after_reload` (`6e3ddc0030a8`, http)
+- failed: `rtc_collaboration_transient_empty_body_on_reload` (`213a2b68b661`, http)
+- failed: `rtc_concurrent_append_after_checkpoint_interleaves_text` (`ab1b60fc6f4a`, websocket)
+- failed: `rtc_concurrent_tail_insert_corrupts_or_diverges_top_level_paragraphs` (`5fe795b32c10`, websocket)
+- passed: `rtc_crdt_merge_reorder_after_fallback_group_insert_duplicates_heading_and_drops_paragraph` (`222f6c558dee`, http)
+- failed: `rtc_crdt_move_after_fallback_group_insert_duplicates_baseline_and_drops_shared_paragraph` (`4492f7048c22`, websocket)
+- failed: `rtc_crdt_top_level_search_move_after_checkpoint_churn_duplicates_multibyte_heading` (`30316f449e06`, websocket)
+- failed: `rtc_delete_nested_after_converged_move_into_group_leaves_stale_moved_paragraph` (`a48cbaacb3c8`, websocket)
+- passed: `rtc_delete_propagation_loss_due_to_stale_local_block_cache` (`ae9a3cdc8424`, http)
+- passed: `rtc_distinct_user_reload_title_divergence` (`08d6f3fb22ac`, http)
+- failed: `rtc_formatted_richtext_programmatic_update_diverges_to_trailing_gt_after_recovery` (`712b98ba96ff`, http)
 
 Recent full-run failures:
 
-- `rtc_ws_move_into_group_hangs_other_collaborator_after_structural_edits` (`60e483562733`, websocket, failed)
-- `rtc_ws_persisted_block_markup_corruption_stuck_save` (`2f060b0d43fe`, websocket, failed)
-- `rtc-entity-normalization-save-loop` (`440c86261e16`, websocket, failed)
-- `RTC nested delete divergence after a converged move-into-group leaves a stale checkpoint paragraph on one collaborator` (`ecae18a9f40b`, websocket, failed)
-- `RTC save/REST divergence where the save response and CRDT meta advance but later persisted title/content reads stay stale` (`2cc4a4a920f5`, websocket, failed)
-- `RTC title persistence gap on reload after move-block + edit-title` (`cf62e53692ba`, websocket, failed, timed out)
-- `rtc_block_tree_collapse_after_delete_and_followup_persistence` (`a2e6705b1ea0`, http, failed)
-- `rtc_checkpoint_reload_followup_body_edit_desync` (`e3ab170829f6`, websocket, failed)
-- `rtc_checkpoint_reload_heading_insert_duplicates_baseline_suffix` (`c07bdb1e2373`, http, failed)
-- `rtc_checkpoint_reload_trailing_table_delete_lost` (`baa3b9ef6312`, websocket, failed)
 - `rtc_checkpoint_save_reload_partial_serialized_body_behind_visible_block_tree` (`549d46417342`, http, failed)
 - `rtc_checkpoint_save_reload_persisted_markup_corruption` (`9f310b30e0b7`, http, failed)
+- `rtc_collab_heading_group_tree_corruption_after_move_into_group_then_top_level_move` (`9a90b69f2672`, websocket, failed)
+- `rtc_collaboration_delete_then_move_heading_order_split` (`f1637972ea57`, http, failed)
+- `rtc_collaboration_malformed_heading_transiently_saves_empty_post_then_rolls_back` (`b60eecd4ac03`, http, failed)
+- `rtc_collaboration_transient_empty_body_on_reload` (`213a2b68b661`, http, failed)
+- `rtc_concurrent_append_after_checkpoint_interleaves_text` (`ab1b60fc6f4a`, websocket, failed)
+- `rtc_concurrent_tail_insert_corrupts_or_diverges_top_level_paragraphs` (`5fe795b32c10`, websocket, failed)
+- `rtc_crdt_move_after_fallback_group_insert_duplicates_baseline_and_drops_shared_paragraph` (`4492f7048c22`, websocket, failed)
+- `rtc_crdt_top_level_search_move_after_checkpoint_churn_duplicates_multibyte_heading` (`30316f449e06`, websocket, failed)
+- `rtc_delete_nested_after_converged_move_into_group_leaves_stale_moved_paragraph` (`a48cbaacb3c8`, websocket, failed)
+- `rtc_formatted_richtext_programmatic_update_diverges_to_trailing_gt_after_recovery` (`712b98ba96ff`, http, failed)
 
 Resume by rerunning the command above with the same `--results-dir`.
 Completed keys already present in `results.jsonl` are skipped.
