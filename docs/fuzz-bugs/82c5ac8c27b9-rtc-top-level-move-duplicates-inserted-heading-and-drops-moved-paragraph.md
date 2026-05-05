@@ -163,6 +163,52 @@ focused repros pass, the full CRDT block unit file passes, JS lint passes, and
 the natural Playwright repro converges both editors to `Inserted paragraph`,
 `Sibling paragraph`, `Moved paragraph`.
 
+Pass 41 independently re-ran the proof on the rebased stack. The source
+artifact still points to a final state divergence, not to a malformed action:
+the original failure reached the final convergence assertion after normal
+editor actions, and its screenshots show one editor with inserted/sibling/moved
+while the other has inserted/moved/moved.
+
+The introducing PR metadata was also checked directly. PR
+https://github.com/WordPress/gutenberg/pull/72262 was merged on
+2025-10-14 at merge commit
+`84019935998c16f877e976ad85e84748355d7282`; its description says the change
+recursively inspects `blocks` and represents data with Yjs shared types. That
+is the commit that added the full-array `mergeCrdtBlocks` trim/update/delete/
+insert path, but it did not retain the previous local block order needed to
+distinguish an old full snapshot from a fresh local reorder.
+
+Pass 41 corrected a before-fix command that was accidentally run from the fixed
+worktree, then re-ran it from the detached `HEAD~1` worktree. At
+`d6b25805c645f7106127fff10493146f40f29e64`, both focused tests fail before the
+fix: current trunk's adjacent RTC fixes reduce one manifestation to stale-order
+reversion (`Inserted paragraph`, `Emoji and multibyte`, `Another paragraph`),
+but the stale snapshot is still applied as authoritative order. The known-fixes
+base `3cba2b1e56a98787de08dc6c7df2434759e8f908`, with only the repro tests
+applied, still shows the original duplicate/drop shape:
+`Inserted paragraph`, `Emoji and multibyte`, `Emoji and multibyte`, and
+`Inserted heading`, `Moved paragraph`, `Moved paragraph`.
+
+The fixed branch at
+`10e01dd7a25b0aed14a648cd5a8bbe9b428649e1` passes the focused repros, the full
+`packages/core-data/src/utils/test/crdt-blocks.ts` suite, and JS lint for the
+changed files. A pass 41 headless Playwright rerun could not exercise the block
+actions locally because this Docker host is saturated: starting a fresh
+wp-env on the requested `WP_ENV_PORT=9905` failed with `all predefined address
+pools have been fully subnetted`, and using the already-running test env at
+port 9937 repeatedly timed out waiting for the initial `Collaborators list`
+button before any block action. The saved attempt JSON shows both editors still
+at the initial heading/paragraph/paragraph state, so this rerun is a readiness
+environment failure and is not evidence against the product bug or the fix.
+
+Pass 41 re-verified the annotated video artifact:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-bug-82c5ac8c27b9/artifacts/82c5ac8c27b9-pass38-video/82c5ac8c27b9-pass38-annotated-repro-and-fix.mp4
+```
+
+`ffprobe` reports H.264, 1280x720, duration 27.5 seconds.
+
 Focused unit repro:
 
 ```bash
