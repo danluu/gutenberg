@@ -181,6 +181,8 @@ Emoji and multibyte: hi ..., こんにちは, مرحبا.
 
 This pass verifies that the existing branch, branch ordering, natural-user repro, and fix still satisfy the requested standard on the current fetched trunk. The additional fresh browser pass removes the pass-45 Docker-network caveat.
 
+Pass 47 repeated the verification against the same fetched `origin/trunk` (`02bfdaa5ca9`). A fresh trunk worktree with only regression commit `d71d0bc87fe` failed all three focused low-level repros. A fresh known-fixes-base worktree with the same test commit passed the two stale-snapshot Y.Doc repros and failed only the same-reference block-array reorder repro. The fixed PR branch passed the focused repros, the full `crdt-blocks` unit file (`76` tests), targeted JS lint, and `git diff --check`. The requested `wp-env-test` start initially failed because Docker's automatic address pool was exhausted; pass 47 avoided stopping unrelated active stacks by pre-creating this task's Compose default network with an explicit private subnet, then reran the natural-user Playwright repro headlessly on `http://localhost:9905`. It passed in 21.1s, and both editors converged to `inserted paragraph`, `another paragraph`, `multibyte paragraph`. This is a fresh pass-47 verification that the existing explanation branch, PR branch, video standard, and fix still satisfy the requested standard.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
