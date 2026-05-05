@@ -1739,6 +1739,22 @@ The R script derives:
     checkpoints for renewal-record, renewal-axis, renewal-state, renewal-owner,
     renewal-consumer, renewal-value, freshness-value, timing-only-renewal, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-active-claim-expiry-enforcement-register.csv`:
+    active-claim expiry-enforcement register for the nine active-claim renewal
+    records, including expiry violation, expiry gate, blocked current use, scan
+    surface, expiry response, downgrade enforcement, proof of enforcement,
+    reinstatement rule, owner, and consumer.
+-   `data/typing-delay-open-question-active-claim-expiry-enforcement-100-pass-audit.csv`:
+    thirty-second forced 100-pass audit over active-claim expiry-enforcement
+    axes: violation, gate, block, scan, response, downgrade, proof, reinstate,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-active-claim-expiry-enforcement-100-pass-summary.csv`:
+    rollup of active-claim expiry-enforcement coverage by expiry-enforcement
+    state, active-claim renewal state, and pass result.
+-   `data/typing-delay-open-question-active-claim-expiry-enforcement-100-pass-checkpoints.csv`:
+    checkpoints for expiry-record, expiry-axis, expiry-state, expiry-owner,
+    expiry-consumer, expiry-enforcement-value, stale-active-claim-risk-value,
+    timing-only-expiry-enforcement, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11882,6 +11898,37 @@ answers "does the claim point at live evidence now?" Active-claim renewal
 answers "when must that live evidence be retested or downgraded?" A clean timing
 movement does not renew evidence by itself; renewal requires the scoped evidence
 packet, control result, ledger update, and report diff.
+
+I then added the active-claim expiry-enforcement layer: when a renewal clock or
+drift signal fires and no passing renewal result exists, active wording must stop
+behaving as current evidence. The report now names the stale-current violation,
+the gate that blocks use, the current use that is blocked, the scanned surfaces,
+the response, downgrade enforcement, proof of enforcement, and reinstatement
+rule.
+
+![Open question active claim expiry enforcement register](figures/378-open-question-active-claim-expiry-enforcement-register.png)
+
+![Open question active claim expiry enforcement 100-pass saturation](figures/379-open-question-active-claim-expiry-enforcement-100-pass-saturation.png)
+
+![Open question active claim expiry enforcement coverage](figures/380-open-question-active-claim-expiry-enforcement-coverage.png)
+
+| Active-claim expiry-enforcement check | Result |
+| ------------------------------------- | ------ |
+| Expiry records | `9`, one per active-claim renewal record. |
+| Expiry-enforcement states | `3`: local packet active-claim expiry enforcement, owner artifact active-claim expiry enforcement, and observer artifact active-claim expiry enforcement. |
+| Expiry owners | `9`; stale-current enforcement routes back to the scoped renewal owner. |
+| Expiry consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Expiry-axis checks | `90`: every row checked against all `10` active-claim expiry-enforcement axes. |
+| Active-claim expiry-enforcement value | `2761250`: local packet expiry enforcement contributes `2086373`, owner artifact expiry enforcement contributes `417176`, and observer artifact expiry enforcement contributes `257701`. |
+| Stale-active-claim risk value | `2084812` across the nine active-claim expiry-enforcement records. |
+| Timing-only expiry-enforcement value | `0`; aggregate timing movement alone cannot detect an expired current claim, block its use, enforce downgraded wording, prove the scan ran, or reinstate a claim. |
+| Saturation | Expiry records are all named by pass `9`; all expiry axes are covered by pass `90`; passes `91-100` add no active-claim expiry-enforcement coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the stale-current guard. Renewal defines freshness; expiry enforcement
+turns missed renewal into a blocking condition. An expired active claim can
+return only after scoped renewal evidence passes, retired evidence remains
+excluded, and the active-claim ledger and report diff are refreshed.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

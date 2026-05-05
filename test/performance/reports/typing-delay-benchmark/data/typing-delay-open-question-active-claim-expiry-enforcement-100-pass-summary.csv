@@ -1,0 +1,7 @@
+expiry_enforcement_state,renewal_state,pass_result,passes,first_pass,expiry_records,axis_checks,expiry_owners,expiry_consumers,expiry_enforcement_value,stale_active_claim_risk_value,timing_only_expiry_enforcement_value,analysis_only_value
+local packet active-claim expiry enforcement,local packet active-claim renewal,active-claim expiry enforcement: local packet,40,1,4,40,4,3,2086373,1575263,0,0
+owner artifact active-claim expiry enforcement,owner artifact active-claim renewal,active-claim expiry enforcement: owner or observer artifact,20,5,2,20,2,2,417176,314979,0,0
+observer artifact active-claim expiry enforcement,observer artifact active-claim renewal,active-claim expiry enforcement: owner or observer artifact,30,7,3,30,3,3,257701,194570,0,0
+local packet active-claim expiry enforcement,local packet active-claim renewal,repeat: expiry-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact active-claim expiry enforcement,owner artifact active-claim renewal,repeat: expiry-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact active-claim expiry enforcement,observer artifact active-claim renewal,repeat: expiry-axis already checked,3,97,3,0,3,3,0,0,0,0

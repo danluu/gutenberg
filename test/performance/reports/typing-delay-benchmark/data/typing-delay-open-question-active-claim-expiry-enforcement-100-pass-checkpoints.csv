@@ -1,0 +1,10 @@
+pass_id,cumulative_expiry_records,cumulative_expiry_axes,cumulative_expiry_states,cumulative_expiry_owners,cumulative_expiry_consumers,cumulative_expiry_enforcement_value,cumulative_stale_active_claim_risk_value,cumulative_timing_only_expiry_enforcement_value,cumulative_analysis_only_value
+1,1,1,1,1,1,575311,434374,0,0
+5,5,5,2,5,4,2320668,1752162,0,0
+9,9,9,3,9,8,2761250,2084812,0,0
+10,9,10,3,9,8,2761250,2084812,0,0
+20,9,20,3,9,8,2761250,2084812,0,0
+50,9,50,3,9,8,2761250,2084812,0,0
+90,9,90,3,9,8,2761250,2084812,0,0
+91,9,90,3,9,8,2761250,2084812,0,0
+100,9,90,3,9,8,2761250,2084812,0,0

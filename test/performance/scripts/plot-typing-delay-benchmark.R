@@ -38000,6 +38000,302 @@ save_plot(
 	height = 7.2
 )
 
+open_question_active_claim_expiry_enforcement_register <- open_question_active_claim_renewal_register %>%
+	mutate(
+		expiry_enforcement_state = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "local packet active-claim expiry enforcement",
+			renewal_state == "owner artifact active-claim renewal" ~ "owner artifact active-claim expiry enforcement",
+			TRUE ~ "observer artifact active-claim expiry enforcement"
+		),
+		expiry_violation = case_when(
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ "active local claim remains current after renewal clock or drift signal fired without a passing packet renewal result",
+			expiry_enforcement_state == "owner artifact active-claim expiry enforcement" ~ "active owner-scoped claim remains current after renewal clock or drift signal fired without a passing owner renewal result",
+			TRUE ~ "active broad claim remains current after renewal clock or drift signal fired without a passing observer renewal result"
+		),
+		expiry_gate = case_when(
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ "block current local claim use unless packet renewal evidence passes and the active-claim ledger is updated",
+			expiry_enforcement_state == "owner artifact active-claim expiry enforcement" ~ "block current owner-scoped claim use unless owner renewal evidence passes and the active-claim ledger is updated",
+			TRUE ~ "block current broad claim use unless observer renewal evidence passes and the active-claim ledger is updated"
+		),
+		blocked_current_use = case_when(
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ "CI, source, method, and local timing wording cannot cite expired local packet evidence as current support",
+			expiry_enforcement_state == "owner artifact active-claim expiry enforcement" ~ "owner-scoped wording cannot cite expired owner artifact evidence as current support",
+			TRUE ~ "product, browser, endpoint, runtime, workload, or broad wording cannot cite expired observer artifact evidence as current support"
+		),
+		expiry_scan_surface = reconciliation_surface,
+		expiry_response = case_when(
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ "fail the active-claim check, downgrade or remove local wording, notify the consumer, and require packet renewal before reuse",
+			expiry_enforcement_state == "owner artifact active-claim expiry enforcement" ~ "fail the active-claim check, downgrade or remove owner-scoped wording, notify the consumer, and require owner renewal before reuse",
+			TRUE ~ "fail the active-claim check, downgrade or remove broad wording, notify the consumer, and require observer renewal before reuse"
+		),
+		downgrade_enforcement = downgrade_path,
+		proof_of_expiry_enforcement = case_when(
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ "expiry scan result, stale local claim diff, downgrade or removal diff, renewal-result absence, consumer notice, and ledger update",
+			expiry_enforcement_state == "owner artifact active-claim expiry enforcement" ~ "expiry scan result, stale owner claim diff, downgrade or removal diff, renewal-result absence, consumer notice, and ledger update",
+			TRUE ~ "expiry scan result, stale broad claim diff, downgrade or removal diff, renewal-result absence, consumer notice, and ledger update"
+		),
+		reinstatement_rule = case_when(
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ "expired local wording can return only after packet renewal evidence passes, retired evidence remains excluded, and the active-claim ledger is refreshed",
+			expiry_enforcement_state == "owner artifact active-claim expiry enforcement" ~ "expired owner wording can return only after owner renewal evidence passes, retired evidence remains excluded, and the active-claim ledger is refreshed",
+			TRUE ~ "expired broad wording can return only after observer renewal evidence passes, retired evidence remains excluded, and the active-claim ledger is refreshed"
+		),
+		expiry_owner = renewal_owner,
+		expiry_consumer = renewal_consumer,
+		expiry_enforcement_cost = case_when(
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ 2,
+			expiry_enforcement_state == "owner artifact active-claim expiry enforcement" ~ 4,
+			TRUE ~ 5
+		),
+		expiry_enforcement_value = pmax(
+			1,
+			renewal_value + freshness_value + false_closure_risk - expiry_enforcement_cost
+		),
+		stale_active_claim_risk_value = pmax(
+			1,
+			freshness_value + reconciliation_value + stale_reuse_risk - expiry_enforcement_cost
+		),
+		timing_only_expiry_enforcement_value = 0,
+		analysis_only_value = 0,
+		active_claim_expiry_enforcement_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(expiry_enforcement_value), desc(stale_active_claim_risk_value), question_family)
+
+open_question_active_claim_expiry_enforcement_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"violation", "What expired-current-claim violation does the guard catch?",
+	"gate", "What gate blocks expired evidence from current use?",
+	"block", "What active use is blocked while expired?",
+	"scan", "What report or dashboard surface is scanned for expired claims?",
+	"response", "What response happens when an expired active claim is found?",
+	"downgrade", "What downgraded wording is enforced while expired?",
+	"proof", "What proof shows expiry enforcement ran?",
+	"reinstate", "What rule allows the active claim to be reinstated?",
+	"substitute", "Can aggregate timing alone substitute for active-claim expiry enforcement?",
+	"stop-rule", "When does active-claim expiry-enforcement review stop?"
+)
+
+open_question_active_claim_expiry_enforcement_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_active_claim_expiry_enforcement_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_active_claim_expiry_enforcement_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_active_claim_expiry_enforcement_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_active_claim_expiry_enforcement_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		expiry_first_seen = !duplicated(active_claim_expiry_enforcement_id),
+		expiry_axis_key = paste(active_claim_expiry_enforcement_id, pressure_axis, sep = "::"),
+		expiry_axis_first_seen = !duplicated(expiry_axis_key),
+		expiry_state_first_seen = !duplicated(expiry_enforcement_state),
+		expiry_owner_first_seen = !duplicated(expiry_owner),
+		expiry_consumer_first_seen = !duplicated(expiry_consumer),
+		new_expiry_enforcement_value = if_else(expiry_first_seen, expiry_enforcement_value, 0),
+		new_stale_active_claim_risk_value = if_else(expiry_first_seen, stale_active_claim_risk_value, 0),
+		new_timing_only_expiry_enforcement_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!expiry_axis_first_seen ~ "repeat: expiry-axis already checked",
+			expiry_enforcement_state == "local packet active-claim expiry enforcement" ~ "active-claim expiry enforcement: local packet",
+			TRUE ~ "active-claim expiry enforcement: owner or observer artifact"
+		),
+		cumulative_expiry_records = cumsum(expiry_first_seen),
+		cumulative_expiry_axes = cumsum(expiry_axis_first_seen),
+		cumulative_expiry_states = cumsum(expiry_state_first_seen),
+		cumulative_expiry_owners = cumsum(expiry_owner_first_seen),
+		cumulative_expiry_consumers = cumsum(expiry_consumer_first_seen),
+		cumulative_expiry_enforcement_value = cumsum(new_expiry_enforcement_value),
+		cumulative_stale_active_claim_risk_value = cumsum(new_stale_active_claim_risk_value),
+		cumulative_timing_only_expiry_enforcement_value = cumsum(new_timing_only_expiry_enforcement_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_active_claim_expiry_enforcement_summary <- open_question_active_claim_expiry_enforcement_100_pass %>%
+	group_by(expiry_enforcement_state, renewal_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		expiry_records = n_distinct(active_claim_expiry_enforcement_id),
+		axis_checks = sum(expiry_axis_first_seen),
+		expiry_owners = n_distinct(expiry_owner),
+		expiry_consumers = n_distinct(expiry_consumer),
+		expiry_enforcement_value = sum(new_expiry_enforcement_value),
+		stale_active_claim_risk_value = sum(new_stale_active_claim_risk_value),
+		timing_only_expiry_enforcement_value = sum(new_timing_only_expiry_enforcement_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(expiry_enforcement_value), desc(stale_active_claim_risk_value), first_pass)
+
+open_question_active_claim_expiry_enforcement_checkpoints <- open_question_active_claim_expiry_enforcement_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_expiry_records,
+		cumulative_expiry_axes,
+		cumulative_expiry_states,
+		cumulative_expiry_owners,
+		cumulative_expiry_consumers,
+		cumulative_expiry_enforcement_value,
+		cumulative_stale_active_claim_risk_value,
+		cumulative_timing_only_expiry_enforcement_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_active_claim_expiry_enforcement_register,
+	file.path(data_dir, "typing-delay-open-question-active-claim-expiry-enforcement-register.csv")
+)
+
+write_csv(
+	open_question_active_claim_expiry_enforcement_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			expiry_enforcement_state,
+			renewal_state,
+			expiry_violation,
+			expiry_gate,
+			blocked_current_use,
+			expiry_scan_surface,
+			expiry_response,
+			downgrade_enforcement,
+			proof_of_expiry_enforcement,
+			reinstatement_rule,
+			expiry_owner,
+			expiry_consumer,
+			supported_claim,
+			blocked_claim,
+			expiry_first_seen,
+			expiry_axis_first_seen,
+			expiry_state_first_seen,
+			expiry_owner_first_seen,
+			expiry_consumer_first_seen,
+			pass_result,
+			expiry_enforcement_value,
+			stale_active_claim_risk_value,
+			timing_only_expiry_enforcement_value,
+			new_expiry_enforcement_value,
+			new_stale_active_claim_risk_value,
+			new_timing_only_expiry_enforcement_value,
+			new_analysis_only_value,
+			cumulative_expiry_records,
+			cumulative_expiry_axes,
+			cumulative_expiry_states,
+			cumulative_expiry_owners,
+			cumulative_expiry_consumers,
+			cumulative_expiry_enforcement_value,
+			cumulative_stale_active_claim_risk_value,
+			cumulative_timing_only_expiry_enforcement_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-active-claim-expiry-enforcement-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_active_claim_expiry_enforcement_summary,
+	file.path(data_dir, "typing-delay-open-question-active-claim-expiry-enforcement-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_active_claim_expiry_enforcement_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-active-claim-expiry-enforcement-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_active_claim_expiry_enforcement_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, expiry_enforcement_value)
+		) %>%
+		ggplot(aes(expiry_enforcement_value, question_label, fill = expiry_enforcement_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Expiry enforcement") +
+		labs(
+			title = "Active-claim expiry enforcement blocks stale current wording",
+			subtitle = "Each row names violation, gate, blocked use, scan surface, response, downgrade, proof, and reinstatement rule",
+			x = "Active-claim expiry-enforcement value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"378-open-question-active-claim-expiry-enforcement-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_active_claim_expiry_enforcement_saturation_long <- open_question_active_claim_expiry_enforcement_100_pass %>%
+	select(
+		pass_id,
+		`expiry records` = cumulative_expiry_records,
+		`expiry axes` = cumulative_expiry_axes,
+		`expiry states` = cumulative_expiry_states,
+		`expiry owners` = cumulative_expiry_owners,
+		`expiry consumers` = cumulative_expiry_consumers,
+		`expiry-enforcement value` = cumulative_expiry_enforcement_value,
+		`stale-active-claim risk value` = cumulative_stale_active_claim_risk_value,
+		`timing-only expiry-enforcement value` = cumulative_timing_only_expiry_enforcement_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("expiry records", "expiry axes", "expiry states", "expiry owners", "expiry consumers", "expiry-enforcement value", "stale-active-claim risk value", "timing-only expiry-enforcement value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_active_claim_expiry_enforcement_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Active-claim expiry-enforcement audit saturates once stale-current guards are named",
+			subtitle = "Nine expiry records appear by pass 9; all 90 axes appear by pass 90; timing-only expiry-enforcement value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"379-open-question-active-claim-expiry-enforcement-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_active_claim_expiry_enforcement_summary %>%
+		mutate(
+			state_label = str_wrap(expiry_enforcement_state, width = 28),
+			state_label = fct_reorder(state_label, expiry_enforcement_value + stale_active_claim_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Active-claim expiry-enforcement coverage separates local packet expiry from owner and observer expiry",
+			subtitle = "Every row is checked for violation, gate, block, scan, response, downgrade, proof, reinstate, substitute, and stop rule",
+			x = "Expiry-axis checks",
+			y = "Active-claim expiry-enforcement state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"380-open-question-active-claim-expiry-enforcement-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
