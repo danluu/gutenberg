@@ -1221,6 +1221,12 @@ The R script derives:
     action-versus-observer scores.
 -   `data/typing-delay-open-question-consensus-roadmap-long.csv`: long-form
     consensus-roadmap scores used for the closure/action/observer heatmap.
+-   `data/typing-delay-open-question-convergence-audit.csv`: cross-audit
+    convergence audit for remaining question families, including direct evidence,
+    negative-control support, same-harness saturation, decision specificity,
+    external dependency, and the wrong next analysis to avoid.
+-   `data/typing-delay-open-question-convergence-audit-long.csv`: long-form
+    convergence scores used for the convergence heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10217,6 +10223,29 @@ frontier rows: startup readiness, pattern readiness, and selector/source guards.
 The rest of the open questions are not reasons to keep rerunning the same held-key
 sweep. They are either stable local conclusions, wording boundaries, or requests
 for different observers and external joins.
+
+The convergence audit checks whether that consensus is supported by independent
+parts of the report or is just another reformulation of one artifact. It scores
+five dimensions for each question family: direct evidence, negative controls,
+whether the current harness is already saturated, how specific the decision rule
+is, and how much external dependency remains.
+
+![Open question convergence audit](figures/260-open-question-convergence-audit.png)
+
+![Open question convergence strength](figures/261-open-question-convergence-strength.png)
+
+| Convergence result | What it means for the next analysis |
+| ------------------ | ----------------------------------- |
+| Held-key cliff | strongest convergence and lowest dependency; another unchanged local sweep is the wrong next analysis |
+| Input mode | strong convergence but high dependency for product claims; the benchmark claim is closed, while product typing needs replay evidence |
+| Startup, selector, and pattern rows | enough convergence to act only through their gates: target topology, behavior fixtures, and source-span collapse |
+| Runtime and CPU/QoS mechanism rows | same-harness evidence is saturated; mechanism naming needs passive joined observers or counters |
+| Product, display, and CI-policy rows | high dependency and policy/endpoint gaps; they block broad claims without weakening the local benchmark conclusion |
+
+This is the cleanest stopping rule for the repeated open-question passes. More
+samples from the existing held-key harness would mostly raise confidence in rows
+that are already saturated. The rows that can still change action need different
+artifacts, not larger versions of the same measurement.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

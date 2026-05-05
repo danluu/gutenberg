@@ -1,0 +1,81 @@
+question_family,question_label,lane,analysis_state,convergence_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed locally,direct evidence,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed locally,negative controls,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed locally,same-harness saturated,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed locally,decision specificity,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed locally,external dependency,1
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,action gate,direct evidence,4
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,action gate,negative controls,4
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,action gate,same-harness saturated,4
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,action gate,decision specificity,4
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,action gate,external dependency,4
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,broad claim blocked,direct evidence,5
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,broad claim blocked,negative controls,5
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,broad claim blocked,same-harness saturated,4
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,broad claim blocked,decision specificity,4
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,broad claim blocked,external dependency,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,broad claim blocked,direct evidence,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,broad claim blocked,negative controls,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,broad claim blocked,same-harness saturated,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,broad claim blocked,decision specificity,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,broad claim blocked,external dependency,5
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,observer or policy blocked,direct evidence,3
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,observer or policy blocked,negative controls,3
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,observer or policy blocked,same-harness saturated,4
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,observer or policy blocked,decision specificity,3
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,observer or policy blocked,external dependency,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,action gate,direct evidence,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,action gate,negative controls,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,action gate,same-harness saturated,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,action gate,decision specificity,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,action gate,external dependency,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,needs targeted validation,direct evidence,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,needs targeted validation,negative controls,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,needs targeted validation,same-harness saturated,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,needs targeted validation,decision specificity,5
+Pattern wait replacement,Pattern wait replacement,CI/readiness,needs targeted validation,external dependency,3
+Selector/source guard,Selector/source guard,Source/code,action gate,direct evidence,4
+Selector/source guard,Selector/source guard,Source/code,action gate,negative controls,3
+Selector/source guard,Selector/source guard,Source/code,action gate,same-harness saturated,4
+Selector/source guard,Selector/source guard,Source/code,action gate,decision specificity,5
+Selector/source guard,Selector/source guard,Source/code,action gate,external dependency,3
+Store subscriber partition,Store subscriber partition,Source/code,action gate,direct evidence,3
+Store subscriber partition,Store subscriber partition,Source/code,action gate,negative controls,4
+Store subscriber partition,Store subscriber partition,Source/code,action gate,same-harness saturated,4
+Store subscriber partition,Store subscriber partition,Source/code,action gate,decision specificity,5
+Store subscriber partition,Store subscriber partition,Source/code,action gate,external dependency,4
+Product workload generalization,"Product workload
+generalization",Claim expansion,observer or policy blocked,direct evidence,2
+Product workload generalization,"Product workload
+generalization",Claim expansion,observer or policy blocked,negative controls,3
+Product workload generalization,"Product workload
+generalization",Claim expansion,observer or policy blocked,same-harness saturated,5
+Product workload generalization,"Product workload
+generalization",Claim expansion,observer or policy blocked,decision specificity,4
+Product workload generalization,"Product workload
+generalization",Claim expansion,observer or policy blocked,external dependency,5
+External display endpoint,External display endpoint,Claim expansion,observer or policy blocked,direct evidence,2
+External display endpoint,External display endpoint,Claim expansion,observer or policy blocked,negative controls,3
+External display endpoint,External display endpoint,Claim expansion,observer or policy blocked,same-harness saturated,5
+External display endpoint,External display endpoint,Claim expansion,observer or policy blocked,decision specificity,4
+External display endpoint,External display endpoint,Claim expansion,observer or policy blocked,external dependency,5
+CI pass/fail policy,CI pass/fail policy,External policy,observer or policy blocked,direct evidence,2
+CI pass/fail policy,CI pass/fail policy,External policy,observer or policy blocked,negative controls,3
+CI pass/fail policy,CI pass/fail policy,External policy,observer or policy blocked,same-harness saturated,5
+CI pass/fail policy,CI pass/fail policy,External policy,observer or policy blocked,decision specificity,5
+CI pass/fail policy,CI pass/fail policy,External policy,observer or policy blocked,external dependency,5

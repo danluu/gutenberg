@@ -26409,6 +26409,199 @@ save_plot(
 	height = 7.8
 )
 
+open_question_convergence_audit <- tribble(
+	~question_family, ~audit_conclusion, ~direct_evidence_score, ~negative_control_score, ~same_harness_saturation_score, ~decision_specificity_score, ~external_dependency_score, ~converging_audits, ~remaining_dependency, ~wrong_next_analysis,
+	"Held-key cliff and metric split", "closed for the current metric unless helper/browser/statistic changes", 5, 5, 5, 5, 1, "dense sweeps; helper comparisons; proof chain; prediction matrix; consensus roadmap", "exact-spec trigger recheck only after a metric-definition change", "another broad held-key sweep under unchanged settings",
+	"Persistence ordering boundary", "bounded as ordering evidence, not timer-work-shift mechanism proof", 4, 4, 4, 4, 4, "timer rewrite; marker/no-op controls; proof-chain correction; theory-prediction rejection of work-shift wording", "joined task/runtime trace if the claim expands to callback work placement", "repeating the same timer-alignment rows and calling alignment mechanism proof",
+	"Input mode versus product typing", "closed for held-key semantics and blocked for product typing wording", 5, 5, 4, 4, 5, "tap/complete-keypress controls; input-shape falsification; observation leverage; consensus roadmap", "representative workload replay if product-typing behavior is the claim", "pooling held-key and tap rows or treating fixed-`x` as product typing",
+	"Runtime checkpoint mechanism", "empirical runtime boundary is converged, mechanism name is not", 3, 4, 5, 4, 5, "ordinary-wait rejection; runtime-repeat dose response; native scale control; marginal-evidence audit", "passive retained-key sidecar with joined runtime fields", "more JS-level delay rows without a retained-key runtime join",
+	"CPU/QoS mechanism", "system-state sensitivity is plausible, exact layer is unnamed", 3, 3, 4, 3, 5, "CPU/QoS controls; finite-duration model; native scale control; claim-ladder audit", "accepted sidecar plus joined powermetrics or trace counters", "renaming aggregate latency classes as frequency, QoS, cache, or scheduler causes",
+	"Startup wait and first-key tails", "near-term action needs target-topology readiness fields, not more local q50", 4, 4, 3, 5, 3, "startup-wait matrices; per-key distributions; CI-comparable rows; outcome-decision matrix", "real Performance Tests topology with failures, resources, retained rows, and first-key tails", "using flat retained q50 to hide or ignore first-input latency",
+	"Pattern wait replacement", "local wait candidates exist, rollout is readiness/topology gated", 3, 3, 3, 5, 3, "pattern matrices; resource-readiness audit; fixed-wait fallback analysis; consensus roadmap", "predicate plus resource-quiet validation with preview/canvas and CI/container lanes", "replacing sleeps from local q50 or pure `getBlockPatterns` readiness alone",
+	"Selector/source guard", "source-cost target is converged, safe patch claim needs behavior gates", 4, 3, 4, 5, 3, "source-span fanout; behavior-gate audit; first-patch unit coverage; handoff contract", "behavior fixtures plus targeted source-span collapse before aggregate p50", "citing aggregate p50 before behavior and source-span gates pass",
+	"Store subscriber partition", "fanout target is real, public compatibility is not proven", 3, 4, 4, 5, 4, "marker fanout; public/private side-channel audits; compatibility runbook; decision-binding audit", "public subscriber, persistence-selector, dynamic dependency, and cross-store compatibility matrix", "treating listener-count reduction or private side-channel wins as public API safety",
+	"Product workload generalization", "fixed-`x` benchmark evidence is converged, product generalization is blocked", 2, 3, 5, 4, 5, "workload strata audit; claim proof chain; marginal-evidence audit; consensus roadmap", "synthetic and recorded replay strata with assertions and source spans", "adding more fixed-`x` samples and calling them product coverage",
+	"External display endpoint", "Chromium-internal endpoint evidence is bounded, physical display is unmeasured", 2, 3, 5, 4, 5, "visual endpoint ladder; display-boundary audit; proof-chain scope; consensus roadmap", "calibrated external OCR/present/camera endpoint joined to retained keys", "calling screenshots, Paint, or DrawFrame hardware display latency",
+	"CI pass/fail policy", "repository q50 production is understood, pass/fail policy is external", 2, 3, 5, 5, 5, "reporter/source audit; decision-binding audit; conflict-resolution audit; consensus roadmap", "dashboard or reviewer policy join against archived CI artifacts", "treating printed q50 or local q50 movement as the pass/fail rule"
+) %>%
+	left_join(
+		open_question_consensus_roadmap %>%
+			select(question_family, lane, consensus_state, decision_quadrant, next_action),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		convergence_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence ordering",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime mechanism",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector guard",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "external display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		convergence_strength = direct_evidence_score + negative_control_score + same_harness_saturation_score + decision_specificity_score,
+		open_dependency_pressure = external_dependency_score + (5 - direct_evidence_score) + (5 - decision_specificity_score),
+		analysis_state = case_when(
+			convergence_strength >= 18 & external_dependency_score <= 2 ~ "closed locally",
+			convergence_strength >= 16 & external_dependency_score >= 5 ~ "broad claim blocked",
+			convergence_strength >= 16 ~ "action gate",
+			external_dependency_score >= 5 ~ "observer or policy blocked",
+			TRUE ~ "needs targeted validation"
+		),
+		analysis_state = factor(
+			analysis_state,
+			levels = c("closed locally", "action gate", "needs targeted validation", "observer or policy blocked", "broad claim blocked")
+		)
+	)
+
+open_question_convergence_audit_long <- open_question_convergence_audit %>%
+	select(
+		question_family,
+		question_label,
+		lane,
+		analysis_state,
+		direct_evidence_score,
+		negative_control_score,
+		same_harness_saturation_score,
+		decision_specificity_score,
+		external_dependency_score
+	) %>%
+	pivot_longer(
+		cols = c(
+			direct_evidence_score,
+			negative_control_score,
+			same_harness_saturation_score,
+			decision_specificity_score,
+			external_dependency_score
+		),
+		names_to = "convergence_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		convergence_dimension = recode(
+			convergence_dimension,
+			direct_evidence_score = "direct evidence",
+			negative_control_score = "negative controls",
+			same_harness_saturation_score = "same-harness saturated",
+			decision_specificity_score = "decision specificity",
+			external_dependency_score = "external dependency"
+		),
+		convergence_dimension = factor(
+			convergence_dimension,
+			levels = c("direct evidence", "negative controls", "same-harness saturated", "decision specificity", "external dependency")
+		),
+		question_label = fct_reorder(question_label, as.numeric(analysis_state), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_convergence_audit %>%
+		select(
+			question_family,
+			lane,
+			consensus_state,
+			decision_quadrant,
+			next_action,
+			analysis_state,
+			audit_conclusion,
+			converging_audits,
+			remaining_dependency,
+			wrong_next_analysis,
+			direct_evidence_score,
+			negative_control_score,
+			same_harness_saturation_score,
+			decision_specificity_score,
+			external_dependency_score,
+			convergence_strength,
+			open_dependency_pressure
+		),
+	file.path(data_dir, "typing-delay-open-question-convergence-audit.csv")
+)
+
+write_csv(
+	open_question_convergence_audit_long,
+	file.path(data_dir, "typing-delay-open-question-convergence-audit-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_convergence_audit_long, aes(convergence_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.7, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Score") +
+		labs(
+			title = "Open-question conclusions converge, but broad claims still need different evidence",
+			subtitle = "High same-harness saturation means repeat local sweeps have low value; high external dependency marks observer or policy blockers",
+			x = "Convergence dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"260-open-question-convergence-audit.png",
+	width = 13.4,
+	height = 8.4
+)
+
+open_question_convergence_strength_plot <- open_question_convergence_audit %>%
+	group_by(open_dependency_pressure, convergence_strength) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.18),
+		point_open_dependency_pressure = open_dependency_pressure + overlap_radius * cos(overlap_angle),
+		point_convergence_strength = convergence_strength + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_open_dependency_pressure = point_open_dependency_pressure + if_else(label_left, -0.08, 0.08),
+		label_convergence_strength = point_convergence_strength + case_when(
+			overlap_count == 1L ~ 0,
+			overlap_index %% 2L == 1L ~ 0.14,
+			TRUE ~ -0.14
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_convergence_strength_plot,
+		aes(point_open_dependency_pressure, point_convergence_strength, color = analysis_state, size = external_dependency_score)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_open_dependency_pressure,
+				y = label_convergence_strength,
+				label = str_wrap(convergence_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Set1", name = "Analysis state") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "External dependency") +
+		scale_x_continuous(breaks = 0:10, limits = c(-0.2, 10.8)) +
+		scale_y_continuous(breaks = seq(12, 20, by = 2), limits = c(11.8, 20.8)) +
+		labs(
+			title = "Strong convergence can still leave broad claims blocked",
+			subtitle = "High convergence with high dependency means the next work is a new observer or policy join, not more same-harness samples",
+			x = "Open-dependency pressure",
+			y = "Convergence strength"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"261-open-question-convergence-strength.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
