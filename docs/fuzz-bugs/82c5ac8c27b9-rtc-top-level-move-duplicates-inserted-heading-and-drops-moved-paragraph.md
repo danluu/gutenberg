@@ -114,6 +114,37 @@ Received: Inserted paragraph, Emoji and multibyte, Emoji and multibyte
 That confirms the known-fixes base still misses this same-member stale-order
 case, even though it already contains earlier stale-snapshot reconciliation.
 
+Pass 38 added an independent lower-level repro that keeps the same stale-order
+sequence but makes the remote insert a heading, matching this signature's
+stored bug name more directly:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts --testNamePattern="preserves a remotely inserted heading and the moved paragraph after a stale top-level move"
+```
+
+Result on the fixed branch: passed.
+
+Result on the known-fixes base, with only the repro tests applied: failed
+deterministically. The receiving document became:
+
+```text
+Inserted heading
+Moved paragraph
+Moved paragraph
+```
+
+instead of:
+
+```text
+Inserted heading
+Sibling paragraph
+Moved paragraph
+```
+
+That gives a second non-Playwright proof that the unfixed algorithm treats a
+stale full snapshot as authoritative top-level order and overwrites a sibling
+by index.
+
 Focused unit repro:
 
 ```bash
@@ -128,7 +159,7 @@ Full CRDT block unit file:
 npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts
 ```
 
-Result: passed, 72 tests.
+Result after the pass 38 heading repro: passed, 73 tests.
 
 Natural Playwright repro against the fixed branch:
 
