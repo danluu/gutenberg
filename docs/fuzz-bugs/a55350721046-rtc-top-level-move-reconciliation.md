@@ -163,6 +163,24 @@ failed to create network wp-env-gutenberg-bug-a55350721046-test-82fb78c1_default
 
 Running containers were attached to the existing `wp-env` bridge networks, so pass 45 did not stop unrelated environments. The pass-44 fixed-branch Playwright JSON was copied into the pass-45 evidence directory and still shows both editors converged to `inserted paragraph`, `another paragraph`, `emoji paragraph`. Pass 45 also created a new headless annotated video from the source screenshots, action log, low-level controls, and fixed-branch verification artifacts.
 
+Pass 46 repeated the corrected focused controls after fetching `origin/trunk`, which still resolved to:
+
+```text
+02bfdaa5ca9 RTC: Fix divergence when two offline users reconnect (#77980)
+```
+
+Current trunk plus only regression commit `d71d0bc87fe` failed all three focused repros. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, plus the same regression commit, passed the two stale Y.Doc cases and failed only `observes reordered blocks when the editor reuses the same block array reference`. The fixed PR branch passed the same focused set, the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`76` tests), targeted JS lint, and `git diff --check`.
+
+Pass 46 also restored fresh browser coverage on the requested `.wp-env.test.json` port family. With `WP_ENV_PORT=9905`, `WP_BASE_URL=http://localhost:9905`, `RTC_MANIFEST_WS_START_PORT=20440`, and `RTC_MANIFEST_WS_FIXED_PORT=1`, the fixed PR branch passed the one-attempt natural-user Playwright repro in 23.1s. The emitted attempt JSON showed both editors converged to:
+
+```text
+RTC ec47 realistic inserted paragraph 1
+Another paragraph exists so the top-level list is not degenerate.
+Emoji and multibyte: hi ..., こんにちは, مرحبا.
+```
+
+This pass verifies that the existing branch, branch ordering, natural-user repro, and fix still satisfy the requested standard on the current fetched trunk. The additional fresh browser pass removes the pass-45 Docker-network caveat.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
