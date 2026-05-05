@@ -105,6 +105,14 @@ failed to create network wp-env-gutenberg-bug-a55350721046-09e684eb_default: Err
 
 That environment failure does not affect the classification: every active `wp-env` bridge network had running containers attached, so the pass did not stop unrelated environments, and the prior fixed-branch headless Playwright run remains the latest feasible natural-user-action browser verification.
 
+Pass 42 refreshed the same controls after `origin/trunk` advanced to:
+
+```text
+02bfdaa5ca9 RTC: Fix divergence when two offline users reconnect (#77980)
+```
+
+That new trunk commit only changes the HTTP polling sync server and a changelog entry, not the CRDT block merge code. With only the regression-test commit applied to current trunk, all three focused repros still fail. With the same regression tests applied to the known-fixes base, the two stale-snapshot Y.Doc repros still pass and the same-array-reference reorder repro still fails. The rebased PR branch passes the three focused repros, the full `crdt-blocks` unit file, targeted JS lint, and `git diff --check`. This is the pass-42 narrower root-cause proof: an editor can lose a top-level move without any Playwright, HTTP polling, readiness wait, or second browser involved, solely because `mergeCrdtBlocks()` reuses a stale serialized result for a mutated block-array object.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
