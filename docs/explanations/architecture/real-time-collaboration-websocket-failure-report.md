@@ -88,9 +88,9 @@ Fresh annotated video for the current-baseline user-visible failure:
 Fresh annotated video for the residual table follow-up repro:
 
 - table follow-up visible divergence:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence.mp4`;
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence-fullwindow.mp4`;
 - table follow-up action log:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence-action-log.md`.
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence-fullwindow-action-log.md`.
 
 Superseded artifacts that should not be cited as current proof:
 
@@ -102,6 +102,8 @@ Superseded artifacts that should not be cited as current proof:
 - `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-content-loss-current-known-fixes.mp4`
   asserted table loss from a stale internal value while the visible table
   content was still correct.
+- `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence.mp4`
+  showed a schematic table rendering instead of full editor viewports.
 
 Existing list-move videos are still useful for the user-visible failure shape,
 but they are not proof from the latest current-baseline rerun:
@@ -221,7 +223,7 @@ Current evidence:
 - follow-up natural workflow diagnostics:
   `/tmp/gutenberg-rtc-table-0ZTLQF/repo/test/e2e/artifacts/rtc-table-followups/result.json`;
 - follow-up annotated video:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence.mp4`;
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence-fullwindow.mp4`;
 - final screenshots:
   `/tmp/gutenberg-rtc-table-0ZTLQF/repo/test/e2e/artifacts/rtc-table-followups/browser-a-final.png`
   and
