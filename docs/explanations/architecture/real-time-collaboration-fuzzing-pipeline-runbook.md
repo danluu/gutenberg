@@ -88,6 +88,39 @@ transport stacks without mixing them in the same `wp-env`.
 Do not run `wp-env clean`, stop shared fuzz `wp-env`s, or restart shared services
 while lanes or browser triage jobs are active.
 
+## Stale wp-env Cleanup
+
+Long fuzz and triage campaigns can leave old `wp-env` Docker Compose projects
+behind. Stopped containers can keep old compose networks attached, which can
+eventually exhaust Docker/OrbStack bridge network address space.
+
+The watchdog runs a conservative cleanup pass by default:
+
+```bash
+node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --apply --json --min-age-hours=24
+```
+
+Safety properties:
+
+- only resources with Docker Compose labels whose working dir/config is under `~/.wp-env`, or whose compose project has a matching directory under `~/.wp-env`, are considered
+- running containers are never stopped or removed
+- a compose project is protected if any container in that project is running
+- only stopped containers older than the age threshold are removed
+- only unused wp-env compose networks older than the age threshold are removed
+- Docker volumes and `~/.wp-env` directories are reported but not deleted
+
+Useful manual dry run:
+
+```bash
+node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --json --min-age-hours=24
+```
+
+Watchdog controls:
+
+- `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV=0`: disable cleanup
+- `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_INTERVAL_MS=1800000`: cleanup interval
+- `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS=24`: minimum resource age
+
 ## Group Config
 
 The supervisor reads `RTC_FUZZ_SUPERVISOR_GROUPS_PATH` or

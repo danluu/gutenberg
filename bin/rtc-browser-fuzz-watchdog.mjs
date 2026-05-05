@@ -28,6 +28,16 @@ const STALE_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_WATCHDOG_STALE_MS',
 	Math.max( SUPERVISOR_POLL_MS * 6, 8 * 60 * 1000 )
 );
+const CLEANUP_STALE_WP_ENV =
+	process.env.RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV !== '0';
+const CLEANUP_STALE_WP_ENV_INTERVAL_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_INTERVAL_MS',
+	30 * 60 * 1000
+);
+const CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS = getPositiveIntegerEnv(
+	'RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS',
+	24
+);
 
 if ( ! OUTPUT_DIR ) {
 	throw new Error( 'RTC_FUZZ_WATCHDOG_OUTPUT_DIR is required.' );
@@ -40,6 +50,11 @@ const WATCHDOG_STATE_PATH = path.join( OUTPUT_DIR, 'watchdog-state.json' );
 const WATCHDOG_LOG_PATH = path.join( OUTPUT_DIR, 'watchdog.log' );
 const WATCHDOG_EVENTS_PATH = path.join( OUTPUT_DIR, 'watchdog-events.ndjson' );
 const SUPERVISOR_STATE_PATH = path.join( OUTPUT_DIR, 'supervisor-state.json' );
+const CLEANUP_SCRIPT_PATH = path.join(
+	REPO_ROOT,
+	'bin/rtc-fuzz-cleanup-stale-wp-env.mjs'
+);
+let lastCleanupAt = 0;
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -171,6 +186,74 @@ function getStateAgeMs( supervisorState ) {
 	return Date.now() - Date.parse( supervisorState.lastUpdatedAt );
 }
 
+function summarizeCleanupReport( report ) {
+	return {
+		dryRun: report.dryRun,
+		minAgeHours: report.minAgeHours,
+		activeProjects: report.activeProjects?.length ?? 0,
+		containerCandidates:
+			report.containers?.removeCandidates?.length ?? 0,
+		containersRemoved: report.containers?.removed?.length ?? 0,
+		networkCandidates: report.networks?.removeCandidates?.length ?? 0,
+		networksRemoved: report.networks?.removed?.length ?? 0,
+		staleWpEnvDirectoryCount:
+			report.staleWpEnvDirectories?.count ?? 0,
+		containerErrors: report.containers?.errors?.length ?? 0,
+		networkErrors: report.networks?.errors?.length ?? 0,
+	};
+}
+
+async function maybeCleanupStaleWpEnv() {
+	if ( ! CLEANUP_STALE_WP_ENV ) {
+		return;
+	}
+	if ( Date.now() - lastCleanupAt < CLEANUP_STALE_WP_ENV_INTERVAL_MS ) {
+		return;
+	}
+	lastCleanupAt = Date.now();
+
+	const result = await runCommand( process.execPath, [
+		CLEANUP_SCRIPT_PATH,
+		'--apply',
+		'--json',
+		`--min-age-hours=${ CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS }`,
+	] );
+
+	if ( ! result.ok ) {
+		const output = result.stderr || result.stdout || `code=${ result.code }`;
+		await log( `stale wp-env cleanup failed: ${ output.trim() }` );
+		await event( {
+			kind: 'wp-env-cleanup-failed',
+			output,
+			code: result.code,
+		} );
+		return;
+	}
+
+	let report;
+	try {
+		report = JSON.parse( result.stdout );
+	} catch {
+		await log(
+			`stale wp-env cleanup returned non-JSON output: ${ result.stdout.trim() }`
+		);
+		await event( {
+			kind: 'wp-env-cleanup-failed',
+			output: result.stdout,
+		} );
+		return;
+	}
+
+	const summary = summarizeCleanupReport( report );
+	await log(
+		`stale wp-env cleanup: removed ${ summary.containersRemoved } container(s), ${ summary.networksRemoved } network(s); candidates ${ summary.containerCandidates } container(s), ${ summary.networkCandidates } network(s); stale dirs reported ${ summary.staleWpEnvDirectoryCount }.`
+	);
+	await event( {
+		kind: 'wp-env-cleanup',
+		...summary,
+	} );
+}
+
 async function monitorOnce() {
 	const hasSession = await hasSupervisorSession();
 	const supervisorState = await readJsonFile( SUPERVISOR_STATE_PATH );
@@ -226,11 +309,15 @@ await event( {
 	outputDir: OUTPUT_DIR,
 	groupsPath: GROUPS_PATH,
 	staleMs: STALE_MS,
+	cleanupStaleWpEnv: CLEANUP_STALE_WP_ENV,
+	cleanupStaleWpEnvIntervalMs: CLEANUP_STALE_WP_ENV_INTERVAL_MS,
+	cleanupStaleWpEnvMinAgeHours: CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS,
 } );
 
 while ( true ) {
 	try {
 		await monitorOnce();
+		await maybeCleanupStaleWpEnv();
 	} catch ( error ) {
 		await log( error.stack ?? error.message );
 		await event( { kind: 'error', error: error.stack ?? error.message } );
