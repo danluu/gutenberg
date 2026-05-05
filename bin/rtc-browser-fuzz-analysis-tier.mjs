@@ -80,6 +80,18 @@ const TRANSIENT_CODEX_STARTUP_BACKOFF_MS = getPositiveIntegerEnv(
 const activeJobs = new Map();
 let shuttingDown = false;
 
+const TRANSIENT_CODEX_STARTUP_PATTERNS = [
+	'Failed to load cloud requirements',
+	'workspace-managed policies',
+	'failed to refresh available models',
+	'error sending request for url (https://chatgpt.com/backend-api/codex/models',
+	'http/request failed: error sending request for url',
+	'failed to connect to websocket',
+	'failed to lookup address information',
+	'stream disconnected before completion',
+	'wss://chatgpt.com/backend-api/codex/responses',
+];
+
 function getPositiveIntegerEnv( name, defaultValue ) {
 	const raw = process.env[ name ];
 	if ( raw === undefined || raw === '' ) {
@@ -188,8 +200,9 @@ async function isTransientCodexStartupFailure( job ) {
 	}
 
 	return (
-		stderr.includes( 'Failed to load cloud requirements' ) ||
-		stderr.includes( 'workspace-managed policies' )
+		TRANSIENT_CODEX_STARTUP_PATTERNS.some( ( pattern ) =>
+			stderr.includes( pattern )
+		)
 	);
 }
 
@@ -197,7 +210,7 @@ function markTransientCodexStartupRetry( job ) {
 	job.pid = null;
 	job.status = 'retry';
 	job.transientFailureCount = ( job.transientFailureCount ?? 0 ) + 1;
-	job.transientFailureReason = 'codex-cloud-requirements';
+	job.transientFailureReason = 'codex-startup-connectivity';
 	job.nextAttemptAt = new Date(
 		Date.now() + TRANSIENT_CODEX_STARTUP_BACKOFF_MS
 	).toISOString();
