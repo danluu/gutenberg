@@ -1157,7 +1157,7 @@ describe( 'saveEntityRecord', () => {
 			'postType/post',
 			10,
 			updatedRecord,
-			undefined,
+			'local-undo-ignored',
 			{ isSave: true }
 		);
 		expect( result ).toBe( updatedRecord );

@@ -666,7 +666,8 @@ function createYValueFromSchema(
 					item,
 					arrayElementPath
 						? `${ arrayElementPath }/${ index }`
-						: undefined
+						: undefined,
+					true
 				)
 			)
 		);
@@ -695,22 +696,26 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query          The query schema defining the properties.
- * @param obj            The plain object to convert.
- * @param arrayElementId Optional stable ID for this array element.
+ * @param query            The query schema defining the properties.
+ * @param obj              The plain object to convert.
+ * @param arrayElementPath Optional stable path for nested array elements.
+ * @param isArrayElement   Whether this map represents a query-array element.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
 	query: Record< string, BlockAttributeSchema >,
 	obj: unknown,
-	arrayElementId?: string
+	arrayElementPath?: string,
+	isArrayElement = false
 ): Y.Map< unknown > {
 	if ( ! isRecord( obj ) ) {
 		return new Y.Map();
 	}
 
-	const resolvedArrayElementId =
-		getArrayElementId( obj ) ?? arrayElementId ?? uuidv4();
+	const resolvedArrayElementId = isArrayElement
+		? getArrayElementId( obj ) ?? arrayElementPath ?? uuidv4()
+		: getArrayElementId( obj );
+	const pathPrefix = resolvedArrayElementId ?? arrayElementPath;
 	const entries: [ string, unknown ][] = Object.entries( obj )
 		.filter( ( [ key ] ) => key !== ARRAY_ELEMENT_ID_KEY )
 		.map( ( [ key, val ] ): [ string, unknown ] => {
@@ -720,12 +725,14 @@ function createYMapFromQuery(
 				createYValueFromSchema(
 					subSchema,
 					val,
-					`${ resolvedArrayElementId }/${ key }`
+					pathPrefix ? `${ pathPrefix }/${ key }` : undefined
 				),
 			];
 		} );
 
-	entries.push( [ ARRAY_ELEMENT_ID_KEY, resolvedArrayElementId ] );
+	if ( resolvedArrayElementId ) {
+		entries.push( [ ARRAY_ELEMENT_ID_KEY, resolvedArrayElementId ] );
+	}
 
 	return new Y.Map( entries );
 }
@@ -1188,7 +1195,8 @@ function mergeYArrayByElementIds(
 					newElement,
 					[ ...cursorScope.attributePath, String( index ) ].join(
 						'/'
-					)
+					),
+					true
 				),
 			] );
 		}
@@ -1441,7 +1449,8 @@ function mergeYArray(
 						[
 							...cursorScope.attributePath,
 							String( index ),
-						].join( '/' )
+						].join( '/' ),
+						true
 					)
 				)
 			);
@@ -1475,7 +1484,8 @@ function mergeYArray(
 				[
 					...cursorScope.attributePath,
 					String( insertAt + i ),
-				].join( '/' )
+				].join( '/' ),
+				true
 			);
 		}
 
