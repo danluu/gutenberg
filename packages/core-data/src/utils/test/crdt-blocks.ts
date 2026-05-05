@@ -32,6 +32,17 @@ jest.mock( '@wordpress/blocks', () => ( {
 			attributes: { content: { type: 'rich-text' } },
 		},
 		{
+			name: 'core/list',
+			attributes: {
+				ordered: { type: 'boolean' },
+				values: { type: 'rich-text' },
+			},
+		},
+		{
+			name: 'core/list-item',
+			attributes: { content: { type: 'rich-text' } },
+		},
+		{
 			name: 'core/image',
 			attributes: {
 				blob: { type: 'string', role: 'local' },
@@ -128,6 +139,38 @@ function createCursorSelection( offset: number ): WPBlockSelection {
 		clientId: 'block-1',
 		offset: asRichTextOffset( offset ),
 	};
+}
+
+function createListBlock( items: string[] ): Block[] {
+	return [
+		{
+			name: 'core/list',
+			attributes: { ordered: false, values: '' },
+			innerBlocks: items.map( ( item ) => ( {
+				name: 'core/list-item',
+				attributes: { content: item },
+				innerBlocks: [],
+				clientId: `list-item-${ item.toLowerCase() }`,
+			} ) ),
+			clientId: 'list-block',
+		},
+	];
+}
+
+function getListItemContents( blocks: YBlocks ): string[] {
+	const listBlock = blocks.get( 0 );
+	const innerBlocks = listBlock.get( 'innerBlocks' ) as YBlocks;
+
+	return Array.from( { length: innerBlocks.length }, ( _, index ) => {
+		const attributes = innerBlocks
+			.get( index )
+			.get( 'attributes' ) as YBlockAttributes;
+		const content = attributes.get( 'content' );
+
+		return content instanceof Y.Text
+			? content.toString()
+			: String( content );
+	} );
 }
 
 describe( 'crdt-blocks', () => {
@@ -734,6 +777,131 @@ describe( 'crdt-blocks', () => {
 				 ).get( 'content' ) as Y.Text;
 				expect( content.toString() ).toBe( expectedContent );
 			} );
+		} );
+
+		it( 'preserves concurrent non-overlapping list item moves', () => {
+			const initialBlocks = createListBlock( [
+				'Alpha',
+				'Beta',
+				'Gamma',
+				'Delta',
+				'Epsilon',
+				'Zeta',
+			] );
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			const doc2 = new Y.Doc();
+			const yblocks2 = doc2.getArray< YBlock >();
+			Y.applyUpdate( doc2, Y.encodeStateAsUpdate( doc ) );
+
+			mergeCrdtBlocks(
+				yblocks,
+				createListBlock( [
+					'Alpha',
+					'Gamma',
+					'Beta',
+					'Delta',
+					'Epsilon',
+					'Zeta',
+				] ),
+				null
+			);
+
+			mergeCrdtBlocks(
+				yblocks2,
+				createListBlock( [
+					'Alpha',
+					'Beta',
+					'Gamma',
+					'Epsilon',
+					'Delta',
+					'Zeta',
+				] ),
+				null
+			);
+
+			const updateA = Y.encodeStateAsUpdate( doc );
+			const updateB = Y.encodeStateAsUpdate( doc2 );
+			Y.applyUpdate( doc2, updateA );
+			Y.applyUpdate( doc, updateB );
+
+			for ( const checkBlocks of [ yblocks, yblocks2 ] ) {
+				expect( getListItemContents( checkBlocks ) ).toEqual( [
+					'Alpha',
+					'Gamma',
+					'Beta',
+					'Epsilon',
+					'Delta',
+					'Zeta',
+				] );
+			}
+
+			doc2.destroy();
+		} );
+
+		it( 'preserves list item moves when clients independently initialized the same post', () => {
+			const initialBlocks = createListBlock( [
+				'Alpha',
+				'Beta',
+				'Gamma',
+				'Delta',
+				'Epsilon',
+				'Zeta',
+			] );
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			const doc2 = new Y.Doc();
+			const yblocks2 = doc2.getArray< YBlock >();
+			mergeCrdtBlocks( yblocks2, initialBlocks, null );
+
+			Y.applyUpdate( doc2, Y.encodeStateAsUpdate( doc ) );
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( doc2 ) );
+
+			mergeCrdtBlocks(
+				yblocks,
+				createListBlock( [
+					'Alpha',
+					'Gamma',
+					'Beta',
+					'Delta',
+					'Epsilon',
+					'Zeta',
+				] ),
+				null
+			);
+
+			mergeCrdtBlocks(
+				yblocks2,
+				createListBlock( [
+					'Alpha',
+					'Beta',
+					'Gamma',
+					'Epsilon',
+					'Delta',
+					'Zeta',
+				] ),
+				null
+			);
+
+			const updateA = Y.encodeStateAsUpdate( doc );
+			const updateB = Y.encodeStateAsUpdate( doc2 );
+			Y.applyUpdate( doc2, updateA );
+			Y.applyUpdate( doc, updateB );
+
+			for ( const checkBlocks of [ yblocks, yblocks2 ] ) {
+				expect( getListItemContents( checkBlocks ) ).toEqual( [
+					'Alpha',
+					'Gamma',
+					'Beta',
+					'Epsilon',
+					'Delta',
+					'Zeta',
+				] );
+			}
+
+			doc2.destroy();
 		} );
 
 		it( 'handles many deletions (10 blocks to 2 blocks)', () => {

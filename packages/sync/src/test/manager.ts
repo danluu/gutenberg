@@ -105,6 +105,7 @@ describe( 'SyncManager', () => {
 	} );
 
 	afterEach( () => {
+		jest.useRealTimers();
 		jest.restoreAllMocks();
 	} );
 
@@ -503,7 +504,7 @@ describe( 'SyncManager', () => {
 			jest.clearAllMocks();
 			manager.update( 'post', '456', { title: 'Updated' }, 'local' );
 
-			// Wait a tick for yieldToEventLoop.
+			// Wait a tick for the deferred CRDT update.
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			expect( mockSyncConfig.applyChangesToCRDTDoc ).toHaveBeenCalled();
@@ -534,7 +535,7 @@ describe( 'SyncManager', () => {
 			const changes = { title: 'Updated Title' };
 			manager.update( 'post', '123', changes, 'local-editor' );
 
-			// Wait a tick for yieldToEventLoop.
+			// Wait a tick for the deferred CRDT update.
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			// Verify that applyChangesToCRDTDoc was called with the changes.
@@ -550,13 +551,87 @@ describe( 'SyncManager', () => {
 			expect( stateMap.get( SAVED_BY_KEY ) ).toBeUndefined();
 		} );
 
+		it( 'flushes queued local changes before remote CRDT updates read the edited record', async () => {
+			let capturedDoc: Y.Doc | null = null;
+			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+				capturedDoc = ydoc;
+				return mockProviderResult;
+			} );
+			mockRecord = {
+				id: '123',
+				title: 'Initial Title',
+				meta: {},
+			};
+			mockHandlers.getEditedRecord.mockImplementation( async () =>
+				Promise.resolve( mockRecord )
+			);
+			mockSyncConfig.applyChangesToCRDTDoc.mockImplementation(
+				( ydoc, changes ) => {
+					const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+					Object.entries( changes ).forEach( ( [ key, value ] ) => {
+						ymap.set( key, value );
+					} );
+				}
+			);
+
+			const manager = createSyncManager();
+			await manager.load(
+				mockSyncConfig,
+				'post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+
+			jest.useFakeTimers();
+			jest.clearAllMocks();
+
+			mockRecord = {
+				...mockRecord,
+				title: 'Local Title',
+				body: 'Initial Body',
+			};
+			manager.update( 'post', '123', { title: 'Local Title' }, 'local' );
+
+			const ydoc = capturedDoc as unknown as Y.Doc;
+			const remoteDoc = new Y.Doc();
+			remoteDoc
+				.getMap( CRDT_RECORD_MAP_KEY )
+				.set( 'body', 'Remote Body' );
+			Y.applyUpdateV2(
+				ydoc,
+				Y.encodeStateAsUpdateV2( remoteDoc ),
+				'remote'
+			);
+
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect( mockHandlers.editRecord ).not.toHaveBeenCalled();
+
+			await jest.runOnlyPendingTimersAsync();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect( mockHandlers.editRecord ).toHaveBeenCalledTimes( 1 );
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
+				body: 'Remote Body',
+			} );
+			expect( mockHandlers.editRecord ).not.toHaveBeenCalledWith(
+				expect.objectContaining( {
+					title: 'Initial Title',
+				} )
+			);
+			remoteDoc.destroy();
+		} );
+
 		it( 'does not update when entity is not loaded', async () => {
 			const manager = createSyncManager();
 
 			const changes = { title: 'Updated Title' };
 			manager.update( 'post', '999', changes, 'local-editor' );
 
-			// Wait a tick for yieldToEventLoop.
+			// Wait a tick for the deferred CRDT update.
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			expect(
@@ -596,7 +671,7 @@ describe( 'SyncManager', () => {
 
 			manager.update( 'post', '123', changes, customOrigin );
 
-			// Wait a tick for yieldToEventLoop.
+			// Wait a tick for the deferred CRDT update.
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			expect( transactSpy ).toHaveBeenCalledWith(
@@ -632,7 +707,7 @@ describe( 'SyncManager', () => {
 				isSave: true,
 			} );
 
-			// Wait a tick for yieldToEventLoop.
+			// Wait a tick for the deferred CRDT update.
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			// Verify that applyChangesToCRDTDoc was called with the changes.
