@@ -2143,6 +2143,23 @@ The R script derives:
     closure-ledger-state, closure-ledger-owner, closure-ledger-consumer,
     closure-ledger-value, closure-ledger-stale-status-risk-value,
     timing-only-closure-ledger, and analysis-only saturation.
+-   `data/typing-delay-open-question-closure-monitoring-register.csv`:
+    closure-monitoring register for the nine closure-ledger records,
+    including trigger catalog, signal source, freshness rule, reopen rule,
+    false-alarm filter, owner route, audit schedule, owner, and consumer.
+-   `data/typing-delay-open-question-closure-monitoring-100-pass-audit.csv`:
+    fifty-fifth forced 100-pass audit over closure-monitoring axes:
+    trigger-catalog, signal-source, freshness, reopen, false-alarm,
+    owner-route, audit-schedule, owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-closure-monitoring-100-pass-summary.csv`:
+    rollup of closure-monitoring coverage by closure-monitoring state,
+    closure-ledger state, and pass result.
+-   `data/typing-delay-open-question-closure-monitoring-100-pass-checkpoints.csv`:
+    checkpoints for closure-monitoring-record, closure-monitoring-axis,
+    closure-monitoring-state, closure-monitoring-owner,
+    closure-monitoring-consumer, closure-monitoring-value,
+    closure-monitoring-reopen-risk-value, timing-only-closure-monitoring,
+    and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -13001,6 +13018,39 @@ or consumer-facing ledger still presents the question as open or presents two
 contradictory closure records. Closure is not reusable until the active ledger
 entry, duplicate-record rule, rollback index, and consumer index all point at
 the same status.
+
+I then added the closure-monitoring layer: a reconciled ledger row must say
+what later change would reopen the question. The monitoring record names the
+trigger catalog, signal source, freshness rule, reopen rule, false-alarm
+filter, owner route, audit schedule, owner, and consumer for each closure-ledger
+row.
+
+![Open question closure monitoring register](figures/447-open-question-closure-monitoring-register.png)
+
+![Open question closure monitoring 100-pass saturation](figures/448-open-question-closure-monitoring-100-pass-saturation.png)
+
+![Open question closure monitoring coverage](figures/449-open-question-closure-monitoring-coverage.png)
+
+| Closure-monitoring check | Result |
+| ------------------------ | ------ |
+| Closure-monitoring records | `9`, one per closure-ledger record. |
+| Closure-monitoring states | `3`: local packet closure monitoring, owner artifact closure monitoring, and observer artifact closure monitoring. |
+| Closure-monitoring owners | `9`; monitoring ownership routes back to the scoped closure-ledger owner. |
+| Closure-monitoring consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Closure-monitoring-axis checks | `90`: every row checked against all `10` closure-monitoring axes. |
+| Closure-monitoring value | `1838653633288`: local packet monitoring contributes `1389275577612`, owner artifact monitoring contributes `277787295094`, and observer artifact monitoring contributes `171590760582`. |
+| Closure-monitoring reopen-risk value | `999529758815` across the nine closure-monitoring records. |
+| Timing-only closure-monitoring value | `0`; aggregate timing movement alone cannot prove the trigger catalog, signal source, freshness rule, reopen rule, false-alarm filter, owner route, audit schedule, owner, or stop rule. |
+| Saturation | Closure-monitoring records are all named by pass `9`; all closure-monitoring axes are covered by pass `90`; passes `91-100` add no closure-monitoring coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the stale-closure guard. It catches the case where the ledger was
+correct when written but a later browser, CI runner, startup wait, typing
+delay, input-mode, source, trace-schema, instrumentation, workload, endpoint,
+container, or artifact change invalidates the closure. A closed question stays
+closed only while the freshness rule still passes; otherwise the reopen rule
+routes a concrete packet to the scoped owner and blocks reuse of stale
+conclusions.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

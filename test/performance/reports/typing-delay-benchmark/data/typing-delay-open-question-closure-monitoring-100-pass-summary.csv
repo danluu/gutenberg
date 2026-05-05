@@ -1,0 +1,7 @@
+closure_monitoring_state,closure_ledger_state,pass_result,passes,first_pass,closure_monitoring_records,axis_checks,closure_monitoring_owners,closure_monitoring_consumers,closure_monitoring_value,closure_monitoring_reopen_risk_value,timing_only_closure_monitoring_value,analysis_only_value
+local packet closure monitoring,local packet closure ledger,closure monitoring: local packet,40,1,4,40,4,3,1389275577612,755238647417,0,0
+owner artifact closure monitoring,owner artifact closure ledger,closure monitoring: owner or observer artifact,20,5,2,20,2,2,277787295094,151010860902,0,0
+observer artifact closure monitoring,observer artifact closure ledger,closure monitoring: owner or observer artifact,30,7,3,30,3,3,171590760582,93280250496,0,0
+local packet closure monitoring,local packet closure ledger,repeat: closure-monitoring-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact closure monitoring,owner artifact closure ledger,repeat: closure-monitoring-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact closure monitoring,observer artifact closure ledger,repeat: closure-monitoring-axis already checked,3,97,3,0,3,3,0,0,0,0

@@ -1,0 +1,10 @@
+pass_id,cumulative_closure_monitoring_records,cumulative_closure_monitoring_axes,cumulative_closure_monitoring_states,cumulative_closure_monitoring_owners,cumulative_closure_monitoring_consumers,cumulative_closure_monitoring_value,cumulative_closure_monitoring_reopen_risk_value,cumulative_timing_only_closure_monitoring_value,cumulative_analysis_only_value
+1,1,1,1,1,1,383088619699,208254816860,0,0
+5,5,5,2,5,4,1545287100978,840049705628,0,0
+9,9,9,3,9,8,1838653633288,999529758815,0,0
+10,9,10,3,9,8,1838653633288,999529758815,0,0
+20,9,20,3,9,8,1838653633288,999529758815,0,0
+50,9,50,3,9,8,1838653633288,999529758815,0,0
+90,9,90,3,9,8,1838653633288,999529758815,0,0
+91,9,90,3,9,8,1838653633288,999529758815,0,0
+100,9,90,3,9,8,1838653633288,999529758815,0,0

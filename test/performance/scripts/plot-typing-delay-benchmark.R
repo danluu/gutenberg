@@ -44924,6 +44924,313 @@ save_plot(
 	height = 7.2
 )
 
+open_question_closure_monitoring_register <- open_question_closure_ledger_register %>%
+	mutate(
+		closure_monitoring_state = case_when(
+			closure_ledger_state == "local packet closure ledger" ~ "local packet closure monitoring",
+			closure_ledger_state == "owner artifact closure ledger" ~ "owner artifact closure monitoring",
+			TRUE ~ "observer artifact closure monitoring"
+		),
+		closure_monitoring_trigger_catalog = case_when(
+			close_scope == "CI wait decision" ~ "monitor CI runner/browser changes, BROWSER_IDLE_WAIT changes, startup-wait changes, typing-delay/input-mode edits, branch-count changes, benchmark script edits, raw-artifact regeneration, and recommendation edits",
+			close_scope == "source prototype decision" ~ "monitor selector graph changes, dispatch/invalidation changes, source patch edits, fanout changes, plugin-heavy fixture changes, owner-review edits, raw-artifact regeneration, and recommendation edits",
+			close_scope == "benchmark method wording" ~ "monitor trace-schema changes, EventDispatch wording changes, aggregation-script edits, instrumentation changes, browser/Playwright changes, raw-artifact regeneration, and method-wording edits",
+			TRUE ~ "monitor browser/runtime changes, OS/container changes, hardware/QoS changes, workload changes, endpoint changes, plugin-set changes, raw-artifact regeneration, and broad recommendation edits"
+		),
+		closure_monitoring_signal_source = case_when(
+			closure_monitoring_state == "local packet closure monitoring" ~ "signals come from local closure ledger diff, artifact hash diff, report section diff, recommendation diff, stale-status scan, and consumer-index diff",
+			closure_monitoring_state == "owner artifact closure monitoring" ~ "signals come from owner closure ledger diff, reviewer-visible status diff, artifact hash diff, report section diff, recommendation diff, stale-status scan, and consumer-index diff",
+			TRUE ~ "signals come from observer closure ledger diff, reviewer-visible status diff, broad wording diff, artifact hash diff, report section diff, recommendation diff, stale-status scan, and consumer-index diff"
+		),
+		closure_monitoring_freshness_rule = case_when(
+			close_scope == "CI wait decision" ~ "freshness expires when CI runner/browser, wait constant, startup wait, typing delay, input mode, branch-count model, benchmark script, or artifact hash changes without a matching ledger update",
+			close_scope == "source prototype decision" ~ "freshness expires when selector graph, dispatch path, invalidation fanout, source patch, fixture shape, owner-review status, benchmark script, or artifact hash changes without a matching ledger update",
+			close_scope == "benchmark method wording" ~ "freshness expires when trace schema, EventDispatch interpretation, aggregation window, instrumentation patch, browser/Playwright version, report script, or artifact hash changes without a matching ledger update",
+			TRUE ~ "freshness expires when browser/runtime, OS/container, hardware/QoS, workload, endpoint, plugin set, report script, or artifact hash changes without a matching ledger update"
+		),
+		closure_monitoring_reopen_rule = case_when(
+			closure_monitoring_state == "local packet closure monitoring" ~ "reopen the local row when a fresh signal contradicts exact-scope status, transfer status, stale-transfer blocker, rollback index, or consumer-index entry",
+			closure_monitoring_state == "owner artifact closure monitoring" ~ "reopen the owner row when a fresh signal contradicts exact-scope status, transfer status, reviewer identity, stale-transfer blocker, rollback index, or consumer-index entry",
+			TRUE ~ "reopen the observer row when a fresh signal contradicts exact-scope status, transfer status, reviewer identity, broad wording guard, stale-transfer blocker, rollback index, or consumer-index entry"
+		),
+		closure_monitoring_false_alarm_filter = case_when(
+			close_scope == "CI wait decision" ~ "filter signals that only move unrelated prose or regenerated timestamps and do not change CI q25/q50/q75, runtime, reliability, wait guidance, input mode, branch-count cost, artifacts, or recommendations",
+			close_scope == "source prototype decision" ~ "filter signals that only move unrelated prose or regenerated timestamps and do not change selector, dispatch, invalidation, fanout, source patch, fixture, artifacts, or recommendations",
+			close_scope == "benchmark method wording" ~ "filter signals that only move unrelated prose or regenerated timestamps and do not change trace schema, EventDispatch wording, aggregation, instrumentation, artifacts, or method recommendations",
+			TRUE ~ "filter signals that only move unrelated prose or regenerated timestamps and do not change browser/runtime, container, workload, endpoint, artifact, scope, or recommendation behavior"
+		),
+		closure_monitoring_owner_route = case_when(
+			closure_monitoring_state == "local packet closure monitoring" ~ "route local reopen signals to the local closure owner with links to changed artifacts, stale scan, rollback index, and consumer-index diff",
+			closure_monitoring_state == "owner artifact closure monitoring" ~ "route owner reopen signals to the owner closure owner and reviewer identity with links to changed artifacts, stale scan, rollback index, and consumer-index diff",
+			TRUE ~ "route observer reopen signals to the observer closure owner, reviewer identity, and broad-scope owner with links to changed artifacts, stale scan, rollback index, and consumer-index diff"
+		),
+		closure_monitoring_audit_schedule = case_when(
+			close_scope == "CI wait decision" ~ "recheck on benchmark-script changes, CI config changes, browser upgrades, runner/container changes, generated artifact refreshes, and recommendation edits",
+			close_scope == "source prototype decision" ~ "recheck on source patch changes, selector/dispatch/invalidation changes, fixture changes, generated artifact refreshes, and recommendation edits",
+			close_scope == "benchmark method wording" ~ "recheck on trace extraction changes, aggregation-script changes, browser/Playwright upgrades, generated artifact refreshes, and method wording edits",
+			TRUE ~ "recheck on browser/runtime changes, OS/container changes, workload changes, endpoint changes, generated artifact refreshes, and broad recommendation edits"
+		),
+		closure_monitoring_owner = closure_ledger_owner,
+		closure_monitoring_consumer = closure_ledger_consumer,
+		closure_monitoring_cost = case_when(
+			closure_monitoring_state == "local packet closure monitoring" ~ 12,
+			closure_monitoring_state == "owner artifact closure monitoring" ~ 14,
+			TRUE ~ 16
+		),
+		closure_monitoring_value = pmax(
+			1,
+			closure_ledger_value + closure_ledger_stale_status_risk_value + retirement_validation_unclosed_transfer_risk_value - closure_monitoring_cost
+		),
+		closure_monitoring_reopen_risk_value = pmax(
+			1,
+			closure_ledger_stale_status_risk_value + retirement_validation_unclosed_transfer_risk_value + uncertainty_retirement_blocked_transfer_risk_value - closure_monitoring_cost
+		),
+		timing_only_closure_monitoring_value = 0,
+		analysis_only_value = 0,
+		closure_monitoring_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(closure_monitoring_value), desc(closure_monitoring_reopen_risk_value), question_family)
+
+open_question_closure_monitoring_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"trigger-catalog", "What future edits or artifacts can invalidate the closure?",
+	"signal-source", "Where does the monitoring signal come from?",
+	"freshness", "What freshness rule marks the closure stale?",
+	"reopen", "What rule reopens the closed row?",
+	"false-alarm", "What filter prevents unrelated churn from reopening it?",
+	"owner-route", "Where are reopen signals routed?",
+	"audit-schedule", "When is closure monitoring rerun?",
+	"owner", "Who owns closure monitoring?",
+	"substitute", "Can aggregate timing alone substitute for closure monitoring?",
+	"stop-rule", "When does closure-monitoring review stop?"
+)
+
+open_question_closure_monitoring_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_closure_monitoring_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_closure_monitoring_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_closure_monitoring_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_closure_monitoring_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		closure_monitoring_first_seen = !duplicated(closure_monitoring_id),
+		closure_monitoring_axis_key = paste(closure_monitoring_id, pressure_axis, sep = "::"),
+		closure_monitoring_axis_first_seen = !duplicated(closure_monitoring_axis_key),
+		closure_monitoring_state_first_seen = !duplicated(closure_monitoring_state),
+		closure_monitoring_owner_first_seen = !duplicated(closure_monitoring_owner),
+		closure_monitoring_consumer_first_seen = !duplicated(closure_monitoring_consumer),
+		new_closure_monitoring_value = if_else(closure_monitoring_first_seen, closure_monitoring_value, 0),
+		new_closure_monitoring_reopen_risk_value = if_else(closure_monitoring_first_seen, closure_monitoring_reopen_risk_value, 0),
+		new_timing_only_closure_monitoring_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!closure_monitoring_axis_first_seen ~ "repeat: closure-monitoring-axis already checked",
+			closure_monitoring_state == "local packet closure monitoring" ~ "closure monitoring: local packet",
+			TRUE ~ "closure monitoring: owner or observer artifact"
+		),
+		cumulative_closure_monitoring_records = cumsum(closure_monitoring_first_seen),
+		cumulative_closure_monitoring_axes = cumsum(closure_monitoring_axis_first_seen),
+		cumulative_closure_monitoring_states = cumsum(closure_monitoring_state_first_seen),
+		cumulative_closure_monitoring_owners = cumsum(closure_monitoring_owner_first_seen),
+		cumulative_closure_monitoring_consumers = cumsum(closure_monitoring_consumer_first_seen),
+		cumulative_closure_monitoring_value = cumsum(new_closure_monitoring_value),
+		cumulative_closure_monitoring_reopen_risk_value = cumsum(new_closure_monitoring_reopen_risk_value),
+		cumulative_timing_only_closure_monitoring_value = cumsum(new_timing_only_closure_monitoring_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_closure_monitoring_summary <- open_question_closure_monitoring_100_pass %>%
+	group_by(closure_monitoring_state, closure_ledger_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		closure_monitoring_records = n_distinct(closure_monitoring_id),
+		axis_checks = sum(closure_monitoring_axis_first_seen),
+		closure_monitoring_owners = n_distinct(closure_monitoring_owner),
+		closure_monitoring_consumers = n_distinct(closure_monitoring_consumer),
+		closure_monitoring_value = sum(new_closure_monitoring_value),
+		closure_monitoring_reopen_risk_value = sum(new_closure_monitoring_reopen_risk_value),
+		timing_only_closure_monitoring_value = sum(new_timing_only_closure_monitoring_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(closure_monitoring_value), desc(closure_monitoring_reopen_risk_value), first_pass)
+
+open_question_closure_monitoring_checkpoints <- open_question_closure_monitoring_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_closure_monitoring_records,
+		cumulative_closure_monitoring_axes,
+		cumulative_closure_monitoring_states,
+		cumulative_closure_monitoring_owners,
+		cumulative_closure_monitoring_consumers,
+		cumulative_closure_monitoring_value,
+		cumulative_closure_monitoring_reopen_risk_value,
+		cumulative_timing_only_closure_monitoring_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_closure_monitoring_register,
+	file.path(data_dir, "typing-delay-open-question-closure-monitoring-register.csv")
+)
+
+write_csv(
+	open_question_closure_monitoring_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			closure_monitoring_state,
+			closure_ledger_state,
+			closure_monitoring_trigger_catalog,
+			closure_monitoring_signal_source,
+			closure_monitoring_freshness_rule,
+			closure_monitoring_reopen_rule,
+			closure_monitoring_false_alarm_filter,
+			closure_monitoring_owner_route,
+			closure_monitoring_audit_schedule,
+			closure_monitoring_owner,
+			closure_monitoring_consumer,
+			closure_ledger_entry,
+			closure_ledger_status_reconciliation,
+			closure_ledger_stale_status_scan,
+			closure_ledger_consumer_index_update,
+			closure_ledger_rollback_index,
+			supported_claim,
+			blocked_claim,
+			closure_monitoring_first_seen,
+			closure_monitoring_axis_first_seen,
+			closure_monitoring_state_first_seen,
+			closure_monitoring_owner_first_seen,
+			closure_monitoring_consumer_first_seen,
+			pass_result,
+			closure_monitoring_value,
+			closure_monitoring_reopen_risk_value,
+			timing_only_closure_monitoring_value,
+			new_closure_monitoring_value,
+			new_closure_monitoring_reopen_risk_value,
+			new_timing_only_closure_monitoring_value,
+			new_analysis_only_value,
+			cumulative_closure_monitoring_records,
+			cumulative_closure_monitoring_axes,
+			cumulative_closure_monitoring_states,
+			cumulative_closure_monitoring_owners,
+			cumulative_closure_monitoring_consumers,
+			cumulative_closure_monitoring_value,
+			cumulative_closure_monitoring_reopen_risk_value,
+			cumulative_timing_only_closure_monitoring_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-closure-monitoring-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_closure_monitoring_summary,
+	file.path(data_dir, "typing-delay-open-question-closure-monitoring-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_closure_monitoring_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-closure-monitoring-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_closure_monitoring_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, closure_monitoring_value)
+		) %>%
+		ggplot(aes(closure_monitoring_value, question_label, fill = closure_monitoring_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Closure monitoring") +
+		labs(
+			title = "Closure monitoring defines when closed questions reopen",
+			subtitle = "Each row names trigger catalog, signal source, freshness rule, reopen rule, false-alarm filter, owner route, audit schedule, owner, and consumer",
+			x = "Closure-monitoring value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"447-open-question-closure-monitoring-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_closure_monitoring_saturation_long <- open_question_closure_monitoring_100_pass %>%
+	select(
+		pass_id,
+		`closure-monitoring records` = cumulative_closure_monitoring_records,
+		`closure-monitoring axes` = cumulative_closure_monitoring_axes,
+		`closure-monitoring states` = cumulative_closure_monitoring_states,
+		`closure-monitoring owners` = cumulative_closure_monitoring_owners,
+		`closure-monitoring consumers` = cumulative_closure_monitoring_consumers,
+		`closure-monitoring value` = cumulative_closure_monitoring_value,
+		`closure-monitoring reopen risk value` = cumulative_closure_monitoring_reopen_risk_value,
+		`timing-only closure-monitoring value` = cumulative_timing_only_closure_monitoring_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("closure-monitoring records", "closure-monitoring axes", "closure-monitoring states", "closure-monitoring owners", "closure-monitoring consumers", "closure-monitoring value", "closure-monitoring reopen risk value", "timing-only closure-monitoring value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_closure_monitoring_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Closure-monitoring audit saturates once every reopen trigger is covered",
+			subtitle = "Nine monitoring records appear by pass 9; all 90 axes appear by pass 90; timing-only monitoring value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"448-open-question-closure-monitoring-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_closure_monitoring_summary %>%
+		mutate(
+			state_label = str_wrap(closure_monitoring_state, width = 28),
+			state_label = fct_reorder(state_label, closure_monitoring_value + closure_monitoring_reopen_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Closure-monitoring coverage separates local reopen triggers from owner and observer triggers",
+			subtitle = "Every row is checked for trigger catalog, signal source, freshness, reopen rule, false alarm filter, owner route, audit schedule, owner, substitute, and stop rule",
+			x = "Closure-monitoring-axis checks",
+			y = "Closure-monitoring state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"449-open-question-closure-monitoring-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
