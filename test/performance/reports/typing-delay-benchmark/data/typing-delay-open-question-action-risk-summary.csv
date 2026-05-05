@@ -1,0 +1,9 @@
+lane,risk_region,decisions,lane_decisions
+Benchmark artifact,low near-term pressure,1,1
+CI/readiness,acting early is riskier,2,3
+CI/readiness,high both: validate before changing,1,3
+Source/code,acting early is riskier,2,2
+Sidecar/mechanism,acting early is riskier,1,1
+CPU/QoS,acting early is riskier,1,1
+Claim expansion,acting early is riskier,2,2
+External policy,acting early is riskier,2,2

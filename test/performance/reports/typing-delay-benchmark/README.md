@@ -1121,6 +1121,11 @@ The R script derives:
     assumption heatmap.
 -   `data/typing-delay-open-question-assumption-ledger-summary.csv`: rollup of
     assumption actions by claim lane.
+-   `data/typing-delay-open-question-action-risk.csv`: action-risk ledger
+    comparing the cost of acting on incomplete evidence with the cost of waiting
+    for each remaining decision.
+-   `data/typing-delay-open-question-action-risk-summary.csv`: rollup of
+    action-risk regions by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9773,6 +9778,34 @@ trigger rechecks when the metric definition changes. The assumptions with the
 highest validation priority are not local benchmark assumptions; they are
 observer, API-compatibility, system-counter, topology, workload, display, and
 policy assumptions. Those require new artifacts before broadening the claim.
+
+The action-risk audit asks the operational version of the question: if evidence
+is incomplete, is it worse to act now or worse to wait? Most rows are asymmetric.
+Acting early can create stale UI, hidden readiness failures, false mechanism
+names, product overgeneralization, or undocumented pass/fail claims. Waiting is
+usually cheap except for CI wait-removal rows, where every unchanged run keeps
+paying runtime.
+
+![Open question action-risk quadrant](figures/234-open-question-action-risk-quadrant.png)
+
+![Open question action-risk balance](figures/235-open-question-action-risk-balance.png)
+
+| Decision | Default | Why |
+| -------- | ------- | --- |
+| Closed benchmark artifact | do not rerun without a metric-definition trigger | more unchanged local rows mostly add churn |
+| Typing startup wait | do not add a wait | it slows CI while retained q50 still does not measure first-input latency |
+| Interactive non-Typing waits | validate before changing | waiting costs CI time, but acting early can hide failures or move resources into measurement |
+| Pattern wait replacement | validate before changing | acting early can move preview/canvas or resource work into the measured interval |
+| Low-risk selector guard | prototype behind behavior gates | p50 wins are not semantic safety |
+| Store subscriber partition | defer until prerequisite | the wrong change can break public subscriber or persistence-selector semantics |
+| Runtime and CPU/QoS mechanism names | keep empirical until sidecar/counters pass | naming mechanisms from aggregate rows is the main false-action risk |
+| Product/display claims | keep fixed-`x` and Chromium-internal wording | broader wording needs replay or external endpoint evidence |
+| Absolute q50 and pass/fail policy | keep local scope and do not predict pass/fail | local q50 is not a CI threshold or dashboard policy |
+
+This is the near-term decision rule. The only open-question row where waiting is
+itself a large cost is wait removal, and even there the answer is validation, not
+blind removal. Everywhere else, acting on incomplete evidence is more expensive
+than preserving narrow wording until the required artifact exists.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -24220,6 +24220,178 @@ save_plot(
 	height = 8.0
 )
 
+open_question_action_risk <- tribble(
+	~decision, ~lane, ~default_action, ~risk_act_now, ~risk_wait, ~reversibility, ~user_or_correctness_impact, ~ci_runtime_impact, ~act_now_failure_mode, ~waiting_failure_mode, ~recommended_guardrail,
+	"Rerun closed benchmark artifact", "Benchmark artifact", "do not rerun without trigger", 2, 1, 5, 1, 1, "analysis churn from unchanged metric semantics", "miss a future helper/browser/statistic trigger", "rerun only after a metric-definition trigger",
+	"Add Typing startup wait", "CI/readiness", "do not add wait", 4, 1, 5, 2, 4, "slower CI while retained q50 still ignores first-input latency", "miss a topology-specific first-input problem", "split first-input from retained-q50 metrics",
+	"Remove interactive non-Typing waits", "CI/readiness", "validate before action", 4, 4, 4, 3, 5, "hidden failures, actionability retries, or resources move into measurement", "leave avoidable CI runtime on every two-branch comparison", "paired CI/mac/container validation with failures and resources",
+	"Replace pattern wait", "CI/readiness", "validate before action", 5, 3, 4, 4, 4, "preview/canvas readiness or late resources move into the measured interval", "keep a likely overlong fixed sleep", "per-spec readiness/resource/fallback artifact",
+	"Ship low-risk selector guard", "Source/code", "prototype behind behavior gates", 5, 2, 3, 5, 2, "stale editor UI or public behavior change", "delay a local source optimization", "behavior fixtures and source-span collapse before aggregate timing",
+	"Prototype store subscriber partition", "Source/code", "defer until prerequisite", 5, 2, 2, 5, 2, "public subscribers miss transitions or observe stale persistence state", "postpone a large fanout win", "compatibility matrix plus marker-only fanout artifact",
+	"Name runtime mechanism", "Sidecar/mechanism", "keep empirical", 4, 1, 4, 2, 1, "mislabel browser/runtime state from aggregate rows", "leave mechanism unnamed", "trace-off protocol sidecar before naming fields",
+	"Name CPU/QoS mechanism", "CPU/QoS", "keep empirical", 4, 1, 4, 2, 1, "mislabel frequency, QoS, cache, or runnable-latency causes", "leave system mechanism unnamed", "accepted sidecar plus root counters",
+	"Generalize to product workload", "Claim expansion", "keep fixed-x scoped", 5, 2, 3, 4, 1, "claim representative product latency from a synthetic stressor", "delay product-wide wording", "per-stratum replay with assertions and source spans",
+	"Claim hardware/display timing", "Claim expansion", "keep Chromium-internal wording", 5, 1, 3, 3, 1, "present screenshot/paint timing as hardware display latency", "leave hardware-display timing unclaimed", "calibrated external endpoint ladder",
+	"Use local q50 as CI threshold proxy", "External policy", "keep local scope", 4, 2, 4, 2, 3, "predict CI stability from local absolute numbers", "delay threshold-portability wording", "real Performance Tests artifacts with environment metadata",
+	"Predict CI pass/fail", "External policy", "do not predict", 5, 1, 4, 3, 2, "turn q50 display into an undocumented gate", "leave pass/fail policy unspecified", "documented dashboard/reviewer policy join"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		default_action = factor(
+			default_action,
+			levels = c(
+				"do not rerun without trigger",
+				"do not add wait",
+				"validate before action",
+				"prototype behind behavior gates",
+				"defer until prerequisite",
+				"keep empirical",
+				"keep fixed-x scoped",
+				"keep Chromium-internal wording",
+				"keep local scope",
+				"do not predict"
+			)
+		),
+		decision_label = str_wrap(decision, width = 26),
+		wrong_action_cost = risk_act_now * user_or_correctness_impact * (6 - reversibility) / 5,
+		waiting_cost = risk_wait * ci_runtime_impact / 2,
+		action_risk_balance = wrong_action_cost - waiting_cost,
+		risk_region = case_when(
+			risk_act_now >= 4 & risk_wait >= 4 ~ "high both: validate before changing",
+			risk_act_now >= 4 ~ "acting early is riskier",
+			risk_wait >= 4 ~ "waiting is costly",
+			TRUE ~ "low near-term pressure"
+		),
+		risk_region = factor(
+			risk_region,
+			levels = c("low near-term pressure", "waiting is costly", "acting early is riskier", "high both: validate before changing")
+		),
+		label_x = risk_act_now + case_when(
+			decision == "Remove interactive non-Typing waits" ~ -0.10,
+			decision == "Name runtime mechanism" ~ 0.10,
+			decision == "Name CPU/QoS mechanism" ~ -0.10,
+			TRUE ~ 0
+		),
+		label_y = risk_wait + case_when(
+			decision == "Remove interactive non-Typing waits" ~ 0.22,
+			decision == "Replace pattern wait" ~ 0.18,
+			decision == "Ship low-risk selector guard" ~ -0.18,
+			decision == "Prototype store subscriber partition" ~ 0.18,
+			decision == "Use local q50 as CI threshold proxy" ~ -0.18,
+			TRUE ~ 0
+		),
+		quadrant_label = if_else(
+			decision %in% c(
+				"Rerun closed benchmark artifact",
+				"Remove interactive non-Typing waits",
+				"Replace pattern wait",
+				"Ship low-risk selector guard",
+				"Prototype store subscriber partition"
+			),
+			decision_label,
+			""
+		)
+	)
+
+open_question_action_risk_summary <- open_question_action_risk %>%
+	count(lane, risk_region, name = "decisions") %>%
+	group_by(lane) %>%
+	mutate(lane_decisions = sum(decisions)) %>%
+	ungroup()
+
+write_csv(
+	open_question_action_risk %>%
+		select(
+			decision,
+			lane,
+			default_action,
+			risk_act_now,
+			risk_wait,
+			reversibility,
+			user_or_correctness_impact,
+			ci_runtime_impact,
+			wrong_action_cost,
+			waiting_cost,
+			action_risk_balance,
+			risk_region,
+			act_now_failure_mode,
+			waiting_failure_mode,
+			recommended_guardrail
+		),
+	file.path(data_dir, "typing-delay-open-question-action-risk.csv")
+)
+
+write_csv(
+	open_question_action_risk_summary,
+	file.path(data_dir, "typing-delay-open-question-action-risk-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_action_risk,
+		aes(risk_act_now, risk_wait, color = risk_region, shape = lane, size = user_or_correctness_impact)
+	) +
+		geom_vline(xintercept = 3.5, color = "grey80", linewidth = 0.5) +
+		geom_hline(yintercept = 3.5, color = "grey80", linewidth = 0.5) +
+		geom_point(alpha = 0.92) +
+		geom_text(
+			aes(x = label_x, y = label_y, label = quadrant_label),
+			color = "grey20",
+			size = 2.75,
+			lineheight = 0.9,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Risk balance") +
+		scale_shape_manual(
+			values = c(
+				"Benchmark artifact" = 16,
+				"CI/readiness" = 17,
+				"Source/code" = 15,
+				"Sidecar/mechanism" = 18,
+				"CPU/QoS" = 7,
+				"Claim expansion" = 8,
+				"External policy" = 4
+			),
+			name = "Lane"
+		) +
+		scale_size_continuous(range = c(2.8, 6), breaks = 1:5, name = "User/correctness impact") +
+		scale_x_continuous(breaks = 1:5, limits = c(0.75, 5.35)) +
+		scale_y_continuous(breaks = 1:5, limits = c(0.75, 5.35)) +
+		labs(
+			title = "Most open questions are unsafe to act on before their artifact passes",
+			subtitle = "Wait-removal rows are the exception: waiting also has real CI-runtime cost",
+			x = "Risk of acting on incomplete evidence",
+			y = "Risk of waiting"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"234-open-question-action-risk-quadrant.png",
+	width = 13.0,
+	height = 8.0
+)
+
+save_plot(
+	ggplot(
+		open_question_action_risk %>%
+			mutate(decision_label = fct_reorder(decision_label, action_risk_balance)),
+		aes(action_risk_balance, decision_label, fill = risk_region)
+	) +
+		geom_col(width = 0.72) +
+		geom_vline(xintercept = 0, color = "grey45", linewidth = 0.5) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Risk balance") +
+		labs(
+			title = "Wrong-action cost dominates except where CI wait time is the decision",
+			subtitle = "Positive values favor deferring or validating; negative values mean waiting is the larger near-term cost",
+			x = "Wrong-action cost minus waiting cost",
+			y = "Decision"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"235-open-question-action-risk-balance.png",
+	width = 12.4,
+	height = 8.0
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
