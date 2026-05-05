@@ -1,0 +1,10 @@
+pass_id,cumulative_enforcement_records,cumulative_enforcement_axes,cumulative_enforcement_states,cumulative_enforcement_owners,cumulative_enforcement_consumers,cumulative_enforcement_value,cumulative_resurrection_risk_value,cumulative_timing_only_enforcement_value,cumulative_analysis_only_value
+1,1,1,1,1,1,106342,80742,0,0
+5,5,5,2,5,4,428958,325696,0,0
+9,9,9,3,9,8,510391,387533,0,0
+10,9,10,3,9,8,510391,387533,0,0
+20,9,20,3,9,8,510391,387533,0,0
+50,9,50,3,9,8,510391,387533,0,0
+90,9,90,3,9,8,510391,387533,0,0
+91,9,90,3,9,8,510391,387533,0,0
+100,9,90,3,9,8,510391,387533,0,0

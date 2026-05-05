@@ -1,0 +1,7 @@
+enforcement_state,retirement_state,pass_result,passes,first_pass,enforcement_records,axis_checks,enforcement_owners,enforcement_consumers,enforcement_value,resurrection_risk_value,timing_only_enforcement_value,analysis_only_value
+local packet retirement enforcement,local packet exception retirement,retirement enforcement: local packet,40,1,4,40,4,3,385650,292812,0,0
+owner artifact retirement enforcement,owner artifact exception retirement,retirement enforcement: owner or observer artifact,20,5,2,20,2,2,77112,58552,0,0
+observer artifact retirement enforcement,observer artifact exception retirement,retirement enforcement: owner or observer artifact,30,7,3,30,3,3,47629,36169,0,0
+local packet retirement enforcement,local packet exception retirement,repeat: enforcement-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact retirement enforcement,owner artifact exception retirement,repeat: enforcement-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact retirement enforcement,observer artifact exception retirement,repeat: enforcement-axis already checked,3,97,3,0,3,3,0,0,0,0

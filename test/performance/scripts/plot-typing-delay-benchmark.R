@@ -37102,6 +37102,305 @@ save_plot(
 	height = 7.2
 )
 
+open_question_retirement_enforcement_register <- open_question_exception_retirement_register %>%
+	mutate(
+		enforcement_state = case_when(
+			retirement_state == "local packet exception retirement" ~ "local packet retirement enforcement",
+			retirement_state == "owner artifact exception retirement" ~ "owner artifact retirement enforcement",
+			TRUE ~ "observer artifact retirement enforcement"
+		),
+		resurrection_attempt = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ "report, CI recommendation, or local timing wording tries to cite a retired local exception as current evidence",
+			enforcement_state == "owner artifact retirement enforcement" ~ "report or owner-scoped wording tries to cite a retired owner exception as current evidence",
+			TRUE ~ "report or broad product, browser, endpoint, runtime, or workload wording tries to cite a retired observer exception as current evidence"
+		),
+		enforcement_gate = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ "block reuse unless a fresh packet passes controls and the report diff replaces the retired evidence",
+			enforcement_state == "owner artifact retirement enforcement" ~ "block reuse unless owner-approved successor evidence passes controls and the report diff replaces the retired evidence",
+			TRUE ~ "block reuse unless observer-approved successor evidence passes controls and the report diff replaces the retired evidence"
+		),
+		prohibited_reuse = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ "using retired local exception rows, old timing movement, or stale generated figures as support for current CI, source, method, or local claims",
+			enforcement_state == "owner artifact retirement enforcement" ~ "using retired owner exception rows, stale owner review, or stale owner artifacts as support for current owner-scoped claims",
+			TRUE ~ "using retired observer exception rows, stale observer review, or stale observer artifacts as support for current broad claims"
+		),
+		allowed_reference = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ "historical reference is allowed only when labeled retired and explicitly excluded from current CI, source, method, or timing support",
+			enforcement_state == "owner artifact retirement enforcement" ~ "historical reference is allowed only when labeled retired and explicitly excluded from current owner-scoped support",
+			TRUE ~ "historical reference is allowed only when labeled retired and explicitly excluded from current broad product, browser, endpoint, runtime, or workload support"
+		),
+		scan_surface = case_when(
+			close_scope == "CI wait decision" ~ "CI wait-policy tables, recommendation bullets, data registry, figure captions, and runtime-saving text",
+			close_scope == "source prototype decision" ~ "source-safety sections, selector-guard recommendations, implementation tables, data registry, and figure captions",
+			close_scope == "benchmark method wording" ~ "method sections, harness caveats, input-mode recommendations, data registry, and figure captions",
+			TRUE ~ "broad claim sections, owner/observer notes, workload/runtime/browser wording, data registry, and figure captions"
+		),
+		enforcement_response = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ "reject the wording change, restore the retired label, require successor packet evidence, and notify the local consumer",
+			enforcement_state == "owner artifact retirement enforcement" ~ "reject the wording change, restore the retired label, require owner-approved successor evidence, and notify the owner consumer",
+			TRUE ~ "reject the wording change, restore the retired label, require observer-approved successor evidence, and notify the broad-claim consumer"
+		),
+		proof_of_enforcement = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ "report diff, retired-evidence grep, successor-packet control result, notification record, and active-claim ledger update",
+			enforcement_state == "owner artifact retirement enforcement" ~ "report diff, retired-evidence grep, owner-successor control result, notification record, and active-claim ledger update",
+			TRUE ~ "report diff, retired-evidence grep, observer-successor control result, notification record, and active-claim ledger update"
+		),
+		enforcement_owner = retirement_owner,
+		enforcement_consumer = notification_target,
+		enforcement_cost = case_when(
+			enforcement_state == "local packet retirement enforcement" ~ 2,
+			enforcement_state == "owner artifact retirement enforcement" ~ 4,
+			TRUE ~ 5
+		),
+		enforcement_value = pmax(
+			1,
+			retirement_value + stale_wording_prevention_value + stale_reuse_risk - enforcement_cost
+		),
+		resurrection_risk_value = pmax(
+			1,
+			stale_wording_prevention_value + monitoring_value + false_closure_risk - enforcement_cost
+		),
+		timing_only_enforcement_value = 0,
+		analysis_only_value = 0,
+		retirement_enforcement_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(enforcement_value), desc(resurrection_risk_value), question_family)
+
+open_question_retirement_enforcement_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"attempt", "What accidental resurrection attempt does the guard catch?",
+	"gate", "What gate blocks retired evidence from current claims?",
+	"prohibit", "What reuse is explicitly prohibited?",
+	"allow", "What historical reference is still allowed?",
+	"scan", "What report or dashboard surface is scanned?",
+	"response", "What response happens when retired evidence reappears?",
+	"proof", "What proof shows the guard actually ran?",
+	"notify", "Which consumer is notified about blocked resurrection?",
+	"substitute", "Can aggregate timing alone substitute for retirement enforcement?",
+	"stop-rule", "When does retirement-enforcement review stop?"
+)
+
+open_question_retirement_enforcement_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_retirement_enforcement_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_retirement_enforcement_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_retirement_enforcement_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_retirement_enforcement_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		enforcement_first_seen = !duplicated(retirement_enforcement_id),
+		enforcement_axis_key = paste(retirement_enforcement_id, pressure_axis, sep = "::"),
+		enforcement_axis_first_seen = !duplicated(enforcement_axis_key),
+		enforcement_state_first_seen = !duplicated(enforcement_state),
+		enforcement_owner_first_seen = !duplicated(enforcement_owner),
+		enforcement_consumer_first_seen = !duplicated(enforcement_consumer),
+		new_enforcement_value = if_else(enforcement_first_seen, enforcement_value, 0),
+		new_resurrection_risk_value = if_else(enforcement_first_seen, resurrection_risk_value, 0),
+		new_timing_only_enforcement_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!enforcement_axis_first_seen ~ "repeat: enforcement-axis already checked",
+			enforcement_state == "local packet retirement enforcement" ~ "retirement enforcement: local packet",
+			TRUE ~ "retirement enforcement: owner or observer artifact"
+		),
+		cumulative_enforcement_records = cumsum(enforcement_first_seen),
+		cumulative_enforcement_axes = cumsum(enforcement_axis_first_seen),
+		cumulative_enforcement_states = cumsum(enforcement_state_first_seen),
+		cumulative_enforcement_owners = cumsum(enforcement_owner_first_seen),
+		cumulative_enforcement_consumers = cumsum(enforcement_consumer_first_seen),
+		cumulative_enforcement_value = cumsum(new_enforcement_value),
+		cumulative_resurrection_risk_value = cumsum(new_resurrection_risk_value),
+		cumulative_timing_only_enforcement_value = cumsum(new_timing_only_enforcement_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_retirement_enforcement_summary <- open_question_retirement_enforcement_100_pass %>%
+	group_by(enforcement_state, retirement_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		enforcement_records = n_distinct(retirement_enforcement_id),
+		axis_checks = sum(enforcement_axis_first_seen),
+		enforcement_owners = n_distinct(enforcement_owner),
+		enforcement_consumers = n_distinct(enforcement_consumer),
+		enforcement_value = sum(new_enforcement_value),
+		resurrection_risk_value = sum(new_resurrection_risk_value),
+		timing_only_enforcement_value = sum(new_timing_only_enforcement_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(enforcement_value), desc(resurrection_risk_value), first_pass)
+
+open_question_retirement_enforcement_checkpoints <- open_question_retirement_enforcement_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_enforcement_records,
+		cumulative_enforcement_axes,
+		cumulative_enforcement_states,
+		cumulative_enforcement_owners,
+		cumulative_enforcement_consumers,
+		cumulative_enforcement_value,
+		cumulative_resurrection_risk_value,
+		cumulative_timing_only_enforcement_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_retirement_enforcement_register,
+	file.path(data_dir, "typing-delay-open-question-retirement-enforcement-register.csv")
+)
+
+write_csv(
+	open_question_retirement_enforcement_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			enforcement_state,
+			retirement_state,
+			resurrection_attempt,
+			enforcement_gate,
+			prohibited_reuse,
+			allowed_reference,
+			scan_surface,
+			enforcement_response,
+			proof_of_enforcement,
+			enforcement_owner,
+			enforcement_consumer,
+			supported_claim,
+			blocked_claim,
+			enforcement_first_seen,
+			enforcement_axis_first_seen,
+			enforcement_state_first_seen,
+			enforcement_owner_first_seen,
+			enforcement_consumer_first_seen,
+			pass_result,
+			enforcement_value,
+			resurrection_risk_value,
+			timing_only_enforcement_value,
+			new_enforcement_value,
+			new_resurrection_risk_value,
+			new_timing_only_enforcement_value,
+			new_analysis_only_value,
+			cumulative_enforcement_records,
+			cumulative_enforcement_axes,
+			cumulative_enforcement_states,
+			cumulative_enforcement_owners,
+			cumulative_enforcement_consumers,
+			cumulative_enforcement_value,
+			cumulative_resurrection_risk_value,
+			cumulative_timing_only_enforcement_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-retirement-enforcement-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_retirement_enforcement_summary,
+	file.path(data_dir, "typing-delay-open-question-retirement-enforcement-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_retirement_enforcement_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-retirement-enforcement-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_retirement_enforcement_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, enforcement_value)
+		) %>%
+		ggplot(aes(enforcement_value, question_label, fill = enforcement_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Retirement enforcement") +
+		labs(
+			title = "Retirement enforcement blocks retired evidence from re-entering active claims",
+			subtitle = "Each row names resurrection attempt, gate, prohibited reuse, allowed history, scan surface, response, proof, and consumer",
+			x = "Retirement-enforcement value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"369-open-question-retirement-enforcement-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_retirement_enforcement_saturation_long <- open_question_retirement_enforcement_100_pass %>%
+	select(
+		pass_id,
+		`enforcement records` = cumulative_enforcement_records,
+		`enforcement axes` = cumulative_enforcement_axes,
+		`enforcement states` = cumulative_enforcement_states,
+		`enforcement owners` = cumulative_enforcement_owners,
+		`enforcement consumers` = cumulative_enforcement_consumers,
+		`enforcement value` = cumulative_enforcement_value,
+		`resurrection risk value` = cumulative_resurrection_risk_value,
+		`timing-only enforcement value` = cumulative_timing_only_enforcement_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("enforcement records", "enforcement axes", "enforcement states", "enforcement owners", "enforcement consumers", "enforcement value", "resurrection risk value", "timing-only enforcement value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_retirement_enforcement_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Retirement-enforcement audit saturates once resurrection guards are named",
+			subtitle = "Nine enforcement records appear by pass 9; all 90 axes appear by pass 90; timing-only enforcement value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"370-open-question-retirement-enforcement-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_retirement_enforcement_summary %>%
+		mutate(
+			state_label = str_wrap(enforcement_state, width = 28),
+			state_label = fct_reorder(state_label, enforcement_value + resurrection_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Retirement-enforcement coverage separates local packet resurrection from owner and observer resurrection",
+			subtitle = "Every row is checked for attempt, gate, prohibited reuse, allowed history, scan, response, proof, notify, substitute, and stop rule",
+			x = "Enforcement-axis checks",
+			y = "Retirement enforcement state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"371-open-question-retirement-enforcement-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

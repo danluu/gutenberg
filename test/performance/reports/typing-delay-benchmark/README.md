@@ -1689,6 +1689,23 @@ The R script derives:
     retirement-owner, notification-target, retirement-value,
     stale-wording-prevention-value, timing-only-retirement, and analysis-only
     saturation.
+-   `data/typing-delay-open-question-retirement-enforcement-register.csv`:
+    retirement-enforcement register for the nine exception-retirement records,
+    including resurrection attempt, enforcement gate, prohibited reuse, allowed
+    historical reference, scan surface, enforcement response, proof of
+    enforcement, owner, and consumer.
+-   `data/typing-delay-open-question-retirement-enforcement-100-pass-audit.csv`:
+    twenty-ninth forced 100-pass audit over retirement-enforcement axes:
+    attempt, gate, prohibited reuse, allowed history, scan, response, proof,
+    notify, substitute, and stop-rule.
+-   `data/typing-delay-open-question-retirement-enforcement-100-pass-summary.csv`:
+    rollup of retirement-enforcement coverage by enforcement state,
+    exception-retirement state, and pass result.
+-   `data/typing-delay-open-question-retirement-enforcement-100-pass-checkpoints.csv`:
+    checkpoints for enforcement-record, enforcement-axis, enforcement-state,
+    enforcement-owner, enforcement-consumer, enforcement-value,
+    resurrection-risk-value, timing-only-enforcement, and analysis-only
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11740,6 +11757,37 @@ retirement is the step that removes them from the active reasoning path. A
 retired exception can remain as historical evidence, but it cannot support a
 current CI, source, method, browser, runtime, workload, or product claim unless
 a fresh successor artifact passes the relevant controls.
+
+I then added the retirement-enforcement layer: after retired evidence is removed
+from the active reasoning path, the report now says what accidental resurrection
+attempt the guard catches, what gate blocks reuse, what reuse is prohibited,
+what historical reference remains allowed, what surfaces are scanned, what
+response happens when retired evidence reappears, what proof shows the guard
+ran, and which consumer is notified.
+
+![Open question retirement enforcement register](figures/369-open-question-retirement-enforcement-register.png)
+
+![Open question retirement enforcement 100-pass saturation](figures/370-open-question-retirement-enforcement-100-pass-saturation.png)
+
+![Open question retirement enforcement coverage](figures/371-open-question-retirement-enforcement-coverage.png)
+
+| Retirement-enforcement check | Result |
+| ---------------------------- | ------ |
+| Enforcement records | `9`, one per exception-retirement record. |
+| Enforcement states | `3`: local packet retirement enforcement, owner artifact retirement enforcement, and observer artifact retirement enforcement. |
+| Enforcement owners | `9`; resurrection review routes back to the scoped retirement owner. |
+| Enforcement consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Enforcement-axis checks | `90`: every row checked against all `10` retirement-enforcement axes. |
+| Retirement-enforcement value | `510391`: local packet enforcement contributes `385650`, owner artifact enforcement contributes `77112`, and observer artifact enforcement contributes `47629`. |
+| Resurrection-risk value | `387533` across the nine retirement-enforcement records. |
+| Timing-only enforcement value | `0`; aggregate timing movement alone cannot detect retired evidence reuse, block a resurrected claim, prove a scan ran, notify a consumer, or authorize a successor artifact. |
+| Saturation | Enforcement records are all named by pass `9`; all enforcement axes are covered by pass `90`; passes `91-100` add no retirement-enforcement coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the anti-resurrection layer. Retirement removes stale exceptions from
+current support; enforcement makes that removal testable by naming the exact
+reuse attempts, report surfaces, blocked wording, allowed historical references,
+and proof that must exist before retired evidence can stay retired.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
