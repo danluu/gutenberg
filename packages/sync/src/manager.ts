@@ -21,6 +21,7 @@ import {
 import { getProviderCreators } from './providers';
 import type {
 	CollectionHandlers,
+	CreatePersistedCRDTDocOptions,
 	CRDTDoc,
 	EntityID,
 	ObjectID,
@@ -181,6 +182,9 @@ export function createSyncManager( debug = false ): SyncManager {
 			addUndoMeta: debugWrap( handlers.addUndoMeta ),
 			editRecord: debugWrap( handlers.editRecord ),
 			getEditedRecord: debugWrap( handlers.getEditedRecord ),
+			getPersistedRecord: handlers.getPersistedRecord
+				? debugWrap( handlers.getPersistedRecord )
+				: undefined,
 			onStatusChange: debugWrap( handlers.onStatusChange ),
 			persistCRDTDoc: debugWrap( handlers.persistCRDTDoc ),
 			refetchRecord: debugWrap( handlers.refetchRecord ),
@@ -621,12 +625,15 @@ export function createSyncManager( debug = false ): SyncManager {
 		}
 
 		const { handlers, syncConfig, ydoc } = entityState;
+		const editedRecord = await handlers.getEditedRecord();
+		const persistedRecord = await handlers.getPersistedRecord?.();
 
 		// Determine which synced properties have actually changed by comparing
 		// them against the current edited entity record.
 		const changes = syncConfig.getChangesFromCRDTDoc(
 			ydoc,
-			await handlers.getEditedRecord()
+			editedRecord,
+			persistedRecord
 		);
 
 		const changedKeys = Object.keys( changes );
@@ -646,10 +653,12 @@ export function createSyncManager( debug = false ): SyncManager {
 	 *
 	 * @param {ObjectType} objectType Object type.
 	 * @param {ObjectID}   objectId   Object ID.
+	 * @param {Object}     options    Options used when serializing the CRDT document.
 	 */
 	async function createPersistedCRDTDoc(
 		objectType: ObjectType,
-		objectId: ObjectID
+		objectId: ObjectID,
+		options: CreatePersistedCRDTDocOptions = {}
 	): Promise< string | null > {
 		const entityId = getEntityId( objectType, objectId );
 		const entityState = entityStates.get( entityId );
@@ -662,6 +671,21 @@ export function createSyncManager( debug = false ): SyncManager {
 		// resolves on the next tick of the event loop so pending updates are flushed
 		// before we serialize the document.
 		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		const editedRecord = await entityState.handlers.getEditedRecord();
+		const record = {
+			...editedRecord,
+			...options.record,
+		};
+
+		if ( Object.keys( record ).length ) {
+			entityState.ydoc.transact( () => {
+				entityState.syncConfig.applyChangesToCRDTDoc(
+					entityState.ydoc,
+					record
+				);
+			}, LOCAL_SYNC_MANAGER_ORIGIN );
+		}
 
 		return serializeCrdtDoc( entityState.ydoc );
 	}
