@@ -139,6 +139,30 @@ Emoji and multibyte: hi ..., こんにちは, مرحبا.
 
 This is the pass-44 independent proof: after the known stale-snapshot fix set, the remaining unresolved source-manifest failure is still reproduced without a browser by mutating and reusing the same block-array object. That isolates the bug to the `serializableBlocksCache` object-identity assumption, not to HTTP polling, Playwright readiness, generated locator actions, malformed block markup, or inverted assertions.
 
+Pass 45 repeated the split in fresh detached worktrees after fetching `origin/trunk`, which remained at:
+
+```text
+02bfdaa5ca9 RTC: Fix divergence when two offline users reconnect (#77980)
+```
+
+The corrected focused Jest invocation was:
+
+```bash
+npm run --workspace @wordpress/unit-tests test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts --runInBand --testNamePattern='preserves an inserted heading|observes reordered blocks|preserves a remotely inserted block'
+```
+
+Current trunk plus only regression commit `d71d0bc87fe` failed all three focused repros. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, plus the same regression commit, passed the two stale Y.Doc cases and failed only `observes reordered blocks when the editor reuses the same block array reference`. The fixed PR branch passed the focused regressions, the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`76` tests), targeted JS lint, and `git diff --check`.
+
+This pass adds a more precise negative-control note: an earlier top-level `npm run test:unit ... -- --testNamePattern=...` command did not forward the name filter to Jest in this workspace and therefore ran the wrong test set. The pass-45 controls use the workspace-level command above and the logs show the three added tests selected by name. With that corrected invocation, the same-reference block-array mutation remains the only known-fixes-base failure, which is the narrowest non-browser proof for this signature.
+
+The requested fresh Playwright rerun on `WP_ENV_PORT=9905` was attempted after confirming `wp-env-test` status was `stopped`, but Docker failed before WordPress boot:
+
+```text
+failed to create network wp-env-gutenberg-bug-a55350721046-test-82fb78c1_default: Error response from daemon: all predefined address pools have been fully subnetted
+```
+
+Running containers were attached to the existing `wp-env` bridge networks, so pass 45 did not stop unrelated environments. The pass-44 fixed-branch Playwright JSON was copied into the pass-45 evidence directory and still shows both editors converged to `inserted paragraph`, `another paragraph`, `emoji paragraph`. Pass 45 also created a new headless annotated video from the source screenshots, action log, low-level controls, and fixed-branch verification artifacts.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
