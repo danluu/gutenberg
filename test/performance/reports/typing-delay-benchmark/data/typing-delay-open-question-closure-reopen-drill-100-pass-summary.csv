@@ -1,0 +1,7 @@
+closure_reopen_drill_state,closure_monitoring_state,pass_result,passes,first_pass,closure_reopen_drill_records,axis_checks,closure_reopen_drill_owners,closure_reopen_drill_consumers,closure_reopen_drill_value,closure_reopen_drill_missed_reopen_risk_value,timing_only_closure_reopen_drill_value,analysis_only_value
+local packet reopen drill,local packet closure monitoring,reopen drill: local packet,40,1,4,40,4,3,2555129745286,1389102107567,0,0
+owner artifact reopen drill,owner artifact closure monitoring,reopen drill: owner or observer artifact,20,5,2,20,2,2,510901214962,277752609530,0,0
+observer artifact reopen drill,observer artifact closure monitoring,reopen drill: owner or observer artifact,30,7,3,30,3,3,315586528209,171569335053,0,0
+local packet reopen drill,local packet closure monitoring,repeat: closure-reopen-drill-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact reopen drill,owner artifact closure monitoring,repeat: closure-reopen-drill-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact reopen drill,observer artifact closure monitoring,repeat: closure-reopen-drill-axis already checked,3,97,3,0,3,3,0,0,0,0

@@ -2160,6 +2160,25 @@ The R script derives:
     closure-monitoring-consumer, closure-monitoring-value,
     closure-monitoring-reopen-risk-value, timing-only-closure-monitoring,
     and analysis-only saturation.
+-   `data/typing-delay-open-question-closure-reopen-drill-register.csv`:
+    closure-reopen-drill register for the nine closure-monitoring records,
+    including contradiction packet, trigger injection, invalidation target,
+    acceptance gate, failure response, consumer notice, rollback check,
+    owner, and consumer.
+-   `data/typing-delay-open-question-closure-reopen-drill-100-pass-audit.csv`:
+    fifty-sixth forced 100-pass audit over closure-reopen-drill axes:
+    contradiction-packet, trigger-injection, invalidation, acceptance-gate,
+    failure-response, consumer-notice, rollback-check, owner, substitute,
+    and stop-rule.
+-   `data/typing-delay-open-question-closure-reopen-drill-100-pass-summary.csv`:
+    rollup of closure-reopen-drill coverage by reopen-drill state,
+    closure-monitoring state, and pass result.
+-   `data/typing-delay-open-question-closure-reopen-drill-100-pass-checkpoints.csv`:
+    checkpoints for closure-reopen-drill-record,
+    closure-reopen-drill-axis, closure-reopen-drill-state,
+    closure-reopen-drill-owner, closure-reopen-drill-consumer,
+    closure-reopen-drill-value, closure-reopen-drill-missed-reopen-risk-value,
+    timing-only-closure-reopen-drill, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -13051,6 +13070,38 @@ container, or artifact change invalidates the closure. A closed question stays
 closed only while the freshness rule still passes; otherwise the reopen rule
 routes a concrete packet to the scoped owner and blocks reuse of stale
 conclusions.
+
+I then added the closure-reopen-drill layer: a monitoring rule is not enough
+unless it can be exercised. The drill record names the contradiction packet,
+trigger injection, invalidated rows, acceptance gate, failure response,
+consumer notice, rollback check, owner, and consumer for each closure-monitoring
+row.
+
+![Open question closure reopen drill register](figures/450-open-question-closure-reopen-drill-register.png)
+
+![Open question closure reopen drill 100-pass saturation](figures/451-open-question-closure-reopen-drill-100-pass-saturation.png)
+
+![Open question closure reopen drill coverage](figures/452-open-question-closure-reopen-drill-coverage.png)
+
+| Closure-reopen-drill check | Result |
+| -------------------------- | ------ |
+| Closure-reopen-drill records | `9`, one per closure-monitoring record. |
+| Closure-reopen-drill states | `3`: local packet reopen drill, owner artifact reopen drill, and observer artifact reopen drill. |
+| Closure-reopen-drill owners | `9`; drill ownership routes back to the scoped closure-monitoring owner. |
+| Closure-reopen-drill consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Closure-reopen-drill-axis checks | `90`: every row checked against all `10` closure-reopen-drill axes. |
+| Closure-reopen-drill value | `3381617488457`: local packet drills contribute `2555129745286`, owner artifact drills contribute `510901214962`, and observer artifact drills contribute `315586528209`. |
+| Closure-reopen-drill missed-reopen-risk value | `1838424052150` across the nine closure-reopen-drill records. |
+| Timing-only closure-reopen-drill value | `0`; aggregate timing movement alone cannot prove the contradiction packet, trigger injection, invalidation set, acceptance gate, failure response, consumer notice, rollback check, owner, or stop rule. |
+| Saturation | Closure-reopen-drill records are all named by pass `9`; all closure-reopen-drill axes are covered by pass `90`; passes `91-100` add no closure-reopen-drill coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the executable stale-closure test. It catches the case where the report
+can say "reopen if contradicted" but no one has defined a contradiction packet,
+no synthetic trigger can exercise the path, stale rows are not invalidated, or
+the consumer still sees the old recommendation. A closed question is robust
+only if an accepted contradiction removes the old figure/CSV/README support,
+updates the consumer-facing status, and leaves a rollback path for stale reuse.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

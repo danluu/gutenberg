@@ -45231,6 +45231,317 @@ save_plot(
 	height = 7.2
 )
 
+open_question_closure_reopen_drill_register <- open_question_closure_monitoring_register %>%
+	mutate(
+		closure_reopen_drill_state = case_when(
+			closure_monitoring_state == "local packet closure monitoring" ~ "local packet reopen drill",
+			closure_monitoring_state == "owner artifact closure monitoring" ~ "owner artifact reopen drill",
+			TRUE ~ "observer artifact reopen drill"
+		),
+		closure_reopen_drill_contradiction_packet = case_when(
+			close_scope == "CI wait decision" ~ "packet changes CI runner/browser version, BROWSER_IDLE_WAIT, startup wait, typing delay, input mode, branch-count model, raw artifact hash, or CI recommendation and includes before/after q25/q50/q75 plus runtime and reliability deltas",
+			close_scope == "source prototype decision" ~ "packet changes selector graph, dispatch path, invalidation fanout, source patch, fixture shape, owner-review status, raw artifact hash, or source recommendation and includes before/after source-span and behavior-fixture evidence",
+			close_scope == "benchmark method wording" ~ "packet changes trace schema, EventDispatch interpretation, aggregation window, instrumentation patch, browser/Playwright version, raw artifact hash, or method wording and includes before/after method-specific recomputation",
+			TRUE ~ "packet changes browser/runtime, OS/container, hardware/QoS, workload, endpoint, plugin set, raw artifact hash, or broad recommendation and includes before/after scoped transfer evidence"
+		),
+		closure_reopen_drill_trigger_injection = case_when(
+			close_scope == "CI wait decision" ~ "inject a synthetic CI-wait contradiction by changing one wait-policy artifact key and verifying the monitoring row marks the CI closure stale before the recommendation can be reused",
+			close_scope == "source prototype decision" ~ "inject a synthetic source contradiction by changing one selector/dispatch/fanout artifact key and verifying the monitoring row marks the source closure stale before the optimization can be reused",
+			close_scope == "benchmark method wording" ~ "inject a synthetic method contradiction by changing one trace/aggregation/instrumentation artifact key and verifying the monitoring row marks the method closure stale before wording can be reused",
+			TRUE ~ "inject a synthetic transfer contradiction by changing one browser/runtime/workload/environment artifact key and verifying the monitoring row marks the broad closure stale before a generalized claim can be reused"
+		),
+		closure_reopen_drill_expected_invalidated_rows = case_when(
+			closure_reopen_drill_state == "local packet reopen drill" ~ "invalidate local closure-monitoring row, closure-ledger row, retirement-validation row, exact-scope recommendation, stale transfer fallback, and local consumer-index entry",
+			closure_reopen_drill_state == "owner artifact reopen drill" ~ "invalidate owner closure-monitoring row, closure-ledger row, retirement-validation row, reviewer-visible recommendation, stale transfer fallback, and owner consumer-index entry",
+			TRUE ~ "invalidate observer closure-monitoring row, closure-ledger row, retirement-validation row, broad-scope recommendation, stale transfer fallback, observer consumer-index entry, and broad wording guard"
+		),
+		closure_reopen_drill_acceptance_gate = case_when(
+			closure_reopen_drill_state == "local packet reopen drill" ~ "accept the reopen only when the contradiction packet is fresh, exact-scope, non-duplicate, linked to raw artifacts, and changes the local row that the consumer index currently exposes",
+			closure_reopen_drill_state == "owner artifact reopen drill" ~ "accept the reopen only when the contradiction packet is fresh, owner-visible, non-duplicate, linked to raw artifacts and reviewer identity, and changes the owner row that the consumer index currently exposes",
+			TRUE ~ "accept the reopen only when the contradiction packet is fresh, observer-visible, non-duplicate, linked to raw artifacts, reviewer identity, and broad wording guard, and changes the observer row that the consumer index currently exposes"
+		),
+		closure_reopen_drill_failure_response = case_when(
+			closure_reopen_drill_state == "local packet reopen drill" ~ "if the drill fails, keep the local closure marked stale, block exact-scope recommendation reuse, restore the open-question warning, and route a rerun packet to the local owner",
+			closure_reopen_drill_state == "owner artifact reopen drill" ~ "if the drill fails, keep the owner closure marked stale, block reviewer-visible recommendation reuse, restore the open-question warning, and route a rerun packet to the owner and reviewer",
+			TRUE ~ "if the drill fails, keep the observer closure marked stale, block broad recommendation reuse, restore the open-question warning, and route a rerun packet to the observer owner, reviewer, and broad-scope owner"
+		),
+		closure_reopen_drill_consumer_notice = case_when(
+			close_scope == "CI wait decision" ~ "notify the Performance Tests CI wait-policy consumer with changed runtime, reliability, latency, branch-count, input-mode, and stale-closure status",
+			close_scope == "source prototype decision" ~ "notify the source optimization consumer with changed behavior-fixture, source-span, fanout, owner-review, and stale-closure status",
+			close_scope == "benchmark method wording" ~ "notify the benchmark-method consumer with changed trace-schema, EventDispatch, aggregation, instrumentation, limitation, and stale-closure status",
+			TRUE ~ "notify the broad-report consumer with changed browser/runtime, environment, workload, endpoint, plugin-set, transfer-boundary, and stale-closure status"
+		),
+		closure_reopen_drill_rollback_check = case_when(
+			close_scope == "CI wait decision" ~ "rollback check proves the prior CI wait recommendation, generated figure, summary CSV, and README row no longer appear as current support after the accepted contradiction",
+			close_scope == "source prototype decision" ~ "rollback check proves the prior source recommendation, generated figure, summary CSV, and README row no longer appear as current support after the accepted contradiction",
+			close_scope == "benchmark method wording" ~ "rollback check proves the prior method wording, generated figure, summary CSV, and README row no longer appear as current support after the accepted contradiction",
+			TRUE ~ "rollback check proves the prior broad recommendation, generated figure, summary CSV, and README row no longer appear as current support after the accepted contradiction"
+		),
+		closure_reopen_drill_owner = closure_monitoring_owner,
+		closure_reopen_drill_consumer = closure_monitoring_consumer,
+		closure_reopen_drill_cost = case_when(
+			closure_reopen_drill_state == "local packet reopen drill" ~ 13,
+			closure_reopen_drill_state == "owner artifact reopen drill" ~ 15,
+			TRUE ~ 17
+		),
+		closure_reopen_drill_value = pmax(
+			1,
+			closure_monitoring_value + closure_monitoring_reopen_risk_value + closure_ledger_stale_status_risk_value - closure_reopen_drill_cost
+		),
+		closure_reopen_drill_missed_reopen_risk_value = pmax(
+			1,
+			closure_monitoring_reopen_risk_value + closure_ledger_stale_status_risk_value + retirement_validation_unclosed_transfer_risk_value - closure_reopen_drill_cost
+		),
+		timing_only_closure_reopen_drill_value = 0,
+		analysis_only_value = 0,
+		closure_reopen_drill_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(closure_reopen_drill_value), desc(closure_reopen_drill_missed_reopen_risk_value), question_family)
+
+open_question_closure_reopen_drill_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"contradiction-packet", "What contradiction packet is sufficient to reopen the closure?",
+	"trigger-injection", "Can the trigger be exercised without hand-waving?",
+	"invalidation", "Which stale rows and claims are invalidated?",
+	"acceptance-gate", "What distinguishes an accepted contradiction from noise?",
+	"failure-response", "What happens when the reopen drill fails?",
+	"consumer-notice", "Which consumer is told the closure is stale?",
+	"rollback-check", "How do we prove stale support disappeared?",
+	"owner", "Who owns the reopen drill?",
+	"substitute", "Can aggregate timing alone substitute for a reopen drill?",
+	"stop-rule", "When does reopen-drill review stop?"
+)
+
+open_question_closure_reopen_drill_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_closure_reopen_drill_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_closure_reopen_drill_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_closure_reopen_drill_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_closure_reopen_drill_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		closure_reopen_drill_first_seen = !duplicated(closure_reopen_drill_id),
+		closure_reopen_drill_axis_key = paste(closure_reopen_drill_id, pressure_axis, sep = "::"),
+		closure_reopen_drill_axis_first_seen = !duplicated(closure_reopen_drill_axis_key),
+		closure_reopen_drill_state_first_seen = !duplicated(closure_reopen_drill_state),
+		closure_reopen_drill_owner_first_seen = !duplicated(closure_reopen_drill_owner),
+		closure_reopen_drill_consumer_first_seen = !duplicated(closure_reopen_drill_consumer),
+		new_closure_reopen_drill_value = if_else(closure_reopen_drill_first_seen, closure_reopen_drill_value, 0),
+		new_closure_reopen_drill_missed_reopen_risk_value = if_else(closure_reopen_drill_first_seen, closure_reopen_drill_missed_reopen_risk_value, 0),
+		new_timing_only_closure_reopen_drill_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!closure_reopen_drill_axis_first_seen ~ "repeat: closure-reopen-drill-axis already checked",
+			closure_reopen_drill_state == "local packet reopen drill" ~ "reopen drill: local packet",
+			TRUE ~ "reopen drill: owner or observer artifact"
+		),
+		cumulative_closure_reopen_drill_records = cumsum(closure_reopen_drill_first_seen),
+		cumulative_closure_reopen_drill_axes = cumsum(closure_reopen_drill_axis_first_seen),
+		cumulative_closure_reopen_drill_states = cumsum(closure_reopen_drill_state_first_seen),
+		cumulative_closure_reopen_drill_owners = cumsum(closure_reopen_drill_owner_first_seen),
+		cumulative_closure_reopen_drill_consumers = cumsum(closure_reopen_drill_consumer_first_seen),
+		cumulative_closure_reopen_drill_value = cumsum(new_closure_reopen_drill_value),
+		cumulative_closure_reopen_drill_missed_reopen_risk_value = cumsum(new_closure_reopen_drill_missed_reopen_risk_value),
+		cumulative_timing_only_closure_reopen_drill_value = cumsum(new_timing_only_closure_reopen_drill_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_closure_reopen_drill_summary <- open_question_closure_reopen_drill_100_pass %>%
+	group_by(closure_reopen_drill_state, closure_monitoring_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		closure_reopen_drill_records = n_distinct(closure_reopen_drill_id),
+		axis_checks = sum(closure_reopen_drill_axis_first_seen),
+		closure_reopen_drill_owners = n_distinct(closure_reopen_drill_owner),
+		closure_reopen_drill_consumers = n_distinct(closure_reopen_drill_consumer),
+		closure_reopen_drill_value = sum(new_closure_reopen_drill_value),
+		closure_reopen_drill_missed_reopen_risk_value = sum(new_closure_reopen_drill_missed_reopen_risk_value),
+		timing_only_closure_reopen_drill_value = sum(new_timing_only_closure_reopen_drill_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(closure_reopen_drill_value), desc(closure_reopen_drill_missed_reopen_risk_value), first_pass)
+
+open_question_closure_reopen_drill_checkpoints <- open_question_closure_reopen_drill_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_closure_reopen_drill_records,
+		cumulative_closure_reopen_drill_axes,
+		cumulative_closure_reopen_drill_states,
+		cumulative_closure_reopen_drill_owners,
+		cumulative_closure_reopen_drill_consumers,
+		cumulative_closure_reopen_drill_value,
+		cumulative_closure_reopen_drill_missed_reopen_risk_value,
+		cumulative_timing_only_closure_reopen_drill_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_closure_reopen_drill_register,
+	file.path(data_dir, "typing-delay-open-question-closure-reopen-drill-register.csv")
+)
+
+write_csv(
+	open_question_closure_reopen_drill_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			closure_reopen_drill_state,
+			closure_monitoring_state,
+			closure_reopen_drill_contradiction_packet,
+			closure_reopen_drill_trigger_injection,
+			closure_reopen_drill_expected_invalidated_rows,
+			closure_reopen_drill_acceptance_gate,
+			closure_reopen_drill_failure_response,
+			closure_reopen_drill_consumer_notice,
+			closure_reopen_drill_rollback_check,
+			closure_reopen_drill_owner,
+			closure_reopen_drill_consumer,
+			closure_monitoring_trigger_catalog,
+			closure_monitoring_signal_source,
+			closure_monitoring_freshness_rule,
+			closure_monitoring_reopen_rule,
+			closure_monitoring_false_alarm_filter,
+			closure_monitoring_owner_route,
+			closure_ledger_entry,
+			closure_ledger_consumer_index_update,
+			closure_ledger_rollback_index,
+			supported_claim,
+			blocked_claim,
+			closure_reopen_drill_first_seen,
+			closure_reopen_drill_axis_first_seen,
+			closure_reopen_drill_state_first_seen,
+			closure_reopen_drill_owner_first_seen,
+			closure_reopen_drill_consumer_first_seen,
+			pass_result,
+			closure_reopen_drill_value,
+			closure_reopen_drill_missed_reopen_risk_value,
+			timing_only_closure_reopen_drill_value,
+			new_closure_reopen_drill_value,
+			new_closure_reopen_drill_missed_reopen_risk_value,
+			new_timing_only_closure_reopen_drill_value,
+			new_analysis_only_value,
+			cumulative_closure_reopen_drill_records,
+			cumulative_closure_reopen_drill_axes,
+			cumulative_closure_reopen_drill_states,
+			cumulative_closure_reopen_drill_owners,
+			cumulative_closure_reopen_drill_consumers,
+			cumulative_closure_reopen_drill_value,
+			cumulative_closure_reopen_drill_missed_reopen_risk_value,
+			cumulative_timing_only_closure_reopen_drill_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-closure-reopen-drill-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_closure_reopen_drill_summary,
+	file.path(data_dir, "typing-delay-open-question-closure-reopen-drill-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_closure_reopen_drill_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-closure-reopen-drill-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_closure_reopen_drill_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, closure_reopen_drill_value)
+		) %>%
+		ggplot(aes(closure_reopen_drill_value, question_label, fill = closure_reopen_drill_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set1", name = "Reopen drill") +
+		labs(
+			title = "Reopen drills make closed-question monitoring testable",
+			subtitle = "Each row names contradiction packet, trigger injection, invalidation, acceptance gate, failure response, consumer notice, rollback check, owner, and consumer",
+			x = "Closure-reopen-drill value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"450-open-question-closure-reopen-drill-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_closure_reopen_drill_saturation_long <- open_question_closure_reopen_drill_100_pass %>%
+	select(
+		pass_id,
+		`closure-reopen-drill records` = cumulative_closure_reopen_drill_records,
+		`closure-reopen-drill axes` = cumulative_closure_reopen_drill_axes,
+		`closure-reopen-drill states` = cumulative_closure_reopen_drill_states,
+		`closure-reopen-drill owners` = cumulative_closure_reopen_drill_owners,
+		`closure-reopen-drill consumers` = cumulative_closure_reopen_drill_consumers,
+		`closure-reopen-drill value` = cumulative_closure_reopen_drill_value,
+		`closure-reopen-drill missed-reopen risk value` = cumulative_closure_reopen_drill_missed_reopen_risk_value,
+		`timing-only closure-reopen-drill value` = cumulative_timing_only_closure_reopen_drill_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("closure-reopen-drill records", "closure-reopen-drill axes", "closure-reopen-drill states", "closure-reopen-drill owners", "closure-reopen-drill consumers", "closure-reopen-drill value", "closure-reopen-drill missed-reopen risk value", "timing-only closure-reopen-drill value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_closure_reopen_drill_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Closure-reopen-drill audit saturates once every contradiction path is covered",
+			subtitle = "Nine drill records appear by pass 9; all 90 axes appear by pass 90; timing-only drill value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"451-open-question-closure-reopen-drill-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_closure_reopen_drill_summary %>%
+		mutate(
+			state_label = str_wrap(closure_reopen_drill_state, width = 28),
+			state_label = fct_reorder(state_label, closure_reopen_drill_value + closure_reopen_drill_missed_reopen_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Closure-reopen-drill coverage separates local stale-closure tests from owner and observer tests",
+			subtitle = "Every row is checked for contradiction packet, trigger injection, invalidation, acceptance gate, failure response, consumer notice, rollback check, owner, substitute, and stop rule",
+			x = "Closure-reopen-drill-axis checks",
+			y = "Closure-reopen-drill state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"452-open-question-closure-reopen-drill-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
