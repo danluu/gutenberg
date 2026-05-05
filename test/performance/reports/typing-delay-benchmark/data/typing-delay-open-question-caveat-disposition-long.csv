@@ -1,0 +1,7 @@
+caveat,caveat_label,disposition,dimension,score
+Startup early-key variance,Startup early-key variance,"split metric, not wait",decision pressure,2
+Startup early-key variance,Startup early-key variance,"split metric, not wait",claim pressure,3
+Startup early-key variance,Startup early-key variance,"split metric, not wait",can change action,1
+Pattern 500ms p90 caveat,Pattern 500ms p90 caveat,candidate with tail gate,decision pressure,4
+Pattern 500ms p90 caveat,Pattern 500ms p90 caveat,candidate with tail gate,claim pressure,4
+Pattern 500ms p90 caveat,Pattern 500ms p90 caveat,candidate with tail gate,can change action,4

@@ -1295,6 +1295,21 @@ The R script derives:
 -   `data/typing-delay-open-question-local-gate-tail-veto-long.csv`: long-form
     q50, mean, p90, and non-q50 blocker scores used for the local-gate veto
     heatmap.
+-   `data/typing-delay-open-question-startup-sequence-summary.csv`: sequence
+    position breakdown for startup-wait rows, separating the discarded first
+    key, the first retained key, and steady retained keys.
+-   `data/typing-delay-open-question-startup-sequence-wide.csv`: wide startup
+    sequence-position table with first-retained-vs-steady gaps and p90 fields.
+-   `data/typing-delay-open-question-pattern-p90-tradeoff.csv`: pattern-wait
+    p90 tradeoff summary, including q50/p90 deltas, readiness/resource gates,
+    and counts of candidate runs above the `1000ms` p90 reference.
+-   `data/typing-delay-open-question-pattern-p90-tradeoff-runs.csv`: run-level
+    pattern-wait q50/p90 rows used for the p50-vs-p90 tradeoff scatter plot.
+-   `data/typing-delay-open-question-caveat-disposition.csv`: disposition table
+    for the remaining local caveats, separating metric-reporting caveats from
+    rollout-gate caveats.
+-   `data/typing-delay-open-question-caveat-disposition-long.csv`: long-form
+    caveat pressure scores used for the caveat-disposition heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10534,6 +10549,31 @@ experience. Pattern wait is the opposite: it has an attractive local q50 row, bu
 the p90 caveat prevents treating the local result as a complete wait-removal
 answer. The selector row remains source-first; a latency-only result cannot
 promote a blocked guard into a safe patch.
+
+The remaining local caveats then split into two different kinds of open
+question. Startup's caveat is a sequence-position effect: the first retained key
+is slow at every startup wait, so adding a startup wait does not remove it. The
+pattern caveat is a rollout gate: the `500ms` row improves q50 locally, but its
+p90 behavior is not clean enough to treat as a drop-in replacement without the
+target topology and policy.
+
+![Open question startup sequence position](figures/282-open-question-startup-sequence-position.png)
+
+![Open question pattern p90 tradeoff](figures/283-open-question-pattern-p90-tradeoff.png)
+
+![Open question caveat disposition](figures/284-open-question-caveat-disposition.png)
+
+| Caveat | Deeper result | Disposition |
+| ------ | ------------- | ----------- |
+| Startup early-key variance | At `0ms`, the first retained key is `10.5ms` slower than the steady retained keys. At `1000ms`, the same gap is `9.2ms`. The discarded first key is already outside the retained metric, and the steady retained keys stay near `16-17ms` across waits. | This should be reported as a separate first-retained or idle-return metric if it matters. It does not justify adding a startup wait to the retained Typing q50 metric. |
+| Pattern `500ms` p90 caveat | The `500ms` candidate has q50 `-10.3ms` versus `1000ms`, but p90 `+11.9ms`. `6/10` candidate runs exceed the `1000ms` median p90, though `0/10` exceed the worst `1000ms` p90. | Keep `500ms` as a local candidate with an explicit tail gate. The next useful evidence is target-topology p90 and policy, not another local q50-only row. |
+
+This leaves only one of those two caveats able to change a near-term action.
+Startup early-key behavior can change reporting or product wording, but not the
+current retained-q50 wait recommendation. Pattern p90 can still change rollout
+wording: it may become acceptable if CI/mac/container p90 stays within policy,
+or it may force a readiness predicate or a longer fixed fallback if the target
+topology amplifies the tail.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

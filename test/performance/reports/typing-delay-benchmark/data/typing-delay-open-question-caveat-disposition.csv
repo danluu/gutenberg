@@ -1,0 +1,3 @@
+caveat,best_current_row,decisive_detail,disposition,can_change_current_action,remaining_evidence,decision_pressure,claim_expansion_pressure,caveat_label
+Startup early-key variance,0ms startup wait,first retained vs steady p50 gap 10.5ms at 0ms and 9.1ms at 1s; discarded first key is already outside retained metric,"split metric, not wait",no,report first retained and idle-return separately if that user experience matters,2,3,Startup early-key variance
+Pattern 500ms p90 caveat,500ms fixed wait,"q50 delta -10.3ms, p90 delta 11.9ms; 6/10 candidate runs exceed 1s median p90 and 0 exceed 1s max p90",candidate with tail gate,"yes, for rollout wording",CI/mac/container target topology and p90 acceptance policy,4,4,Pattern 500ms p90 caveat

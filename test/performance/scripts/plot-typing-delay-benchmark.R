@@ -28697,6 +28697,297 @@ if (length(open_question_local_gate_tail_veto_rows) > 0) {
 	)
 }
 
+open_question_startup_sequence_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-keypress-distribution-summary.csv")
+open_question_pattern_short_runs_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-runs.csv")
+open_question_caveat_disposition_rows <- list()
+
+if (file.exists(open_question_startup_sequence_path)) {
+	open_question_startup_sequence_distribution <- read_csv(open_question_startup_sequence_path, show_col_types = FALSE) %>%
+		mutate(
+			key_position_class = case_when(
+				keypress_index == 1 ~ "discarded first key",
+				keypress_index == 2 ~ "first retained key",
+				keypress_index >= 3 ~ "steady retained keys",
+				TRUE ~ "other"
+			)
+		)
+
+	open_question_startup_sequence_summary <- open_question_startup_sequence_distribution %>%
+		group_by(startup_wait_ms, key_position_class) %>%
+		summarize(
+			keypress_indices = if_else(n() == 1L, as.character(first(keypress_index)), paste0(min(keypress_index), "-", max(keypress_index))),
+			n_key_positions = n(),
+			latency_p50_ms = median(latency_p50_ms, na.rm = TRUE),
+			latency_p90_ms = median(latency_p90_ms, na.rm = TRUE),
+			latency_sd_ms = median(latency_sd_ms, na.rm = TRUE),
+			max_position_p90_ms = max(latency_p90_ms, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		mutate(
+			wait_label = case_when(
+				startup_wait_ms == 0 ~ "0",
+				startup_wait_ms < 1000 ~ paste0(startup_wait_ms, "ms"),
+				startup_wait_ms %% 1000 == 0 ~ paste0(startup_wait_ms / 1000, "s"),
+				TRUE ~ paste0(startup_wait_ms, "ms")
+			),
+			wait_label = factor(wait_label, levels = unique(wait_label[order(startup_wait_ms)])),
+			key_position_class = factor(key_position_class, levels = c("discarded first key", "first retained key", "steady retained keys"))
+		)
+
+	open_question_startup_sequence_wide <- open_question_startup_sequence_summary %>%
+		select(startup_wait_ms, key_position_class, latency_p50_ms, latency_p90_ms, max_position_p90_ms) %>%
+		pivot_wider(
+			names_from = key_position_class,
+			values_from = c(latency_p50_ms, latency_p90_ms, max_position_p90_ms),
+			names_glue = "{.value}_{str_replace_all(key_position_class, '[^A-Za-z0-9]+', '_')}"
+		) %>%
+		mutate(
+			first_retained_vs_steady_p50_gap_ms = latency_p50_ms_first_retained_key - latency_p50_ms_steady_retained_keys,
+			discarded_vs_steady_p50_gap_ms = latency_p50_ms_discarded_first_key - latency_p50_ms_steady_retained_keys,
+			first_retained_vs_steady_p90_gap_ms = latency_p90_ms_first_retained_key - latency_p90_ms_steady_retained_keys,
+			steady_retained_max_p90_ms = max_position_p90_ms_steady_retained_keys,
+			wait_label = case_when(
+				startup_wait_ms == 0 ~ "0",
+				startup_wait_ms < 1000 ~ paste0(startup_wait_ms, "ms"),
+				startup_wait_ms %% 1000 == 0 ~ paste0(startup_wait_ms / 1000, "s"),
+				TRUE ~ paste0(startup_wait_ms, "ms")
+			),
+			wait_label = factor(wait_label, levels = wait_label[order(startup_wait_ms)]),
+			sequence_disposition = case_when(
+				first_retained_vs_steady_p50_gap_ms > 8 & startup_wait_ms == 0 ~ "same sequence cost; no startup-wait fix",
+				first_retained_vs_steady_p50_gap_ms > 8 ~ "same sequence cost",
+				TRUE ~ "small sequence cost"
+			)
+		)
+
+	write_csv(
+		open_question_startup_sequence_summary,
+		file.path(data_dir, "typing-delay-open-question-startup-sequence-summary.csv")
+	)
+	write_csv(
+		open_question_startup_sequence_wide,
+		file.path(data_dir, "typing-delay-open-question-startup-sequence-wide.csv")
+	)
+
+	save_plot(
+		ggplot(
+			open_question_startup_sequence_summary,
+			aes(wait_label, latency_p50_ms, color = key_position_class)
+		) +
+			geom_point(size = 2.8, alpha = 0.9, position = position_dodge(width = 0.45)) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Key position") +
+			labs(
+				title = "Startup early-key caveat is sequence-position cost, not startup-wait benefit",
+				subtitle = "The first retained key is slow at every startup wait; steady retained keys stay near the low band",
+				x = "Extra startup wait after editor setup",
+				y = "Per-position p50 latency (ms)"
+			) +
+			theme_minimal(base_size = 12) +
+			theme(legend.position = "bottom"),
+		"282-open-question-startup-sequence-position.png",
+		width = 12.8,
+		height = 7.2
+	)
+
+	open_question_startup_sequence_zero <- open_question_startup_sequence_wide %>% filter(startup_wait_ms == 0)
+	open_question_startup_sequence_reference <- open_question_startup_sequence_wide %>% filter(startup_wait_ms == 1000)
+	if (nrow(open_question_startup_sequence_zero) > 0 && nrow(open_question_startup_sequence_reference) > 0) {
+		open_question_caveat_disposition_rows <- append(
+			open_question_caveat_disposition_rows,
+			list(
+				tibble(
+					caveat = "Startup early-key variance",
+					best_current_row = "0ms startup wait",
+					decisive_detail = sprintf(
+						"first retained vs steady p50 gap %.1fms at 0ms and %.1fms at 1s; discarded first key is already outside retained metric",
+						open_question_startup_sequence_zero$first_retained_vs_steady_p50_gap_ms,
+						open_question_startup_sequence_reference$first_retained_vs_steady_p50_gap_ms
+					),
+					disposition = "split metric, not wait",
+					can_change_current_action = "no",
+					remaining_evidence = "report first retained and idle-return separately if that user experience matters",
+					decision_pressure = 2,
+					claim_expansion_pressure = 3
+				)
+			)
+		)
+	}
+}
+
+if (file.exists(open_question_pattern_short_runs_path)) {
+	open_question_pattern_short_runs <- read_csv(open_question_pattern_short_runs_path, show_col_types = FALSE)
+	open_question_pattern_reference_runs <- open_question_pattern_short_runs %>%
+		filter(measurement_idle_wait_ms == 1000)
+	open_question_pattern_reference_p50_median <- median(open_question_pattern_reference_runs$p50_ms, na.rm = TRUE)
+	open_question_pattern_reference_p90_median <- median(open_question_pattern_reference_runs$p90_ms, na.rm = TRUE)
+	open_question_pattern_reference_p90_max <- max(open_question_pattern_reference_runs$p90_ms, na.rm = TRUE)
+
+	open_question_pattern_tail_tradeoff <- open_question_pattern_short_runs %>%
+		group_by(wait_ms = measurement_idle_wait_ms) %>%
+		summarize(
+			runs = n(),
+			median_p50_ms = median(p50_ms, na.rm = TRUE),
+			median_mean_ms = median(mean_ms, na.rm = TRUE),
+			median_p90_ms = median(p90_ms, na.rm = TRUE),
+			p50_iqr_ms = IQR(p50_ms, na.rm = TRUE),
+			p90_iqr_ms = IQR(p90_ms, na.rm = TRUE),
+			max_p90_ms = max(p90_ms, na.rm = TRUE),
+			runs_p50_below_1000_median = sum(p50_ms < open_question_pattern_reference_p50_median, na.rm = TRUE),
+			runs_p90_above_1000_median = sum(p90_ms > open_question_pattern_reference_p90_median, na.rm = TRUE),
+			runs_p90_above_1000_max = sum(p90_ms > open_question_pattern_reference_p90_max, na.rm = TRUE),
+			.groups = "drop"
+		) %>%
+		left_join(
+			read_csv(open_question_pattern_boundary_path, show_col_types = FALSE) %>%
+				select(wait_ms = waitMs, readiness_boundary_hit_rate, wait_resource_plateau_rate),
+			by = "wait_ms"
+		) %>%
+		mutate(
+			q50_delta_vs_1000ms = median_p50_ms - open_question_pattern_reference_p50_median,
+			p90_delta_vs_1000ms = median_p90_ms - open_question_pattern_reference_p90_median,
+			wait_label = case_when(
+				wait_ms == 0 ~ "0",
+				wait_ms < 1000 ~ paste0(wait_ms, "ms"),
+				wait_ms %% 1000 == 0 ~ paste0(wait_ms / 1000, "s"),
+				TRUE ~ paste0(wait_ms, "ms")
+			),
+			wait_label = factor(wait_label, levels = wait_label[order(wait_ms)]),
+			tradeoff_class = case_when(
+				wait_ms == 1000 ~ "reference",
+				readiness_boundary_hit_rate < 1 | wait_resource_plateau_rate < 1 ~ "readiness veto",
+				q50_delta_vs_1000ms <= 0 & p90_delta_vs_1000ms <= 0 ~ "q50 and p90 improve",
+				q50_delta_vs_1000ms <= 0 & p90_delta_vs_1000ms > 0 ~ "q50 win, p90 cost",
+				TRUE ~ "no q50 win"
+			),
+			tradeoff_class = factor(tradeoff_class, levels = c("q50 and p90 improve", "q50 win, p90 cost", "no q50 win", "readiness veto", "reference"))
+		)
+
+	open_question_pattern_tail_tradeoff_runs <- open_question_pattern_short_runs %>%
+		mutate(
+			wait_label = case_when(
+				measurement_idle_wait_ms == 0 ~ "0",
+				measurement_idle_wait_ms < 1000 ~ paste0(measurement_idle_wait_ms, "ms"),
+				measurement_idle_wait_ms %% 1000 == 0 ~ paste0(measurement_idle_wait_ms / 1000, "s"),
+				TRUE ~ paste0(measurement_idle_wait_ms, "ms")
+			),
+			wait_label = factor(wait_label, levels = open_question_pattern_tail_tradeoff$wait_label[order(open_question_pattern_tail_tradeoff$wait_ms)]),
+			wait_class = if_else(measurement_idle_wait_ms == 500, "500ms candidate", if_else(measurement_idle_wait_ms == 1000, "1000ms reference", "other wait"))
+		)
+
+	write_csv(
+		open_question_pattern_tail_tradeoff,
+		file.path(data_dir, "typing-delay-open-question-pattern-p90-tradeoff.csv")
+	)
+	write_csv(
+		open_question_pattern_tail_tradeoff_runs,
+		file.path(data_dir, "typing-delay-open-question-pattern-p90-tradeoff-runs.csv")
+	)
+
+	save_plot(
+		ggplot(open_question_pattern_tail_tradeoff_runs, aes(p50_ms, p90_ms, color = wait_class)) +
+			geom_vline(xintercept = open_question_pattern_reference_p50_median, color = "grey55", linewidth = 0.35, linetype = "dashed") +
+			geom_hline(yintercept = open_question_pattern_reference_p90_median, color = "grey55", linewidth = 0.35, linetype = "dashed") +
+			geom_point(alpha = 0.82, size = 2.8) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Run class") +
+			labs(
+				title = "Pattern 500ms row buys q50 at the cost of a p90 caveat",
+				subtitle = "Dashed lines are the 1000ms median p50 and p90; the candidate is not a clean tail improvement",
+				x = "Run q50 (ms)",
+				y = "Run p90 (ms)"
+			) +
+			theme_minimal(base_size = 12) +
+			theme(legend.position = "bottom"),
+		"283-open-question-pattern-p90-tradeoff.png",
+		width = 12.4,
+		height = 7.2
+	)
+
+	open_question_pattern_500_tradeoff <- open_question_pattern_tail_tradeoff %>% filter(wait_ms == 500)
+	if (nrow(open_question_pattern_500_tradeoff) > 0) {
+		open_question_caveat_disposition_rows <- append(
+			open_question_caveat_disposition_rows,
+			list(
+				tibble(
+					caveat = "Pattern 500ms p90 caveat",
+					best_current_row = "500ms fixed wait",
+					decisive_detail = sprintf(
+						"q50 delta %.1fms, p90 delta %.1fms; %d/%d candidate runs exceed 1s median p90 and %d exceed 1s max p90",
+						open_question_pattern_500_tradeoff$q50_delta_vs_1000ms,
+						open_question_pattern_500_tradeoff$p90_delta_vs_1000ms,
+						open_question_pattern_500_tradeoff$runs_p90_above_1000_median,
+						open_question_pattern_500_tradeoff$runs,
+						open_question_pattern_500_tradeoff$runs_p90_above_1000_max
+					),
+					disposition = "candidate with tail gate",
+					can_change_current_action = "yes, for rollout wording",
+					remaining_evidence = "CI/mac/container target topology and p90 acceptance policy",
+					decision_pressure = 4,
+					claim_expansion_pressure = 4
+				)
+			)
+		)
+	}
+}
+
+if (length(open_question_caveat_disposition_rows) > 0) {
+	open_question_caveat_disposition <- bind_rows(open_question_caveat_disposition_rows) %>%
+		mutate(
+			caveat_label = str_wrap(caveat, width = 28),
+			disposition = factor(disposition, levels = c("split metric, not wait", "candidate with tail gate"))
+		)
+
+	open_question_caveat_disposition_long <- open_question_caveat_disposition %>%
+		transmute(
+			caveat,
+			caveat_label,
+			disposition,
+			decision_pressure,
+			claim_expansion_pressure,
+			action_change_score = if_else(can_change_current_action == "yes, for rollout wording", 4, 1)
+		) %>%
+		pivot_longer(
+			cols = c(decision_pressure, claim_expansion_pressure, action_change_score),
+			names_to = "dimension",
+			values_to = "score"
+		) %>%
+		mutate(
+			dimension = recode(
+				dimension,
+				decision_pressure = "decision pressure",
+				claim_expansion_pressure = "claim pressure",
+				action_change_score = "can change action"
+			),
+			dimension = factor(dimension, levels = c("decision pressure", "claim pressure", "can change action"))
+		)
+
+	write_csv(
+		open_question_caveat_disposition,
+		file.path(data_dir, "typing-delay-open-question-caveat-disposition.csv")
+	)
+	write_csv(
+		open_question_caveat_disposition_long,
+		file.path(data_dir, "typing-delay-open-question-caveat-disposition-long.csv")
+	)
+
+	save_plot(
+		ggplot(open_question_caveat_disposition_long, aes(dimension, caveat_label, fill = score)) +
+			geom_tile(color = "white", linewidth = 0.42) +
+			geom_text(aes(label = score), size = 3, color = "grey15") +
+			scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Score") +
+			labs(
+				title = "Remaining local caveats split into metric wording and rollout gates",
+				subtitle = "Startup early-key cost should be reported separately; pattern p90 can still change rollout wording",
+				x = "Dimension",
+				y = "Caveat"
+			) +
+			theme_minimal(base_size = 12) +
+			theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+		"284-open-question-caveat-disposition.png",
+		width = 11.6,
+		height = 5.4
+	)
+}
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
