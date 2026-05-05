@@ -38,11 +38,19 @@ Emoji/multibyte paragraph
 Emoji/multibyte paragraph
 ```
 
-A pass-36 rerun against the known-fixes base on the already-running HTTP wp-env
-at `http://localhost:9601` reproduced the same split. Starting a fresh wp-env on
-the suggested port `9968` failed before WordPress boot with Docker reporting
-that all predefined address pools were fully subnetted, so that environment was
-not used as evidence either way.
+A pass-39 rerun against the known-fixes base on a freshly started HTTP wp-env at
+`http://localhost:9910` reproduced the same split. That run used the same
+natural user actions as the source repro and failed after 43.3s with primary
+state `[inserted paragraph, another paragraph, emoji paragraph]` and secondary
+state `[inserted paragraph, emoji paragraph, emoji paragraph]`.
+
+The narrowest pass-39 proof is lower than Playwright: applying only the
+regression-test commit to the known-fixes base shows that the base already
+survives the pure stale-snapshot interleaving when each editor emits a fresh
+block array, but still fails when the editor reuses the same mutable block array
+reference across a reorder. That isolates the remaining defect to the cached
+serializable block snapshot, not to action locators, readiness waits, or the
+browser harness.
 
 ## Root cause
 
@@ -53,14 +61,23 @@ updates to the next event-loop turn. That means a local full-block snapshot can
 be based on the editor state before a remote structural edit, but be merged into
 a Yjs block array that has already received the remote edit.
 
-`mergeCrdtBlocks()` currently has no base snapshot for the incoming local
-snapshot. It treats `incomingBlocks` as the whole desired CRDT value and performs
-a positional left/right diff. For same-length middle regions it updates existing
-`Y.Map` instances in place. After a remote insertion and deletion, a later
-top-level move can therefore be interpreted as content replacement at the old
-positions rather than as an order change over block identities. On the receiving
-peer, an older local snapshot with the pre-move order can then rewrite the
-newly-received order and leave the peer with stale order and duplicated content.
+The original `mergeCrdtBlocks()` had no base snapshot for the incoming local
+snapshot. It treated `incomingBlocks` as the whole desired CRDT value and
+performed a positional left/right diff. For same-length middle regions it
+updated existing `Y.Map` instances in place. After a remote insertion and
+deletion, a later top-level move could therefore be interpreted as content
+replacement at the old positions rather than as an order change over block
+identities. On the receiving peer, an older local snapshot with the pre-move
+order could then rewrite the newly-received order and leave the peer with stale
+order and duplicated content.
+
+The known-fixes base contains an earlier merge-base reconciliation attempt, but
+it still memoizes `makeBlocksSerializable( incomingBlocks )` in
+`serializableBlocksCache` by the mutable `incomingBlocks` array object. When the
+block editor reuses that array reference and mutates its order, the cached
+serializable copy still has the pre-move order. The final top-level move is then
+invisible to reconciliation, so the peer can remain on the pre-move order and
+duplicate the moved paragraph.
 
 The behavior originates with `84019935998c16f877e976ad85e84748355d7282`
 ("Improve CRDT \"merge logic\" for post entities", PR #72262), which introduced
