@@ -1,0 +1,4 @@
+local_gate,best_local_row,q50_delta_ms,mean_delta_ms,p90_delta_ms,variance_or_readiness_result,veto_result,current_action,gate_label
+Startup wait,0ms extra wait,0.21550000000000225,0.4383999999999979,0.39019999999999655,CV delta 0.102; first retained key delta 1.3ms,variance caution only,Do not add a Typing startup wait for retained q50; keep first-key/tail reporting split.,Startup wait
+Pattern wait,500ms wait,-10.330125000000407,-2.45463964999999,11.886991500000818,readiness 100%; resource plateau 100%; run-q50 sd delta -10.5ms,p90 caution,"Keep 500ms as a local candidate, not a rollout decision; p90 and target topology remain gates.",Pattern wait
+Selector/source guard,Pattern override selected-only split,NA,NA,NA,7/7 behavior/source gates covered; aggregate timing not primary,semantic gate only,Prototype only the covered source guard; broader guards need behavior/source evidence before timing.,Selector/source guard

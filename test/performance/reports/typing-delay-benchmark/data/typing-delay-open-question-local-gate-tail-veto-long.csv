@@ -1,0 +1,13 @@
+local_gate,gate_label,veto_result,veto_dimension,score
+Startup wait,Startup wait,variance caution only,q50 risk,1
+Startup wait,Startup wait,variance caution only,mean risk,1
+Startup wait,Startup wait,variance caution only,p90 risk,1
+Startup wait,Startup wait,variance caution only,non-q50 blocker,3
+Pattern wait,Pattern wait,p90 caution,q50 risk,1
+Pattern wait,Pattern wait,p90 caution,mean risk,1
+Pattern wait,Pattern wait,p90 caution,p90 risk,3
+Pattern wait,Pattern wait,p90 caution,non-q50 blocker,3
+Selector/source guard,Selector/source guard,semantic gate only,q50 risk,NA
+Selector/source guard,Selector/source guard,semantic gate only,mean risk,NA
+Selector/source guard,Selector/source guard,semantic gate only,p90 risk,NA
+Selector/source guard,Selector/source guard,semantic gate only,non-q50 blocker,3

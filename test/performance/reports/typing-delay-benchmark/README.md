@@ -1280,6 +1280,21 @@ The R script derives:
     startup wait, pattern wait, and selector/source guard.
 -   `data/typing-delay-open-question-local-decision-robustness-long.csv`:
     long-form local-gate robustness scores used for the robustness heatmap.
+-   `data/typing-delay-open-question-startup-wait-tail-audit.csv`: non-q50
+    startup-wait audit comparing retained q50, mean, p90, CV, and first retained
+    key shape against the `1000ms` reference.
+-   `data/typing-delay-open-question-startup-wait-tail-long.csv`: long-form
+    startup-wait q50/mean/p90 deltas used for the tail-sensitivity scatter plot.
+-   `data/typing-delay-open-question-pattern-wait-tail-audit.csv`: non-q50
+    pattern-wait audit comparing q50, mean, p90, run-to-run q50 sd, readiness,
+    and resource-plateau fields against the `1000ms` reference.
+-   `data/typing-delay-open-question-pattern-wait-tail-long.csv`: long-form
+    pattern-wait q50/mean/p90 deltas used for the tail-sensitivity scatter plot.
+-   `data/typing-delay-open-question-local-gate-tail-veto.csv`: summary of
+    non-q50 vetoes for startup wait, pattern wait, and selector/source guard.
+-   `data/typing-delay-open-question-local-gate-tail-veto-long.csv`: long-form
+    q50, mean, p90, and non-q50 blocker scores used for the local-gate veto
+    heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10493,6 +10508,32 @@ answer is locally robust for the retained Typing statistic but does not answer
 idle first-input or CI policy. The pattern-wait answer is not "use the shortest
 wait"; it is "q50 is subordinate to readiness/resource preservation." The
 selector answer is not a timing sweep; it is a behavior-gated source patch.
+
+The next possible objection is that q50 is the wrong statistic for the local
+gate. I checked that directly for the same three local rows. For startup wait,
+the retained q50 answer survives mean and p90; for pattern wait, the q50 answer
+does not fully survive p90; for selector/source guard, q50 is not the deciding
+statistic at all.
+
+![Open question startup-wait tail sensitivity](figures/279-open-question-startup-wait-tail-sensitivity.png)
+
+![Open question pattern-wait tail sensitivity](figures/280-open-question-pattern-wait-tail-sensitivity.png)
+
+![Open question local-gate tail veto](figures/281-open-question-local-gate-tail-veto.png)
+
+| Local gate | Non-q50 check | Interpretation |
+| ---------- | ------------- | -------------- |
+| Startup wait | At `0ms` extra startup wait, retained q50 is `+0.2ms`, mean is `+0.4ms`, and p90 is `+0.4ms` versus `1000ms`. CV is higher by `0.102`, and the first retained key is about `+1.3ms` versus `1000ms`. | The "do not add a Typing startup wait for retained q50" recommendation survives q50/mean/p90. The remaining caveat is early-key distribution, not a benefit from waiting `1000ms`. |
+| Pattern wait | The `500ms` row is still the best local ready q50 row: q50 `-10.3ms` and mean `-2.5ms` versus `1000ms`, with readiness and resource plateau both `100%`. But p90 is `+11.9ms` versus `1000ms`. | `500ms` is a local candidate, not a tail-clean replacement. CI/topology validation must decide whether the p90 tradeoff is acceptable for this metric. |
+| Selector/source guard | The covered row is still the pattern-override selected-only split, with `7/7` behavior/source gates. | Timing is secondary here. The open question is semantic/source safety; broader guards remain blocked even if aggregate p50 later improves. |
+
+This closes a q50-only loophole in the previous pass. Startup wait is stable
+under the retained aggregate metrics that CI currently exposes, but still should
+not be used as evidence about the discarded first key or idle-return user
+experience. Pattern wait is the opposite: it has an attractive local q50 row, but
+the p90 caveat prevents treating the local result as a complete wait-removal
+answer. The selector row remains source-first; a latency-only result cannot
+promote a blocked guard into a safe patch.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

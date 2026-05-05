@@ -28356,6 +28356,347 @@ if (length(open_question_local_robustness_rows) > 0) {
 	)
 }
 
+open_question_startup_tail_summary_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-summary.csv")
+open_question_startup_keypress_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-keypress-distribution-summary.csv")
+open_question_pattern_tail_summary_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
+open_question_local_gate_tail_veto_rows <- list()
+
+if (file.exists(open_question_startup_tail_summary_path)) {
+	open_question_startup_tail_summary <- read_csv(open_question_startup_tail_summary_path, show_col_types = FALSE)
+	open_question_startup_tail_reference <- open_question_startup_tail_summary %>%
+		filter(settle_after_editor_setup_ms == 1000) %>%
+		slice(1)
+
+	open_question_startup_keypress_wide <- tibble(startup_wait_ms = numeric())
+	if (file.exists(open_question_startup_keypress_path)) {
+		open_question_startup_keypress_wide <- read_csv(open_question_startup_keypress_path, show_col_types = FALSE) %>%
+			filter(keypress_index %in% c(1, 2, 3)) %>%
+			transmute(
+				startup_wait_ms,
+				keypress_name = recode(
+					as.character(keypress_index),
+					`1` = "discarded_first",
+					`2` = "first_retained",
+					`3` = "second_retained"
+				),
+				latency_p50_ms,
+				latency_p90_ms
+			) %>%
+			pivot_wider(
+				names_from = keypress_name,
+				values_from = c(latency_p50_ms, latency_p90_ms)
+			)
+	}
+
+	if (nrow(open_question_startup_tail_reference) > 0) {
+		open_question_startup_tail_audit <- open_question_startup_tail_summary %>%
+			transmute(
+				startup_wait_ms = settle_after_editor_setup_ms,
+				retained_n,
+				retained_q50_ms = retained_latency_p50_ms,
+				retained_mean_ms = retained_latency_mean_ms,
+				retained_p90_ms = retained_latency_p90_ms,
+				retained_sd_ms = retained_latency_sd_ms,
+				retained_cv = retained_latency_cv,
+				throwaway_q50_ms = throwaway_latency_p50_ms,
+				q50_delta_vs_1000ms = retained_latency_p50_ms - open_question_startup_tail_reference$retained_latency_p50_ms,
+				mean_delta_vs_1000ms = retained_latency_mean_ms - open_question_startup_tail_reference$retained_latency_mean_ms,
+				p90_delta_vs_1000ms = retained_latency_p90_ms - open_question_startup_tail_reference$retained_latency_p90_ms,
+				cv_delta_vs_1000ms = retained_latency_cv - open_question_startup_tail_reference$retained_latency_cv
+			) %>%
+			left_join(open_question_startup_keypress_wide, by = "startup_wait_ms") %>%
+			mutate(
+				first_retained_delta_vs_1000ms = latency_p50_ms_first_retained -
+					latency_p50_ms_first_retained[startup_wait_ms == 1000][1],
+				second_retained_delta_vs_1000ms = latency_p50_ms_second_retained -
+					latency_p50_ms_second_retained[startup_wait_ms == 1000][1],
+				wait_label = case_when(
+					startup_wait_ms == 0 ~ "0",
+					startup_wait_ms < 1000 ~ paste0(startup_wait_ms, "ms"),
+					startup_wait_ms %% 1000 == 0 ~ paste0(startup_wait_ms / 1000, "s"),
+					TRUE ~ paste0(startup_wait_ms, "ms")
+				),
+				wait_label = factor(wait_label, levels = wait_label[order(startup_wait_ms)]),
+				tail_veto_class = case_when(
+					startup_wait_ms == 1000 ~ "reference",
+					q50_delta_vs_1000ms <= 5 & mean_delta_vs_1000ms <= 5 & p90_delta_vs_1000ms <= 5 & cv_delta_vs_1000ms <= 0.10 ~ "no q50/tail veto",
+					q50_delta_vs_1000ms <= 5 & mean_delta_vs_1000ms <= 5 & p90_delta_vs_1000ms <= 5 ~ "variance caution only",
+					TRUE ~ "tail or mean veto"
+				),
+				tail_veto_class = factor(tail_veto_class, levels = c("no q50/tail veto", "variance caution only", "tail or mean veto", "reference"))
+			)
+
+		open_question_startup_tail_long <- open_question_startup_tail_audit %>%
+			select(startup_wait_ms, wait_label, tail_veto_class, q50_delta_vs_1000ms, mean_delta_vs_1000ms, p90_delta_vs_1000ms) %>%
+			pivot_longer(
+				cols = c(q50_delta_vs_1000ms, mean_delta_vs_1000ms, p90_delta_vs_1000ms),
+				names_to = "metric",
+				values_to = "delta_ms"
+			) %>%
+			mutate(
+				metric = recode(
+					metric,
+					q50_delta_vs_1000ms = "q50",
+					mean_delta_vs_1000ms = "mean",
+					p90_delta_vs_1000ms = "p90"
+				),
+				metric = factor(metric, levels = c("q50", "mean", "p90"))
+			)
+
+		write_csv(
+			open_question_startup_tail_audit,
+			file.path(data_dir, "typing-delay-open-question-startup-wait-tail-audit.csv")
+		)
+		write_csv(
+			open_question_startup_tail_long,
+			file.path(data_dir, "typing-delay-open-question-startup-wait-tail-long.csv")
+		)
+
+		save_plot(
+			ggplot(open_question_startup_tail_long, aes(wait_label, delta_ms, color = metric)) +
+				geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35, linetype = "dashed") +
+				geom_point(size = 2.5, alpha = 0.9, position = position_dodge(width = 0.42)) +
+				scale_color_brewer(type = "qual", palette = "Set2", name = "Metric") +
+				labs(
+					title = "Startup-wait q50 conclusion survives mean and p90 checks",
+					subtitle = "The only local caveat is variance/early-key shape, not a retained q50, mean, or p90 benefit from waiting 1s",
+					x = "Extra startup wait after editor setup",
+					y = "Delta versus 1000ms wait (ms)"
+				) +
+				theme_minimal(base_size = 12) +
+				theme(legend.position = "bottom"),
+			"279-open-question-startup-wait-tail-sensitivity.png",
+			width = 12.8,
+			height = 7.2
+		)
+
+		open_question_startup_zero_tail <- open_question_startup_tail_audit %>% filter(startup_wait_ms == 0)
+		if (nrow(open_question_startup_zero_tail) > 0) {
+			open_question_local_gate_tail_veto_rows <- append(
+				open_question_local_gate_tail_veto_rows,
+				list(
+					tibble(
+						local_gate = "Startup wait",
+						best_local_row = "0ms extra wait",
+						q50_delta_ms = open_question_startup_zero_tail$q50_delta_vs_1000ms,
+						mean_delta_ms = open_question_startup_zero_tail$mean_delta_vs_1000ms,
+						p90_delta_ms = open_question_startup_zero_tail$p90_delta_vs_1000ms,
+						variance_or_readiness_result = sprintf("CV delta %.3f; first retained key delta %.1fms", open_question_startup_zero_tail$cv_delta_vs_1000ms, open_question_startup_zero_tail$first_retained_delta_vs_1000ms),
+						veto_result = as.character(open_question_startup_zero_tail$tail_veto_class),
+						current_action = "Do not add a Typing startup wait for retained q50; keep first-key/tail reporting split."
+					)
+				)
+			)
+		}
+	}
+}
+
+if (file.exists(open_question_pattern_tail_summary_path) && file.exists(open_question_pattern_boundary_path)) {
+	open_question_pattern_tail_summary <- read_csv(open_question_pattern_tail_summary_path, show_col_types = FALSE)
+	open_question_pattern_tail_reference <- open_question_pattern_tail_summary %>%
+		filter(measurement_idle_wait_ms == 1000) %>%
+		slice(1)
+
+	if (nrow(open_question_pattern_tail_reference) > 0) {
+		open_question_pattern_tail_audit <- open_question_pattern_tail_summary %>%
+			transmute(
+				wait_ms = measurement_idle_wait_ms,
+				exact_runs,
+				run_q50_ms = median_reported_q50_ms,
+				run_mean_ms = median_mean_ms,
+				run_p90_ms = median_p90_ms,
+				run_to_run_q50_sd_ms,
+				q50_delta_vs_1000ms = median_reported_q50_ms - open_question_pattern_tail_reference$median_reported_q50_ms,
+				mean_delta_vs_1000ms = median_mean_ms - open_question_pattern_tail_reference$median_mean_ms,
+				p90_delta_vs_1000ms = median_p90_ms - open_question_pattern_tail_reference$median_p90_ms,
+				run_to_run_sd_delta_vs_1000ms = run_to_run_q50_sd_ms - open_question_pattern_tail_reference$run_to_run_q50_sd_ms
+			) %>%
+			left_join(
+				read_csv(open_question_pattern_boundary_path, show_col_types = FALSE) %>%
+					select(
+						wait_ms = waitMs,
+						readiness_boundary_hit_rate,
+						wait_resource_plateau_rate,
+						no_active_requests_at_start_rate,
+						low_measurement_resources_rate
+					),
+				by = "wait_ms"
+			) %>%
+			mutate(
+				wait_label = case_when(
+					wait_ms == 0 ~ "0",
+					wait_ms < 1000 ~ paste0(wait_ms, "ms"),
+					wait_ms %% 1000 == 0 ~ paste0(wait_ms / 1000, "s"),
+					TRUE ~ paste0(wait_ms, "ms")
+				),
+				wait_label = factor(wait_label, levels = wait_label[order(wait_ms)]),
+				tail_veto_class = case_when(
+					wait_ms == 1000 ~ "reference",
+					readiness_boundary_hit_rate < 1 | wait_resource_plateau_rate < 1 ~ "readiness veto",
+					q50_delta_vs_1000ms <= 5 & mean_delta_vs_1000ms <= 5 & p90_delta_vs_1000ms <= 5 ~ "q50/tail pass",
+					q50_delta_vs_1000ms <= 5 & mean_delta_vs_1000ms <= 5 ~ "p90 caution",
+					TRUE ~ "q50 or mean veto"
+				),
+				tail_veto_class = factor(tail_veto_class, levels = c("q50/tail pass", "p90 caution", "q50 or mean veto", "readiness veto", "reference"))
+			)
+
+		open_question_pattern_tail_long <- open_question_pattern_tail_audit %>%
+			select(wait_ms, wait_label, tail_veto_class, q50_delta_vs_1000ms, mean_delta_vs_1000ms, p90_delta_vs_1000ms) %>%
+			pivot_longer(
+				cols = c(q50_delta_vs_1000ms, mean_delta_vs_1000ms, p90_delta_vs_1000ms),
+				names_to = "metric",
+				values_to = "delta_ms"
+			) %>%
+			mutate(
+				metric = recode(
+					metric,
+					q50_delta_vs_1000ms = "q50",
+					mean_delta_vs_1000ms = "mean",
+					p90_delta_vs_1000ms = "p90"
+				),
+				metric = factor(metric, levels = c("q50", "mean", "p90"))
+			)
+
+		write_csv(
+			open_question_pattern_tail_audit,
+			file.path(data_dir, "typing-delay-open-question-pattern-wait-tail-audit.csv")
+		)
+		write_csv(
+			open_question_pattern_tail_long,
+			file.path(data_dir, "typing-delay-open-question-pattern-wait-tail-long.csv")
+		)
+
+		save_plot(
+			ggplot(open_question_pattern_tail_long, aes(wait_label, delta_ms, color = metric)) +
+				geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35, linetype = "dashed") +
+				geom_point(size = 2.8, alpha = 0.9, position = position_dodge(width = 0.42)) +
+				scale_color_brewer(type = "qual", palette = "Dark2", name = "Metric") +
+				labs(
+					title = "Pattern-wait q50 candidates still have readiness and p90 caveats",
+					subtitle = "The local q50-best ready row is 500ms, but p90 does not improve against 1s; 0ms and 100ms fail readiness",
+					x = "Pattern measurement wait",
+					y = "Delta versus 1000ms wait (ms)"
+				) +
+				theme_minimal(base_size = 12) +
+				theme(legend.position = "bottom"),
+			"280-open-question-pattern-wait-tail-sensitivity.png",
+			width = 12.8,
+			height = 7.2
+		)
+
+		open_question_pattern_best_tail <- open_question_pattern_tail_audit %>%
+			filter(wait_ms < 1000, readiness_boundary_hit_rate >= 1, wait_resource_plateau_rate >= 1) %>%
+			arrange(q50_delta_vs_1000ms, wait_ms) %>%
+			slice(1)
+		if (nrow(open_question_pattern_best_tail) > 0) {
+			open_question_local_gate_tail_veto_rows <- append(
+				open_question_local_gate_tail_veto_rows,
+				list(
+					tibble(
+						local_gate = "Pattern wait",
+						best_local_row = paste0(open_question_pattern_best_tail$wait_ms, "ms wait"),
+						q50_delta_ms = open_question_pattern_best_tail$q50_delta_vs_1000ms,
+						mean_delta_ms = open_question_pattern_best_tail$mean_delta_vs_1000ms,
+						p90_delta_ms = open_question_pattern_best_tail$p90_delta_vs_1000ms,
+						variance_or_readiness_result = sprintf("readiness %.0f%%; resource plateau %.0f%%; run-q50 sd delta %.1fms", 100 * open_question_pattern_best_tail$readiness_boundary_hit_rate, 100 * open_question_pattern_best_tail$wait_resource_plateau_rate, open_question_pattern_best_tail$run_to_run_sd_delta_vs_1000ms),
+						veto_result = as.character(open_question_pattern_best_tail$tail_veto_class),
+						current_action = "Keep 500ms as a local candidate, not a rollout decision; p90 and target topology remain gates."
+					)
+				)
+			)
+		}
+	}
+}
+
+if (exists("open_question_selector_gate")) {
+	open_question_selector_best_tail <- open_question_selector_gate %>%
+		arrange(desc(covered_gates), desc(mean_proof_score), desc(current_scope_ms)) %>%
+		slice(1)
+	open_question_local_gate_tail_veto_rows <- append(
+		open_question_local_gate_tail_veto_rows,
+		list(
+			tibble(
+				local_gate = "Selector/source guard",
+				best_local_row = open_question_selector_best_tail$candidate,
+				q50_delta_ms = NA_real_,
+				mean_delta_ms = NA_real_,
+				p90_delta_ms = NA_real_,
+				variance_or_readiness_result = sprintf("%d/%d behavior/source gates covered; aggregate timing not primary", open_question_selector_best_tail$covered_gates, open_question_selector_best_tail$total_gates),
+				veto_result = "semantic gate only",
+				current_action = "Prototype only the covered source guard; broader guards need behavior/source evidence before timing."
+			)
+		)
+	)
+}
+
+if (length(open_question_local_gate_tail_veto_rows) > 0) {
+	open_question_local_gate_tail_veto <- bind_rows(open_question_local_gate_tail_veto_rows) %>%
+		mutate(
+			veto_result = factor(
+				veto_result,
+				levels = c("no q50/tail veto", "variance caution only", "q50/tail pass", "p90 caution", "q50 or mean veto", "readiness veto", "semantic gate only", "reference")
+			),
+			gate_label = str_wrap(local_gate, width = 24)
+		)
+
+	open_question_local_gate_tail_veto_long <- open_question_local_gate_tail_veto %>%
+		transmute(
+			local_gate,
+			gate_label,
+			veto_result,
+			q50_delta_score = case_when(is.na(q50_delta_ms) ~ NA_real_, q50_delta_ms <= 5 ~ 1, TRUE ~ 5),
+			mean_delta_score = case_when(is.na(mean_delta_ms) ~ NA_real_, mean_delta_ms <= 5 ~ 1, TRUE ~ 5),
+			p90_delta_score = case_when(is.na(p90_delta_ms) ~ NA_real_, p90_delta_ms <= 5 ~ 1, p90_delta_ms <= 15 ~ 3, TRUE ~ 5),
+			non_q50_blocker_score = case_when(
+				veto_result %in% c("no q50/tail veto", "q50/tail pass") ~ 1,
+				veto_result %in% c("variance caution only", "p90 caution", "semantic gate only") ~ 3,
+				TRUE ~ 5
+			)
+		) %>%
+		pivot_longer(
+			cols = c(q50_delta_score, mean_delta_score, p90_delta_score, non_q50_blocker_score),
+			names_to = "veto_dimension",
+			values_to = "score"
+		) %>%
+		mutate(
+			veto_dimension = recode(
+				veto_dimension,
+				q50_delta_score = "q50 risk",
+				mean_delta_score = "mean risk",
+				p90_delta_score = "p90 risk",
+				non_q50_blocker_score = "non-q50 blocker"
+			),
+			veto_dimension = factor(veto_dimension, levels = c("q50 risk", "mean risk", "p90 risk", "non-q50 blocker"))
+		)
+
+	write_csv(
+		open_question_local_gate_tail_veto,
+		file.path(data_dir, "typing-delay-open-question-local-gate-tail-veto.csv")
+	)
+	write_csv(
+		open_question_local_gate_tail_veto_long,
+		file.path(data_dir, "typing-delay-open-question-local-gate-tail-veto-long.csv")
+	)
+
+	save_plot(
+		ggplot(open_question_local_gate_tail_veto_long, aes(veto_dimension, gate_label, fill = score)) +
+			geom_tile(color = "white", linewidth = 0.42) +
+			geom_text(aes(label = if_else(is.na(score), "n/a", as.character(score))), size = 3, color = "grey15") +
+			scale_fill_distiller(type = "seq", palette = "OrRd", direction = 1, name = "Risk", na.value = "grey88") +
+			labs(
+				title = "Non-q50 checks narrow the remaining local open questions",
+				subtitle = "Startup wait has no q50/mean/p90 veto; pattern wait has a p90 caveat; selector work is gated by semantics, not latency",
+				x = "Check",
+				y = "Local gate"
+			) +
+			theme_minimal(base_size = 12) +
+			theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+		"281-open-question-local-gate-tail-veto.png",
+		width = 11.8,
+		height = 5.6
+	)
+}
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
