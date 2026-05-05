@@ -24531,6 +24531,129 @@ save_plot(
 	height = 8.0
 )
 
+open_question_falsification_matrix <- tribble(
+	~claim, ~lane, ~current_scope, ~falsifying_observation, ~negative_control, ~action_if_falsified, ~diagnostic_power, ~false_negative_risk, ~test_cost, ~reopen_scope,
+	"1000ms held-key cliff is a benchmark/input-shape artifact", "Benchmark artifact", "local dense held-key/tap comparison", "tap-then-wait or fixed-short-hold controls reproduce the same cliff after matching startup state and retained-key filtering", "paired tap, 50ms hold, 100ms hold, and held-key rows in the same fresh-editor topology", "reopen input-shape wording and rerun cross-browser controls", 5, 4, 2, "measurement definition",
+	"Chrome, Firefox, and Safari dips share benchmark ordering rather than one Chrome EventDispatch bug", "Benchmark artifact", "browser-portability wording", "one browser loses the dip after the same held-key and persistence-boundary controls while the others retain it", "same delay grid, key mode, retained-key rule, and persistence markers across browsers", "split browser-specific mechanism wording", 4, 3, 4, "browser scope",
+	"Retained Typing q50 is stable enough only for retained typing, not first input after idle", "CI/readiness", "retained aggregate metric", "first retained key or first undiscarded key remains wait-sensitive while aggregate q50 looks flat", "per-keypress distributions with and without CI throwaway under matched startup waits", "add or rename idle-input metric; do not hide it in q50", 5, 5, 2, "metric scope",
+	"Reducing startup wait can save runtime only after readiness fields pass", "CI/readiness", "CI runtime recommendation", "shorter startup wait improves q50 but increases failures, retries, late resources, or preview/canvas movement", "real Performance Tests topology with failures, resources, retries, first keys, and retained rows", "block wait reduction until readiness predicate or fallback is validated", 5, 5, 3, "CI action",
+	"Pattern fixed wait can be replaced by a source predicate", "CI/readiness", "site/post pattern-loading wait", "predicate fires before block patterns, previews, canvas, or resources are stable in any target lane", "fixed 500ms/1000ms control plus predicate and predicate-plus-resource-quiet arms", "keep fixed fallback or add resource guard", 5, 4, 3, "wait replacement",
+	"Selector guard is a safe source-level optimization", "Source/code", "behavior-gated prototype", "behavior fixtures fail or targeted source spans do not collapse even when aggregate p50 moves", "behavior fixtures first, source-span microscope second, aggregate p50 last", "do not cite aggregate timing; narrow or abandon patch", 5, 5, 2, "source patch",
+	"Store subscriber partition is compatible with public data semantics", "Source/code", "prerequisite for fanout optimization", "public subscribe order, dynamic dependency, or persistence selector compatibility changes under partitioning", "public compatibility matrix and marker-only fanout control", "veto public-path partition; keep private side-channel only", 5, 5, 4, "API contract",
+	"Sidecar can name runtime mechanism without perturbing the benchmark", "Sidecar/mechanism", "mechanism naming prerequisite", "sidecar changes fast/slow ordering or fails to join retained keys to helper, renderer, command, and clock rows", "observer-off baseline, passive sidecar, and repeated runtime-checkpoint control", "keep empirical wording; do not run heavier tracing", 5, 4, 5, "observer validity",
+	"CPU/QoS counters explain the remaining fast/slow classes", "CPU/QoS", "system-mechanism hypothesis", "joined frequency, residency, QoS, cache, or runnable-latency counters do not separate classes or perturb ordering", "accepted passive sidecar plus root counter run with ordering preservation", "keep empirical CPU-state sensitivity or escalate to root trace", 4, 3, 5, "system mechanism",
+	"Fixed-x workload is enough to choose source owners", "Claim expansion", "fixed-character benchmark artifact", "selection, deletion, paste, IME, block-structure, plugin-heavy, or pattern workloads show different owners or opposite effects", "per-stratum replay with assertions and source spans", "limit source conclusions to strata that reproduce the owner/effect", 5, 4, 4, "product workload",
+	"Chromium-internal visual endpoints approximate user-visible presentation", "Claim expansion", "browser-internal endpoint wording", "OCR, present, or camera endpoint ordering disagrees with screenshot/paint/DrawFrame ordering", "calibrated external endpoint ladder joined to retained-key windows", "keep Chromium-internal wording only", 4, 3, 5, "presentation endpoint",
+	"Repository q50 display predicts CI pass/fail", "External policy", "policy unknown", "dashboard, reviewer workflow, or noisy-metric policy uses thresholds or comparisons that do not match printed q50", "archived Performance Tests artifacts joined to dashboard/reviewer decisions", "do not predict pass/fail from local or repository q50", 4, 4, 4, "external policy"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		claim_label = str_wrap(claim, width = 31),
+		falsification_priority = diagnostic_power * false_negative_risk - test_cost,
+		falsification_action = case_when(
+			false_negative_risk >= 5 & test_cost <= 3 ~ "run before action",
+			false_negative_risk >= 5 ~ "block until prerequisite",
+			diagnostic_power >= 5 ~ "narrow on failure",
+			TRUE ~ "claim-boundary control"
+		),
+		falsification_action = factor(
+			falsification_action,
+			levels = c("claim-boundary control", "narrow on failure", "run before action", "block until prerequisite")
+		)
+	)
+
+open_question_falsification_long <- open_question_falsification_matrix %>%
+	select(claim, claim_label, lane, diagnostic_power, false_negative_risk, test_cost) %>%
+	pivot_longer(
+		cols = c(diagnostic_power, false_negative_risk, test_cost),
+		names_to = "dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		dimension = recode(
+			dimension,
+			diagnostic_power = "diagnostic power",
+			false_negative_risk = "false-negative risk",
+			test_cost = "test cost"
+		),
+		dimension = factor(dimension, levels = c("diagnostic power", "false-negative risk", "test cost")),
+		claim_label = fct_reorder(claim_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_falsification_summary <- open_question_falsification_matrix %>%
+	count(lane, falsification_action, name = "claims") %>%
+	group_by(lane) %>%
+	mutate(lane_claims = sum(claims)) %>%
+	ungroup()
+
+write_csv(
+	open_question_falsification_matrix %>%
+		select(
+			claim,
+			lane,
+			current_scope,
+			falsifying_observation,
+			negative_control,
+			action_if_falsified,
+			diagnostic_power,
+			false_negative_risk,
+			test_cost,
+			falsification_priority,
+			falsification_action,
+			reopen_scope
+		),
+	file.path(data_dir, "typing-delay-open-question-falsification-matrix.csv")
+)
+
+write_csv(
+	open_question_falsification_long,
+	file.path(data_dir, "typing-delay-open-question-falsification-long.csv")
+)
+
+write_csv(
+	open_question_falsification_summary,
+	file.path(data_dir, "typing-delay-open-question-falsification-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_falsification_long, aes(dimension, claim_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.75, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "PuBuGn", direction = 1, name = "Score") +
+		labs(
+			title = "Open questions should be closed by disconfirming controls",
+			subtitle = "Rows with high false-negative risk need explicit negative controls before action or broad wording",
+			x = "Falsification dimension",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"238-open-question-falsification-matrix.png",
+	width = 13.2,
+	height = 8.4
+)
+
+save_plot(
+	ggplot(
+		open_question_falsification_matrix %>%
+			mutate(claim_label = fct_reorder(claim_label, falsification_priority)),
+		aes(falsification_priority, claim_label, fill = falsification_action)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Required response") +
+		labs(
+			title = "The cheapest high-value falsifiers are metric and source-action controls",
+			subtitle = "Priority combines diagnostic power and false-negative risk, then subtracts test cost",
+			x = "Falsification priority",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"239-open-question-falsification-priority.png",
+	width = 12.8,
+	height = 8.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

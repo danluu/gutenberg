@@ -1,0 +1,97 @@
+claim,claim_label,lane,dimension,score
+1000ms held-key cliff is a benchmark/input-shape artifact,"1000ms held-key cliff is a
+benchmark/input-shape artifact",Benchmark artifact,diagnostic power,5
+1000ms held-key cliff is a benchmark/input-shape artifact,"1000ms held-key cliff is a
+benchmark/input-shape artifact",Benchmark artifact,false-negative risk,4
+1000ms held-key cliff is a benchmark/input-shape artifact,"1000ms held-key cliff is a
+benchmark/input-shape artifact",Benchmark artifact,test cost,2
+"Chrome, Firefox, and Safari dips share benchmark ordering rather than one Chrome EventDispatch bug","Chrome, Firefox, and Safari
+dips share benchmark ordering
+rather than one Chrome
+EventDispatch bug",Benchmark artifact,diagnostic power,4
+"Chrome, Firefox, and Safari dips share benchmark ordering rather than one Chrome EventDispatch bug","Chrome, Firefox, and Safari
+dips share benchmark ordering
+rather than one Chrome
+EventDispatch bug",Benchmark artifact,false-negative risk,3
+"Chrome, Firefox, and Safari dips share benchmark ordering rather than one Chrome EventDispatch bug","Chrome, Firefox, and Safari
+dips share benchmark ordering
+rather than one Chrome
+EventDispatch bug",Benchmark artifact,test cost,4
+"Retained Typing q50 is stable enough only for retained typing, not first input after idle","Retained Typing q50 is stable
+enough only for retained
+typing, not first input after
+idle",CI/readiness,diagnostic power,5
+"Retained Typing q50 is stable enough only for retained typing, not first input after idle","Retained Typing q50 is stable
+enough only for retained
+typing, not first input after
+idle",CI/readiness,false-negative risk,5
+"Retained Typing q50 is stable enough only for retained typing, not first input after idle","Retained Typing q50 is stable
+enough only for retained
+typing, not first input after
+idle",CI/readiness,test cost,2
+Reducing startup wait can save runtime only after readiness fields pass,"Reducing startup wait can save
+runtime only after readiness
+fields pass",CI/readiness,diagnostic power,5
+Reducing startup wait can save runtime only after readiness fields pass,"Reducing startup wait can save
+runtime only after readiness
+fields pass",CI/readiness,false-negative risk,5
+Reducing startup wait can save runtime only after readiness fields pass,"Reducing startup wait can save
+runtime only after readiness
+fields pass",CI/readiness,test cost,3
+Pattern fixed wait can be replaced by a source predicate,"Pattern fixed wait can be
+replaced by a source predicate",CI/readiness,diagnostic power,5
+Pattern fixed wait can be replaced by a source predicate,"Pattern fixed wait can be
+replaced by a source predicate",CI/readiness,false-negative risk,4
+Pattern fixed wait can be replaced by a source predicate,"Pattern fixed wait can be
+replaced by a source predicate",CI/readiness,test cost,3
+Selector guard is a safe source-level optimization,"Selector guard is a safe
+source-level optimization",Source/code,diagnostic power,5
+Selector guard is a safe source-level optimization,"Selector guard is a safe
+source-level optimization",Source/code,false-negative risk,5
+Selector guard is a safe source-level optimization,"Selector guard is a safe
+source-level optimization",Source/code,test cost,2
+Store subscriber partition is compatible with public data semantics,"Store subscriber partition is
+compatible with public data
+semantics",Source/code,diagnostic power,5
+Store subscriber partition is compatible with public data semantics,"Store subscriber partition is
+compatible with public data
+semantics",Source/code,false-negative risk,5
+Store subscriber partition is compatible with public data semantics,"Store subscriber partition is
+compatible with public data
+semantics",Source/code,test cost,4
+Sidecar can name runtime mechanism without perturbing the benchmark,"Sidecar can name runtime
+mechanism without perturbing
+the benchmark",Sidecar/mechanism,diagnostic power,5
+Sidecar can name runtime mechanism without perturbing the benchmark,"Sidecar can name runtime
+mechanism without perturbing
+the benchmark",Sidecar/mechanism,false-negative risk,4
+Sidecar can name runtime mechanism without perturbing the benchmark,"Sidecar can name runtime
+mechanism without perturbing
+the benchmark",Sidecar/mechanism,test cost,5
+CPU/QoS counters explain the remaining fast/slow classes,"CPU/QoS counters explain the
+remaining fast/slow classes",CPU/QoS,diagnostic power,4
+CPU/QoS counters explain the remaining fast/slow classes,"CPU/QoS counters explain the
+remaining fast/slow classes",CPU/QoS,false-negative risk,3
+CPU/QoS counters explain the remaining fast/slow classes,"CPU/QoS counters explain the
+remaining fast/slow classes",CPU/QoS,test cost,5
+Fixed-x workload is enough to choose source owners,"Fixed-x workload is enough to
+choose source owners",Claim expansion,diagnostic power,5
+Fixed-x workload is enough to choose source owners,"Fixed-x workload is enough to
+choose source owners",Claim expansion,false-negative risk,4
+Fixed-x workload is enough to choose source owners,"Fixed-x workload is enough to
+choose source owners",Claim expansion,test cost,4
+Chromium-internal visual endpoints approximate user-visible presentation,"Chromium-internal visual
+endpoints approximate
+user-visible presentation",Claim expansion,diagnostic power,4
+Chromium-internal visual endpoints approximate user-visible presentation,"Chromium-internal visual
+endpoints approximate
+user-visible presentation",Claim expansion,false-negative risk,3
+Chromium-internal visual endpoints approximate user-visible presentation,"Chromium-internal visual
+endpoints approximate
+user-visible presentation",Claim expansion,test cost,5
+Repository q50 display predicts CI pass/fail,"Repository q50 display predicts
+CI pass/fail",External policy,diagnostic power,4
+Repository q50 display predicts CI pass/fail,"Repository q50 display predicts
+CI pass/fail",External policy,false-negative risk,4
+Repository q50 display predicts CI pass/fail,"Repository q50 display predicts
+CI pass/fail",External policy,test cost,4

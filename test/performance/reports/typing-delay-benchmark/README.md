@@ -1133,6 +1133,14 @@ The R script derives:
     heatmap.
 -   `data/typing-delay-open-question-conflict-resolution-summary.csv`: rollup of
     conflict-resolution actions by claim lane.
+-   `data/typing-delay-open-question-falsification-matrix.csv`: falsifiability
+    ledger for remaining claims, including the observation that would retract or
+    narrow each claim and the negative control that should catch it.
+-   `data/typing-delay-open-question-falsification-long.csv`: long-form
+    diagnostic-power, false-negative-risk, and test-cost scores used for the
+    falsification heatmap.
+-   `data/typing-delay-open-question-falsification-summary.csv`: rollup of
+    falsification responses by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9840,6 +9848,34 @@ This closes another loophole in the open-question story. A disagreement is not a
 reason to reopen the local benchmark result by default. It is a reason to choose
 the artifact that actually measures the claim being made and narrow the wording
 to the passing artifact.
+
+The falsification matrix makes the remaining stop conditions explicit. For each
+claim, it names the observation that would force a retraction or narrower claim,
+the negative control that should catch that observation, and the response if the
+control fails.
+
+![Open question falsification matrix](figures/238-open-question-falsification-matrix.png)
+
+![Open question falsification priority](figures/239-open-question-falsification-priority.png)
+
+| Claim | Falsifying observation | Required response |
+| ----- | ---------------------- | ----------------- |
+| Retained Typing q50 is stable enough only for retained typing | first retained or first undiscarded key remains wait-sensitive while aggregate q50 is flat | run before action; add or rename an idle-input metric |
+| Startup wait can be reduced | q50 improves while failures, retries, resources, preview, canvas, or first-key tails regress | run before action; block wait reduction until readiness passes |
+| Selector guard is safe | behavior fixtures fail or source spans do not collapse even when p50 moves | run before action; do not cite aggregate timing |
+| Store subscriber partition is compatible | public subscribe order, dynamic dependency, or persistence selector semantics change | block until prerequisite; keep only compatible private-side-channel work |
+| `1000ms` held-key cliff is an input-shape artifact | tap-then-wait or short-hold controls reproduce the same cliff after matching state and retained-key filtering | narrow input-shape wording and rerun cross-browser controls |
+| Pattern wait can be replaced by a predicate | predicate fires before patterns, previews, canvas, or resources are stable | keep fixed fallback or add resource-quiet guard |
+| Fixed-`x` workload chooses source owners | replay strata show different owners, opposite effects, or behavior failures | narrow source claims to the strata that reproduce the effect |
+| Runtime or CPU/QoS mechanism can be named | sidecar or root counters perturb ordering, fail to join, or fail to separate classes | keep empirical wording |
+| External display or CI policy claims can be made | external endpoints or dashboard/reviewer policy disagree with internal q50 artifacts | keep Chromium-internal or repository-artifact wording only |
+
+This is the practical test for more analysis. The next additional runs should be
+negative controls, not larger versions of already closed local sweeps. The rows
+that can still change near-term action are the metric split, startup-readiness
+wait removal, selector behavior gates, and subscriber compatibility. Runtime,
+CPU/QoS, display, workload, and policy rows mostly control wording unless the
+claim is intentionally expanded beyond the current benchmark artifact.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
