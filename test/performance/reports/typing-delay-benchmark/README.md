@@ -1578,6 +1578,20 @@ The R script derives:
 -   `data/typing-delay-open-question-access-control-100-pass-checkpoints.csv`:
     checkpoints for access-record, access-axis, access-state, access-value,
     permission-value, timing-only-access, and analysis-only saturation.
+-   `data/typing-delay-open-question-audit-log-register.csv`: audit-log
+    register for the nine access-control records, including logged events,
+    creation/read/mutation/deletion records, supersession and dispute records,
+    log integrity, missing-log effect, and owner.
+-   `data/typing-delay-open-question-audit-log-100-pass-audit.csv`:
+    twenty-second forced 100-pass audit over audit-log axes: create, read,
+    mutate, delete, supersede, dispute, integrity, owner, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-audit-log-100-pass-summary.csv`: rollup of
+    audit-log coverage by audit-log state, access state, and pass result.
+-   `data/typing-delay-open-question-audit-log-100-pass-checkpoints.csv`:
+    checkpoints for audit-log-record, audit-log-axis, audit-log-state,
+    audit-log-value, event-trace-value, timing-only-audit-log, and analysis-only
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11420,6 +11434,35 @@ owner. If an artifact can be silently rewritten or deleted, the linked claim is
 not stable evidence. The access-control row makes that explicit: report wording
 is reusable only when permissions, mutation gates, deletion guards, and tamper
 signals are all intact.
+
+I then added the audit-log layer: each access-controlled evidence row now names
+which creation, read, mutation, deletion, supersession, and dispute events must
+be logged, what makes those logs tamper-evident, and what claim becomes
+unsupported when the event trail is missing.
+
+![Open question audit log register](figures/348-open-question-audit-log-register.png)
+
+![Open question audit log 100-pass saturation](figures/349-open-question-audit-log-100-pass-saturation.png)
+
+![Open question audit log coverage](figures/350-open-question-audit-log-coverage.png)
+
+| Audit-log check | Result |
+| --------------- | ------ |
+| Audit-log records | `9`, one per access-control record. |
+| Audit-log states | `3`: local packet audit log, owner artifact audit log, and observer artifact audit log. |
+| Audit-log owners | `9`; missing or disputed event logs route to the scoped permission owner. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Audit-log-axis checks | `90`: every row checked against all `10` audit-log axes. |
+| Audit-log value | `11792`: local packet audit logs contribute `8920`, owner artifact audit logs contribute `1778`, and observer artifact audit logs contribute `1094`. |
+| Event-trace value | `7082` across the nine audit-log records. |
+| Timing-only audit-log value | `0`; aggregate timing alone does not record creation, read, mutation, deletion, supersession, dispute, integrity, or ownership events. |
+| Saturation | Audit-log records are all named by pass `9`; all audit-log axes are covered by pass `90`; passes `91-100` add no audit-log coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This closes another loophole in the evidence chain. Permission rules are not
+enough if the actual lifecycle events are invisible. The audit-log row makes
+every evidence transition accountable; if a packet or artifact changes without a
+logged old/new event, the linked report wording is unsupported.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

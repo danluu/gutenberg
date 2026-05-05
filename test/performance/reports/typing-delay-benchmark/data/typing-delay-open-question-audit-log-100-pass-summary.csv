@@ -1,0 +1,7 @@
+audit_log_state,access_state,pass_result,passes,first_pass,audit_log_records,axis_checks,audit_log_owners,ledger_consumers,audit_log_value,event_trace_value,timing_only_audit_log_value,analysis_only_value
+local packet audit log,local packet access control,audit log: local packet,40,1,4,40,4,3,8920,5329,0,0
+owner artifact audit log,owner artifact access control,audit log: owner or observer artifact,20,5,2,20,2,2,1778,1082,0,0
+observer artifact audit log,observer artifact access control,audit log: owner or observer artifact,30,7,3,30,3,3,1094,671,0,0
+local packet audit log,local packet access control,repeat: audit-log-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact audit log,owner artifact access control,repeat: audit-log-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact audit log,observer artifact access control,repeat: audit-log-axis already checked,3,97,3,0,3,3,0,0,0,0

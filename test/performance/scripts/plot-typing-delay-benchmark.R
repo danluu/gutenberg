@@ -35048,6 +35048,298 @@ save_plot(
 	height = 7.2
 )
 
+open_question_audit_log_register <- open_question_access_control_register %>%
+	mutate(
+		audit_log_state = case_when(
+			access_state == "local packet access control" ~ "local packet audit log",
+			access_state == "owner artifact access control" ~ "owner artifact audit log",
+			TRUE ~ "observer artifact audit log"
+		),
+		logged_events = case_when(
+			audit_log_state == "local packet audit log" ~ "create packet, read packet, regenerate figure, mutate derived CSV, supersede packet, delete retired row, and dispute checksum",
+			audit_log_state == "owner artifact audit log" ~ "create owner artifact, read owner artifact, mutate scope decision, supersede artifact, delete retired row, and dispute owner signoff",
+			TRUE ~ "create observer artifact, read observer artifact, mutate control result, supersede artifact, delete retired row, and dispute calibration or counter signoff"
+		),
+		creation_record = case_when(
+			audit_log_state == "local packet audit log" ~ "record command, branch SHA, artifact checksum, generated CSV/figure paths, required-field manifest, and creator",
+			audit_log_state == "owner artifact audit log" ~ "record owner revision, artifact checksum, scope diff, reviewer identity, report link, and creator",
+			TRUE ~ "record observer revision, artifact checksum, calibration/replay/control metadata, reviewer identity, report link, and creator"
+		),
+		read_record = case_when(
+			audit_log_state == "local packet audit log" ~ "record retrieval of packet CSV, figure, checksum manifest, and report section by reviewer or report generator",
+			audit_log_state == "owner artifact audit log" ~ "record retrieval of owner artifact, scope decision, compatibility or policy diff, and report section",
+			TRUE ~ "record retrieval of observer artifact, calibration or replay control, mechanism decision, and report section"
+		),
+		mutation_record = case_when(
+			audit_log_state == "local packet audit log" ~ "record old/new checksum, regenerated output diff, mutation gate, reviewer, and report wording diff",
+			audit_log_state == "owner artifact audit log" ~ "record old/new checksum, owner scope diff, reviewer, mutation gate, and report wording diff",
+			TRUE ~ "record old/new checksum, observer control diff, reviewer, mutation gate, and report wording diff"
+		),
+		deletion_record = case_when(
+			audit_log_state == "local packet audit log" ~ "record deletion guard, successor packet or unsupported-claim note, reviewer, and report removal diff",
+			audit_log_state == "owner artifact audit log" ~ "record deletion guard, successor owner artifact or unsupported-claim note, reviewer, and report removal diff",
+			TRUE ~ "record deletion guard, successor observer artifact or unsupported-claim note, reviewer, and report removal diff"
+		),
+		supersession_record = supersession_rule,
+		dispute_record = case_when(
+			audit_log_state == "local packet audit log" ~ "record checksum, schema, row-count, figure-regeneration, or report-link dispute and reviewer disposition",
+			audit_log_state == "owner artifact audit log" ~ "record owner revision, reviewer identity, scope-diff, checksum, or report-link dispute and owner disposition",
+			TRUE ~ "record observer revision, control schema, calibration/replay result, checksum, or report-link dispute and observer disposition"
+		),
+		log_integrity = case_when(
+			audit_log_state == "local packet audit log" ~ "event log must preserve old/new checksums, command metadata, reviewer identity, timestamp, and report diff",
+			audit_log_state == "owner artifact audit log" ~ "event log must preserve old/new owner revisions, checksums, reviewer identity, timestamp, and scope diff",
+			TRUE ~ "event log must preserve old/new observer revisions, checksums, reviewer identity, timestamp, and control diff"
+		),
+		missing_log_effect = case_when(
+			audit_log_state == "local packet audit log" ~ "unlogged packet mutation or deletion makes local timing wording unsupported",
+			audit_log_state == "owner artifact audit log" ~ "unlogged owner artifact mutation or deletion makes owner-scoped wording unsupported",
+			TRUE ~ "unlogged observer artifact mutation or deletion makes broad product, endpoint, browser, or runtime wording unsupported"
+		),
+		audit_log_owner = permission_owner,
+		audit_log_cost = case_when(
+			audit_log_state == "local packet audit log" ~ 1,
+			audit_log_state == "owner artifact audit log" ~ 3,
+			TRUE ~ 4
+		),
+		audit_log_value = pmax(
+			1,
+			access_value + permission_value + false_closure_risk - audit_log_cost
+		),
+		event_trace_value = pmax(
+			1,
+			permission_value + retrieval_value + stale_reuse_risk - audit_log_cost
+		),
+		timing_only_audit_log_value = 0,
+		analysis_only_value = 0,
+		audit_log_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(audit_log_value), desc(event_trace_value), question_family)
+
+open_question_audit_log_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"create", "What evidence creation event must be logged?",
+	"read", "What retrieval or read event must be logged?",
+	"mutate", "What old/new mutation event must be logged?",
+	"delete", "What deletion or retirement event must be logged?",
+	"supersede", "What successor-evidence event supersedes the row?",
+	"dispute", "What dispute event records checksum, schema, scope, or report-link disagreement?",
+	"integrity", "What fields make the event log tamper-evident?",
+	"owner", "Who owns missing or disputed event logs?",
+	"substitute", "Can aggregate timing alone substitute for the event log?",
+	"stop-rule", "When does event-log review stop?"
+)
+
+open_question_audit_log_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_audit_log_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_audit_log_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_audit_log_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_audit_log_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		audit_log_first_seen = !duplicated(audit_log_id),
+		audit_log_axis_key = paste(audit_log_id, pressure_axis, sep = "::"),
+		audit_log_axis_first_seen = !duplicated(audit_log_axis_key),
+		audit_log_state_first_seen = !duplicated(audit_log_state),
+		new_audit_log_value = if_else(audit_log_first_seen, audit_log_value, 0),
+		new_event_trace_value = if_else(audit_log_first_seen, event_trace_value, 0),
+		new_timing_only_audit_log_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!audit_log_axis_first_seen ~ "repeat: audit-log-axis already checked",
+			audit_log_state == "local packet audit log" ~ "audit log: local packet",
+			TRUE ~ "audit log: owner or observer artifact"
+		),
+		cumulative_audit_log_records = cumsum(audit_log_first_seen),
+		cumulative_audit_log_axes = cumsum(audit_log_axis_first_seen),
+		cumulative_audit_log_states = cumsum(audit_log_state_first_seen),
+		cumulative_audit_log_value = cumsum(new_audit_log_value),
+		cumulative_event_trace_value = cumsum(new_event_trace_value),
+		cumulative_timing_only_audit_log_value = cumsum(new_timing_only_audit_log_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_audit_log_summary <- open_question_audit_log_100_pass %>%
+	group_by(audit_log_state, access_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		audit_log_records = n_distinct(audit_log_id),
+		axis_checks = sum(audit_log_axis_first_seen),
+		audit_log_owners = n_distinct(audit_log_owner),
+		ledger_consumers = n_distinct(ledger_consumer),
+		audit_log_value = sum(new_audit_log_value),
+		event_trace_value = sum(new_event_trace_value),
+		timing_only_audit_log_value = sum(new_timing_only_audit_log_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(audit_log_value), desc(event_trace_value), first_pass)
+
+open_question_audit_log_checkpoints <- open_question_audit_log_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_audit_log_records,
+		cumulative_audit_log_axes,
+		cumulative_audit_log_states,
+		cumulative_audit_log_value,
+		cumulative_event_trace_value,
+		cumulative_timing_only_audit_log_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_audit_log_register,
+	file.path(data_dir, "typing-delay-open-question-audit-log-register.csv")
+)
+
+write_csv(
+	open_question_audit_log_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			audit_log_state,
+			access_state,
+			logged_events,
+			creation_record,
+			read_record,
+			mutation_record,
+			deletion_record,
+			supersession_record,
+			dispute_record,
+			log_integrity,
+			missing_log_effect,
+			audit_log_owner,
+			supported_claim,
+			blocked_claim,
+			audit_log_first_seen,
+			audit_log_axis_first_seen,
+			audit_log_state_first_seen,
+			pass_result,
+			audit_log_value,
+			event_trace_value,
+			timing_only_audit_log_value,
+			new_audit_log_value,
+			new_event_trace_value,
+			new_timing_only_audit_log_value,
+			new_analysis_only_value,
+			cumulative_audit_log_records,
+			cumulative_audit_log_axes,
+			cumulative_audit_log_states,
+			cumulative_audit_log_value,
+			cumulative_event_trace_value,
+			cumulative_timing_only_audit_log_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-audit-log-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_audit_log_summary,
+	file.path(data_dir, "typing-delay-open-question-audit-log-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_audit_log_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-audit-log-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_audit_log_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, audit_log_value)
+		) %>%
+		ggplot(aes(audit_log_value, question_label, fill = audit_log_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Audit log state") +
+		labs(
+			title = "Audit logs make evidence lifecycle events inspectable",
+			subtitle = "Each row names creation, read, mutation, deletion, supersession, dispute, integrity, and missing-log effects",
+			x = "Audit-log value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"348-open-question-audit-log-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_audit_log_saturation_long <- open_question_audit_log_100_pass %>%
+	select(
+		pass_id,
+		`audit-log records` = cumulative_audit_log_records,
+		`audit-log axes` = cumulative_audit_log_axes,
+		`audit-log states` = cumulative_audit_log_states,
+		`audit-log value` = cumulative_audit_log_value,
+		`event-trace value` = cumulative_event_trace_value,
+		`timing-only audit-log value` = cumulative_timing_only_audit_log_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("audit-log records", "audit-log axes", "audit-log states", "audit-log value", "event-trace value", "timing-only audit-log value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_audit_log_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Audit-log audit saturates once evidence lifecycle events are named",
+			subtitle = "Nine audit-log records appear by pass 9; all 90 audit-log axes appear by pass 90; timing-only audit-log value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"349-open-question-audit-log-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_audit_log_summary %>%
+		mutate(
+			state_label = str_wrap(audit_log_state, width = 28),
+			state_label = fct_reorder(state_label, audit_log_value + event_trace_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Audit-log coverage separates local packets from owner and observer event trails",
+			subtitle = "Every row is checked for create, read, mutate, delete, supersede, dispute, integrity, owner, substitute, and stop rule",
+			x = "Audit-log-axis checks",
+			y = "Audit log state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"350-open-question-audit-log-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

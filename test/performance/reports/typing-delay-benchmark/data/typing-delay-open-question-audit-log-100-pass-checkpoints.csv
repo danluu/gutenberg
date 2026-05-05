@@ -1,0 +1,10 @@
+pass_id,cumulative_audit_log_records,cumulative_audit_log_axes,cumulative_audit_log_states,cumulative_audit_log_value,cumulative_event_trace_value,cumulative_timing_only_audit_log_value,cumulative_analysis_only_value
+1,1,1,1,2460,1469,0,0
+5,5,5,2,9919,5936,0,0
+9,9,9,3,11792,7082,0,0
+10,9,10,3,11792,7082,0,0
+20,9,20,3,11792,7082,0,0
+50,9,50,3,11792,7082,0,0
+90,9,90,3,11792,7082,0,0
+91,9,90,3,11792,7082,0,0
+100,9,90,3,11792,7082,0,0
