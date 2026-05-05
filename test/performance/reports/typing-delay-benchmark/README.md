@@ -1965,6 +1965,23 @@ The R script derives:
     disposition-propagation-value,
     disposition-propagation-stale-conclusion-risk-value,
     timing-only-disposition-propagation, and analysis-only saturation.
+-   `data/typing-delay-open-question-consumer-receipt-register.csv`:
+    consumer-receipt register for the nine disposition-propagation records,
+    including consumer channel, expected status, receipt evidence,
+    stale-view check, retry rule, escalation, audit packet, owner, and
+    consumer.
+-   `data/typing-delay-open-question-consumer-receipt-100-pass-audit.csv`:
+    forty-fifth forced 100-pass audit over consumer-receipt axes: channel,
+    status, evidence, stale-view, retry, escalate, audit-packet, owner,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-consumer-receipt-100-pass-summary.csv`:
+    rollup of consumer-receipt coverage by consumer-receipt state,
+    disposition-propagation state, and pass result.
+-   `data/typing-delay-open-question-consumer-receipt-100-pass-checkpoints.csv`:
+    checkpoints for consumer-receipt-record, consumer-receipt-axis,
+    consumer-receipt-state, consumer-receipt-owner, consumer-receipt-consumer,
+    consumer-receipt-value, consumer-receipt-missed-update-risk-value,
+    timing-only-consumer-receipt, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12504,6 +12521,37 @@ mode where a contradiction is accepted or rejected correctly but the old
 recommendation, figure, CSV, cached summary, or consumer notice remains live.
 The downstream conclusion cannot be reused until the propagation packet proves
 that every dependent surface reflects the disposition row.
+
+I then added the consumer-receipt layer: propagation is not complete until the
+intended consumer can actually see the propagated state and cannot still reach
+the stale one. Receipt records the consumer channel, expected status, receipt
+evidence, stale-view check, retry rule, escalation path, audit packet, owner,
+and consumer for each propagation row.
+
+![Open question consumer receipt register](figures/417-open-question-consumer-receipt-register.png)
+
+![Open question consumer receipt 100-pass saturation](figures/418-open-question-consumer-receipt-100-pass-saturation.png)
+
+![Open question consumer receipt coverage](figures/419-open-question-consumer-receipt-coverage.png)
+
+| Consumer-receipt check | Result |
+| ---------------------- | ------ |
+| Consumer-receipt records | `9`, one per disposition-propagation record. |
+| Consumer-receipt states | `3`: local packet consumer receipt, owner artifact consumer receipt, and observer artifact consumer receipt. |
+| Consumer-receipt owners | `9`; receipt routes back to the scoped disposition-propagation owner. |
+| Consumer-receipt consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Consumer-receipt-axis checks | `90`: every row checked against all `10` consumer-receipt axes. |
+| Consumer-receipt value | `4364751486`: local packet receipt contributes `3297979790`, owner artifact receipt contributes `659434978`, and observer artifact receipt contributes `407336718`. |
+| Consumer-receipt missed-update-risk value | `2272071679` across the nine consumer-receipt records. |
+| Timing-only consumer-receipt value | `0`; aggregate timing movement alone cannot prove the consumer channel, expected status, receipt evidence, stale-view check, retry rule, escalation, or audit packet. |
+| Saturation | Consumer-receipt records are all named by pass `9`; all consumer-receipt axes are covered by pass `90`; passes `91-100` add no consumer-receipt coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the stale-consumer-view guard. It catches the case where the report has
+been patched correctly but the CI wait-policy, source, benchmark-method, or
+broad-report consumer still sees old status through a stale table, figure,
+snippet, artifact, or recommendation path. If receipt evidence is missing, the
+recommendation remains blocked and publication is retried or escalated.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

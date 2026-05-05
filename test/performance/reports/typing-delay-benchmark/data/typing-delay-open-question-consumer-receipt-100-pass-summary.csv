@@ -1,0 +1,7 @@
+consumer_receipt_state,disposition_propagation_state,pass_result,passes,first_pass,consumer_receipt_records,axis_checks,consumer_receipt_owners,consumer_receipt_consumers,consumer_receipt_value,consumer_receipt_missed_update_risk_value,timing_only_consumer_receipt_value,analysis_only_value
+local packet consumer receipt,local packet disposition propagation,consumer receipt: local packet,40,1,4,40,4,3,3297979790,1716763621,0,0
+owner artifact consumer receipt,owner artifact disposition propagation,consumer receipt: owner or observer artifact,20,5,2,20,2,2,659434978,343268922,0,0
+observer artifact consumer receipt,observer artifact disposition propagation,consumer receipt: owner or observer artifact,30,7,3,30,3,3,407336718,212039136,0,0
+local packet consumer receipt,local packet disposition propagation,repeat: consumer-receipt-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact consumer receipt,owner artifact disposition propagation,repeat: consumer-receipt-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact consumer receipt,observer artifact disposition propagation,repeat: consumer-receipt-axis already checked,3,97,3,0,3,3,0,0,0,0

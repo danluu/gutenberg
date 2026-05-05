@@ -1,0 +1,10 @@
+pass_id,cumulative_consumer_receipt_records,cumulative_consumer_receipt_axes,cumulative_consumer_receipt_states,cumulative_consumer_receipt_owners,cumulative_consumer_receipt_consumers,cumulative_consumer_receipt_value,cumulative_consumer_receipt_missed_update_risk_value,cumulative_timing_only_consumer_receipt_value,cumulative_analysis_only_value
+1,1,1,1,1,1,909408143,473392476,0,0
+5,5,5,2,5,4,3668333138,1909551082,0,0
+9,9,9,3,9,8,4364751486,2272071679,0,0
+10,9,10,3,9,8,4364751486,2272071679,0,0
+20,9,20,3,9,8,4364751486,2272071679,0,0
+50,9,50,3,9,8,4364751486,2272071679,0,0
+90,9,90,3,9,8,4364751486,2272071679,0,0
+91,9,90,3,9,8,4364751486,2272071679,0,0
+100,9,90,3,9,8,4364751486,2272071679,0,0

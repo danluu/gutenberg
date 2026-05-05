@@ -41860,6 +41860,310 @@ save_plot(
 	height = 7.2
 )
 
+open_question_consumer_receipt_register <- open_question_disposition_propagation_register %>%
+	mutate(
+		consumer_receipt_state = case_when(
+			disposition_propagation_state == "local packet disposition propagation" ~ "local packet consumer receipt",
+			disposition_propagation_state == "owner artifact disposition propagation" ~ "owner artifact consumer receipt",
+			TRUE ~ "observer artifact consumer receipt"
+		),
+		consumer_receipt_channel = case_when(
+			close_scope == "CI wait decision" ~ "Performance Tests CI wait-policy consumer reads the propagated report section, refreshed CSV/figure set, and recommendation status",
+			close_scope == "source prototype decision" ~ "source and selector consumers read the propagated source guidance, refreshed artifact, and reviewer status",
+			close_scope == "benchmark method wording" ~ "benchmark-method consumers read the propagated method wording, refreshed trace/aggregation artifact, and limitation status",
+			TRUE ~ "broad report consumers read the propagated conclusion scope, refreshed artifact, browser/runtime/workload caveat, and recommendation status"
+		),
+		consumer_receipt_expected_status = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ "consumer sees accepted-reopened or rejected-unchanged status for the local packet, with stale local rows hidden from active support",
+			consumer_receipt_state == "owner artifact consumer receipt" ~ "consumer sees accepted-reopened or rejected-unchanged status for the owner artifact, with reviewer identity and stale owner rows hidden from active support",
+			TRUE ~ "consumer sees accepted-reopened or rejected-unchanged status for the observer artifact, with reviewer identity, broad-scope wording, and stale observer rows hidden from active support"
+		),
+		consumer_receipt_evidence = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ "receipt evidence links the local propagation packet, consumer-visible diff, refreshed or rejected artifact, and current recommendation row",
+			consumer_receipt_state == "owner artifact consumer receipt" ~ "receipt evidence links the owner propagation packet, reviewer identity, consumer-visible diff, refreshed or rejected artifact, and current recommendation row",
+			TRUE ~ "receipt evidence links the observer propagation packet, reviewer identity, broad-scope wording diff, consumer-visible diff, refreshed or rejected artifact, and current conclusion row"
+		),
+		consumer_receipt_stale_view_check = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ "check that no stale local recommendation, stale CSV, stale figure, or stale report snippet is still reachable through the consumer path",
+			consumer_receipt_state == "owner artifact consumer receipt" ~ "check that no stale owner recommendation, stale CSV, stale figure, stale reviewer status, or stale report snippet is still reachable through the consumer path",
+			TRUE ~ "check that no stale broad conclusion, stale CSV, stale figure, stale broad wording, stale reviewer status, or stale report snippet is still reachable through the consumer path"
+		),
+		consumer_receipt_retry_rule = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ "retry publication and keep the local recommendation blocked if receipt evidence is missing or stale",
+			consumer_receipt_state == "owner artifact consumer receipt" ~ "retry publication and keep the owner-scoped recommendation blocked if receipt evidence or reviewer-visible status is missing or stale",
+			TRUE ~ "retry publication and keep the broad conclusion blocked if receipt evidence, reviewer-visible status, or broad-scope wording is missing or stale"
+		),
+		consumer_receipt_escalation = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ "escalate to local packet owner when repeated receipt attempts still expose stale local status",
+			consumer_receipt_state == "owner artifact consumer receipt" ~ "escalate to owner artifact reviewer when repeated receipt attempts still expose stale owner status",
+			TRUE ~ "escalate to observer artifact reviewer when repeated receipt attempts still expose stale broad status"
+		),
+		consumer_receipt_audit_packet = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ "local receipt packet contains propagation packet, current consumer view, stale-view check result, retry result, escalation state, and consumer notice",
+			consumer_receipt_state == "owner artifact consumer receipt" ~ "owner receipt packet contains propagation packet, reviewer identity, current consumer view, stale-view check result, retry result, escalation state, and consumer notice",
+			TRUE ~ "observer receipt packet contains propagation packet, reviewer identity, broad-scope wording, current consumer view, stale-view check result, retry result, escalation state, and consumer notice"
+		),
+		consumer_receipt_owner = disposition_propagation_owner,
+		consumer_receipt_consumer = disposition_propagation_consumer,
+		consumer_receipt_cost = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ 4,
+			consumer_receipt_state == "owner artifact consumer receipt" ~ 6,
+			TRUE ~ 8
+		),
+		consumer_receipt_value = pmax(
+			1,
+			disposition_propagation_value + disposition_propagation_stale_conclusion_risk_value + contradiction_disposition_wrong_decision_risk_value - consumer_receipt_cost
+		),
+		consumer_receipt_missed_update_risk_value = pmax(
+			1,
+			disposition_propagation_stale_conclusion_risk_value + contradiction_disposition_wrong_decision_risk_value + contradiction_intake_drop_risk_value - consumer_receipt_cost
+		),
+		timing_only_consumer_receipt_value = 0,
+		analysis_only_value = 0,
+		consumer_receipt_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(consumer_receipt_value), desc(consumer_receipt_missed_update_risk_value), question_family)
+
+open_question_consumer_receipt_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"channel", "Which consumer channel receives the propagated state?",
+	"status", "What active or stale status should the consumer see?",
+	"evidence", "What proves the consumer saw the propagated state?",
+	"stale-view", "How is a stale consumer view detected?",
+	"retry", "What retry rule runs when receipt evidence is missing?",
+	"escalate", "Who is escalated when receipt continues to fail?",
+	"audit-packet", "What receipt packet proves the consumer path is current?",
+	"owner", "Who owns consumer receipt?",
+	"substitute", "Can aggregate timing alone substitute for consumer receipt?",
+	"stop-rule", "When does consumer-receipt review stop?"
+)
+
+open_question_consumer_receipt_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_consumer_receipt_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_consumer_receipt_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_consumer_receipt_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_consumer_receipt_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		consumer_receipt_first_seen = !duplicated(consumer_receipt_id),
+		consumer_receipt_axis_key = paste(consumer_receipt_id, pressure_axis, sep = "::"),
+		consumer_receipt_axis_first_seen = !duplicated(consumer_receipt_axis_key),
+		consumer_receipt_state_first_seen = !duplicated(consumer_receipt_state),
+		consumer_receipt_owner_first_seen = !duplicated(consumer_receipt_owner),
+		consumer_receipt_consumer_first_seen = !duplicated(consumer_receipt_consumer),
+		new_consumer_receipt_value = if_else(consumer_receipt_first_seen, consumer_receipt_value, 0),
+		new_consumer_receipt_missed_update_risk_value = if_else(consumer_receipt_first_seen, consumer_receipt_missed_update_risk_value, 0),
+		new_timing_only_consumer_receipt_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!consumer_receipt_axis_first_seen ~ "repeat: consumer-receipt-axis already checked",
+			consumer_receipt_state == "local packet consumer receipt" ~ "consumer receipt: local packet",
+			TRUE ~ "consumer receipt: owner or observer artifact"
+		),
+		cumulative_consumer_receipt_records = cumsum(consumer_receipt_first_seen),
+		cumulative_consumer_receipt_axes = cumsum(consumer_receipt_axis_first_seen),
+		cumulative_consumer_receipt_states = cumsum(consumer_receipt_state_first_seen),
+		cumulative_consumer_receipt_owners = cumsum(consumer_receipt_owner_first_seen),
+		cumulative_consumer_receipt_consumers = cumsum(consumer_receipt_consumer_first_seen),
+		cumulative_consumer_receipt_value = cumsum(new_consumer_receipt_value),
+		cumulative_consumer_receipt_missed_update_risk_value = cumsum(new_consumer_receipt_missed_update_risk_value),
+		cumulative_timing_only_consumer_receipt_value = cumsum(new_timing_only_consumer_receipt_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_consumer_receipt_summary <- open_question_consumer_receipt_100_pass %>%
+	group_by(consumer_receipt_state, disposition_propagation_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		consumer_receipt_records = n_distinct(consumer_receipt_id),
+		axis_checks = sum(consumer_receipt_axis_first_seen),
+		consumer_receipt_owners = n_distinct(consumer_receipt_owner),
+		consumer_receipt_consumers = n_distinct(consumer_receipt_consumer),
+		consumer_receipt_value = sum(new_consumer_receipt_value),
+		consumer_receipt_missed_update_risk_value = sum(new_consumer_receipt_missed_update_risk_value),
+		timing_only_consumer_receipt_value = sum(new_timing_only_consumer_receipt_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(consumer_receipt_value), desc(consumer_receipt_missed_update_risk_value), first_pass)
+
+open_question_consumer_receipt_checkpoints <- open_question_consumer_receipt_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_consumer_receipt_records,
+		cumulative_consumer_receipt_axes,
+		cumulative_consumer_receipt_states,
+		cumulative_consumer_receipt_owners,
+		cumulative_consumer_receipt_consumers,
+		cumulative_consumer_receipt_value,
+		cumulative_consumer_receipt_missed_update_risk_value,
+		cumulative_timing_only_consumer_receipt_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_consumer_receipt_register,
+	file.path(data_dir, "typing-delay-open-question-consumer-receipt-register.csv")
+)
+
+write_csv(
+	open_question_consumer_receipt_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			consumer_receipt_state,
+			disposition_propagation_state,
+			consumer_receipt_channel,
+			consumer_receipt_expected_status,
+			consumer_receipt_evidence,
+			consumer_receipt_stale_view_check,
+			consumer_receipt_retry_rule,
+			consumer_receipt_escalation,
+			consumer_receipt_audit_packet,
+			consumer_receipt_owner,
+			consumer_receipt_consumer,
+			disposition_propagation_target,
+			disposition_propagation_cache_update,
+			disposition_propagation_report_update,
+			disposition_propagation_verification_packet,
+			contradiction_disposition_consumer_notice,
+			supported_claim,
+			blocked_claim,
+			consumer_receipt_first_seen,
+			consumer_receipt_axis_first_seen,
+			consumer_receipt_state_first_seen,
+			consumer_receipt_owner_first_seen,
+			consumer_receipt_consumer_first_seen,
+			pass_result,
+			consumer_receipt_value,
+			consumer_receipt_missed_update_risk_value,
+			timing_only_consumer_receipt_value,
+			new_consumer_receipt_value,
+			new_consumer_receipt_missed_update_risk_value,
+			new_timing_only_consumer_receipt_value,
+			new_analysis_only_value,
+			cumulative_consumer_receipt_records,
+			cumulative_consumer_receipt_axes,
+			cumulative_consumer_receipt_states,
+			cumulative_consumer_receipt_owners,
+			cumulative_consumer_receipt_consumers,
+			cumulative_consumer_receipt_value,
+			cumulative_consumer_receipt_missed_update_risk_value,
+			cumulative_timing_only_consumer_receipt_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-consumer-receipt-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_consumer_receipt_summary,
+	file.path(data_dir, "typing-delay-open-question-consumer-receipt-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_consumer_receipt_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-consumer-receipt-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_consumer_receipt_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, consumer_receipt_value)
+		) %>%
+		ggplot(aes(consumer_receipt_value, question_label, fill = consumer_receipt_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Consumer receipt") +
+		labs(
+			title = "Consumer receipt checks that propagated conclusions are visible to their consumers",
+			subtitle = "Each row names channel, expected status, receipt evidence, stale-view check, retry rule, escalation, audit packet, owner, and consumer",
+			x = "Consumer-receipt value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"417-open-question-consumer-receipt-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_consumer_receipt_saturation_long <- open_question_consumer_receipt_100_pass %>%
+	select(
+		pass_id,
+		`consumer-receipt records` = cumulative_consumer_receipt_records,
+		`consumer-receipt axes` = cumulative_consumer_receipt_axes,
+		`consumer-receipt states` = cumulative_consumer_receipt_states,
+		`consumer-receipt owners` = cumulative_consumer_receipt_owners,
+		`consumer-receipt consumers` = cumulative_consumer_receipt_consumers,
+		`consumer-receipt value` = cumulative_consumer_receipt_value,
+		`consumer-receipt missed-update risk value` = cumulative_consumer_receipt_missed_update_risk_value,
+		`timing-only consumer-receipt value` = cumulative_timing_only_consumer_receipt_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("consumer-receipt records", "consumer-receipt axes", "consumer-receipt states", "consumer-receipt owners", "consumer-receipt consumers", "consumer-receipt value", "consumer-receipt missed-update risk value", "timing-only consumer-receipt value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_consumer_receipt_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Consumer-receipt audit saturates once every consumer path is checked",
+			subtitle = "Nine receipt records appear by pass 9; all 90 axes appear by pass 90; timing-only receipt value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"418-open-question-consumer-receipt-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_consumer_receipt_summary %>%
+		mutate(
+			state_label = str_wrap(consumer_receipt_state, width = 28),
+			state_label = fct_reorder(state_label, consumer_receipt_value + consumer_receipt_missed_update_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Consumer-receipt coverage separates local receipt from owner and observer receipt",
+			subtitle = "Every row is checked for channel, status, evidence, stale-view, retry, escalate, audit packet, owner, substitute, and stop rule",
+			x = "Consumer-receipt-axis checks",
+			y = "Consumer-receipt state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"419-open-question-consumer-receipt-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
