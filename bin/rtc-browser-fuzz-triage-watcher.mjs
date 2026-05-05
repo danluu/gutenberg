@@ -27,11 +27,12 @@ const SHARED_PATH = [
 
 const args = process.argv.slice( 2 );
 const DAEMON = args.includes( '--daemon' );
+const GATE_ONLY = args.includes( '--gate-only' );
 
 if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 	process.stdout.write(
 		[
-			'Usage: node bin/rtc-browser-fuzz-triage-watcher.mjs <run-output-dir> [--once] [--daemon]',
+			'Usage: node bin/rtc-browser-fuzz-triage-watcher.mjs <run-output-dir> [--once] [--daemon] [--gate-only]',
 			'',
 			'Scans RTC browser fuzz artifacts, dedupes failures, and launches',
 			'independent Codex deep-triage jobs for distinct failure signatures.',
@@ -41,9 +42,10 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 			'  RTC_FUZZ_TRIAGE_MAX_PARALLEL=2',
 			'  RTC_FUZZ_TRIAGE_REPRO_HOURS=3',
 			'  RTC_FUZZ_TRIAGE_CODEX_TIMEOUT_MS=<derived from repro hours>',
-			'  RTC_FUZZ_TRIAGE_STATE_DIR=<run-output-dir>/.triage-watcher',
-			'  RTC_FUZZ_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/analysis-tier',
-		].join( '\n' ) + '\n'
+		'  RTC_FUZZ_TRIAGE_STATE_DIR=<run-output-dir>/.triage-watcher',
+		'  RTC_FUZZ_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/analysis-tier',
+		'  RTC_FUZZ_DEEP_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/deep-analysis-tier',
+	].join( '\n' ) + '\n'
 	);
 	process.exit( 0 );
 }
@@ -67,6 +69,9 @@ const STATE_PATH = path.join( STATE_DIR, 'state.json' );
 const ANALYSIS_STATE_DIR =
 	process.env.RTC_FUZZ_ANALYSIS_STATE_DIR ??
 	path.join( STATE_DIR, 'analysis-tier' );
+const DEEP_ANALYSIS_STATE_DIR =
+	process.env.RTC_FUZZ_DEEP_ANALYSIS_STATE_DIR ??
+	path.join( STATE_DIR, 'deep-analysis-tier' );
 const WATCH_INTERVAL_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_TRIAGE_INTERVAL_MS',
 	30000
@@ -393,14 +398,21 @@ function mergeExamples( currentExamples = [], newExamples = [] ) {
 async function launchQueuedJobs( state ) {
 	const activeHashes = getActiveJobHashes( state );
 	const analysisDecisions = await readAnalysisDecisions();
+	const deepAnalysisDecisions = await readDeepAnalysisDecisions();
 	const sortedSignatures = sortSignaturesForLaunch(
 		Object.values( state.signatures ),
-		analysisDecisions
+		analysisDecisions,
+		deepAnalysisDecisions
 	);
 	const analysisGated = await applyAnalysisGates(
 		sortedSignatures,
-		analysisDecisions
+		analysisDecisions,
+		deepAnalysisDecisions
 	);
+	if ( GATE_ONLY ) {
+		state.lastAnalysisGatedCount = analysisGated;
+		return;
+	}
 
 	for ( const signature of sortedSignatures ) {
 		if ( activeHashes.size >= MAX_PARALLEL ) {
@@ -423,12 +435,19 @@ async function launchQueuedJobs( state ) {
 	state.lastAnalysisGatedCount = analysisGated;
 }
 
-async function applyAnalysisGates( signatures, analysisDecisions ) {
+async function applyAnalysisGates(
+	signatures,
+	analysisDecisions,
+	deepAnalysisDecisions
+) {
 	let analysisGated = 0;
 
 	for ( const signature of signatures ) {
-		const analysisDecision = analysisDecisions.get( signature.hash );
-		if ( ! shouldGateByAnalysis( analysisDecision ) ) {
+		const gate = getAnalysisGate(
+			analysisDecisions.get( signature.hash ),
+			deepAnalysisDecisions.get( signature.hash )
+		);
+		if ( ! gate ) {
 			continue;
 		}
 
@@ -436,14 +455,16 @@ async function applyAnalysisGates( signatures, analysisDecisions ) {
 			signature.status = 'analysis-gated';
 			signature.analysisGate = {
 				gatedAt: new Date().toISOString(),
-				classification: analysisDecision.classification,
-				confidence: analysisDecision.confidence,
-				distinctBugType: analysisDecision.distinctBugType,
-				isDuplicateOf: analysisDecision.isDuplicateOf,
+				sourceTier: gate.sourceTier,
+				classification: gate.classification,
+				confidence: gate.confidence,
+				distinctBugType: gate.distinctBugType,
+				isDuplicateOf: gate.isDuplicateOf,
+				candidateStatus: gate.candidateStatus,
 				recommendedTriageAction:
-					analysisDecision.recommendedTriageAction,
-				summary: analysisDecision.summary,
-				resultPath: analysisDecision.resultPath,
+					gate.recommendedTriageAction,
+				summary: gate.summary,
+				resultPath: gate.resultPath,
 			};
 			await writeStatusMarkdown(
 				path.join( signature.jobDir, 'STATUS.md' ),
@@ -455,6 +476,40 @@ async function applyAnalysisGates( signatures, analysisDecisions ) {
 	}
 
 	return analysisGated;
+}
+
+function getAnalysisGate( analysisDecision, deepAnalysisDecision ) {
+	if ( shouldGateByDeepAnalysis( deepAnalysisDecision ) ) {
+		return {
+			sourceTier: 'deep-analysis-tier',
+			classification: deepAnalysisDecision.classification,
+			confidence: deepAnalysisDecision.confidence,
+			distinctBugType: deepAnalysisDecision.distinctBugType,
+			isDuplicateOf: deepAnalysisDecision.duplicateOf,
+			candidateStatus: deepAnalysisDecision.candidateStatus,
+			recommendedTriageAction:
+				deepAnalysisDecision.candidateStatus,
+			summary: deepAnalysisDecision.summary,
+			resultPath: deepAnalysisDecision.resultPath,
+		};
+	}
+
+	if ( shouldGateByAnalysis( analysisDecision ) ) {
+		return {
+			sourceTier: 'analysis-tier',
+			classification: analysisDecision.classification,
+			confidence: analysisDecision.confidence,
+			distinctBugType: analysisDecision.distinctBugType,
+			isDuplicateOf: analysisDecision.isDuplicateOf,
+			candidateStatus: null,
+			recommendedTriageAction:
+				analysisDecision.recommendedTriageAction,
+			summary: analysisDecision.summary,
+			resultPath: analysisDecision.resultPath,
+		};
+	}
+
+	return null;
 }
 
 async function readAnalysisDecisions() {
@@ -493,25 +548,92 @@ async function readAnalysisDecisions() {
 	return decisions;
 }
 
+async function readDeepAnalysisDecisions() {
+	const analysisStatePath = path.join(
+		DEEP_ANALYSIS_STATE_DIR,
+		'state.json'
+	);
+	let analysisState = null;
+
+	try {
+		analysisState = JSON.parse(
+			await fs.readFile( analysisStatePath, 'utf8' )
+		);
+	} catch {
+		return new Map();
+	}
+
+	const decisions = new Map();
+	for ( const job of Object.values( analysisState.jobs ?? {} ) ) {
+		if ( job.status !== 'completed' || ! job.resultPath ) {
+			continue;
+		}
+
+		let result = null;
+		try {
+			result = JSON.parse(
+				await fs.readFile( job.resultPath, 'utf8' )
+			);
+		} catch {
+			continue;
+		}
+
+		decisions.set( job.hash, {
+			...result,
+			resultPath: job.resultPath,
+		} );
+	}
+
+	return decisions;
+}
+
 function shouldGateByAnalysis( analysisDecision ) {
-	if ( ! analysisDecision || analysisDecision.shouldDeepTriage !== false ) {
+	if ( ! analysisDecision ) {
 		return false;
 	}
 
-	return [
+	const gateAction = [
 		'merge_with_duplicate',
 		'suppress_as_infra',
 		'keep_collecting',
 	].includes( analysisDecision.recommendedTriageAction );
+
+	return gateAction || analysisDecision.shouldDeepTriage === false;
 }
 
-function sortSignaturesForLaunch( signatures, analysisDecisions ) {
+function shouldGateByDeepAnalysis( deepAnalysisDecision ) {
+	if ( ! deepAnalysisDecision ) {
+		return false;
+	}
+
+	if (
+		[
+			'confirmed_likely_real',
+			'needs_realistic_repro_search',
+			'needs_more_evidence',
+		].includes( deepAnalysisDecision.candidateStatus )
+	) {
+		return false;
+	}
+
+	return [ 'likely_duplicate', 'likely_false_positive' ].includes(
+		deepAnalysisDecision.candidateStatus
+	);
+}
+
+function sortSignaturesForLaunch(
+	signatures,
+	analysisDecisions,
+	deepAnalysisDecisions
+) {
 	return [ ...signatures ].sort( ( left, right ) => {
 		const leftPriority = getAnalysisLaunchPriority(
-			analysisDecisions.get( left.hash )
+			analysisDecisions.get( left.hash ),
+			deepAnalysisDecisions.get( left.hash )
 		);
 		const rightPriority = getAnalysisLaunchPriority(
-			analysisDecisions.get( right.hash )
+			analysisDecisions.get( right.hash ),
+			deepAnalysisDecisions.get( right.hash )
 		);
 
 		if ( leftPriority !== rightPriority ) {
@@ -522,9 +644,25 @@ function sortSignaturesForLaunch( signatures, analysisDecisions ) {
 	} );
 }
 
-function getAnalysisLaunchPriority( analysisDecision ) {
-	if ( shouldGateByAnalysis( analysisDecision ) ) {
+function getAnalysisLaunchPriority( analysisDecision, deepAnalysisDecision ) {
+	if (
+		shouldGateByAnalysis( analysisDecision ) ||
+		shouldGateByDeepAnalysis( deepAnalysisDecision )
+	) {
 		return 3;
+	}
+
+	if (
+		deepAnalysisDecision?.candidateStatus === 'confirmed_likely_real'
+	) {
+		return 0;
+	}
+
+	if (
+		deepAnalysisDecision?.candidateStatus ===
+		'needs_realistic_repro_search'
+	) {
+		return 0;
 	}
 
 	if (
@@ -783,12 +921,15 @@ function buildCodexPrompt( signature ) {
 		'6. Write durable artifacts in the triage job directory: analysis.md, bug-report.md for real bugs, false-positive.md for not-real/infra, and any repro files or commands you create.',
 		'7. If after the bounded search the issue is not real or cannot be reproduced realistically, document why and recommend keep_fuzzing, suppress_as_infra, or manual_triage as appropriate.',
 		'8. Do not revert user changes. If you edit repository files, keep changes narrowly scoped and list them in changedFiles.',
-		'9. The active fuzz environment is the wp-env test environment on port 8950. Check it with: WP_ENV_PORT=8950 WP_BASE_URL=http://localhost:8950 npm run wp-env-test -- status. Do not use npm run wp-env status for this run; that checks a different development environment and may be stopped.',
-		'10. Do not stop, start, clean, or reset the shared fuzz environment while fuzz lanes are running. If a reproduction needs a separate environment, create a separate worktree or terminal with a different port and document it.',
-		'11. Never run a Playwright repro command against the shared port 8950 environment unless the command sets GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1, GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1, WP_ENV_PORT=8950, WP_BASE_URL=http://localhost:8950, and WP_ARTIFACTS_PATH under the triage job directory. The default Playwright global setup deletes all posts and can invalidate active fuzz lanes.',
-		'12. Do not run tests or fixtures that call deleteAllPosts(), deleteAllUsers(), wp-env clean, wp-env start, or other destructive shared-environment cleanup against port 8950 while fuzz lanes are active. Use a separate worktree/port for destructive reproduction attempts.',
-		'13. You may launch additional codex exec processes or terminal subprocesses for independent repro searches when helpful. Keep every artifact and status file under the triage job directory.',
-		'14. Prefer Codex-heavy trace, screenshot, log, and code analysis before starting browser work. Only launch Playwright once you have a concrete hypothesis, and do not run multiple long browser loops concurrently from this job.',
+		'9. Keep filesystem searches narrow. Do not run broad `find`/`rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search only the triage job directory, the current fuzz run directory, the listed example artifact directories, and specific source files discovered with `git ls-files` or direct paths.',
+		'10. Do not search historical fuzz generations unless an exact related signature path is already listed in this prompt. If you need duplicate context, read this run\'s watcher/analysis state files instead of walking the artifact tree.',
+		'11. The active fuzz environment is the wp-env test environment on port 8950. Check it with: WP_ENV_PORT=8950 WP_BASE_URL=http://localhost:8950 npm run wp-env-test -- status. Do not use npm run wp-env status for this run; that checks a different development environment and may be stopped.',
+		'12. Do not stop, start, clean, or reset the shared fuzz environment while fuzz lanes are running. If a reproduction needs a separate environment, create a separate worktree or terminal with a different port and document it.',
+		'13. Never run a Playwright repro command against the shared port 8950 environment unless the command sets GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1, GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1, WP_ENV_PORT=8950, WP_BASE_URL=http://localhost:8950, and WP_ARTIFACTS_PATH under the triage job directory. The default Playwright global setup deletes all posts and can invalidate active fuzz lanes.',
+		'14. Do not run tests or fixtures that call deleteAllPosts(), deleteAllUsers(), wp-env clean, wp-env start, or other destructive shared-environment cleanup against port 8950 while fuzz lanes are active. Use a separate worktree/port for destructive reproduction attempts.',
+		'15. You may launch additional codex exec processes or terminal subprocesses for independent repro searches when helpful. Keep every artifact and status file under the triage job directory.',
+		'16. Prefer Codex-heavy trace, screenshot, log, and code analysis before starting browser work. Only launch Playwright once you have a concrete hypothesis, and do not run multiple long browser loops concurrently from this job.',
+		'17. Do not run `npm run wp-env-test start`, `npm run wp-env start`, or default `.wp-env.test.json` startup from `/Users/danluu/dev/fuzz/gutenberg` or `/Users/danluu/dev/fuzz/gutenberg-rtc-post-content-safe-sync-fuzz`; those are shared fuzz environments. If browser repro work needs a WordPress environment, create a job-local wp-env config under the triage job directory with a unique non-shared port and run `npm exec wp-env --config <that-config> start` only for that isolated environment.',
 		'',
 		'Output only JSON matching the schema. The JSON should point at the artifacts you wrote.',
 	].join( '\n' );
@@ -832,10 +973,12 @@ async function writeStatusMarkdown( statusPath, signature ) {
 		lines.push(
 			'Deep triage launch was gated by the high-parallel analysis tier.',
 			'',
+			`Analysis tier: ${ signature.analysisGate.sourceTier ?? 'analysis-tier' }`,
 			`Analysis classification: ${ signature.analysisGate.classification }`,
 			`Analysis confidence: ${ signature.analysisGate.confidence }`,
 			`Distinct bug type: ${ signature.analysisGate.distinctBugType }`,
 			`Duplicate of: ${ signature.analysisGate.isDuplicateOf ?? 'none' }`,
+			`Candidate status: ${ signature.analysisGate.candidateStatus ?? 'none' }`,
 			`Recommended triage action: ${ signature.analysisGate.recommendedTriageAction }`,
 			`Analysis result: ${ signature.analysisGate.resultPath }`,
 			'',

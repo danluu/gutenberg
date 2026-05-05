@@ -8,7 +8,8 @@ import { fileURLToPath } from 'url';
 const REPO_ROOT =
 	process.env.RTC_FUZZ_WATCHDOG_REPO_ROOT ??
 	path.resolve( path.dirname( fileURLToPath( import.meta.url ) ), '..' );
-const SESSION = process.env.RTC_FUZZ_WATCHDOG_SESSION ?? 'rtc-fuzz-supervisor';
+const SESSION =
+	process.env.RTC_FUZZ_WATCHDOG_SESSION ?? 'rtc-fuzz-supervisor';
 const OUTPUT_DIR = process.env.RTC_FUZZ_WATCHDOG_OUTPUT_DIR;
 const GROUPS_PATH = process.env.RTC_FUZZ_WATCHDOG_GROUPS_PATH;
 const SUPERVISOR_DURATION_HOURS =
@@ -58,19 +59,14 @@ function shellQuote( value ) {
 
 function runCommand( command, args ) {
 	return new Promise( ( resolve ) => {
-		execFile(
-			command,
-			args,
-			{ encoding: 'utf8' },
-			( error, stdout, stderr ) => {
-				resolve( {
-					ok: ! error,
-					code: error?.code ?? 0,
-					stdout,
-					stderr,
-				} );
-			}
-		);
+		execFile( command, args, { encoding: 'utf8' }, ( error, stdout, stderr ) => {
+			resolve( {
+				ok: ! error,
+				code: error?.code ?? 0,
+				stdout,
+				stderr,
+			} );
+		} );
 	} );
 }
 
@@ -129,9 +125,7 @@ function buildSupervisorCommand() {
 		`export RTC_FUZZ_SUPERVISOR_DURATION_HOURS=${ shellQuote(
 			SUPERVISOR_DURATION_HOURS
 		) }`,
-		`export RTC_FUZZ_SUPERVISOR_POLL_MS=${ shellQuote(
-			SUPERVISOR_POLL_MS
-		) }`,
+		`export RTC_FUZZ_SUPERVISOR_POLL_MS=${ shellQuote( SUPERVISOR_POLL_MS ) }`,
 		'while true; do node bin/rtc-browser-fuzz-supervisor.mjs; code=$?; echo "SUPERVISOR_EXIT:$code $(date -u +%Y-%m-%dT%H:%M:%SZ)"; sleep 30; done',
 	].join( '; ' );
 }

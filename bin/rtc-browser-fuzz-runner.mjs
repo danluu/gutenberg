@@ -109,7 +109,6 @@ const state = {
 	startedAt: new Date().toISOString(),
 	laneLabel: LANE_LABEL,
 	outputDir: OUTPUT_DIR,
-	actionProfile: ACTION_PROFILE || 'full',
 	seedStride: SEED_STRIDE,
 	nextSeed: START_SEED,
 	currentSeed: null,

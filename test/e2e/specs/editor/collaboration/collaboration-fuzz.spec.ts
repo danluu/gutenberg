@@ -4,7 +4,7 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
-import type { Locator, Page, Route } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -190,21 +190,6 @@ type BehaviorFaultTrace = {
 	userIndex: number;
 };
 
-type CdpSession = {
-	detach: () => Promise< void >;
-	send: (
-		method: string,
-		params?: Record< string, unknown >
-	) => Promise< any >;
-};
-
-type CdpCoverageSummary = {
-	coveredFunctionCount: number;
-	coveredRangeCount: number;
-	hash: string;
-	scriptCount: number;
-};
-
 type BehaviorCoverage = {
 	actionProfile: string;
 	actions: BehaviorActionTrace[];
@@ -243,6 +228,21 @@ type BehaviorCoverage = {
 	stepCount: number;
 	transport: 'http' | 'ws';
 	userCount: number;
+};
+
+type CdpSession = {
+	detach: () => Promise< void >;
+	send: (
+		method: string,
+		params?: Record< string, unknown >
+	) => Promise< any >;
+};
+
+type CdpCoverageSummary = {
+	coveredFunctionCount: number;
+	coveredRangeCount: number;
+	hash: string;
+	scriptCount: number;
 };
 
 const SEED_START = getEnvInt( 'GUTENBERG_RTC_BROWSER_SEED_START', 701 );
@@ -285,9 +285,6 @@ const ENABLE_LIFECYCLE_EVENTS =
 const COLLECT_CDP_COVERAGE =
 	process.env.GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE === '1';
 const BEHAVIORAL_COVERAGE_FILENAME = 'rtc-behavioral-coverage.ndjson';
-const ENABLE_STALE_TAB_PROBE = [ 'surface', 'stale-tab' ].includes(
-	ACTION_PROFILE
-);
 const RETRIABLE_SYNC_FAILURE_STATUSES = [ 429, 500, 503 ];
 
 function getEnvInt( name: string, fallback: number ): number {
@@ -378,7 +375,7 @@ function getInitialContentProfile( seed: number ): string {
 		return `base-${ seed % 4 }`;
 	}
 
-	switch ( seed % 8 ) {
+	switch ( seed % 6 ) {
 		case 1:
 			return 'html-entity-reference';
 		case 2:
@@ -389,10 +386,6 @@ function getInitialContentProfile( seed: number ): string {
 			return 'equivalent-html-content';
 		case 5:
 			return 'freeform-parser-content';
-		case 6:
-			return 'layout-and-media-content';
-		case 7:
-			return 'query-and-navigation-like-content';
 		default:
 			return `base-${ seed % 4 }`;
 	}
@@ -778,61 +771,6 @@ function freeformParserContent( seed: number ): string {
 	].join( '\n' );
 }
 
-function layoutAndMediaContent( seed: number ): string {
-	return [
-		'<!-- wp:columns -->',
-		'<div class="wp-block-columns">',
-		'<!-- wp:column -->',
-		'<div class="wp-block-column">',
-		paragraph( `Column A nested paragraph ${ seed }.` ),
-		'</div>',
-		'<!-- /wp:column -->',
-		'<!-- wp:column -->',
-		'<div class="wp-block-column">',
-		paragraph( `Column B nested paragraph ${ seed }.` ),
-		'</div>',
-		'<!-- /wp:column -->',
-		'</div>',
-		'<!-- /wp:columns -->',
-		`${ blockDelimiter( 'image', {
-			alt: `Fuzz image alt ${ seed }`,
-			caption: `Fuzz image caption ${ seed }`,
-			url: `https://example.com/fuzz-image-${ seed }.jpg`,
-		} ) }\n<figure class="wp-block-image"><img src="https://example.com/fuzz-image-${ seed }.jpg" alt="Fuzz image alt ${ seed }"/><figcaption class="wp-element-caption">Fuzz image caption ${ seed }</figcaption></figure>\n<!-- /wp:image -->`,
-		`${ blockDelimiter( 'file', {
-			href: `https://example.com/fuzz-file-${ seed }.pdf`,
-		} ) }\n<div class="wp-block-file"><a href="https://example.com/fuzz-file-${ seed }.pdf">Fuzz file ${ seed }</a><a href="https://example.com/fuzz-file-${ seed }.pdf" class="wp-block-file__button wp-element-button" download>Download</a></div>\n<!-- /wp:file -->`,
-	].join( '\n' );
-}
-
-function queryAndNavigationLikeContent( seed: number ): string {
-	return [
-		`${ blockDelimiter( 'query', {
-			queryId: seed % 1000,
-			query: {
-				author: '',
-				exclude: [],
-				inherit: false,
-				offset: 0,
-				order: 'desc',
-				orderBy: 'date',
-				pages: 0,
-				perPage: 3,
-				postType: 'post',
-				search: '',
-				sticky: '',
-			},
-		} ) }\n<div class="wp-block-query"><!-- wp:post-template --><!-- wp:post-title /--><!-- wp:post-excerpt /--><!-- /wp:post-template --></div>\n<!-- /wp:query -->`,
-		'<!-- wp:buttons -->',
-		'<div class="wp-block-buttons">',
-		`${ blockDelimiter( 'button', {
-			url: `https://example.com/button-${ seed }`,
-		} ) }\n<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://example.com/button-${ seed }">Button ${ seed }</a></div>\n<!-- /wp:button -->`,
-		'</div>',
-		'<!-- /wp:buttons -->',
-	].join( '\n' );
-}
-
 function getParserStressContent(
 	seed: number,
 	step = 0,
@@ -846,8 +784,6 @@ function getParserStressContent(
 		validationFixContent,
 		equivalentHtmlContent,
 		freeformParserContent,
-		layoutAndMediaContent,
-		queryAndNavigationLikeContent,
 	];
 
 	return pick( rng, variants )( variantSeed );
@@ -914,7 +850,7 @@ function getInitialContent( seed: number ): string {
 		return baseContent;
 	}
 
-	switch ( seed % 8 ) {
+	switch ( seed % 6 ) {
 		case 1:
 			return [ baseContent, htmlEntityReferenceContent( seed ) ].join(
 				'\n'
@@ -927,12 +863,6 @@ function getInitialContent( seed: number ): string {
 			return [ baseContent, equivalentHtmlContent( seed ) ].join( '\n' );
 		case 5:
 			return [ baseContent, freeformParserContent( seed ) ].join( '\n' );
-		case 6:
-			return [ baseContent, layoutAndMediaContent( seed ) ].join( '\n' );
-		case 7:
-			return [ baseContent, queryAndNavigationLikeContent( seed ) ].join(
-				'\n'
-			);
 		default:
 			return baseContent;
 	}
@@ -951,7 +881,14 @@ function hasMarker( value: unknown, marker: string ): boolean {
 }
 
 function getCheckpointMarker( seed: number, step: number, userIndex: number ) {
-	return `rtc-save-marker-${ seed }-${ step }-${ userIndex }`;
+	return `rtc-save-paragraph-marker-${ seed }-${ step }-${ userIndex }-end`;
+}
+
+function getRelatedCheckpointMarker( marker: string, kind: string ) {
+	return marker.replace(
+		'rtc-save-paragraph-marker-',
+		`rtc-save-${ kind }-marker-`
+	);
 }
 
 async function getEditedPostContent( page: Page ): Promise< string > {
@@ -1309,6 +1246,196 @@ async function moveTopLevelBlock( page: Page, rng: Random ) {
 	);
 }
 
+async function insertNestedGroup(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const blocks = await getTopLevelBlocks( page );
+	const index = Math.floor( rng() * ( blocks.length + 1 ) );
+
+	await page.evaluate(
+		( { blockIndex, marker } ) => {
+			const paragraphBlock = ( window as any ).wp.blocks.createBlock(
+				'core/paragraph',
+				{
+					content: `${ marker } nested paragraph`,
+				}
+			);
+			const headingBlock = ( window as any ).wp.blocks.createBlock(
+				'core/heading',
+				{
+					content: `${ marker } nested heading`,
+					level: 3,
+				}
+			);
+			const groupBlock = ( window as any ).wp.blocks.createBlock(
+				'core/group',
+				{
+					layout: { type: 'constrained' },
+				},
+				[ paragraphBlock, headingBlock ]
+			);
+
+			( window as any ).wp.data
+				.dispatch( 'core/block-editor' )
+				.insertBlock( groupBlock, blockIndex );
+		},
+		{
+			blockIndex: index,
+			marker: `Seed ${ seed } step ${ step } user ${ userIndex }`,
+		}
+	);
+}
+
+async function editNestedParagraph(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const targetIndex = Math.floor( rng() * 1000000 );
+	const updated = await page.evaluate(
+		( { content, nestedTargetIndex } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			const nestedParagraphs: Array< { clientId: string } > = [];
+			const visit = ( currentBlocks: Array< any >, depth: number ) => {
+				for ( const block of currentBlocks ) {
+					if ( depth > 0 && block.name === 'core/paragraph' ) {
+						nestedParagraphs.push( block );
+					}
+					visit( block.innerBlocks ?? [], depth + 1 );
+				}
+			};
+
+			visit( blocks, 0 );
+
+			if ( nestedParagraphs.length === 0 ) {
+				return false;
+			}
+
+			const target =
+				nestedParagraphs[ nestedTargetIndex % nestedParagraphs.length ];
+			blockEditor.updateBlockAttributes( target.clientId, {
+				content,
+			} );
+			return true;
+		},
+		{
+			content: `Nested update seed ${ seed } step ${ step } user ${ userIndex } ${ Math.floor(
+				rng() * 1000000
+			) }`,
+			nestedTargetIndex: targetIndex,
+		}
+	);
+
+	if ( ! updated ) {
+		await insertNestedGroup( page, seed, step, userIndex, rng );
+	}
+}
+
+async function moveBlockIntoGroup(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const sourceIndex = Math.floor( rng() * 1000000 );
+	const targetIndex = Math.floor( rng() * 1000000 );
+	const moved = await page.evaluate(
+		( { moveSourceIndex, moveTargetIndex } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			const groups = blocks.filter(
+				( block: { name: string } ) => block.name === 'core/group'
+			);
+			const movable = blocks.filter(
+				( block: { name: string } ) => block.name !== 'core/group'
+			);
+
+			if ( groups.length === 0 || movable.length === 0 ) {
+				return false;
+			}
+
+			const source = movable[ moveSourceIndex % movable.length ];
+			const target = groups[ moveTargetIndex % groups.length ];
+			blockEditor.moveBlockToPosition(
+				source.clientId,
+				'',
+				target.clientId,
+				0
+			);
+			return true;
+		},
+		{
+			moveSourceIndex: sourceIndex,
+			moveTargetIndex: targetIndex,
+		}
+	);
+
+	if ( ! moved ) {
+		await insertNestedGroup( page, seed, step, userIndex, rng );
+	}
+}
+
+async function deleteNestedBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const targetIndex = Math.floor( rng() * 1000000 );
+	const deleted = await page.evaluate(
+		( { nestedTargetIndex } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			const nestedBlocks: Array< { clientId: string } > = [];
+			const visit = ( currentBlocks: Array< any >, depth: number ) => {
+				for ( const block of currentBlocks ) {
+					if ( depth > 0 ) {
+						nestedBlocks.push( block );
+					}
+					visit( block.innerBlocks ?? [], depth + 1 );
+				}
+			};
+
+			visit( blocks, 0 );
+
+			if ( nestedBlocks.length === 0 ) {
+				return false;
+			}
+
+			const target =
+				nestedBlocks[ nestedTargetIndex % nestedBlocks.length ];
+			blockEditor.removeBlocks( [ target.clientId ], false );
+			return true;
+		},
+		{ nestedTargetIndex: targetIndex }
+	);
+
+	if ( ! deleted ) {
+		await insertNestedGroup( page, seed, step, userIndex, rng );
+	}
+}
+
 async function editTitle(
 	page: Page,
 	seed: number,
@@ -1621,337 +1748,6 @@ async function editTableArrayAttributes(
 	);
 }
 
-async function insertLayoutCompositeBlock(
-	page: Page,
-	seed: number,
-	step: number,
-	userIndex: number
-) {
-	await page.evaluate(
-		( { fuzzSeed, fuzzStep, fuzzUserIndex } ) => {
-			const blocks = ( window as any ).wp.blocks;
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
-			const marker = `layout-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }`;
-			const columns = blocks.createBlock( 'core/columns', {}, [
-				blocks.createBlock( 'core/column', {}, [
-					blocks.createBlock( 'core/paragraph', {
-						content: `${ marker } left column paragraph`,
-					} ),
-					blocks.createBlock( 'core/buttons', {}, [
-						blocks.createBlock( 'core/button', {
-							text: `${ marker } button`,
-							url: `https://example.com/${ marker }`,
-						} ),
-					] ),
-				] ),
-				blocks.createBlock( 'core/column', {}, [
-					blocks.createBlock( 'core/heading', {
-						content: `${ marker } right heading`,
-						level: 3,
-					} ),
-				] ),
-			] );
-
-			blockEditor.insertBlock( columns );
-		},
-		{ fuzzSeed: seed, fuzzStep: step, fuzzUserIndex: userIndex }
-	);
-}
-
-async function editNestedBlockAttributes(
-	page: Page,
-	seed: number,
-	step: number,
-	userIndex: number
-) {
-	await page.evaluate(
-		( { fuzzSeed, fuzzStep, fuzzUserIndex } ) => {
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
-			const blockSelect = ( window as any ).wp.data.select(
-				'core/block-editor'
-			);
-			const blocksApi = ( window as any ).wp.blocks;
-			const marker = `nested-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }`;
-			const flattenBlocks = ( blocks: any[] ): any[] =>
-				blocks.flatMap( ( block ) => [
-					block,
-					...flattenBlocks( block.innerBlocks ?? [] ),
-				] );
-			const allBlocks = flattenBlocks( blockSelect.getBlocks() );
-			const nestedEditable = allBlocks.find(
-				( block ) =>
-					block.name === 'core/paragraph' &&
-					block.innerBlocks?.length === 0 &&
-					allBlocks.some( ( candidate ) =>
-						( candidate.innerBlocks ?? [] ).some(
-							( child: { clientId: string } ) =>
-								child.clientId === block.clientId
-						)
-					)
-			);
-
-			if ( nestedEditable ) {
-				blockEditor.updateBlockAttributes( nestedEditable.clientId, {
-					content: `${ marker } edited nested paragraph`,
-				} );
-				return;
-			}
-
-			blockEditor.insertBlock(
-				blocksApi.createBlock( 'core/group', {}, [
-					blocksApi.createBlock( 'core/paragraph', {
-						content: `${ marker } inserted nested paragraph`,
-					} ),
-				] )
-			);
-		},
-		{ fuzzSeed: seed, fuzzStep: step, fuzzUserIndex: userIndex }
-	);
-}
-
-async function editMediaReferenceBlock(
-	page: Page,
-	seed: number,
-	step: number,
-	userIndex: number,
-	rng: Random
-) {
-	const variant = Math.floor( rng() * 3 );
-
-	await page.evaluate(
-		( { fuzzSeed, fuzzStep, fuzzUserIndex, mediaVariant } ) => {
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
-			const blocks = ( window as any ).wp.data
-				.select( 'core/block-editor' )
-				.getBlocks();
-			const blocksApi = ( window as any ).wp.blocks;
-			const marker = `media-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }-${ mediaVariant }`;
-			let block = blocks.find( ( candidate: { name: string } ) =>
-				[ 'core/image', 'core/file' ].includes( candidate.name )
-			);
-
-			if ( ! block ) {
-				block =
-					mediaVariant === 0
-						? blocksApi.createBlock( 'core/image', {
-								alt: `${ marker } alt`,
-								caption: `${ marker } caption`,
-								url: `https://example.com/${ marker }.jpg`,
-						  } )
-						: blocksApi.createBlock( 'core/file', {
-								href: `https://example.com/${ marker }.pdf`,
-								textLinkHref: `https://example.com/${ marker }.pdf`,
-								textLinkTarget: '_blank',
-						  } );
-				blockEditor.insertBlock( block );
-				return;
-			}
-
-			if ( block.name === 'core/image' ) {
-				blockEditor.updateBlockAttributes( block.clientId, {
-					alt: `${ marker } updated alt`,
-					caption: `${ marker } updated caption`,
-					url: `https://example.com/${ marker }-updated.jpg`,
-				} );
-				return;
-			}
-
-			blockEditor.updateBlockAttributes( block.clientId, {
-				href: `https://example.com/${ marker }-updated.pdf`,
-				textLinkHref: `https://example.com/${ marker }-updated.pdf`,
-				textLinkTarget: mediaVariant === 2 ? '_blank' : undefined,
-			} );
-		},
-		{
-			fuzzSeed: seed,
-			fuzzStep: step,
-			fuzzUserIndex: userIndex,
-			mediaVariant: variant,
-		}
-	);
-}
-
-async function editQueryBlockAttributes(
-	page: Page,
-	seed: number,
-	step: number,
-	userIndex: number,
-	rng: Random
-) {
-	const variant = Math.floor( rng() * 5 );
-
-	await page.evaluate(
-		( { fuzzSeed, fuzzStep, fuzzUserIndex, queryVariant } ) => {
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
-			const blocksApi = ( window as any ).wp.blocks;
-			const blocks = ( window as any ).wp.data
-				.select( 'core/block-editor' )
-				.getBlocks();
-			let block = blocks.find(
-				( candidate: { name: string } ) =>
-					candidate.name === 'core/query'
-			);
-
-			if ( ! block ) {
-				block = blocksApi.createBlock(
-					'core/query',
-					{
-						queryId: ( fuzzSeed + fuzzStep ) % 1000,
-						query: {
-							author: '',
-							exclude: [],
-							inherit: false,
-							offset: 0,
-							order: 'desc',
-							orderBy: 'date',
-							pages: 0,
-							perPage: 3,
-							postType: 'post',
-							search: '',
-							sticky: '',
-						},
-					},
-					[
-						blocksApi.createBlock( 'core/post-template', {}, [
-							blocksApi.createBlock( 'core/post-title' ),
-							blocksApi.createBlock( 'core/post-excerpt' ),
-						] ),
-					]
-				);
-				blockEditor.insertBlock( block );
-				return;
-			}
-
-			const query = {
-				...( block.attributes.query ?? {} ),
-				exclude: [ fuzzSeed % 7, ( fuzzStep + fuzzUserIndex ) % 11 ],
-				offset: queryVariant,
-				order: queryVariant % 2 === 0 ? 'desc' : 'asc',
-				orderBy: queryVariant % 3 === 0 ? 'modified' : 'date',
-				perPage: 1 + queryVariant,
-				search: `query-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }`,
-			};
-
-			blockEditor.updateBlockAttributes( block.clientId, {
-				query,
-				queryId: ( fuzzSeed + fuzzStep + queryVariant ) % 1000,
-			} );
-		},
-		{
-			fuzzSeed: seed,
-			fuzzStep: step,
-			fuzzUserIndex: userIndex,
-			queryVariant: variant,
-		}
-	);
-}
-
-async function triggerServerAutosave(
-	page: Page,
-	seed: number,
-	step: number,
-	userIndex: number
-) {
-	await page.evaluate(
-		async ( { marker } ) => {
-			const blocks = ( window as any ).wp.blocks;
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
-			blockEditor.insertBlock(
-				blocks.createBlock( 'core/paragraph', {
-					content: `${ marker } autosave target`,
-				} )
-			);
-			await ( window as any ).wp.data
-				.dispatch( 'core/editor' )
-				.autosave();
-		},
-		{ marker: `autosave-${ seed }-${ step }-${ userIndex }` }
-	);
-
-	await page.waitForFunction(
-		() => {
-			const editor = ( window as any ).wp.data.select( 'core/editor' );
-			return (
-				! editor.isSavingPost() &&
-				( ! editor.isAutosavingPost || ! editor.isAutosavingPost() )
-			);
-		},
-		undefined,
-		{ timeout: CONVERGENCE_TIMEOUT_MS }
-	);
-}
-
-async function publishAndReturnToDraft(
-	page: Page,
-	seed: number,
-	step: number,
-	userIndex: number
-) {
-	await page.evaluate(
-		async ( { title } ) => {
-			const editor = ( window as any ).wp.data.dispatch( 'core/editor' );
-			editor.editPost( { status: 'publish', title } );
-			await editor.savePost();
-			editor.editPost( { status: 'draft' } );
-			await editor.savePost();
-		},
-		{
-			title: `RTC published draft ${ seed } ${ step } ${ userIndex }`,
-		}
-	);
-
-	await page.waitForFunction(
-		() =>
-			! ( window as any ).wp.data.select( 'core/editor' ).isSavingPost(),
-		undefined,
-		{ timeout: CONVERGENCE_TIMEOUT_MS }
-	);
-}
-
-async function undoRedoRecentChange(
-	page: Page,
-	seed: number,
-	step: number,
-	userIndex: number
-) {
-	await page.evaluate(
-		async ( { marker } ) => {
-			const blocks = ( window as any ).wp.blocks;
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
-			const editor = ( window as any ).wp.data.dispatch( 'core/editor' );
-			const editorSelect = ( window as any ).wp.data.select(
-				'core/editor'
-			);
-			blockEditor.insertBlock(
-				blocks.createBlock( 'core/paragraph', {
-					content: `${ marker } undo-redo target`,
-				} )
-			);
-
-			if ( editorSelect.hasEditorUndo?.() !== false ) {
-				editor.undo();
-			}
-
-			if ( editorSelect.hasEditorRedo?.() !== false ) {
-				editor.redo();
-			}
-		},
-		{ marker: `undo-redo-${ seed }-${ step }-${ userIndex }` }
-	);
-}
-
 async function reparseEditedContent(
 	page: Page,
 	seed: number,
@@ -1988,90 +1784,6 @@ async function saveDraft( page: Page ) {
 		undefined,
 		{ timeout: CONVERGENCE_TIMEOUT_MS }
 	);
-}
-
-async function pauseSyncRequests(
-	page: Page
-): Promise< () => Promise< void > > {
-	const handler = async ( route: Route ) => {
-		if (
-			route.request().method() === 'POST' &&
-			route.request().url().includes( 'wp-sync' )
-		) {
-			await route.abort( 'failed' );
-			return;
-		}
-
-		await route.continue();
-	};
-
-	await page.route( /wp-sync/, handler );
-
-	return async () => {
-		await page.unroute( /wp-sync/, handler );
-	};
-}
-
-async function runStaleTabSaveProbe( {
-	collaborationUtils,
-	postId,
-	requestUtils,
-	seed,
-}: {
-	collaborationUtils: CollaborationUtils;
-	postId: number;
-	requestUtils: RestRequestUtils;
-	seed: number;
-} ) {
-	if ( COLLABORATOR_MODE !== 'same-user' ) {
-		await collaborationUtils.joinUser( postId, ADMIN_USER );
-		await waitForCollaborationSessionSettled( collaborationUtils, {
-			timeout: DISCOVERY_TIMEOUT_MS,
-		} );
-	}
-
-	const pages = collaborationUtils.allPages.map( ( page, userIndex ) => ( {
-		editor: collaborationUtils.allEditors[ userIndex ],
-		page,
-		userIndex,
-	} ) );
-	const active = pages[ 0 ];
-	const stale = pages[ pages.length - 1 ];
-	const activeMarker = `stale-tab-active-${ seed }`;
-	const staleMarker = `stale-tab-resume-${ seed }`;
-	const resumeSync = await pauseSyncRequests( stale.page );
-
-	try {
-		await insertCheckpointMarker( active.page, activeMarker );
-		await saveDraft( active.page );
-		await waitForPersistedPostContentMarker(
-			requestUtils,
-			postId,
-			activeMarker
-		);
-
-		await insertCheckpointMarker( stale.page, staleMarker );
-		await saveDraft( stale.page );
-	} finally {
-		await resumeSync();
-	}
-
-	await reloadAndWait( active.page, collaborationUtils );
-	const stateAfterStaleSave = await collaborationUtils.waitForConvergence( {
-		includeCrdtDocument: true,
-		timeout: SESSION_SETTLE_TIMEOUT_MS,
-	} );
-	expect( hasMarker( stateAfterStaleSave.blocks, activeMarker ) ).toBe(
-		true
-	);
-	expect( hasMarker( stateAfterStaleSave.blocks, staleMarker ) ).toBe( true );
-
-	const persistedContent = await waitForPersistedPostContentMarker(
-		requestUtils,
-		postId,
-		activeMarker
-	);
-	expect( persistedContent ).toContain( staleMarker );
 }
 
 async function reloadAndWait(
@@ -2127,8 +1839,8 @@ async function saveCheckpointAndVerify( {
 	step: number;
 	viewer: PageRef;
 } ): Promise< SaveCheckpoint > {
-	const optionMarker = `${ marker }-search-option`;
-	const titleMarker = `${ marker }-title`;
+	const optionMarker = getRelatedCheckpointMarker( marker, 'search-option' );
+	const titleMarker = getRelatedCheckpointMarker( marker, 'title' );
 
 	await insertCheckpointMarker( saver.page, marker );
 	await insertCheckpointOptionBlock( saver.page, optionMarker );
@@ -2225,7 +1937,7 @@ async function chooseOldRevisionInBrowser( {
 	const slider = page.getByRole( 'slider', { name: 'Revision' } );
 	await slider.focus();
 
-	for ( const key of [ 'ArrowLeft', 'ArrowRight' ] ) {
+	for ( const key of [ 'ArrowLeft', 'ArrowRight' ] as const ) {
 		for ( let attempt = 0; attempt < 50; attempt++ ) {
 			if (
 				await isTargetRevisionSelected( {
@@ -2549,39 +2261,24 @@ const ACTIONS: PageAction[] = [
 			editTableArrayAttributes( page, seed, step, userIndex, rng ),
 	},
 	{
-		label: 'insert-layout-composite-block',
-		run: async ( page, seed, step, userIndex ) =>
-			insertLayoutCompositeBlock( page, seed, step, userIndex ),
-	},
-	{
-		label: 'edit-nested-block-attributes',
-		run: async ( page, seed, step, userIndex ) =>
-			editNestedBlockAttributes( page, seed, step, userIndex ),
-	},
-	{
-		label: 'edit-media-reference-block',
+		label: 'insert-nested-group',
 		run: async ( page, seed, step, userIndex, rng ) =>
-			editMediaReferenceBlock( page, seed, step, userIndex, rng ),
+			insertNestedGroup( page, seed, step, userIndex, rng ),
 	},
 	{
-		label: 'edit-query-block-attributes',
+		label: 'edit-nested-paragraph',
 		run: async ( page, seed, step, userIndex, rng ) =>
-			editQueryBlockAttributes( page, seed, step, userIndex, rng ),
+			editNestedParagraph( page, seed, step, userIndex, rng ),
 	},
 	{
-		label: 'server-autosave',
-		run: async ( page, seed, step, userIndex ) =>
-			triggerServerAutosave( page, seed, step, userIndex ),
+		label: 'move-block-into-group',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			moveBlockIntoGroup( page, seed, step, userIndex, rng ),
 	},
 	{
-		label: 'publish-and-return-to-draft',
-		run: async ( page, seed, step, userIndex ) =>
-			publishAndReturnToDraft( page, seed, step, userIndex ),
-	},
-	{
-		label: 'undo-redo-recent-change',
-		run: async ( page, seed, step, userIndex ) =>
-			undoRedoRecentChange( page, seed, step, userIndex ),
+		label: 'delete-nested-block',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			deleteNestedBlock( page, seed, step, userIndex, rng ),
 	},
 	{
 		label: 'reparse-edited-content',
@@ -2598,75 +2295,17 @@ const ACTIONS: PageAction[] = [
 ];
 
 function getActiveActions(): PageAction[] {
-	if ( ACTION_PROFILE === 'full' || ACTION_PROFILE === 'surface' ) {
-		if ( DISABLE_PARSER_STRESS ) {
-			const parserStressActionLabels = new Set( [
-				'reparse-edited-content',
-				'append-parser-stress-content',
-			] );
-			return ACTIONS.filter(
-				( action ) => ! parserStressActionLabels.has( action.label )
-			);
+	if ( ACTION_PROFILE === 'full' ) {
+		if ( ! DISABLE_PARSER_STRESS ) {
+			return ACTIONS;
 		}
 
-		return ACTIONS;
-	}
-
-	if ( ACTION_PROFILE === 'stale-tab' ) {
-		const staleTabActionLabels = new Set( [
-			'insert-paragraph',
-			'append-paragraph',
-			'edit-paragraph',
-			'edit-title',
-			'insert-heading',
+		const parserStressActionLabels = new Set( [
+			'reparse-edited-content',
+			'append-parser-stress-content',
 		] );
-
-		return ACTIONS.filter( ( action ) =>
-			staleTabActionLabels.has( action.label )
-		);
-	}
-
-	if ( ACTION_PROFILE === 'structure' ) {
-		const structureActionLabels = new Set( [
-			'insert-paragraph',
-			'append-paragraph',
-			'edit-paragraph',
-			'delete-block',
-			'move-block',
-			'concurrent-paragraphs',
-			'insert-heading',
-			'edit-table-array-attributes',
-			'insert-layout-composite-block',
-			'edit-nested-block-attributes',
-			'edit-media-reference-block',
-			'edit-query-block-attributes',
-			'undo-redo-recent-change',
-		] );
-
-		return ACTIONS.filter( ( action ) =>
-			structureActionLabels.has( action.label )
-		);
-	}
-
-	if ( ACTION_PROFILE === 'session-lifecycle' ) {
-		const lifecycleActionLabels = new Set( [
-			'insert-paragraph',
-			'append-paragraph',
-			'edit-paragraph',
-			'delete-block',
-			'move-block',
-			'edit-title',
-			'concurrent-paragraphs',
-			'insert-heading',
-			'edit-table-array-attributes',
-			'insert-layout-composite-block',
-			'edit-nested-block-attributes',
-			'server-autosave',
-			'undo-redo-recent-change',
-		] );
-
-		return ACTIONS.filter( ( action ) =>
-			lifecycleActionLabels.has( action.label )
+		return ACTIONS.filter(
+			( action ) => ! parserStressActionLabels.has( action.label )
 		);
 	}
 
@@ -2694,6 +2333,47 @@ function getActiveActions(): PageAction[] {
 		);
 	}
 
+	if ( ACTION_PROFILE === 'structure' ) {
+		const structureActionLabels = new Set( [
+			'insert-paragraph',
+			'append-paragraph',
+			'edit-paragraph',
+			'delete-block',
+			'move-block',
+			'concurrent-paragraphs',
+			'insert-heading',
+			'edit-table-array-attributes',
+			'insert-nested-group',
+			'edit-nested-paragraph',
+			'move-block-into-group',
+			'delete-nested-block',
+		] );
+
+		return ACTIONS.filter( ( action ) =>
+			structureActionLabels.has( action.label )
+		);
+	}
+
+	if ( ACTION_PROFILE === 'session-lifecycle' ) {
+		const lifecycleActionLabels = new Set( [
+			'insert-paragraph',
+			'append-paragraph',
+			'edit-paragraph',
+			'delete-block',
+			'move-block',
+			'edit-title',
+			'concurrent-paragraphs',
+			'insert-heading',
+			'edit-table-array-attributes',
+			'insert-nested-group',
+			'edit-nested-paragraph',
+		] );
+
+		return ACTIONS.filter( ( action ) =>
+			lifecycleActionLabels.has( action.label )
+		);
+	}
+
 	throw new Error(
 		`Unknown GUTENBERG_RTC_BROWSER_ACTION_PROFILE "${ ACTION_PROFILE }".`
 	);
@@ -2716,17 +2396,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			collaborationUtils,
 			requestUtils,
 		}, testInfo ) => {
-			test.setTimeout(
-				Math.max(
-					ENABLE_STALE_TAB_PROBE ? 180000 : 90000,
-					STEP_COUNT *
-						( [ 'surface', 'session-lifecycle' ].includes(
-							ACTION_PROFILE
-						)
-							? 25000
-							: 15000 )
-				)
-			);
+			test.setTimeout( Math.max( 90000, STEP_COUNT * 15000 ) );
 
 			const rng = createRng( seed );
 			const behavior = createBehaviorCoverage( seed );
@@ -2979,16 +2649,6 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					requestUtils,
 					restorer: pick( rng, pages ),
 				} );
-
-				if ( ENABLE_STALE_TAB_PROBE ) {
-					await runStaleTabSaveProbe( {
-						collaborationUtils,
-						postId: post.id,
-						requestUtils,
-						seed,
-					} );
-				}
-
 				behavior.status = 'passed';
 			} catch ( error ) {
 				behavior.error =
