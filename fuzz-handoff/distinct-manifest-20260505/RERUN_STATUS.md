@@ -1,6 +1,6 @@
 # Distinct Manifest Rerun Status
 
-Updated: 2026-05-05T10:39:42.743Z
+Updated: 2026-05-05T10:54:48.164Z
 
 This is the local rerun status for the distinct-bug manifest on refreshed base
 `try/fuzz-fixed-base-20260505`.
@@ -69,41 +69,39 @@ Live state:
 
 Current progress:
 
-- Attempted: 79 of 184
-- Remaining: 105
-- Passed: 33
-- Failed: 45
+- Attempted: 83 of 184
+- Remaining: 101
+- Passed: 35
+- Failed: 47
 - Missing spec: 0
 - Timed out: 2
 - Skipped: 0
-- HTTP records completed: 36
-- WebSocket records completed: 42
-- Runner status updated at: `2026-05-05T10:39:15.108Z`
+- HTTP records completed: 39
+- WebSocket records completed: 43
+- Runner status updated at: `2026-05-05T10:48:42.923Z`
 - Completed at: `not complete`
 - Stop reason: `running`
-- Current index: 78
-- Current bug type: `rtc_heading_insert_position_diverges_across_collaborators`
-- Current signature: `0c33bad2fdd0`
-- Current transport: `http`
-- Current spec: `test/e2e/specs/editor/collaboration/triage-0c33bad2fdd0-realistic.spec.ts`
+- Current index: 82
+- Current bug type: `rtc_local_add_before_then_delete_original_paragraph_not_propagated`
+- Current signature: `7b809e0f5ed7`
+- Current transport: `websocket`
+- Current spec: `test/e2e/specs/editor/collaboration/websocket/triage-e76dcda2cf8a-realistic.spec.ts`
 
 Recent full-run results:
 
-- failed: `rtc_collaboration_transient_empty_body_on_reload` (`213a2b68b661`, http)
-- failed: `rtc_concurrent_append_after_checkpoint_interleaves_text` (`ab1b60fc6f4a`, websocket)
-- failed: `rtc_concurrent_tail_insert_corrupts_or_diverges_top_level_paragraphs` (`5fe795b32c10`, websocket)
-- passed: `rtc_crdt_merge_reorder_after_fallback_group_insert_duplicates_heading_and_drops_paragraph` (`222f6c558dee`, http)
 - failed: `rtc_crdt_move_after_fallback_group_insert_duplicates_baseline_and_drops_shared_paragraph` (`4492f7048c22`, websocket)
 - failed: `rtc_crdt_top_level_search_move_after_checkpoint_churn_duplicates_multibyte_heading` (`30316f449e06`, websocket)
 - failed: `rtc_delete_nested_after_converged_move_into_group_leaves_stale_moved_paragraph` (`a48cbaacb3c8`, websocket)
 - passed: `rtc_delete_propagation_loss_due_to_stale_local_block_cache` (`ae9a3cdc8424`, http)
 - passed: `rtc_distinct_user_reload_title_divergence` (`08d6f3fb22ac`, http)
 - failed: `rtc_formatted_richtext_programmatic_update_diverges_to_trailing_gt_after_recovery` (`712b98ba96ff`, http)
+- passed: `rtc_heading_insert_position_diverges_across_collaborators` (`0c33bad2fdd0`, http)
+- failed: `rtc_http_polling_sync_server_oom_blocks_mutual_discovery` (`fc99825fb6c2`, http)
+- passed: `rtc_http_reload_title_only_divergence` (`e2ce526255c8`, http)
+- failed: `rtc_insert_before_then_delete_original_first_paragraph_not_propagated` (`007e79caf228`, websocket)
 
 Recent full-run failures:
 
-- `rtc_checkpoint_save_reload_partial_serialized_body_behind_visible_block_tree` (`549d46417342`, http, failed)
-- `rtc_checkpoint_save_reload_persisted_markup_corruption` (`9f310b30e0b7`, http, failed)
 - `rtc_collab_heading_group_tree_corruption_after_move_into_group_then_top_level_move` (`9a90b69f2672`, websocket, failed)
 - `rtc_collaboration_delete_then_move_heading_order_split` (`f1637972ea57`, http, failed)
 - `rtc_collaboration_malformed_heading_transiently_saves_empty_post_then_rolls_back` (`b60eecd4ac03`, http, failed)
@@ -114,6 +112,8 @@ Recent full-run failures:
 - `rtc_crdt_top_level_search_move_after_checkpoint_churn_duplicates_multibyte_heading` (`30316f449e06`, websocket, failed)
 - `rtc_delete_nested_after_converged_move_into_group_leaves_stale_moved_paragraph` (`a48cbaacb3c8`, websocket, failed)
 - `rtc_formatted_richtext_programmatic_update_diverges_to_trailing_gt_after_recovery` (`712b98ba96ff`, http, failed)
+- `rtc_http_polling_sync_server_oom_blocks_mutual_discovery` (`fc99825fb6c2`, http, failed)
+- `rtc_insert_before_then_delete_original_first_paragraph_not_propagated` (`007e79caf228`, websocket, failed)
 
 Resume by rerunning the command above with the same `--results-dir`.
 Completed keys already present in `results.jsonl` are skipped.
