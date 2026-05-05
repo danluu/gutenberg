@@ -30934,6 +30934,307 @@ save_plot(
 	height = 7.2
 )
 
+open_question_decision_readiness <- open_question_packet_retirement_monitor %>%
+	mutate(
+		decision_surface = case_when(
+			question_family == "Startup wait and first-key tails" ~ "CI startup-wait policy",
+			question_family == "Pattern wait replacement" ~ "CI pattern readiness wait",
+			question_family == "Selector/source guard" ~ "source prototype scope",
+			question_family == "Input-mode realism" ~ "benchmark stimulus wording",
+			question_family == "Store-subscriber partition" ~ "public data-layer compatibility",
+			question_family == "CI pass/fail policy" ~ "dashboard or reviewer policy",
+			question_family == "Product workload generalization" ~ "product workload wording",
+			question_family == "Browser endpoint and display presentation" ~ "display endpoint wording",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "runtime or system mechanism wording",
+			TRUE ~ action_scope
+		),
+		decision_that_can_change = case_when(
+			question_family == "Startup wait and first-key tails" ~ "reduce, keep, or separately report startup wait and first-input latency",
+			question_family == "Pattern wait replacement" ~ "replace, shorten, or keep the pattern-loading wait for the passing lane",
+			question_family == "Selector/source guard" ~ "prototype a guarded selector/source change, or reject timing-only source claims",
+			question_family == "Input-mode realism" ~ "label the CI stimulus as hold, tap, short-hold, or repeat before comparing results",
+			question_family == "Store-subscriber partition" ~ "allow only compatibility-proved public/private store notification partitioning",
+			question_family == "CI pass/fail policy" ~ "map raw repository q50 artifacts to dashboard/reviewer pass/fail wording",
+			question_family == "Product workload generalization" ~ "widen or narrow the fixed-character benchmark to replayed workload strata",
+			question_family == "Browser endpoint and display presentation" ~ "widen or narrow Chromium-internal endpoint claims to calibrated presentation",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "name only mechanisms supported by passive joined sidecar or counter evidence",
+			TRUE ~ current_answer
+		),
+		decision_veto = case_when(
+			question_family == "Startup wait and first-key tails" ~ "failures, resources, retained counts, p90, first-retained, or idle-input tails regress",
+			question_family == "Pattern wait replacement" ~ "readiness, preview/canvas, resource, failure, lane, or p90 veto fires",
+			question_family == "Selector/source guard" ~ "behavior fixture fails or targeted source span does not move",
+			question_family == "Input-mode realism" ~ "stimulus labels are merged before interpretation or only an unintended helper path passes",
+			question_family == "Store-subscriber partition" ~ "public subscriber order, import surface, or persistence-selector semantics break",
+			question_family == "CI pass/fail policy" ~ "dashboard/reviewer policy uses another statistic, threshold, or noisy-metric rule",
+			question_family == "Product workload generalization" ~ "replay strata change rank order, tail behavior, or affected workload class",
+			question_family == "Browser endpoint and display presentation" ~ "external presentation endpoint disagrees or cannot be joined without perturbation",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "sidecar/counters perturb ordering or fail to separate timing classes",
+			TRUE ~ fail_condition
+		),
+		local_decision_state = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement") ~ "local decision candidate",
+			question_family == "Selector/source guard" ~ "local prototype candidate",
+			question_family == "Input-mode realism" ~ "local method wording",
+			retirement_state == "retire after local packet" ~ "local trigger-monitored claim",
+			TRUE ~ "external claim expansion"
+		),
+		decision_status = case_when(
+			local_decision_state == "local decision candidate" ~ "can change CI runtime decision",
+			local_decision_state == "local prototype candidate" ~ "can change source prototype decision",
+			local_decision_state == "local method wording" ~ "can change benchmark-method wording",
+			TRUE ~ "blocks broader claim, not local cliff"
+		),
+		no_longer_open_for = case_when(
+			question_family %in% c(
+				"Startup wait and first-key tails",
+				"Input-mode realism",
+				"Pattern wait replacement"
+			) ~ "the local held-key timing artifact, unless the benchmark definition changes",
+			question_family == "Selector/source guard" ~ "the existence of the measured cliff; only source-patch safety remains open",
+			retirement_state == "retire after local packet" ~ "the scoped local packet after its invariant and monitor are archived",
+			TRUE ~ "the local 1000ms cliff explanation; only broader claim wording remains open"
+		),
+		required_decision_artifact = case_when(
+			retirement_state == "retire after local packet" ~ minimum_new_artifact,
+			TRUE ~ monitor_artifact
+		),
+		decision_readiness_value = pmax(
+			1,
+			near_term_action_score + retirement_monitor_value + wrong_action_risk +
+				evidence_readiness - false_reopen_risk - if_else(retirement_state == "retire after local packet", 0, 2)
+		),
+		action_change_value = if_else(
+			retirement_state == "retire after local packet",
+			next_artifact_value,
+			pmin(next_artifact_value, 2)
+		),
+		same_harness_repeat_value = repeat_more_local_samples_value,
+		analysis_only_value = 0,
+		decision_readiness_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(decision_readiness_value), desc(action_change_value), question_family)
+
+open_question_decision_readiness_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"decision", "What concrete decision can still change?",
+	"artifact", "Which artifact changes that decision?",
+	"veto", "What veto prevents an unsafe conclusion?",
+	"owner", "Who owns the decision or blocked claim?",
+	"consumer", "Which report, CI, source, or policy consumer changes?",
+	"metric", "Which q50, p90, failure, first-key, endpoint, or counter field is decisive?",
+	"scope", "Which claim is already closed versus merely narrowed?",
+	"compatibility", "Does public API or external endpoint compatibility gate the decision?",
+	"cost", "Does another same-harness timing pass have marginal value?",
+	"stop-rule", "When should the forced analysis loop stop?"
+)
+
+open_question_decision_readiness_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_decision_readiness)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_decision_readiness_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_decision_readiness %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_decision_readiness_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		decision_first_seen = !duplicated(decision_readiness_id),
+		decision_axis_key = paste(decision_readiness_id, pressure_axis, sep = "::"),
+		decision_axis_first_seen = !duplicated(decision_axis_key),
+		decision_surface_first_seen = !duplicated(decision_surface),
+		new_decision_value = if_else(decision_first_seen, decision_readiness_value, 0),
+		new_action_change_value = if_else(decision_first_seen, action_change_value, 0),
+		new_same_harness_repeat_value = if_else(decision_first_seen, same_harness_repeat_value, 0),
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!decision_axis_first_seen ~ "repeat: decision-axis already checked",
+			decision_status == "can change CI runtime decision" ~ "decision-ready: CI runtime",
+			decision_status == "can change source prototype decision" ~ "decision-ready: source prototype",
+			decision_status == "can change benchmark-method wording" ~ "decision-ready: method wording",
+			TRUE ~ "blocked: broader claim only"
+		),
+		cumulative_decisions = cumsum(decision_first_seen),
+		cumulative_decision_axes = cumsum(decision_axis_first_seen),
+		cumulative_decision_surfaces = cumsum(decision_surface_first_seen),
+		cumulative_decision_value = cumsum(new_decision_value),
+		cumulative_action_change_value = cumsum(new_action_change_value),
+		cumulative_same_harness_repeat_value = cumsum(new_same_harness_repeat_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_decision_readiness_summary <- open_question_decision_readiness_100_pass %>%
+	group_by(decision_status, local_decision_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		decisions = n_distinct(decision_readiness_id),
+		axis_checks = sum(decision_axis_first_seen),
+		decision_surfaces = n_distinct(decision_surface),
+		decision_value = sum(new_decision_value),
+		action_change_value = sum(new_action_change_value),
+		same_harness_repeat_value = sum(new_same_harness_repeat_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_wrong_action_risk = max(wrong_action_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(action_change_value), desc(decision_value), first_pass)
+
+open_question_decision_readiness_checkpoints <- open_question_decision_readiness_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_decisions,
+		cumulative_decision_axes,
+		cumulative_decision_surfaces,
+		cumulative_decision_value,
+		cumulative_action_change_value,
+		cumulative_same_harness_repeat_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_decision_readiness,
+	file.path(data_dir, "typing-delay-open-question-decision-readiness.csv")
+)
+
+write_csv(
+	open_question_decision_readiness_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			decision_surface,
+			decision_status,
+			local_decision_state,
+			decision_that_can_change,
+			required_decision_artifact,
+			decision_veto,
+			no_longer_open_for,
+			monitor_owner,
+			decision_first_seen,
+			decision_axis_first_seen,
+			decision_surface_first_seen,
+			pass_result,
+			decision_readiness_value,
+			action_change_value,
+			same_harness_repeat_value,
+			new_decision_value,
+			new_action_change_value,
+			new_same_harness_repeat_value,
+			new_analysis_only_value,
+			cumulative_decisions,
+			cumulative_decision_axes,
+			cumulative_decision_surfaces,
+			cumulative_decision_value,
+			cumulative_action_change_value,
+			cumulative_same_harness_repeat_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-decision-readiness-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_decision_readiness_summary,
+	file.path(data_dir, "typing-delay-open-question-decision-readiness-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_decision_readiness_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-decision-readiness-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_decision_readiness %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, action_change_value)
+		) %>%
+		ggplot(aes(action_change_value, question_label, fill = decision_status)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Decision status") +
+		labs(
+			title = "Remaining open questions mostly change claim scope, not the local cliff",
+			subtitle = "The only high-action rows are CI runtime/readiness and the behavior-gated source prototype",
+			x = "Action-change value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"306-open-question-decision-readiness-value.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_decision_readiness_saturation_long <- open_question_decision_readiness_100_pass %>%
+	select(
+		pass_id,
+		`decisions` = cumulative_decisions,
+		`decision-axis checks` = cumulative_decision_axes,
+		`decision surfaces` = cumulative_decision_surfaces,
+		`decision value` = cumulative_decision_value,
+		`action-change value` = cumulative_action_change_value,
+		`same-harness repeat value` = cumulative_same_harness_repeat_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("decisions", "decision-axis checks", "decision surfaces", "decision value", "action-change value", "same-harness repeat value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_decision_readiness_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.55) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Decision-readiness audit saturates once all decision axes are checked",
+			subtitle = "Nine decision surfaces appear by pass 9; all 90 decision-axis checks appear by pass 90; analysis-only value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"307-open-question-decision-readiness-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_decision_readiness_summary %>%
+		mutate(
+			state_label = str_wrap(local_decision_state, width = 28),
+			state_label = fct_reorder(state_label, action_change_value + decision_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Decision coverage separates local action from blocked claim expansion",
+			subtitle = "Extra forced passes cover decision axes but do not add same-harness timing value",
+			x = "Decision-axis checks",
+			y = "Decision state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"308-open-question-decision-readiness-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

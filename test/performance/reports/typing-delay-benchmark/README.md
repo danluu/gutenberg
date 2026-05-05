@@ -1389,6 +1389,20 @@ The R script derives:
 -   `data/typing-delay-open-question-packet-retirement-100-pass-checkpoints.csv`:
     checkpoints for retirement-monitor, retirement-axis, owner, monitor-value,
     axis-value, and analysis-only-value saturation.
+-   `data/typing-delay-open-question-decision-readiness.csv`: decision surface
+    table for the nine packet contracts, separating CI/runtime action,
+    source-prototype action, benchmark-method wording, and broader blocked
+    claims.
+-   `data/typing-delay-open-question-decision-readiness-100-pass-audit.csv`:
+    eighth forced 100-pass audit over decision-readiness axes: decision,
+    artifact, veto, owner, consumer, metric, scope, compatibility, cost, and
+    stop-rule.
+-   `data/typing-delay-open-question-decision-readiness-100-pass-summary.csv`:
+    rollup of decision-readiness coverage by decision status, local decision
+    state, pass result, and action-change value.
+-   `data/typing-delay-open-question-decision-readiness-100-pass-checkpoints.csv`:
+    checkpoints for decision, decision-axis, decision-surface, decision-value,
+    action-change, same-harness-repeat, and analysis-only-value saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10832,6 +10846,33 @@ This keeps retired questions retired without making them invisible. A retired
 packet is reopened only by its named trigger and monitor artifact, not by generic
 uncertainty or another timing-only run. External packets are not retired yet;
 they stay deferred until their missing owner or observer exists.
+
+I then added the decision-readiness layer: after the packet monitor is named,
+what concrete decision can still change, which artifact changes it, and whether
+another same-harness timing pass has any marginal value.
+
+![Open question decision readiness value](figures/306-open-question-decision-readiness-value.png)
+
+![Open question decision readiness 100-pass saturation](figures/307-open-question-decision-readiness-100-pass-saturation.png)
+
+![Open question decision readiness coverage](figures/308-open-question-decision-readiness-coverage.png)
+
+| Decision-readiness check | Result |
+| ------------------------ | ------ |
+| Decision surfaces | `9`, one per packet contract. |
+| Decision-axis checks | `90`: every decision surface checked against all `10` decision axes. |
+| Action-change value | `63`: CI runtime/readiness contributes `28`, source prototype contributes `16`, benchmark-method wording contributes `11`, and broader blocked claims contribute `8`. |
+| Decision-readiness value | `130` across the nine surfaces. |
+| Same-harness repeat value | `0`; another timing-only pass does not change a decision unless the benchmark definition or target artifact changes. |
+| Saturation | Decision surfaces are all named by pass `9`; all decision-axis checks are covered by pass `90`; passes `91-100` add no decision coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the practical decision boundary after the deeper audits. Startup-wait
+and pattern-wait rows can still change CI runtime/readiness decisions. The
+selector/source row can still change a behavior-gated source prototype. The
+input-mode row can still change benchmark-method wording. The remaining rows
+block broader compatibility, policy, workload, display, and mechanism wording;
+they do not reopen the local held-key `1000ms` cliff explanation.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,9 @@
+decision_status,local_decision_state,pass_result,passes,first_pass,decisions,axis_checks,decision_surfaces,decision_value,action_change_value,same_harness_repeat_value,analysis_only_value,max_wrong_action_risk
+can change CI runtime decision,local decision candidate,decision-ready: CI runtime,20,2,2,20,2,43,28,0,0,5
+can change source prototype decision,local prototype candidate,decision-ready: source prototype,10,1,1,10,1,22,16,0,0,5
+can change benchmark-method wording,local method wording,decision-ready: method wording,10,4,1,10,1,18,11,0,0,4
+"blocks broader claim, not local cliff",external claim expansion,blocked: broader claim only,50,5,5,50,5,47,8,0,0,5
+can change source prototype decision,local prototype candidate,repeat: decision-axis already checked,2,91,1,0,1,0,0,0,0,5
+can change CI runtime decision,local decision candidate,repeat: decision-axis already checked,2,92,2,0,2,0,0,0,0,5
+can change benchmark-method wording,local method wording,repeat: decision-axis already checked,1,94,1,0,1,0,0,0,0,4
+"blocks broader claim, not local cliff",external claim expansion,repeat: decision-axis already checked,5,95,5,0,5,0,0,0,0,5
