@@ -1,0 +1,7 @@
+monitoring_state,exception_state,pass_result,passes,first_pass,monitoring_records,axis_checks,monitoring_owners,dashboard_consumers,monitoring_value,stale_exception_risk_value,timing_only_monitoring_value,analysis_only_value
+local packet exception monitoring,local packet exception management,exception monitoring: local packet,40,1,4,40,4,3,125400,92827,0,0
+owner artifact exception monitoring,owner artifact exception management,exception monitoring: owner or observer artifact,20,5,2,20,2,2,25073,18560,0,0
+observer artifact exception monitoring,observer artifact exception management,exception monitoring: owner or observer artifact,30,7,3,30,3,3,15478,11460,0,0
+local packet exception monitoring,local packet exception management,repeat: monitoring-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact exception monitoring,owner artifact exception management,repeat: monitoring-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact exception monitoring,observer artifact exception management,repeat: monitoring-axis already checked,3,97,3,0,3,3,0,0,0,0

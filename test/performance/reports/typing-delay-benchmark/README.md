@@ -1655,6 +1655,23 @@ The R script derives:
     checkpoints for exception-record, exception-axis, exception-state,
     exception-owner, ledger-consumer, exception-value, risk-acceptance-value,
     timing-only-exception, and analysis-only saturation.
+-   `data/typing-delay-open-question-exception-monitoring-register.csv`:
+    exception-monitoring register for the nine exception-management records,
+    including stale signal, review clock, stale condition, escalation route,
+    evidence to check, closure condition, reopen condition, dashboard consumer,
+    and permanent-exception guard.
+-   `data/typing-delay-open-question-exception-monitoring-100-pass-audit.csv`:
+    twenty-seventh forced 100-pass audit over exception-monitoring axes:
+    signal, clock, stale condition, escalate, evidence, close, reopen,
+    dashboard, substitute, and stop-rule.
+-   `data/typing-delay-open-question-exception-monitoring-100-pass-summary.csv`:
+    rollup of exception-monitoring coverage by monitoring state,
+    exception-management state, and pass result.
+-   `data/typing-delay-open-question-exception-monitoring-100-pass-checkpoints.csv`:
+    checkpoints for monitoring-record, monitoring-axis, monitoring-state,
+    monitoring-owner, dashboard-consumer, monitoring-value,
+    stale-exception-risk-value, timing-only-monitoring, and analysis-only
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11644,6 +11661,36 @@ does not silently become a passed claim and it does not become a license to
 reuse broad wording. The only permitted path is a scoped temporary statement
 with an approver, compensating control, expiry, revocation trigger, and preserved
 risk-acceptance record.
+
+I then added the exception-monitoring layer: once a temporary exception exists,
+the report now says what signal makes it stale, when it must be checked again,
+what escalation path handles stale wording, what evidence is checked, what
+closes the exception, what reopens the open question, which dashboard consumer
+sees the result, and why an exception cannot become permanent.
+
+![Open question exception monitoring register](figures/363-open-question-exception-monitoring-register.png)
+
+![Open question exception monitoring 100-pass saturation](figures/364-open-question-exception-monitoring-100-pass-saturation.png)
+
+![Open question exception monitoring coverage](figures/365-open-question-exception-monitoring-coverage.png)
+
+| Exception-monitoring check | Result |
+| -------------------------- | ------ |
+| Monitoring records | `9`, one per exception-management record. |
+| Monitoring states | `3`: local packet exception monitoring, owner artifact exception monitoring, and observer artifact exception monitoring. |
+| Monitoring owners | `9`; stale exception review routes back to the scoped exception owner. |
+| Dashboard consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Monitoring-axis checks | `90`: every row checked against all `10` exception-monitoring axes. |
+| Exception-monitoring value | `165951`: local packet monitoring contributes `125400`, owner artifact monitoring contributes `25073`, and observer artifact monitoring contributes `15478`. |
+| Stale-exception risk value | `122847` across the nine exception-monitoring records. |
+| Timing-only monitoring value | `0`; aggregate timing movement alone cannot show an exception is fresh, expired, escalated, closed, reopened, displayed to the right consumer, or prevented from becoming permanent. |
+| Saturation | Monitoring records are all named by pass `9`; all monitoring axes are covered by pass `90`; passes `91-100` add no exception-monitoring coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the anti-staleness layer. Exception management blocks silent waivers at
+creation time; exception monitoring blocks the later failure mode where a narrow
+temporary exception becomes stale but remains in the report as if it were still
+approved evidence.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

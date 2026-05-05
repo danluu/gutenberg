@@ -36499,6 +36499,311 @@ save_plot(
 	height = 7.2
 )
 
+open_question_exception_monitoring_register <- open_question_exception_management_register %>%
+	mutate(
+		monitoring_state = case_when(
+			exception_state == "local packet exception management" ~ "local packet exception monitoring",
+			exception_state == "owner artifact exception management" ~ "owner artifact exception monitoring",
+			TRUE ~ "observer artifact exception monitoring"
+		),
+		monitoring_signal = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "missing successor packet, expired local exception, changed generated artifact, or failed packet rerun",
+			monitoring_state == "owner artifact exception monitoring" ~ "missing owner review, expired owner exception, changed owner artifact, or failed owner-control rerun",
+			TRUE ~ "missing observer review, expired observer exception, changed observer artifact, or failed observer-control rerun"
+		),
+		review_clock = case_when(
+			close_scope == "CI wait decision" ~ "before each CI wait-policy reuse and after any Performance Tests topology, browser, fixture, or artifact-schema change",
+			close_scope == "source prototype decision" ~ "before each source-safety reuse and after any selector, fixture, package-boundary, or semantic-behavior change",
+			close_scope == "benchmark method wording" ~ "before each benchmark-method reuse and after any helper, aggregation, browser, input, or instrumentation change",
+			TRUE ~ "before each broad wording reuse and after any owner, observer, endpoint, runtime-control, replay, or workload change"
+		),
+		stale_condition = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "temporary wording persists after expiry, packet evidence is missing, or the compensating-control note no longer matches the report",
+			monitoring_state == "owner artifact exception monitoring" ~ "temporary wording persists after expiry, owner evidence is missing, or the owner-scope note no longer matches the report",
+			TRUE ~ "temporary wording persists after expiry, observer evidence is missing, or the broad-scope note no longer matches the report"
+		),
+		escalation_route = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "exception owner must either attach a successor packet, mark the claim unsupported, or remove the local wording",
+			monitoring_state == "owner artifact exception monitoring" ~ "exception owner must either attach owner-approved successor evidence, mark the claim unsupported, or remove owner-scoped wording",
+			TRUE ~ "exception owner must either attach observer-approved successor evidence, mark the claim unsupported, or remove broad wording"
+		),
+		evidence_to_check = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "exception record, expiry, revocation trigger, failed control evidence, successor-packet link, figure hash, and report wording",
+			monitoring_state == "owner artifact exception monitoring" ~ "exception record, expiry, revocation trigger, failed owner evidence, successor-owner link, reviewer identity, and report wording",
+			TRUE ~ "exception record, expiry, revocation trigger, failed observer evidence, successor-observer link, reviewer identity, and report wording"
+		),
+		closure_condition = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "successor packet passes control tests or the unsupported local wording is removed",
+			monitoring_state == "owner artifact exception monitoring" ~ "owner-approved successor artifact passes control tests or the unsupported owner wording is removed",
+			TRUE ~ "observer-approved successor artifact passes control tests or the unsupported broad wording is removed"
+		),
+		reopen_condition = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "report reuses local wording after expiry without a passing successor packet",
+			monitoring_state == "owner artifact exception monitoring" ~ "report reuses owner-scoped wording after expiry without passing owner-approved successor evidence",
+			TRUE ~ "report reuses broad wording after expiry without passing observer-approved successor evidence"
+		),
+		dashboard_consumer = ledger_consumer,
+		permanent_exception_guard = case_when(
+			monitoring_state == "local packet exception monitoring" ~ "local exception cannot become permanent; it must close through successor evidence or wording removal",
+			monitoring_state == "owner artifact exception monitoring" ~ "owner exception cannot become permanent; it must close through owner-approved successor evidence or wording removal",
+			TRUE ~ "observer exception cannot become permanent; it must close through observer-approved successor evidence or wording removal"
+		),
+		monitoring_owner = exception_owner,
+		monitoring_cost = case_when(
+			monitoring_state == "local packet exception monitoring" ~ 2,
+			monitoring_state == "owner artifact exception monitoring" ~ 4,
+			TRUE ~ 5
+		),
+		monitoring_value = pmax(
+			1,
+			exception_value + risk_acceptance_value + stale_reuse_risk - monitoring_cost
+		),
+		stale_exception_risk_value = pmax(
+			1,
+			risk_acceptance_value + control_effectiveness_value + false_closure_risk - monitoring_cost
+		),
+		timing_only_monitoring_value = 0,
+		analysis_only_value = 0,
+		exception_monitoring_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(monitoring_value), desc(stale_exception_risk_value), question_family)
+
+open_question_exception_monitoring_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"signal", "What signal shows the exception might be stale?",
+	"clock", "When is the exception checked again?",
+	"stale", "What condition makes the exception stale?",
+	"escalate", "What escalation route handles a stale exception?",
+	"evidence", "What evidence is checked during monitoring?",
+	"close", "What closes the exception?",
+	"reopen", "What reopens the open question after an exception expires?",
+	"dashboard", "Which consumer sees the monitoring result?",
+	"substitute", "Can aggregate timing alone substitute for exception monitoring?",
+	"stop-rule", "When does exception-monitoring review stop?"
+)
+
+open_question_exception_monitoring_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_exception_monitoring_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_exception_monitoring_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_exception_monitoring_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_exception_monitoring_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		monitoring_first_seen = !duplicated(exception_monitoring_id),
+		monitoring_axis_key = paste(exception_monitoring_id, pressure_axis, sep = "::"),
+		monitoring_axis_first_seen = !duplicated(monitoring_axis_key),
+		monitoring_state_first_seen = !duplicated(monitoring_state),
+		monitoring_owner_first_seen = !duplicated(monitoring_owner),
+		dashboard_consumer_first_seen = !duplicated(dashboard_consumer),
+		new_monitoring_value = if_else(monitoring_first_seen, monitoring_value, 0),
+		new_stale_exception_risk_value = if_else(monitoring_first_seen, stale_exception_risk_value, 0),
+		new_timing_only_monitoring_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!monitoring_axis_first_seen ~ "repeat: monitoring-axis already checked",
+			monitoring_state == "local packet exception monitoring" ~ "exception monitoring: local packet",
+			TRUE ~ "exception monitoring: owner or observer artifact"
+		),
+		cumulative_monitoring_records = cumsum(monitoring_first_seen),
+		cumulative_monitoring_axes = cumsum(monitoring_axis_first_seen),
+		cumulative_monitoring_states = cumsum(monitoring_state_first_seen),
+		cumulative_monitoring_owners = cumsum(monitoring_owner_first_seen),
+		cumulative_dashboard_consumers = cumsum(dashboard_consumer_first_seen),
+		cumulative_monitoring_value = cumsum(new_monitoring_value),
+		cumulative_stale_exception_risk_value = cumsum(new_stale_exception_risk_value),
+		cumulative_timing_only_monitoring_value = cumsum(new_timing_only_monitoring_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_exception_monitoring_summary <- open_question_exception_monitoring_100_pass %>%
+	group_by(monitoring_state, exception_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		monitoring_records = n_distinct(exception_monitoring_id),
+		axis_checks = sum(monitoring_axis_first_seen),
+		monitoring_owners = n_distinct(monitoring_owner),
+		dashboard_consumers = n_distinct(dashboard_consumer),
+		monitoring_value = sum(new_monitoring_value),
+		stale_exception_risk_value = sum(new_stale_exception_risk_value),
+		timing_only_monitoring_value = sum(new_timing_only_monitoring_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(monitoring_value), desc(stale_exception_risk_value), first_pass)
+
+open_question_exception_monitoring_checkpoints <- open_question_exception_monitoring_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_monitoring_records,
+		cumulative_monitoring_axes,
+		cumulative_monitoring_states,
+		cumulative_monitoring_owners,
+		cumulative_dashboard_consumers,
+		cumulative_monitoring_value,
+		cumulative_stale_exception_risk_value,
+		cumulative_timing_only_monitoring_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_exception_monitoring_register,
+	file.path(data_dir, "typing-delay-open-question-exception-monitoring-register.csv")
+)
+
+write_csv(
+	open_question_exception_monitoring_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			monitoring_state,
+			exception_state,
+			monitoring_signal,
+			review_clock,
+			stale_condition,
+			escalation_route,
+			evidence_to_check,
+			closure_condition,
+			reopen_condition,
+			dashboard_consumer,
+			permanent_exception_guard,
+			monitoring_owner,
+			supported_claim,
+			blocked_claim,
+			monitoring_first_seen,
+			monitoring_axis_first_seen,
+			monitoring_state_first_seen,
+			monitoring_owner_first_seen,
+			dashboard_consumer_first_seen,
+			pass_result,
+			monitoring_value,
+			stale_exception_risk_value,
+			timing_only_monitoring_value,
+			new_monitoring_value,
+			new_stale_exception_risk_value,
+			new_timing_only_monitoring_value,
+			new_analysis_only_value,
+			cumulative_monitoring_records,
+			cumulative_monitoring_axes,
+			cumulative_monitoring_states,
+			cumulative_monitoring_owners,
+			cumulative_dashboard_consumers,
+			cumulative_monitoring_value,
+			cumulative_stale_exception_risk_value,
+			cumulative_timing_only_monitoring_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-exception-monitoring-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_exception_monitoring_summary,
+	file.path(data_dir, "typing-delay-open-question-exception-monitoring-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_exception_monitoring_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-exception-monitoring-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_exception_monitoring_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, monitoring_value)
+		) %>%
+		ggplot(aes(monitoring_value, question_label, fill = monitoring_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Exception monitoring") +
+		labs(
+			title = "Exception monitoring prevents temporary waivers from becoming permanent claims",
+			subtitle = "Each row names signal, review clock, stale condition, escalation, evidence, closure, reopen rule, and dashboard consumer",
+			x = "Exception-monitoring value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"363-open-question-exception-monitoring-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_exception_monitoring_saturation_long <- open_question_exception_monitoring_100_pass %>%
+	select(
+		pass_id,
+		`monitoring records` = cumulative_monitoring_records,
+		`monitoring axes` = cumulative_monitoring_axes,
+		`monitoring states` = cumulative_monitoring_states,
+		`monitoring owners` = cumulative_monitoring_owners,
+		`dashboard consumers` = cumulative_dashboard_consumers,
+		`monitoring value` = cumulative_monitoring_value,
+		`stale-exception risk value` = cumulative_stale_exception_risk_value,
+		`timing-only monitoring value` = cumulative_timing_only_monitoring_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("monitoring records", "monitoring axes", "monitoring states", "monitoring owners", "dashboard consumers", "monitoring value", "stale-exception risk value", "timing-only monitoring value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_exception_monitoring_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Exception-monitoring audit saturates once stale-waiver checks are named",
+			subtitle = "Nine monitoring records appear by pass 9; all 90 axes appear by pass 90; timing-only monitoring value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"364-open-question-exception-monitoring-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_exception_monitoring_summary %>%
+		mutate(
+			state_label = str_wrap(monitoring_state, width = 28),
+			state_label = fct_reorder(state_label, monitoring_value + stale_exception_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Exception-monitoring coverage separates local packet checks from owner and observer checks",
+			subtitle = "Every row is checked for signal, clock, stale condition, escalation, evidence, close, reopen, dashboard, substitute, and stop rule",
+			x = "Monitoring-axis checks",
+			y = "Exception monitoring state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"365-open-question-exception-monitoring-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

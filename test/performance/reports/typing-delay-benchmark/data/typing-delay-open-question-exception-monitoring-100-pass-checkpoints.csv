@@ -1,0 +1,10 @@
+pass_id,cumulative_monitoring_records,cumulative_monitoring_axes,cumulative_monitoring_states,cumulative_monitoring_owners,cumulative_dashboard_consumers,cumulative_monitoring_value,cumulative_stale_exception_risk_value,cumulative_timing_only_monitoring_value,cumulative_analysis_only_value
+1,1,1,1,1,1,34579,25597,0,0
+5,5,5,2,5,4,139482,103251,0,0
+9,9,9,3,9,8,165951,122847,0,0
+10,9,10,3,9,8,165951,122847,0,0
+20,9,20,3,9,8,165951,122847,0,0
+50,9,50,3,9,8,165951,122847,0,0
+90,9,90,3,9,8,165951,122847,0,0
+91,9,90,3,9,8,165951,122847,0,0
+100,9,90,3,9,8,165951,122847,0,0
