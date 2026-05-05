@@ -1,0 +1,10 @@
+pass_id,cumulative_renewal_records,cumulative_renewal_axes,cumulative_renewal_states,cumulative_renewal_owners,cumulative_renewal_consumers,cumulative_renewal_value,cumulative_freshness_value,cumulative_timing_only_renewal_value,cumulative_analysis_only_value
+1,1,1,1,1,1,328024,247279,0,0
+5,5,5,2,5,4,1323171,997464,0,0
+9,9,9,3,9,8,1574373,1186829,0,0
+10,9,10,3,9,8,1574373,1186829,0,0
+20,9,20,3,9,8,1574373,1186829,0,0
+50,9,50,3,9,8,1574373,1186829,0,0
+90,9,90,3,9,8,1574373,1186829,0,0
+91,9,90,3,9,8,1574373,1186829,0,0
+100,9,90,3,9,8,1574373,1186829,0,0

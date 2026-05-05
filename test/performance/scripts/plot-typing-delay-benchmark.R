@@ -37695,6 +37695,311 @@ save_plot(
 	height = 7.2
 )
 
+open_question_active_claim_renewal_register <- open_question_active_claim_reconciliation_register %>%
+	mutate(
+		renewal_state = case_when(
+			reconciliation_state == "local packet active-claim reconciliation" ~ "local packet active-claim renewal",
+			reconciliation_state == "owner artifact active-claim reconciliation" ~ "owner artifact active-claim renewal",
+			TRUE ~ "observer artifact active-claim renewal"
+		),
+		renewal_clock = case_when(
+			close_scope == "CI wait decision" ~ "before each CI wait-policy recommendation is reused and after any Performance Tests topology, fixture, browser, or artifact-schema change",
+			close_scope == "source prototype decision" ~ "before each source-safety recommendation is reused and after any selector, fixture, package-boundary, or semantic-behavior change",
+			close_scope == "benchmark method wording" ~ "before each benchmark-method claim is reused and after any helper, aggregation, browser, input-mode, or instrumentation change",
+			TRUE ~ "before each broad claim is reused and after any owner, observer, endpoint, runtime-control, replay, workload, or product-scope change"
+		),
+		renewal_drift_signal = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "active local claim text, packet checksum, generated figure, helper output, fixture, or CI recommendation changes",
+			renewal_state == "owner artifact active-claim renewal" ~ "active owner claim text, owner artifact checksum, reviewer identity, owner schema, or owner-scoped recommendation changes",
+			TRUE ~ "active broad claim text, observer artifact checksum, reviewer identity, observer schema, endpoint, runtime, workload, or product-scope wording changes"
+		),
+		renewal_test = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "rerun packet controls, active-claim reconciliation, retired-evidence exclusion, and report-link checks",
+			renewal_state == "owner artifact active-claim renewal" ~ "rerun owner controls, active-claim reconciliation, retired-evidence exclusion, owner review, and report-link checks",
+			TRUE ~ "rerun observer controls, active-claim reconciliation, retired-evidence exclusion, observer review, and report-link checks"
+		),
+		expiry_rule = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "active local claim expires when renewal clock or drift signal fires without a passing packet renewal result",
+			renewal_state == "owner artifact active-claim renewal" ~ "active owner claim expires when renewal clock or drift signal fires without a passing owner renewal result",
+			TRUE ~ "active broad claim expires when renewal clock or drift signal fires without a passing observer renewal result"
+		),
+		stale_claim_response = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "downgrade or remove active local wording until fresh packet evidence passes renewal",
+			renewal_state == "owner artifact active-claim renewal" ~ "downgrade or remove active owner-scoped wording until fresh owner evidence passes renewal",
+			TRUE ~ "downgrade or remove active broad wording until fresh observer evidence passes renewal"
+		),
+		downgrade_path = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "replace current support with unsupported-note wording or a narrow historical local-evidence reference",
+			renewal_state == "owner artifact active-claim renewal" ~ "replace current support with unsupported-note wording or a narrow historical owner-evidence reference",
+			TRUE ~ "replace current support with unsupported-note wording or a narrow historical observer-evidence reference"
+		),
+		renewal_evidence = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "renewal timestamp, packet checksum, control-effectiveness result, active-claim ledger row, retired-evidence exclusion result, and report diff",
+			renewal_state == "owner artifact active-claim renewal" ~ "renewal timestamp, owner checksum, owner control result, active-claim ledger row, retired-evidence exclusion result, reviewer identity, and report diff",
+			TRUE ~ "renewal timestamp, observer checksum, observer control result, active-claim ledger row, retired-evidence exclusion result, reviewer identity, and report diff"
+		),
+		consumer_notice = case_when(
+			renewal_state == "local packet active-claim renewal" ~ "consumer receives renewed, stale, downgraded, or removed status before using the local claim",
+			renewal_state == "owner artifact active-claim renewal" ~ "consumer receives renewed, stale, downgraded, or removed status before using the owner-scoped claim",
+			TRUE ~ "consumer receives renewed, stale, downgraded, or removed status before using the broad claim"
+		),
+		renewal_owner = reconciliation_owner,
+		renewal_consumer = reconciliation_consumer,
+		renewal_cost = case_when(
+			renewal_state == "local packet active-claim renewal" ~ 2,
+			renewal_state == "owner artifact active-claim renewal" ~ 4,
+			TRUE ~ 5
+		),
+		renewal_value = pmax(
+			1,
+			reconciliation_value + active_claim_integrity_value + stale_reuse_risk - renewal_cost
+		),
+		freshness_value = pmax(
+			1,
+			active_claim_integrity_value + enforcement_value + false_closure_risk - renewal_cost
+		),
+		timing_only_renewal_value = 0,
+		analysis_only_value = 0,
+		active_claim_renewal_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(renewal_value), desc(freshness_value), question_family)
+
+open_question_active_claim_renewal_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"clock", "When must the active claim be renewed?",
+	"drift", "What drift signal forces renewal?",
+	"test", "What renewal test must pass?",
+	"expire", "What rule expires the active claim?",
+	"response", "What response handles a stale active claim?",
+	"downgrade", "What downgraded wording is allowed while stale?",
+	"evidence", "What evidence proves renewal happened?",
+	"consumer", "Which consumer receives the renewal result?",
+	"substitute", "Can aggregate timing alone substitute for active-claim renewal?",
+	"stop-rule", "When does active-claim renewal review stop?"
+)
+
+open_question_active_claim_renewal_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_active_claim_renewal_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_active_claim_renewal_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_active_claim_renewal_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_active_claim_renewal_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		renewal_first_seen = !duplicated(active_claim_renewal_id),
+		renewal_axis_key = paste(active_claim_renewal_id, pressure_axis, sep = "::"),
+		renewal_axis_first_seen = !duplicated(renewal_axis_key),
+		renewal_state_first_seen = !duplicated(renewal_state),
+		renewal_owner_first_seen = !duplicated(renewal_owner),
+		renewal_consumer_first_seen = !duplicated(renewal_consumer),
+		new_renewal_value = if_else(renewal_first_seen, renewal_value, 0),
+		new_freshness_value = if_else(renewal_first_seen, freshness_value, 0),
+		new_timing_only_renewal_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!renewal_axis_first_seen ~ "repeat: renewal-axis already checked",
+			renewal_state == "local packet active-claim renewal" ~ "active-claim renewal: local packet",
+			TRUE ~ "active-claim renewal: owner or observer artifact"
+		),
+		cumulative_renewal_records = cumsum(renewal_first_seen),
+		cumulative_renewal_axes = cumsum(renewal_axis_first_seen),
+		cumulative_renewal_states = cumsum(renewal_state_first_seen),
+		cumulative_renewal_owners = cumsum(renewal_owner_first_seen),
+		cumulative_renewal_consumers = cumsum(renewal_consumer_first_seen),
+		cumulative_renewal_value = cumsum(new_renewal_value),
+		cumulative_freshness_value = cumsum(new_freshness_value),
+		cumulative_timing_only_renewal_value = cumsum(new_timing_only_renewal_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_active_claim_renewal_summary <- open_question_active_claim_renewal_100_pass %>%
+	group_by(renewal_state, reconciliation_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		renewal_records = n_distinct(active_claim_renewal_id),
+		axis_checks = sum(renewal_axis_first_seen),
+		renewal_owners = n_distinct(renewal_owner),
+		renewal_consumers = n_distinct(renewal_consumer),
+		renewal_value = sum(new_renewal_value),
+		freshness_value = sum(new_freshness_value),
+		timing_only_renewal_value = sum(new_timing_only_renewal_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(renewal_value), desc(freshness_value), first_pass)
+
+open_question_active_claim_renewal_checkpoints <- open_question_active_claim_renewal_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_renewal_records,
+		cumulative_renewal_axes,
+		cumulative_renewal_states,
+		cumulative_renewal_owners,
+		cumulative_renewal_consumers,
+		cumulative_renewal_value,
+		cumulative_freshness_value,
+		cumulative_timing_only_renewal_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_active_claim_renewal_register,
+	file.path(data_dir, "typing-delay-open-question-active-claim-renewal-register.csv")
+)
+
+write_csv(
+	open_question_active_claim_renewal_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			renewal_state,
+			reconciliation_state,
+			renewal_clock,
+			renewal_drift_signal,
+			renewal_test,
+			expiry_rule,
+			stale_claim_response,
+			downgrade_path,
+			renewal_evidence,
+			consumer_notice,
+			renewal_owner,
+			renewal_consumer,
+			supported_claim,
+			blocked_claim,
+			renewal_first_seen,
+			renewal_axis_first_seen,
+			renewal_state_first_seen,
+			renewal_owner_first_seen,
+			renewal_consumer_first_seen,
+			pass_result,
+			renewal_value,
+			freshness_value,
+			timing_only_renewal_value,
+			new_renewal_value,
+			new_freshness_value,
+			new_timing_only_renewal_value,
+			new_analysis_only_value,
+			cumulative_renewal_records,
+			cumulative_renewal_axes,
+			cumulative_renewal_states,
+			cumulative_renewal_owners,
+			cumulative_renewal_consumers,
+			cumulative_renewal_value,
+			cumulative_freshness_value,
+			cumulative_timing_only_renewal_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-active-claim-renewal-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_active_claim_renewal_summary,
+	file.path(data_dir, "typing-delay-open-question-active-claim-renewal-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_active_claim_renewal_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-active-claim-renewal-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_active_claim_renewal_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, renewal_value)
+		) %>%
+		ggplot(aes(renewal_value, question_label, fill = renewal_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Active-claim renewal") +
+		labs(
+			title = "Active-claim renewal keeps current evidence from silently going stale",
+			subtitle = "Each row names renewal clock, drift signal, test, expiry, stale response, downgrade path, evidence, and consumer notice",
+			x = "Active-claim renewal value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"375-open-question-active-claim-renewal-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_active_claim_renewal_saturation_long <- open_question_active_claim_renewal_100_pass %>%
+	select(
+		pass_id,
+		`renewal records` = cumulative_renewal_records,
+		`renewal axes` = cumulative_renewal_axes,
+		`renewal states` = cumulative_renewal_states,
+		`renewal owners` = cumulative_renewal_owners,
+		`renewal consumers` = cumulative_renewal_consumers,
+		`renewal value` = cumulative_renewal_value,
+		`freshness value` = cumulative_freshness_value,
+		`timing-only renewal value` = cumulative_timing_only_renewal_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("renewal records", "renewal axes", "renewal states", "renewal owners", "renewal consumers", "renewal value", "freshness value", "timing-only renewal value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_active_claim_renewal_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Active-claim renewal audit saturates once clocks, drift, and expiry are named",
+			subtitle = "Nine renewal records appear by pass 9; all 90 axes appear by pass 90; timing-only renewal value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"376-open-question-active-claim-renewal-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_active_claim_renewal_summary %>%
+		mutate(
+			state_label = str_wrap(renewal_state, width = 28),
+			state_label = fct_reorder(state_label, renewal_value + freshness_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Active-claim renewal coverage separates local packet renewal from owner and observer renewal",
+			subtitle = "Every row is checked for clock, drift, test, expire, response, downgrade, evidence, consumer, substitute, and stop rule",
+			x = "Renewal-axis checks",
+			y = "Active-claim renewal state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"377-open-question-active-claim-renewal-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1723,6 +1723,22 @@ The R script derives:
     reconciliation-state, reconciliation-owner, reconciliation-consumer,
     reconciliation-value, active-claim-integrity-value,
     timing-only-reconciliation, and analysis-only saturation.
+-   `data/typing-delay-open-question-active-claim-renewal-register.csv`:
+    active-claim renewal register for the nine active-claim reconciliation
+    records, including renewal clock, drift signal, renewal test, expiry rule,
+    stale-claim response, downgrade path, renewal evidence, consumer notice,
+    owner, and consumer.
+-   `data/typing-delay-open-question-active-claim-renewal-100-pass-audit.csv`:
+    thirty-first forced 100-pass audit over active-claim renewal axes: clock,
+    drift, test, expire, response, downgrade, evidence, consumer, substitute,
+    and stop-rule.
+-   `data/typing-delay-open-question-active-claim-renewal-100-pass-summary.csv`:
+    rollup of active-claim renewal coverage by renewal state,
+    active-claim reconciliation state, and pass result.
+-   `data/typing-delay-open-question-active-claim-renewal-100-pass-checkpoints.csv`:
+    checkpoints for renewal-record, renewal-axis, renewal-state, renewal-owner,
+    renewal-consumer, renewal-value, freshness-value, timing-only-renewal, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11835,6 +11851,37 @@ cannot come back accidentally; active-claim reconciliation says current wording
 must have a live evidence pointer. The two checks meet in the ledger: retired
 evidence may remain as history, but only current evidence can support active CI,
 source, method, browser, runtime, workload, or product wording.
+
+I then added the active-claim renewal layer: current evidence is not permanent
+just because it reconciled once. Each active claim now has a renewal clock, drift
+signals that force retest, a renewal test, an expiry rule, a stale-claim
+response, downgraded wording for stale claims, renewal evidence, and consumer
+notice.
+
+![Open question active claim renewal register](figures/375-open-question-active-claim-renewal-register.png)
+
+![Open question active claim renewal 100-pass saturation](figures/376-open-question-active-claim-renewal-100-pass-saturation.png)
+
+![Open question active claim renewal coverage](figures/377-open-question-active-claim-renewal-coverage.png)
+
+| Active-claim renewal check | Result |
+| -------------------------- | ------ |
+| Renewal records | `9`, one per active-claim reconciliation record. |
+| Renewal states | `3`: local packet active-claim renewal, owner artifact active-claim renewal, and observer artifact active-claim renewal. |
+| Renewal owners | `9`; stale-claim review routes back to the scoped reconciliation owner. |
+| Renewal consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Renewal-axis checks | `90`: every row checked against all `10` active-claim renewal axes. |
+| Active-claim renewal value | `1574373`: local packet renewal contributes `1189583`, owner artifact renewal contributes `237861`, and observer artifact renewal contributes `146929`. |
+| Freshness value | `1186829` across the nine active-claim renewal records. |
+| Timing-only renewal value | `0`; aggregate timing movement alone cannot renew an active claim, detect drift, pass a renewal test, set expiry, choose downgraded wording, or notify consumers. |
+| Saturation | Renewal records are all named by pass `9`; all renewal axes are covered by pass `90`; passes `91-100` add no active-claim renewal coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the freshness layer for current claims. Active-claim reconciliation
+answers "does the claim point at live evidence now?" Active-claim renewal
+answers "when must that live evidence be retested or downgraded?" A clean timing
+movement does not renew evidence by itself; renewal requires the scoped evidence
+packet, control result, ledger update, and report diff.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

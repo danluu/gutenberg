@@ -1,0 +1,7 @@
+renewal_state,reconciliation_state,pass_result,passes,first_pass,renewal_records,axis_checks,renewal_owners,renewal_consumers,renewal_value,freshness_value,timing_only_renewal_value,analysis_only_value
+local packet active-claim renewal,local packet active-claim reconciliation,active-claim renewal: local packet,40,1,4,40,4,3,1189583,896760,0,0
+owner artifact active-claim renewal,owner artifact active-claim reconciliation,active-claim renewal: owner or observer artifact,20,5,2,20,2,2,237861,179309,0,0
+observer artifact active-claim renewal,observer artifact active-claim reconciliation,active-claim renewal: owner or observer artifact,30,7,3,30,3,3,146929,110760,0,0
+local packet active-claim renewal,local packet active-claim reconciliation,repeat: renewal-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact active-claim renewal,owner artifact active-claim reconciliation,repeat: renewal-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact active-claim renewal,observer artifact active-claim reconciliation,repeat: renewal-axis already checked,3,97,3,0,3,3,0,0,0,0
