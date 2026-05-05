@@ -11,6 +11,7 @@ jest.mock( '../sync', () => ( {
 jest.mock( '../utils/crdt', () => ( {
 	...jest.requireActual( '../utils/crdt' ),
 	applyPostChangesToCRDTDoc: jest.fn(),
+	getPostChangesFromCRDTDoc: jest.fn( () => ( {} ) ),
 } ) );
 
 /**
@@ -25,6 +26,7 @@ import {
 import { getSyncManager } from '../sync';
 import {
 	applyPostChangesToCRDTDoc,
+	getPostChangesFromCRDTDoc,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
 } from '../utils/crdt';
 
@@ -127,7 +129,29 @@ describe( 'prePersistPostType', () => {
 		expect( getSyncManager ).toHaveBeenCalled();
 		expect( getSyncManager().createPersistedCRDTDoc ).toHaveBeenCalledWith(
 			'postType/post',
-			123
+			123,
+			{ record: edits }
+		);
+
+		getSyncManager.mockReset();
+	} );
+
+	it( 'passes the current save edits to CRDT document serialization', async () => {
+		const mockSerializedDoc = 'serialized-crdt-doc-data';
+		getSyncManager.mockReturnValue( {
+			createPersistedCRDTDoc: jest
+				.fn()
+				.mockReturnValue( mockSerializedDoc ),
+		} );
+
+		const record = { id: 123, status: 'publish', title: 'Initial title' };
+		const edits = { id: 123, title: 'Customer title' };
+		await prePersistPostType( record, edits, 'post', false );
+
+		expect( getSyncManager().createPersistedCRDTDoc ).toHaveBeenCalledWith(
+			'postType/post',
+			123,
+			{ record: edits }
 		);
 
 		getSyncManager.mockReset();
@@ -140,6 +164,7 @@ describe( 'loadPostTypeEntities', () => {
 	beforeEach( () => {
 		apiFetch.mockReset();
 		applyPostChangesToCRDTDoc.mockReset();
+		getPostChangesFromCRDTDoc.mockClear();
 		originalCollaborationEnabled = window._wpCollaborationEnabled;
 	} );
 
@@ -308,6 +333,43 @@ describe( 'loadPostTypeEntities', () => {
 			expect( syncedProperties ).toContain( prop );
 		}
 		expect( syncedProperties.size ).toBe( 15 );
+	} );
+
+	it( 'passes the persisted record through when extracting CRDT changes', async () => {
+		window._wpCollaborationEnabled = true;
+
+		apiFetch
+			.mockResolvedValueOnce( {
+				post: {
+					name: 'Posts',
+					rest_base: 'posts',
+					rest_namespace: 'wp/v2',
+					taxonomies: [],
+				},
+			} )
+			.mockResolvedValueOnce( {} );
+
+		const postTypeLoader = additionalEntityConfigLoaders.find(
+			( loader ) => loader.kind === 'postType'
+		);
+		const entities = await postTypeLoader.loadEntities();
+		const postEntity = entities.find( ( e ) => e.name === 'post' );
+		const crdtDoc = {};
+		const editedRecord = { title: { raw: 'Unsaved title' } };
+		const persistedRecord = { title: { raw: 'Persisted title' } };
+
+		postEntity.syncConfig.getChangesFromCRDTDoc(
+			crdtDoc,
+			editedRecord,
+			persistedRecord
+		);
+
+		expect( getPostChangesFromCRDTDoc ).toHaveBeenCalledWith(
+			crdtDoc,
+			editedRecord,
+			expect.any( Set ),
+			persistedRecord
+		);
 	} );
 } );
 
