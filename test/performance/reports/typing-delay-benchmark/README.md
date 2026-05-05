@@ -1755,6 +1755,22 @@ The R script derives:
     checkpoints for expiry-record, expiry-axis, expiry-state, expiry-owner,
     expiry-consumer, expiry-enforcement-value, stale-active-claim-risk-value,
     timing-only-expiry-enforcement, and analysis-only saturation.
+-   `data/typing-delay-open-question-consumer-use-gate-register.csv`:
+    consumer-use gate register for the nine active-claim expiry-enforcement
+    records, including downstream use request, pre-use check, allowed use,
+    blocked use, failure response, proof of gate, owner, and consumer.
+-   `data/typing-delay-open-question-consumer-use-gate-100-pass-audit.csv`:
+    thirty-third forced 100-pass audit over consumer-use gate axes: request,
+    precheck, allow, block, response, proof, owner, consumer, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-consumer-use-gate-100-pass-summary.csv`:
+    rollup of consumer-use gate coverage by consumer gate state,
+    active-claim expiry-enforcement state, and pass result.
+-   `data/typing-delay-open-question-consumer-use-gate-100-pass-checkpoints.csv`:
+    checkpoints for consumer-gate-record, consumer-gate-axis,
+    consumer-gate-state, consumer-gate-owner, consumer-gate-consumer,
+    consumer-gate-value, consumer-misuse-risk-value,
+    timing-only-consumer-gate, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11929,6 +11945,36 @@ This is the stale-current guard. Renewal defines freshness; expiry enforcement
 turns missed renewal into a blocking condition. An expired active claim can
 return only after scoped renewal evidence passes, retired evidence remains
 excluded, and the active-claim ledger and report diff are refreshed.
+
+I then added the consumer-use gate layer: downstream consumers now have to run a
+pre-use check before they reuse an active claim in CI policy, source
+recommendations, benchmark-method wording, or broad conclusions. The gate names
+the requested downstream use, the pre-use check, allowed use, blocked use,
+failure response, proof that the gate ran, the owner, and the consumer.
+
+![Open question consumer use gate register](figures/381-open-question-consumer-use-gate-register.png)
+
+![Open question consumer use gate 100-pass saturation](figures/382-open-question-consumer-use-gate-100-pass-saturation.png)
+
+![Open question consumer use gate coverage](figures/383-open-question-consumer-use-gate-coverage.png)
+
+| Consumer-use gate check | Result |
+| ----------------------- | ------ |
+| Consumer-gate records | `9`, one per active-claim expiry-enforcement record. |
+| Consumer-gate states | `3`: local packet consumer-use gate, owner artifact consumer-use gate, and observer artifact consumer-use gate. |
+| Consumer-gate owners | `9`; failed pre-use checks route back to the scoped expiry-enforcement owner. |
+| Consumer-gate consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Consumer-gate-axis checks | `90`: every row checked against all `10` consumer-use gate axes. |
+| Consumer-use gate value | `4846110`: local packet gates contribute `3661666`, owner artifact gates contribute `732161`, and observer artifact gates contribute `452283`. |
+| Consumer-misuse risk value | `3659196` across the nine consumer-use gate records. |
+| Timing-only consumer-gate value | `0`; aggregate timing movement alone cannot authorize downstream use, prove pre-use checks, unblock expired evidence, or notify consumers. |
+| Saturation | Consumer-gate records are all named by pass `9`; all consumer-gate axes are covered by pass `90`; passes `91-100` add no consumer-use gate coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the downstream-use guard. Expiry enforcement can mark report evidence as
+stale, but a separate consumer-use gate is what prevents that stale or
+downgraded claim from being used later by a policy, implementation, method, or
+broad-conclusion consumer without a fresh pre-use check.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

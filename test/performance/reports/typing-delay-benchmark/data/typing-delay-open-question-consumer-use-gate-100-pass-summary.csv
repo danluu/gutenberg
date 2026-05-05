@@ -1,0 +1,7 @@
+consumer_gate_state,expiry_enforcement_state,pass_result,passes,first_pass,consumer_gate_records,axis_checks,consumer_gate_owners,consumer_gate_consumers,consumer_gate_value,consumer_misuse_risk_value,timing_only_consumer_gate_value,analysis_only_value
+local packet consumer-use gate,local packet active-claim expiry enforcement,consumer-use gate: local packet,40,1,4,40,4,3,3661666,2764857,0,0
+owner artifact consumer-use gate,owner artifact active-claim expiry enforcement,consumer-use gate: owner or observer artifact,20,5,2,20,2,2,732161,552840,0,0
+observer artifact consumer-use gate,observer artifact active-claim expiry enforcement,consumer-use gate: owner or observer artifact,30,7,3,30,3,3,452283,341499,0,0
+local packet consumer-use gate,local packet active-claim expiry enforcement,repeat: consumer-gate-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact consumer-use gate,owner artifact active-claim expiry enforcement,repeat: consumer-gate-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact consumer-use gate,observer artifact active-claim expiry enforcement,repeat: consumer-gate-axis already checked,3,97,3,0,3,3,0,0,0,0

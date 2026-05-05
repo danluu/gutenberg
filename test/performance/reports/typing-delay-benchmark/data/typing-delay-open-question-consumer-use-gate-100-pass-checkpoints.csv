@@ -1,0 +1,10 @@
+pass_id,cumulative_consumer_gate_records,cumulative_consumer_gate_axes,cumulative_consumer_gate_states,cumulative_consumer_gate_owners,cumulative_consumer_gate_consumers,cumulative_consumer_gate_value,cumulative_consumer_misuse_risk_value,cumulative_timing_only_consumer_gate_value,cumulative_analysis_only_value
+1,1,1,1,1,1,1009693,762401,0,0
+5,5,5,2,5,4,4072863,3075344,0,0
+9,9,9,3,9,8,4846110,3659196,0,0
+10,9,10,3,9,8,4846110,3659196,0,0
+20,9,20,3,9,8,4846110,3659196,0,0
+50,9,50,3,9,8,4846110,3659196,0,0
+90,9,90,3,9,8,4846110,3659196,0,0
+91,9,90,3,9,8,4846110,3659196,0,0
+100,9,90,3,9,8,4846110,3659196,0,0
