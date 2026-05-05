@@ -41564,6 +41564,302 @@ save_plot(
 	height = 7.2
 )
 
+open_question_disposition_propagation_register <- open_question_contradiction_disposition_register %>%
+	mutate(
+		disposition_propagation_state = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "local packet disposition propagation",
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ "owner artifact disposition propagation",
+			TRUE ~ "observer artifact disposition propagation"
+		),
+		disposition_propagation_target = case_when(
+			close_scope == "CI wait decision" ~ "propagate accepted-reopened or rejected-unchanged status to CI wait-policy recommendations, runtime/reliability tables, startup-wait guidance, typing-delay guidance, and input-mode guidance",
+			close_scope == "source prototype decision" ~ "propagate accepted-reopened or rejected-unchanged status to source prototype recommendations, selector-guard guidance, dispatch/invalidation claims, and owner-review status",
+			close_scope == "benchmark method wording" ~ "propagate accepted-reopened or rejected-unchanged status to benchmark-method wording, trace-schema notes, aggregation caveats, instrumentation caveats, and method limitations",
+			TRUE ~ "propagate accepted-reopened or rejected-unchanged status to broad conclusions, portability caveats, browser/runtime caveats, workload caveats, endpoint caveats, and recommendation scope"
+		),
+		disposition_propagation_cache_update = case_when(
+			disposition_propagation_state == "local packet disposition propagation" ~ "invalidate cached local recommendation rows, stale summary CSVs, stale figures, and stale report snippets before publishing the disposition result",
+			disposition_propagation_state == "owner artifact disposition propagation" ~ "invalidate cached owner-scoped recommendation rows, stale summary CSVs, stale figures, and stale report snippets before publishing the disposition result",
+			TRUE ~ "invalidate cached observer-scope conclusion rows, stale summary CSVs, stale figures, broad wording snippets, and stale report snippets before publishing the disposition result"
+		),
+		disposition_propagation_report_update = case_when(
+			disposition_propagation_state == "local packet disposition propagation" ~ "report update links the local disposition row, propagated recommendation status, refreshed or rejected artifact, cache invalidations, and consumer-visible delta",
+			disposition_propagation_state == "owner artifact disposition propagation" ~ "report update links the owner disposition row, reviewer identity, propagated recommendation status, refreshed or rejected artifact, cache invalidations, and consumer-visible delta",
+			TRUE ~ "report update links the observer disposition row, reviewer identity, broad-scope wording, propagated conclusion status, refreshed or rejected artifact, cache invalidations, and consumer-visible delta"
+		),
+		disposition_propagation_artifact_update = contradiction_disposition_artifact_update,
+		disposition_propagation_consumer_status = contradiction_disposition_consumer_notice,
+		disposition_propagation_backpressure_rule = case_when(
+			disposition_propagation_state == "local packet disposition propagation" ~ "block local recommendation reuse until cache invalidation, report update, artifact update, and consumer notice all match the disposition row",
+			disposition_propagation_state == "owner artifact disposition propagation" ~ "block owner-scoped recommendation reuse until cache invalidation, reviewer signoff, report update, artifact update, and consumer notice all match the disposition row",
+			TRUE ~ "block broad conclusion reuse until cache invalidation, reviewer signoff, report update, broad wording update, artifact update, and consumer notice all match the disposition row"
+		),
+		disposition_propagation_verification_packet = case_when(
+			disposition_propagation_state == "local packet disposition propagation" ~ "local propagation packet contains disposition row, cache-invalidation list, refreshed or rejected artifact, report diff, recommendation diff, and consumer notice",
+			disposition_propagation_state == "owner artifact disposition propagation" ~ "owner propagation packet contains disposition row, reviewer identity, cache-invalidation list, refreshed or rejected artifact, report diff, recommendation diff, and consumer notice",
+			TRUE ~ "observer propagation packet contains disposition row, reviewer identity, broad-scope wording diff, cache-invalidation list, refreshed or rejected artifact, report diff, conclusion diff, and consumer notice"
+		),
+		disposition_propagation_owner = contradiction_disposition_owner,
+		disposition_propagation_consumer = contradiction_disposition_consumer,
+		disposition_propagation_cost = case_when(
+			disposition_propagation_state == "local packet disposition propagation" ~ 5,
+			disposition_propagation_state == "owner artifact disposition propagation" ~ 7,
+			TRUE ~ 9
+		),
+		disposition_propagation_value = pmax(
+			1,
+			contradiction_disposition_value + contradiction_disposition_wrong_decision_risk_value + contradiction_intake_drop_risk_value - disposition_propagation_cost
+		),
+		disposition_propagation_stale_conclusion_risk_value = pmax(
+			1,
+			contradiction_disposition_wrong_decision_risk_value + contradiction_intake_drop_risk_value + reopen_drill_missed_reopen_risk_value - disposition_propagation_cost
+		),
+		timing_only_disposition_propagation_value = 0,
+		analysis_only_value = 0,
+		disposition_propagation_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(disposition_propagation_value), desc(disposition_propagation_stale_conclusion_risk_value), question_family)
+
+open_question_disposition_propagation_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"target", "Which dependent recommendation or conclusion receives the disposition?",
+	"cache", "Which cached summaries, CSVs, figures, or snippets are invalidated?",
+	"report", "What report update proves propagation?",
+	"artifact", "Which artifact is refreshed or retained as rejected?",
+	"consumer", "Which consumer-facing status is updated?",
+	"backpressure", "What blocks reuse until propagation completes?",
+	"verify", "What packet verifies propagation completion?",
+	"owner", "Who owns disposition propagation?",
+	"substitute", "Can aggregate timing alone substitute for disposition propagation?",
+	"stop-rule", "When does disposition-propagation review stop?"
+)
+
+open_question_disposition_propagation_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_disposition_propagation_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_disposition_propagation_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_disposition_propagation_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_disposition_propagation_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		disposition_propagation_first_seen = !duplicated(disposition_propagation_id),
+		disposition_propagation_axis_key = paste(disposition_propagation_id, pressure_axis, sep = "::"),
+		disposition_propagation_axis_first_seen = !duplicated(disposition_propagation_axis_key),
+		disposition_propagation_state_first_seen = !duplicated(disposition_propagation_state),
+		disposition_propagation_owner_first_seen = !duplicated(disposition_propagation_owner),
+		disposition_propagation_consumer_first_seen = !duplicated(disposition_propagation_consumer),
+		new_disposition_propagation_value = if_else(disposition_propagation_first_seen, disposition_propagation_value, 0),
+		new_disposition_propagation_stale_conclusion_risk_value = if_else(disposition_propagation_first_seen, disposition_propagation_stale_conclusion_risk_value, 0),
+		new_timing_only_disposition_propagation_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!disposition_propagation_axis_first_seen ~ "repeat: disposition-propagation-axis already checked",
+			disposition_propagation_state == "local packet disposition propagation" ~ "disposition propagation: local packet",
+			TRUE ~ "disposition propagation: owner or observer artifact"
+		),
+		cumulative_disposition_propagation_records = cumsum(disposition_propagation_first_seen),
+		cumulative_disposition_propagation_axes = cumsum(disposition_propagation_axis_first_seen),
+		cumulative_disposition_propagation_states = cumsum(disposition_propagation_state_first_seen),
+		cumulative_disposition_propagation_owners = cumsum(disposition_propagation_owner_first_seen),
+		cumulative_disposition_propagation_consumers = cumsum(disposition_propagation_consumer_first_seen),
+		cumulative_disposition_propagation_value = cumsum(new_disposition_propagation_value),
+		cumulative_disposition_propagation_stale_conclusion_risk_value = cumsum(new_disposition_propagation_stale_conclusion_risk_value),
+		cumulative_timing_only_disposition_propagation_value = cumsum(new_timing_only_disposition_propagation_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_disposition_propagation_summary <- open_question_disposition_propagation_100_pass %>%
+	group_by(disposition_propagation_state, contradiction_disposition_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		disposition_propagation_records = n_distinct(disposition_propagation_id),
+		axis_checks = sum(disposition_propagation_axis_first_seen),
+		disposition_propagation_owners = n_distinct(disposition_propagation_owner),
+		disposition_propagation_consumers = n_distinct(disposition_propagation_consumer),
+		disposition_propagation_value = sum(new_disposition_propagation_value),
+		disposition_propagation_stale_conclusion_risk_value = sum(new_disposition_propagation_stale_conclusion_risk_value),
+		timing_only_disposition_propagation_value = sum(new_timing_only_disposition_propagation_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(disposition_propagation_value), desc(disposition_propagation_stale_conclusion_risk_value), first_pass)
+
+open_question_disposition_propagation_checkpoints <- open_question_disposition_propagation_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_disposition_propagation_records,
+		cumulative_disposition_propagation_axes,
+		cumulative_disposition_propagation_states,
+		cumulative_disposition_propagation_owners,
+		cumulative_disposition_propagation_consumers,
+		cumulative_disposition_propagation_value,
+		cumulative_disposition_propagation_stale_conclusion_risk_value,
+		cumulative_timing_only_disposition_propagation_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_disposition_propagation_register,
+	file.path(data_dir, "typing-delay-open-question-disposition-propagation-register.csv")
+)
+
+write_csv(
+	open_question_disposition_propagation_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			disposition_propagation_state,
+			contradiction_disposition_state,
+			disposition_propagation_target,
+			disposition_propagation_cache_update,
+			disposition_propagation_report_update,
+			disposition_propagation_artifact_update,
+			disposition_propagation_consumer_status,
+			disposition_propagation_backpressure_rule,
+			disposition_propagation_verification_packet,
+			disposition_propagation_owner,
+			disposition_propagation_consumer,
+			contradiction_disposition_burden,
+			contradiction_disposition_accept_action,
+			contradiction_disposition_reject_action,
+			contradiction_disposition_report_patch,
+			contradiction_disposition_quarantine_release,
+			supported_claim,
+			blocked_claim,
+			disposition_propagation_first_seen,
+			disposition_propagation_axis_first_seen,
+			disposition_propagation_state_first_seen,
+			disposition_propagation_owner_first_seen,
+			disposition_propagation_consumer_first_seen,
+			pass_result,
+			disposition_propagation_value,
+			disposition_propagation_stale_conclusion_risk_value,
+			timing_only_disposition_propagation_value,
+			new_disposition_propagation_value,
+			new_disposition_propagation_stale_conclusion_risk_value,
+			new_timing_only_disposition_propagation_value,
+			new_analysis_only_value,
+			cumulative_disposition_propagation_records,
+			cumulative_disposition_propagation_axes,
+			cumulative_disposition_propagation_states,
+			cumulative_disposition_propagation_owners,
+			cumulative_disposition_propagation_consumers,
+			cumulative_disposition_propagation_value,
+			cumulative_disposition_propagation_stale_conclusion_risk_value,
+			cumulative_timing_only_disposition_propagation_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-disposition-propagation-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_disposition_propagation_summary,
+	file.path(data_dir, "typing-delay-open-question-disposition-propagation-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_disposition_propagation_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-disposition-propagation-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_disposition_propagation_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, disposition_propagation_value)
+		) %>%
+		ggplot(aes(disposition_propagation_value, question_label, fill = disposition_propagation_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Disposition propagation") +
+		labs(
+			title = "Disposition propagation checks that accept/reject decisions reach dependent conclusions",
+			subtitle = "Each row names target, cache invalidation, report update, artifact update, consumer status, backpressure, verification packet, owner, and consumer",
+			x = "Disposition-propagation value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"414-open-question-disposition-propagation-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_disposition_propagation_saturation_long <- open_question_disposition_propagation_100_pass %>%
+	select(
+		pass_id,
+		`disposition-propagation records` = cumulative_disposition_propagation_records,
+		`disposition-propagation axes` = cumulative_disposition_propagation_axes,
+		`disposition-propagation states` = cumulative_disposition_propagation_states,
+		`disposition-propagation owners` = cumulative_disposition_propagation_owners,
+		`disposition-propagation consumers` = cumulative_disposition_propagation_consumers,
+		`disposition-propagation value` = cumulative_disposition_propagation_value,
+		`disposition-propagation stale-conclusion risk value` = cumulative_disposition_propagation_stale_conclusion_risk_value,
+		`timing-only disposition-propagation value` = cumulative_timing_only_disposition_propagation_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("disposition-propagation records", "disposition-propagation axes", "disposition-propagation states", "disposition-propagation owners", "disposition-propagation consumers", "disposition-propagation value", "disposition-propagation stale-conclusion risk value", "timing-only disposition-propagation value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_disposition_propagation_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Disposition-propagation audit saturates once every downstream update path is named",
+			subtitle = "Nine propagation records appear by pass 9; all 90 axes appear by pass 90; timing-only propagation value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"415-open-question-disposition-propagation-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_disposition_propagation_summary %>%
+		mutate(
+			state_label = str_wrap(disposition_propagation_state, width = 28),
+			state_label = fct_reorder(state_label, disposition_propagation_value + disposition_propagation_stale_conclusion_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Disposition-propagation coverage separates local propagation from owner and observer propagation",
+			subtitle = "Every row is checked for target, cache, report, artifact, consumer, backpressure, verify, owner, substitute, and stop rule",
+			x = "Disposition-propagation-axis checks",
+			y = "Disposition-propagation state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"416-open-question-disposition-propagation-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

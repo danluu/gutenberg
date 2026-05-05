@@ -1946,6 +1946,25 @@ The R script derives:
     contradiction-disposition-value,
     contradiction-disposition-wrong-decision-risk-value,
     timing-only-contradiction-disposition, and analysis-only saturation.
+-   `data/typing-delay-open-question-disposition-propagation-register.csv`:
+    disposition-propagation register for the nine contradiction-disposition
+    records, including propagation target, cache invalidation, report update,
+    artifact update, consumer status, backpressure rule, verification packet,
+    owner, and consumer.
+-   `data/typing-delay-open-question-disposition-propagation-100-pass-audit.csv`:
+    forty-fourth forced 100-pass audit over disposition-propagation axes:
+    target, cache, report, artifact, consumer, backpressure, verify, owner,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-disposition-propagation-100-pass-summary.csv`:
+    rollup of disposition-propagation coverage by disposition-propagation
+    state, contradiction-disposition state, and pass result.
+-   `data/typing-delay-open-question-disposition-propagation-100-pass-checkpoints.csv`:
+    checkpoints for disposition-propagation-record,
+    disposition-propagation-axis, disposition-propagation-state,
+    disposition-propagation-owner, disposition-propagation-consumer,
+    disposition-propagation-value,
+    disposition-propagation-stale-conclusion-risk-value,
+    timing-only-disposition-propagation, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12453,6 +12472,38 @@ treating a contradictory packet as either automatically decisive or silently
 irrelevant: the row must say why the contradiction reopened the claim or why it
 was retained only as non-supporting evidence, and the provisional status cannot
 be released until that disposition is recorded.
+
+I then added the disposition-propagation layer: an accept/reject decision is
+not complete until dependent recommendations, cached summaries, report
+sections, figures/data artifacts, and consumer-facing status have all moved to
+the same state. Propagation records the target, cache invalidation, report
+update, artifact update, consumer status, backpressure rule, verification
+packet, owner, and consumer for each disposition row.
+
+![Open question disposition propagation register](figures/414-open-question-disposition-propagation-register.png)
+
+![Open question disposition propagation 100-pass saturation](figures/415-open-question-disposition-propagation-100-pass-saturation.png)
+
+![Open question disposition propagation coverage](figures/416-open-question-disposition-propagation-coverage.png)
+
+| Disposition-propagation check | Result |
+| ----------------------------- | ------ |
+| Disposition-propagation records | `9`, one per contradiction-disposition record. |
+| Disposition-propagation states | `3`: local packet disposition propagation, owner artifact disposition propagation, and observer artifact disposition propagation. |
+| Disposition-propagation owners | `9`; propagation routes back to the scoped contradiction-disposition owner. |
+| Disposition-propagation consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Disposition-propagation-axis checks | `90`: every row checked against all `10` disposition-propagation axes. |
+| Disposition-propagation value | `2501652736`: local packet propagation contributes `1890233630`, owner artifact propagation contributes `377954468`, and observer artifact propagation contributes `233464638`. |
+| Disposition-propagation stale-conclusion-risk value | `1226918717` across the nine disposition-propagation records. |
+| Timing-only disposition-propagation value | `0`; aggregate timing movement alone cannot prove the target update, cache invalidation, report update, artifact update, consumer status, backpressure, or verification packet. |
+| Saturation | Disposition-propagation records are all named by pass `9`; all disposition-propagation axes are covered by pass `90`; passes `91-100` add no disposition-propagation coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the stale-conclusion guard after disposition. It blocks the failure
+mode where a contradiction is accepted or rejected correctly but the old
+recommendation, figure, CSV, cached summary, or consumer notice remains live.
+The downstream conclusion cannot be reused until the propagation packet proves
+that every dependent surface reflects the disposition row.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

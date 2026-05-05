@@ -1,0 +1,10 @@
+pass_id,cumulative_disposition_propagation_records,cumulative_disposition_propagation_axes,cumulative_disposition_propagation_states,cumulative_disposition_propagation_owners,cumulative_disposition_propagation_consumers,cumulative_disposition_propagation_value,cumulative_disposition_propagation_stale_conclusion_risk_value,cumulative_timing_only_disposition_propagation_value,cumulative_analysis_only_value
+1,1,1,1,1,1,521226315,255631938,0,0
+5,5,5,2,5,4,2102501263,1031157589,0,0
+9,9,9,3,9,8,2501652736,1226918717,0,0
+10,9,10,3,9,8,2501652736,1226918717,0,0
+20,9,20,3,9,8,2501652736,1226918717,0,0
+50,9,50,3,9,8,2501652736,1226918717,0,0
+90,9,90,3,9,8,2501652736,1226918717,0,0
+91,9,90,3,9,8,2501652736,1226918717,0,0
+100,9,90,3,9,8,2501652736,1226918717,0,0

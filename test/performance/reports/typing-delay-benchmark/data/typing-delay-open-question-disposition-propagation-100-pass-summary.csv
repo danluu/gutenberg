@@ -1,0 +1,7 @@
+disposition_propagation_state,contradiction_disposition_state,pass_result,passes,first_pass,disposition_propagation_records,axis_checks,disposition_propagation_owners,disposition_propagation_consumers,disposition_propagation_value,disposition_propagation_stale_conclusion_risk_value,timing_only_disposition_propagation_value,analysis_only_value
+local packet disposition propagation,local packet contradiction disposition,disposition propagation: local packet,40,1,4,40,4,3,1890233630,927052359,0,0
+owner artifact disposition propagation,owner artifact contradiction disposition,disposition propagation: owner or observer artifact,20,5,2,20,2,2,377954468,185365220,0,0
+observer artifact disposition propagation,observer artifact contradiction disposition,disposition propagation: owner or observer artifact,30,7,3,30,3,3,233464638,114501138,0,0
+local packet disposition propagation,local packet contradiction disposition,repeat: disposition-propagation-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact disposition propagation,owner artifact contradiction disposition,repeat: disposition-propagation-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact disposition propagation,observer artifact contradiction disposition,repeat: disposition-propagation-axis already checked,3,97,3,0,3,3,0,0,0,0
