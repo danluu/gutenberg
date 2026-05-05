@@ -113,6 +113,16 @@ Pass 42 refreshed the same controls after `origin/trunk` advanced to:
 
 That new trunk commit only changes the HTTP polling sync server and a changelog entry, not the CRDT block merge code. With only the regression-test commit applied to current trunk, all three focused repros still fail. With the same regression tests applied to the known-fixes base, the two stale-snapshot Y.Doc repros still pass and the same-array-reference reorder repro still fails. The rebased PR branch passes the three focused repros, the full `crdt-blocks` unit file, targeted JS lint, and `git diff --check`. This is the pass-42 narrower root-cause proof: an editor can lose a top-level move without any Playwright, HTTP polling, readiness wait, or second browser involved, solely because `mergeCrdtBlocks()` reuses a stale serialized result for a mutated block-array object.
 
+Pass 43 added fresh runtime verification after starting the correct `.wp-env.test.json` environment on `WP_ENV_PORT=9905` with `WP_ENV_PHPMYADMIN_PORT=19905`. The fixed PR branch passed the natural-user Playwright repro in 23.4s; both editors converged to:
+
+```text
+RTC ec47 realistic inserted paragraph 1
+Another paragraph exists so the top-level list is not degenerate.
+Emoji and multibyte: hi ..., こんにちは, مرحبا.
+```
+
+The same pass repeated the focused unit controls. Current `origin/trunk` plus only the regression-test commit still fails all three focused repros. The known-fixes base plus only the regression-test commit still passes the two stale-snapshot Y.Doc repros and fails only the same-array-reference reorder repro. The PR branch passes the focused repros, the full `crdt-blocks` unit file, and targeted JS lint. That confirms the existing branch and video satisfy the requested standard, with pass-43 adding the previously blocked fresh browser verification.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
