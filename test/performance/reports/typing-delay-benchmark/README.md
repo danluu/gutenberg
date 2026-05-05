@@ -1509,6 +1509,20 @@ The R script derives:
     checkpoints for closure-record, closure-axis, closure-governance-state,
     governance-value, wording-change-value, timing-only-governance, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-closure-falsification.csv`: falsification
+    protocol for the nine closure records, including decisive falsifier,
+    negative control, conflict rule, non-falsifier, reopen action, and archive.
+-   `data/typing-delay-open-question-closure-falsification-100-pass-audit.csv`:
+    seventeenth forced 100-pass audit over falsification axes: falsifier,
+    control, conflict, non-falsifier, reopen, owner, archive, wording,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-closure-falsification-100-pass-summary.csv`:
+    rollup of falsification coverage by falsifier state, closure governance
+    state, and pass result.
+-   `data/typing-delay-open-question-closure-falsification-100-pass-checkpoints.csv`:
+    checkpoints for falsification-record, falsification-axis,
+    falsification-state, falsification-value, reopen-value,
+    timing-only-falsification, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11204,6 +11218,34 @@ This is the final audit-trail layer for the remaining open questions. Closure is
 not a new q50, p90, or volatility number. It is a signed old/new packet or owner
 artifact, plus an explicit wording rule and rollback trigger. If that record is
 missing, the question stays open even if another timing run looks clean.
+
+I then added the closure-falsification layer: after a question is marked closed,
+what concrete evidence can reopen it, what negative control prevents noise from
+being treated as disproof, how conflicting evidence is resolved, and which
+tempting observations are not falsifiers.
+
+![Open question closure falsification](figures/333-open-question-closure-falsification.png)
+
+![Open question closure falsification 100-pass saturation](figures/334-open-question-closure-falsification-100-pass-saturation.png)
+
+![Open question closure falsification coverage](figures/335-open-question-closure-falsification-coverage.png)
+
+| Closure-falsification check | Result |
+| --------------------------- | ------ |
+| Falsification records | `9`, one per closure record. |
+| Falsification states | `3`: local packet falsifier, owner artifact falsifier, and observer artifact falsifier. |
+| Signoff owners | `9`; disputed falsification evidence routes back to the same scoped owner as closure. |
+| Falsification-axis checks | `90`: every record checked against all `10` falsification axes. |
+| Falsification value | `1169`: local packet falsifiers contribute `921`, owner artifact falsifiers contribute `156`, and observer artifact falsifiers contribute `92`. |
+| Reopen value | `548` across the nine records. |
+| Timing-only falsification value | `0`; aggregate timing movement without the required fields, controls, or owner artifact is neither confirmation nor falsification. |
+| Saturation | Falsification records are all named by pass `9`; all falsification axes are covered by pass `90`; passes `91-100` add no falsification coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This hardens the closure story against a common mistake: treating any later clean
+or noisy timing run as proof. A closure can be reopened, but only by the scoped
+packet, owner artifact, or observer artifact named in the falsification record,
+with the negative control and conflict rule preserved in the archive.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,7 @@
+falsification_state,closure_governance_state,pass_result,passes,first_pass,falsification_records,axis_checks,signoff_owners,falsification_value,reopen_value,timing_only_falsification_value,analysis_only_value,max_false_closure_risk
+local packet falsifier,local closure governance,falsification: local packet,40,1,4,40,4,921,410,0,0,10
+owner artifact falsifier,owner signoff governance,falsification: owner or observer,20,5,2,20,2,156,91,0,0,7
+observer artifact falsifier,observer signoff governance,falsification: owner or observer,30,7,3,30,3,92,47,0,0,9
+local packet falsifier,local closure governance,repeat: falsification-axis already checked,5,91,4,0,4,0,0,0,0,10
+owner artifact falsifier,owner signoff governance,repeat: falsification-axis already checked,2,95,2,0,2,0,0,0,0,7
+observer artifact falsifier,observer signoff governance,repeat: falsification-axis already checked,3,97,3,0,3,0,0,0,0,9

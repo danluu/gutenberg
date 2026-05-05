@@ -1,0 +1,10 @@
+pass_id,cumulative_falsification_records,cumulative_falsification_axes,cumulative_falsification_states,cumulative_falsification_value,cumulative_reopen_value,cumulative_timing_only_falsification_value,cumulative_analysis_only_value
+1,1,1,1,255,113,0,0
+5,5,5,2,1010,461,0,0
+9,9,9,3,1169,548,0,0
+10,9,10,3,1169,548,0,0
+20,9,20,3,1169,548,0,0
+50,9,50,3,1169,548,0,0
+90,9,90,3,1169,548,0,0
+91,9,90,3,1169,548,0,0
+100,9,90,3,1169,548,0,0

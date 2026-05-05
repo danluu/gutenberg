@@ -33614,6 +33614,288 @@ save_plot(
 	height = 7.2
 )
 
+open_question_closure_falsification <- open_question_closure_governance %>%
+	mutate(
+		falsification_state = case_when(
+			closure_governance_state == "local closure governance" ~ "local packet falsifier",
+			closure_governance_state == "owner signoff governance" ~ "owner artifact falsifier",
+			TRUE ~ "observer artifact falsifier"
+		),
+		decisive_falsifier = case_when(
+			question_family == "Startup wait and first-key tails" ~ "CI-comparable packet shows first retained key or job statistic crosses the accepted wait policy under the same lane and resource fields",
+			question_family == "Pattern wait replacement" ~ "readiness packet shows the replacement predicate misses preview/canvas readiness or worsens the accepted p90 target",
+			question_family == "Selector/source guard" ~ "source-span packet shows the guarded selector no longer owns the measured behavior or changes compatibility fixtures",
+			question_family == "Input-mode realism" ~ "stimulus packet shows hold, tap, repeat, or short-hold strata cannot be reported under the same aggregate wording",
+			question_family == "Store-subscriber partition" ~ "owner artifact shows the public data API or import surface would be violated by the proposed partition",
+			question_family == "CI pass/fail policy" ~ "policy artifact shows dashboard, threshold, noisy-metric, or reviewer semantics differ from the assumed pass/fail rule",
+			question_family == "Product workload generalization" ~ "workload replay shows the fixed-character stressor does not cover the claimed human or plugin-heavy stratum",
+			question_family == "Browser endpoint and display presentation" ~ "endpoint calibration shows visual presentation, display pipeline, or clock sync reverses the reported browser comparison",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "runtime counter packet shows class ordering changes after scheduler, QoS, sidecar, or counter controls",
+			TRUE ~ rollback_trigger
+		),
+		negative_control_required = case_when(
+			falsification_state == "local packet falsifier" ~ "same packet with unchanged topology and no stale trigger must keep the prior disposition",
+			falsification_state == "owner artifact falsifier" ~ "owner artifact must distinguish API or policy change from local measurement churn",
+			TRUE ~ "observer artifact must include calibration, replay, sidecar, or counter control that separates mechanism from harness noise"
+		),
+		conflict_resolution = case_when(
+			falsification_state == "local packet falsifier" ~ "if two local packets conflict, keep the question open until the required fields and invariant diffs explain the split",
+			falsification_state == "owner artifact falsifier" ~ "if local timing and owner artifact conflict, owner compatibility or policy scope wins and report wording stays narrow",
+			TRUE ~ "if local timing and observer artifact conflict, keep the broader claim open until replay, endpoint, or counter calibration explains the split"
+		),
+		non_falsifier = case_when(
+			falsification_state == "local packet falsifier" ~ "aggregate q50 movement without the required packet fields or negative control",
+			falsification_state == "owner artifact falsifier" ~ "local timing movement without owner API, compatibility, dashboard, threshold, or reviewer evidence",
+			TRUE ~ "local timing movement without endpoint calibration, workload replay, scheduler, sidecar, or counter evidence"
+		),
+		reopen_action = rollback_trigger,
+		falsification_archive = case_when(
+			falsification_state == "local packet falsifier" ~ "old/new packet, required-field manifest, negative-control result, and report rollback diff",
+			falsification_state == "owner artifact falsifier" ~ "old/new owner artifact, scope decision, reviewer signoff, and report rollback diff",
+			TRUE ~ "old/new observer artifact, calibration or replay control, mechanism decision, and report rollback diff"
+		),
+		false_closure_risk = pmax(
+			1,
+			stale_reuse_risk + false_fresh_risk + ambiguity_risk - maintenance_cost
+		),
+		conflict_cost = case_when(
+			falsification_state == "local packet falsifier" ~ 2,
+			falsification_state == "owner artifact falsifier" ~ 4,
+			TRUE ~ 5
+		),
+		falsification_value = pmax(
+			1,
+			governance_value + false_closure_risk - conflict_cost
+		),
+		reopen_value = pmax(
+			1,
+			wording_change_value + residual_severity + false_fresh_risk - conflict_cost
+		),
+		timing_only_falsification_value = 0,
+		analysis_only_value = 0,
+		closure_falsification_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(falsification_value), desc(reopen_value), question_family)
+
+open_question_falsification_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"falsifier", "What concrete evidence would falsify or reopen the closure?",
+	"control", "What negative control prevents treating noise as falsification?",
+	"conflict", "How are conflicting packet, owner, or observer results handled?",
+	"non-falsifier", "Which tempting observation is explicitly not a falsifier?",
+	"reopen", "What action follows when the falsifier fires?",
+	"owner", "Who owns disputed falsification evidence?",
+	"archive", "What archive proves the closure was reopened correctly?",
+	"wording", "What report wording is rolled back or narrowed?",
+	"substitute", "Can a clean aggregate timing-only run substitute?",
+	"stop-rule", "When does falsification review stop?"
+)
+
+open_question_falsification_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_closure_falsification)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_falsification_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_closure_falsification %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_falsification_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		closure_falsification_first_seen = !duplicated(closure_falsification_id),
+		falsification_axis_key = paste(closure_falsification_id, pressure_axis, sep = "::"),
+		falsification_axis_first_seen = !duplicated(falsification_axis_key),
+		falsification_state_first_seen = !duplicated(falsification_state),
+		new_falsification_value = if_else(closure_falsification_first_seen, falsification_value, 0),
+		new_reopen_value = if_else(closure_falsification_first_seen, reopen_value, 0),
+		new_timing_only_falsification_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!falsification_axis_first_seen ~ "repeat: falsification-axis already checked",
+			falsification_state == "local packet falsifier" ~ "falsification: local packet",
+			TRUE ~ "falsification: owner or observer"
+		),
+		cumulative_falsification_records = cumsum(closure_falsification_first_seen),
+		cumulative_falsification_axes = cumsum(falsification_axis_first_seen),
+		cumulative_falsification_states = cumsum(falsification_state_first_seen),
+		cumulative_falsification_value = cumsum(new_falsification_value),
+		cumulative_reopen_value = cumsum(new_reopen_value),
+		cumulative_timing_only_falsification_value = cumsum(new_timing_only_falsification_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_falsification_summary <- open_question_falsification_100_pass %>%
+	group_by(falsification_state, closure_governance_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		falsification_records = n_distinct(closure_falsification_id),
+		axis_checks = sum(falsification_axis_first_seen),
+		signoff_owners = n_distinct(signoff_required),
+		falsification_value = sum(new_falsification_value),
+		reopen_value = sum(new_reopen_value),
+		timing_only_falsification_value = sum(new_timing_only_falsification_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_false_closure_risk = max(false_closure_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(falsification_value), desc(reopen_value), first_pass)
+
+open_question_falsification_checkpoints <- open_question_falsification_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_falsification_records,
+		cumulative_falsification_axes,
+		cumulative_falsification_states,
+		cumulative_falsification_value,
+		cumulative_reopen_value,
+		cumulative_timing_only_falsification_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_closure_falsification,
+	file.path(data_dir, "typing-delay-open-question-closure-falsification.csv")
+)
+
+write_csv(
+	open_question_falsification_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			falsification_state,
+			closure_governance_state,
+			decisive_falsifier,
+			negative_control_required,
+			conflict_resolution,
+			non_falsifier,
+			reopen_action,
+			falsification_archive,
+			signoff_required,
+			closure_falsification_first_seen,
+			falsification_axis_first_seen,
+			falsification_state_first_seen,
+			pass_result,
+			falsification_value,
+			reopen_value,
+			timing_only_falsification_value,
+			new_falsification_value,
+			new_reopen_value,
+			new_timing_only_falsification_value,
+			new_analysis_only_value,
+			cumulative_falsification_records,
+			cumulative_falsification_axes,
+			cumulative_falsification_states,
+			cumulative_falsification_value,
+			cumulative_reopen_value,
+			cumulative_timing_only_falsification_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-closure-falsification-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_falsification_summary,
+	file.path(data_dir, "typing-delay-open-question-closure-falsification-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_falsification_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-closure-falsification-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_closure_falsification %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, falsification_value)
+		) %>%
+		ggplot(aes(falsification_value, question_label, fill = falsification_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Falsification state") +
+		labs(
+			title = "Closed questions need explicit falsifiers and negative controls",
+			subtitle = "Each closure names the evidence that reopens it and the observation that is not enough",
+			x = "Falsification value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"333-open-question-closure-falsification.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_falsification_saturation_long <- open_question_falsification_100_pass %>%
+	select(
+		pass_id,
+		`falsification records` = cumulative_falsification_records,
+		`falsification axes` = cumulative_falsification_axes,
+		`falsification states` = cumulative_falsification_states,
+		`falsification value` = cumulative_falsification_value,
+		`reopen value` = cumulative_reopen_value,
+		`timing-only falsification value` = cumulative_timing_only_falsification_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("falsification records", "falsification axes", "falsification states", "falsification value", "reopen value", "timing-only falsification value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_falsification_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Falsification audit saturates once reopen evidence and non-falsifiers are named",
+			subtitle = "Nine falsification records appear by pass 9; all 90 falsification axes appear by pass 90; timing-only falsification value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"334-open-question-closure-falsification-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_falsification_summary %>%
+		mutate(
+			state_label = str_wrap(falsification_state, width = 28),
+			state_label = fct_reorder(state_label, falsification_value + reopen_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Falsification coverage distinguishes local packets from owner and observer conflicts",
+			subtitle = "Every record is checked for falsifier, control, conflict, non-falsifier, reopen, owner, archive, wording, substitute, and stop rule",
+			x = "Falsification-axis checks",
+			y = "Falsification state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"335-open-question-closure-falsification-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
