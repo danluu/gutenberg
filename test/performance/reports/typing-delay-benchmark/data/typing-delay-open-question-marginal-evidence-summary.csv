@@ -1,0 +1,9 @@
+lane,recommended_next_evidence_label,claims,lane_claims
+Benchmark artifact,local control,2,2
+CI/readiness,local control,1,3
+CI/readiness,CI/policy artifact,2,3
+Source/code,source/compatibility,2,2
+Sidecar/mechanism,sidecar/counters,1,1
+CPU/QoS,sidecar/counters,1,1
+Claim expansion,claim expansion,2,2
+External policy,CI/policy artifact,1,1

@@ -1,0 +1,97 @@
+claim,claim_label,lane,evidence_type,value
+1000ms held-key cliff input shape,"1000ms held-key cliff input
+shape",Benchmark artifact,more same samples,1
+1000ms held-key cliff input shape,"1000ms held-key cliff input
+shape",Benchmark artifact,local controls,4
+1000ms held-key cliff input shape,"1000ms held-key cliff input
+shape",Benchmark artifact,CI topology,3
+1000ms held-key cliff input shape,"1000ms held-key cliff input
+shape",Benchmark artifact,source prototype,1
+1000ms held-key cliff input shape,"1000ms held-key cliff input
+shape",Benchmark artifact,sidecar/counters,2
+1000ms held-key cliff input shape,"1000ms held-key cliff input
+shape",Benchmark artifact,external/replay/policy,1
+Cross-browser dip portability,Cross-browser dip portability,Benchmark artifact,more same samples,2
+Cross-browser dip portability,Cross-browser dip portability,Benchmark artifact,local controls,4
+Cross-browser dip portability,Cross-browser dip portability,Benchmark artifact,CI topology,3
+Cross-browser dip portability,Cross-browser dip portability,Benchmark artifact,source prototype,1
+Cross-browser dip portability,Cross-browser dip portability,Benchmark artifact,sidecar/counters,3
+Cross-browser dip portability,Cross-browser dip portability,Benchmark artifact,external/replay/policy,1
+Retained q50 versus first input,"Retained q50 versus first
+input",CI/readiness,more same samples,1
+Retained q50 versus first input,"Retained q50 versus first
+input",CI/readiness,local controls,4
+Retained q50 versus first input,"Retained q50 versus first
+input",CI/readiness,CI topology,5
+Retained q50 versus first input,"Retained q50 versus first
+input",CI/readiness,source prototype,1
+Retained q50 versus first input,"Retained q50 versus first
+input",CI/readiness,sidecar/counters,1
+Retained q50 versus first input,"Retained q50 versus first
+input",CI/readiness,external/replay/policy,1
+Startup-wait removal safety,Startup-wait removal safety,CI/readiness,more same samples,1
+Startup-wait removal safety,Startup-wait removal safety,CI/readiness,local controls,3
+Startup-wait removal safety,Startup-wait removal safety,CI/readiness,CI topology,5
+Startup-wait removal safety,Startup-wait removal safety,CI/readiness,source prototype,1
+Startup-wait removal safety,Startup-wait removal safety,CI/readiness,sidecar/counters,1
+Startup-wait removal safety,Startup-wait removal safety,CI/readiness,external/replay/policy,1
+Pattern wait replacement,Pattern wait replacement,CI/readiness,more same samples,1
+Pattern wait replacement,Pattern wait replacement,CI/readiness,local controls,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,CI topology,5
+Pattern wait replacement,Pattern wait replacement,CI/readiness,source prototype,2
+Pattern wait replacement,Pattern wait replacement,CI/readiness,sidecar/counters,1
+Pattern wait replacement,Pattern wait replacement,CI/readiness,external/replay/policy,1
+Selector guard source safety,Selector guard source safety,Source/code,more same samples,1
+Selector guard source safety,Selector guard source safety,Source/code,local controls,2
+Selector guard source safety,Selector guard source safety,Source/code,CI topology,2
+Selector guard source safety,Selector guard source safety,Source/code,source prototype,5
+Selector guard source safety,Selector guard source safety,Source/code,sidecar/counters,1
+Selector guard source safety,Selector guard source safety,Source/code,external/replay/policy,1
+Store subscriber partition compatibility,"Store subscriber partition
+compatibility",Source/code,more same samples,1
+Store subscriber partition compatibility,"Store subscriber partition
+compatibility",Source/code,local controls,2
+Store subscriber partition compatibility,"Store subscriber partition
+compatibility",Source/code,CI topology,2
+Store subscriber partition compatibility,"Store subscriber partition
+compatibility",Source/code,source prototype,5
+Store subscriber partition compatibility,"Store subscriber partition
+compatibility",Source/code,sidecar/counters,1
+Store subscriber partition compatibility,"Store subscriber partition
+compatibility",Source/code,external/replay/policy,1
+Runtime mechanism naming,Runtime mechanism naming,Sidecar/mechanism,more same samples,1
+Runtime mechanism naming,Runtime mechanism naming,Sidecar/mechanism,local controls,2
+Runtime mechanism naming,Runtime mechanism naming,Sidecar/mechanism,CI topology,2
+Runtime mechanism naming,Runtime mechanism naming,Sidecar/mechanism,source prototype,1
+Runtime mechanism naming,Runtime mechanism naming,Sidecar/mechanism,sidecar/counters,5
+Runtime mechanism naming,Runtime mechanism naming,Sidecar/mechanism,external/replay/policy,1
+CPU/QoS mechanism naming,CPU/QoS mechanism naming,CPU/QoS,more same samples,1
+CPU/QoS mechanism naming,CPU/QoS mechanism naming,CPU/QoS,local controls,1
+CPU/QoS mechanism naming,CPU/QoS mechanism naming,CPU/QoS,CI topology,2
+CPU/QoS mechanism naming,CPU/QoS mechanism naming,CPU/QoS,source prototype,1
+CPU/QoS mechanism naming,CPU/QoS mechanism naming,CPU/QoS,sidecar/counters,5
+CPU/QoS mechanism naming,CPU/QoS mechanism naming,CPU/QoS,external/replay/policy,1
+Fixed-x workload generalization,"Fixed-x workload
+generalization",Claim expansion,more same samples,1
+Fixed-x workload generalization,"Fixed-x workload
+generalization",Claim expansion,local controls,2
+Fixed-x workload generalization,"Fixed-x workload
+generalization",Claim expansion,CI topology,2
+Fixed-x workload generalization,"Fixed-x workload
+generalization",Claim expansion,source prototype,3
+Fixed-x workload generalization,"Fixed-x workload
+generalization",Claim expansion,sidecar/counters,2
+Fixed-x workload generalization,"Fixed-x workload
+generalization",Claim expansion,external/replay/policy,4
+User-visible display endpoint,User-visible display endpoint,Claim expansion,more same samples,1
+User-visible display endpoint,User-visible display endpoint,Claim expansion,local controls,1
+User-visible display endpoint,User-visible display endpoint,Claim expansion,CI topology,2
+User-visible display endpoint,User-visible display endpoint,Claim expansion,source prototype,1
+User-visible display endpoint,User-visible display endpoint,Claim expansion,sidecar/counters,3
+User-visible display endpoint,User-visible display endpoint,Claim expansion,external/replay/policy,5
+CI pass/fail policy,CI pass/fail policy,External policy,more same samples,1
+CI pass/fail policy,CI pass/fail policy,External policy,local controls,1
+CI pass/fail policy,CI pass/fail policy,External policy,CI topology,5
+CI pass/fail policy,CI pass/fail policy,External policy,source prototype,1
+CI pass/fail policy,CI pass/fail policy,External policy,sidecar/counters,1
+CI pass/fail policy,CI pass/fail policy,External policy,external/replay/policy,4

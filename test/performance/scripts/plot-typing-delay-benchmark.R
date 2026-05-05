@@ -24654,6 +24654,159 @@ save_plot(
 	height = 8.2
 )
 
+open_question_marginal_evidence_value <- tribble(
+	~claim, ~lane, ~more_same_samples_value, ~local_control_value, ~ci_topology_value, ~source_prototype_value, ~sidecar_value, ~external_value, ~wrong_next_run_risk, ~recommended_next_evidence, ~why_more_same_samples_not_decisive, ~current_stop_condition,
+	"1000ms held-key cliff input shape", "Benchmark artifact", 1, 4, 3, 1, 2, 1, 4, "paired tap/short-hold/held-key negative controls under matched state", "The dense held-key sweep already established the cliff shape; more identical rows mostly reduce confidence intervals around the same input artifact.", "input-shape wording changes only if matched tap or short-hold controls reproduce the cliff",
+	"Cross-browser dip portability", "Benchmark artifact", 2, 4, 3, 1, 3, 1, 3, "same key-mode and persistence-marker grid across browsers", "The current question is not local sample uncertainty; it is whether browser lanes preserve ordering under the same controls.", "browser wording splits if any browser loses the controlled dip",
+	"Retained q50 versus first input", "CI/readiness", 1, 4, 5, 1, 1, 1, 5, "per-keypress distributions in CI-comparable topology with and without the throwaway", "More retained aggregate rows can hide the same first-input behavior; the unit of analysis must change to key position.", "add a separate idle-input metric if first retained or first undiscarded key remains wait-sensitive",
+	"Startup-wait removal safety", "CI/readiness", 1, 3, 5, 1, 1, 1, 5, "real Performance Tests topology with failures, retries, resources, first keys, and retained rows", "Local latency rows cannot prove actionability, hidden resource movement, or CI runner stability.", "do not remove waits unless q50, failures, resources, retries, and first-key tails all pass",
+	"Pattern wait replacement", "CI/readiness", 1, 3, 5, 2, 1, 1, 5, "predicate versus fixed-wait artifact with resource quiet across target lanes", "More rows at the old fixed wait do not test whether a readiness predicate fires at the correct boundary.", "keep fixed fallback unless predicate and resource quiet preserve preview/canvas/readiness",
+	"Selector guard source safety", "Source/code", 1, 2, 2, 5, 1, 1, 4, "behavior fixtures plus source-span microscope before aggregate p50", "Aggregate p50 samples cannot distinguish a real source optimization from changed editor behavior.", "do not cite timing until behavior passes and targeted source spans collapse",
+	"Store subscriber partition compatibility", "Source/code", 1, 2, 2, 5, 1, 1, 5, "public subscriber and persistence-selector compatibility matrix", "More timing rows cannot prove public data-layer semantics or dynamic dependency correctness.", "block public-path fanout work until compatibility fixtures pass",
+	"Runtime mechanism naming", "Sidecar/mechanism", 1, 2, 2, 1, 5, 1, 4, "passive retained-key sidecar with clock sync and runtime checkpoint joins", "Aggregate latency classes do not name V8, scheduler, task, or tracing mechanisms.", "keep empirical wording unless passive sidecar preserves ordering and joins retained keys",
+	"CPU/QoS mechanism naming", "CPU/QoS", 1, 1, 2, 1, 5, 1, 4, "accepted sidecar followed by root counters if ordering is preserved", "More browser-level latency rows cannot distinguish frequency, residency, QoS, cache, or runnable-latency causes.", "do not name CPU/QoS mechanism unless joined counters separate classes without perturbing them",
+	"Fixed-x workload generalization", "Claim expansion", 1, 2, 2, 3, 2, 4, 4, "per-stratum replay with assertions and source spans", "More fixed-x rows only strengthen a synthetic workload result; they do not cover selection, paste, IME, plugin, or block-structure histories.", "product/source claims apply only to strata that reproduce the effect",
+	"User-visible display endpoint", "Claim expansion", 1, 1, 2, 1, 3, 5, 3, "calibrated OCR/present/camera endpoint joined to retained keys", "Chromium-internal screenshots or paint timing do not prove physical display timing no matter how many samples are collected.", "keep Chromium-internal wording unless external endpoints preserve ordering",
+	"CI pass/fail policy", "External policy", 1, 1, 5, 1, 1, 4, 4, "dashboard or reviewer policy joined to archived CI artifacts", "Printed q50 rows are evidence production, not the policy that decides pass/fail or review action.", "do not predict pass/fail until policy and raw artifacts are joined"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		claim_label = str_wrap(claim, width = 29),
+		recommended_next_evidence_label = case_when(
+			str_detect(recommended_next_evidence, "CI|Performance Tests|dashboard") ~ "CI/policy artifact",
+			str_detect(recommended_next_evidence, "behavior|subscriber|compatibility|source-span") ~ "source/compatibility",
+			str_detect(recommended_next_evidence, "sidecar|counters|runtime") ~ "sidecar/counters",
+			str_detect(recommended_next_evidence, "replay|OCR|present|camera") ~ "claim expansion",
+			TRUE ~ "local control"
+		),
+		recommended_next_evidence_label = factor(
+			recommended_next_evidence_label,
+			levels = c("local control", "CI/policy artifact", "source/compatibility", "sidecar/counters", "claim expansion")
+		),
+		same_sample_futility = wrong_next_run_risk - more_same_samples_value,
+		best_non_same_value = pmax(local_control_value, ci_topology_value, source_prototype_value, sidecar_value, external_value),
+		evidence_gap = best_non_same_value - more_same_samples_value
+	)
+
+open_question_marginal_evidence_long <- open_question_marginal_evidence_value %>%
+	select(
+		claim,
+		claim_label,
+		lane,
+		more_same_samples_value,
+		local_control_value,
+		ci_topology_value,
+		source_prototype_value,
+		sidecar_value,
+		external_value
+	) %>%
+	pivot_longer(
+		cols = c(
+			more_same_samples_value,
+			local_control_value,
+			ci_topology_value,
+			source_prototype_value,
+			sidecar_value,
+			external_value
+		),
+		names_to = "evidence_type",
+		values_to = "value"
+	) %>%
+	mutate(
+		evidence_type = recode(
+			evidence_type,
+			more_same_samples_value = "more same samples",
+			local_control_value = "local controls",
+			ci_topology_value = "CI topology",
+			source_prototype_value = "source prototype",
+			sidecar_value = "sidecar/counters",
+			external_value = "external/replay/policy"
+		),
+		evidence_type = factor(
+			evidence_type,
+			levels = c("more same samples", "local controls", "CI topology", "source prototype", "sidecar/counters", "external/replay/policy")
+		),
+		claim_label = fct_reorder(claim_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_marginal_evidence_summary <- open_question_marginal_evidence_value %>%
+	count(lane, recommended_next_evidence_label, name = "claims") %>%
+	group_by(lane) %>%
+	mutate(lane_claims = sum(claims)) %>%
+	ungroup()
+
+write_csv(
+	open_question_marginal_evidence_value %>%
+		select(
+			claim,
+			lane,
+			more_same_samples_value,
+			local_control_value,
+			ci_topology_value,
+			source_prototype_value,
+			sidecar_value,
+			external_value,
+			best_non_same_value,
+			evidence_gap,
+			wrong_next_run_risk,
+			same_sample_futility,
+			recommended_next_evidence_label,
+			recommended_next_evidence,
+			why_more_same_samples_not_decisive,
+			current_stop_condition
+		),
+	file.path(data_dir, "typing-delay-open-question-marginal-evidence-value.csv")
+)
+
+write_csv(
+	open_question_marginal_evidence_long,
+	file.path(data_dir, "typing-delay-open-question-marginal-evidence-long.csv")
+)
+
+write_csv(
+	open_question_marginal_evidence_summary,
+	file.path(data_dir, "typing-delay-open-question-marginal-evidence-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_marginal_evidence_long, aes(evidence_type, claim_label, fill = value)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = value), size = 2.7, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Value") +
+		labs(
+			title = "More samples of the same harness have low marginal value for most open questions",
+			subtitle = "The remaining claims usually require changed controls, CI topology, source fixtures, sidecars, or external endpoints",
+			x = "Evidence type",
+			y = "Open claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"240-open-question-marginal-evidence-value.png",
+	width = 13.4,
+	height = 8.4
+)
+
+save_plot(
+	ggplot(
+		open_question_marginal_evidence_value %>%
+			mutate(claim_label = fct_reorder(claim_label, same_sample_futility)),
+		aes(same_sample_futility, claim_label, fill = recommended_next_evidence_label)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Next evidence") +
+		labs(
+			title = "Running the same benchmark again is usually the wrong next move",
+			subtitle = "Priority here is the risk of the wrong next run minus the value of more identical samples",
+			x = "Same-sample futility score",
+			y = "Open claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"241-open-question-same-sample-futility.png",
+	width = 12.8,
+	height = 8.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1141,6 +1141,14 @@ The R script derives:
     falsification heatmap.
 -   `data/typing-delay-open-question-falsification-summary.csv`: rollup of
     falsification responses by claim lane.
+-   `data/typing-delay-open-question-marginal-evidence-value.csv`: marginal
+    evidence-value audit for remaining open claims, comparing more same-harness
+    samples with changed controls, CI topology, source prototypes, sidecars, and
+    external/replay/policy artifacts.
+-   `data/typing-delay-open-question-marginal-evidence-long.csv`: long-form
+    evidence-type scores used for the marginal-evidence heatmap.
+-   `data/typing-delay-open-question-marginal-evidence-summary.csv`: rollup of
+    recommended next evidence by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9876,6 +9884,33 @@ that can still change near-term action are the metric split, startup-readiness
 wait removal, selector behavior gates, and subscriber compatibility. Runtime,
 CPU/QoS, display, workload, and policy rows mostly control wording unless the
 claim is intentionally expanded beyond the current benchmark artifact.
+
+The marginal-evidence audit asks whether more samples of the same harness would
+answer any of the remaining questions. In most cases, the answer is no: the
+open item is not sampling error in the existing local run, but a missing control,
+topology, semantic fixture, sidecar join, or external policy/end-point artifact.
+
+![Open question marginal evidence value](figures/240-open-question-marginal-evidence-value.png)
+
+![Open question same-sample futility](figures/241-open-question-same-sample-futility.png)
+
+| Open claim | Highest-value next evidence | Why more same-harness samples are not decisive |
+| ---------- | --------------------------- | ---------------------------------------------- |
+| `1000ms` held-key cliff input shape | paired tap, short-hold, and held-key controls under matched state | the dense held-key sweep already established the cliff shape |
+| retained q50 versus first input | per-keypress distributions in CI-comparable topology | retained aggregates can hide first-input behavior |
+| startup-wait removal safety | real Performance Tests topology with failures, retries, resources, first keys, and retained rows | local latency rows cannot prove actionability or hidden resource movement |
+| pattern wait replacement | predicate versus fixed-wait artifact with resource quiet | old fixed-wait rows do not test whether a predicate fires at the right boundary |
+| selector guard source safety | behavior fixtures plus source-span microscope | aggregate p50 cannot prove behavior preservation |
+| store subscriber partition compatibility | public subscriber and persistence-selector compatibility matrix | timing rows cannot prove public data-layer semantics |
+| runtime and CPU/QoS mechanism naming | passive retained-key sidecar, then counters only after ordering is preserved | aggregate latency classes cannot name runtime or OS mechanisms |
+| fixed-`x`, display, and pass/fail generalization | replay strata, calibrated external endpoints, or dashboard/reviewer policy | more local q50 rows only strengthen the narrow artifact, not the broader claim |
+
+This is why I did not run another bulk sample sweep for this pass. It would
+mostly tighten already-closed local estimates while leaving the open decision
+variables unchanged. The next useful runs are targeted controls or artifacts:
+CI topology and per-keypress distributions for wait decisions, behavior and
+compatibility fixtures for source changes, sidecars for mechanism names, and
+external/replay/policy joins only if the report intentionally broadens its claim.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
