@@ -1,0 +1,10 @@
+lane,assumption_action,assumptions,lane_assumptions
+Benchmark artifact,trigger-only recheck,2,3
+Benchmark artifact,wording guardrail,1,3
+CI/readiness,validate before action,2,2
+Source/code,wording guardrail,1,2
+Source/code,new artifact before broad claim,1,2
+Sidecar/mechanism,new artifact before broad claim,1,1
+CPU/QoS,new artifact before broad claim,1,1
+Claim expansion,validate before action,2,2
+External policy,validate before action,1,1

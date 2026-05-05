@@ -1,0 +1,97 @@
+assumption,assumption_label,lane,dimension,score
+Metric family is stable,Metric family is stable,Benchmark artifact,current support,5
+Metric family is stable,Metric family is stable,Benchmark artifact,fragility,4
+Metric family is stable,Metric family is stable,Benchmark artifact,blast radius,5
+Metric family is stable,Metric family is stable,Benchmark artifact,validation burden,1
+Retained q50 is the reported Typing statistic,"Retained q50 is the reported
+Typing statistic",Benchmark artifact,current support,5
+Retained q50 is the reported Typing statistic,"Retained q50 is the reported
+Typing statistic",Benchmark artifact,fragility,3
+Retained q50 is the reported Typing statistic,"Retained q50 is the reported
+Typing statistic",Benchmark artifact,blast radius,4
+Retained q50 is the reported Typing statistic,"Retained q50 is the reported
+Typing statistic",Benchmark artifact,validation burden,1
+Local ordering is enough for local benchmark wording,"Local ordering is enough for
+local benchmark wording",Benchmark artifact,current support,4
+Local ordering is enough for local benchmark wording,"Local ordering is enough for
+local benchmark wording",Benchmark artifact,fragility,2
+Local ordering is enough for local benchmark wording,"Local ordering is enough for
+local benchmark wording",Benchmark artifact,blast radius,3
+Local ordering is enough for local benchmark wording,"Local ordering is enough for
+local benchmark wording",Benchmark artifact,validation burden,1
+CI topology can differ from local topology,"CI topology can differ from
+local topology",CI/readiness,current support,4
+CI topology can differ from local topology,"CI topology can differ from
+local topology",CI/readiness,fragility,4
+CI topology can differ from local topology,"CI topology can differ from
+local topology",CI/readiness,blast radius,5
+CI topology can differ from local topology,"CI topology can differ from
+local topology",CI/readiness,validation burden,3
+Pattern readiness is spec-specific,"Pattern readiness is
+spec-specific",CI/readiness,current support,4
+Pattern readiness is spec-specific,"Pattern readiness is
+spec-specific",CI/readiness,fragility,5
+Pattern readiness is spec-specific,"Pattern readiness is
+spec-specific",CI/readiness,blast radius,4
+Pattern readiness is spec-specific,"Pattern readiness is
+spec-specific",CI/readiness,validation burden,3
+Aggregate p50 is not semantic safety,"Aggregate p50 is not semantic
+safety",Source/code,current support,5
+Aggregate p50 is not semantic safety,"Aggregate p50 is not semantic
+safety",Source/code,fragility,4
+Aggregate p50 is not semantic safety,"Aggregate p50 is not semantic
+safety",Source/code,blast radius,5
+Aggregate p50 is not semantic safety,"Aggregate p50 is not semantic
+safety",Source/code,validation burden,3
+Public subscriber semantics constrain fanout wins,"Public subscriber semantics
+constrain fanout wins",Source/code,current support,4
+Public subscriber semantics constrain fanout wins,"Public subscriber semantics
+constrain fanout wins",Source/code,fragility,5
+Public subscriber semantics constrain fanout wins,"Public subscriber semantics
+constrain fanout wins",Source/code,blast radius,5
+Public subscriber semantics constrain fanout wins,"Public subscriber semantics
+constrain fanout wins",Source/code,validation burden,4
+Sidecar evidence must be passive and joinable,"Sidecar evidence must be
+passive and joinable",Sidecar/mechanism,current support,3
+Sidecar evidence must be passive and joinable,"Sidecar evidence must be
+passive and joinable",Sidecar/mechanism,fragility,5
+Sidecar evidence must be passive and joinable,"Sidecar evidence must be
+passive and joinable",Sidecar/mechanism,blast radius,4
+Sidecar evidence must be passive and joinable,"Sidecar evidence must be
+passive and joinable",Sidecar/mechanism,validation burden,5
+CPU/QoS names require system counters,"CPU/QoS names require system
+counters",CPU/QoS,current support,3
+CPU/QoS names require system counters,"CPU/QoS names require system
+counters",CPU/QoS,fragility,5
+CPU/QoS names require system counters,"CPU/QoS names require system
+counters",CPU/QoS,blast radius,4
+CPU/QoS names require system counters,"CPU/QoS names require system
+counters",CPU/QoS,validation burden,5
+Fixed-x is not representative product workload by itself,"Fixed-x is not representative
+product workload by itself",Claim expansion,current support,4
+Fixed-x is not representative product workload by itself,"Fixed-x is not representative
+product workload by itself",Claim expansion,fragility,4
+Fixed-x is not representative product workload by itself,"Fixed-x is not representative
+product workload by itself",Claim expansion,blast radius,4
+Fixed-x is not representative product workload by itself,"Fixed-x is not representative
+product workload by itself",Claim expansion,validation burden,4
+Chromium-internal visual endpoints are not hardware display timing,"Chromium-internal visual
+endpoints are not hardware
+display timing",Claim expansion,current support,4
+Chromium-internal visual endpoints are not hardware display timing,"Chromium-internal visual
+endpoints are not hardware
+display timing",Claim expansion,fragility,5
+Chromium-internal visual endpoints are not hardware display timing,"Chromium-internal visual
+endpoints are not hardware
+display timing",Claim expansion,blast radius,3
+Chromium-internal visual endpoints are not hardware display timing,"Chromium-internal visual
+endpoints are not hardware
+display timing",Claim expansion,validation burden,5
+Repository q50 display is not a numeric pass/fail gate,"Repository q50 display is not
+a numeric pass/fail gate",External policy,current support,4
+Repository q50 display is not a numeric pass/fail gate,"Repository q50 display is not
+a numeric pass/fail gate",External policy,fragility,4
+Repository q50 display is not a numeric pass/fail gate,"Repository q50 display is not
+a numeric pass/fail gate",External policy,blast radius,4
+Repository q50 display is not a numeric pass/fail gate,"Repository q50 display is not
+a numeric pass/fail gate",External policy,validation burden,4

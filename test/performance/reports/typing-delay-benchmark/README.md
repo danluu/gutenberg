@@ -1113,6 +1113,14 @@ The R script derives:
     outcome-decision heatmap.
 -   `data/typing-delay-open-question-outcome-decision-summary.csv`: rollup of
     outcome-decision artifacts by claim lane and artifact class.
+-   `data/typing-delay-open-question-assumption-ledger.csv`: assumption ledger
+    for the remaining conclusions, including support, fragility, blast radius,
+    validation burden, invalidating observations, and safe wording.
+-   `data/typing-delay-open-question-assumption-ledger-long.csv`: long-form
+    support, fragility, blast-radius, and validation-burden scores used for the
+    assumption heatmap.
+-   `data/typing-delay-open-question-assumption-ledger-summary.csv`: rollup of
+    assumption actions by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9734,6 +9742,37 @@ This turns the remaining open questions into predeclared decision rules. A mixed
 artifact should narrow the scope of the claim, not become a compromise
 conclusion. A failed mechanism or display artifact should not weaken the local
 benchmark result; it only blocks the broader mechanism or display wording.
+
+The assumption ledger is the dependency version of the same audit. It lists the
+assumptions that would have to be false for each conclusion to change. This
+separates stable benchmark assumptions from fragile assumptions that exist only
+when the report widens to CI policy, source changes, mechanism names, product
+workloads, display timing, or pass/fail prediction.
+
+![Open question assumption ledger](figures/232-open-question-assumption-ledger.png)
+
+![Open question assumption priority](figures/233-open-question-assumption-priority.png)
+
+| Assumption | Current action | Invalidating observation |
+| ---------- | -------------- | ------------------------ |
+| Metric family is stable | trigger-only recheck | helper family, browser/runtime, trace placement, throwaway policy, or reported statistic changes remove the held-key/tap split |
+| Retained q50 is the reported Typing statistic | trigger-only recheck | the suite changes throwaway policy, retained count, aggregation, or printed/uploaded statistic |
+| CI topology can differ from local topology | validate before action | real Performance Tests topology reverses ordering, widens variance, changes first-key tails, or moves failures/resources into measurement |
+| Pattern readiness is spec-specific | validate before action | the predicate passes q50 while missing preview/canvas readiness or shifting resources into measurement |
+| Aggregate p50 is not semantic safety | wording guardrail | a source patch changes behavior or compatibility while improving timing |
+| Public subscriber semantics constrain fanout wins | new artifact before broad claim | public or external subscribers miss a transition, observe stale state, or lose documented notification semantics |
+| Sidecar evidence must be passive and joinable | new artifact before broad claim | sidecar rows cannot join every retained key or sidecar-on/off changes ordering, counts, or q summaries |
+| CPU/QoS names require system counters | new artifact before broad claim | root counters fail to separate fast/slow retained classes or perturb ordering |
+| Fixed-`x` is not representative product workload by itself | validate before action | replay strata show different owners, effects, failures, or regressions from fixed-`x` insertion |
+| Chromium-internal visual endpoints are not hardware display timing | validate before action | external OCR, present, or camera endpoints disagree or cannot be joined without perturbing ordering |
+| Repository q50 display is not a numeric pass/fail gate | validate before action | dashboard or reviewer policy defines thresholds, noisy-metric handling, or pass/fail interpretation |
+
+The important result is that the assumptions behind the local benchmark
+conclusion are highly supported but definition-sensitive. They need small
+trigger rechecks when the metric definition changes. The assumptions with the
+highest validation priority are not local benchmark assumptions; they are
+observer, API-compatibility, system-counter, topology, workload, display, and
+policy assumptions. Those require new artifacts before broadening the claim.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

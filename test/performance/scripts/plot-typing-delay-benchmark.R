@@ -24073,6 +24073,153 @@ save_plot(
 	height = 7.8
 )
 
+open_question_assumption_ledger <- tribble(
+	~assumption, ~lane, ~assumption_class, ~support_score, ~fragility_score, ~blast_radius, ~validation_burden, ~current_evidence, ~invalidating_observation, ~minimum_check, ~safe_wording,
+	"Metric family is stable", "Benchmark artifact", "measurement definition", 5, 4, 5, 1, "Held-key, tap, and control rows separate under the current helper/browser/statistic setup.", "A helper, browser, trace placement, throwaway policy, or reported statistic change removes or reverses the held-key/tap distinction.", "Exact-spec trigger recheck with raw per-key rows.", "This benchmark path has a held-key cliff under the current metric.",
+	"Retained q50 is the reported Typing statistic", "Benchmark artifact", "aggregation", 5, 3, 4, 1, "The reporter computes q25/q50/q75/cnt from retained samples and the first key is discarded.", "The suite changes throwaway policy, retained count, aggregation, or printed/uploaded statistic.", "Reporter artifact and raw retained-row audit.", "Retained q50 answers retained-typing latency, not first-input latency.",
+	"Local ordering is enough for local benchmark wording", "Benchmark artifact", "scope boundary", 4, 2, 3, 1, "Multiple local controls preserve the qualitative held-key/tap and delay-boundary shape.", "Matched local controls stop preserving ordering under unchanged metric settings.", "Small local trigger-control rerun.", "Local claims are benchmark-artifact claims, not CI threshold claims.",
+	"CI topology can differ from local topology", "CI/readiness", "portability", 4, 4, 5, 3, "Local rows expose candidate wait changes, but CI runner/browser/wp-env topology is not sampled by local artifacts.", "Real Performance Tests topology reverses ordering, widens variance, changes first-key tails, or moves failures/resources into measurement.", "Compact CI topology artifact with raw rows and environment metadata.", "CI wait policy requires target-topology validation.",
+	"Pattern readiness is spec-specific", "CI/readiness", "readiness boundary", 4, 5, 4, 3, "Site Editor, Post Editor, predicate, and fixed-sleep rows have different readiness contracts.", "A predicate that passes q50 misses preview/canvas readiness or shifts resources into measurement.", "Per-spec readiness/resource artifact with fallback logs.", "Only the passing spec/lane/fallback policy can be changed.",
+	"Aggregate p50 is not semantic safety", "Source/code", "source correctness", 5, 4, 5, 3, "Source-span and behavior-gate audits separate timing movement from correctness.", "A source patch changes behavior or compatibility while improving timing.", "Behavior fixtures, compatibility fixtures, and source-span collapse before aggregate timing.", "Source wins require behavior and source evidence first.",
+	"Public subscriber semantics constrain fanout wins", "Source/code", "API compatibility", 4, 5, 5, 4, "The public persistence selector and root subscribe behavior remain compatibility boundaries.", "External or public subscribers miss a transition, observe stale state, or lose documented notification semantics.", "Public subscribe and persistence-selector compatibility matrix.", "Store partition claims are blocked until compatibility survives.",
+	"Sidecar evidence must be passive and joinable", "Sidecar/mechanism", "observer validity", 3, 5, 4, 5, "Current aggregate rows show classes but do not join runtime/system state to retained keys.", "Sidecar rows cannot join every retained key or sidecar-on/off changes ordering, counts, or q summaries.", "Key-window sidecar with clock sync, renderer identity, and observer-on/off controls.", "Mechanism names require accepted sidecar joins.",
+	"CPU/QoS names require system counters", "CPU/QoS", "mechanism naming", 3, 5, 4, 5, "Local sensitivity exists, but frequency, residency, QoS, wait, and cache counters are not joined.", "Root counters fail to separate fast/slow retained classes or perturb ordering.", "Accepted sidecar plus root powermetrics or trace counters.", "CPU/QoS is empirical sensitivity until counters pass.",
+	"Fixed-x is not representative product workload by itself", "Claim expansion", "workload scope", 4, 4, 4, 4, "Fixed-x is strong benchmark/source evidence but lacks correction, selection, paste, structural, IME, media, and plugin-heavy strata.", "Replay strata show different owners, effects, failures, or regressions from fixed-x insertion.", "Per-stratum replay with assertions and source spans.", "Generalize only to passing workload strata.",
+	"Chromium-internal visual endpoints are not hardware display timing", "Claim expansion", "presentation scope", 4, 5, 3, 5, "RAF, paint, DrawFrame, screenshot, and localized pixel endpoints align internally.", "External OCR, present, or camera endpoints disagree or cannot be joined without perturbing ordering.", "External endpoint ladder joined to retained keys.", "Scope current visual claims to Chromium-internal propagation.",
+	"Repository q50 display is not a numeric pass/fail gate", "External policy", "policy boundary", 4, 4, 4, 4, "Repo code shows q50 production/publishing but no in-repo numeric fail threshold.", "Dashboard or reviewer policy defines thresholds, noisy-metric handling, or pass/fail interpretation.", "Policy join against archived CI artifacts and published q50/base-q50 fields.", "Report q50 movement as evidence until policy is documented."
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		assumption_class = factor(
+			assumption_class,
+			levels = c(
+				"measurement definition",
+				"aggregation",
+				"scope boundary",
+				"portability",
+				"readiness boundary",
+				"source correctness",
+				"API compatibility",
+				"observer validity",
+				"mechanism naming",
+				"workload scope",
+				"presentation scope",
+				"policy boundary"
+			)
+		),
+		assumption_label = str_wrap(assumption, width = 30),
+		unvalidated_risk = fragility_score * blast_radius * (6 - support_score) / 5,
+		validation_priority = unvalidated_risk + validation_burden,
+		assumption_action = case_when(
+			support_score >= 5 & validation_burden <= 1 ~ "trigger-only recheck",
+			unvalidated_risk >= 8 & validation_burden >= 4 ~ "new artifact before broad claim",
+			unvalidated_risk >= 6 ~ "validate before action",
+			TRUE ~ "wording guardrail"
+		),
+		assumption_action = factor(
+			assumption_action,
+			levels = c("trigger-only recheck", "wording guardrail", "validate before action", "new artifact before broad claim")
+		)
+	)
+
+open_question_assumption_ledger_long <- open_question_assumption_ledger %>%
+	select(assumption, assumption_label, lane, support_score, fragility_score, blast_radius, validation_burden) %>%
+	pivot_longer(
+		cols = c(support_score, fragility_score, blast_radius, validation_burden),
+		names_to = "dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		dimension = recode(
+			dimension,
+			support_score = "current support",
+			fragility_score = "fragility",
+			blast_radius = "blast radius",
+			validation_burden = "validation burden"
+		),
+		dimension = factor(dimension, levels = c("current support", "fragility", "blast radius", "validation burden")),
+		assumption_label = fct_reorder(assumption_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_assumption_ledger_summary <- open_question_assumption_ledger %>%
+	count(lane, assumption_action, name = "assumptions") %>%
+	group_by(lane) %>%
+	mutate(lane_assumptions = sum(assumptions)) %>%
+	ungroup()
+
+write_csv(
+	open_question_assumption_ledger %>%
+		select(
+			assumption,
+			lane,
+			assumption_class,
+			support_score,
+			fragility_score,
+			blast_radius,
+			validation_burden,
+			unvalidated_risk,
+			validation_priority,
+			assumption_action,
+			current_evidence,
+			invalidating_observation,
+			minimum_check,
+			safe_wording
+		),
+	file.path(data_dir, "typing-delay-open-question-assumption-ledger.csv")
+)
+
+write_csv(
+	open_question_assumption_ledger_long,
+	file.path(data_dir, "typing-delay-open-question-assumption-ledger-long.csv")
+)
+
+write_csv(
+	open_question_assumption_ledger_summary,
+	file.path(data_dir, "typing-delay-open-question-assumption-ledger-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_assumption_ledger_long,
+		aes(dimension, assumption_label, fill = score)
+	) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.8, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Score") +
+		labs(
+			title = "The fragile assumptions are claim-expansion and observer assumptions",
+			subtitle = "Closed benchmark assumptions are well-supported but should be rechecked after metric-definition changes",
+			x = "Assumption dimension",
+			y = "Assumption"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"232-open-question-assumption-ledger.png",
+	width = 13.0,
+	height = 8.4
+)
+
+save_plot(
+	ggplot(
+		open_question_assumption_ledger %>%
+			mutate(assumption_label = fct_reorder(assumption_label, validation_priority)),
+		aes(validation_priority, assumption_label, fill = assumption_action)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Action") +
+		labs(
+			title = "Assumptions with high validation priority need new artifacts, not more local rows",
+			subtitle = "Priority combines unvalidated risk and the burden required to validate the assumption",
+			x = "Validation priority",
+			y = "Assumption"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"233-open-question-assumption-priority.png",
+	width = 12.6,
+	height = 8.0
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
