@@ -1233,6 +1233,12 @@ The R script derives:
     risk, blocker strength, and same-harness waste.
 -   `data/typing-delay-open-question-counterfactual-impact-long.csv`: long-form
     counterfactual impact scores used for the action/wording heatmap.
+-   `data/typing-delay-open-question-escape-hatches.csv`: contradiction and
+    escape-hatch audit for remaining question families, listing what observation
+    would overturn or narrow the current recommendation, the immediate
+    consequence, existing signal, minimum next check, and blind-spot scores.
+-   `data/typing-delay-open-question-escape-hatches-long.csv`: long-form
+    escape-hatch scores used for the contradiction/impact and blind-spot plots.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10274,6 +10280,32 @@ This is a stronger version of the stopping rule. The open questions are not all
 open in the same way. The rows worth running next are the ones with high
 action-delta and concrete gates. The high-cost low-action rows should be treated
 as claim-expansion work, not blockers for the local benchmark result.
+
+The escape-hatch audit asks the skeptical version of that question: what
+observation would force the report to reverse or narrow each current
+recommendation? This is where repeated local latency samples stop helping. The
+high-impact reversals are mostly not visible to the existing harness: they need
+target-topology readiness rows, representative replay, sidecar/counter joins,
+calibrated display endpoints, compatibility fixtures, or CI policy joins.
+
+![Open question escape hatches](figures/264-open-question-escape-hatches.png)
+
+![Open question escape priority](figures/265-open-question-escape-priority.png)
+
+| Escape-hatch class | What would change the conclusion |
+| ------------------ | -------------------------------- |
+| Trigger-only recheck | the held-key cliff only reopens after a helper, browser, trace placement, throwaway, or statistic change removes the current metric fact |
+| Target-topology gates | startup-wait and pattern-wait recommendations can change only if the real Performance Tests topology preserves q50, failures, resources, retained counts, first-key tails, and endpoint composition |
+| Source/API gates | selector and store-partition work can be overturned by behavior failures, missing source-span collapse, or public compatibility regressions |
+| New-observer gates | persistence, runtime, CPU/QoS, and CI-policy explanations need joined task/runtime/counter/policy observers before the wording can get stronger |
+| Claim-expansion blind spots | product-workload and display claims remain blocked until replay strata or calibrated endpoints pass; fixed-`x` q50 cannot settle them |
+
+The important asymmetry is detectability. The locally detectable contradiction is
+the metric-definition trigger for the held-key cliff. The rows with the largest
+decision impact are also the rows where the existing harness has the biggest
+blind spot. So another same-harness sweep can make the current artifact cleaner,
+but it cannot answer the questions most likely to change CI rollout, product
+wording, external display wording, or mechanism names.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

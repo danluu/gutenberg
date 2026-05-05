@@ -26799,6 +26799,200 @@ save_plot(
 	height = 7.8
 )
 
+open_question_escape_hatches <- tribble(
+	~question_family, ~current_claim, ~overturning_observation, ~immediate_consequence, ~existing_signal, ~minimum_next_check, ~contradiction_likelihood, ~impact_if_true, ~current_artifact_detectability, ~new_observer_need, ~decision_reversibility, ~same_harness_blind_spot,
+	"Held-key cliff and metric split", "Held-key cliff is a current-metric fact; held key and complete keypress are separate metrics.", "An exact-spec rerun after a helper, browser, trace, throwaway, or statistic change removes the cliff or collapses the mode split.", "Reopen the metric definition and threshold-continuity discussion before citing old rows.", "Current dense, fresh, randomized, and helper-control rows agree.", "Triggered exact-spec rerun only after the metric definition changes.", 1, 4, 5, 1, 4, 1,
+	"Persistence ordering boundary", "Persistence timing is an ordering marker, not proof that callback work moved out of the next key.", "A joined task/runtime trace shows callback work, next-key work, and counterfactual placement in the same retained-key window.", "Upgrade wording from ordering marker to a named work-placement mechanism.", "Timer rewrites and marker/no-op controls align with ordering but reject simple store-work wording.", "Joined task/runtime work-placement trace only if mechanism wording is needed.", 2, 3, 2, 5, 4, 5,
+	"Input mode versus product typing", "The cliff is held-key benchmark behavior, not product-wide typing behavior.", "Representative replay strata reproduce the same cliff and owner pattern under tap, pauses, deletion, selection, and realistic text.", "Widen the claim to the passing replay strata; keep fixed-`x` as one stratum.", "Tap and complete-keypress rows do not reproduce the held-key cliff.", "Synthetic and recorded replay strata with per-key rows and source spans.", 2, 5, 2, 4, 3, 5,
+	"Runtime checkpoint mechanism", "Runtime checkpoint state is empirical and unnamed.", "A passive retained-key sidecar joins every key and names a runtime field that separates low and high bands without perturbing ordering.", "Name the runtime mechanism; otherwise keep empirical wording.", "Runtime checkpoints produce a dose response, but current rows are not passive mechanism evidence.", "Passive sidecar with helper/renderer identity, clock sync, and observer-off baseline.", 3, 3, 1, 5, 3, 5,
+	"CPU/QoS mechanism", "CPU/QoS sensitivity is plausible, but the exact layer is unnamed.", "Joined counters separate retained-key classes by frequency, residency, scheduler latency, cache, QoS, or timer-wakeup state.", "Name only the passing counter layer; otherwise downgrade to empirical system-state sensitivity.", "Local CPU controls move latency, but counters are not joined per retained key.", "Accepted sidecar followed by powermetrics, trace, or browser-counter windows.", 3, 3, 1, 5, 3, 5,
+	"Startup wait and first-key tails", "Retained q50 does not justify adding a Typing startup wait; first-key tails and readiness still gate wait reduction.", "Target Performance Tests topology shows shorter waits preserve q50 while failures, resources, retained counts, and first-key tails regress.", "Block wait reduction or split idle-input from retained typing.", "Local startup rows show flat retained q50 but visible first/second-key differences.", "Target-topology artifact with failures, retries, resources, retained rows, and key position.", 3, 5, 3, 3, 4, 3,
+	"Pattern wait replacement", "Local shorter waits or predicates are candidates, not rollout proof.", "Predicate/fallback rows move preview/canvas or endpoint work before timing, or fail in CI/container/Site/Post lanes.", "Keep the fixed wait for failing lanes; do not count their runtime savings.", "Local rows show q50 candidates and tail/resource caveats.", "Predicate plus resource-quiet validation with endpoint composition and per-spec veto gates.", 3, 5, 3, 3, 4, 3,
+	"Selector/source guard", "Broad subscriber fanout is a credible source-cost target, but patches need behavior and source-span gates.", "Behavior fixtures fail, or targeted source spans do not collapse before aggregate timing moves.", "Reject or rescope the patch before citing p50.", "Source-span fanout and a first guarded prototype identify actionable owners.", "Behavior fixtures plus before/after source-span microscope for the targeted owner.", 3, 4, 4, 3, 5, 2,
+	"Store subscriber partition", "Timing/private side-channel wins do not prove public data-layer compatibility.", "Public subscribers, persistence selectors, dynamic dependencies, cross-store behavior, or async ordering change under partitioning.", "Keep public root-notification semantics or restrict the change to a private path.", "Private/side-channel rows reduce fanout, but compatibility is not proven.", "Public subscriber compatibility matrix before timing claims.", 3, 5, 2, 4, 3, 4,
+	"Product workload generalization", "Fixed-`x` evidence is benchmark/source evidence only.", "Replay strata show different owners, opposite effects, failures, or missing assertions.", "Keep product-wide wording blocked and report only the fixed-`x` artifact.", "No representative replay artifact yet.", "Synthetic and recorded workload replay strata with assertions and source spans.", 3, 5, 1, 5, 3, 5,
+	"External display endpoint", "Current visual claims are Chromium-internal propagation, not physical display latency.", "Calibrated OCR, present, or camera endpoints disagree with internal timing or perturb retained-key ordering.", "Keep display wording at the deepest passing endpoint only.", "Internal Paint/DrawFrame and pixel proxies are useful but not calibrated physical endpoints.", "Calibrated endpoint ladder joined to retained keys.", 3, 4, 1, 5, 3, 5,
+	"CI pass/fail policy", "q50 artifacts are evidence production; pass/fail policy is external.", "Dashboard, threshold, noisy-metric handling, or reviewer decisions use a different statistic or rule than local q50.", "Stop predicting pass/fail from local q50; document only evidence production.", "Repository source shows q50 production and display/upload consumers, not full policy.", "Archived CI artifact to dashboard/reviewer decision join.", 3, 5, 1, 5, 2, 5
+) %>%
+	left_join(
+		open_question_counterfactual_impact %>%
+			select(question_family, counterfactual_class, max_decision_delta, engineer_value_after_cost),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		escape_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		escape_priority = impact_if_true + contradiction_likelihood + same_harness_blind_spot + new_observer_need - current_artifact_detectability,
+		escape_class = case_when(
+			contradiction_likelihood <= 1 & current_artifact_detectability >= 5 ~ "trigger-only recheck",
+			impact_if_true >= 5 & current_artifact_detectability >= 3 ~ "target-topology gate",
+			impact_if_true >= 5 & new_observer_need >= 4 ~ "new-observer gate",
+			same_harness_blind_spot >= 5 ~ "claim-expansion blind spot",
+			impact_if_true >= 4 ~ "source or policy gate",
+			TRUE ~ "wording caveat"
+		),
+		escape_class = factor(
+			escape_class,
+			levels = c("trigger-only recheck", "wording caveat", "source or policy gate", "target-topology gate", "new-observer gate", "claim-expansion blind spot")
+		)
+	)
+
+open_question_escape_hatches_long <- open_question_escape_hatches %>%
+	select(
+		question_family,
+		question_label,
+		escape_class,
+		contradiction_likelihood,
+		impact_if_true,
+		current_artifact_detectability,
+		new_observer_need,
+		decision_reversibility,
+		same_harness_blind_spot
+	) %>%
+	pivot_longer(
+		cols = c(
+			contradiction_likelihood,
+			impact_if_true,
+			current_artifact_detectability,
+			new_observer_need,
+			decision_reversibility,
+			same_harness_blind_spot
+		),
+		names_to = "escape_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		escape_dimension = recode(
+			escape_dimension,
+			contradiction_likelihood = "contradiction likelihood",
+			impact_if_true = "impact if true",
+			current_artifact_detectability = "detectable now",
+			new_observer_need = "new observer need",
+			decision_reversibility = "decision reversibility",
+			same_harness_blind_spot = "same-harness blind spot"
+		),
+		escape_dimension = factor(
+			escape_dimension,
+			levels = c("contradiction likelihood", "impact if true", "detectable now", "new observer need", "decision reversibility", "same-harness blind spot")
+		),
+		question_label = fct_reorder(question_label, as.numeric(escape_class), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_escape_hatches %>%
+		select(
+			question_family,
+			escape_class,
+			counterfactual_class,
+			current_claim,
+			overturning_observation,
+			immediate_consequence,
+			existing_signal,
+			minimum_next_check,
+			contradiction_likelihood,
+			impact_if_true,
+			current_artifact_detectability,
+			new_observer_need,
+			decision_reversibility,
+			same_harness_blind_spot,
+			escape_priority,
+			max_decision_delta,
+			engineer_value_after_cost
+		),
+	file.path(data_dir, "typing-delay-open-question-escape-hatches.csv")
+)
+
+write_csv(
+	open_question_escape_hatches_long,
+	file.path(data_dir, "typing-delay-open-question-escape-hatches-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_escape_hatches_long, aes(escape_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.6, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Score") +
+		labs(
+			title = "Escape hatches show which open questions can still overturn decisions",
+			subtitle = "Most high-impact reversals require new observers or target topology; unchanged same-harness samples are blind to them",
+			x = "Escape-hatch dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"264-open-question-escape-hatches.png",
+	width = 13.8,
+	height = 8.8
+)
+
+open_question_escape_hatch_plot <- open_question_escape_hatches %>%
+	group_by(contradiction_likelihood, impact_if_true) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.18),
+		point_contradiction_likelihood = contradiction_likelihood + overlap_radius * cos(overlap_angle),
+		point_impact_if_true = impact_if_true + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_contradiction_likelihood = point_contradiction_likelihood + if_else(label_left, -0.11, 0.11),
+		label_impact_if_true = point_impact_if_true + case_when(
+			overlap_count == 1L ~ 0,
+			TRUE ~ (overlap_index - (overlap_count + 1) / 2) * 0.14
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_escape_hatch_plot,
+		aes(point_contradiction_likelihood, point_impact_if_true, color = escape_class, size = same_harness_blind_spot)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_contradiction_likelihood,
+				y = label_impact_if_true,
+				label = str_wrap(escape_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Escape-hatch class") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "Same-harness blind spot") +
+		scale_x_continuous(breaks = 1:5, limits = c(0.7, 3.65)) +
+		scale_y_continuous(breaks = 1:5, limits = c(2.65, 5.65)) +
+		labs(
+			title = "High-impact reversals mostly need evidence the current harness cannot see",
+			subtitle = "The locally detectable row is a metric-definition trigger; CI, product, display, policy, and mechanism rows need different joins",
+			x = "Likelihood of contradiction under current evidence",
+			y = "Impact if the contradiction is true"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"265-open-question-escape-priority.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

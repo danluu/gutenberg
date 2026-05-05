@@ -1,0 +1,97 @@
+question_family,question_label,escape_class,escape_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only recheck,contradiction likelihood,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only recheck,impact if true,4
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only recheck,detectable now,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only recheck,new observer need,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only recheck,decision reversibility,4
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only recheck,same-harness blind spot,1
+Persistence ordering boundary,Persistence ordering boundary,claim-expansion blind spot,contradiction likelihood,2
+Persistence ordering boundary,Persistence ordering boundary,claim-expansion blind spot,impact if true,3
+Persistence ordering boundary,Persistence ordering boundary,claim-expansion blind spot,detectable now,2
+Persistence ordering boundary,Persistence ordering boundary,claim-expansion blind spot,new observer need,5
+Persistence ordering boundary,Persistence ordering boundary,claim-expansion blind spot,decision reversibility,4
+Persistence ordering boundary,Persistence ordering boundary,claim-expansion blind spot,same-harness blind spot,5
+Input mode versus product typing,"Input mode versus product
+typing",new-observer gate,contradiction likelihood,2
+Input mode versus product typing,"Input mode versus product
+typing",new-observer gate,impact if true,5
+Input mode versus product typing,"Input mode versus product
+typing",new-observer gate,detectable now,2
+Input mode versus product typing,"Input mode versus product
+typing",new-observer gate,new observer need,4
+Input mode versus product typing,"Input mode versus product
+typing",new-observer gate,decision reversibility,3
+Input mode versus product typing,"Input mode versus product
+typing",new-observer gate,same-harness blind spot,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion blind spot,contradiction likelihood,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion blind spot,impact if true,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion blind spot,detectable now,1
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion blind spot,new observer need,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion blind spot,decision reversibility,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion blind spot,same-harness blind spot,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion blind spot,contradiction likelihood,3
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion blind spot,impact if true,3
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion blind spot,detectable now,1
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion blind spot,new observer need,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion blind spot,decision reversibility,3
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion blind spot,same-harness blind spot,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",target-topology gate,contradiction likelihood,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",target-topology gate,impact if true,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",target-topology gate,detectable now,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",target-topology gate,new observer need,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",target-topology gate,decision reversibility,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",target-topology gate,same-harness blind spot,3
+Pattern wait replacement,Pattern wait replacement,target-topology gate,contradiction likelihood,3
+Pattern wait replacement,Pattern wait replacement,target-topology gate,impact if true,5
+Pattern wait replacement,Pattern wait replacement,target-topology gate,detectable now,3
+Pattern wait replacement,Pattern wait replacement,target-topology gate,new observer need,3
+Pattern wait replacement,Pattern wait replacement,target-topology gate,decision reversibility,4
+Pattern wait replacement,Pattern wait replacement,target-topology gate,same-harness blind spot,3
+Selector/source guard,Selector/source guard,source or policy gate,contradiction likelihood,3
+Selector/source guard,Selector/source guard,source or policy gate,impact if true,4
+Selector/source guard,Selector/source guard,source or policy gate,detectable now,4
+Selector/source guard,Selector/source guard,source or policy gate,new observer need,3
+Selector/source guard,Selector/source guard,source or policy gate,decision reversibility,5
+Selector/source guard,Selector/source guard,source or policy gate,same-harness blind spot,2
+Store subscriber partition,Store subscriber partition,new-observer gate,contradiction likelihood,3
+Store subscriber partition,Store subscriber partition,new-observer gate,impact if true,5
+Store subscriber partition,Store subscriber partition,new-observer gate,detectable now,2
+Store subscriber partition,Store subscriber partition,new-observer gate,new observer need,4
+Store subscriber partition,Store subscriber partition,new-observer gate,decision reversibility,3
+Store subscriber partition,Store subscriber partition,new-observer gate,same-harness blind spot,4
+Product workload generalization,"Product workload
+generalization",new-observer gate,contradiction likelihood,3
+Product workload generalization,"Product workload
+generalization",new-observer gate,impact if true,5
+Product workload generalization,"Product workload
+generalization",new-observer gate,detectable now,1
+Product workload generalization,"Product workload
+generalization",new-observer gate,new observer need,5
+Product workload generalization,"Product workload
+generalization",new-observer gate,decision reversibility,3
+Product workload generalization,"Product workload
+generalization",new-observer gate,same-harness blind spot,5
+External display endpoint,External display endpoint,claim-expansion blind spot,contradiction likelihood,3
+External display endpoint,External display endpoint,claim-expansion blind spot,impact if true,4
+External display endpoint,External display endpoint,claim-expansion blind spot,detectable now,1
+External display endpoint,External display endpoint,claim-expansion blind spot,new observer need,5
+External display endpoint,External display endpoint,claim-expansion blind spot,decision reversibility,3
+External display endpoint,External display endpoint,claim-expansion blind spot,same-harness blind spot,5
+CI pass/fail policy,CI pass/fail policy,new-observer gate,contradiction likelihood,3
+CI pass/fail policy,CI pass/fail policy,new-observer gate,impact if true,5
+CI pass/fail policy,CI pass/fail policy,new-observer gate,detectable now,1
+CI pass/fail policy,CI pass/fail policy,new-observer gate,new observer need,5
+CI pass/fail policy,CI pass/fail policy,new-observer gate,decision reversibility,2
+CI pass/fail policy,CI pass/fail policy,new-observer gate,same-harness blind spot,5
