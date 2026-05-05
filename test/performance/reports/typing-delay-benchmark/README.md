@@ -1403,6 +1403,20 @@ The R script derives:
 -   `data/typing-delay-open-question-decision-readiness-100-pass-checkpoints.csv`:
     checkpoints for decision, decision-axis, decision-surface, decision-value,
     action-change, same-harness-repeat, and analysis-only-value saturation.
+-   `data/typing-delay-open-question-execution-readiness.csv`: execution packet
+    table for the nine decision surfaces, including start conditions,
+    completion artifacts, vetoes, non-substitutability reasons, and owner or
+    observer handoffs.
+-   `data/typing-delay-open-question-execution-readiness-100-pass-audit.csv`:
+    ninth forced 100-pass audit over execution-readiness axes: start, command,
+    fields, join, negative-control, veto, artifact, substitute, owner, and
+    stop-rule.
+-   `data/typing-delay-open-question-execution-readiness-100-pass-summary.csv`:
+    rollup of execution-readiness coverage by execution mode and pass result.
+-   `data/typing-delay-open-question-execution-readiness-100-pass-checkpoints.csv`:
+    checkpoints for execution-packet, execution-axis, execution-mode,
+    execution-value, run-now, handoff, same-harness-substitute, and
+    analysis-only-value saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10873,6 +10887,35 @@ selector/source row can still change a behavior-gated source prototype. The
 input-mode row can still change benchmark-method wording. The remaining rows
 block broader compatibility, policy, workload, display, and mechanism wording;
 they do not reopen the local held-key `1000ms` cliff explanation.
+
+I then added the execution-readiness layer: turn each remaining decision surface
+into the smallest packet that can actually be run or handed off, including the
+start condition, required artifact, veto, and reason another aggregate timing
+pass cannot substitute for it.
+
+![Open question execution readiness value](figures/309-open-question-execution-readiness-value.png)
+
+![Open question execution readiness 100-pass saturation](figures/310-open-question-execution-readiness-100-pass-saturation.png)
+
+![Open question execution readiness coverage](figures/311-open-question-execution-readiness-coverage.png)
+
+| Execution-readiness check | Result |
+| ------------------------- | ------ |
+| Execution packets | `9`, one per decision surface. |
+| Execution modes | `5`: target-CI validation, local source prototype, local stimulus control, owner handoff, and external observer/workload. |
+| Execution-axis checks | `90`: every packet checked against all `10` execution axes. |
+| Run-now value | `69`: selector/source contributes `20`, startup wait contributes `18`, pattern wait contributes `17`, and input-mode controls contribute `14`. |
+| Handoff value | `29`: the remaining compatibility, policy, workload, display, and mechanism packets require an owner, observer, or representative workload. |
+| Execution-readiness value | `171` across the nine packets. |
+| Same-harness substitute value | `0`; an aggregate q50-only timing pass cannot replace missing packet fields, compatibility proof, policy join, workload replay, display endpoint, or passive counters. |
+| Saturation | Execution packets are all named by pass `9`; all execution-axis checks are covered by pass `90`; passes `91-100` add no execution coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the operational version of the open-question answer. Four packets are
+startable without a new owner: target-CI startup wait, target-CI pattern
+readiness, selector/source prototype, and input-mode controls. The other five
+should be written as handoffs, not kept alive as generic uncertainty about the
+local cliff.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

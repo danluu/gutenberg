@@ -1,0 +1,10 @@
+pass_id,cumulative_execution_packets,cumulative_execution_axes,cumulative_execution_modes,cumulative_execution_value,cumulative_run_now_value,cumulative_handoff_value,cumulative_same_harness_substitute_value,cumulative_analysis_only_value
+1,1,1,1,41,20,0,0,0
+5,5,5,4,158,69,11,0,0
+9,9,9,5,171,69,29,0,0
+10,9,10,5,171,69,29,0,0
+20,9,20,5,171,69,29,0,0
+50,9,50,5,171,69,29,0,0
+90,9,90,5,171,69,29,0,0
+91,9,90,5,171,69,29,0,0
+100,9,90,5,171,69,29,0,0

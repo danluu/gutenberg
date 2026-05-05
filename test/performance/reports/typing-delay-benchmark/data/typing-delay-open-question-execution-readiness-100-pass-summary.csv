@@ -1,0 +1,11 @@
+execution_mode,pass_result,passes,first_pass,execution_packets,axis_checks,execution_value,run_now_value,handoff_value,same_harness_substitute_value,analysis_only_value,max_blocker_cost
+target CI validation,execution-ready: local or target packet,20,2,2,20,76,35,0,0,0,1
+local source prototype,execution-ready: local or target packet,10,1,1,10,41,20,0,0,0,1
+local stimulus control,execution-ready: local or target packet,10,4,1,10,31,14,0,0,0,1
+owner handoff,handoff-ready: owner or observer packet,20,5,2,20,17,0,19,0,0,3
+external observer or workload,handoff-ready: owner or observer packet,30,7,3,30,6,0,10,0,0,4
+local source prototype,repeat: execution-axis already checked,2,91,1,0,0,0,0,0,0,1
+target CI validation,repeat: execution-axis already checked,2,92,2,0,0,0,0,0,0,1
+local stimulus control,repeat: execution-axis already checked,1,94,1,0,0,0,0,0,0,1
+owner handoff,repeat: execution-axis already checked,2,95,2,0,0,0,0,0,0,3
+external observer or workload,repeat: execution-axis already checked,3,97,3,0,0,0,0,0,0,4

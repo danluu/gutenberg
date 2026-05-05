@@ -31235,6 +31235,317 @@ save_plot(
 	height = 7.2
 )
 
+open_question_execution_readiness <- open_question_decision_readiness %>%
+	mutate(
+		execution_packet = case_when(
+			question_family == "Startup wait and first-key tails" ~ "target-CI startup grid with retained and early-key fields",
+			question_family == "Pattern wait replacement" ~ "target-CI pattern-readiness run with resource and p90 vetoes",
+			question_family == "Selector/source guard" ~ "one selector-owner prototype with behavior and source-span gates",
+			question_family == "Input-mode realism" ~ "matched hold, tap, short-hold, and repeat stimulus controls",
+			question_family == "Store-subscriber partition" ~ "public/private store compatibility matrix",
+			question_family == "CI pass/fail policy" ~ "raw artifact to dashboard/reviewer policy join",
+			question_family == "Product workload generalization" ~ "representative workload replay stratum",
+			question_family == "Browser endpoint and display presentation" ~ "calibrated external presentation endpoint join",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "passive sidecar or counter join to retained keys",
+			TRUE ~ required_decision_artifact
+		),
+		execution_mode = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement") ~ "target CI validation",
+			question_family == "Selector/source guard" ~ "local source prototype",
+			question_family == "Input-mode realism" ~ "local stimulus control",
+			question_family %in% c("Store-subscriber partition", "CI pass/fail policy") ~ "owner handoff",
+			TRUE ~ "external observer or workload"
+		),
+		startable_without_new_owner = execution_mode %in% c(
+			"target CI validation",
+			"local source prototype",
+			"local stimulus control"
+		),
+		start_condition = case_when(
+			question_family == "Startup wait and first-key tails" ~ "CI-comparable topology is available and startup wait is varied independently from inter-key delay",
+			question_family == "Pattern wait replacement" ~ "Post/Site target lanes and readiness/resource observers are enabled",
+			question_family == "Selector/source guard" ~ "one selector owner and behavior fixture are selected before timing is cited",
+			question_family == "Input-mode realism" ~ "helper action and platform repeat labels are captured per retained key",
+			question_family == "Store-subscriber partition" ~ "public subscriber/import surface is enumerated before partition timing",
+			question_family == "CI pass/fail policy" ~ "dashboard or reviewer policy artifact is accessible",
+			question_family == "Product workload generalization" ~ "replay stratum and plugin/theme context are defined",
+			question_family == "Browser endpoint and display presentation" ~ "external endpoint can be clock-joined to the trace window",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "sidecar/counter observer passes off/on non-perturbation control",
+			TRUE ~ required_decision_artifact
+		),
+		completion_artifact = case_when(
+			question_family == "Startup wait and first-key tails" ~ "CSV with retained q50/mean/p90, first retained key, discarded key, failures, resources, and run order",
+			question_family == "Pattern wait replacement" ~ "CSV with readiness, preview/canvas, resource quiet, failures, retained q50, and p90 by lane",
+			question_family == "Selector/source guard" ~ "behavior fixture result plus targeted source-span before/after and aggregate timing control",
+			question_family == "Input-mode realism" ~ "stimulus-labeled retained rows for tap, short-hold, held-key, and repeat",
+			question_family == "Store-subscriber partition" ~ "compatibility matrix and affected public import/subscriber list",
+			question_family == "CI pass/fail policy" ~ "joined raw artifact, displayed metric, dashboard threshold/noisy rule, and reviewer outcome",
+			question_family == "Product workload generalization" ~ "replay manifest, workload stratum labels, setup script, failures, and retained rows",
+			question_family == "Browser endpoint and display presentation" ~ "external presentation timestamp joined to retained-key trace endpoints",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "sidecar/counter samples joined to the same retained key windows",
+			TRUE ~ required_decision_artifact
+		),
+		execution_veto = decision_veto,
+		non_substitutable_reason = case_when(
+			startable_without_new_owner ~ "needs the target packet fields, not more aggregate q50-only timing",
+			question_family == "Store-subscriber partition" ~ "public compatibility semantics cannot be inferred from private timing",
+			question_family == "CI pass/fail policy" ~ "pass/fail semantics live in dashboard or reviewer policy, not the repository CSV alone",
+			question_family == "Product workload generalization" ~ "fixed-character typing rows do not define workload representativeness",
+			question_family == "Browser endpoint and display presentation" ~ "physical presentation needs a calibrated endpoint outside Chromium internals",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "mechanism names need passive system/runtime counters joined to keys",
+			TRUE ~ "requires the named owner or observer before broader wording changes"
+		),
+		execution_blocker_cost = case_when(
+			startable_without_new_owner ~ 1,
+			question_family %in% c("Store-subscriber partition", "CI pass/fail policy") ~ 3,
+			TRUE ~ 4
+		),
+		execution_readiness_value = pmax(
+			1,
+			decision_readiness_value + action_change_value + evidence_readiness -
+				execution_blocker_cost - if_else(startable_without_new_owner, 0, wrong_action_risk)
+		),
+		run_now_value = if_else(
+			startable_without_new_owner,
+			action_change_value + evidence_readiness,
+			0
+		),
+		handoff_value = if_else(
+			startable_without_new_owner,
+			0,
+			pmax(1, decision_readiness_value - execution_blocker_cost)
+		),
+		same_harness_substitute_value = 0,
+		analysis_only_value = 0,
+		execution_readiness_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(run_now_value), desc(handoff_value), desc(execution_readiness_value), question_family)
+
+open_question_execution_readiness_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"start", "Can the next packet start without a new owner?",
+	"command", "What command, fixture, or owner handoff starts the packet?",
+	"fields", "Which raw fields must be captured for interpretation?",
+	"join", "Can packet rows join to retained keys, policy rows, endpoint rows, or counters?",
+	"negative-control", "Which control catches the wrong causal story?",
+	"veto", "Which observation blocks action?",
+	"artifact", "What artifact proves the packet completed?",
+	"substitute", "Can another same-harness timing pass substitute for the packet?",
+	"owner", "Who owns the packet after generation?",
+	"stop-rule", "When is the packet closed or handed off?"
+)
+
+open_question_execution_readiness_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_execution_readiness)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_execution_readiness_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_execution_readiness %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_execution_readiness_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		execution_first_seen = !duplicated(execution_readiness_id),
+		execution_axis_key = paste(execution_readiness_id, pressure_axis, sep = "::"),
+		execution_axis_first_seen = !duplicated(execution_axis_key),
+		execution_mode_first_seen = !duplicated(execution_mode),
+		new_execution_value = if_else(execution_first_seen, execution_readiness_value, 0),
+		new_run_now_value = if_else(execution_first_seen, run_now_value, 0),
+		new_handoff_value = if_else(execution_first_seen, handoff_value, 0),
+		new_same_harness_substitute_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!execution_axis_first_seen ~ "repeat: execution-axis already checked",
+			startable_without_new_owner ~ "execution-ready: local or target packet",
+			TRUE ~ "handoff-ready: owner or observer packet"
+		),
+		cumulative_execution_packets = cumsum(execution_first_seen),
+		cumulative_execution_axes = cumsum(execution_axis_first_seen),
+		cumulative_execution_modes = cumsum(execution_mode_first_seen),
+		cumulative_execution_value = cumsum(new_execution_value),
+		cumulative_run_now_value = cumsum(new_run_now_value),
+		cumulative_handoff_value = cumsum(new_handoff_value),
+		cumulative_same_harness_substitute_value = cumsum(new_same_harness_substitute_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_execution_readiness_summary <- open_question_execution_readiness_100_pass %>%
+	group_by(execution_mode, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		execution_packets = n_distinct(execution_readiness_id),
+		axis_checks = sum(execution_axis_first_seen),
+		execution_value = sum(new_execution_value),
+		run_now_value = sum(new_run_now_value),
+		handoff_value = sum(new_handoff_value),
+		same_harness_substitute_value = sum(new_same_harness_substitute_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_blocker_cost = max(execution_blocker_cost, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(run_now_value), desc(handoff_value), first_pass)
+
+open_question_execution_readiness_checkpoints <- open_question_execution_readiness_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_execution_packets,
+		cumulative_execution_axes,
+		cumulative_execution_modes,
+		cumulative_execution_value,
+		cumulative_run_now_value,
+		cumulative_handoff_value,
+		cumulative_same_harness_substitute_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_execution_readiness,
+	file.path(data_dir, "typing-delay-open-question-execution-readiness.csv")
+)
+
+write_csv(
+	open_question_execution_readiness_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			execution_packet,
+			execution_mode,
+			startable_without_new_owner,
+			start_condition,
+			completion_artifact,
+			execution_veto,
+			non_substitutable_reason,
+			monitor_owner,
+			execution_first_seen,
+			execution_axis_first_seen,
+			execution_mode_first_seen,
+			pass_result,
+			execution_readiness_value,
+			run_now_value,
+			handoff_value,
+			same_harness_substitute_value,
+			new_execution_value,
+			new_run_now_value,
+			new_handoff_value,
+			new_same_harness_substitute_value,
+			new_analysis_only_value,
+			cumulative_execution_packets,
+			cumulative_execution_axes,
+			cumulative_execution_modes,
+			cumulative_execution_value,
+			cumulative_run_now_value,
+			cumulative_handoff_value,
+			cumulative_same_harness_substitute_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-execution-readiness-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_execution_readiness_summary,
+	file.path(data_dir, "typing-delay-open-question-execution-readiness-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_execution_readiness_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-execution-readiness-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_execution_readiness %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, run_now_value + handoff_value)
+		) %>%
+		ggplot(aes(run_now_value + handoff_value, question_label, fill = execution_mode)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Execution mode") +
+		labs(
+			title = "Open questions reduce to executable packets or owner handoffs",
+			subtitle = "Target-CI, source, and stimulus packets are startable; broader claims wait on owners or observers",
+			x = "Run-now plus handoff value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"309-open-question-execution-readiness-value.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_execution_readiness_saturation_long <- open_question_execution_readiness_100_pass %>%
+	select(
+		pass_id,
+		`execution packets` = cumulative_execution_packets,
+		`execution-axis checks` = cumulative_execution_axes,
+		`execution modes` = cumulative_execution_modes,
+		`execution value` = cumulative_execution_value,
+		`run-now value` = cumulative_run_now_value,
+		`handoff value` = cumulative_handoff_value,
+		`same-harness substitute value` = cumulative_same_harness_substitute_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("execution packets", "execution-axis checks", "execution modes", "execution value", "run-now value", "handoff value", "same-harness substitute value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_execution_readiness_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Execution-readiness audit saturates once all packet axes are checked",
+			subtitle = "Nine execution packets appear by pass 9; all 90 execution-axis checks appear by pass 90; same-harness substitute value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"310-open-question-execution-readiness-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_execution_readiness_summary %>%
+		mutate(
+			mode_label = str_wrap(execution_mode, width = 28),
+			mode_label = fct_reorder(mode_label, run_now_value + handoff_value + execution_value)
+		) %>%
+		ggplot(aes(axis_checks, mode_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Execution coverage distinguishes startable packets from handoffs",
+			subtitle = "Repeated forced passes cover axes but do not make aggregate q50 a substitute for missing artifacts",
+			x = "Execution-axis checks",
+			y = "Execution mode"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"311-open-question-execution-readiness-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
