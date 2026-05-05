@@ -1201,6 +1201,13 @@ The R script derives:
     if missing, and overclaim risk.
 -   `data/typing-delay-open-question-discriminating-fields-summary.csv`: rollup
     of field actions by claim lane.
+-   `data/typing-delay-open-question-theory-prediction-matrix.csv`: prediction
+    matrix for candidate explanations, scoring how each theory matches or fails
+    current observations and storing the full prediction and observed-result
+    text.
+-   `data/typing-delay-open-question-theory-prediction-summary.csv`: per-theory
+    prediction balance, strong matches, falsifiers, weakening observations, and
+    survivor/rejection status.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10114,6 +10121,39 @@ larger sweeps by default. They are narrow runs with generated-key identity,
 input-shape fields, readiness/actionability fields, source-span and behavior
 gates, and sidecar join fields. Without those fields, the next run can still
 produce a number while leaving the same open question open.
+
+The prediction matrix is the falsifiability check on the theory triage. Instead
+of asking only whether a theory sounds plausible, it asks what observations the
+theory should predict and whether the current artifacts match those predictions.
+Positive cells support or scope a theory; negative cells are observations the
+theory fails to explain.
+
+![Open question theory prediction matrix](figures/254-open-question-theory-prediction-matrix.png)
+
+![Open question theory survivors](figures/255-open-question-theory-survivors.png)
+
+| Observation ID | Meaning |
+| -------------- | ------- |
+| `DENSE` / `FIXTURE` | dense/randomized/fresh reproduction and fixture/browser/volatility checks |
+| `MODE` / `HOLD` | matched held-key versus tap/complete-keypress rows, observed hold duration, and post-keyup gap controls |
+| `TIMER` / `NOOP` / `WORK` | timer rewrite and persistence markers, raw/no-op/direct-callback controls, and missing callback-work-placement proof |
+| `EDISP` / `FF` | Chrome `EventDispatch` input-slice movement and Firefox controlled dip |
+| `WAIT` / `RT` / `PAYLOAD` | ordinary post-keyup wait extension, runtime checkpoint dose response, and matched event-payload controls |
+| `VISUAL` / `FANOUT` / `OWNER` | EventDispatch versus visual/render tail, source-span fanout, and single-owner controls |
+| `CPU` / `START` / `KEYPOS` | CPU/QoS controls, startup-wait matrices, and per-key-position distributions |
+| `PATTERN` / `READY` / `CI` | pattern-wait local matrices, readiness/resource fields, and CI/container topology |
+| `COMPAT` / `SIDECH` | public compatibility requirements and private-side-channel controls |
+| `MECH` / `THRESH` / `PRODUCT` / `PROF` | mechanism-naming fields, threshold portability, product-typing generalization, and profiler usefulness |
+
+This produces a stricter survivor set. The held-key metric-definition theory,
+persistence-ordering boundary, runtime checkpoint state, CPU/QoS state, and
+broad subscriber fanout survive the current observations, but with scoped claims.
+The plotting artifact, ordinary-wait, React-primary, startup-wait-primary,
+pattern-q50-only rollout, store-partition-timing-only, timer-work-shift, and
+Chrome-only accounting theories are rejected or mostly rejected by direct
+predictions. That is why the remaining work is not more broad sampling. It is
+either scoped wording for surviving theories or new fields for the mechanisms
+whose predictions are still under-observed.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

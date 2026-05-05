@@ -25778,6 +25778,254 @@ save_plot(
 	height = 8.2
 )
 
+open_question_theory_predictions <- tribble(
+	~theory, ~lane, ~observation, ~prediction, ~observed_result, ~score,
+	"Plotting/sample artifact", "Benchmark artifact", "dense and randomized held-key reproduction", "effect should disappear or move under denser sampling and randomized order", "effect persists across dense, targeted, and fresh-editor rows", -2,
+	"Plotting/sample artifact", "Benchmark artifact", "container, browser, and volatility controls", "effect should be fragile to fixture or run ordering", "shape persists enough to require an explanation beyond plotting", -1,
+	"Plotting/sample artifact", "Benchmark artifact", "matched input-mode controls", "input mode should not systematically change the curve", "held-key and complete-keypress curves differ", -2,
+	"Held-key metric-definition effect", "Benchmark artifact", "matched input-mode controls", "held key should differ from tap and complete-keypress rows", "held-key and complete-keypress/tap rows differ under matched conditions", 2,
+	"Held-key metric-definition effect", "Benchmark artifact", "observed hold and post-keyup controls", "physical hold duration alone should not explain all helper-family differences", "similar observed holds can land in different latency phases", 1,
+	"Held-key metric-definition effect", "Benchmark artifact", "product typing generalization", "fixed held-key rows should not be generalized to ordinary typing", "representative workload evidence is still absent", 1,
+	"Persistence ordering boundary", "Benchmark artifact", "timer rewrite and persistence markers", "transition should move with the rich-text persistence boundary", "timer rewrites and markers put the transition near the persistence interval", 2,
+	"Persistence ordering boundary", "Benchmark artifact", "raw/no-op/direct-callback controls", "simple generic timer or raw-action explanations should fail", "no-op/raw-action/direct-callback controls reject the shortcut", 2,
+	"Persistence ordering boundary", "Benchmark artifact", "callback work placement", "ordering evidence alone should not prove work moved between measurement slices", "current traces do not show counterfactual work placement", 1,
+	"Timer callback shifts work", "Benchmark artifact", "timer rewrite and persistence markers", "timer firing should align with the transition", "timer firing aligns, which weakly supports why this was tempting", 1,
+	"Timer callback shifts work", "Benchmark artifact", "raw/no-op/direct-callback controls", "callback work should explain the low band", "controls do not show callback work moving out of next-key measurement", -2,
+	"Timer callback shifts work", "Benchmark artifact", "callback work placement", "joined trace should show work that would otherwise be charged to next key", "that joined counterfactual evidence is absent", -2,
+	"Chrome EventDispatch accounting only", "Browser portability", "Chrome EventDispatch/input slice movement", "Chrome EventDispatch should show a large movement", "Chrome EventDispatch/input slice moves", 1,
+	"Chrome EventDispatch accounting only", "Browser portability", "Firefox controlled dip", "Firefox should not show the same controlled dip if this is Chrome-only accounting", "Firefox preserves a similar controlled dip", -2,
+	"Chrome EventDispatch accounting only", "Browser portability", "threshold portability", "non-Chromium magnitudes should not set Chromium thresholds", "browser lanes are treated as causal checks, not threshold lanes", 1,
+	"Ordinary sleep or queued-JS drain", "Runtime boundary", "ordinary post-keyup wait extension", "longer ordinary waits should enter the same fast class", "raw CDP ordinary waits through multi-second delays do not reproduce the class", -2,
+	"Ordinary sleep or queued-JS drain", "Runtime boundary", "runtime checkpoint dose response", "generic rest should explain checkpoint dose response", "runtime-repeat and trace/checkpoint controls behave differently from rest", -2,
+	"Ordinary sleep or queued-JS drain", "Runtime boundary", "matched event payload controls", "DOM payload changes should not be needed", "payload and one generic checkpoint are not enough", -1,
+	"React render primary cause", "Source/code", "EventDispatch versus visual/render tail", "post-EventDispatch rendering should account for the primary cliff", "main movement is already inside EventDispatch/input; post-tail is smaller", -2,
+	"React render primary cause", "Source/code", "source-span fanout", "React ownership should dominate before data fanout", "data/root subscriber fanout is a larger source-cost target", -1,
+	"React render primary cause", "Source/code", "profiler usefulness", "profiling should be next for cliff causality", "profiler is deferred to residual ownership after source changes", -1,
+	"Broad subscriber fanout source cost", "Source/code", "source-span fanout", "source spans should show broad block-editor/root subscriber wakeup", "source spans and wrapper audits show broad subscriber fanout", 2,
+	"Broad subscriber fanout source cost", "Source/code", "single-owner controls", "one obvious owner or selector body should explain most cost", "single-owner and selector-body-only explanations are rejected", 1,
+	"Broad subscriber fanout source cost", "Source/code", "compatibility requirements", "timing win should not by itself prove semantic safety", "behavior and public compatibility fields are still required", 1,
+	"Runtime checkpoint state", "Runtime boundary", "runtime checkpoint dose response", "checkpoint/repeated Runtime calls should form a dose response", "runtime-repeat controls show a dose response below ordinary JS rows", 2,
+	"Runtime checkpoint state", "Runtime boundary", "ordinary post-keyup wait extension", "ordinary waiting should not reproduce the checkpoint class", "ordinary waiting does not reproduce the class", 2,
+	"Runtime checkpoint state", "Runtime boundary", "mechanism naming field", "exact browser/runtime state should remain unnamed without joined sidecar fields", "sidecar/runtime trace is still missing", 1,
+	"CPU/QoS system state", "CPU/QoS", "CPU/QoS controls", "ordinary/utility CPU state and background/maintenance controls should separate absolute latency classes", "CPU/QoS controls move absolute latency and reject overbroad CPU-burn claims", 2,
+	"CPU/QoS system state", "CPU/QoS", "runtime checkpoint dose response", "system state may modulate residuals but should not replace runtime-side evidence", "runtime checkpoint effect remains a separate open mechanism", 0,
+	"CPU/QoS system state", "CPU/QoS", "mechanism naming field", "exact frequency/QoS/cache/scheduler cause should require counters", "root counters and sidecar joins are missing", 1,
+	"Startup wait determines retained typing", "CI/readiness", "startup wait matrices", "adding startup wait should improve retained q50 stability under the current metric", "added waits do not justify themselves for retained q50", -2,
+	"Startup wait determines retained typing", "CI/readiness", "per-key position distributions", "first-key and retained aggregate should be the same question", "first-key/user-idle latency is separate from retained typing q50", -1,
+	"Startup wait determines retained typing", "CI/readiness", "readiness/resource fields", "q50 alone should decide wait removal", "readiness, failures, resources, and first-key tails gate rollout", -2,
+	"Pattern/source wait q50-only rollout", "CI/readiness", "pattern wait local matrices", "local q50 should be enough to remove fixed waits everywhere", "local rows differ by Site/Post Editor path and readiness contract", -2,
+	"Pattern/source wait q50-only rollout", "CI/readiness", "readiness/resource fields", "resource/actionability/preview fields should be unnecessary", "these fields are required before rollout", -2,
+	"Pattern/source wait q50-only rollout", "CI/readiness", "CI/container topology", "local macOS q50 should set CI behavior directly", "CI/mac/container validation is still required", -1,
+	"Store partition timing-only safety", "Source/code", "source-span fanout", "timing should motivate a fanout-reduction prototype", "marker fanout is a real target", 1,
+	"Store partition timing-only safety", "Source/code", "compatibility requirements", "timing improvement should prove public data-layer safety", "public subscriber/useSelect/withSelect semantics remain gating fields", -2,
+	"Store partition timing-only safety", "Source/code", "private side-channel controls", "private side-channel wins should imply public compatibility", "private/internal wins do not imply public subscriber compatibility", -2
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Runtime boundary", "CPU/QoS", "Browser portability")),
+		observation = factor(
+			observation,
+			levels = c(
+				"dense and randomized held-key reproduction",
+				"container, browser, and volatility controls",
+				"matched input-mode controls",
+				"observed hold and post-keyup controls",
+				"timer rewrite and persistence markers",
+				"raw/no-op/direct-callback controls",
+				"callback work placement",
+				"Chrome EventDispatch/input slice movement",
+				"Firefox controlled dip",
+				"ordinary post-keyup wait extension",
+				"runtime checkpoint dose response",
+				"matched event payload controls",
+				"EventDispatch versus visual/render tail",
+				"source-span fanout",
+				"single-owner controls",
+				"CPU/QoS controls",
+				"startup wait matrices",
+				"per-key position distributions",
+				"pattern wait local matrices",
+				"readiness/resource fields",
+				"CI/container topology",
+				"compatibility requirements",
+				"private side-channel controls",
+				"mechanism naming field",
+				"threshold portability",
+				"product typing generalization",
+				"profiler usefulness"
+			)
+		),
+		theory_label = str_wrap(theory, width = 30),
+		observation_label = str_wrap(as.character(observation), width = 24),
+		observation_id = recode(
+			as.character(observation),
+			"dense and randomized held-key reproduction" = "DENSE",
+			"container, browser, and volatility controls" = "FIXTURE",
+			"matched input-mode controls" = "MODE",
+			"observed hold and post-keyup controls" = "HOLD",
+			"timer rewrite and persistence markers" = "TIMER",
+			"raw/no-op/direct-callback controls" = "NOOP",
+			"callback work placement" = "WORK",
+			"Chrome EventDispatch/input slice movement" = "EDISP",
+			"Firefox controlled dip" = "FF",
+			"ordinary post-keyup wait extension" = "WAIT",
+			"runtime checkpoint dose response" = "RT",
+			"matched event payload controls" = "PAYLOAD",
+			"EventDispatch versus visual/render tail" = "VISUAL",
+			"source-span fanout" = "FANOUT",
+			"single-owner controls" = "OWNER",
+			"CPU/QoS controls" = "CPU",
+			"startup wait matrices" = "START",
+			"per-key position distributions" = "KEYPOS",
+			"pattern wait local matrices" = "PATTERN",
+			"readiness/resource fields" = "READY",
+			"CI/container topology" = "CI",
+			"compatibility requirements" = "COMPAT",
+			"private side-channel controls" = "SIDECH",
+			"mechanism naming field" = "MECH",
+			"threshold portability" = "THRESH",
+			"product typing generalization" = "PRODUCT",
+			"profiler usefulness" = "PROF"
+		),
+		observation_id = factor(
+			observation_id,
+			levels = c(
+				"DENSE",
+				"FIXTURE",
+				"MODE",
+				"HOLD",
+				"TIMER",
+				"NOOP",
+				"WORK",
+				"EDISP",
+				"FF",
+				"WAIT",
+				"RT",
+				"PAYLOAD",
+				"VISUAL",
+				"FANOUT",
+				"OWNER",
+				"CPU",
+				"START",
+				"KEYPOS",
+				"PATTERN",
+				"READY",
+				"CI",
+				"COMPAT",
+				"SIDECH",
+				"MECH",
+				"THRESH",
+				"PRODUCT",
+				"PROF"
+			)
+		),
+		prediction_result = case_when(
+			score >= 2 ~ "strong match",
+			score == 1 ~ "match or scope guard",
+			score == 0 ~ "not decisive",
+			score == -1 ~ "weakens",
+			TRUE ~ "falsifies"
+		),
+		prediction_result = factor(
+			prediction_result,
+			levels = c("falsifies", "weakens", "not decisive", "match or scope guard", "strong match")
+		)
+	)
+
+open_question_theory_prediction_summary <- open_question_theory_predictions %>%
+	group_by(theory, theory_label, lane) %>%
+	summarize(
+		prediction_balance = sum(score),
+		strong_matches = sum(score >= 2),
+		falsifiers = sum(score <= -2),
+		weakening_observations = sum(score < 0),
+		observations_checked = n(),
+		.groups = "drop"
+	) %>%
+	mutate(
+		theory_status = case_when(
+			falsifiers >= 2 ~ "rejected by predictions",
+			falsifiers == 1 & prediction_balance <= 0 ~ "mostly rejected",
+			strong_matches >= 2 & weakening_observations == 0 ~ "survives current observations",
+			strong_matches >= 1 & falsifiers == 0 ~ "bounded survivor",
+			TRUE ~ "mixed or scope-only"
+		),
+		theory_status = factor(
+			theory_status,
+			levels = c("rejected by predictions", "mostly rejected", "mixed or scope-only", "bounded survivor", "survives current observations")
+		)
+	)
+
+write_csv(
+	open_question_theory_predictions %>%
+		select(
+			theory,
+			lane,
+			observation_id,
+			observation,
+			prediction,
+			observed_result,
+			score,
+			prediction_result
+		),
+	file.path(data_dir, "typing-delay-open-question-theory-prediction-matrix.csv")
+)
+
+write_csv(
+	open_question_theory_prediction_summary,
+	file.path(data_dir, "typing-delay-open-question-theory-prediction-summary.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_theory_predictions,
+		aes(observation_id, theory_label, fill = score)
+	) +
+		geom_tile(color = "white", linewidth = 0.38) +
+		geom_text(aes(label = score), size = 2.35, color = "grey12") +
+		scale_fill_distiller(
+			type = "div",
+			palette = "RdYlBu",
+			direction = -1,
+			limits = c(-2, 2),
+			breaks = -2:2,
+			name = "Prediction\nscore"
+		) +
+		labs(
+			title = "Theory predictions make the open questions falsifiable",
+			subtitle = "Positive cells match current observations; negative cells are observations the theory fails to explain",
+			x = "Observation id; full observation text is in the CSV",
+			y = "Candidate explanation"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 25, hjust = 1)),
+	"254-open-question-theory-prediction-matrix.png",
+	width = 13.8,
+	height = 8.6
+)
+
+save_plot(
+	ggplot(
+		open_question_theory_prediction_summary %>%
+			mutate(theory_label = fct_reorder(theory_label, prediction_balance)),
+		aes(prediction_balance, theory_label, color = theory_status, shape = lane, size = observations_checked)
+	) +
+		geom_vline(xintercept = 0, color = "grey72", linewidth = 0.45) +
+		geom_point(alpha = 0.9) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Prediction status") +
+		scale_size_continuous(range = c(2.5, 7.2), breaks = c(3, 4, 5), name = "Observations") +
+		labs(
+			title = "Surviving theories are the ones with positive predictions and no direct falsifier",
+			subtitle = "Rejected explanations have non-positive balance or multiple direct falsifiers; survivors still need scoped wording or new fields",
+			x = "Prediction balance",
+			y = "Candidate explanation"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"255-open-question-theory-survivors.png",
+	width = 13.0,
+	height = 8.0
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

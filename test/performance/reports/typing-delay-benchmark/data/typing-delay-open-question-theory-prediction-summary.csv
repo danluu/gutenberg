@@ -1,0 +1,21 @@
+theory,theory_label,lane,prediction_balance,strong_matches,falsifiers,weakening_observations,observations_checked,theory_status
+Broad subscriber fanout source cost,"Broad subscriber fanout source
+cost",Source/code,4,1,0,0,3,bounded survivor
+CPU/QoS system state,CPU/QoS system state,CPU/QoS,3,1,0,0,3,bounded survivor
+Chrome EventDispatch accounting only,"Chrome EventDispatch
+accounting only",Browser portability,0,0,1,1,3,mostly rejected
+Held-key metric-definition effect,"Held-key metric-definition
+effect",Benchmark artifact,4,1,0,0,3,bounded survivor
+Ordinary sleep or queued-JS drain,"Ordinary sleep or queued-JS
+drain",Runtime boundary,-5,0,2,3,3,rejected by predictions
+Pattern/source wait q50-only rollout,"Pattern/source wait q50-only
+rollout",CI/readiness,-5,0,2,3,3,rejected by predictions
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,5,2,0,0,3,survives current observations
+Plotting/sample artifact,Plotting/sample artifact,Benchmark artifact,-5,0,2,3,3,rejected by predictions
+React render primary cause,React render primary cause,Source/code,-4,0,1,3,3,mostly rejected
+Runtime checkpoint state,Runtime checkpoint state,Runtime boundary,5,2,0,0,3,survives current observations
+Startup wait determines retained typing,"Startup wait determines
+retained typing",CI/readiness,-5,0,2,3,3,rejected by predictions
+Store partition timing-only safety,"Store partition timing-only
+safety",Source/code,-3,0,2,2,3,rejected by predictions
+Timer callback shifts work,Timer callback shifts work,Benchmark artifact,-3,0,2,2,3,rejected by predictions
