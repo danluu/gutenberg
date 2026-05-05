@@ -1215,6 +1215,12 @@ The R script derives:
 -   `data/typing-delay-open-question-observation-leverage-long.csv`: long-form
     observation-leverage scores used for the support/rejection and leverage
     plots.
+-   `data/typing-delay-open-question-consensus-roadmap.csv`: cross-audit
+    consensus roadmap that groups remaining question families by current
+    conclusion, next action, decisive artifact, closure/reopen condition, and
+    action-versus-observer scores.
+-   `data/typing-delay-open-question-consensus-roadmap-long.csv`: long-form
+    consensus-roadmap scores used for the closure/action/observer heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10186,6 +10192,31 @@ like `MODE`, `NOOP`, `RT`, and `WAIT`: they split alternatives. To broaden
 claims, add the missing scope-guard fields: work placement for the timer theory,
 mechanism fields for runtime/CPU, product replay for typing claims, and policy
 joins for pass/fail claims.
+
+The consensus roadmap is a cross-audit check on the open-question loop. It
+groups the repeated findings into question families and asks whether each family
+is a stable local conclusion, a near-term action gate, or a blocker for broader
+mechanism, product, display, or policy wording. This is deliberately stricter
+than asking which topic still feels interesting: the row has to say what would
+close it and what would reopen or narrow it.
+
+![Open question consensus roadmap](figures/258-open-question-consensus-roadmap.png)
+
+![Open question consensus priority](figures/259-open-question-consensus-priority.png)
+
+| Consensus row | Decision from the current evidence |
+| ------------- | ---------------------------------- |
+| Stable local claims | the held-key cliff, held-key/tap metric split, and persistence-ordering boundary do not need another broad local sweep unless the metric definition changes |
+| Actionable frontier | startup-wait/first-key tails, pattern-wait replacement, and selector-source guards are the rows where more work can change near-term CI or source action |
+| Guarded source/mechanism | store subscriber partition and similar fanout work need compatibility or source-span gates before timing can justify a public behavior change |
+| Mechanism blockers | runtime checkpoint and CPU/QoS rows need passive joined observers; more same-harness JS rows mostly leave the mechanism unnamed |
+| Claim-expansion blockers | product workload, external display, and pass/fail policy rows do not weaken the local benchmark result; they only block broader product, hardware, or policy claims |
+
+The important consensus result is that there are only three locally actionable
+frontier rows: startup readiness, pattern readiness, and selector/source guards.
+The rest of the open questions are not reasons to keep rerunning the same held-key
+sweep. They are either stable local conclusions, wording boundaries, or requests
+for different observers and external joins.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

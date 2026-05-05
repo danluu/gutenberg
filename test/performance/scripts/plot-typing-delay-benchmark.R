@@ -26205,6 +26205,210 @@ save_plot(
 	height = 7.6
 )
 
+open_question_consensus_roadmap <- tribble(
+	~question_family, ~lane, ~consensus_state, ~current_conclusion, ~decisive_next_artifact, ~near_term_action_impact, ~same_harness_value, ~missing_observer_burden, ~overclaim_risk, ~closure_confidence, ~next_action, ~close_condition, ~reopen_or_narrow_condition,
+	"Held-key cliff and metric split", "Benchmark artifact", "closed local conclusion", "The `1000ms` held-key cliff exists under the current helper/browser/statistic, and held key is not complete-keypress-then-wait.", "Exact-spec trigger recheck only after helper, browser, trace-placement, throwaway, or statistic changes.", 2, 1, 1, 3, 5, "do not rerun without trigger", "Matched held-key/tap/control rows keep the same qualitative ordering under the unchanged metric.", "A metric-definition trigger removes or reverses the held-key/tap split.",
+	"Persistence ordering boundary", "Benchmark artifact", "bounded conclusion", "Persistence timing is an ordering marker near the transition; timer-work-shift wording is rejected.", "Joined task/runtime trace only if the wording expands from ordering marker to work placement.", 2, 1, 4, 4, 4, "keep wording scoped", "Timer rewrite, marker, and no-op controls keep aligning with the transition while work-shift controls remain negative.", "A joined trace shows callback work, next-key work, and counterfactual placement, or persistence ordering no longer aligns.",
+	"Input mode versus product typing", "Benchmark artifact", "closed for current metric", "The observed cliff is held-key specific; complete-keypress/tap rows are not interchangeable.", "Representative workload replay only if the claim expands to product typing.", 3, 1, 4, 5, 4, "block broad wording", "Input-mode controls keep tap/keypress-then-wait separate from held-key delay.", "Tap or short-hold controls reproduce the same cliff under matched state and retained-key filtering.",
+	"Runtime checkpoint mechanism", "Runtime boundary", "open mechanism", "Runtime checkpoint state remains empirical and unnamed below the current JS/browser tables.", "Passive retained-key sidecar with clock sync, renderer/helper identity, observer-off baseline, and joined runtime fields.", 2, 0, 5, 5, 2, "require new observer", "A passive sidecar joins every retained key and names a runtime field that separates classes without perturbing ordering.", "The sidecar perturbs ordering, fails to join, or no runtime field separates classes.",
+	"CPU/QoS mechanism", "CPU/QoS", "open mechanism", "CPU/QoS state can modulate absolute latency, but frequency, residency, QoS, cache, and scheduler causes are unnamed.", "Accepted sidecar followed by joined powermetrics or trace counters only if mechanism naming is still needed.", 2, 0, 5, 5, 2, "require new observer", "Joined counters separate retained classes without changing ordering or counts.", "Counters fail to separate classes, require perturbing observers, or contradict runtime-side evidence.",
+	"Startup wait and first-key tails", "CI/readiness", "near-term action gate", "Retained q50 does not justify adding a Typing startup wait, but first-key and readiness fields still gate wait reduction.", "Real Performance Tests topology artifact retaining failures, retries, resources, first-key tails, retained rows, run order, and environment metadata.", 5, 2, 3, 4, 3, "run target-topology gate", "Shorter startup waits preserve q50, failures, resources, retained counts, and first-key tails in target topology.", "q50 improves while failures, resources, retries, retained counts, or first-key tails regress.",
+	"Pattern wait replacement", "CI/readiness", "near-term action gate", "Local rows suggest shorter waits or predicates in some lanes, but rollout is spec/topology/readiness gated.", "Predicate plus resource-quiet artifact with fixed-wait controls, preview/canvas checks, failures, retained rows, and CI/container lanes.", 5, 2, 3, 4, 3, "run target-topology gate", "Predicate or fixed fallback preserves readiness, resources, preview/canvas behavior, failures, and retained q50 in the target lane.", "Predicate fires before readiness, moves resource work into measurement, or differs across Site/Post/container lanes.",
+	"Selector/source guard", "Source/code", "near-term source gate", "Broad subscriber fanout is a credible source-cost target, but source patches need behavior and source-span proof first.", "Behavior fixtures plus targeted source-span before/after rows, with aggregate timing secondary.", 4, 1, 3, 4, 3, "prototype behind gates", "Behavior fixtures pass and the targeted source span/fanout collapses before aggregate p50 is cited.", "Behavior changes, source spans do not collapse, or aggregate timing moves without the targeted source evidence.",
+	"Store subscriber partition", "Source/code", "blocked safety claim", "Timing and fanout motivate investigation, but timing alone cannot prove public data-layer compatibility.", "Public subscriber, persistence selector, dynamic dependency, cross-store, async, and private-side-channel compatibility matrix.", 3, 0, 4, 5, 2, "block until compatibility", "Public compatibility passes and fanout collapse is isolated to compatible subscriber classes.", "Any public subscriber, persistence selector, dependency, or ordering semantic changes.",
+	"Product workload generalization", "Claim expansion", "blocked expansion", "Fixed-`x` rows are strong benchmark/source evidence, not product-wide editor latency evidence.", "Synthetic and recorded workload replay strata with assertions, source spans, endpoints, and per-stratum summaries.", 3, 0, 5, 5, 2, "defer until claim expands", "The specific workload strata reproduce the relevant owners, effects, and assertions.", "Replay strata show different owners, opposite effects, failures, or missing assertions.",
+	"External display endpoint", "Claim expansion", "blocked expansion", "Current visual claims are Chromium-internal propagation claims, not calibrated physical display timing.", "Calibrated OCR/present/camera endpoint ladder joined to retained keys with dropped-frame and perturbation controls.", 2, 0, 5, 5, 2, "defer until claim expands", "The external endpoint preserves ordering and joins retained keys without perturbing the benchmark.", "External endpoints disagree, cannot join retained keys, or perturb ordering.",
+	"CI pass/fail policy", "External policy", "policy join required", "Repository artifacts produce q50 evidence; they do not by themselves define dashboard or reviewer pass/fail policy.", "Policy join from archived raw CI artifacts to displayed q50, dashboard thresholds, noisy-metric handling, and reviewer decisions.", 4, 0, 4, 5, 2, "join policy before predicting pass/fail", "Documented policy maps raw q50/base-q50 movement to the same pass/fail or reviewer outcome.", "Dashboard/reviewer policy uses a different statistic, threshold, noisy-metric rule, or manual decision path."
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Runtime boundary", "CPU/QoS", "Claim expansion", "External policy")),
+		consensus_state = factor(
+			consensus_state,
+			levels = c("closed local conclusion", "closed for current metric", "bounded conclusion", "near-term action gate", "near-term source gate", "blocked safety claim", "open mechanism", "blocked expansion", "policy join required")
+		),
+		next_action = factor(
+			next_action,
+			levels = c(
+				"do not rerun without trigger",
+				"keep wording scoped",
+				"block broad wording",
+				"run target-topology gate",
+				"prototype behind gates",
+				"block until compatibility",
+				"require new observer",
+				"defer until claim expands",
+				"join policy before predicting pass/fail"
+			)
+		),
+		question_label = str_wrap(question_family, width = 30),
+		priority_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence ordering",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime mechanism",
+			"CPU/QoS mechanism" = "CPU/QoS mechanism",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector guard",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "external display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		consensus_priority = near_term_action_impact + overclaim_risk + (6 - closure_confidence) - same_harness_value,
+		decision_quadrant = case_when(
+			closure_confidence >= 4 & near_term_action_impact <= 3 ~ "stable local claim",
+			near_term_action_impact >= 4 & missing_observer_burden <= 3 ~ "actionable frontier",
+			near_term_action_impact >= 4 ~ "policy or topology gate",
+			missing_observer_burden >= 5 ~ "claim-expansion blocker",
+			TRUE ~ "guarded source/mechanism"
+		),
+		decision_quadrant = factor(
+			decision_quadrant,
+			levels = c("stable local claim", "actionable frontier", "guarded source/mechanism", "policy or topology gate", "claim-expansion blocker")
+		)
+	)
+
+open_question_consensus_roadmap_long <- open_question_consensus_roadmap %>%
+	select(
+		question_family,
+		question_label,
+		lane,
+		consensus_state,
+		near_term_action_impact,
+		same_harness_value,
+		missing_observer_burden,
+		overclaim_risk,
+		closure_confidence
+	) %>%
+	pivot_longer(
+		cols = c(
+			near_term_action_impact,
+			same_harness_value,
+			missing_observer_burden,
+			overclaim_risk,
+			closure_confidence
+		),
+		names_to = "consensus_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		consensus_dimension = recode(
+			consensus_dimension,
+			near_term_action_impact = "near-term action impact",
+			same_harness_value = "same-harness value",
+			missing_observer_burden = "missing-observer burden",
+			overclaim_risk = "overclaim risk",
+			closure_confidence = "current closure"
+		),
+		consensus_dimension = factor(
+			consensus_dimension,
+			levels = c("current closure", "near-term action impact", "same-harness value", "missing-observer burden", "overclaim risk")
+		),
+		question_label = fct_reorder(question_label, as.numeric(lane), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_consensus_roadmap %>%
+		select(
+			question_family,
+			lane,
+			consensus_state,
+			decision_quadrant,
+			next_action,
+			current_conclusion,
+			decisive_next_artifact,
+			near_term_action_impact,
+			same_harness_value,
+			missing_observer_burden,
+			overclaim_risk,
+			closure_confidence,
+			consensus_priority,
+			close_condition,
+			reopen_or_narrow_condition
+		),
+	file.path(data_dir, "typing-delay-open-question-consensus-roadmap.csv")
+)
+
+write_csv(
+	open_question_consensus_roadmap_long,
+	file.path(data_dir, "typing-delay-open-question-consensus-roadmap-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_consensus_roadmap_long, aes(consensus_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.7, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Score") +
+		labs(
+			title = "Consensus across audits separates closed facts from action gates and claim blockers",
+			subtitle = "Same-harness value is low for most remaining questions; missing observers and overclaim risk drive the open rows",
+			x = "Consensus dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"258-open-question-consensus-roadmap.png",
+	width = 13.4,
+	height = 8.4
+)
+
+open_question_consensus_priority_plot <- open_question_consensus_roadmap %>%
+	group_by(missing_observer_burden, near_term_action_impact) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.13),
+		point_missing_observer_burden = missing_observer_burden + overlap_radius * cos(overlap_angle),
+		point_near_term_action_impact = near_term_action_impact + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_missing_observer_burden = point_missing_observer_burden + if_else(label_left, -0.06, 0.06),
+		label_near_term_action_impact = point_near_term_action_impact + case_when(
+			overlap_count == 1L ~ 0,
+			overlap_index %% 2L == 1L ~ 0.09,
+			TRUE ~ -0.09
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_consensus_priority_plot,
+		aes(point_missing_observer_burden, point_near_term_action_impact, color = decision_quadrant, size = overclaim_risk)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_missing_observer_burden,
+				y = label_near_term_action_impact,
+				label = str_wrap(priority_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.55,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Set1", name = "Consensus quadrant") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "Overclaim risk") +
+		scale_x_continuous(breaks = 0:5, limits = c(-0.2, 6.0)) +
+		scale_y_continuous(breaks = 1:5, limits = c(1.7, 5.45)) +
+		labs(
+			title = "Only CI/readiness and source gates are both actionable and closeable locally",
+			subtitle = "Mechanism, product, display, and policy rows need new observers or external joins before broader claims",
+			x = "Missing-observer burden",
+			y = "Near-term action impact"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"259-open-question-consensus-priority.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

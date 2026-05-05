@@ -1,0 +1,81 @@
+question_family,question_label,lane,consensus_state,consensus_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed local conclusion,near-term action impact,2
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed local conclusion,same-harness value,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed local conclusion,missing-observer burden,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed local conclusion,overclaim risk,3
+Held-key cliff and metric split,"Held-key cliff and metric
+split",Benchmark artifact,closed local conclusion,current closure,5
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,bounded conclusion,near-term action impact,2
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,bounded conclusion,same-harness value,1
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,bounded conclusion,missing-observer burden,4
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,bounded conclusion,overclaim risk,4
+Persistence ordering boundary,Persistence ordering boundary,Benchmark artifact,bounded conclusion,current closure,4
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,closed for current metric,near-term action impact,3
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,closed for current metric,same-harness value,1
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,closed for current metric,missing-observer burden,4
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,closed for current metric,overclaim risk,5
+Input mode versus product typing,"Input mode versus product
+typing",Benchmark artifact,closed for current metric,current closure,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,open mechanism,near-term action impact,2
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,open mechanism,same-harness value,0
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,open mechanism,missing-observer burden,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,open mechanism,overclaim risk,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,Runtime boundary,open mechanism,current closure,2
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,open mechanism,near-term action impact,2
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,open mechanism,same-harness value,0
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,open mechanism,missing-observer burden,5
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,open mechanism,overclaim risk,5
+CPU/QoS mechanism,CPU/QoS mechanism,CPU/QoS,open mechanism,current closure,2
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,near-term action gate,near-term action impact,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,near-term action gate,same-harness value,2
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,near-term action gate,missing-observer burden,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,near-term action gate,overclaim risk,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/readiness,near-term action gate,current closure,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,near-term action gate,near-term action impact,5
+Pattern wait replacement,Pattern wait replacement,CI/readiness,near-term action gate,same-harness value,2
+Pattern wait replacement,Pattern wait replacement,CI/readiness,near-term action gate,missing-observer burden,3
+Pattern wait replacement,Pattern wait replacement,CI/readiness,near-term action gate,overclaim risk,4
+Pattern wait replacement,Pattern wait replacement,CI/readiness,near-term action gate,current closure,3
+Selector/source guard,Selector/source guard,Source/code,near-term source gate,near-term action impact,4
+Selector/source guard,Selector/source guard,Source/code,near-term source gate,same-harness value,1
+Selector/source guard,Selector/source guard,Source/code,near-term source gate,missing-observer burden,3
+Selector/source guard,Selector/source guard,Source/code,near-term source gate,overclaim risk,4
+Selector/source guard,Selector/source guard,Source/code,near-term source gate,current closure,3
+Store subscriber partition,Store subscriber partition,Source/code,blocked safety claim,near-term action impact,3
+Store subscriber partition,Store subscriber partition,Source/code,blocked safety claim,same-harness value,0
+Store subscriber partition,Store subscriber partition,Source/code,blocked safety claim,missing-observer burden,4
+Store subscriber partition,Store subscriber partition,Source/code,blocked safety claim,overclaim risk,5
+Store subscriber partition,Store subscriber partition,Source/code,blocked safety claim,current closure,2
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked expansion,near-term action impact,3
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked expansion,same-harness value,0
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked expansion,missing-observer burden,5
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked expansion,overclaim risk,5
+Product workload generalization,"Product workload
+generalization",Claim expansion,blocked expansion,current closure,2
+External display endpoint,External display endpoint,Claim expansion,blocked expansion,near-term action impact,2
+External display endpoint,External display endpoint,Claim expansion,blocked expansion,same-harness value,0
+External display endpoint,External display endpoint,Claim expansion,blocked expansion,missing-observer burden,5
+External display endpoint,External display endpoint,Claim expansion,blocked expansion,overclaim risk,5
+External display endpoint,External display endpoint,Claim expansion,blocked expansion,current closure,2
+CI pass/fail policy,CI pass/fail policy,External policy,policy join required,near-term action impact,4
+CI pass/fail policy,CI pass/fail policy,External policy,policy join required,same-harness value,0
+CI pass/fail policy,CI pass/fail policy,External policy,policy join required,missing-observer burden,4
+CI pass/fail policy,CI pass/fail policy,External policy,policy join required,overclaim risk,5
+CI pass/fail policy,CI pass/fail policy,External policy,policy join required,current closure,2
