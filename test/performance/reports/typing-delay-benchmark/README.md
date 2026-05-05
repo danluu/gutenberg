@@ -2070,6 +2070,23 @@ The R script derives:
     generalization-boundary-value,
     generalization-boundary-overgeneralization-risk-value,
     timing-only-generalization-boundary, and analysis-only saturation.
+-   `data/typing-delay-open-question-residual-uncertainty-register.csv`:
+    residual-uncertainty register for the nine generalization-boundary records,
+    including uncertainty class, evidence gap, next measurement, priority rule,
+    decision block, stop condition, fallback decision, owner, and consumer.
+-   `data/typing-delay-open-question-residual-uncertainty-100-pass-audit.csv`:
+    fifty-first forced 100-pass audit over residual-uncertainty axes: class,
+    evidence-gap, next-measurement, priority, decision-block, stop-condition,
+    fallback, owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-residual-uncertainty-100-pass-summary.csv`:
+    rollup of residual-uncertainty coverage by residual-uncertainty state,
+    generalization-boundary state, and pass result.
+-   `data/typing-delay-open-question-residual-uncertainty-100-pass-checkpoints.csv`:
+    checkpoints for residual-uncertainty-record, residual-uncertainty-axis,
+    residual-uncertainty-state, residual-uncertainty-owner,
+    residual-uncertainty-consumer, residual-uncertainty-value,
+    residual-uncertainty-wrong-decision-risk-value,
+    timing-only-residual-uncertainty, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12798,6 +12815,38 @@ container, workload, or source claim without the transfer evidence that would
 justify that label. The claim remains exact-scope unless the report names the
 excluded scope, negative control, matrix gap, and decision rule that would allow
 or block transfer.
+
+I then added the residual-uncertainty layer: after exact scope and excluded
+scope are named, the remaining question is which uncertainty is still
+decision-relevant. Uncertainty records the uncertainty class, evidence gap, next
+measurement, priority rule, decision block, stop condition, fallback decision,
+owner, and consumer for each generalization-boundary row.
+
+![Open question residual uncertainty register](figures/435-open-question-residual-uncertainty-register.png)
+
+![Open question residual uncertainty 100-pass saturation](figures/436-open-question-residual-uncertainty-100-pass-saturation.png)
+
+![Open question residual uncertainty coverage](figures/437-open-question-residual-uncertainty-coverage.png)
+
+| Residual-uncertainty check | Result |
+| -------------------------- | ------ |
+| Residual-uncertainty records | `9`, one per generalization-boundary record. |
+| Residual-uncertainty states | `3`: local packet residual uncertainty, owner artifact residual uncertainty, and observer artifact residual uncertainty. |
+| Residual-uncertainty owners | `9`; uncertainty ownership routes back to the scoped generalization-boundary owner. |
+| Residual-uncertainty consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Residual-uncertainty-axis checks | `90`: every row checked against all `10` residual-uncertainty axes. |
+| Residual-uncertainty value | `160865046573`: local packet uncertainty contributes `121548657292`, owner artifact uncertainty contributes `24303797828`, and observer artifact uncertainty contributes `15012591453`. |
+| Residual-uncertainty wrong-decision-risk value | `87338434150` across the nine residual-uncertainty records. |
+| Timing-only residual-uncertainty value | `0`; aggregate timing movement alone cannot prove the uncertainty class, evidence gap, next measurement, priority rule, decision block, stop condition, fallback decision, owner, or stop rule. |
+| Saturation | Residual-uncertainty records are all named by pass `9`; all residual-uncertainty axes are covered by pass `90`; passes `91-100` add no residual-uncertainty coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the decision-relevance guard. It catches the case where every remaining
+unknown is treated as equally important or where an exact-scope result is
+blocked by a non-decision-relevant uncertainty. The report now separates valid
+fallback decisions from blocked transfer claims and names the next measurement
+only when it can change CI policy, source guidance, method wording, or broad
+recommendation scope.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

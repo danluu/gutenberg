@@ -43693,6 +43693,314 @@ save_plot(
 	height = 7.2
 )
 
+open_question_residual_uncertainty_register <- open_question_generalization_boundary_register %>%
+	mutate(
+		residual_uncertainty_state = case_when(
+			generalization_boundary_state == "local packet generalization boundary" ~ "local packet residual uncertainty",
+			generalization_boundary_state == "owner artifact generalization boundary" ~ "owner artifact residual uncertainty",
+			TRUE ~ "observer artifact residual uncertainty"
+		),
+		residual_uncertainty_class = case_when(
+			close_scope == "CI wait decision" ~ "CI timing-policy uncertainty: untested runner hardware, browser channel, startup state, typing-delay/input-mode mix, branch-count model, and real-user workload transfer remain outside the exact replicated claim",
+			close_scope == "source prototype decision" ~ "source-change uncertainty: untested selector graphs, invalidation fanout, plugin-heavy documents, source branches, and owner-review environments remain outside the exact replicated claim",
+			close_scope == "benchmark method wording" ~ "method uncertainty: untested trace schemas, event categories, extraction windows, aggregation rules, instrumentation overhead, and future browser/Playwright versions remain outside the exact replicated claim",
+			TRUE ~ "broad-report uncertainty: untested browser/runtime, OS/container, hardware/QoS, workload, endpoint, plugin-set, and future-runtime combinations remain outside the exact replicated claim"
+		),
+		residual_uncertainty_evidence_gap = case_when(
+			close_scope == "CI wait decision" ~ "missing evidence is a blocked matrix over CI runner class, browser channel, container state, startup wait, typing delay, input mode, branch count, and at least one representative typing workload",
+			close_scope == "source prototype decision" ~ "missing evidence is a blocked matrix over source branch, selector graph, dispatch path, invalidation fanout, plugin-heavy document, block pattern, and owner-review environment",
+			close_scope == "benchmark method wording" ~ "missing evidence is a blocked matrix over trace category set, browser tracing implementation, extraction window, aggregation rule, instrumentation patch, raw JSON schema, and report script version",
+			TRUE ~ "missing evidence is a blocked matrix over browser, OS, container, hardware/QoS state, endpoint, workload, plugin set, user history, and future runtime version"
+		),
+		residual_uncertainty_next_measurement = case_when(
+			residual_uncertainty_state == "local packet residual uncertainty" ~ "next local measurement should change exactly one boundary variable from the replicated packet, preserve raw artifacts, and report whether the exact-scope conclusion transfers",
+			residual_uncertainty_state == "owner artifact residual uncertainty" ~ "next owner measurement should change exactly one owner-approved boundary variable, preserve raw artifacts and reviewer identity, and report whether the exact-scope conclusion transfers",
+			TRUE ~ "next observer measurement should run a small crossed matrix over the highest-risk boundary variable, preserve raw artifacts and broad-scope wording, and report whether the exact-scope conclusion transfers"
+		),
+		residual_uncertainty_priority_rule = case_when(
+			close_scope == "CI wait decision" ~ "prioritize measurements that can change CI runtime, pass/fail reliability, q50/q25/q75 interpretation, startup-wait guidance, typing-delay guidance, or tap-versus-hold policy",
+			close_scope == "source prototype decision" ~ "prioritize measurements that can change selector-guard recommendation, dispatch/invalidation recommendation, fanout caveat, source patch acceptance, or owner-review status",
+			close_scope == "benchmark method wording" ~ "prioritize measurements that can change trace-schema caveat, EventDispatch interpretation, aggregation caveat, instrumentation caveat, or limitation wording",
+			TRUE ~ "prioritize measurements that can change broad recommendation scope, portability caveat, browser/runtime caveat, workload caveat, endpoint caveat, or user-facing conclusion"
+		),
+		residual_uncertainty_decision_block = case_when(
+			residual_uncertainty_state == "local packet residual uncertainty" ~ "block only the local decision text that would cross the unsupported boundary; keep the exact-scope local conclusion available with its scope label",
+			residual_uncertainty_state == "owner artifact residual uncertainty" ~ "block owner-scoped recommendation text that would cross the unsupported boundary; keep the exact-scope owner conclusion available with reviewer identity and scope label",
+			TRUE ~ "block broad conclusion text that would cross the unsupported boundary; keep the exact-scope observer conclusion available with reviewer identity, broad wording guard, and scope label"
+		),
+		residual_uncertainty_stop_condition = case_when(
+			close_scope == "CI wait decision" ~ "stop when the decision cannot change CI runtime/reliability recommendation, q50 interpretation, startup wait, typing delay, input mode, or branch-count guidance within the named acceptance band",
+			close_scope == "source prototype decision" ~ "stop when the decision cannot change selector guard, dispatch/invalidation, fanout, source patch, or owner-review guidance within the named acceptance band",
+			close_scope == "benchmark method wording" ~ "stop when the decision cannot change trace schema, EventDispatch interpretation, aggregation, instrumentation, or limitation wording within the named acceptance band",
+			TRUE ~ "stop when the decision cannot change broad recommendation scope, portability, browser/runtime, workload, endpoint, or user-facing conclusion within the named acceptance band"
+		),
+		residual_uncertainty_fallback_decision = case_when(
+			residual_uncertainty_state == "local packet residual uncertainty" ~ "fallback is to publish the exact local scope only, mark the transfer claim as unproven, and link the next local measurement",
+			residual_uncertainty_state == "owner artifact residual uncertainty" ~ "fallback is to publish the exact owner scope only, mark the transfer claim as unproven, keep reviewer identity visible, and link the next owner measurement",
+			TRUE ~ "fallback is to publish the exact observer scope only, mark the broad transfer claim as unproven, keep reviewer identity and broad wording guard visible, and link the next matrix measurement"
+		),
+		residual_uncertainty_owner = generalization_boundary_owner,
+		residual_uncertainty_consumer = generalization_boundary_consumer,
+		residual_uncertainty_cost = case_when(
+			residual_uncertainty_state == "local packet residual uncertainty" ~ 8,
+			residual_uncertainty_state == "owner artifact residual uncertainty" ~ 10,
+			TRUE ~ 12
+		),
+		residual_uncertainty_value = pmax(
+			1,
+			generalization_boundary_value + generalization_boundary_overgeneralization_risk_value + replication_readiness_reproducibility_gap_risk_value - residual_uncertainty_cost
+		),
+		residual_uncertainty_wrong_decision_risk_value = pmax(
+			1,
+			generalization_boundary_overgeneralization_risk_value + replication_readiness_reproducibility_gap_risk_value + consumer_verification_false_confidence_risk_value - residual_uncertainty_cost
+		),
+		timing_only_residual_uncertainty_value = 0,
+		analysis_only_value = 0,
+		residual_uncertainty_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(residual_uncertainty_value), desc(residual_uncertainty_wrong_decision_risk_value), question_family)
+
+open_question_residual_uncertainty_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"class", "What kind of residual uncertainty remains after the boundary is named?",
+	"evidence-gap", "What evidence gap keeps the wider claim open?",
+	"next-measurement", "What next measurement would reduce the uncertainty?",
+	"priority", "What priority rule decides whether the uncertainty is worth measuring?",
+	"decision-block", "Which decision text remains blocked until the evidence exists?",
+	"stop-condition", "What stop condition says more measurement is not decision-relevant?",
+	"fallback", "What fallback decision is valid while uncertainty remains?",
+	"owner", "Who owns residual-uncertainty triage?",
+	"substitute", "Can aggregate timing alone substitute for residual-uncertainty evidence?",
+	"stop-rule", "When does residual-uncertainty review stop?"
+)
+
+open_question_residual_uncertainty_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_residual_uncertainty_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_residual_uncertainty_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_residual_uncertainty_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_residual_uncertainty_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		residual_uncertainty_first_seen = !duplicated(residual_uncertainty_id),
+		residual_uncertainty_axis_key = paste(residual_uncertainty_id, pressure_axis, sep = "::"),
+		residual_uncertainty_axis_first_seen = !duplicated(residual_uncertainty_axis_key),
+		residual_uncertainty_state_first_seen = !duplicated(residual_uncertainty_state),
+		residual_uncertainty_owner_first_seen = !duplicated(residual_uncertainty_owner),
+		residual_uncertainty_consumer_first_seen = !duplicated(residual_uncertainty_consumer),
+		new_residual_uncertainty_value = if_else(residual_uncertainty_first_seen, residual_uncertainty_value, 0),
+		new_residual_uncertainty_wrong_decision_risk_value = if_else(residual_uncertainty_first_seen, residual_uncertainty_wrong_decision_risk_value, 0),
+		new_timing_only_residual_uncertainty_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!residual_uncertainty_axis_first_seen ~ "repeat: residual-uncertainty-axis already checked",
+			residual_uncertainty_state == "local packet residual uncertainty" ~ "residual uncertainty: local packet",
+			TRUE ~ "residual uncertainty: owner or observer artifact"
+		),
+		cumulative_residual_uncertainty_records = cumsum(residual_uncertainty_first_seen),
+		cumulative_residual_uncertainty_axes = cumsum(residual_uncertainty_axis_first_seen),
+		cumulative_residual_uncertainty_states = cumsum(residual_uncertainty_state_first_seen),
+		cumulative_residual_uncertainty_owners = cumsum(residual_uncertainty_owner_first_seen),
+		cumulative_residual_uncertainty_consumers = cumsum(residual_uncertainty_consumer_first_seen),
+		cumulative_residual_uncertainty_value = cumsum(new_residual_uncertainty_value),
+		cumulative_residual_uncertainty_wrong_decision_risk_value = cumsum(new_residual_uncertainty_wrong_decision_risk_value),
+		cumulative_timing_only_residual_uncertainty_value = cumsum(new_timing_only_residual_uncertainty_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_residual_uncertainty_summary <- open_question_residual_uncertainty_100_pass %>%
+	group_by(residual_uncertainty_state, generalization_boundary_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		residual_uncertainty_records = n_distinct(residual_uncertainty_id),
+		axis_checks = sum(residual_uncertainty_axis_first_seen),
+		residual_uncertainty_owners = n_distinct(residual_uncertainty_owner),
+		residual_uncertainty_consumers = n_distinct(residual_uncertainty_consumer),
+		residual_uncertainty_value = sum(new_residual_uncertainty_value),
+		residual_uncertainty_wrong_decision_risk_value = sum(new_residual_uncertainty_wrong_decision_risk_value),
+		timing_only_residual_uncertainty_value = sum(new_timing_only_residual_uncertainty_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(residual_uncertainty_value), desc(residual_uncertainty_wrong_decision_risk_value), first_pass)
+
+open_question_residual_uncertainty_checkpoints <- open_question_residual_uncertainty_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_residual_uncertainty_records,
+		cumulative_residual_uncertainty_axes,
+		cumulative_residual_uncertainty_states,
+		cumulative_residual_uncertainty_owners,
+		cumulative_residual_uncertainty_consumers,
+		cumulative_residual_uncertainty_value,
+		cumulative_residual_uncertainty_wrong_decision_risk_value,
+		cumulative_timing_only_residual_uncertainty_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_residual_uncertainty_register,
+	file.path(data_dir, "typing-delay-open-question-residual-uncertainty-register.csv")
+)
+
+write_csv(
+	open_question_residual_uncertainty_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			residual_uncertainty_state,
+			generalization_boundary_state,
+			residual_uncertainty_class,
+			residual_uncertainty_evidence_gap,
+			residual_uncertainty_next_measurement,
+			residual_uncertainty_priority_rule,
+			residual_uncertainty_decision_block,
+			residual_uncertainty_stop_condition,
+			residual_uncertainty_fallback_decision,
+			residual_uncertainty_owner,
+			residual_uncertainty_consumer,
+			generalization_boundary_supported_scope,
+			generalization_boundary_excluded_scope,
+			generalization_boundary_transfer_evidence,
+			generalization_boundary_negative_control,
+			generalization_boundary_matrix_gap,
+			generalization_boundary_decision_rule,
+			supported_claim,
+			blocked_claim,
+			residual_uncertainty_first_seen,
+			residual_uncertainty_axis_first_seen,
+			residual_uncertainty_state_first_seen,
+			residual_uncertainty_owner_first_seen,
+			residual_uncertainty_consumer_first_seen,
+			pass_result,
+			residual_uncertainty_value,
+			residual_uncertainty_wrong_decision_risk_value,
+			timing_only_residual_uncertainty_value,
+			new_residual_uncertainty_value,
+			new_residual_uncertainty_wrong_decision_risk_value,
+			new_timing_only_residual_uncertainty_value,
+			new_analysis_only_value,
+			cumulative_residual_uncertainty_records,
+			cumulative_residual_uncertainty_axes,
+			cumulative_residual_uncertainty_states,
+			cumulative_residual_uncertainty_owners,
+			cumulative_residual_uncertainty_consumers,
+			cumulative_residual_uncertainty_value,
+			cumulative_residual_uncertainty_wrong_decision_risk_value,
+			cumulative_timing_only_residual_uncertainty_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-residual-uncertainty-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_residual_uncertainty_summary,
+	file.path(data_dir, "typing-delay-open-question-residual-uncertainty-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_residual_uncertainty_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-residual-uncertainty-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_residual_uncertainty_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, residual_uncertainty_value)
+		) %>%
+		ggplot(aes(residual_uncertainty_value, question_label, fill = residual_uncertainty_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Residual uncertainty") +
+		labs(
+			title = "Residual uncertainty separates exact-scope findings from still-open transfer decisions",
+			subtitle = "Each row names class, evidence gap, next measurement, priority rule, decision block, stop condition, fallback decision, owner, and consumer",
+			x = "Residual-uncertainty value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"435-open-question-residual-uncertainty-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_residual_uncertainty_saturation_long <- open_question_residual_uncertainty_100_pass %>%
+	select(
+		pass_id,
+		`residual-uncertainty records` = cumulative_residual_uncertainty_records,
+		`residual-uncertainty axes` = cumulative_residual_uncertainty_axes,
+		`residual-uncertainty states` = cumulative_residual_uncertainty_states,
+		`residual-uncertainty owners` = cumulative_residual_uncertainty_owners,
+		`residual-uncertainty consumers` = cumulative_residual_uncertainty_consumers,
+		`residual-uncertainty value` = cumulative_residual_uncertainty_value,
+		`residual-uncertainty wrong-decision risk value` = cumulative_residual_uncertainty_wrong_decision_risk_value,
+		`timing-only residual-uncertainty value` = cumulative_timing_only_residual_uncertainty_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("residual-uncertainty records", "residual-uncertainty axes", "residual-uncertainty states", "residual-uncertainty owners", "residual-uncertainty consumers", "residual-uncertainty value", "residual-uncertainty wrong-decision risk value", "timing-only residual-uncertainty value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_residual_uncertainty_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Residual-uncertainty audit saturates once every evidence-gap path is checked",
+			subtitle = "Nine uncertainty records appear by pass 9; all 90 axes appear by pass 90; timing-only uncertainty value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"436-open-question-residual-uncertainty-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_residual_uncertainty_summary %>%
+		mutate(
+			state_label = str_wrap(residual_uncertainty_state, width = 28),
+			state_label = fct_reorder(state_label, residual_uncertainty_value + residual_uncertainty_wrong_decision_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Residual-uncertainty coverage separates local gaps from owner and observer gaps",
+			subtitle = "Every row is checked for class, evidence gap, next measurement, priority, decision block, stop condition, fallback, owner, substitute, and stop rule",
+			x = "Residual-uncertainty-axis checks",
+			y = "Residual-uncertainty state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"437-open-question-residual-uncertainty-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

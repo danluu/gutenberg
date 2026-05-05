@@ -1,0 +1,7 @@
+residual_uncertainty_state,generalization_boundary_state,pass_result,passes,first_pass,residual_uncertainty_records,axis_checks,residual_uncertainty_owners,residual_uncertainty_consumers,residual_uncertainty_value,residual_uncertainty_wrong_decision_risk_value,timing_only_residual_uncertainty_value,analysis_only_value
+local packet residual uncertainty,local packet generalization boundary,residual uncertainty: local packet,40,1,4,40,4,3,121548657292,65992393197,0,0
+owner artifact residual uncertainty,owner artifact generalization boundary,residual uncertainty: owner or observer artifact,20,5,2,20,2,2,24303797828,13195257088,0,0
+observer artifact residual uncertainty,observer artifact generalization boundary,residual uncertainty: owner or observer artifact,30,7,3,30,3,3,15012591453,8150783865,0,0
+local packet residual uncertainty,local packet generalization boundary,repeat: residual-uncertainty-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact residual uncertainty,owner artifact generalization boundary,repeat: residual-uncertainty-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact residual uncertainty,observer artifact generalization boundary,repeat: residual-uncertainty-axis already checked,3,97,3,0,3,3,0,0,0,0

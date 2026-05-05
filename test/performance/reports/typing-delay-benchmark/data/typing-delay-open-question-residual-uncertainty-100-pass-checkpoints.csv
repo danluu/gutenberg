@@ -1,0 +1,10 @@
+pass_id,cumulative_residual_uncertainty_records,cumulative_residual_uncertainty_axes,cumulative_residual_uncertainty_states,cumulative_residual_uncertainty_owners,cumulative_residual_uncertainty_consumers,cumulative_residual_uncertainty_value,cumulative_residual_uncertainty_wrong_decision_risk_value,cumulative_timing_only_residual_uncertainty_value,cumulative_analysis_only_value
+1,1,1,1,1,1,33516681712,18197206679,0,0
+5,5,5,2,5,4,135198210705,73403143061,0,0
+9,9,9,3,9,8,160865046573,87338434150,0,0
+10,9,10,3,9,8,160865046573,87338434150,0,0
+20,9,20,3,9,8,160865046573,87338434150,0,0
+50,9,50,3,9,8,160865046573,87338434150,0,0
+90,9,90,3,9,8,160865046573,87338434150,0,0
+91,9,90,3,9,8,160865046573,87338434150,0,0
+100,9,90,3,9,8,160865046573,87338434150,0,0
