@@ -369,9 +369,49 @@ async function ensureWpEnvRunning() {
 	}
 }
 
+async function clearCollaborationSyncStorage( label ) {
+	const cleanupLogPath = path.join(
+		OUTPUT_DIR,
+		`${ label }-sync-storage-cleanup.log`
+	);
+	const cleanupScript = [
+		'ids=$(wp post list --post_type=wp_sync_storage --post_status=any --format=ids)',
+		'if [ -n "$ids" ]; then',
+		'  wp post delete $ids --force',
+		'else',
+		'  echo "No wp_sync_storage posts found."',
+		'fi',
+	].join( '; ' );
+	const cleanupResult = await runCombinedCommand( {
+		command: 'npm',
+		args: [
+			'run',
+			'wp-env-test',
+			'--',
+			'run',
+			'cli',
+			'sh',
+			'-lc',
+			cleanupScript,
+		],
+		env: getSharedEnv(),
+		logPath: cleanupLogPath,
+		timeoutMs: 2 * 60 * 1000,
+	} );
+
+	if ( ! cleanupResult.ok ) {
+		throw new Error(
+			`Failed to clear collaboration sync storage. See ${ cleanupResult.logPath }.`
+		);
+	}
+
+	return cleanupResult;
+}
+
 async function runFullPreflight( label ) {
 	await ensureFileExists( path.join( REPO_ROOT, SPEC_PATH ) );
 	await ensureFileExists( SCHEMA_PATH );
+	await clearCollaborationSyncStorage( `${ label }-preflight` );
 
 	const preflightLogPath = path.join(
 		OUTPUT_DIR,
@@ -491,6 +531,7 @@ function buildAttemptEnv( seed, convergenceTimeoutMs, artifactsDir ) {
 async function runSeedAttempt( seed, label, convergenceTimeoutMs ) {
 	const attemptDir = path.join( OUTPUT_DIR, `seed-${ seed }`, label );
 	const artifactsDir = path.join( attemptDir, 'artifacts' );
+	await clearCollaborationSyncStorage( `${ label }-seed-${ seed }` );
 	const commandResult = await runCombinedCommand( {
 		command: 'npm',
 		args: [ 'run', 'test:e2e', '--', SPEC_PATH, '--project=chromium' ],

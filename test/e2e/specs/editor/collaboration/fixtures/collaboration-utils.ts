@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Page, BrowserContext } from '@playwright/test';
+import type { Page, BrowserContext, Route } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -37,6 +37,7 @@ interface NormalizedBlock {
 interface NormalizedCollaborativeState {
 	blocks: NormalizedBlock[];
 	crdtDocument: string | null;
+	serializedContent: string;
 	title: string;
 }
 
@@ -52,6 +53,11 @@ export const SECOND_USER: UserCredentials = {
 };
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
+
+function isSyncRequestRoute( route: Route ) {
+	const request = route.request();
+	return request.method() === 'POST' && request.url().includes( 'wp-sync' );
+}
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -428,6 +434,49 @@ export default class CollaborationUtils {
 		}
 	}
 
+	async routeNextSyncRequest(
+		page: Page,
+		onMatch: ( route: Route ) => Promise< void >
+	) {
+		let handled = false;
+		const handler = async ( route: Route ) => {
+			if ( handled || ! isSyncRequestRoute( route ) ) {
+				await route.fallback();
+				return;
+			}
+
+			handled = true;
+			try {
+				await onMatch( route );
+			} finally {
+				await page.unroute( '**/*', handler );
+			}
+		};
+
+		await page.route( '**/*', handler );
+	}
+
+	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		await this.routeNextSyncRequest( page, async ( route ) => {
+			await new Promise( ( resolve ) => setTimeout( resolve, delayMs ) );
+			await route.fallback();
+		} );
+	}
+
+	async failNextSyncRequest( page: Page, status: number ) {
+		await this.routeNextSyncRequest( page, async ( route ) => {
+			await route.fulfill( {
+				status,
+				contentType: 'application/json',
+				body: JSON.stringify( {
+					code: 'rtc_fuzz_injected_sync_failure',
+					message: 'Injected sync failure from RTC browser fuzzer.',
+					data: { status },
+				} ),
+			} );
+		} );
+	}
+
 	/**
 	 * Returns a normalized view of the current collaborative editor state for
 	 * equality checks across participants.
@@ -480,6 +529,8 @@ export default class CollaborationUtils {
 							.select( 'core/editor' )
 							.getEditedPostAttribute( 'title' ) ?? '',
 					blocks: normalizeBlocks( blocks ),
+					serializedContent:
+						( window as any ).wp.blocks.serialize( blocks ) ?? '',
 					crdtDocument: includePersistedDoc
 						? record?.meta?._crdt_document ?? null
 						: null,
