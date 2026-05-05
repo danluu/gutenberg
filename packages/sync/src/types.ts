@@ -130,6 +130,7 @@ export interface RecordHandlers {
 		options?: { undoIgnore?: boolean }
 	) => void;
 	getEditedRecord: () => Promise< ObjectData >;
+	getPersistedRecord?: () => Promise< ObjectData | undefined >;
 	onStatusChange: OnStatusChangeCallback;
 	persistCRDTDoc: () => void;
 	refetchRecord: () => Promise< void >;
@@ -147,7 +148,8 @@ export interface SyncConfig {
 	) => Awareness | undefined;
 	getChangesFromCRDTDoc: (
 		ydoc: Y.Doc,
-		editedRecord: ObjectData
+		editedRecord: ObjectData,
+		persistedRecord?: ObjectData
 	) => ObjectData;
 	getPersistedCRDTDoc?: ( record: ObjectData ) => string | null;
 	shouldSync?: (
@@ -156,10 +158,15 @@ export interface SyncConfig {
 	) => boolean;
 }
 
+export interface CreatePersistedCRDTDocOptions {
+	record?: ObjectData;
+}
+
 export interface SyncManager {
 	createPersistedCRDTDoc: (
 		objectType: ObjectType,
-		objectId: ObjectID
+		objectId: ObjectID,
+		options?: CreatePersistedCRDTDocOptions
 	) => Promise< string | null >;
 	getAwareness: < State extends Awareness >(
 		objectType: ObjectType,
