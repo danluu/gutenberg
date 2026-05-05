@@ -1,0 +1,7 @@
+closure_ledger_state,retirement_validation_state,pass_result,passes,first_pass,closure_ledger_records,axis_checks,closure_ledger_owners,closure_ledger_consumers,closure_ledger_value,closure_ledger_stale_status_risk_value,timing_only_closure_ledger_value,analysis_only_value
+local packet closure ledger,local packet retirement validation,closure ledger: local packet,40,1,4,40,4,3,755412117458,410615520309,0,0
+owner artifact closure ledger,owner artifact retirement validation,closure ledger: owner or observer artifact,20,5,2,20,2,2,151045546464,82103058996,0,0
+observer artifact closure ledger,observer artifact retirement validation,closure ledger: owner or observer artifact,30,7,3,30,3,3,93301676022,50715517182,0,0
+local packet closure ledger,local packet retirement validation,repeat: closure-ledger-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact closure ledger,owner artifact retirement validation,repeat: closure-ledger-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact closure ledger,observer artifact retirement validation,repeat: closure-ledger-axis already checked,3,97,3,0,3,3,0,0,0,0

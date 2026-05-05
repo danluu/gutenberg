@@ -1,0 +1,10 @@
+pass_id,cumulative_closure_ledger_records,cumulative_closure_ledger_axes,cumulative_closure_ledger_states,cumulative_closure_ledger_owners,cumulative_closure_ledger_consumers,cumulative_closure_ledger_value,cumulative_closure_ledger_stale_status_risk_value,cumulative_timing_only_closure_ledger_value,cumulative_analysis_only_value
+1,1,1,1,1,1,208302650707,113226011770,0,0
+5,5,5,2,5,4,840242655849,456726424347,0,0
+9,9,9,3,9,8,999759339944,543434096487,0,0
+10,9,10,3,9,8,999759339944,543434096487,0,0
+20,9,20,3,9,8,999759339944,543434096487,0,0
+50,9,50,3,9,8,999759339944,543434096487,0,0
+90,9,90,3,9,8,999759339944,543434096487,0,0
+91,9,90,3,9,8,999759339944,543434096487,0,0
+100,9,90,3,9,8,999759339944,543434096487,0,0

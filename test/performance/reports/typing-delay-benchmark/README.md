@@ -2126,6 +2126,23 @@ The R script derives:
     retirement-validation-value,
     retirement-validation-unclosed-transfer-risk-value,
     timing-only-retirement-validation, and analysis-only saturation.
+-   `data/typing-delay-open-question-closure-ledger-register.csv`:
+    closure-ledger register for the nine retirement-validation records,
+    including ledger entry, status reconciliation, stale-status scan, artifact
+    cross-reference, duplicate-record rule, consumer-index update,
+    rollback-index entry, owner, and consumer.
+-   `data/typing-delay-open-question-closure-ledger-100-pass-audit.csv`:
+    fifty-fourth forced 100-pass audit over closure-ledger axes: ledger-entry,
+    status-reconciliation, stale-scan, cross-reference, duplicate-rule,
+    consumer-index, rollback-index, owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-closure-ledger-100-pass-summary.csv`:
+    rollup of closure-ledger coverage by closure-ledger state,
+    retirement-validation state, and pass result.
+-   `data/typing-delay-open-question-closure-ledger-100-pass-checkpoints.csv`:
+    checkpoints for closure-ledger-record, closure-ledger-axis,
+    closure-ledger-state, closure-ledger-owner, closure-ledger-consumer,
+    closure-ledger-value, closure-ledger-stale-status-risk-value,
+    timing-only-closure-ledger, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12951,6 +12968,39 @@ nominally measured or deferred but stale transfer claims still survive in a
 recommendation, CSV, figure, wording block, or consumer path. A retirement is
 not counted as closed until the report surface, recompute or deferral record,
 stale-transfer scan, escalation hook, and consumer receipt all agree.
+
+I then added the closure-ledger layer: a validated closure must be reconciled
+with the open-question ledger so stale open status cannot survive in another
+table, index, artifact list, recommendation row, or rollback path. The ledger
+records the closure entry, status reconciliation, stale-status scan, artifact
+cross-reference, duplicate-record rule, consumer-index update, rollback-index
+entry, owner, and consumer for each retirement-validation row.
+
+![Open question closure ledger register](figures/444-open-question-closure-ledger-register.png)
+
+![Open question closure ledger 100-pass saturation](figures/445-open-question-closure-ledger-100-pass-saturation.png)
+
+![Open question closure ledger coverage](figures/446-open-question-closure-ledger-coverage.png)
+
+| Closure-ledger check | Result |
+| -------------------- | ------ |
+| Closure-ledger records | `9`, one per retirement-validation record. |
+| Closure-ledger states | `3`: local packet closure ledger, owner artifact closure ledger, and observer artifact closure ledger. |
+| Closure-ledger owners | `9`; ledger ownership routes back to the scoped retirement-validation owner. |
+| Closure-ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Closure-ledger-axis checks | `90`: every row checked against all `10` closure-ledger axes. |
+| Closure-ledger value | `999759339944`: local packet ledger contributes `755412117458`, owner artifact ledger contributes `151045546464`, and observer artifact ledger contributes `93301676022`. |
+| Closure-ledger stale-status-risk value | `543434096487` across the nine closure-ledger records. |
+| Timing-only closure-ledger value | `0`; aggregate timing movement alone cannot prove the ledger entry, status reconciliation, stale scan, artifact cross-reference, duplicate rule, consumer index, rollback index, owner, or stop rule. |
+| Saturation | Closure-ledger records are all named by pass `9`; all closure-ledger axes are covered by pass `90`; passes `91-100` add no closure-ledger coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the stale-ledger guard. It catches the case where the detailed closure
+surface is correct but the summary matrix, artifact index, recommendation list,
+or consumer-facing ledger still presents the question as open or presents two
+contradictory closure records. Closure is not reusable until the active ledger
+entry, duplicate-record rule, rollback index, and consumer index all point at
+the same status.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

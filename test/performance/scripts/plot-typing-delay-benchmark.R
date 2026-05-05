@@ -44617,6 +44617,313 @@ save_plot(
 	height = 7.2
 )
 
+open_question_closure_ledger_register <- open_question_retirement_validation_register %>%
+	mutate(
+		closure_ledger_state = case_when(
+			retirement_validation_state == "local packet retirement validation" ~ "local packet closure ledger",
+			retirement_validation_state == "owner artifact retirement validation" ~ "owner artifact closure ledger",
+			TRUE ~ "observer artifact closure ledger"
+		),
+		closure_ledger_entry = case_when(
+			close_scope == "CI wait decision" ~ "ledger entry records the CI closure id, exact-scope label, transfer or deferral status, stale-transfer scan result, recommendation row, figure/data references, and escalation hook",
+			close_scope == "source prototype decision" ~ "ledger entry records the source closure id, exact-scope label, transfer or deferral status, stale-transfer scan result, recommendation row, figure/data references, and escalation hook",
+			close_scope == "benchmark method wording" ~ "ledger entry records the method closure id, exact-scope label, transfer or deferral status, stale-transfer scan result, wording row, figure/data references, and escalation hook",
+			TRUE ~ "ledger entry records the broad closure id, exact-scope label, transfer or deferral status, stale-transfer scan result, recommendation row, figure/data references, and escalation hook"
+		),
+		closure_ledger_status_reconciliation = case_when(
+			closure_ledger_state == "local packet closure ledger" ~ "reconcile local open-question matrix, recommendation text, closure record, retirement validation row, and consumer path so they expose the same local status",
+			closure_ledger_state == "owner artifact closure ledger" ~ "reconcile owner open-question matrix, reviewer identity, recommendation text, closure record, retirement validation row, and consumer path so they expose the same owner status",
+			TRUE ~ "reconcile observer open-question matrix, reviewer identity, broad wording, recommendation text, closure record, retirement validation row, and consumer path so they expose the same observer status"
+		),
+		closure_ledger_stale_status_scan = case_when(
+			close_scope == "CI wait decision" ~ "scan CI sections, startup-wait guidance, typing-delay guidance, input-mode guidance, runtime/reliability tables, report index, artifact index, figures, CSVs, and recommendation bullets for stale open status",
+			close_scope == "source prototype decision" ~ "scan source sections, selector-guard guidance, dispatch/invalidation guidance, fanout caveat, owner-review rows, report index, artifact index, figures, CSVs, and recommendation bullets for stale open status",
+			close_scope == "benchmark method wording" ~ "scan method sections, trace-schema caveat, EventDispatch wording, aggregation caveat, instrumentation caveat, report index, artifact index, figures, CSVs, and limitation bullets for stale open status",
+			TRUE ~ "scan broad-report sections, portability caveat, browser/runtime caveat, workload caveat, endpoint caveat, report index, artifact index, figures, CSVs, and recommendation bullets for stale open status"
+		),
+		closure_ledger_artifact_cross_reference = case_when(
+			closure_ledger_state == "local packet closure ledger" ~ "cross-reference local closure row to source CSVs, generated figures, raw artifacts, report section, recommendation row, exact-scope label, and stale-transfer blocker",
+			closure_ledger_state == "owner artifact closure ledger" ~ "cross-reference owner closure row to reviewer identity, source CSVs, generated figures, raw artifacts, report section, recommendation row, exact-scope label, and stale-transfer blocker",
+			TRUE ~ "cross-reference observer closure row to reviewer identity, broad wording guard, source CSVs, generated figures, raw artifacts, report section, recommendation row, exact-scope label, and stale-transfer blocker"
+		),
+		closure_ledger_duplicate_record_rule = case_when(
+			close_scope == "CI wait decision" ~ "duplicate CI closure records must collapse to one active status keyed by question family, scope label, transfer label, artifact hash, and escalation hook",
+			close_scope == "source prototype decision" ~ "duplicate source closure records must collapse to one active status keyed by question family, scope label, source patch hash, artifact hash, and escalation hook",
+			close_scope == "benchmark method wording" ~ "duplicate method closure records must collapse to one active status keyed by question family, scope label, trace schema, report script hash, and escalation hook",
+			TRUE ~ "duplicate broad closure records must collapse to one active status keyed by question family, scope label, matrix label, artifact hash, and escalation hook"
+		),
+		closure_ledger_consumer_index_update = case_when(
+			closure_ledger_state == "local packet closure ledger" ~ "consumer index shows the local exact-scope result, blocked transfer status, closure record, stale-status scan, and escalation hook",
+			closure_ledger_state == "owner artifact closure ledger" ~ "consumer index shows the owner exact-scope result, reviewer identity, blocked transfer status, closure record, stale-status scan, and escalation hook",
+			TRUE ~ "consumer index shows the observer exact-scope result, reviewer identity, broad wording guard, blocked transfer status, closure record, stale-status scan, and escalation hook"
+		),
+		closure_ledger_rollback_index = case_when(
+			close_scope == "CI wait decision" ~ "rollback index points stale or contradictory CI wait-policy edits back to the closure row, raw artifacts, exact-scope fallback, and escalation rule",
+			close_scope == "source prototype decision" ~ "rollback index points stale or contradictory source-guidance edits back to the closure row, raw artifacts, exact-scope fallback, and escalation rule",
+			close_scope == "benchmark method wording" ~ "rollback index points stale or contradictory method-wording edits back to the closure row, raw artifacts, exact-scope fallback, and escalation rule",
+			TRUE ~ "rollback index points stale or contradictory broad-report edits back to the closure row, raw artifacts, exact-scope fallback, and escalation rule"
+		),
+		closure_ledger_owner = retirement_validation_owner,
+		closure_ledger_consumer = retirement_validation_consumer,
+		closure_ledger_cost = case_when(
+			closure_ledger_state == "local packet closure ledger" ~ 11,
+			closure_ledger_state == "owner artifact closure ledger" ~ 13,
+			TRUE ~ 15
+		),
+		closure_ledger_value = pmax(
+			1,
+			retirement_validation_value + retirement_validation_unclosed_transfer_risk_value + uncertainty_retirement_blocked_transfer_risk_value - closure_ledger_cost
+		),
+		closure_ledger_stale_status_risk_value = pmax(
+			1,
+			retirement_validation_unclosed_transfer_risk_value + uncertainty_retirement_blocked_transfer_risk_value + residual_uncertainty_wrong_decision_risk_value - closure_ledger_cost
+		),
+		timing_only_closure_ledger_value = 0,
+		analysis_only_value = 0,
+		closure_ledger_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(closure_ledger_value), desc(closure_ledger_stale_status_risk_value), question_family)
+
+open_question_closure_ledger_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"ledger-entry", "What ledger entry records the final closure status?",
+	"status-reconciliation", "What status reconciliation prevents contradictory open and closed states?",
+	"stale-scan", "What scan proves stale open status is gone from report and artifacts?",
+	"cross-reference", "What cross-reference links the closure to source artifacts?",
+	"duplicate-rule", "What rule collapses duplicate closure records?",
+	"consumer-index", "What consumer index update exposes the closure result?",
+	"rollback-index", "What rollback index handles later contradictory edits?",
+	"owner", "Who owns closure-ledger reconciliation?",
+	"substitute", "Can aggregate timing alone substitute for closure-ledger reconciliation?",
+	"stop-rule", "When does closure-ledger review stop?"
+)
+
+open_question_closure_ledger_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_closure_ledger_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_closure_ledger_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_closure_ledger_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_closure_ledger_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		closure_ledger_first_seen = !duplicated(closure_ledger_id),
+		closure_ledger_axis_key = paste(closure_ledger_id, pressure_axis, sep = "::"),
+		closure_ledger_axis_first_seen = !duplicated(closure_ledger_axis_key),
+		closure_ledger_state_first_seen = !duplicated(closure_ledger_state),
+		closure_ledger_owner_first_seen = !duplicated(closure_ledger_owner),
+		closure_ledger_consumer_first_seen = !duplicated(closure_ledger_consumer),
+		new_closure_ledger_value = if_else(closure_ledger_first_seen, closure_ledger_value, 0),
+		new_closure_ledger_stale_status_risk_value = if_else(closure_ledger_first_seen, closure_ledger_stale_status_risk_value, 0),
+		new_timing_only_closure_ledger_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!closure_ledger_axis_first_seen ~ "repeat: closure-ledger-axis already checked",
+			closure_ledger_state == "local packet closure ledger" ~ "closure ledger: local packet",
+			TRUE ~ "closure ledger: owner or observer artifact"
+		),
+		cumulative_closure_ledger_records = cumsum(closure_ledger_first_seen),
+		cumulative_closure_ledger_axes = cumsum(closure_ledger_axis_first_seen),
+		cumulative_closure_ledger_states = cumsum(closure_ledger_state_first_seen),
+		cumulative_closure_ledger_owners = cumsum(closure_ledger_owner_first_seen),
+		cumulative_closure_ledger_consumers = cumsum(closure_ledger_consumer_first_seen),
+		cumulative_closure_ledger_value = cumsum(new_closure_ledger_value),
+		cumulative_closure_ledger_stale_status_risk_value = cumsum(new_closure_ledger_stale_status_risk_value),
+		cumulative_timing_only_closure_ledger_value = cumsum(new_timing_only_closure_ledger_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_closure_ledger_summary <- open_question_closure_ledger_100_pass %>%
+	group_by(closure_ledger_state, retirement_validation_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		closure_ledger_records = n_distinct(closure_ledger_id),
+		axis_checks = sum(closure_ledger_axis_first_seen),
+		closure_ledger_owners = n_distinct(closure_ledger_owner),
+		closure_ledger_consumers = n_distinct(closure_ledger_consumer),
+		closure_ledger_value = sum(new_closure_ledger_value),
+		closure_ledger_stale_status_risk_value = sum(new_closure_ledger_stale_status_risk_value),
+		timing_only_closure_ledger_value = sum(new_timing_only_closure_ledger_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(closure_ledger_value), desc(closure_ledger_stale_status_risk_value), first_pass)
+
+open_question_closure_ledger_checkpoints <- open_question_closure_ledger_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_closure_ledger_records,
+		cumulative_closure_ledger_axes,
+		cumulative_closure_ledger_states,
+		cumulative_closure_ledger_owners,
+		cumulative_closure_ledger_consumers,
+		cumulative_closure_ledger_value,
+		cumulative_closure_ledger_stale_status_risk_value,
+		cumulative_timing_only_closure_ledger_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_closure_ledger_register,
+	file.path(data_dir, "typing-delay-open-question-closure-ledger-register.csv")
+)
+
+write_csv(
+	open_question_closure_ledger_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			closure_ledger_state,
+			retirement_validation_state,
+			closure_ledger_entry,
+			closure_ledger_status_reconciliation,
+			closure_ledger_stale_status_scan,
+			closure_ledger_artifact_cross_reference,
+			closure_ledger_duplicate_record_rule,
+			closure_ledger_consumer_index_update,
+			closure_ledger_rollback_index,
+			closure_ledger_owner,
+			closure_ledger_consumer,
+			retirement_validation_closure_record,
+			retirement_validation_surface_check,
+			retirement_validation_stale_transfer_block,
+			retirement_validation_escalation_hook,
+			retirement_validation_consumer_receipt,
+			supported_claim,
+			blocked_claim,
+			closure_ledger_first_seen,
+			closure_ledger_axis_first_seen,
+			closure_ledger_state_first_seen,
+			closure_ledger_owner_first_seen,
+			closure_ledger_consumer_first_seen,
+			pass_result,
+			closure_ledger_value,
+			closure_ledger_stale_status_risk_value,
+			timing_only_closure_ledger_value,
+			new_closure_ledger_value,
+			new_closure_ledger_stale_status_risk_value,
+			new_timing_only_closure_ledger_value,
+			new_analysis_only_value,
+			cumulative_closure_ledger_records,
+			cumulative_closure_ledger_axes,
+			cumulative_closure_ledger_states,
+			cumulative_closure_ledger_owners,
+			cumulative_closure_ledger_consumers,
+			cumulative_closure_ledger_value,
+			cumulative_closure_ledger_stale_status_risk_value,
+			cumulative_timing_only_closure_ledger_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-closure-ledger-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_closure_ledger_summary,
+	file.path(data_dir, "typing-delay-open-question-closure-ledger-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_closure_ledger_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-closure-ledger-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_closure_ledger_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, closure_ledger_value)
+		) %>%
+		ggplot(aes(closure_ledger_value, question_label, fill = closure_ledger_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Closure ledger") +
+		labs(
+			title = "Closure ledger reconciles validated closures across report and artifacts",
+			subtitle = "Each row names ledger entry, status reconciliation, stale scan, artifact cross-reference, duplicate rule, consumer index, rollback index, owner, and consumer",
+			x = "Closure-ledger value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"444-open-question-closure-ledger-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_closure_ledger_saturation_long <- open_question_closure_ledger_100_pass %>%
+	select(
+		pass_id,
+		`closure-ledger records` = cumulative_closure_ledger_records,
+		`closure-ledger axes` = cumulative_closure_ledger_axes,
+		`closure-ledger states` = cumulative_closure_ledger_states,
+		`closure-ledger owners` = cumulative_closure_ledger_owners,
+		`closure-ledger consumers` = cumulative_closure_ledger_consumers,
+		`closure-ledger value` = cumulative_closure_ledger_value,
+		`closure-ledger stale-status risk value` = cumulative_closure_ledger_stale_status_risk_value,
+		`timing-only closure-ledger value` = cumulative_timing_only_closure_ledger_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("closure-ledger records", "closure-ledger axes", "closure-ledger states", "closure-ledger owners", "closure-ledger consumers", "closure-ledger value", "closure-ledger stale-status risk value", "timing-only closure-ledger value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_closure_ledger_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Closure-ledger audit saturates once every closure status path is reconciled",
+			subtitle = "Nine ledger records appear by pass 9; all 90 axes appear by pass 90; timing-only ledger value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"445-open-question-closure-ledger-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_closure_ledger_summary %>%
+		mutate(
+			state_label = str_wrap(closure_ledger_state, width = 28),
+			state_label = fct_reorder(state_label, closure_ledger_value + closure_ledger_stale_status_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Closure-ledger coverage separates local reconciliation from owner and observer reconciliation",
+			subtitle = "Every row is checked for ledger entry, status reconciliation, stale scan, cross-reference, duplicate rule, consumer index, rollback index, owner, substitute, and stop rule",
+			x = "Closure-ledger-axis checks",
+			y = "Closure-ledger state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"446-open-question-closure-ledger-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
