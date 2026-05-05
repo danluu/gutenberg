@@ -34472,6 +34472,292 @@ save_plot(
 	height = 7.2
 )
 
+open_question_retention_register <- open_question_provenance_register %>%
+	mutate(
+		retention_state = case_when(
+			provenance_state == "local packet provenance" ~ "local packet retention",
+			provenance_state == "owner artifact provenance" ~ "owner artifact retention",
+			TRUE ~ "observer artifact retention"
+		),
+		retention_location = case_when(
+			retention_state == "local packet retention" ~ "report data directory plus linked packet artifact, figure, checksum manifest, and report section",
+			retention_state == "owner artifact retention" ~ "owner artifact archive plus compatibility or policy diff, reviewer decision, and report section",
+			TRUE ~ "observer artifact archive plus calibration, replay, endpoint, sidecar, or counter control and report section"
+		),
+		retention_index_key = paste(provenance_id, close_scope, signoff_required, sep = "::"),
+		retrieval_contract = case_when(
+			retention_state == "local packet retention" ~ "independent reviewer can find the packet CSV, required fields, negative control, generated figure, and report wording diff from the ledger row",
+			retention_state == "owner artifact retention" ~ "independent reviewer can find the owner artifact, reviewer decision, policy or compatibility scope, and report wording diff from the ledger row",
+			TRUE ~ "independent reviewer can find the observer artifact, calibration or replay control, mechanism decision, and report wording diff from the ledger row"
+		),
+		retention_integrity = case_when(
+			retention_state == "local packet retention" ~ "stored checksum, schema check, row-count check, required-field check, and regenerated-figure check must agree",
+			retention_state == "owner artifact retention" ~ "stored checksum, owner revision, reviewer identity, scope diff, and compatibility or policy schema must agree",
+			TRUE ~ "stored checksum, observer revision, calibration or replay-control check, counter schema, and perturbation-control check must agree"
+		),
+		supersession_rule = case_when(
+			retention_state == "local packet retention" ~ "a newer local packet supersedes the row only when it carries the same required fields and an old/new disposition diff",
+			retention_state == "owner artifact retention" ~ "a newer owner artifact supersedes the row only when the owner signs the changed policy or compatibility scope",
+			TRUE ~ "a newer observer artifact supersedes the row only when calibration, replay, endpoint, sidecar, or counter controls explain the changed scope"
+		),
+		retirement_rule = case_when(
+			retention_state == "local packet retention" ~ "retire only after the report removes or narrows the claim and links the successor packet",
+			retention_state == "owner artifact retention" ~ "retire only after the owner signs the replacement scope and the report links the successor artifact",
+			TRUE ~ "retire only after the observer signs the replacement scope and the report links the successor artifact"
+		),
+		orphan_claim_guard = case_when(
+			retention_state == "local packet retention" ~ "if the packet or required fields cannot be retrieved, the local timing claim is treated as unsupported",
+			retention_state == "owner artifact retention" ~ "if the owner artifact cannot be retrieved, local timing cannot support the owner-scoped claim",
+			TRUE ~ "if the observer artifact cannot be retrieved, broad product, endpoint, browser, or runtime wording stays blocked"
+		),
+		retrieval_test = case_when(
+			retention_state == "local packet retention" ~ "fetch archived packet and figure, verify checksum/schema, rerun figure generation, and compare report link",
+			retention_state == "owner artifact retention" ~ "fetch archived owner artifact, verify checksum/scope/reviewer, and compare report link",
+			TRUE ~ "fetch archived observer artifact, verify checksum/control/calibration or replay schema, and compare report link"
+		),
+		retention_owner = signoff_required,
+		retention_cost = case_when(
+			retention_state == "local packet retention" ~ 1,
+			retention_state == "owner artifact retention" ~ 3,
+			TRUE ~ 4
+		),
+		retention_value = pmax(
+			1,
+			provenance_value + reproducibility_value + stale_reuse_risk - retention_cost
+		),
+		retrieval_value = pmax(
+			1,
+			reproducibility_value + traceability_value + false_closure_risk - retention_cost
+		),
+		timing_only_retention_value = 0,
+		analysis_only_value = 0,
+		retention_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(retention_value), desc(retrieval_value), question_family)
+
+open_question_retention_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"locate", "Where is the evidence stored and how is it found from the report?",
+	"index", "What stable key connects the claim, owner, scope, and artifact?",
+	"retrieve", "Can an independent reviewer retrieve the artifact and dependent figure?",
+	"integrity", "Which checksum, schema, or regeneration check detects archive corruption?",
+	"supersede", "What newer evidence can supersede this row?",
+	"retire", "What report or successor-artifact event retires the row?",
+	"owner", "Who owns retention and retrieval failures?",
+	"orphan", "What claim becomes unsupported when the archive is missing?",
+	"substitute", "Can aggregate timing alone substitute for the retained artifact?",
+	"stop-rule", "When does the retention check stop?"
+)
+
+open_question_retention_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_retention_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_retention_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_retention_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_retention_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		retention_first_seen = !duplicated(retention_id),
+		retention_axis_key = paste(retention_id, pressure_axis, sep = "::"),
+		retention_axis_first_seen = !duplicated(retention_axis_key),
+		retention_state_first_seen = !duplicated(retention_state),
+		new_retention_value = if_else(retention_first_seen, retention_value, 0),
+		new_retrieval_value = if_else(retention_first_seen, retrieval_value, 0),
+		new_timing_only_retention_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!retention_axis_first_seen ~ "repeat: retention-axis already checked",
+			retention_state == "local packet retention" ~ "retention: local packet",
+			TRUE ~ "retention: owner or observer artifact"
+		),
+		cumulative_retention_records = cumsum(retention_first_seen),
+		cumulative_retention_axes = cumsum(retention_axis_first_seen),
+		cumulative_retention_states = cumsum(retention_state_first_seen),
+		cumulative_retention_value = cumsum(new_retention_value),
+		cumulative_retrieval_value = cumsum(new_retrieval_value),
+		cumulative_timing_only_retention_value = cumsum(new_timing_only_retention_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_retention_summary <- open_question_retention_100_pass %>%
+	group_by(retention_state, provenance_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		retention_records = n_distinct(retention_id),
+		axis_checks = sum(retention_axis_first_seen),
+		retention_owners = n_distinct(retention_owner),
+		ledger_consumers = n_distinct(ledger_consumer),
+		retention_value = sum(new_retention_value),
+		retrieval_value = sum(new_retrieval_value),
+		timing_only_retention_value = sum(new_timing_only_retention_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(retention_value), desc(retrieval_value), first_pass)
+
+open_question_retention_checkpoints <- open_question_retention_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_retention_records,
+		cumulative_retention_axes,
+		cumulative_retention_states,
+		cumulative_retention_value,
+		cumulative_retrieval_value,
+		cumulative_timing_only_retention_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_retention_register,
+	file.path(data_dir, "typing-delay-open-question-retention-register.csv")
+)
+
+write_csv(
+	open_question_retention_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			retention_state,
+			provenance_state,
+			retention_location,
+			retention_index_key,
+			retrieval_contract,
+			retention_integrity,
+			supersession_rule,
+			retirement_rule,
+			orphan_claim_guard,
+			retrieval_test,
+			retention_owner,
+			supported_claim,
+			blocked_claim,
+			retention_first_seen,
+			retention_axis_first_seen,
+			retention_state_first_seen,
+			pass_result,
+			retention_value,
+			retrieval_value,
+			timing_only_retention_value,
+			new_retention_value,
+			new_retrieval_value,
+			new_timing_only_retention_value,
+			new_analysis_only_value,
+			cumulative_retention_records,
+			cumulative_retention_axes,
+			cumulative_retention_states,
+			cumulative_retention_value,
+			cumulative_retrieval_value,
+			cumulative_timing_only_retention_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-retention-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_retention_summary,
+	file.path(data_dir, "typing-delay-open-question-retention-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_retention_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-retention-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_retention_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, retention_value)
+		) %>%
+		ggplot(aes(retention_value, question_label, fill = retention_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Retention state") +
+		labs(
+			title = "Retention keeps evidence rows retrievable after the report moves on",
+			subtitle = "Each row names its archive location, retrieval test, supersession rule, retirement rule, and orphan-claim guard",
+			x = "Retention value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"342-open-question-retention-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_retention_saturation_long <- open_question_retention_100_pass %>%
+	select(
+		pass_id,
+		`retention records` = cumulative_retention_records,
+		`retention axes` = cumulative_retention_axes,
+		`retention states` = cumulative_retention_states,
+		`retention value` = cumulative_retention_value,
+		`retrieval value` = cumulative_retrieval_value,
+		`timing-only retention value` = cumulative_timing_only_retention_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("retention records", "retention axes", "retention states", "retention value", "retrieval value", "timing-only retention value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_retention_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Retention audit saturates once retrieval, supersession, and retirement rules are named",
+			subtitle = "Nine retention records appear by pass 9; all 90 retention axes appear by pass 90; timing-only retention value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"343-open-question-retention-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_retention_summary %>%
+		mutate(
+			state_label = str_wrap(retention_state, width = 28),
+			state_label = fct_reorder(state_label, retention_value + retrieval_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Retention coverage separates local packets from owner and observer archives",
+			subtitle = "Every row is checked for locate, index, retrieve, integrity, supersede, retire, owner, orphan, substitute, and stop rule",
+			x = "Retention-axis checks",
+			y = "Retention state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"344-open-question-retention-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

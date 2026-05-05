@@ -1,0 +1,10 @@
+pass_id,cumulative_retention_records,cumulative_retention_axes,cumulative_retention_states,cumulative_retention_value,cumulative_retrieval_value,cumulative_timing_only_retention_value,cumulative_analysis_only_value
+1,1,1,1,977,361,0,0
+5,5,5,2,3923,1476,0,0
+9,9,9,3,4616,1798,0,0
+10,9,10,3,4616,1798,0,0
+20,9,20,3,4616,1798,0,0
+50,9,50,3,4616,1798,0,0
+90,9,90,3,4616,1798,0,0
+91,9,90,3,4616,1798,0,0
+100,9,90,3,4616,1798,0,0

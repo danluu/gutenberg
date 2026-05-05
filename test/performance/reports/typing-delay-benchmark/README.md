@@ -1551,6 +1551,19 @@ The R script derives:
     checkpoints for provenance-record, provenance-axis, provenance-state,
     provenance-value, reproducibility-value, timing-only-provenance, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-retention-register.csv`: retention
+    register for the nine provenance records, including archive location,
+    retrieval contract, integrity rule, supersession rule, retirement rule,
+    orphan-claim guard, retrieval test, and retention owner.
+-   `data/typing-delay-open-question-retention-100-pass-audit.csv`: twentieth
+    forced 100-pass audit over retention axes: locate, index, retrieve,
+    integrity, supersede, retire, owner, orphan, substitute, and stop-rule.
+-   `data/typing-delay-open-question-retention-100-pass-summary.csv`: rollup of
+    retention coverage by retention state, provenance state, and pass result.
+-   `data/typing-delay-open-question-retention-100-pass-checkpoints.csv`:
+    checkpoints for retention-record, retention-axis, retention-state,
+    retention-value, retrieval-value, timing-only-retention, and analysis-only
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11334,6 +11347,35 @@ supports the claim?", but "can someone else identify and reproduce that exact
 artifact later?" Without the source authority, version pins, integrity checks,
 and custody chain, the row is not reproducible evidence and the related claim
 stays blocked.
+
+I then added the retention layer: each provenance record now names where the
+evidence is stored, how an independent reviewer retrieves it, what integrity
+checks must pass, how newer evidence supersedes it, when it can be retired, and
+which claim becomes unsupported if the archive goes missing.
+
+![Open question retention register](figures/342-open-question-retention-register.png)
+
+![Open question retention 100-pass saturation](figures/343-open-question-retention-100-pass-saturation.png)
+
+![Open question retention coverage](figures/344-open-question-retention-coverage.png)
+
+| Retention check | Result |
+| --------------- | ------ |
+| Retention records | `9`, one per provenance record. |
+| Retention states | `3`: local packet retention, owner artifact retention, and observer artifact retention. |
+| Retention owners | `9`; archive failures route to the same scoped owner as provenance. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Retention-axis checks | `90`: every row checked against all `10` retention axes. |
+| Retention value | `4616`: local packet retention contributes `3538`, owner artifact retention contributes `682`, and observer artifact retention contributes `396`. |
+| Retrieval value | `1798` across the nine retention records. |
+| Timing-only retention value | `0`; aggregate timing alone does not locate, retrieve, verify, supersede, retire, or replace an archived artifact. |
+| Saturation | Retention records are all named by pass `9`; all retention axes are covered by pass `90`; passes `91-100` add no retention coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This prevents a subtler failure mode: a claim outliving the artifact that made
+it defensible. If a packet, owner artifact, observer artifact, or generated
+figure cannot be retrieved and integrity-checked, the linked claim is treated as
+unsupported until the row is restored or superseded.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

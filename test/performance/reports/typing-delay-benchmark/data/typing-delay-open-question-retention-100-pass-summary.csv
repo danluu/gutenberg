@@ -1,0 +1,7 @@
+retention_state,provenance_state,pass_result,passes,first_pass,retention_records,axis_checks,retention_owners,ledger_consumers,retention_value,retrieval_value,timing_only_retention_value,analysis_only_value
+local packet retention,local packet provenance,retention: local packet,40,1,4,40,4,3,3538,1313,0,0
+owner artifact retention,owner artifact provenance,retention: owner or observer artifact,20,5,2,20,2,2,682,293,0,0
+observer artifact retention,observer artifact provenance,retention: owner or observer artifact,30,7,3,30,3,3,396,192,0,0
+local packet retention,local packet provenance,repeat: retention-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact retention,owner artifact provenance,repeat: retention-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact retention,observer artifact provenance,repeat: retention-axis already checked,3,97,3,0,3,3,0,0,0,0
