@@ -13,11 +13,7 @@ import {
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
 	LOCAL_SYNC_MANAGER_ORIGIN,
 } from './config';
-import {
-	logPerformanceTiming,
-	passThru,
-	yieldToEventLoop,
-} from './performance';
+import { logPerformanceTiming, passThru } from './performance';
 import { getProviderCreators } from './providers';
 import type {
 	CollectionHandlers,
@@ -84,6 +80,8 @@ export function createSyncManager( debug = false ): SyncManager {
 	const debugWrap = debug ? logPerformanceTiming : passThru;
 	const collectionStates: Map< ObjectType, CollectionState > = new Map();
 	const entityStates: Map< EntityID, EntityState > = new Map();
+	let pendingUpdateCount = 0;
+	let pendingUpdateFlush: Promise< void > = Promise.resolve();
 
 	/**
 	 * A "sync-aware" undo manager for all synced entities. It is lazily created
@@ -601,6 +599,44 @@ export function createSyncManager( debug = false ): SyncManager {
 		}
 	}
 
+	function scheduleUpdateCRDTDoc(
+		objectType: ObjectType,
+		objectId: ObjectID | null,
+		changes: Partial< ObjectData >,
+		origin: string,
+		options: SyncManagerUpdateOptions = {}
+	): void {
+		pendingUpdateCount++;
+
+		const updatePromise = new Promise< void >( ( resolve ) => {
+			setTimeout( () => {
+				try {
+					updateCRDTDoc(
+						objectType,
+						objectId,
+						changes,
+						origin,
+						options
+					);
+				} finally {
+					pendingUpdateCount--;
+					resolve();
+				}
+			}, 0 );
+		} );
+
+		pendingUpdateFlush = Promise.all( [
+			pendingUpdateFlush,
+			updatePromise,
+		] ).then( () => undefined );
+	}
+
+	async function flushPendingUpdates(): Promise< void > {
+		while ( pendingUpdateCount > 0 ) {
+			await pendingUpdateFlush;
+		}
+	}
+
 	/**
 	 * Update the entity record in the local store with changes from the CRDT
 	 * document.
@@ -621,6 +657,8 @@ export function createSyncManager( debug = false ): SyncManager {
 		}
 
 		const { handlers, syncConfig, ydoc } = entityState;
+
+		await flushPendingUpdates();
 
 		// Determine which synced properties have actually changed by comparing
 		// them against the current edited entity record.
@@ -658,10 +696,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			return null;
 		}
 
-		// Y.Doc updates are deferred via yieldToEventLoop. Await a promise that
-		// resolves on the next tick of the event loop so pending updates are flushed
-		// before we serialize the document.
-		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+		await flushPendingUpdates();
 
 		return serializeCrdtDoc( entityState.ydoc );
 	}
@@ -683,6 +718,6 @@ export function createSyncManager( debug = false ): SyncManager {
 			return undoManager;
 		},
 		unload: debugWrap( unloadEntity ),
-		update: debugWrap( yieldToEventLoop( updateCRDTDoc ) ),
+		update: debugWrap( scheduleUpdateCRDTDoc ),
 	};
 }
