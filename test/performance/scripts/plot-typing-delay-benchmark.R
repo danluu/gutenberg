@@ -31853,6 +31853,311 @@ save_plot(
 	height = 7.2
 )
 
+open_question_acceptance_gate <- open_question_critical_path %>%
+	mutate(
+		acceptance_gate = case_when(
+			question_family == "Startup wait and first-key tails" ~ "accept only if retained q50/mean/p90, first-key tails, failures, resources, and retained counts stay inside tolerance",
+			question_family == "Pattern wait replacement" ~ "accept only if readiness, preview/canvas, resource quiet, failures, retained q50, and p90 pass in each target lane",
+			question_family == "Selector/source guard" ~ "accept only if behavior fixtures pass and targeted source span collapses before aggregate timing is cited",
+			question_family == "Input-mode realism" ~ "accept only if tap, short-hold, held-key, and repeat rows remain stimulus-labeled through aggregation",
+			question_family == "Store-subscriber partition" ~ "accept only if public subscriber/import compatibility passes before any fanout timing claim",
+			question_family == "CI pass/fail policy" ~ "accept only if raw artifact, displayed metric, dashboard/noisy rule, and reviewer outcome are joined",
+			question_family == "Product workload generalization" ~ "accept only if replay stratum, setup context, failures, and retained rows support the widened workload wording",
+			question_family == "Browser endpoint and display presentation" ~ "accept only if calibrated external endpoint joins to retained-key trace windows without perturbing ordering",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "accept only if passive sidecar/counter fields separate timing classes without perturbing class ordering",
+			TRUE ~ completion_artifact
+		),
+		rejection_gate = case_when(
+			question_family == "Startup wait and first-key tails" ~ "reject wait reduction or split out idle-input metric if early-key tails, failures, resources, counts, or p90 regress",
+			question_family == "Pattern wait replacement" ~ "reject shorter wait or predicate for any lane where readiness, resource, failure, preview/canvas, or p90 veto fires",
+			question_family == "Selector/source guard" ~ "reject source-safety wording if behavior changes or targeted source span does not move",
+			question_family == "Input-mode realism" ~ "reject merged stimulus claims if helper family, hold duration, or platform repeat is not preserved",
+			question_family == "Store-subscriber partition" ~ "reject partitioning if any public subscriber, import surface, or ordering assumption breaks",
+			question_family == "CI pass/fail policy" ~ "reject pass/fail prediction if policy uses another statistic, threshold, noisy rule, or manual path",
+			question_family == "Product workload generalization" ~ "reject product-wide wording if replay strata change rank, tails, failures, or affected workload class",
+			question_family == "Browser endpoint and display presentation" ~ "reject display wording if external endpoint disagrees or cannot join without perturbation",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "reject mechanism name if counters disagree, fail to join, or observer changes ordering",
+			TRUE ~ execution_veto
+		),
+		mixed_result_rule = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement") ~ "accept only the passing lane or statistic; keep failing lane on current wait or split the metric",
+			question_family == "Selector/source guard" ~ "scope the prototype to the selector owner whose behavior and source-span gates pass",
+			question_family == "Input-mode realism" ~ "report separate hold, tap, short-hold, and repeat results without merging them",
+			question_family == "Store-subscriber partition" ~ "ship only compatibility-proved private-side-channel work; leave public partition blocked",
+			question_family == "CI pass/fail policy" ~ "separate repository artifact production from dashboard or reviewer policy",
+			question_family == "Product workload generalization" ~ "widen only to replay strata that pass",
+			question_family == "Browser endpoint and display presentation" ~ "name only the deepest passing endpoint",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "name only the joined counter class that separates timing rows",
+			TRUE ~ "narrow to the passing artifact scope"
+		),
+		review_owner = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement") ~ "Performance Tests runtime reviewer",
+			question_family == "Selector/source guard" ~ "selector/source owner reviewer",
+			question_family == "Input-mode realism" ~ "benchmark-method reviewer",
+			question_family == "Store-subscriber partition" ~ "data API compatibility reviewer",
+			question_family == "CI pass/fail policy" ~ "CI dashboard/policy reviewer",
+			question_family == "Product workload generalization" ~ "workload replay reviewer",
+			question_family == "Browser endpoint and display presentation" ~ "presentation endpoint reviewer",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "runtime/counter reviewer",
+			TRUE ~ monitor_owner
+		),
+		closure_record = case_when(
+			startable_without_new_owner ~ "packet CSV plus invariant, veto, and retained-row archive linked from the report",
+			execution_mode == "owner handoff" ~ "owner-reviewed compatibility or policy artifact linked from the report",
+			TRUE ~ "observer/workload artifact and calibration or replay manifest linked from the report"
+		),
+		close_scope = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement") ~ "CI wait decision",
+			question_family == "Selector/source guard" ~ "source prototype decision",
+			question_family == "Input-mode realism" ~ "benchmark method wording",
+			TRUE ~ "broader claim wording"
+		),
+		review_mode = case_when(
+			startable_without_new_owner ~ "local packet review",
+			execution_mode == "owner handoff" ~ "owner handoff review",
+			TRUE ~ "external artifact review"
+		),
+		strictness_score = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement", "Store-subscriber partition") ~ 5,
+			question_family %in% c("Selector/source guard", "CI pass/fail policy", "Runtime and CPU/QoS mechanism") ~ 4,
+			TRUE ~ 3
+		),
+		ambiguity_risk = case_when(
+			startable_without_new_owner ~ 2,
+			execution_mode == "owner handoff" ~ 3,
+			TRUE ~ 4
+		),
+		acceptance_value = pmax(
+			1,
+			queue_priority_value + strictness_score + wrong_action_risk - ambiguity_risk
+		),
+		closure_value = pmax(
+			1,
+			critical_path_value + acceptance_value - blocker_risk - if_else(startable_without_new_owner, 0, 3)
+		),
+		local_repeat_resolves_acceptance_value = 0,
+		analysis_only_value = 0,
+		acceptance_gate_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(acceptance_value), desc(closure_value), question_family)
+
+open_question_acceptance_gate_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"pass", "What exact evidence accepts the packet?",
+	"reject", "What exact evidence rejects or blocks action?",
+	"mixed", "How is a mixed result narrowed without compromise wording?",
+	"reviewer", "Who reviews the packet result?",
+	"archive", "What archive lets a reviewer recompute the result?",
+	"scope", "Which claim closes and which claim remains merely narrowed?",
+	"rollback", "What action is reversed if the gate fails later?",
+	"stale", "What future change makes the gate stale?",
+	"substitute", "Can another aggregate q50 timing pass resolve acceptance?",
+	"stop-rule", "When should the open-question loop stop?"
+)
+
+open_question_acceptance_gate_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_acceptance_gate)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_acceptance_gate_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_acceptance_gate %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_acceptance_gate_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		acceptance_gate_first_seen = !duplicated(acceptance_gate_id),
+		acceptance_axis_key = paste(acceptance_gate_id, pressure_axis, sep = "::"),
+		acceptance_axis_first_seen = !duplicated(acceptance_axis_key),
+		review_owner_first_seen = !duplicated(review_owner),
+		new_acceptance_value = if_else(acceptance_gate_first_seen, acceptance_value, 0),
+		new_closure_value = if_else(acceptance_gate_first_seen, closure_value, 0),
+		new_local_repeat_resolves_acceptance_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!acceptance_axis_first_seen ~ "repeat: acceptance-axis already checked",
+			startable_without_new_owner ~ "acceptance gate: local packet",
+			TRUE ~ "acceptance gate: handoff packet"
+		),
+		cumulative_acceptance_gates = cumsum(acceptance_gate_first_seen),
+		cumulative_acceptance_axes = cumsum(acceptance_axis_first_seen),
+		cumulative_review_owners = cumsum(review_owner_first_seen),
+		cumulative_acceptance_value = cumsum(new_acceptance_value),
+		cumulative_closure_value = cumsum(new_closure_value),
+		cumulative_local_repeat_resolves_acceptance_value = cumsum(new_local_repeat_resolves_acceptance_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_acceptance_gate_summary <- open_question_acceptance_gate_100_pass %>%
+	group_by(review_mode, close_scope, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		gates = n_distinct(acceptance_gate_id),
+		axis_checks = sum(acceptance_axis_first_seen),
+		review_owners = n_distinct(review_owner),
+		acceptance_value = sum(new_acceptance_value),
+		closure_value = sum(new_closure_value),
+		local_repeat_resolves_acceptance_value = sum(new_local_repeat_resolves_acceptance_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_ambiguity_risk = max(ambiguity_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(acceptance_value), desc(closure_value), first_pass)
+
+open_question_acceptance_gate_checkpoints <- open_question_acceptance_gate_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_acceptance_gates,
+		cumulative_acceptance_axes,
+		cumulative_review_owners,
+		cumulative_acceptance_value,
+		cumulative_closure_value,
+		cumulative_local_repeat_resolves_acceptance_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_acceptance_gate,
+	file.path(data_dir, "typing-delay-open-question-acceptance-gate.csv")
+)
+
+write_csv(
+	open_question_acceptance_gate_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			review_mode,
+			close_scope,
+			acceptance_gate,
+			rejection_gate,
+			mixed_result_rule,
+			review_owner,
+			closure_record,
+			acceptance_gate_first_seen,
+			acceptance_axis_first_seen,
+			review_owner_first_seen,
+			pass_result,
+			acceptance_value,
+			closure_value,
+			local_repeat_resolves_acceptance_value,
+			new_acceptance_value,
+			new_closure_value,
+			new_local_repeat_resolves_acceptance_value,
+			new_analysis_only_value,
+			cumulative_acceptance_gates,
+			cumulative_acceptance_axes,
+			cumulative_review_owners,
+			cumulative_acceptance_value,
+			cumulative_closure_value,
+			cumulative_local_repeat_resolves_acceptance_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-acceptance-gate-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_acceptance_gate_summary,
+	file.path(data_dir, "typing-delay-open-question-acceptance-gate-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_acceptance_gate_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-acceptance-gate-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_acceptance_gate %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, acceptance_value)
+		) %>%
+		ggplot(aes(acceptance_value, question_label, fill = review_mode)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Review mode") +
+		labs(
+			title = "Acceptance gates make each remaining packet falsifiable",
+			subtitle = "The highest-value gates are the target-CI wait packets, selector/source prototype, and input-mode controls",
+			x = "Acceptance value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"315-open-question-acceptance-gates.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_acceptance_gate_saturation_long <- open_question_acceptance_gate_100_pass %>%
+	select(
+		pass_id,
+		`acceptance gates` = cumulative_acceptance_gates,
+		`acceptance axes` = cumulative_acceptance_axes,
+		`review owners` = cumulative_review_owners,
+		`acceptance value` = cumulative_acceptance_value,
+		`closure value` = cumulative_closure_value,
+		`local repeat resolves acceptance value` = cumulative_local_repeat_resolves_acceptance_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("acceptance gates", "acceptance axes", "review owners", "acceptance value", "closure value", "local repeat resolves acceptance value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_acceptance_gate_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.55) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Acceptance-gate audit saturates once pass/reject/mixed rules are named",
+			subtitle = "Nine gates appear by pass 9; all 90 acceptance axes appear by pass 90; local repeats never resolve acceptance",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"316-open-question-acceptance-gate-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_acceptance_gate_summary %>%
+		mutate(
+			scope_label = str_wrap(close_scope, width = 28),
+			scope_label = fct_reorder(scope_label, acceptance_value + closure_value)
+		) %>%
+		ggplot(aes(axis_checks, scope_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Acceptance coverage separates local closure from broader claim review",
+			subtitle = "Every packet has pass, reject, mixed-result, owner, archive, and stop-rule checks",
+			x = "Acceptance-axis checks",
+			y = "Close scope"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"317-open-question-acceptance-gate-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

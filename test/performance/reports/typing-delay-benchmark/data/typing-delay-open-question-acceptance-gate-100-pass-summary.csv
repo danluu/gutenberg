@@ -1,0 +1,11 @@
+review_mode,close_scope,pass_result,passes,first_pass,gates,axis_checks,review_owners,acceptance_value,closure_value,local_repeat_resolves_acceptance_value,analysis_only_value,max_ambiguity_risk
+local packet review,CI wait decision,acceptance gate: local packet,20,2,2,20,1,86,225,0,0,2
+local packet review,source prototype decision,acceptance gate: local packet,10,1,1,10,1,46,122,0,0,2
+owner handoff review,broader claim wording,acceptance gate: handoff packet,20,5,2,20,2,35,47,0,0,3
+local packet review,benchmark method wording,acceptance gate: local packet,10,4,1,10,1,33,88,0,0,2
+external artifact review,broader claim wording,acceptance gate: handoff packet,30,7,3,30,3,17,3,0,0,4
+local packet review,source prototype decision,repeat: acceptance-axis already checked,2,91,1,0,1,0,0,0,0,2
+local packet review,CI wait decision,repeat: acceptance-axis already checked,2,92,2,0,1,0,0,0,0,2
+local packet review,benchmark method wording,repeat: acceptance-axis already checked,1,94,1,0,1,0,0,0,0,2
+owner handoff review,broader claim wording,repeat: acceptance-axis already checked,2,95,2,0,2,0,0,0,0,3
+external artifact review,broader claim wording,repeat: acceptance-axis already checked,3,97,3,0,3,0,0,0,0,4

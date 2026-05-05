@@ -1428,6 +1428,18 @@ The R script derives:
 -   `data/typing-delay-open-question-critical-path-queue-100-pass-checkpoints.csv`:
     checkpoints for critical-path packet, axis, lane, value, queue-priority,
     parallelism, local-repeat-shortening, and analysis-only saturation.
+-   `data/typing-delay-open-question-acceptance-gate.csv`: acceptance-gate table
+    for the nine critical-path packets, including pass, reject, mixed-result,
+    review-owner, closure-record, and close-scope rules.
+-   `data/typing-delay-open-question-acceptance-gate-100-pass-audit.csv`:
+    eleventh forced 100-pass audit over acceptance axes: pass, reject, mixed,
+    reviewer, archive, scope, rollback, stale, substitute, and stop-rule.
+-   `data/typing-delay-open-question-acceptance-gate-100-pass-summary.csv`:
+    rollup of acceptance coverage by review mode, close scope, and pass result.
+-   `data/typing-delay-open-question-acceptance-gate-100-pass-checkpoints.csv`:
+    checkpoints for acceptance-gate, acceptance-axis, review-owner,
+    acceptance-value, closure-value, local-repeat-resolution, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10956,6 +10968,33 @@ input-mode controls and selector/source prototype. The remaining compatibility,
 policy, workload, display, and mechanism rows should become owner or observer
 handoffs with exact artifact contracts, not another request for generic timing
 analysis.
+
+I then added the acceptance-gate layer: each queued packet now has explicit
+pass, reject, and mixed-result rules, a review owner, a closure record, and a
+scope that says exactly what closes.
+
+![Open question acceptance gates](figures/315-open-question-acceptance-gates.png)
+
+![Open question acceptance gate 100-pass saturation](figures/316-open-question-acceptance-gate-100-pass-saturation.png)
+
+![Open question acceptance gate coverage](figures/317-open-question-acceptance-gate-coverage.png)
+
+| Acceptance-gate check | Result |
+| --------------------- | ------ |
+| Acceptance gates | `9`, one per critical-path packet. |
+| Review owners | `8`; target-CI startup and pattern-wait packets share the Performance Tests runtime reviewer, while the rest have distinct owners. |
+| Close scopes | `4`: CI wait decision, source prototype decision, benchmark method wording, and broader claim wording. |
+| Acceptance-axis checks | `90`: every packet checked against all `10` acceptance axes. |
+| Acceptance value | `217`, led by selector/source (`46`), startup wait (`43`), pattern wait (`43`), and input-mode controls (`33`). |
+| Closure value | `485` across the nine gates. |
+| Local repeat resolves acceptance value | `0`; another aggregate q50-only timing pass cannot decide pass/reject/mixed outcomes without the packet fields and reviewer artifacts. |
+| Saturation | Acceptance gates are all named by pass `9`; all acceptance axes are covered by pass `90`; passes `91-100` add no acceptance coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the review contract for the open questions. A packet does not close
+because it produced a faster or slower aggregate number; it closes because its
+predeclared pass/reject/mixed rule fires and the closure record is archived.
+Mixed results narrow the claim rather than creating compromise wording.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
