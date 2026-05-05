@@ -1318,6 +1318,16 @@ The R script derives:
     disposition counts and marginal decision value from the 100-pass audit.
 -   `data/typing-delay-open-question-100-pass-saturation-checkpoints.csv`: pass
     checkpoints showing when the forced audit saturates.
+-   `data/typing-delay-open-question-action-frontier.csv`: action-frontier ledger
+    for the remaining open questions, separating target-topology, source,
+    compatibility, observer, replay, display, input-mode, and policy gates.
+-   `data/typing-delay-open-question-action-frontier-100-pass-audit.csv`: second
+    forced 100-pass audit that asks whether each pass creates a new
+    action-changing artifact requirement or only repeats the same frontier.
+-   `data/typing-delay-open-question-action-frontier-100-pass-summary.csv`: rollup
+    of the second 100-pass audit by frontier class and pass result.
+-   `data/typing-delay-open-question-action-frontier-100-pass-checkpoints.csv`:
+    checkpoints for frontier-question, artifact-bundle, and action-value saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10607,6 +10617,33 @@ passes are analysis churn. The remaining useful work is target-topology
 validation for pattern/startup/tail questions, behavior/source validation for
 the selector guard, compatibility/policy joins for blocked action rows, and
 external observers or replay only when the claim expands.
+
+I then repeated the loop in a stricter form: a pass only counts as useful if it
+identifies an action-changing frontier, the missing artifact for that frontier,
+and the stop rule that prevents another same-harness timing rerun from being
+mistaken for progress.
+
+![Open question action frontier value](figures/288-open-question-action-frontier-value.png)
+
+![Open question action frontier 100-pass saturation](figures/289-open-question-action-frontier-100-pass-saturation.png)
+
+![Open question action frontier pass results](figures/290-open-question-action-frontier-pass-results.png)
+
+| Check | Result |
+| ----- | ------ |
+| Frontier size | `9` action-frontier questions remain. |
+| Saturation | The second forced 100-pass audit saturates at pass `9`: all `9` frontier questions and all `9` artifact bundles are named. |
+| Cumulative action value | Reaches `69` by pass `9` and stays there through pass `100`. |
+| Extra same-harness value | `0` through pass `100`; another local timing-only rerun does not close any remaining frontier. |
+| Highest-value frontier | Selector/source guard (`16`), then pattern wait and startup wait target-topology gates (`14` each), then input-mode controls (`11`). |
+
+This is a stronger version of the stopping rule. The remaining open questions are
+not asking for the same benchmark to be run more times. They are asking for a
+different artifact class: target Performance Tests topology for wait/readiness
+decisions, behavior/source evidence for the selector prototype, matched input
+stimulus controls for hold-vs-tap wording, compatibility proof before public data
+layer changes, a policy join before pass/fail claims, and external observer,
+display, or replay artifacts only if the claim expands beyond the benchmark.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

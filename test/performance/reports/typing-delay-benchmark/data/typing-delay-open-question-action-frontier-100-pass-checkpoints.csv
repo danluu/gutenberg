@@ -1,0 +1,10 @@
+pass_id,cumulative_frontier_questions,cumulative_artifact_bundles,cumulative_action_value,cumulative_same_harness_value
+1,1,1,16,0
+5,5,5,62,0
+9,9,9,69,0
+10,9,9,69,0
+20,9,9,69,0
+25,9,9,69,0
+50,9,9,69,0
+75,9,9,69,0
+100,9,9,69,0

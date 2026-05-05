@@ -29245,6 +29245,250 @@ save_plot(
 	height = 7.2
 )
 
+open_question_action_frontier <- tribble(
+	~question_family, ~frontier_class, ~action_scope, ~current_answer, ~minimum_new_artifact, ~pass_condition, ~fail_condition, ~current_do_not_do, ~engineering_owner, ~near_term_action_score, ~local_reducibility, ~external_dependency, ~same_harness_repeat_penalty, ~wrong_action_risk, ~evidence_readiness,
+	"Startup wait and first-key tails", "target-topology gate", "CI runtime/reporting", "Retained Typing q50 does not justify adding a startup wait; first-retained and idle-return latency are separate metrics.", "Performance Tests topology artifact with failures, resources, retained rows, run order, and key-position tails.", "Reduced startup wait preserves retained q50/mean/p90, failures, resources, retained counts, and early-key tails in target topology.", "Reduced startup wait regresses failures, resources, retained counts, p90, or early-key tails.", "Do not add or remove startup waits from retained q50 alone.", "CI runtime owner", 5, 4, 3, 3, 4, 4,
+	"Pattern wait replacement", "target-topology gate", "CI runtime/readiness", "The local `500ms` candidate is attractive on q50 but still has a p90/readiness rollout caveat.", "Predicate-or-fixed-wait target-topology artifact with resource quiet, preview/canvas checks, failures, retained rows, Post/Site/container lanes, and p90.", "Predicate or shorter fixed wait preserves readiness, resources, preview/canvas behavior, failures, retained q50, and p90 in the target lanes.", "Predicate fires before readiness, moves resource work into measurement, worsens p90, or diverges across target lanes.", "Do not ship a shorter pattern wait from local q50 alone.", "pattern benchmark owner", 5, 4, 3, 3, 5, 3,
+	"Selector/source guard", "behavior/source gate", "source optimization", "A narrow selector guard is plausible, but behavior/source safety decides before aggregate timing.", "Behavior fixtures plus targeted before/after source-span microscope for one guarded selector owner.", "Behavior fixtures pass and the targeted source span collapses before aggregate p50 is cited.", "Behavior changes, source span does not collapse, or timing moves without the targeted owner moving.", "Do not use aggregate p50 to prove semantic safety.", "source optimization owner", 4, 5, 2, 2, 5, 4,
+	"Store-subscriber partition", "compatibility gate", "data-layer/API design", "The broad fanout is real, but public store-notification partitioning is unsafe without compatibility proof.", "Public/private compatibility matrix plus migration sketch for store notification partitioning.", "Compatibility fixtures and downstream import/use cases pass under the proposed partition.", "Any public subscriber, plugin import, or ordering assumption breaks.", "Do not turn private side-channel wins into public API changes.", "data API owner", 3, 2, 4, 4, 5, 2,
+	"Runtime and CPU/QoS mechanism", "new-observer gate", "mechanism wording", "The benchmark shows timing bands, but runtime/OS scheduling is below the current harness.", "Passive retained-key sidecar with CPU frequency, runnable count, thermal/QoS state, and browser event alignment.", "Sidecar counters align with the timing-band transitions without perturbing the benchmark.", "Counters disagree, observer perturbs the benchmark, or timing bands remain uncorrelated.", "Do not name a VM/runtime/OS mechanism from trace slices alone.", "mechanism owner", 2, 2, 5, 5, 3, 1,
+	"Browser endpoint and display presentation", "external endpoint", "user-visible latency", "Chromium Paint/DrawFrame and RAF proxies narrow the claim, but calibrated physical presentation remains external.", "Calibrated display or high-speed-camera endpoint joined to retained key windows and trace endpoints.", "External presentation preserves the qualitative cliff or bounds the endpoint gap.", "External presentation disagrees with internal endpoints or shows a larger unseen tail.", "Do not claim physical-display latency from internal trace endpoints alone.", "presentation owner", 2, 1, 5, 5, 4, 1,
+	"Product workload generalization", "workload/replay gate", "product claim", "The fixed-character large-post benchmark is not a product-wide typing workload.", "Recorded or synthetic workload replay covering human pauses, formatting, navigation, plugin-heavy posts, and IME/input modes.", "Replay strata preserve the relevant benchmark conclusions or identify narrower strata.", "Replay changes rank order, tail behavior, or the affected workload class.", "Do not generalize fixed-`x` benchmark facts to all editor lag.", "workload owner", 2, 2, 5, 5, 4, 1,
+	"Input-mode realism", "topology/control gate", "benchmark method", "Held-key and complete-keypress-then-wait are distinct stimuli; the current benchmark's held-key path is not a generic tap model.", "Matched tap, short-hold, held-key, and platform-repeat controls in the target Performance Tests topology.", "The intended CI stimulus is explicitly selected and preserves the conclusion across matched controls.", "The conclusion only holds for an unintended stimulus or platform-repeat path.", "Do not mix held-key and tap conclusions without naming the stimulus.", "benchmark owner", 3, 4, 3, 3, 4, 3,
+	"CI pass/fail policy", "policy join", "CI semantics", "Repository artifacts produce q50 evidence; they do not by themselves define dashboard or reviewer pass/fail policy.", "Archived CI artifact to displayed q50, dashboard threshold/noisy-metric policy, and reviewer-decision join.", "Documented policy maps raw artifact movement to the same displayed/reviewed outcome.", "Policy uses another statistic, threshold, noisy rule, or manual decision path.", "Do not predict pass/fail from local q50 alone.", "CI policy owner", 3, 1, 5, 4, 4, 1
+) %>%
+	mutate(
+		artifact_key = str_to_lower(str_replace_all(minimum_new_artifact, "[^a-zA-Z0-9]+", "-")),
+		next_artifact_value = pmax(
+			0,
+			near_term_action_score + wrong_action_risk + local_reducibility + evidence_readiness -
+				same_harness_repeat_penalty - pmax(external_dependency - 3, 0)
+		),
+		repeat_more_local_samples_value = pmax(
+			0,
+			local_reducibility + evidence_readiness - same_harness_repeat_penalty -
+				wrong_action_risk - 5
+		),
+		action_band = case_when(
+			near_term_action_score >= 5 ~ "can move CI wait/readiness decision",
+			near_term_action_score >= 4 ~ "can move source prototype",
+			near_term_action_score >= 3 & external_dependency >= 4 ~ "blocked until external join",
+			near_term_action_score >= 3 ~ "method/control decision",
+			TRUE ~ "claim boundary only"
+		),
+		stop_rule = case_when(
+			frontier_class == "target-topology gate" ~ "run target topology once; repeat only if failures/resources/tails disagree",
+			frontier_class == "behavior/source gate" ~ "prototype one guarded source change after behavior fixtures exist",
+			frontier_class == "compatibility gate" ~ "stop local timing until compatibility matrix exists",
+			frontier_class == "new-observer gate" ~ "stop mechanism claims until passive sidecar exists",
+			frontier_class == "external endpoint" ~ "stop display claims until calibrated endpoint exists",
+			frontier_class == "workload/replay gate" ~ "stop product-wide claims until workload replay exists",
+			frontier_class == "policy join" ~ "stop pass/fail claims until policy join exists",
+			TRUE ~ "stop unless benchmark stimulus wording changes"
+		)
+	) %>%
+	arrange(desc(next_artifact_value), desc(wrong_action_risk), question_family)
+
+open_question_action_frontier_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"action", "Can this pass change a concrete engineering action?",
+	"falsifier", "What result would overturn the current recommendation?",
+	"metric", "Does q50 hide a mean, p90, first-key, failure, or resource veto?",
+	"topology", "Does the target runner preserve the local result?",
+	"source", "Does behavior/source safety precede timing?",
+	"policy", "Is a policy or external owner needed before claiming pass/fail?",
+	"claim", "Which broader claim remains blocked?",
+	"cost", "Does another same-harness sample have positive marginal value?",
+	"negative-control", "What negative control prevents the wrong causal story?",
+	"stop-rule", "What exact condition stops the loop?"
+)
+
+open_question_action_frontier_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_action_frontier)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_action_frontier_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_action_frontier %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_action_frontier_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		frontier_first_seen = !duplicated(question_family),
+		artifact_first_seen = !duplicated(artifact_key),
+		new_action_value = if_else(artifact_first_seen, next_artifact_value, 0),
+		new_same_harness_value = if_else(artifact_first_seen, repeat_more_local_samples_value, 0),
+		pass_result = case_when(
+			!artifact_first_seen ~ "repeat: same frontier",
+			frontier_class == "target-topology gate" ~ "action gate: target topology",
+			frontier_class == "behavior/source gate" ~ "action gate: source prototype",
+			frontier_class == "topology/control gate" ~ "method gate: stimulus controls",
+			frontier_class == "compatibility gate" ~ "blocked: compatibility",
+			frontier_class == "policy join" ~ "blocked: policy join",
+			frontier_class %in% c("new-observer gate", "external endpoint", "workload/replay gate") ~ "blocked: claim expansion",
+			TRUE ~ "scoped wording"
+		),
+		cumulative_frontier_questions = cumsum(frontier_first_seen),
+		cumulative_artifact_bundles = cumsum(artifact_first_seen),
+		cumulative_action_value = cumsum(new_action_value),
+		cumulative_same_harness_value = cumsum(new_same_harness_value)
+	)
+
+open_question_action_frontier_summary <- open_question_action_frontier_100_pass %>%
+	group_by(frontier_class, pass_result, action_band) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		frontier_questions = n_distinct(question_family),
+		new_artifact_bundles = sum(artifact_first_seen),
+		new_action_value = sum(new_action_value),
+		new_same_harness_value = sum(new_same_harness_value),
+		max_wrong_action_risk = max(wrong_action_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(new_action_value), first_pass)
+
+open_question_action_frontier_checkpoints <- open_question_action_frontier_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 25, 50, 75, 100)) %>%
+	select(
+		pass_id,
+		cumulative_frontier_questions,
+		cumulative_artifact_bundles,
+		cumulative_action_value,
+		cumulative_same_harness_value
+	)
+
+write_csv(
+	open_question_action_frontier,
+	file.path(data_dir, "typing-delay-open-question-action-frontier.csv")
+)
+
+write_csv(
+	open_question_action_frontier_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			frontier_class,
+			action_scope,
+			action_band,
+			current_answer,
+			minimum_new_artifact,
+			pass_condition,
+			fail_condition,
+			current_do_not_do,
+			stop_rule,
+			frontier_first_seen,
+			artifact_first_seen,
+			pass_result,
+			next_artifact_value,
+			repeat_more_local_samples_value,
+			new_action_value,
+			new_same_harness_value,
+			cumulative_frontier_questions,
+			cumulative_artifact_bundles,
+			cumulative_action_value,
+			cumulative_same_harness_value
+		),
+	file.path(data_dir, "typing-delay-open-question-action-frontier-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_action_frontier_summary,
+	file.path(data_dir, "typing-delay-open-question-action-frontier-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_action_frontier_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-action-frontier-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_action_frontier %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, next_artifact_value)
+		) %>%
+		ggplot(aes(next_artifact_value, question_label, fill = frontier_class)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Frontier") +
+		labs(
+			title = "Only a few open questions can still move engineering action",
+			subtitle = "The highest-value next artifacts are target-topology validation and the behavior/source-gated selector prototype",
+			x = "Next-artifact decision value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"288-open-question-action-frontier-value.png",
+	width = 12.8,
+	height = 7.8
+)
+
+open_question_action_frontier_saturation_long <- open_question_action_frontier_100_pass %>%
+	select(
+		pass_id,
+		`frontier questions` = cumulative_frontier_questions,
+		`artifact bundles` = cumulative_artifact_bundles,
+		`action value` = cumulative_action_value,
+		`same-harness value` = cumulative_same_harness_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("frontier questions", "artifact bundles", "action value", "same-harness value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_action_frontier_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.75) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "The second forced 100-pass audit saturates after the frontier is enumerated",
+			subtitle = "Passes after the first sweep do not create local same-harness value; they require new artifacts or external joins",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"289-open-question-action-frontier-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_action_frontier_summary %>%
+		mutate(
+			pass_result_label = str_wrap(pass_result, width = 26),
+			pass_result_label = fct_reorder(pass_result_label, passes)
+		) %>%
+		ggplot(aes(passes, pass_result_label, fill = pass_result)) +
+		geom_col(width = 0.72, show.legend = FALSE) +
+		scale_fill_brewer(type = "qual", palette = "Paired") +
+		labs(
+			title = "Most of another 100 passes are repeats of the same frontier",
+			subtitle = "The useful work is to collect target-topology, source, compatibility, observer, replay, display, or policy artifacts",
+			x = "Forced passes",
+			y = "Pass result"
+		) +
+		theme_minimal(base_size = 12),
+	"290-open-question-action-frontier-pass-results.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
