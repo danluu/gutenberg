@@ -1,0 +1,7 @@
+ledger_consistency_state,resolution_ledger_state,pass_result,passes,first_pass,ledger_consistency_records,axis_checks,ledger_consistency_owners,ledger_consistency_consumers,ledger_consistency_value,ledger_consistency_drift_risk_value,timing_only_ledger_consistency_value,analysis_only_value
+local packet ledger consistency,local packet resolution ledger,ledger consistency: local packet,40,1,4,40,4,3,242140558,103005827,0,0
+owner artifact ledger consistency,owner artifact resolution ledger,ledger consistency: owner or observer artifact,20,5,2,20,2,2,48416308,20596142,0,0
+observer artifact ledger consistency,observer artifact resolution ledger,ledger consistency: owner or observer artifact,30,7,3,30,3,3,29907078,12722361,0,0
+local packet ledger consistency,local packet resolution ledger,repeat: ledger-consistency-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact ledger consistency,owner artifact resolution ledger,repeat: ledger-consistency-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact ledger consistency,observer artifact resolution ledger,repeat: ledger-consistency-axis already checked,3,97,3,0,3,3,0,0,0,0

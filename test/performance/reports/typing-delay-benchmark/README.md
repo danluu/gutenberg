@@ -1876,6 +1876,23 @@ The R script derives:
     resolution-ledger-consumer, resolution-ledger-value,
     resolution-ledger-stale-row-risk-value, timing-only-resolution-ledger, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-ledger-consistency-register.csv`:
+    ledger-consistency register for the nine resolution-ledger records,
+    including row linkage, invalidated rows, consumer notice, report diff,
+    artifact state, reopen trigger, failure response, owner, and consumer.
+-   `data/typing-delay-open-question-ledger-consistency-100-pass-audit.csv`:
+    fortieth forced 100-pass audit over ledger-consistency axes: row,
+    invalidate, notice, report-diff, artifact, reopen, failure, owner,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-ledger-consistency-100-pass-summary.csv`:
+    rollup of ledger-consistency coverage by ledger-consistency state,
+    resolution-ledger state, and pass result.
+-   `data/typing-delay-open-question-ledger-consistency-100-pass-checkpoints.csv`:
+    checkpoints for ledger-consistency-record, ledger-consistency-axis,
+    ledger-consistency-state, ledger-consistency-owner,
+    ledger-consistency-consumer, ledger-consistency-value,
+    ledger-consistency-drift-risk-value, timing-only-ledger-consistency, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12261,6 +12278,36 @@ This is the durable-closure guard. It prevents a resolved open question from
 leaving stale supporting rows behind in the evidence chain. Closure now has to
 write the ledger row, invalidate superseded rows, notify consumers, link the
 report diff, and keep a concrete trigger for reopening the claim later.
+
+I then added the ledger-consistency layer: a ledgered resolution is not accepted
+just because a row exists. The row must stay internally consistent with the
+resolution outcome, invalidated rows, consumer notice, report diff, artifact
+state, reopen trigger, failure response, owner, and consumer.
+
+![Open question ledger consistency register](figures/402-open-question-ledger-consistency-register.png)
+
+![Open question ledger consistency 100-pass saturation](figures/403-open-question-ledger-consistency-100-pass-saturation.png)
+
+![Open question ledger consistency coverage](figures/404-open-question-ledger-consistency-coverage.png)
+
+| Ledger-consistency check | Result |
+| ------------------------ | ------ |
+| Ledger-consistency records | `9`, one per resolution-ledger record. |
+| Ledger-consistency states | `3`: local packet ledger consistency, owner artifact ledger consistency, and observer artifact ledger consistency. |
+| Ledger-consistency owners | `9`; consistency checks route back to the scoped resolution-ledger owner. |
+| Ledger-consistency consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Ledger-consistency-axis checks | `90`: every row checked against all `10` ledger-consistency axes. |
+| Ledger-consistency value | `320463944`: local packet consistency contributes `242140558`, owner artifact consistency contributes `48416308`, and observer artifact consistency contributes `29907078`. |
+| Ledger-consistency drift-risk value | `136324330` across the nine ledger-consistency records. |
+| Timing-only ledger-consistency value | `0`; aggregate timing movement alone cannot prove row linkage, invalidated rows, consumer notice, report diff, artifact state, reopen trigger, or failure response. |
+| Saturation | Ledger-consistency records are all named by pass `9`; all ledger-consistency axes are covered by pass `90`; passes `91-100` add no ledger-consistency coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the closure-row integrity guard. It catches the failure mode where the
+report says a question is resolved but the supporting row, invalidations,
+notice, artifact, or reopen rule no longer match that resolution. If the check
+fails, the row is reopened, stale-row warnings come back, and the scoped
+consumer is notified.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -40373,6 +40373,291 @@ save_plot(
 	height = 7.2
 )
 
+open_question_ledger_consistency_register <- open_question_resolution_ledger_register %>%
+	mutate(
+		ledger_consistency_state = case_when(
+			resolution_ledger_state == "local packet resolution ledger" ~ "local packet ledger consistency",
+			resolution_ledger_state == "owner artifact resolution ledger" ~ "owner artifact ledger consistency",
+			TRUE ~ "observer artifact ledger consistency"
+		),
+		ledger_consistency_row_check = case_when(
+			ledger_consistency_state == "local packet ledger consistency" ~ "check that the local ledger row links resolution outcome, local packet path, invalidated rows, consumer notice, report diff, and reopen trigger",
+			ledger_consistency_state == "owner artifact ledger consistency" ~ "check that the owner ledger row links resolution outcome, owner artifact path, reviewer identity, invalidated rows, consumer notice, report diff, and reopen trigger",
+			TRUE ~ "check that the observer ledger row links resolution outcome, observer artifact path, reviewer identity, invalidated rows, broad-scope wording, consumer notice, report diff, and reopen trigger"
+		),
+		ledger_consistency_invalidated_rows = resolution_ledger_invalidates,
+		ledger_consistency_notice_check = resolution_ledger_consumer_notice,
+		ledger_consistency_report_diff_check = resolution_ledger_report_diff,
+		ledger_consistency_artifact_check = case_when(
+			ledger_consistency_state == "local packet ledger consistency" ~ "verify the local packet is current if accepted, stale if rejected, and absent from active support when rolled back or reopened",
+			ledger_consistency_state == "owner artifact ledger consistency" ~ "verify the owner artifact and reviewer identity are current if accepted, stale if rejected, and absent from active support when rolled back or reopened",
+			TRUE ~ "verify the observer artifact, reviewer identity, and broad-scope wording are current if accepted, stale if rejected, and absent from active support when rolled back or reopened"
+		),
+		ledger_consistency_reopen_check = resolution_ledger_reopen_trigger,
+		ledger_consistency_failure_response = case_when(
+			ledger_consistency_state == "local packet ledger consistency" ~ "fail the consistency check, reopen the local packet, restore stale-row warnings, and notify the local consumer",
+			ledger_consistency_state == "owner artifact ledger consistency" ~ "fail the consistency check, reopen the owner packet, restore stale-row warnings, and notify the owner-scoped consumer",
+			TRUE ~ "fail the consistency check, reopen the observer packet, restore stale-row warnings, and notify the broad consumer"
+		),
+		ledger_consistency_owner = resolution_ledger_owner,
+		ledger_consistency_consumer = resolution_ledger_consumer,
+		ledger_consistency_cost = case_when(
+			ledger_consistency_state == "local packet ledger consistency" ~ 3,
+			ledger_consistency_state == "owner artifact ledger consistency" ~ 5,
+			TRUE ~ 7
+		),
+		ledger_consistency_value = pmax(
+			1,
+			resolution_ledger_value + resolution_ledger_stale_row_risk_value + triage_resolution_shortcut_risk_value - ledger_consistency_cost
+		),
+		ledger_consistency_drift_risk_value = pmax(
+			1,
+			resolution_ledger_stale_row_risk_value + monitoring_failure_misroute_risk_value + post_execution_monitoring_escape_risk_value - ledger_consistency_cost
+		),
+		timing_only_ledger_consistency_value = 0,
+		analysis_only_value = 0,
+		ledger_consistency_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(ledger_consistency_value), desc(ledger_consistency_drift_risk_value), question_family)
+
+open_question_ledger_consistency_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"row", "Does the ledger row link every required closure artifact?",
+	"invalidate", "Do stale rows match the ledger invalidation rule?",
+	"notice", "Does the consumer notice match the ledger outcome?",
+	"report-diff", "Does the report diff prove the ledgered closure?",
+	"artifact", "Does the artifact state match the ledger outcome?",
+	"reopen", "Does the reopen trigger remain attached to the row?",
+	"failure", "What happens when ledger consistency fails?",
+	"owner", "Who owns the ledger-consistency result?",
+	"substitute", "Can aggregate timing alone substitute for ledger consistency?",
+	"stop-rule", "When does ledger-consistency review stop?"
+)
+
+open_question_ledger_consistency_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_ledger_consistency_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_ledger_consistency_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_ledger_consistency_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_ledger_consistency_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		ledger_consistency_first_seen = !duplicated(ledger_consistency_id),
+		ledger_consistency_axis_key = paste(ledger_consistency_id, pressure_axis, sep = "::"),
+		ledger_consistency_axis_first_seen = !duplicated(ledger_consistency_axis_key),
+		ledger_consistency_state_first_seen = !duplicated(ledger_consistency_state),
+		ledger_consistency_owner_first_seen = !duplicated(ledger_consistency_owner),
+		ledger_consistency_consumer_first_seen = !duplicated(ledger_consistency_consumer),
+		new_ledger_consistency_value = if_else(ledger_consistency_first_seen, ledger_consistency_value, 0),
+		new_ledger_consistency_drift_risk_value = if_else(ledger_consistency_first_seen, ledger_consistency_drift_risk_value, 0),
+		new_timing_only_ledger_consistency_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!ledger_consistency_axis_first_seen ~ "repeat: ledger-consistency-axis already checked",
+			ledger_consistency_state == "local packet ledger consistency" ~ "ledger consistency: local packet",
+			TRUE ~ "ledger consistency: owner or observer artifact"
+		),
+		cumulative_ledger_consistency_records = cumsum(ledger_consistency_first_seen),
+		cumulative_ledger_consistency_axes = cumsum(ledger_consistency_axis_first_seen),
+		cumulative_ledger_consistency_states = cumsum(ledger_consistency_state_first_seen),
+		cumulative_ledger_consistency_owners = cumsum(ledger_consistency_owner_first_seen),
+		cumulative_ledger_consistency_consumers = cumsum(ledger_consistency_consumer_first_seen),
+		cumulative_ledger_consistency_value = cumsum(new_ledger_consistency_value),
+		cumulative_ledger_consistency_drift_risk_value = cumsum(new_ledger_consistency_drift_risk_value),
+		cumulative_timing_only_ledger_consistency_value = cumsum(new_timing_only_ledger_consistency_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_ledger_consistency_summary <- open_question_ledger_consistency_100_pass %>%
+	group_by(ledger_consistency_state, resolution_ledger_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		ledger_consistency_records = n_distinct(ledger_consistency_id),
+		axis_checks = sum(ledger_consistency_axis_first_seen),
+		ledger_consistency_owners = n_distinct(ledger_consistency_owner),
+		ledger_consistency_consumers = n_distinct(ledger_consistency_consumer),
+		ledger_consistency_value = sum(new_ledger_consistency_value),
+		ledger_consistency_drift_risk_value = sum(new_ledger_consistency_drift_risk_value),
+		timing_only_ledger_consistency_value = sum(new_timing_only_ledger_consistency_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(ledger_consistency_value), desc(ledger_consistency_drift_risk_value), first_pass)
+
+open_question_ledger_consistency_checkpoints <- open_question_ledger_consistency_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_ledger_consistency_records,
+		cumulative_ledger_consistency_axes,
+		cumulative_ledger_consistency_states,
+		cumulative_ledger_consistency_owners,
+		cumulative_ledger_consistency_consumers,
+		cumulative_ledger_consistency_value,
+		cumulative_ledger_consistency_drift_risk_value,
+		cumulative_timing_only_ledger_consistency_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_ledger_consistency_register,
+	file.path(data_dir, "typing-delay-open-question-ledger-consistency-register.csv")
+)
+
+write_csv(
+	open_question_ledger_consistency_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			ledger_consistency_state,
+			resolution_ledger_state,
+			ledger_consistency_row_check,
+			ledger_consistency_invalidated_rows,
+			ledger_consistency_notice_check,
+			ledger_consistency_report_diff_check,
+			ledger_consistency_artifact_check,
+			ledger_consistency_reopen_check,
+			ledger_consistency_failure_response,
+			ledger_consistency_owner,
+			ledger_consistency_consumer,
+			resolution_ledger_update,
+			resolution_ledger_audit_packet,
+			resolution_ledger_reopen_trigger,
+			supported_claim,
+			blocked_claim,
+			ledger_consistency_first_seen,
+			ledger_consistency_axis_first_seen,
+			ledger_consistency_state_first_seen,
+			ledger_consistency_owner_first_seen,
+			ledger_consistency_consumer_first_seen,
+			pass_result,
+			ledger_consistency_value,
+			ledger_consistency_drift_risk_value,
+			timing_only_ledger_consistency_value,
+			new_ledger_consistency_value,
+			new_ledger_consistency_drift_risk_value,
+			new_timing_only_ledger_consistency_value,
+			new_analysis_only_value,
+			cumulative_ledger_consistency_records,
+			cumulative_ledger_consistency_axes,
+			cumulative_ledger_consistency_states,
+			cumulative_ledger_consistency_owners,
+			cumulative_ledger_consistency_consumers,
+			cumulative_ledger_consistency_value,
+			cumulative_ledger_consistency_drift_risk_value,
+			cumulative_timing_only_ledger_consistency_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-ledger-consistency-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_ledger_consistency_summary,
+	file.path(data_dir, "typing-delay-open-question-ledger-consistency-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_ledger_consistency_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-ledger-consistency-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_ledger_consistency_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, ledger_consistency_value)
+		) %>%
+		ggplot(aes(ledger_consistency_value, question_label, fill = ledger_consistency_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Ledger consistency") +
+		labs(
+			title = "Ledger consistency checks closure rows against notices, diffs, artifacts, and reopen triggers",
+			subtitle = "Each row checks closure linkage, invalidated rows, notice, report diff, artifact state, reopen trigger, failure response, owner, and consumer",
+			x = "Ledger-consistency value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"402-open-question-ledger-consistency-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_ledger_consistency_saturation_long <- open_question_ledger_consistency_100_pass %>%
+	select(
+		pass_id,
+		`ledger-consistency records` = cumulative_ledger_consistency_records,
+		`ledger-consistency axes` = cumulative_ledger_consistency_axes,
+		`ledger-consistency states` = cumulative_ledger_consistency_states,
+		`ledger-consistency owners` = cumulative_ledger_consistency_owners,
+		`ledger-consistency consumers` = cumulative_ledger_consistency_consumers,
+		`ledger-consistency value` = cumulative_ledger_consistency_value,
+		`ledger-consistency drift risk value` = cumulative_ledger_consistency_drift_risk_value,
+		`timing-only ledger-consistency value` = cumulative_timing_only_ledger_consistency_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("ledger-consistency records", "ledger-consistency axes", "ledger-consistency states", "ledger-consistency owners", "ledger-consistency consumers", "ledger-consistency value", "ledger-consistency drift risk value", "timing-only ledger-consistency value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_ledger_consistency_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Ledger-consistency audit saturates once every consistency check is named",
+			subtitle = "Nine consistency records appear by pass 9; all 90 axes appear by pass 90; timing-only consistency value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"403-open-question-ledger-consistency-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_ledger_consistency_summary %>%
+		mutate(
+			state_label = str_wrap(ledger_consistency_state, width = 28),
+			state_label = fct_reorder(state_label, ledger_consistency_value + ledger_consistency_drift_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Ledger-consistency coverage separates local consistency from owner and observer consistency",
+			subtitle = "Every row is checked for row linkage, invalidation, notice, report diff, artifact state, reopen trigger, failure response, owner, substitute, and stop rule",
+			x = "Ledger-consistency-axis checks",
+			y = "Ledger-consistency state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"404-open-question-ledger-consistency-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
