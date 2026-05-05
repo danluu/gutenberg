@@ -1,0 +1,10 @@
+pass_id,cumulative_triage_resolution_records,cumulative_triage_resolution_axes,cumulative_triage_resolution_states,cumulative_triage_resolution_owners,cumulative_triage_resolution_consumers,cumulative_triage_resolution_value,cumulative_triage_resolution_shortcut_risk_value,cumulative_timing_only_triage_resolution_value,cumulative_analysis_only_value
+1,1,1,1,1,1,22586246,9467849,0,0
+5,5,5,2,5,4,91107482,38191022,0,0
+9,9,9,3,9,8,108403945,45441444,0,0
+10,9,10,3,9,8,108403945,45441444,0,0
+20,9,20,3,9,8,108403945,45441444,0,0
+50,9,50,3,9,8,108403945,45441444,0,0
+90,9,90,3,9,8,108403945,45441444,0,0
+91,9,90,3,9,8,108403945,45441444,0,0
+100,9,90,3,9,8,108403945,45441444,0,0

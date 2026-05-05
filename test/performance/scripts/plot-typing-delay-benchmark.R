@@ -39779,6 +39779,302 @@ save_plot(
 	height = 7.2
 )
 
+open_question_triage_resolution_register <- open_question_monitoring_failure_triage_register %>%
+	mutate(
+		triage_resolution_state = case_when(
+			monitoring_failure_triage_state == "local packet monitoring-failure triage" ~ "local packet triage resolution",
+			monitoring_failure_triage_state == "owner artifact monitoring-failure triage" ~ "owner artifact triage resolution",
+			TRUE ~ "observer artifact triage resolution"
+		),
+		triage_resolution_outcome = case_when(
+			close_scope == "CI wait decision" ~ "resolve the routed failure as accept current CI change, roll back CI change, renew CI packet, or keep CI question reopened",
+			close_scope == "source prototype decision" ~ "resolve the routed failure as accept source recommendation, roll back source wording, renew owner/source packet, or keep source question reopened",
+			close_scope == "benchmark method wording" ~ "resolve the routed failure as accept method wording, roll back method wording, renew method packet, or keep method question reopened",
+			TRUE ~ "resolve the routed failure as accept broad conclusion, roll back broad wording, renew observer packet, or keep broad question reopened"
+		),
+		triage_resolution_accept_evidence = case_when(
+			triage_resolution_state == "local packet triage resolution" ~ "fresh local decisive-check result, packet renewal result, monitor recovery row, backout-not-needed note, and report diff",
+			triage_resolution_state == "owner artifact triage resolution" ~ "fresh owner decisive-check result, reviewer identity, owner renewal result, monitor recovery row, backout-not-needed note, and report diff",
+			TRUE ~ "fresh observer decisive-check result, reviewer identity, observer renewal result, monitor recovery row, backout-not-needed note, and report diff"
+		),
+		triage_resolution_reject_evidence = case_when(
+			triage_resolution_state == "local packet triage resolution" ~ "failed decisive-check result, stale local packet, rollback diff, blocked-consumer note, and renewed open-question row",
+			triage_resolution_state == "owner artifact triage resolution" ~ "failed decisive-check result, stale owner artifact, reviewer note, rollback diff, blocked-consumer note, and renewed open-question row",
+			TRUE ~ "failed decisive-check result, stale observer artifact, reviewer note, rollback diff, blocked-consumer note, and renewed open-question row"
+		),
+		triage_resolution_renewal_path = case_when(
+			triage_resolution_state == "local packet triage resolution" ~ "rerun local packet, update active-claim ledger, reapply consumer-use gate, recheck decision execution, and restart monitoring",
+			triage_resolution_state == "owner artifact triage resolution" ~ "refresh owner artifact, record reviewer identity, update active-claim ledger, reapply consumer-use gate, recheck execution, and restart monitoring",
+			TRUE ~ "refresh observer artifact, record reviewer identity, update active-claim ledger, reapply consumer-use gate, recheck execution, and restart monitoring"
+		),
+		triage_resolution_closure_rule = case_when(
+			triage_resolution_state == "local packet triage resolution" ~ "close only when accept/reject evidence, renewal path, consumer notice, ledger update, and report diff are all present",
+			triage_resolution_state == "owner artifact triage resolution" ~ "close only when accept/reject evidence, reviewer identity, renewal path, consumer notice, ledger update, and report diff are all present",
+			TRUE ~ "close only when accept/reject evidence, reviewer identity, renewal path, consumer notice, ledger update, and report diff are all present"
+		),
+		triage_resolution_blocked_shortcut = case_when(
+			triage_resolution_state == "local packet triage resolution" ~ "do not resolve by citing aggregate timing, stale local evidence, or an unreviewed rollback note",
+			triage_resolution_state == "owner artifact triage resolution" ~ "do not resolve by citing aggregate timing, stale owner evidence, missing reviewer identity, or an unreviewed rollback note",
+			TRUE ~ "do not resolve by citing aggregate timing, stale observer evidence, missing reviewer identity, or broad wording without refreshed evidence"
+		),
+		triage_resolution_owner = monitoring_failure_owner,
+		triage_resolution_consumer = monitoring_failure_consumer,
+		triage_resolution_cost = case_when(
+			triage_resolution_state == "local packet triage resolution" ~ 3,
+			triage_resolution_state == "owner artifact triage resolution" ~ 5,
+			TRUE ~ 7
+		),
+		triage_resolution_value = pmax(
+			1,
+			monitoring_failure_triage_value + monitoring_failure_misroute_risk_value + post_execution_monitoring_escape_risk_value - triage_resolution_cost
+		),
+		triage_resolution_shortcut_risk_value = pmax(
+			1,
+			monitoring_failure_misroute_risk_value + decision_execution_escape_risk_value + consumer_misuse_risk_value - triage_resolution_cost
+		),
+		timing_only_triage_resolution_value = 0,
+		analysis_only_value = 0,
+		triage_resolution_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(triage_resolution_value), desc(triage_resolution_shortcut_risk_value), question_family)
+
+open_question_triage_resolution_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"outcome", "What resolution outcome is allowed after triage?",
+	"accept", "What evidence accepts the executed decision after failure triage?",
+	"reject", "What evidence rejects or rolls back the executed decision?",
+	"renewal", "What renewal path reopens the evidence packet?",
+	"closure", "What closure rule prevents premature resolution?",
+	"shortcut", "What shortcut resolution is blocked?",
+	"owner", "Who owns the triage-resolution result?",
+	"consumer", "Which consumer receives the resolution?",
+	"substitute", "Can aggregate timing alone substitute for triage resolution?",
+	"stop-rule", "When does triage-resolution review stop?"
+)
+
+open_question_triage_resolution_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_triage_resolution_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_triage_resolution_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_triage_resolution_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_triage_resolution_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		triage_resolution_first_seen = !duplicated(triage_resolution_id),
+		triage_resolution_axis_key = paste(triage_resolution_id, pressure_axis, sep = "::"),
+		triage_resolution_axis_first_seen = !duplicated(triage_resolution_axis_key),
+		triage_resolution_state_first_seen = !duplicated(triage_resolution_state),
+		triage_resolution_owner_first_seen = !duplicated(triage_resolution_owner),
+		triage_resolution_consumer_first_seen = !duplicated(triage_resolution_consumer),
+		new_triage_resolution_value = if_else(triage_resolution_first_seen, triage_resolution_value, 0),
+		new_triage_resolution_shortcut_risk_value = if_else(triage_resolution_first_seen, triage_resolution_shortcut_risk_value, 0),
+		new_timing_only_triage_resolution_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!triage_resolution_axis_first_seen ~ "repeat: triage-resolution-axis already checked",
+			triage_resolution_state == "local packet triage resolution" ~ "triage resolution: local packet",
+			TRUE ~ "triage resolution: owner or observer artifact"
+		),
+		cumulative_triage_resolution_records = cumsum(triage_resolution_first_seen),
+		cumulative_triage_resolution_axes = cumsum(triage_resolution_axis_first_seen),
+		cumulative_triage_resolution_states = cumsum(triage_resolution_state_first_seen),
+		cumulative_triage_resolution_owners = cumsum(triage_resolution_owner_first_seen),
+		cumulative_triage_resolution_consumers = cumsum(triage_resolution_consumer_first_seen),
+		cumulative_triage_resolution_value = cumsum(new_triage_resolution_value),
+		cumulative_triage_resolution_shortcut_risk_value = cumsum(new_triage_resolution_shortcut_risk_value),
+		cumulative_timing_only_triage_resolution_value = cumsum(new_timing_only_triage_resolution_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_triage_resolution_summary <- open_question_triage_resolution_100_pass %>%
+	group_by(triage_resolution_state, monitoring_failure_triage_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		triage_resolution_records = n_distinct(triage_resolution_id),
+		axis_checks = sum(triage_resolution_axis_first_seen),
+		triage_resolution_owners = n_distinct(triage_resolution_owner),
+		triage_resolution_consumers = n_distinct(triage_resolution_consumer),
+		triage_resolution_value = sum(new_triage_resolution_value),
+		triage_resolution_shortcut_risk_value = sum(new_triage_resolution_shortcut_risk_value),
+		timing_only_triage_resolution_value = sum(new_timing_only_triage_resolution_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(triage_resolution_value), desc(triage_resolution_shortcut_risk_value), first_pass)
+
+open_question_triage_resolution_checkpoints <- open_question_triage_resolution_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_triage_resolution_records,
+		cumulative_triage_resolution_axes,
+		cumulative_triage_resolution_states,
+		cumulative_triage_resolution_owners,
+		cumulative_triage_resolution_consumers,
+		cumulative_triage_resolution_value,
+		cumulative_triage_resolution_shortcut_risk_value,
+		cumulative_timing_only_triage_resolution_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_triage_resolution_register,
+	file.path(data_dir, "typing-delay-open-question-triage-resolution-register.csv")
+)
+
+write_csv(
+	open_question_triage_resolution_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			triage_resolution_state,
+			monitoring_failure_triage_state,
+			triage_resolution_outcome,
+			triage_resolution_accept_evidence,
+			triage_resolution_reject_evidence,
+			triage_resolution_renewal_path,
+			triage_resolution_closure_rule,
+			triage_resolution_blocked_shortcut,
+			triage_resolution_owner,
+			triage_resolution_consumer,
+			monitoring_failure_signal,
+			monitoring_failure_classification,
+			monitoring_failure_decisive_check,
+			supported_claim,
+			blocked_claim,
+			triage_resolution_first_seen,
+			triage_resolution_axis_first_seen,
+			triage_resolution_state_first_seen,
+			triage_resolution_owner_first_seen,
+			triage_resolution_consumer_first_seen,
+			pass_result,
+			triage_resolution_value,
+			triage_resolution_shortcut_risk_value,
+			timing_only_triage_resolution_value,
+			new_triage_resolution_value,
+			new_triage_resolution_shortcut_risk_value,
+			new_timing_only_triage_resolution_value,
+			new_analysis_only_value,
+			cumulative_triage_resolution_records,
+			cumulative_triage_resolution_axes,
+			cumulative_triage_resolution_states,
+			cumulative_triage_resolution_owners,
+			cumulative_triage_resolution_consumers,
+			cumulative_triage_resolution_value,
+			cumulative_triage_resolution_shortcut_risk_value,
+			cumulative_timing_only_triage_resolution_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-triage-resolution-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_triage_resolution_summary,
+	file.path(data_dir, "typing-delay-open-question-triage-resolution-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_triage_resolution_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-triage-resolution-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_triage_resolution_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, triage_resolution_value)
+		) %>%
+		ggplot(aes(triage_resolution_value, question_label, fill = triage_resolution_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Triage resolution") +
+		labs(
+			title = "Triage resolution blocks shortcut closure after monitoring failures",
+			subtitle = "Each row names outcome, accept evidence, reject evidence, renewal path, closure rule, blocked shortcut, owner, and consumer",
+			x = "Triage-resolution value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"396-open-question-triage-resolution-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_triage_resolution_saturation_long <- open_question_triage_resolution_100_pass %>%
+	select(
+		pass_id,
+		`triage-resolution records` = cumulative_triage_resolution_records,
+		`triage-resolution axes` = cumulative_triage_resolution_axes,
+		`triage-resolution states` = cumulative_triage_resolution_states,
+		`triage-resolution owners` = cumulative_triage_resolution_owners,
+		`triage-resolution consumers` = cumulative_triage_resolution_consumers,
+		`triage-resolution value` = cumulative_triage_resolution_value,
+		`triage-resolution shortcut risk value` = cumulative_triage_resolution_shortcut_risk_value,
+		`timing-only triage-resolution value` = cumulative_timing_only_triage_resolution_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("triage-resolution records", "triage-resolution axes", "triage-resolution states", "triage-resolution owners", "triage-resolution consumers", "triage-resolution value", "triage-resolution shortcut risk value", "timing-only triage-resolution value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_triage_resolution_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Triage-resolution audit saturates once every resolution rule is named",
+			subtitle = "Nine resolution records appear by pass 9; all 90 axes appear by pass 90; timing-only resolution value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"397-open-question-triage-resolution-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_triage_resolution_summary %>%
+		mutate(
+			state_label = str_wrap(triage_resolution_state, width = 28),
+			state_label = fct_reorder(state_label, triage_resolution_value + triage_resolution_shortcut_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Triage-resolution coverage separates local resolution from owner and observer resolution",
+			subtitle = "Every row is checked for outcome, accept, reject, renewal, closure, shortcut, owner, consumer, substitute, and stop rule",
+			x = "Triage-resolution-axis checks",
+			y = "Triage-resolution state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"398-open-question-triage-resolution-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

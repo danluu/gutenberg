@@ -1,0 +1,7 @@
+triage_resolution_state,monitoring_failure_triage_state,pass_result,passes,first_pass,triage_resolution_records,axis_checks,triage_resolution_owners,triage_resolution_consumers,triage_resolution_value,triage_resolution_shortcut_risk_value,timing_only_triage_resolution_value,analysis_only_value
+local packet triage resolution,local packet monitoring-failure triage,triage resolution: local packet,40,1,4,40,4,3,81909304,34335271,0,0
+owner artifact triage resolution,owner artifact monitoring-failure triage,triage resolution: owner or observer artifact,20,5,2,20,2,2,16377878,6865382,0,0
+observer artifact triage resolution,observer artifact monitoring-failure triage,triage resolution: owner or observer artifact,30,7,3,30,3,3,10116763,4240791,0,0
+local packet triage resolution,local packet monitoring-failure triage,repeat: triage-resolution-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact triage resolution,owner artifact monitoring-failure triage,repeat: triage-resolution-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact triage resolution,observer artifact monitoring-failure triage,repeat: triage-resolution-axis already checked,3,97,3,0,3,3,0,0,0,0

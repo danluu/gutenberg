@@ -1842,6 +1842,23 @@ The R script derives:
     monitoring-failure-triage-value,
     monitoring-failure-misroute-risk-value,
     timing-only-monitoring-failure-triage, and analysis-only saturation.
+-   `data/typing-delay-open-question-triage-resolution-register.csv`:
+    triage-resolution register for the nine monitoring-failure triage records,
+    including allowed outcome, accept evidence, reject evidence, renewal path,
+    closure rule, blocked shortcut, owner, and consumer.
+-   `data/typing-delay-open-question-triage-resolution-100-pass-audit.csv`:
+    thirty-eighth forced 100-pass audit over triage-resolution axes: outcome,
+    accept, reject, renewal, closure, shortcut, owner, consumer, substitute,
+    and stop-rule.
+-   `data/typing-delay-open-question-triage-resolution-100-pass-summary.csv`:
+    rollup of triage-resolution coverage by triage-resolution state,
+    monitoring-failure triage state, and pass result.
+-   `data/typing-delay-open-question-triage-resolution-100-pass-checkpoints.csv`:
+    checkpoints for triage-resolution-record, triage-resolution-axis,
+    triage-resolution-state, triage-resolution-owner,
+    triage-resolution-consumer, triage-resolution-value,
+    triage-resolution-shortcut-risk-value, timing-only-triage-resolution, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12169,6 +12186,35 @@ This is the failure-routing guard. Monitoring says an executed decision drifted;
 triage decides whether that is a CI runtime problem, source/invalidation
 problem, method/schema problem, or portability/scope problem, and prevents the
 wrong owner or consumer from treating an unresolved failure as fresh support.
+
+I then added the triage-resolution layer: routing a monitoring failure is not
+the same as resolving it. The report now records the allowed resolution outcome,
+accept evidence, reject or rollback evidence, renewal path, closure rule,
+blocked shortcut, owner, and consumer.
+
+![Open question triage resolution register](figures/396-open-question-triage-resolution-register.png)
+
+![Open question triage resolution 100-pass saturation](figures/397-open-question-triage-resolution-100-pass-saturation.png)
+
+![Open question triage resolution coverage](figures/398-open-question-triage-resolution-coverage.png)
+
+| Triage-resolution check | Result |
+| ----------------------- | ------ |
+| Triage-resolution records | `9`, one per monitoring-failure triage record. |
+| Triage-resolution states | `3`: local packet triage resolution, owner artifact triage resolution, and observer artifact triage resolution. |
+| Triage-resolution owners | `9`; resolution routes back to the scoped monitoring-failure triage owner. |
+| Triage-resolution consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Triage-resolution-axis checks | `90`: every row checked against all `10` triage-resolution axes. |
+| Triage-resolution value | `108403945`: local packet resolution contributes `81909304`, owner artifact resolution contributes `16377878`, and observer artifact resolution contributes `10116763`. |
+| Triage-resolution shortcut-risk value | `45441444` across the nine triage-resolution records. |
+| Timing-only triage-resolution value | `0`; aggregate timing movement alone cannot accept the executed decision, reject it, prove rollback, renew the packet, or close the question. |
+| Saturation | Triage-resolution records are all named by pass `9`; all triage-resolution axes are covered by pass `90`; passes `91-100` add no triage-resolution coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the closure guard for monitoring failures. It blocks the common shortcut
+of treating a routed failure as resolved just because someone named the likely
+category. Closure requires accept or reject evidence, renewal or rollback path,
+consumer notice, ledger update, and a report diff.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
