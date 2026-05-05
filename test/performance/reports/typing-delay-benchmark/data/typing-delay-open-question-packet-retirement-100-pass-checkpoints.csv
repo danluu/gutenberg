@@ -1,0 +1,10 @@
+pass_id,cumulative_retirement_monitors,cumulative_retirement_axes,cumulative_monitor_owners,cumulative_monitor_value,cumulative_axis_value,cumulative_analysis_only_value
+1,1,1,1,11,1,0
+5,5,5,5,51,5,0
+9,9,9,9,79,9,0
+10,9,10,9,79,10,0
+20,9,20,9,79,20,0
+50,9,50,9,79,50,0
+90,9,90,9,79,90,0
+91,9,90,9,79,90,0
+100,9,90,9,79,90,0

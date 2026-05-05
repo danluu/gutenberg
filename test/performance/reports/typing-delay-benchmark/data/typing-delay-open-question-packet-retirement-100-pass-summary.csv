@@ -1,0 +1,5 @@
+retirement_state,pass_result,passes,first_pass,monitors,axis_checks,monitor_owners,monitor_value,axis_value,analysis_only_value,max_false_retire_risk
+retire after local packet,retirement monitor: local packet,40,1,4,40,4,42,40,0,3
+defer retirement until external packet,retirement monitor: external packet,50,5,5,50,5,37,50,0,5
+retire after local packet,repeat: retirement-axis already checked,5,91,4,0,4,0,0,0,3
+defer retirement until external packet,repeat: retirement-axis already checked,5,95,5,0,5,0,0,0,5

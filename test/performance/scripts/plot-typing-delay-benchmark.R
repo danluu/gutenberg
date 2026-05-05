@@ -30649,6 +30649,291 @@ save_plot(
 	height = 7.2
 )
 
+open_question_packet_retirement_monitor <- open_question_packet_invariant_gate %>%
+	left_join(
+		open_question_packet_outcome_matrix %>%
+			filter(outcome_case == "pass") %>%
+			select(question_family, pass_retirement_condition = retirement_condition, pass_reopen_trigger = reopen_trigger),
+		by = "question_family"
+	) %>%
+	mutate(
+		retirement_decision = case_when(
+			can_start_without_external_owner ~ "retire local packet after scoped pass/fail plus invariant archive",
+			packet_kind == "compatibility packet" ~ "retire public partition claim only after compatibility pass",
+			packet_kind == "policy packet" ~ "retire pass/fail uncertainty only after policy mapping is archived",
+			packet_kind == "workload packet" ~ "retire workload expansion only for covered replay strata",
+			packet_kind == "external endpoint packet" ~ "retire display-endpoint uncertainty only inside calibrated endpoint bounds",
+			packet_kind == "observer packet" ~ "retire mechanism wording only for the joined counter class",
+			TRUE ~ pass_retirement_condition
+		),
+		monitor_signal = case_when(
+			question_family == "Selector/source guard" ~ "source owner, behavior fixture, or target span changes",
+			question_family == "Pattern wait replacement" ~ "readiness resource p90 failure tuple changes in target topology",
+			question_family == "Startup wait and first-key tails" ~ "startup/inter-key independence or early-key fields change",
+			question_family == "Input-mode realism" ~ "helper stimulus, platform repeat, or hold-duration labeling changes",
+			question_family == "Store-subscriber partition" ~ "new public subscriber/import surface or ordering assumption appears",
+			question_family == "CI pass/fail policy" ~ "dashboard, reviewer, or noisy-metric policy changes",
+			question_family == "Product workload generalization" ~ "new workload stratum, plugin-heavy usage, or replay fixture changes",
+			question_family == "Browser endpoint and display presentation" ~ "display pipeline, capture calibration, or browser endpoint changes",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "browser/runtime/OS scheduler or sidecar perturbation profile changes",
+			TRUE ~ pass_reopen_trigger
+		),
+		monitor_artifact = case_when(
+			can_start_without_external_owner ~ "small trigger-control rerun with archived invariant fields",
+			packet_kind == "compatibility packet" ~ "compatibility fixture delta and public API surface diff",
+			packet_kind == "policy packet" ~ "policy mapping diff joined to archived CI artifact",
+			packet_kind == "workload packet" ~ "new replay stratum manifest and retained rows",
+			packet_kind == "external endpoint packet" ~ "calibration diff and endpoint join manifest",
+			packet_kind == "observer packet" ~ "sidecar off/on perturbation control and counter join manifest",
+			TRUE ~ "claim-scope diff"
+		),
+		monitor_owner = case_when(
+			can_start_without_external_owner ~ engineering_owner,
+			packet_kind == "compatibility packet" ~ "data API compatibility owner",
+			packet_kind == "policy packet" ~ "CI policy owner",
+			packet_kind == "workload packet" ~ "workload replay owner",
+			packet_kind == "external endpoint packet" ~ "presentation endpoint owner",
+			packet_kind == "observer packet" ~ "mechanism observer owner",
+			TRUE ~ engineering_owner
+		),
+		retirement_state = case_when(
+			can_start_without_external_owner ~ "retire after local packet",
+			TRUE ~ "defer retirement until external packet"
+		),
+		false_retire_risk = case_when(
+			can_start_without_external_owner ~ 3,
+			packet_kind %in% c("compatibility packet", "policy packet") ~ 4,
+			TRUE ~ 5
+		),
+		false_reopen_risk = case_when(
+			can_start_without_external_owner ~ 2,
+			packet_kind %in% c("compatibility packet", "policy packet") ~ 3,
+			TRUE ~ 4
+		),
+		monitor_burden = case_when(
+			can_start_without_external_owner ~ 2,
+			packet_kind %in% c("compatibility packet", "policy packet") ~ 3,
+			TRUE ~ 4
+		),
+		retirement_monitor_value = pmax(
+			1,
+			invariant_gate_value + false_retire_risk + false_reopen_risk - monitor_burden
+		),
+		analysis_only_value = 0,
+		retirement_monitor_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(retirement_monitor_value), desc(false_retire_risk), question_family)
+
+open_question_packet_retirement_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"retire", "What exact condition retires this packet?",
+	"monitor", "What lightweight signal remains after retirement?",
+	"reopen", "What signal reopens the packet?",
+	"owner", "Who owns the retired packet monitor?",
+	"false-retire", "What would make retirement premature?",
+	"false-reopen", "What would create noisy reopen churn?",
+	"artifact", "What archived artifact proves the monitor fired?",
+	"scope", "Which claim remains retired versus merely narrowed?",
+	"cadence", "Is monitoring event-triggered rather than periodic churn?",
+	"stop-rule", "When should more analysis stop after retirement?"
+)
+
+open_question_packet_retirement_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_packet_retirement_monitor)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_packet_retirement_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_packet_retirement_monitor %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_packet_retirement_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		retirement_monitor_first_seen = !duplicated(retirement_monitor_id),
+		retirement_axis_key = paste(retirement_monitor_id, pressure_axis, sep = "::"),
+		retirement_axis_first_seen = !duplicated(retirement_axis_key),
+		monitor_owner_first_seen = !duplicated(monitor_owner),
+		new_monitor_value = if_else(retirement_monitor_first_seen, retirement_monitor_value, 0),
+		new_axis_value = if_else(retirement_axis_first_seen, 1, 0),
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!retirement_axis_first_seen ~ "repeat: retirement-axis already checked",
+			retirement_state == "retire after local packet" ~ "retirement monitor: local packet",
+			TRUE ~ "retirement monitor: external packet"
+		),
+		cumulative_retirement_monitors = cumsum(retirement_monitor_first_seen),
+		cumulative_retirement_axes = cumsum(retirement_axis_first_seen),
+		cumulative_monitor_owners = cumsum(monitor_owner_first_seen),
+		cumulative_monitor_value = cumsum(new_monitor_value),
+		cumulative_axis_value = cumsum(new_axis_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_packet_retirement_summary <- open_question_packet_retirement_100_pass %>%
+	group_by(retirement_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		monitors = n_distinct(retirement_monitor_id),
+		axis_checks = sum(retirement_axis_first_seen),
+		monitor_owners = n_distinct(monitor_owner),
+		monitor_value = sum(new_monitor_value),
+		axis_value = sum(new_axis_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_false_retire_risk = max(false_retire_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(monitor_value), desc(axis_value), first_pass)
+
+open_question_packet_retirement_checkpoints <- open_question_packet_retirement_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_retirement_monitors,
+		cumulative_retirement_axes,
+		cumulative_monitor_owners,
+		cumulative_monitor_value,
+		cumulative_axis_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_packet_retirement_monitor,
+	file.path(data_dir, "typing-delay-open-question-packet-retirement-monitor.csv")
+)
+
+write_csv(
+	open_question_packet_retirement_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			packet_kind,
+			retirement_state,
+			retirement_decision,
+			monitor_signal,
+			monitor_artifact,
+			monitor_owner,
+			false_retire_risk,
+			false_reopen_risk,
+			monitor_burden,
+			retirement_monitor_first_seen,
+			retirement_axis_first_seen,
+			monitor_owner_first_seen,
+			pass_result,
+			retirement_monitor_value,
+			new_monitor_value,
+			new_axis_value,
+			new_analysis_only_value,
+			cumulative_retirement_monitors,
+			cumulative_retirement_axes,
+			cumulative_monitor_owners,
+			cumulative_monitor_value,
+			cumulative_axis_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-packet-retirement-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_packet_retirement_summary,
+	file.path(data_dir, "typing-delay-open-question-packet-retirement-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_packet_retirement_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-packet-retirement-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_packet_retirement_monitor %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, retirement_monitor_value)
+		) %>%
+		ggplot(aes(retirement_monitor_value, question_label, fill = retirement_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Retirement state") +
+		labs(
+			title = "Retired packet questions still need explicit reopen monitors",
+			subtitle = "Local packets can retire after scoped packet results; external packets defer retirement until their missing owner or observer exists",
+			x = "Retirement monitor value",
+			y = "Packet"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"303-open-question-packet-retirement-monitors.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_packet_retirement_saturation_long <- open_question_packet_retirement_100_pass %>%
+	select(
+		pass_id,
+		`retirement monitors` = cumulative_retirement_monitors,
+		`retirement-axis checks` = cumulative_retirement_axes,
+		`monitor owners` = cumulative_monitor_owners,
+		`monitor value` = cumulative_monitor_value,
+		`axis value` = cumulative_axis_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("retirement monitors", "retirement-axis checks", "monitor owners", "monitor value", "axis value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_packet_retirement_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.65) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Retirement-monitor audit saturates after all packet-axis checks are named",
+			subtitle = "Nine retirement monitors appear by pass 9; all 90 monitor-axis checks appear by pass 90; analysis-only value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"304-open-question-packet-retirement-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_packet_retirement_summary %>%
+		mutate(
+			state_label = str_wrap(retirement_state, width = 28),
+			state_label = fct_reorder(state_label, monitor_value + axis_value)
+		) %>%
+		ggplot(aes(axis_value, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Retirement monitoring distinguishes local closure from external deferral",
+			subtitle = "Repeated passes cover monitor axes but do not create more analysis-only work",
+			x = "Retirement-axis coverage value",
+			y = "Retirement state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"305-open-question-packet-retirement-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

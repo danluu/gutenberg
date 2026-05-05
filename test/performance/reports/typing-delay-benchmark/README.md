@@ -1376,6 +1376,19 @@ The R script derives:
 -   `data/typing-delay-open-question-packet-invariant-100-pass-checkpoints.csv`:
     checkpoints for invariant, invariant-axis, invariant-family, gate-value,
     axis-coverage, and analysis-only-value saturation.
+-   `data/typing-delay-open-question-packet-retirement-monitor.csv`: retirement
+    monitor table for the nine packet contracts, including retirement decisions,
+    monitor signals, monitor artifacts, owners, false-retire risk, and false-
+    reopen risk.
+-   `data/typing-delay-open-question-packet-retirement-100-pass-audit.csv`:
+    seventh forced 100-pass audit over packet retirement monitors and pressure
+    axes: retire, monitor, reopen, owner, false-retire, false-reopen, artifact,
+    scope, cadence, and stop-rule.
+-   `data/typing-delay-open-question-packet-retirement-100-pass-summary.csv`:
+    rollup of retirement monitor coverage by retirement state and pass result.
+-   `data/typing-delay-open-question-packet-retirement-100-pass-checkpoints.csv`:
+    checkpoints for retirement-monitor, retirement-axis, owner, monitor-value,
+    axis-value, and analysis-only-value saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10795,6 +10808,30 @@ accepting an unjoinable or under-specified result. A packet result is not
 interpretable until its invariant holds. If the invariant breaks, the recovery is
 to rerun with the required fields or narrow back to the prior scoped claim, not
 to promote the aggregate timing number.
+
+I then added the lifecycle layer: once a packet result is interpreted and its
+invariant holds, what stays monitored, who owns the monitor, and what exact
+signal reopens the retired or deferred question.
+
+![Open question packet retirement monitors](figures/303-open-question-packet-retirement-monitors.png)
+
+![Open question packet retirement 100-pass saturation](figures/304-open-question-packet-retirement-100-pass-saturation.png)
+
+![Open question packet retirement coverage](figures/305-open-question-packet-retirement-coverage.png)
+
+| Retirement-monitor check | Result |
+| ------------------------ | ------ |
+| Retirement monitors | `9`, one per packet contract. |
+| Monitor owners | `9`; every retired or deferred packet has a named owner. |
+| Retirement-axis checks | `90`: every packet checked against all `10` lifecycle axes. |
+| Monitor value | `79`: local packet retirement monitors contribute `42`; deferred external packet monitors contribute `37`. |
+| Saturation | Monitors are all named by pass `9`; all monitor-axis checks are covered by pass `90`; passes `91-100` add no monitor coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This keeps retired questions retired without making them invisible. A retired
+packet is reopened only by its named trigger and monitor artifact, not by generic
+uncertainty or another timing-only run. External packets are not retired yet;
+they stay deferred until their missing owner or observer exists.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
