@@ -25,20 +25,22 @@ plus the known RTC fixes from `latest-known-ws-repro-with-tests`, rebuilt with
 provider on port `18991`.
 
 That current-baseline run gives valid user-visible evidence for one bug still
-failing after recent trunk plus the known fixes:
+failing after recent trunk plus the known fixes and addressed by the current
+PR branch:
 
 - same-user title reload loss/corruption.
 
 The duplicate-table run does still expose a stale internal table attribute on
 Browser B, but the original table video was invalid as user-visible evidence:
 Browser B's visible table, textboxes, edited post serialization, saved REST
-content, and reload all kept `anchor`, `same`, `same` in the direct repro. A
-deeper natural follow-up path can make the stale table object worse across
-duplicate/reload/edit operations, and `Save draft` can briefly return before
-REST raw content reflects a newly inserted row, but the row appeared after a
-short poll and was present after publish/front-end view. Treat this as an
-internal stale-state bug with follow-up risk, not as a confirmed durable
-user-visible table content-loss repro from the current evidence.
+content, and reload all kept `anchor`, `same`, `same` in the direct repro.
+
+A deeper natural follow-up path found after that correction does make the table
+problem user-visible: Browser A and Browser B can visibly diverge after normal
+table toolbar edits, and later the editors can converge to content that differs
+from saved raw post content. That stronger table follow-up repro was run on
+`latest-known-ws-pr-combined` with a temp-only build patch, so it is residual
+evidence against the current PR branch, not a bug fixed by the PR branch.
 
 The current PR branch also contains a fix for concurrent list-item move loss.
 That bug has earlier valid trace-level evidence and a natural-user video, but
@@ -67,7 +69,7 @@ Results:
 | Repro | Result on recent trunk plus known fixes | Evidence |
 | --- | --- | --- |
 | Same-user title reload | Failed 5/5 | `/private/tmp/gutenberg-rerun-defaultws-20260504/title-video-source-rerun.log` |
-| Duplicate table rows | Internal stale attribute reproduced; direct visible loss disconfirmed | `/private/tmp/gutenberg-table-duplicate-current-diagnostics.json`, `/private/tmp/gutenberg-table-stale-visible-followups.json` |
+| Duplicate table rows | Direct visible loss disconfirmed; stronger follow-up visible divergence reproduced as residual issue | `/private/tmp/gutenberg-table-duplicate-current-diagnostics.json`, `/tmp/gutenberg-rtc-table-0ZTLQF/repo/test/e2e/artifacts/rtc-table-followups/result.json` |
 | Concurrent list-item moves | Inconclusive | `/private/tmp/gutenberg-rerun-defaultws-20260504/list-rerun.log` |
 | Undo selection with another synced entity loaded | Passed 5/5 | `/private/tmp/gutenberg-rerun-defaultws-20260504/undo-rerun.log` |
 | Same-user excerpt reload divergence | Did not reproduce | `/private/tmp/gutenberg-rerun-defaultws-20260504/excerpt-rerun.log` |
@@ -78,6 +80,13 @@ Fresh annotated video for the current-baseline user-visible failure:
   `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-repro.mp4`;
 - title action log:
   `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-action-log.md`.
+
+Fresh annotated video for the residual table follow-up repro:
+
+- table follow-up visible divergence:
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence.mp4`;
+- table follow-up action log:
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence-action-log.md`.
 
 Superseded artifacts that should not be cited as current proof:
 
@@ -93,9 +102,9 @@ but they are not proof from the latest current-baseline rerun:
 - `/private/tmp/gutenberg-ws-unfixed-repro-videos-20260504/ws-concurrent-list-item-move-loss.mp4`;
 - `/private/tmp/gutenberg-ws-repro-videos/ws-concurrent-list-item-move-loss.mp4`.
 
-## Bugs Fixed By The PR Branch
+## Current Findings
 
-### 1. Same-user title reload loss/corruption
+### 1. Same-user title reload loss/corruption (PR-fixed claim)
 
 Natural user flow:
 
@@ -154,7 +163,7 @@ stale REST fields to the collaborative document. It also fixes the WebSocket
 test provider handshake so a joining/reloading peer is not considered ready
 until it has received a real room snapshot or peer-state response.
 
-### 2. Duplicate table row internal stale state
+### 2. Duplicate table row follow-up divergence (not PR-fixed)
 
 Natural user flow:
 
@@ -170,24 +179,38 @@ The direct repro is not a valid user-visible table-loss repro. Browser B's
 visible table, textboxes, edited post serialization, saved REST content, and
 reload all stayed `anchor`, `same`, `same`.
 
-Natural follow-up experiments show the stale object can persist and deepen:
-duplicating the stale table creates another table whose internal duplicate row
-is `null`; after save/reload, the duplicated table can have internal
-`null`, `null`, `null` while still visibly rendering all rows. Editing or
-inserting rows through the UI updates visible/editor serialization correctly.
-One `Save draft` check returned before REST raw content contained a newly
-inserted row, but a short poll later did contain it, and publishing plus the
-front-end view also contained it. This is follow-up risk, not current durable
-visible data-loss evidence.
+The stronger natural follow-up repro is user-visible:
+
+1. Browser A creates duplicate visible rows through the table toolbar:
+   `anchor`, `same`, `same`.
+2. Browser B edits the duplicate row to `edited-duplicate`.
+3. Browser B inserts a column and types `extra` in the duplicate row.
+4. Browser A deletes the earlier duplicate row.
+5. Actual: Browser A shows `anchor`, `edited-duplicate / extra`, while
+   Browser B still shows an extra row:
+   `anchor`, `edited-duplicate / empty`, `edited-duplicate / extra`.
+6. Browser B adds a tail row, deletes a column, saves, and reloads.
+7. Actual final mismatch: both editors converge to
+   `anchor`, `edited-duplicate`, `edited-duplicate / extra`, but saved raw
+   post content is `anchor`, `edited-duplicate`, `edited-duplicate`, `tail`.
+
+This stronger follow-up repro was run on `latest-known-ws-pr-combined` at
+`aa48ddde13a75896b8431467fd0da1236063e1ba` with a temp-only build patch to
+remove a duplicate `getBlockClientId` helper. Therefore it is residual evidence
+that the current PR branch does not fully fix the table stale-state class.
 
 Current evidence:
 
 - direct diagnostics:
   `/private/tmp/gutenberg-table-duplicate-current-diagnostics.json`;
 - follow-up natural workflow diagnostics:
-  `/private/tmp/gutenberg-table-stale-visible-followups.json`;
-- screenshots:
-  `/private/tmp/gutenberg-table-stale-visible-followups-screenshots/`.
+  `/tmp/gutenberg-rtc-table-0ZTLQF/repo/test/e2e/artifacts/rtc-table-followups/result.json`;
+- follow-up annotated video:
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-followup-visible-divergence.mp4`;
+- final screenshots:
+  `/tmp/gutenberg-rtc-table-0ZTLQF/repo/test/e2e/artifacts/rtc-table-followups/browser-a-final.png`
+  and
+  `/tmp/gutenberg-rtc-table-0ZTLQF/repo/test/e2e/artifacts/rtc-table-followups/browser-b-final.png`.
 
 How it was introduced:
 
