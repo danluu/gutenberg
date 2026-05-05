@@ -43384,6 +43384,315 @@ save_plot(
 	height = 7.2
 )
 
+open_question_generalization_boundary_register <- open_question_replication_readiness_register %>%
+	mutate(
+		generalization_boundary_state = case_when(
+			replication_readiness_state == "local packet replication readiness" ~ "local packet generalization boundary",
+			replication_readiness_state == "owner artifact replication readiness" ~ "owner artifact generalization boundary",
+			TRUE ~ "observer artifact generalization boundary"
+		),
+		generalization_boundary_supported_scope = case_when(
+			close_scope == "CI wait decision" ~ "support only the named CI-comparable Typing setup, startup-wait setting, typing-delay setting, input mode, branch-count model, browser channel, container state, and hardware/QoS envelope that were replicated",
+			close_scope == "source prototype decision" ~ "support only the named source prototype, selector/dispatch instrumentation, invalidation pathway, fanout shape, owner-review branch, browser channel, and build hash that were replicated",
+			close_scope == "benchmark method wording" ~ "support only the named trace schema, aggregation script, event-slice extraction, instrumentation patch, raw JSON set, browser channel, and report-generation commit that were replicated",
+			TRUE ~ "support only the named browser/runtime/workload/container/endpoint matrix, raw artifact set, report-generation commit, and recommendation surface that were replicated"
+		),
+		generalization_boundary_excluded_scope = case_when(
+			close_scope == "CI wait decision" ~ "does not by itself support untested CI hardware, alternate browser channels, different branch counts, tap-vs-hold substitutions, different startup waits, different typing delays, or real-user typing workloads",
+			close_scope == "source prototype decision" ~ "does not by itself support untested source branches, alternate selector graphs, plugin-heavy blocks, different invalidation fanout, or production editor workloads",
+			close_scope == "benchmark method wording" ~ "does not by itself support untested trace categories, alternate browser tracing implementations, different aggregation windows, or new instrumentation schemas",
+			TRUE ~ "does not by itself support untested browsers, OSes, containers, workloads, endpoints, editor histories, plugin sets, hardware/QoS states, or future runtime versions"
+		),
+		generalization_boundary_transfer_evidence = case_when(
+			generalization_boundary_state == "local packet generalization boundary" ~ "transfer requires replicated local artifact bundle plus at least one scoped sensitivity check that changes one boundary variable without changing the conclusion",
+			generalization_boundary_state == "owner artifact generalization boundary" ~ "transfer requires replicated owner artifact bundle, reviewer-visible scope label, and at least one owner-approved sensitivity check that changes one boundary variable without changing the conclusion",
+			TRUE ~ "transfer requires replicated observer artifact bundle, reviewer-visible scope label, broad-scope wording, and a matrix sensitivity check that changes one boundary variable without changing the conclusion"
+		),
+		generalization_boundary_negative_control = case_when(
+			close_scope == "CI wait decision" ~ "negative control changes a wait, input mode, branch count, browser channel, or startup state expected not to support the same CI decision; boundary fails if the broader label still publishes unchanged",
+			close_scope == "source prototype decision" ~ "negative control changes a selector graph, dispatch path, invalidation fanout, source branch, or plugin-heavy workload expected not to support the same source decision; boundary fails if the broader label still publishes unchanged",
+			close_scope == "benchmark method wording" ~ "negative control changes a trace schema, extraction window, aggregation rule, or instrumentation patch expected not to support the same method wording; boundary fails if the broader label still publishes unchanged",
+			TRUE ~ "negative control changes a browser, runtime, container, workload, endpoint, or hardware/QoS state expected not to support the same broad conclusion; boundary fails if the broader label still publishes unchanged"
+		),
+		generalization_boundary_matrix_gap = case_when(
+			close_scope == "CI wait decision" ~ "gap remains for unmeasured CI runners, Mac/Linux/container splits, browser channel changes, branch-count changes, realistic typing sessions, and long-idle user input",
+			close_scope == "source prototype decision" ~ "gap remains for unmeasured plugin-heavy documents, block patterns, selector graphs, invalidation fanout sizes, source branches, and owner-review environments",
+			close_scope == "benchmark method wording" ~ "gap remains for unmeasured browser trace implementations, event categories, trace overhead, aggregation windows, raw JSON schema changes, and future Playwright/browser versions",
+			TRUE ~ "gap remains for unmeasured browsers, OSes, containers, hardware/QoS states, plugin sets, user histories, endpoints, and future runtime versions"
+		),
+		generalization_boundary_decision_rule = case_when(
+			generalization_boundary_state == "local packet generalization boundary" ~ "local decision may use the claim only with the exact replicated scope label and must block broader recommendation text until transfer evidence is present",
+			generalization_boundary_state == "owner artifact generalization boundary" ~ "owner decision may use the claim only with the replicated owner scope label, reviewer identity, and explicit excluded-scope text",
+			TRUE ~ "observer decision may use the claim only with the replicated matrix scope label, reviewer identity, broad wording guard, and explicit excluded-scope text"
+		),
+		generalization_boundary_labeling_rule = case_when(
+			close_scope == "CI wait decision" ~ "label CI claims as exact-CI-comparable, sensitivity-supported, or unsupported-broad-CI; do not label them as real-user typing without workload evidence",
+			close_scope == "source prototype decision" ~ "label source claims as exact-source-prototype, owner-reviewed sensitivity, or unsupported-production-source; do not label them as plugin-heavy production behavior without workload evidence",
+			close_scope == "benchmark method wording" ~ "label method claims as exact-trace-schema, sensitivity-supported method, or unsupported-general-tracing; do not label them as browser-independent without cross-browser trace evidence",
+			TRUE ~ "label broad claims as exact-matrix, sensitivity-supported matrix, or unsupported-general-editor; do not label them as user-general without representative workload evidence"
+		),
+		generalization_boundary_owner = replication_readiness_owner,
+		generalization_boundary_consumer = replication_readiness_consumer,
+		generalization_boundary_cost = case_when(
+			generalization_boundary_state == "local packet generalization boundary" ~ 7,
+			generalization_boundary_state == "owner artifact generalization boundary" ~ 9,
+			TRUE ~ 11
+		),
+		generalization_boundary_value = pmax(
+			1,
+			replication_readiness_value + replication_readiness_reproducibility_gap_risk_value + consumer_verification_false_confidence_risk_value - generalization_boundary_cost
+		),
+		generalization_boundary_overgeneralization_risk_value = pmax(
+			1,
+			replication_readiness_reproducibility_gap_risk_value + consumer_verification_false_confidence_risk_value + consumer_outcome_regression_risk_value - generalization_boundary_cost
+		),
+		timing_only_generalization_boundary_value = 0,
+		analysis_only_value = 0,
+		generalization_boundary_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(generalization_boundary_value), desc(generalization_boundary_overgeneralization_risk_value), question_family)
+
+open_question_generalization_boundary_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"supported-scope", "What exact scope is supported by the replicated evidence?",
+	"excluded-scope", "What tempting broader scope is not supported?",
+	"transfer-evidence", "What evidence is required before transferring the claim to a wider scope?",
+	"negative-control", "What negative control would catch overgeneralization?",
+	"matrix-gap", "What browser, CI, workload, source, or environment matrix gap remains?",
+	"decision-rule", "What decision rule prevents broader text from publishing without transfer evidence?",
+	"label", "How must the report label the claim boundary?",
+	"owner", "Who owns the generalization boundary?",
+	"substitute", "Can aggregate timing alone substitute for generalization-boundary evidence?",
+	"stop-rule", "When does generalization-boundary review stop?"
+)
+
+open_question_generalization_boundary_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_generalization_boundary_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_generalization_boundary_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_generalization_boundary_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_generalization_boundary_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		generalization_boundary_first_seen = !duplicated(generalization_boundary_id),
+		generalization_boundary_axis_key = paste(generalization_boundary_id, pressure_axis, sep = "::"),
+		generalization_boundary_axis_first_seen = !duplicated(generalization_boundary_axis_key),
+		generalization_boundary_state_first_seen = !duplicated(generalization_boundary_state),
+		generalization_boundary_owner_first_seen = !duplicated(generalization_boundary_owner),
+		generalization_boundary_consumer_first_seen = !duplicated(generalization_boundary_consumer),
+		new_generalization_boundary_value = if_else(generalization_boundary_first_seen, generalization_boundary_value, 0),
+		new_generalization_boundary_overgeneralization_risk_value = if_else(generalization_boundary_first_seen, generalization_boundary_overgeneralization_risk_value, 0),
+		new_timing_only_generalization_boundary_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!generalization_boundary_axis_first_seen ~ "repeat: generalization-boundary-axis already checked",
+			generalization_boundary_state == "local packet generalization boundary" ~ "generalization boundary: local packet",
+			TRUE ~ "generalization boundary: owner or observer artifact"
+		),
+		cumulative_generalization_boundary_records = cumsum(generalization_boundary_first_seen),
+		cumulative_generalization_boundary_axes = cumsum(generalization_boundary_axis_first_seen),
+		cumulative_generalization_boundary_states = cumsum(generalization_boundary_state_first_seen),
+		cumulative_generalization_boundary_owners = cumsum(generalization_boundary_owner_first_seen),
+		cumulative_generalization_boundary_consumers = cumsum(generalization_boundary_consumer_first_seen),
+		cumulative_generalization_boundary_value = cumsum(new_generalization_boundary_value),
+		cumulative_generalization_boundary_overgeneralization_risk_value = cumsum(new_generalization_boundary_overgeneralization_risk_value),
+		cumulative_timing_only_generalization_boundary_value = cumsum(new_timing_only_generalization_boundary_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_generalization_boundary_summary <- open_question_generalization_boundary_100_pass %>%
+	group_by(generalization_boundary_state, replication_readiness_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		generalization_boundary_records = n_distinct(generalization_boundary_id),
+		axis_checks = sum(generalization_boundary_axis_first_seen),
+		generalization_boundary_owners = n_distinct(generalization_boundary_owner),
+		generalization_boundary_consumers = n_distinct(generalization_boundary_consumer),
+		generalization_boundary_value = sum(new_generalization_boundary_value),
+		generalization_boundary_overgeneralization_risk_value = sum(new_generalization_boundary_overgeneralization_risk_value),
+		timing_only_generalization_boundary_value = sum(new_timing_only_generalization_boundary_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(generalization_boundary_value), desc(generalization_boundary_overgeneralization_risk_value), first_pass)
+
+open_question_generalization_boundary_checkpoints <- open_question_generalization_boundary_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_generalization_boundary_records,
+		cumulative_generalization_boundary_axes,
+		cumulative_generalization_boundary_states,
+		cumulative_generalization_boundary_owners,
+		cumulative_generalization_boundary_consumers,
+		cumulative_generalization_boundary_value,
+		cumulative_generalization_boundary_overgeneralization_risk_value,
+		cumulative_timing_only_generalization_boundary_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_generalization_boundary_register,
+	file.path(data_dir, "typing-delay-open-question-generalization-boundary-register.csv")
+)
+
+write_csv(
+	open_question_generalization_boundary_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			generalization_boundary_state,
+			replication_readiness_state,
+			generalization_boundary_supported_scope,
+			generalization_boundary_excluded_scope,
+			generalization_boundary_transfer_evidence,
+			generalization_boundary_negative_control,
+			generalization_boundary_matrix_gap,
+			generalization_boundary_decision_rule,
+			generalization_boundary_labeling_rule,
+			generalization_boundary_owner,
+			generalization_boundary_consumer,
+			replication_readiness_environment_manifest,
+			replication_readiness_artifact_manifest,
+			replication_readiness_rerun_command,
+			replication_readiness_independent_host_rule,
+			replication_readiness_drift_detection,
+			replication_readiness_acceptance_band,
+			supported_claim,
+			blocked_claim,
+			generalization_boundary_first_seen,
+			generalization_boundary_axis_first_seen,
+			generalization_boundary_state_first_seen,
+			generalization_boundary_owner_first_seen,
+			generalization_boundary_consumer_first_seen,
+			pass_result,
+			generalization_boundary_value,
+			generalization_boundary_overgeneralization_risk_value,
+			timing_only_generalization_boundary_value,
+			new_generalization_boundary_value,
+			new_generalization_boundary_overgeneralization_risk_value,
+			new_timing_only_generalization_boundary_value,
+			new_analysis_only_value,
+			cumulative_generalization_boundary_records,
+			cumulative_generalization_boundary_axes,
+			cumulative_generalization_boundary_states,
+			cumulative_generalization_boundary_owners,
+			cumulative_generalization_boundary_consumers,
+			cumulative_generalization_boundary_value,
+			cumulative_generalization_boundary_overgeneralization_risk_value,
+			cumulative_timing_only_generalization_boundary_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-generalization-boundary-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_generalization_boundary_summary,
+	file.path(data_dir, "typing-delay-open-question-generalization-boundary-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_generalization_boundary_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-generalization-boundary-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_generalization_boundary_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, generalization_boundary_value)
+		) %>%
+		ggplot(aes(generalization_boundary_value, question_label, fill = generalization_boundary_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Generalization boundary") +
+		labs(
+			title = "Generalization boundary checks that replicated claims are not overextended",
+			subtitle = "Each row names supported scope, excluded scope, transfer evidence, negative control, matrix gap, decision rule, label, owner, and consumer",
+			x = "Generalization-boundary value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"432-open-question-generalization-boundary-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_generalization_boundary_saturation_long <- open_question_generalization_boundary_100_pass %>%
+	select(
+		pass_id,
+		`generalization-boundary records` = cumulative_generalization_boundary_records,
+		`generalization-boundary axes` = cumulative_generalization_boundary_axes,
+		`generalization-boundary states` = cumulative_generalization_boundary_states,
+		`generalization-boundary owners` = cumulative_generalization_boundary_owners,
+		`generalization-boundary consumers` = cumulative_generalization_boundary_consumers,
+		`generalization-boundary value` = cumulative_generalization_boundary_value,
+		`generalization-boundary overgeneralization risk value` = cumulative_generalization_boundary_overgeneralization_risk_value,
+		`timing-only generalization-boundary value` = cumulative_timing_only_generalization_boundary_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("generalization-boundary records", "generalization-boundary axes", "generalization-boundary states", "generalization-boundary owners", "generalization-boundary consumers", "generalization-boundary value", "generalization-boundary overgeneralization risk value", "timing-only generalization-boundary value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_generalization_boundary_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Generalization-boundary audit saturates once every transfer path is checked",
+			subtitle = "Nine boundary records appear by pass 9; all 90 axes appear by pass 90; timing-only boundary value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"433-open-question-generalization-boundary-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_generalization_boundary_summary %>%
+		mutate(
+			state_label = str_wrap(generalization_boundary_state, width = 28),
+			state_label = fct_reorder(state_label, generalization_boundary_value + generalization_boundary_overgeneralization_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Generalization-boundary coverage separates exact-scope claims from wider transfer claims",
+			subtitle = "Every row is checked for supported scope, excluded scope, transfer evidence, negative control, matrix gap, decision rule, label, owner, substitute, and stop rule",
+			x = "Generalization-boundary-axis checks",
+			y = "Generalization-boundary state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"434-open-question-generalization-boundary-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

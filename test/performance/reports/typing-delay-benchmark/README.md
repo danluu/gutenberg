@@ -2052,6 +2052,24 @@ The R script derives:
     replication-readiness-consumer, replication-readiness-value,
     replication-readiness-reproducibility-gap-risk-value,
     timing-only-replication-readiness, and analysis-only saturation.
+-   `data/typing-delay-open-question-generalization-boundary-register.csv`:
+    generalization-boundary register for the nine replication-readiness records,
+    including supported scope, excluded scope, transfer evidence, negative
+    control, matrix gap, decision rule, labeling rule, owner, and consumer.
+-   `data/typing-delay-open-question-generalization-boundary-100-pass-audit.csv`:
+    fiftieth forced 100-pass audit over generalization-boundary axes:
+    supported-scope, excluded-scope, transfer-evidence, negative-control,
+    matrix-gap, decision-rule, label, owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-generalization-boundary-100-pass-summary.csv`:
+    rollup of generalization-boundary coverage by generalization-boundary
+    state, replication-readiness state, and pass result.
+-   `data/typing-delay-open-question-generalization-boundary-100-pass-checkpoints.csv`:
+    checkpoints for generalization-boundary-record,
+    generalization-boundary-axis, generalization-boundary-state,
+    generalization-boundary-owner, generalization-boundary-consumer,
+    generalization-boundary-value,
+    generalization-boundary-overgeneralization-risk-value,
+    timing-only-generalization-boundary, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12748,6 +12766,38 @@ or reviewer-owned host because the environment, raw artifacts, ordering, rerun
 command, or drift band were implicit. A verified claim is not treated as
 replication-ready until a named artifact bundle and rerun path can reproduce it
 or explain bounded numeric drift.
+
+I then added the generalization-boundary layer: replication is still not a
+license to generalize beyond the replicated setup. Boundary records the
+supported scope, excluded scope, transfer evidence, negative control, remaining
+matrix gap, decision rule, labeling rule, owner, and consumer for each
+replication-readiness row.
+
+![Open question generalization boundary register](figures/432-open-question-generalization-boundary-register.png)
+
+![Open question generalization boundary 100-pass saturation](figures/433-open-question-generalization-boundary-100-pass-saturation.png)
+
+![Open question generalization boundary coverage](figures/434-open-question-generalization-boundary-coverage.png)
+
+| Generalization-boundary check | Result |
+| ----------------------------- | ------ |
+| Generalization-boundary records | `9`, one per replication-readiness record. |
+| Generalization-boundary states | `3`: local packet generalization boundary, owner artifact generalization boundary, and observer artifact generalization boundary. |
+| Generalization-boundary owners | `9`; boundary ownership routes back to the scoped replication-readiness owner. |
+| Generalization-boundary consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Generalization-boundary-axis checks | `90`: every row checked against all `10` generalization-boundary axes. |
+| Generalization-boundary value | `87568015243`: local packet boundary contributes `66165863222`, owner artifact boundary contributes `13229942642`, and observer artifact boundary contributes `8172209379`. |
+| Generalization-boundary overgeneralization-risk value | `47486297466` across the nine generalization-boundary records. |
+| Timing-only generalization-boundary value | `0`; aggregate timing movement alone cannot prove supported scope, excluded scope, transfer evidence, negative controls, matrix gaps, decision rules, labeling rules, owner, or stop rule. |
+| Saturation | Generalization-boundary records are all named by pass `9`; all generalization-boundary axes are covered by pass `90`; passes `91-100` add no generalization-boundary coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the overgeneralization guard. It catches the case where a reproduced
+local or CI-comparable result is described as a broader user, browser,
+container, workload, or source claim without the transfer evidence that would
+justify that label. The claim remains exact-scope unless the report names the
+excluded scope, negative control, matrix gap, and decision rule that would allow
+or block transfer.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

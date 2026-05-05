@@ -1,0 +1,7 @@
+generalization_boundary_state,replication_readiness_state,pass_result,passes,first_pass,generalization_boundary_records,axis_checks,generalization_boundary_owners,generalization_boundary_consumers,generalization_boundary_value,generalization_boundary_overgeneralization_risk_value,timing_only_generalization_boundary_value,analysis_only_value
+local packet generalization boundary,local packet replication readiness,generalization boundary: local packet,40,1,4,40,4,3,66165863222,35880359473,0,0
+owner artifact generalization boundary,owner artifact replication readiness,generalization boundary: owner or observer artifact,20,5,2,20,2,2,13229942642,7174320326,0,0
+observer artifact generalization boundary,observer artifact replication readiness,generalization boundary: owner or observer artifact,30,7,3,30,3,3,8172209379,4431617667,0,0
+local packet generalization boundary,local packet replication readiness,repeat: generalization-boundary-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact generalization boundary,owner artifact replication readiness,repeat: generalization-boundary-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact generalization boundary,observer artifact replication readiness,repeat: generalization-boundary-axis already checked,3,97,3,0,3,3,0,0,0,0

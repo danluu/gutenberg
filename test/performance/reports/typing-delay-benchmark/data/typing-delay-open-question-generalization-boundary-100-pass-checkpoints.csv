@@ -1,0 +1,10 @@
+pass_id,cumulative_generalization_boundary_records,cumulative_generalization_boundary_axes,cumulative_generalization_boundary_states,cumulative_generalization_boundary_owners,cumulative_generalization_boundary_consumers,cumulative_generalization_boundary_value,cumulative_generalization_boundary_overgeneralization_risk_value,cumulative_timing_only_generalization_boundary_value,cumulative_analysis_only_value
+1,1,1,1,1,1,18245040522,9893902697,0,0
+5,5,5,2,5,4,73596093262,39909617336,0,0
+9,9,9,3,9,8,87568015243,47486297466,0,0
+10,9,10,3,9,8,87568015243,47486297466,0,0
+20,9,20,3,9,8,87568015243,47486297466,0,0
+50,9,50,3,9,8,87568015243,47486297466,0,0
+90,9,90,3,9,8,87568015243,47486297466,0,0
+91,9,90,3,9,8,87568015243,47486297466,0,0
+100,9,90,3,9,8,87568015243,47486297466,0,0
