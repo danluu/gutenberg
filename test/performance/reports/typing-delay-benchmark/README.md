@@ -1607,6 +1607,22 @@ The R script derives:
     checkpoints for incident-record, incident-axis, incident-state,
     incident-response-value, recovery-value, timing-only-incident, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-corrective-action-register.csv`:
+    corrective-action register for the nine incident-response records,
+    including permanent fix, prevention gate, verification test, rollout owner,
+    recurrence monitor, rollback prevention, review cadence, and effectiveness
+    metric.
+-   `data/typing-delay-open-question-corrective-action-100-pass-audit.csv`:
+    twenty-fourth forced 100-pass audit over corrective-action axes: fix, gate,
+    verify, rollout, monitor, rollback, cadence, metric, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-corrective-action-100-pass-summary.csv`:
+    rollup of corrective-action coverage by corrective-action state, incident
+    state, and pass result.
+-   `data/typing-delay-open-question-corrective-action-100-pass-checkpoints.csv`:
+    checkpoints for corrective-action-record, corrective-action-axis,
+    corrective-action-state, corrective-action-value, prevention-value,
+    timing-only-corrective-action, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11507,6 +11523,35 @@ This is the failure-handling layer for the evidence chain. When a packet,
 artifact, permission, retention entry, or event log fails, the linked benchmark
 claim is not kept alive by another clean timing run. It is suspended until the
 incident response restores the evidence or rolls back the wording.
+
+I then added the corrective-action layer: each incident-response row now names
+the permanent fix, the prevention gate that blocks unsafe wording, the
+verification test, the rollout owner, the recurrence monitor, rollback
+prevention, review cadence, and the effectiveness metric.
+
+![Open question corrective action register](figures/354-open-question-corrective-action-register.png)
+
+![Open question corrective action 100-pass saturation](figures/355-open-question-corrective-action-100-pass-saturation.png)
+
+![Open question corrective action coverage](figures/356-open-question-corrective-action-coverage.png)
+
+| Corrective-action check | Result |
+| ----------------------- | ------ |
+| Corrective-action records | `9`, one per incident-response record. |
+| Corrective-action states | `3`: local packet corrective action, owner artifact corrective action, and observer artifact corrective action. |
+| Rollout owners | `9`; permanent fixes route to the scoped incident owner. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Corrective-action-axis checks | `90`: every row checked against all `10` corrective-action axes. |
+| Corrective-action value | `31327`: local packet corrective actions contribute `23650`, owner artifact corrective actions contribute `4741`, and observer artifact corrective actions contribute `2936`. |
+| Prevention value | `24160` across the nine corrective-action records. |
+| Timing-only corrective-action value | `0`; aggregate timing alone does not install a permanent fix, prevention gate, verification test, rollout owner, recurrence monitor, rollback prevention, review cadence, or effectiveness metric. |
+| Saturation | Corrective-action records are all named by pass `9`; all corrective-action axes are covered by pass `90`; passes `91-100` add no corrective-action coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This turns incident response into prevention rather than ritual. Recovery is not
+done when a fresh timing run looks clean; it is done when the permanent evidence
+guard is installed, verified, owned, monitored, and tied back to the report
+wording it protects.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

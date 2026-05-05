@@ -1,0 +1,7 @@
+corrective_action_state,incident_state,pass_result,passes,first_pass,corrective_action_records,axis_checks,rollout_owners,ledger_consumers,corrective_action_value,prevention_value,timing_only_corrective_action_value,analysis_only_value
+local packet corrective action,local packet incident response,corrective action: local packet,40,1,4,40,4,3,23650,18272,0,0
+owner artifact corrective action,owner artifact incident response,corrective action: owner or observer artifact,20,5,2,20,2,2,4741,3647,0,0
+observer artifact corrective action,observer artifact incident response,corrective action: owner or observer artifact,30,7,3,30,3,3,2936,2241,0,0
+local packet corrective action,local packet incident response,repeat: corrective-action-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact corrective action,owner artifact incident response,repeat: corrective-action-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact corrective action,observer artifact incident response,repeat: corrective-action-axis already checked,3,97,3,0,3,3,0,0,0,0

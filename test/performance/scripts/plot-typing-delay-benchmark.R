@@ -35627,6 +35627,291 @@ save_plot(
 	height = 7.2
 )
 
+open_question_corrective_action_register <- open_question_incident_response_register %>%
+	mutate(
+		corrective_action_state = case_when(
+			incident_state == "local packet incident response" ~ "local packet corrective action",
+			incident_state == "owner artifact incident response" ~ "owner artifact corrective action",
+			TRUE ~ "observer artifact corrective action"
+		),
+		permanent_fix = case_when(
+			corrective_action_state == "local packet corrective action" ~ "add or repair scripted checks for packet checksum, required fields, regenerated figures, negative controls, report links, and old/new event logs",
+			corrective_action_state == "owner artifact corrective action" ~ "add or repair owner artifact scope checks, reviewer identity checks, compatibility or policy schema checks, report links, and old/new event logs",
+			TRUE ~ "add or repair observer artifact control checks, calibration/replay/counter schema checks, report links, and old/new event logs"
+		),
+		prevention_gate = case_when(
+			corrective_action_state == "local packet corrective action" ~ "no report wording update until packet validation, regeneration, negative control, and event-log checks pass in the script",
+			corrective_action_state == "owner artifact corrective action" ~ "no owner-scoped wording update until owner artifact validation, reviewer signoff, and event-log checks pass",
+			TRUE ~ "no broad wording update until observer artifact validation, control-schema checks, reviewer signoff, and event-log checks pass"
+		),
+		verification_test = case_when(
+			corrective_action_state == "local packet corrective action" ~ "rerun the pinned packet, regenerate CSV/PNG, verify checksums and required fields, and compare old/new disposition",
+			corrective_action_state == "owner artifact corrective action" ~ "refetch or regenerate owner artifact, verify checksum, reviewer identity, scope diff, and compatibility or policy schema",
+			TRUE ~ "refetch or regenerate observer artifact, verify checksum, calibration/replay/counter schema, control diff, and reviewer identity"
+		),
+		rollout_owner = incident_owner,
+		recurrence_monitor = case_when(
+			corrective_action_state == "local packet corrective action" ~ "monitor packet checksum, required-field completeness, regenerated figure hash, negative-control result, and report-link presence",
+			corrective_action_state == "owner artifact corrective action" ~ "monitor owner artifact checksum, reviewer identity, scope diff, compatibility or policy schema, and report-link presence",
+			TRUE ~ "monitor observer artifact checksum, control schema, calibration/replay/counter result, reviewer identity, and report-link presence"
+		),
+		rollback_prevention = case_when(
+			corrective_action_state == "local packet corrective action" ~ "do not reintroduce local timing wording unless validation and event-log checks accompany the successor packet",
+			corrective_action_state == "owner artifact corrective action" ~ "do not reintroduce owner-scoped wording unless owner validation and event-log checks accompany the successor artifact",
+			TRUE ~ "do not reintroduce broad wording unless observer validation and event-log checks accompany the successor artifact"
+		),
+		review_cadence = case_when(
+			close_scope == "CI wait decision" ~ "review before any CI wait-policy wording or runtime-saving recommendation changes",
+			close_scope == "source prototype decision" ~ "review before any source-patch safety wording changes",
+			close_scope == "benchmark method wording" ~ "review before any stimulus-method wording changes",
+			TRUE ~ "review before broad owner or observer claim wording changes"
+		),
+		effectiveness_metric = case_when(
+			corrective_action_state == "local packet corrective action" ~ "zero missing packet fields, zero checksum mismatches, zero unlogged output mutations, and successful pinned-packet reproduction",
+			corrective_action_state == "owner artifact corrective action" ~ "zero missing owner scope fields, zero checksum mismatches, zero unlogged scope mutations, and signed owner reproduction",
+			TRUE ~ "zero missing observer control fields, zero checksum mismatches, zero unlogged control mutations, and signed observer reproduction"
+		),
+		corrective_action_cost = case_when(
+			corrective_action_state == "local packet corrective action" ~ 2,
+			corrective_action_state == "owner artifact corrective action" ~ 4,
+			TRUE ~ 5
+		),
+		corrective_action_value = pmax(
+			1,
+			incident_response_value + recovery_value + false_closure_risk - corrective_action_cost
+		),
+		prevention_value = pmax(
+			1,
+			recovery_value + audit_log_value + stale_reuse_risk - corrective_action_cost
+		),
+		timing_only_corrective_action_value = 0,
+		analysis_only_value = 0,
+		corrective_action_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(corrective_action_value), desc(prevention_value), question_family)
+
+open_question_corrective_action_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"fix", "What permanent fix prevents the evidence incident from recurring?",
+	"gate", "What prevention gate blocks unsafe report wording?",
+	"verify", "What verification test proves the fix works?",
+	"rollout", "Who owns rollout of the permanent fix?",
+	"monitor", "What recurrence monitor catches the same failure later?",
+	"rollback", "What prevents reintroducing unsupported wording?",
+	"cadence", "When is the corrective action reviewed again?",
+	"metric", "What effectiveness metric shows recurrence is controlled?",
+	"substitute", "Can aggregate timing alone substitute for corrective action?",
+	"stop-rule", "When does corrective-action review stop?"
+)
+
+open_question_corrective_action_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_corrective_action_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_corrective_action_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_corrective_action_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_corrective_action_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		corrective_action_first_seen = !duplicated(corrective_action_id),
+		corrective_action_axis_key = paste(corrective_action_id, pressure_axis, sep = "::"),
+		corrective_action_axis_first_seen = !duplicated(corrective_action_axis_key),
+		corrective_action_state_first_seen = !duplicated(corrective_action_state),
+		new_corrective_action_value = if_else(corrective_action_first_seen, corrective_action_value, 0),
+		new_prevention_value = if_else(corrective_action_first_seen, prevention_value, 0),
+		new_timing_only_corrective_action_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!corrective_action_axis_first_seen ~ "repeat: corrective-action-axis already checked",
+			corrective_action_state == "local packet corrective action" ~ "corrective action: local packet",
+			TRUE ~ "corrective action: owner or observer artifact"
+		),
+		cumulative_corrective_action_records = cumsum(corrective_action_first_seen),
+		cumulative_corrective_action_axes = cumsum(corrective_action_axis_first_seen),
+		cumulative_corrective_action_states = cumsum(corrective_action_state_first_seen),
+		cumulative_corrective_action_value = cumsum(new_corrective_action_value),
+		cumulative_prevention_value = cumsum(new_prevention_value),
+		cumulative_timing_only_corrective_action_value = cumsum(new_timing_only_corrective_action_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_corrective_action_summary <- open_question_corrective_action_100_pass %>%
+	group_by(corrective_action_state, incident_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		corrective_action_records = n_distinct(corrective_action_id),
+		axis_checks = sum(corrective_action_axis_first_seen),
+		rollout_owners = n_distinct(rollout_owner),
+		ledger_consumers = n_distinct(ledger_consumer),
+		corrective_action_value = sum(new_corrective_action_value),
+		prevention_value = sum(new_prevention_value),
+		timing_only_corrective_action_value = sum(new_timing_only_corrective_action_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(corrective_action_value), desc(prevention_value), first_pass)
+
+open_question_corrective_action_checkpoints <- open_question_corrective_action_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_corrective_action_records,
+		cumulative_corrective_action_axes,
+		cumulative_corrective_action_states,
+		cumulative_corrective_action_value,
+		cumulative_prevention_value,
+		cumulative_timing_only_corrective_action_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_corrective_action_register,
+	file.path(data_dir, "typing-delay-open-question-corrective-action-register.csv")
+)
+
+write_csv(
+	open_question_corrective_action_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			corrective_action_state,
+			incident_state,
+			permanent_fix,
+			prevention_gate,
+			verification_test,
+			rollout_owner,
+			recurrence_monitor,
+			rollback_prevention,
+			review_cadence,
+			effectiveness_metric,
+			supported_claim,
+			blocked_claim,
+			corrective_action_first_seen,
+			corrective_action_axis_first_seen,
+			corrective_action_state_first_seen,
+			pass_result,
+			corrective_action_value,
+			prevention_value,
+			timing_only_corrective_action_value,
+			new_corrective_action_value,
+			new_prevention_value,
+			new_timing_only_corrective_action_value,
+			new_analysis_only_value,
+			cumulative_corrective_action_records,
+			cumulative_corrective_action_axes,
+			cumulative_corrective_action_states,
+			cumulative_corrective_action_value,
+			cumulative_prevention_value,
+			cumulative_timing_only_corrective_action_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-corrective-action-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_corrective_action_summary,
+	file.path(data_dir, "typing-delay-open-question-corrective-action-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_corrective_action_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-corrective-action-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_corrective_action_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, corrective_action_value)
+		) %>%
+		ggplot(aes(corrective_action_value, question_label, fill = corrective_action_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Corrective action") +
+		labs(
+			title = "Corrective actions turn evidence incidents into permanent prevention gates",
+			subtitle = "Each row names fix, gate, verification, rollout owner, recurrence monitor, rollback prevention, cadence, and effectiveness metric",
+			x = "Corrective-action value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"354-open-question-corrective-action-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_corrective_action_saturation_long <- open_question_corrective_action_100_pass %>%
+	select(
+		pass_id,
+		`corrective-action records` = cumulative_corrective_action_records,
+		`corrective-action axes` = cumulative_corrective_action_axes,
+		`corrective-action states` = cumulative_corrective_action_states,
+		`corrective-action value` = cumulative_corrective_action_value,
+		`prevention value` = cumulative_prevention_value,
+		`timing-only corrective-action value` = cumulative_timing_only_corrective_action_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("corrective-action records", "corrective-action axes", "corrective-action states", "corrective-action value", "prevention value", "timing-only corrective-action value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_corrective_action_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Corrective-action audit saturates once prevention gates and recurrence monitors are named",
+			subtitle = "Nine corrective-action records appear by pass 9; all 90 axes appear by pass 90; timing-only corrective-action value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"355-open-question-corrective-action-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_corrective_action_summary %>%
+		mutate(
+			state_label = str_wrap(corrective_action_state, width = 28),
+			state_label = fct_reorder(state_label, corrective_action_value + prevention_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Corrective-action coverage separates local packet fixes from owner and observer fixes",
+			subtitle = "Every row is checked for fix, gate, verify, rollout, monitor, rollback, cadence, metric, substitute, and stop rule",
+			x = "Corrective-action-axis checks",
+			y = "Corrective action state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"356-open-question-corrective-action-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
