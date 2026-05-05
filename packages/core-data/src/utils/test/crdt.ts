@@ -490,6 +490,27 @@ describe( 'crdt', () => {
 			expect( changes.title ).toBe( 'CRDT Title' );
 		} );
 
+		it( 'does not overwrite a dirty title with the persisted title from a stale CRDT update', () => {
+			map.set( 'title', new Y.Text( 'Persisted Title' ) );
+			const editedRecord = {
+				title: 'Unsaved Local Title',
+				status: 'draft',
+			} as unknown as Post;
+			const persistedRecord = {
+				title: 'Persisted Title',
+				status: 'draft',
+			} as unknown as Post;
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				editedRecord,
+				defaultSyncedProperties,
+				persistedRecord
+			);
+
+			expect( changes ).not.toHaveProperty( 'title' );
+		} );
+
 		it( 'filters out disallowed properties', () => {
 			map.set( 'title', new Y.Text( 'Test title' ) );
 			map.set( 'unsyncedProp', 'value' );
