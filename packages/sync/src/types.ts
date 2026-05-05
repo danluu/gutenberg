@@ -161,6 +161,10 @@ export interface SyncManager {
 		objectType: ObjectType,
 		objectId: ObjectID
 	) => Promise< string | null >;
+	getRecordFromCRDTDoc: (
+		objectType: ObjectType,
+		objectId: ObjectID
+	) => Promise< ObjectData | null >;
 	getAwareness: < State extends Awareness >(
 		objectType: ObjectType,
 		objectId: ObjectID

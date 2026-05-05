@@ -662,6 +662,30 @@ export function createSyncManager( debug = false ): SyncManager {
 		return serializeCrdtDoc( entityState.ydoc );
 	}
 
+	/**
+	 * Get the current entity record data from its CRDT document.
+	 *
+	 * @param {ObjectType} objectType Object type.
+	 * @param {ObjectID}   objectId   Object ID.
+	 */
+	async function getRecordFromCRDTDoc(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): Promise< ObjectData | null > {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+
+		if ( ! entityState?.ydoc ) {
+			return null;
+		}
+
+		// Match createPersistedCRDTDoc: pending local updates are deferred via
+		// yieldToEventLoop, so wait one tick before reading the CRDT record.
+		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		return entityState.ydoc.getMap( CRDT_RECORD_MAP_KEY ).toJSON();
+	}
+
 	// Collect internal functions so that they can be wrapped before calling.
 	const internal = {
 		applyPersistedCrdtDoc: debugWrap( _applyPersistedCrdtDoc ),
@@ -671,6 +695,7 @@ export function createSyncManager( debug = false ): SyncManager {
 	// Wrap and return the public API.
 	return {
 		createPersistedCRDTDoc: debugWrap( createPersistedCRDTDoc ),
+		getRecordFromCRDTDoc: debugWrap( getRecordFromCRDTDoc ),
 		getAwareness,
 		load: debugWrap( loadEntity ),
 		loadCollection: debugWrap( loadCollection ),
