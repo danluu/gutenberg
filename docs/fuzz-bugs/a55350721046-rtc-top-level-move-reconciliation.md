@@ -123,13 +123,29 @@ Emoji and multibyte: hi ..., こんにちは, مرحبا.
 
 The same pass repeated the focused unit controls. Current `origin/trunk` plus only the regression-test commit still fails all three focused repros. The known-fixes base plus only the regression-test commit still passes the two stale-snapshot Y.Doc repros and fails only the same-array-reference reorder repro. The PR branch passes the focused repros, the full `crdt-blocks` unit file, and targeted JS lint. That confirms the existing branch and video satisfy the requested standard, with pass-43 adding the previously blocked fresh browser verification.
 
+Pass 44 repeated the controls in fresh detached worktrees after fetching `origin/trunk` at:
+
+```text
+02bfdaa5ca9 RTC: Fix divergence when two offline users reconnect (#77980)
+```
+
+Current trunk plus only the regression-test commit failed all three focused non-Playwright repros. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, again with only that same test commit applied, passed the two Y.Doc stale-snapshot repros and still failed only `observes reordered blocks when the editor reuses the same block array reference`. The fixed PR branch passed the same three focused repros, the full `crdt-blocks` unit file, targeted JS lint, `git diff --check`, and a fresh one-attempt headless Playwright run on `.wp-env.test.json` port `9905`. The emitted Playwright JSON had both editors converged to:
+
+```text
+RTC ec47 realistic inserted paragraph 1
+Another paragraph exists so the top-level list is not degenerate.
+Emoji and multibyte: hi ..., こんにちは, مرحبا.
+```
+
+This is the pass-44 independent proof: after the known stale-snapshot fix set, the remaining unresolved source-manifest failure is still reproduced without a browser by mutating and reusing the same block-array object. That isolates the bug to the `serializableBlocksCache` object-identity assumption, not to HTTP polling, Playwright readiness, generated locator actions, malformed block markup, or inverted assertions.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
 84019935998 Improve CRDT "merge logic" for post entities (#72262)
 ```
 
-`git blame` still points the left/right diff, positional update loop, delete/insert tail, and duplicate-clientId cleanup to that initial CRDT block merge implementation, with later RTC text and array improvements layered on top. Those later changes did not add identity-aware handling for top-level moves.
+`git blame` still points the object-identity serialization cache, left/right diff, positional update loop, delete/insert tail, and duplicate-clientId cleanup to that initial CRDT block merge implementation, with later RTC text and array improvements layered on top. Local `gh` was unavailable in pass 44, so PR metadata was taken from local commit titles. The relevant follow-up commits were `54af1ce40068` (`RTC: Ensure that changes are only applied to text and cursors for their associated RichText instances`) and `128a3c29b7f1` (`Real-time collaboration: Expand mergeCrdtBlocks() automated testing (#75923)`). Those later commits expanded CRDT text/array handling and test coverage, but did not remove the object-identity cache or make top-level order reconciliation identity-aware.
 
 ## Fix Direction
 
