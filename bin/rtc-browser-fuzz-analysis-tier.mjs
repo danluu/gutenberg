@@ -72,6 +72,10 @@ const MAX_ATTEMPTS = getPositiveIntegerEnv(
 	'RTC_FUZZ_ANALYSIS_MAX_ATTEMPTS',
 	2
 );
+const TRANSIENT_CODEX_STARTUP_BACKOFF_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_ANALYSIS_TRANSIENT_CODEX_STARTUP_BACKOFF_MS',
+	5 * 60 * 1000
+);
 
 const activeJobs = new Map();
 let shuttingDown = false;
@@ -104,7 +108,9 @@ async function readJson( filePath, fallback ) {
 
 async function writeJson( filePath, value ) {
 	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
-	const tmpPath = `${ filePath }.tmp-${ process.pid }`;
+	const tmpPath = `${ filePath }.tmp-${ process.pid }-${ Date.now() }-${ Math.random()
+		.toString( 36 )
+		.slice( 2 ) }`;
 	await fs.writeFile( tmpPath, JSON.stringify( value, null, 2 ) + '\n' );
 	await fs.rename( tmpPath, filePath );
 }
@@ -140,6 +146,14 @@ function isProcessAlive( pid ) {
 
 async function reconcileJobs( state ) {
 	for ( const job of Object.values( state.jobs ) ) {
+		if (
+			job.status === 'failed' &&
+			( await isTransientCodexStartupFailure( job ) )
+		) {
+			markTransientCodexStartupRetry( job );
+			continue;
+		}
+
 		if ( job.status !== 'running' ) {
 			continue;
 		}
@@ -159,6 +173,36 @@ async function reconcileJobs( state ) {
 		job.status = job.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
 		job.completedAt = new Date().toISOString();
 	}
+}
+
+async function isTransientCodexStartupFailure( job ) {
+	if ( ! job?.stderrPath ) {
+		return false;
+	}
+
+	let stderr;
+	try {
+		stderr = await fs.readFile( job.stderrPath, 'utf8' );
+	} catch {
+		return false;
+	}
+
+	return (
+		stderr.includes( 'Failed to load cloud requirements' ) ||
+		stderr.includes( 'workspace-managed policies' )
+	);
+}
+
+function markTransientCodexStartupRetry( job ) {
+	job.pid = null;
+	job.status = 'retry';
+	job.transientFailureCount = ( job.transientFailureCount ?? 0 ) + 1;
+	job.transientFailureReason = 'codex-cloud-requirements';
+	job.nextAttemptAt = new Date(
+		Date.now() + TRANSIENT_CODEX_STARTUP_BACKOFF_MS
+	).toISOString();
+	job.attempts = Math.max( 0, ( job.attempts ?? 1 ) - 1 );
+	job.completedAt = new Date().toISOString();
 }
 
 function getActiveJobHashes( state ) {
@@ -187,6 +231,14 @@ function shouldAnalyzeSignature( signature, job ) {
 	}
 
 	if ( job.status === 'completed' || job.status === 'running' ) {
+		return false;
+	}
+
+	if (
+		job.status === 'retry' &&
+		job.nextAttemptAt &&
+		Date.parse( job.nextAttemptAt ) > Date.now()
+	) {
 		return false;
 	}
 
@@ -274,6 +326,7 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 		stderrPath,
 		analysisPath,
 		handoffPath,
+		nextAttemptAt: null,
 	};
 	state.jobs[ signature.hash ] = job;
 	await writeState( state );
@@ -335,12 +388,16 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 		latestJob.exitCode = code;
 		latestJob.signal = signal;
 		latestJob.completedAt = new Date().toISOString();
-		latestJob.status =
-			code === 0 && fsSync.existsSync( resultPath )
-				? 'completed'
-				: latestJob.attempts >= MAX_ATTEMPTS
-					? 'failed'
-					: 'retry';
+		if ( code === 0 && fsSync.existsSync( resultPath ) ) {
+			latestJob.status = 'completed';
+			latestJob.nextAttemptAt = null;
+		} else if ( await isTransientCodexStartupFailure( latestJob ) ) {
+			markTransientCodexStartupRetry( latestJob );
+		} else {
+			latestJob.status =
+				latestJob.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
+			latestJob.nextAttemptAt = null;
+		}
 		await writeState( latest );
 	} );
 }
