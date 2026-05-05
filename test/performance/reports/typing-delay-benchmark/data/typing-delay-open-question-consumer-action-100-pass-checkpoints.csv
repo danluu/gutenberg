@@ -1,0 +1,10 @@
+pass_id,cumulative_consumer_action_records,cumulative_consumer_action_axes,cumulative_consumer_action_states,cumulative_consumer_action_owners,cumulative_consumer_action_consumers,cumulative_consumer_action_value,cumulative_consumer_action_stale_decision_risk_value,cumulative_timing_only_consumer_action_value,cumulative_analysis_only_value
+1,1,1,1,1,1,1638432553,861574304,0,0
+5,5,5,2,5,4,6609041787,3475382957,0,0
+9,9,9,3,9,8,7863741830,4135170429,0,0
+10,9,10,3,9,8,7863741830,4135170429,0,0
+20,9,20,3,9,8,7863741830,4135170429,0,0
+50,9,50,3,9,8,7863741830,4135170429,0,0
+90,9,90,3,9,8,7863741830,4135170429,0,0
+91,9,90,3,9,8,7863741830,4135170429,0,0
+100,9,90,3,9,8,7863741830,4135170429,0,0

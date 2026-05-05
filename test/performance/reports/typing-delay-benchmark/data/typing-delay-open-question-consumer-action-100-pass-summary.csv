@@ -1,0 +1,7 @@
+consumer_action_state,consumer_receipt_state,pass_result,passes,first_pass,consumer_action_records,axis_checks,consumer_action_owners,consumer_action_consumers,consumer_action_value,consumer_action_stale_decision_risk_value,timing_only_consumer_action_value,analysis_only_value
+local packet consumer action,local packet consumer receipt,consumer action: local packet,40,1,4,40,4,3,5941795754,3124509781,0,0
+owner artifact consumer action,owner artifact consumer receipt,consumer action: owner or observer artifact,20,5,2,20,2,2,1188069108,624749432,0,0
+observer artifact consumer action,observer artifact consumer receipt,consumer action: owner or observer artifact,30,7,3,30,3,3,733876968,385911216,0,0
+local packet consumer action,local packet consumer receipt,repeat: consumer-action-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact consumer action,owner artifact consumer receipt,repeat: consumer-action-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact consumer action,observer artifact consumer receipt,repeat: consumer-action-axis already checked,3,97,3,0,3,3,0,0,0,0

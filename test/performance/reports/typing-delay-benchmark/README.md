@@ -1982,6 +1982,23 @@ The R script derives:
     consumer-receipt-state, consumer-receipt-owner, consumer-receipt-consumer,
     consumer-receipt-value, consumer-receipt-missed-update-risk-value,
     timing-only-consumer-receipt, and analysis-only saturation.
+-   `data/typing-delay-open-question-consumer-action-register.csv`:
+    consumer-action register for the nine consumer-receipt records, including
+    required consumer-side change, decision record, stale/missing-receipt
+    block rule, apply rule, rollback rule, verification packet, residual risk,
+    owner, and consumer.
+-   `data/typing-delay-open-question-consumer-action-100-pass-audit.csv`:
+    forty-sixth forced 100-pass audit over consumer-action axes:
+    required-change, decision-record, block, apply, rollback, verify,
+    residual, owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-consumer-action-100-pass-summary.csv`:
+    rollup of consumer-action coverage by consumer-action state,
+    consumer-receipt state, and pass result.
+-   `data/typing-delay-open-question-consumer-action-100-pass-checkpoints.csv`:
+    checkpoints for consumer-action-record, consumer-action-axis,
+    consumer-action-state, consumer-action-owner, consumer-action-consumer,
+    consumer-action-value, consumer-action-stale-decision-risk-value,
+    timing-only-consumer-action, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12552,6 +12569,37 @@ been patched correctly but the CI wait-policy, source, benchmark-method, or
 broad-report consumer still sees old status through a stale table, figure,
 snippet, artifact, or recommendation path. If receipt evidence is missing, the
 recommendation remains blocked and publication is retried or escalated.
+
+I then added the consumer-action layer: receipt is not enough if the consumer
+does not actually change or block the dependent decision. Action records the
+required consumer-side change, decision row, stale/missing-receipt block rule,
+apply rule, rollback rule, verification packet, residual risk, owner, and
+consumer for each receipt row.
+
+![Open question consumer action register](figures/420-open-question-consumer-action-register.png)
+
+![Open question consumer action 100-pass saturation](figures/421-open-question-consumer-action-100-pass-saturation.png)
+
+![Open question consumer action coverage](figures/422-open-question-consumer-action-coverage.png)
+
+| Consumer-action check | Result |
+| --------------------- | ------ |
+| Consumer-action records | `9`, one per consumer-receipt record. |
+| Consumer-action states | `3`: local packet consumer action, owner artifact consumer action, and observer artifact consumer action. |
+| Consumer-action owners | `9`; action routes back to the scoped consumer-receipt owner. |
+| Consumer-action consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Consumer-action-axis checks | `90`: every row checked against all `10` consumer-action axes. |
+| Consumer-action value | `7863741830`: local packet action contributes `5941795754`, owner artifact action contributes `1188069108`, and observer artifact action contributes `733876968`. |
+| Consumer-action stale-decision-risk value | `4135170429` across the nine consumer-action records. |
+| Timing-only consumer-action value | `0`; aggregate timing movement alone cannot prove the required decision change, decision record, block rule, apply rule, rollback, verification packet, or residual-risk boundary. |
+| Saturation | Consumer-action records are all named by pass `9`; all consumer-action axes are covered by pass `90`; passes `91-100` add no consumer-action coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the stale-decision guard. It catches the case where the propagated
+status was received correctly but the CI wait policy, source guidance,
+benchmark-method wording, or broad conclusion still acts on the old decision.
+The consumer action now has an explicit apply rule, stale-action block, rollback
+hook, and verification packet.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

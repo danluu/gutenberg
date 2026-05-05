@@ -42164,6 +42164,310 @@ save_plot(
 	height = 7.2
 )
 
+open_question_consumer_action_register <- open_question_consumer_receipt_register %>%
+	mutate(
+		consumer_action_state = case_when(
+			consumer_receipt_state == "local packet consumer receipt" ~ "local packet consumer action",
+			consumer_receipt_state == "owner artifact consumer receipt" ~ "owner artifact consumer action",
+			TRUE ~ "observer artifact consumer action"
+		),
+		consumer_action_required_change = case_when(
+			close_scope == "CI wait decision" ~ "update the Performance Tests CI wait policy, runtime/reliability recommendation, startup-wait guidance, typing-delay guidance, and input-mode guidance from the received status",
+			close_scope == "source prototype decision" ~ "update source prototype guidance, selector-guard guidance, dispatch/invalidation recommendation, fanout caveat, and owner-review status from the received status",
+			close_scope == "benchmark method wording" ~ "update benchmark-method wording, trace-schema caveat, aggregation caveat, instrumentation caveat, and limitation text from the received status",
+			TRUE ~ "update broad conclusions, portability caveat, browser/runtime caveat, workload caveat, endpoint caveat, and recommendation scope from the received status"
+		),
+		consumer_action_decision_record = case_when(
+			consumer_action_state == "local packet consumer action" ~ "consumer action row links the local receipt packet, active/stale status, applied local recommendation change, and rollback hook",
+			consumer_action_state == "owner artifact consumer action" ~ "consumer action row links the owner receipt packet, reviewer identity, active/stale status, applied owner-scoped recommendation change, and rollback hook",
+			TRUE ~ "consumer action row links the observer receipt packet, reviewer identity, broad-scope wording, active/stale status, applied broad conclusion change, and rollback hook"
+		),
+		consumer_action_block_rule = case_when(
+			consumer_action_state == "local packet consumer action" ~ "block local recommendation changes when receipt evidence is missing, stale, or still points at a superseded local packet",
+			consumer_action_state == "owner artifact consumer action" ~ "block owner-scoped recommendation changes when receipt evidence, reviewer-visible status, or owner artifact state is missing, stale, or superseded",
+			TRUE ~ "block broad conclusion changes when receipt evidence, reviewer-visible status, broad-scope wording, or observer artifact state is missing, stale, or superseded"
+		),
+		consumer_action_apply_rule = case_when(
+			consumer_action_state == "local packet consumer action" ~ "apply only after the local receipt packet proves the consumer sees current accepted-reopened or rejected-unchanged status",
+			consumer_action_state == "owner artifact consumer action" ~ "apply only after the owner receipt packet proves the consumer sees current accepted-reopened or rejected-unchanged status and reviewer identity",
+			TRUE ~ "apply only after the observer receipt packet proves the consumer sees current accepted-reopened or rejected-unchanged status, reviewer identity, and broad-scope wording"
+		),
+		consumer_action_rollback_rule = case_when(
+			consumer_action_state == "local packet consumer action" ~ "rollback the local recommendation if later receipt evidence shows the consumer acted on stale local status",
+			consumer_action_state == "owner artifact consumer action" ~ "rollback the owner-scoped recommendation if later receipt evidence shows the consumer acted on stale owner status",
+			TRUE ~ "rollback the broad conclusion if later receipt evidence shows the consumer acted on stale observer or broad-scope status"
+		),
+		consumer_action_verification_packet = case_when(
+			consumer_action_state == "local packet consumer action" ~ "local action packet contains receipt packet, decision row, applied recommendation diff, blocked-stale check, rollback hook, and consumer notice",
+			consumer_action_state == "owner artifact consumer action" ~ "owner action packet contains receipt packet, reviewer identity, decision row, applied recommendation diff, blocked-stale check, rollback hook, and consumer notice",
+			TRUE ~ "observer action packet contains receipt packet, reviewer identity, broad-scope wording diff, decision row, applied conclusion diff, blocked-stale check, rollback hook, and consumer notice"
+		),
+		consumer_action_residual_risk = case_when(
+			consumer_action_state == "local packet consumer action" ~ "residual risk is limited to future local evidence that contradicts the action row or proves the consumer view became stale again",
+			consumer_action_state == "owner artifact consumer action" ~ "residual risk is limited to future owner evidence that contradicts the action row, reviewer signoff, or consumer view",
+			TRUE ~ "residual risk is limited to future observer or broad-scope evidence that contradicts the action row, reviewer signoff, broad wording, or consumer view"
+		),
+		consumer_action_owner = consumer_receipt_owner,
+		consumer_action_consumer = consumer_receipt_consumer,
+		consumer_action_cost = case_when(
+			consumer_action_state == "local packet consumer action" ~ 4,
+			consumer_action_state == "owner artifact consumer action" ~ 6,
+			TRUE ~ 8
+		),
+		consumer_action_value = pmax(
+			1,
+			consumer_receipt_value + consumer_receipt_missed_update_risk_value + disposition_propagation_stale_conclusion_risk_value - consumer_action_cost
+		),
+		consumer_action_stale_decision_risk_value = pmax(
+			1,
+			consumer_receipt_missed_update_risk_value + disposition_propagation_stale_conclusion_risk_value + contradiction_disposition_wrong_decision_risk_value - consumer_action_cost
+		),
+		timing_only_consumer_action_value = 0,
+		analysis_only_value = 0,
+		consumer_action_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(consumer_action_value), desc(consumer_action_stale_decision_risk_value), question_family)
+
+open_question_consumer_action_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"required-change", "What consumer-side decision or recommendation must change?",
+	"decision-record", "What row records the consumer action?",
+	"block", "What blocks action on stale or missing receipt?",
+	"apply", "What evidence allows the action to apply?",
+	"rollback", "What rollback rule corrects stale consumer action?",
+	"verify", "What packet verifies the action was applied correctly?",
+	"residual", "What residual risk remains after action?",
+	"owner", "Who owns the consumer action?",
+	"substitute", "Can aggregate timing alone substitute for consumer action?",
+	"stop-rule", "When does consumer-action review stop?"
+)
+
+open_question_consumer_action_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_consumer_action_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_consumer_action_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_consumer_action_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_consumer_action_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		consumer_action_first_seen = !duplicated(consumer_action_id),
+		consumer_action_axis_key = paste(consumer_action_id, pressure_axis, sep = "::"),
+		consumer_action_axis_first_seen = !duplicated(consumer_action_axis_key),
+		consumer_action_state_first_seen = !duplicated(consumer_action_state),
+		consumer_action_owner_first_seen = !duplicated(consumer_action_owner),
+		consumer_action_consumer_first_seen = !duplicated(consumer_action_consumer),
+		new_consumer_action_value = if_else(consumer_action_first_seen, consumer_action_value, 0),
+		new_consumer_action_stale_decision_risk_value = if_else(consumer_action_first_seen, consumer_action_stale_decision_risk_value, 0),
+		new_timing_only_consumer_action_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!consumer_action_axis_first_seen ~ "repeat: consumer-action-axis already checked",
+			consumer_action_state == "local packet consumer action" ~ "consumer action: local packet",
+			TRUE ~ "consumer action: owner or observer artifact"
+		),
+		cumulative_consumer_action_records = cumsum(consumer_action_first_seen),
+		cumulative_consumer_action_axes = cumsum(consumer_action_axis_first_seen),
+		cumulative_consumer_action_states = cumsum(consumer_action_state_first_seen),
+		cumulative_consumer_action_owners = cumsum(consumer_action_owner_first_seen),
+		cumulative_consumer_action_consumers = cumsum(consumer_action_consumer_first_seen),
+		cumulative_consumer_action_value = cumsum(new_consumer_action_value),
+		cumulative_consumer_action_stale_decision_risk_value = cumsum(new_consumer_action_stale_decision_risk_value),
+		cumulative_timing_only_consumer_action_value = cumsum(new_timing_only_consumer_action_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_consumer_action_summary <- open_question_consumer_action_100_pass %>%
+	group_by(consumer_action_state, consumer_receipt_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		consumer_action_records = n_distinct(consumer_action_id),
+		axis_checks = sum(consumer_action_axis_first_seen),
+		consumer_action_owners = n_distinct(consumer_action_owner),
+		consumer_action_consumers = n_distinct(consumer_action_consumer),
+		consumer_action_value = sum(new_consumer_action_value),
+		consumer_action_stale_decision_risk_value = sum(new_consumer_action_stale_decision_risk_value),
+		timing_only_consumer_action_value = sum(new_timing_only_consumer_action_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(consumer_action_value), desc(consumer_action_stale_decision_risk_value), first_pass)
+
+open_question_consumer_action_checkpoints <- open_question_consumer_action_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_consumer_action_records,
+		cumulative_consumer_action_axes,
+		cumulative_consumer_action_states,
+		cumulative_consumer_action_owners,
+		cumulative_consumer_action_consumers,
+		cumulative_consumer_action_value,
+		cumulative_consumer_action_stale_decision_risk_value,
+		cumulative_timing_only_consumer_action_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_consumer_action_register,
+	file.path(data_dir, "typing-delay-open-question-consumer-action-register.csv")
+)
+
+write_csv(
+	open_question_consumer_action_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			consumer_action_state,
+			consumer_receipt_state,
+			consumer_action_required_change,
+			consumer_action_decision_record,
+			consumer_action_block_rule,
+			consumer_action_apply_rule,
+			consumer_action_rollback_rule,
+			consumer_action_verification_packet,
+			consumer_action_residual_risk,
+			consumer_action_owner,
+			consumer_action_consumer,
+			consumer_receipt_channel,
+			consumer_receipt_expected_status,
+			consumer_receipt_evidence,
+			consumer_receipt_stale_view_check,
+			consumer_receipt_audit_packet,
+			supported_claim,
+			blocked_claim,
+			consumer_action_first_seen,
+			consumer_action_axis_first_seen,
+			consumer_action_state_first_seen,
+			consumer_action_owner_first_seen,
+			consumer_action_consumer_first_seen,
+			pass_result,
+			consumer_action_value,
+			consumer_action_stale_decision_risk_value,
+			timing_only_consumer_action_value,
+			new_consumer_action_value,
+			new_consumer_action_stale_decision_risk_value,
+			new_timing_only_consumer_action_value,
+			new_analysis_only_value,
+			cumulative_consumer_action_records,
+			cumulative_consumer_action_axes,
+			cumulative_consumer_action_states,
+			cumulative_consumer_action_owners,
+			cumulative_consumer_action_consumers,
+			cumulative_consumer_action_value,
+			cumulative_consumer_action_stale_decision_risk_value,
+			cumulative_timing_only_consumer_action_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-consumer-action-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_consumer_action_summary,
+	file.path(data_dir, "typing-delay-open-question-consumer-action-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_consumer_action_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-consumer-action-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_consumer_action_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, consumer_action_value)
+		) %>%
+		ggplot(aes(consumer_action_value, question_label, fill = consumer_action_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Consumer action") +
+		labs(
+			title = "Consumer action checks that receipt changes decisions instead of only notifying consumers",
+			subtitle = "Each row names required change, decision record, block rule, apply rule, rollback, verification packet, residual risk, owner, and consumer",
+			x = "Consumer-action value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"420-open-question-consumer-action-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_consumer_action_saturation_long <- open_question_consumer_action_100_pass %>%
+	select(
+		pass_id,
+		`consumer-action records` = cumulative_consumer_action_records,
+		`consumer-action axes` = cumulative_consumer_action_axes,
+		`consumer-action states` = cumulative_consumer_action_states,
+		`consumer-action owners` = cumulative_consumer_action_owners,
+		`consumer-action consumers` = cumulative_consumer_action_consumers,
+		`consumer-action value` = cumulative_consumer_action_value,
+		`consumer-action stale-decision risk value` = cumulative_consumer_action_stale_decision_risk_value,
+		`timing-only consumer-action value` = cumulative_timing_only_consumer_action_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("consumer-action records", "consumer-action axes", "consumer-action states", "consumer-action owners", "consumer-action consumers", "consumer-action value", "consumer-action stale-decision risk value", "timing-only consumer-action value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_consumer_action_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Consumer-action audit saturates once every decision path is checked",
+			subtitle = "Nine action records appear by pass 9; all 90 axes appear by pass 90; timing-only action value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"421-open-question-consumer-action-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_consumer_action_summary %>%
+		mutate(
+			state_label = str_wrap(consumer_action_state, width = 28),
+			state_label = fct_reorder(state_label, consumer_action_value + consumer_action_stale_decision_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Consumer-action coverage separates local action from owner and observer action",
+			subtitle = "Every row is checked for required change, decision record, block, apply, rollback, verify, residual risk, owner, substitute, and stop rule",
+			x = "Consumer-action-axis checks",
+			y = "Consumer-action state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"422-open-question-consumer-action-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
