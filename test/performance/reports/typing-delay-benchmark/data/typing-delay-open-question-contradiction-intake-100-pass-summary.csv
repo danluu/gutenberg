@@ -1,0 +1,7 @@
+contradiction_intake_state,reopen_drill_state,pass_result,passes,first_pass,contradiction_intake_records,axis_checks,contradiction_intake_owners,contradiction_intake_consumers,contradiction_intake_value,contradiction_intake_drop_risk_value,timing_only_contradiction_intake_value,analysis_only_value
+local packet contradiction intake,local packet reopen drill,contradiction intake: local packet,40,1,4,40,4,3,654163830,309017461,0,0
+owner artifact contradiction intake,owner artifact reopen drill,contradiction intake: owner or observer artifact,20,5,2,20,2,2,130800850,61788412,0,0
+observer artifact contradiction intake,observer artifact reopen drill,contradiction intake: owner or observer artifact,30,7,3,30,3,3,80796471,38167056,0,0
+local packet contradiction intake,local packet reopen drill,repeat: contradiction-intake-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact contradiction intake,owner artifact reopen drill,repeat: contradiction-intake-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact contradiction intake,observer artifact reopen drill,repeat: contradiction-intake-axis already checked,3,97,3,0,3,3,0,0,0,0

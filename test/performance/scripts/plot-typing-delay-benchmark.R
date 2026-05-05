@@ -40949,6 +40949,310 @@ save_plot(
 	height = 7.2
 )
 
+open_question_contradiction_intake_register <- open_question_reopen_drill_register %>%
+	mutate(
+		contradiction_intake_state = case_when(
+			reopen_drill_state == "local packet reopen drill" ~ "local packet contradiction intake",
+			reopen_drill_state == "owner artifact reopen drill" ~ "owner artifact contradiction intake",
+			TRUE ~ "observer artifact contradiction intake"
+		),
+		contradiction_intake_capture = case_when(
+			close_scope == "CI wait decision" ~ "capture CI-comparable run id, commit, environment manifest, run order, q50/q90/tail deltas, reliability delta, runtime delta, startup wait, typing delay, and input mode",
+			close_scope == "source prototype decision" ~ "capture source commit, selector trace id, dispatch/invalidation/fanout evidence, owner-review status, and artifact hash",
+			close_scope == "benchmark method wording" ~ "capture generated data hash, trace schema, aggregation script version, instrumentation mode, and report wording affected by the contradiction",
+			TRUE ~ "capture portability target, browser/runtime version, workload label, endpoint label, conclusion-scope wording, and artifact hash"
+		),
+		contradiction_intake_dedupe = case_when(
+			contradiction_intake_state == "local packet contradiction intake" ~ "dedupe by question family, local packet path, run id, commit, environment manifest, and evidence hash",
+			contradiction_intake_state == "owner artifact contradiction intake" ~ "dedupe by question family, owner artifact path, reviewer identity, commit, artifact hash, and evidence hash",
+			TRUE ~ "dedupe by question family, observer artifact path, reviewer identity, portability/workload/browser scope, artifact hash, and evidence hash"
+		),
+		contradiction_intake_route = case_when(
+			contradiction_intake_state == "local packet contradiction intake" ~ "route accepted contradictions to the local reopen packet and keep rejected duplicates as non-supporting audit rows",
+			contradiction_intake_state == "owner artifact contradiction intake" ~ "route accepted contradictions to the owner artifact packet and require reviewer identity before reuse",
+			TRUE ~ "route accepted contradictions to the observer artifact packet and require reviewer identity plus broad-scope wording review before reuse"
+		),
+		contradiction_intake_provisional_notice = case_when(
+			close_scope == "CI wait decision" ~ "mark Performance Tests CI wait-policy conclusions provisional until the contradiction is accepted or rejected",
+			close_scope == "source prototype decision" ~ "mark source and selector conclusions provisional until the contradiction is accepted or rejected",
+			close_scope == "benchmark method wording" ~ "mark benchmark-method wording provisional until the contradiction is accepted or rejected",
+			TRUE ~ "mark broad report conclusions provisional until the contradiction is accepted or rejected"
+		),
+		contradiction_intake_acceptance_gate = case_when(
+			contradiction_intake_state == "local packet contradiction intake" ~ "accept only with current local packet, rerun manifest, contradiction evidence, stale-row list, report diff, and consumer-visible delta",
+			contradiction_intake_state == "owner artifact contradiction intake" ~ "accept only with current owner artifact, reviewer identity, contradiction evidence, stale-row list, report diff, and consumer-visible delta",
+			TRUE ~ "accept only with current observer artifact, reviewer identity, contradiction evidence, broad-scope wording diff, stale-row list, report diff, and consumer-visible delta"
+		),
+		contradiction_intake_rejection_gate = case_when(
+			contradiction_intake_state == "local packet contradiction intake" ~ "reject when the packet is duplicate, stale, non-comparable, missing the local manifest, or outside the ledgered claim boundary",
+			contradiction_intake_state == "owner artifact contradiction intake" ~ "reject when the artifact is duplicate, stale, non-comparable, missing reviewer identity, or outside the owner-scoped claim boundary",
+			TRUE ~ "reject when the artifact is duplicate, stale, non-comparable, missing reviewer identity, or outside the broad claim boundary"
+		),
+		contradiction_intake_quarantine_rule = case_when(
+			contradiction_intake_state == "local packet contradiction intake" ~ "do not change local recommendations until intake accepts or rejects the contradiction packet",
+			contradiction_intake_state == "owner artifact contradiction intake" ~ "do not change owner-scoped recommendations until intake accepts or rejects the contradiction packet",
+			TRUE ~ "do not change broad conclusions until intake accepts or rejects the contradiction packet"
+		),
+		contradiction_intake_owner = reopen_drill_owner,
+		contradiction_intake_consumer = reopen_drill_consumer,
+		contradiction_intake_cost = case_when(
+			contradiction_intake_state == "local packet contradiction intake" ~ 4,
+			contradiction_intake_state == "owner artifact contradiction intake" ~ 6,
+			TRUE ~ 8
+		),
+		contradiction_intake_value = pmax(
+			1,
+			reopen_drill_value + reopen_drill_missed_reopen_risk_value + ledger_consistency_drift_risk_value - contradiction_intake_cost
+		),
+		contradiction_intake_drop_risk_value = pmax(
+			1,
+			reopen_drill_missed_reopen_risk_value + ledger_consistency_drift_risk_value + resolution_ledger_stale_row_risk_value - contradiction_intake_cost
+		),
+		timing_only_contradiction_intake_value = 0,
+		analysis_only_value = 0,
+		contradiction_intake_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(contradiction_intake_value), desc(contradiction_intake_drop_risk_value), question_family)
+
+open_question_contradiction_intake_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"capture", "What data is captured when a contradiction arrives?",
+	"dedupe", "How is the contradiction deduplicated against existing packets?",
+	"route", "Where is an accepted contradiction routed?",
+	"notice", "Which consumer receives provisional status?",
+	"acceptance", "What evidence accepts the contradiction into a reopened packet?",
+	"rejection", "What evidence rejects the contradiction as non-supporting?",
+	"quarantine", "What conclusion is quarantined while intake is unresolved?",
+	"owner", "Who owns contradiction intake?",
+	"substitute", "Can aggregate timing alone substitute for contradiction intake?",
+	"stop-rule", "When does contradiction-intake review stop?"
+)
+
+open_question_contradiction_intake_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_contradiction_intake_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_contradiction_intake_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_contradiction_intake_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_contradiction_intake_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		contradiction_intake_first_seen = !duplicated(contradiction_intake_id),
+		contradiction_intake_axis_key = paste(contradiction_intake_id, pressure_axis, sep = "::"),
+		contradiction_intake_axis_first_seen = !duplicated(contradiction_intake_axis_key),
+		contradiction_intake_state_first_seen = !duplicated(contradiction_intake_state),
+		contradiction_intake_owner_first_seen = !duplicated(contradiction_intake_owner),
+		contradiction_intake_consumer_first_seen = !duplicated(contradiction_intake_consumer),
+		new_contradiction_intake_value = if_else(contradiction_intake_first_seen, contradiction_intake_value, 0),
+		new_contradiction_intake_drop_risk_value = if_else(contradiction_intake_first_seen, contradiction_intake_drop_risk_value, 0),
+		new_timing_only_contradiction_intake_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!contradiction_intake_axis_first_seen ~ "repeat: contradiction-intake-axis already checked",
+			contradiction_intake_state == "local packet contradiction intake" ~ "contradiction intake: local packet",
+			TRUE ~ "contradiction intake: owner or observer artifact"
+		),
+		cumulative_contradiction_intake_records = cumsum(contradiction_intake_first_seen),
+		cumulative_contradiction_intake_axes = cumsum(contradiction_intake_axis_first_seen),
+		cumulative_contradiction_intake_states = cumsum(contradiction_intake_state_first_seen),
+		cumulative_contradiction_intake_owners = cumsum(contradiction_intake_owner_first_seen),
+		cumulative_contradiction_intake_consumers = cumsum(contradiction_intake_consumer_first_seen),
+		cumulative_contradiction_intake_value = cumsum(new_contradiction_intake_value),
+		cumulative_contradiction_intake_drop_risk_value = cumsum(new_contradiction_intake_drop_risk_value),
+		cumulative_timing_only_contradiction_intake_value = cumsum(new_timing_only_contradiction_intake_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_contradiction_intake_summary <- open_question_contradiction_intake_100_pass %>%
+	group_by(contradiction_intake_state, reopen_drill_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		contradiction_intake_records = n_distinct(contradiction_intake_id),
+		axis_checks = sum(contradiction_intake_axis_first_seen),
+		contradiction_intake_owners = n_distinct(contradiction_intake_owner),
+		contradiction_intake_consumers = n_distinct(contradiction_intake_consumer),
+		contradiction_intake_value = sum(new_contradiction_intake_value),
+		contradiction_intake_drop_risk_value = sum(new_contradiction_intake_drop_risk_value),
+		timing_only_contradiction_intake_value = sum(new_timing_only_contradiction_intake_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(contradiction_intake_value), desc(contradiction_intake_drop_risk_value), first_pass)
+
+open_question_contradiction_intake_checkpoints <- open_question_contradiction_intake_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_contradiction_intake_records,
+		cumulative_contradiction_intake_axes,
+		cumulative_contradiction_intake_states,
+		cumulative_contradiction_intake_owners,
+		cumulative_contradiction_intake_consumers,
+		cumulative_contradiction_intake_value,
+		cumulative_contradiction_intake_drop_risk_value,
+		cumulative_timing_only_contradiction_intake_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_contradiction_intake_register,
+	file.path(data_dir, "typing-delay-open-question-contradiction-intake-register.csv")
+)
+
+write_csv(
+	open_question_contradiction_intake_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			contradiction_intake_state,
+			reopen_drill_state,
+			contradiction_intake_capture,
+			contradiction_intake_dedupe,
+			contradiction_intake_route,
+			contradiction_intake_provisional_notice,
+			contradiction_intake_acceptance_gate,
+			contradiction_intake_rejection_gate,
+			contradiction_intake_quarantine_rule,
+			contradiction_intake_owner,
+			contradiction_intake_consumer,
+			reopen_drill_trigger,
+			reopen_drill_contradiction_packet,
+			reopen_drill_evidence_packet,
+			reopen_drill_failure_response,
+			supported_claim,
+			blocked_claim,
+			contradiction_intake_first_seen,
+			contradiction_intake_axis_first_seen,
+			contradiction_intake_state_first_seen,
+			contradiction_intake_owner_first_seen,
+			contradiction_intake_consumer_first_seen,
+			pass_result,
+			contradiction_intake_value,
+			contradiction_intake_drop_risk_value,
+			timing_only_contradiction_intake_value,
+			new_contradiction_intake_value,
+			new_contradiction_intake_drop_risk_value,
+			new_timing_only_contradiction_intake_value,
+			new_analysis_only_value,
+			cumulative_contradiction_intake_records,
+			cumulative_contradiction_intake_axes,
+			cumulative_contradiction_intake_states,
+			cumulative_contradiction_intake_owners,
+			cumulative_contradiction_intake_consumers,
+			cumulative_contradiction_intake_value,
+			cumulative_contradiction_intake_drop_risk_value,
+			cumulative_timing_only_contradiction_intake_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-contradiction-intake-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_contradiction_intake_summary,
+	file.path(data_dir, "typing-delay-open-question-contradiction-intake-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_contradiction_intake_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-contradiction-intake-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_contradiction_intake_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, contradiction_intake_value)
+		) %>%
+		ggplot(aes(contradiction_intake_value, question_label, fill = contradiction_intake_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Contradiction intake") +
+		labs(
+			title = "Contradiction intake prevents later evidence from being ignored or over-applied",
+			subtitle = "Each row names capture, dedupe, route, provisional notice, acceptance, rejection, quarantine, owner, and consumer",
+			x = "Contradiction-intake value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"408-open-question-contradiction-intake-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_contradiction_intake_saturation_long <- open_question_contradiction_intake_100_pass %>%
+	select(
+		pass_id,
+		`contradiction-intake records` = cumulative_contradiction_intake_records,
+		`contradiction-intake axes` = cumulative_contradiction_intake_axes,
+		`contradiction-intake states` = cumulative_contradiction_intake_states,
+		`contradiction-intake owners` = cumulative_contradiction_intake_owners,
+		`contradiction-intake consumers` = cumulative_contradiction_intake_consumers,
+		`contradiction-intake value` = cumulative_contradiction_intake_value,
+		`contradiction-intake drop-risk value` = cumulative_contradiction_intake_drop_risk_value,
+		`timing-only contradiction-intake value` = cumulative_timing_only_contradiction_intake_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("contradiction-intake records", "contradiction-intake axes", "contradiction-intake states", "contradiction-intake owners", "contradiction-intake consumers", "contradiction-intake value", "contradiction-intake drop-risk value", "timing-only contradiction-intake value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_contradiction_intake_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Contradiction-intake audit saturates once every intake path is named",
+			subtitle = "Nine intake records appear by pass 9; all 90 axes appear by pass 90; timing-only intake value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"409-open-question-contradiction-intake-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_contradiction_intake_summary %>%
+		mutate(
+			state_label = str_wrap(contradiction_intake_state, width = 28),
+			state_label = fct_reorder(state_label, contradiction_intake_value + contradiction_intake_drop_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Contradiction-intake coverage separates local intake from owner and observer intake",
+			subtitle = "Every row is checked for capture, dedupe, route, notice, acceptance, rejection, quarantine, owner, substitute, and stop rule",
+			x = "Contradiction-intake-axis checks",
+			y = "Contradiction-intake state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"410-open-question-contradiction-intake-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

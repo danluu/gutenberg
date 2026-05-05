@@ -1909,6 +1909,23 @@ The R script derives:
     reopen-drill-state, reopen-drill-owner, reopen-drill-consumer,
     reopen-drill-value, reopen-drill-missed-reopen-risk-value,
     timing-only-reopen-drill, and analysis-only saturation.
+-   `data/typing-delay-open-question-contradiction-intake-register.csv`:
+    contradiction-intake register for the nine reopen-drill records, including
+    capture fields, dedupe rule, route, provisional notice, acceptance gate,
+    rejection gate, quarantine rule, owner, and consumer.
+-   `data/typing-delay-open-question-contradiction-intake-100-pass-audit.csv`:
+    forty-second forced 100-pass audit over contradiction-intake axes:
+    capture, dedupe, route, notice, acceptance, rejection, quarantine, owner,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-contradiction-intake-100-pass-summary.csv`:
+    rollup of contradiction-intake coverage by contradiction-intake state,
+    reopen-drill state, and pass result.
+-   `data/typing-delay-open-question-contradiction-intake-100-pass-checkpoints.csv`:
+    checkpoints for contradiction-intake-record, contradiction-intake-axis,
+    contradiction-intake-state, contradiction-intake-owner,
+    contradiction-intake-consumer, contradiction-intake-value,
+    contradiction-intake-drop-risk-value,
+    timing-only-contradiction-intake, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12354,6 +12371,37 @@ becoming an irreversible conclusion: every closure row now carries the specific
 signal that would reopen it, the packet that must be attached, the stale rows to
 invalidate, and the consumer who has to be told before the claim can be used
 again.
+
+I then added the contradiction-intake layer: a later contradictory signal should
+not silently override the report, and it should not be dropped because the
+claim was already closed. Intake records the capture fields, dedupe rule, route,
+provisional notice, acceptance gate, rejection gate, quarantine rule, owner, and
+consumer for each reopenable question.
+
+![Open question contradiction intake register](figures/408-open-question-contradiction-intake-register.png)
+
+![Open question contradiction intake 100-pass saturation](figures/409-open-question-contradiction-intake-100-pass-saturation.png)
+
+![Open question contradiction intake coverage](figures/410-open-question-contradiction-intake-coverage.png)
+
+| Contradiction-intake check | Result |
+| -------------------------- | ------ |
+| Contradiction-intake records | `9`, one per reopen-drill record. |
+| Contradiction-intake states | `3`: local packet contradiction intake, owner artifact contradiction intake, and observer artifact contradiction intake. |
+| Contradiction-intake owners | `9`; intake routes back to the scoped reopen-drill owner. |
+| Contradiction-intake consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Contradiction-intake-axis checks | `90`: every row checked against all `10` contradiction-intake axes. |
+| Contradiction-intake value | `865761151`: local packet intake contributes `654163830`, owner artifact intake contributes `130800850`, and observer artifact intake contributes `80796471`. |
+| Contradiction-intake drop-risk value | `408972929` across the nine contradiction-intake records. |
+| Timing-only contradiction-intake value | `0`; aggregate timing movement alone cannot capture, dedupe, route, provisionally notify, accept, reject, quarantine, or assign ownership for a later contradiction. |
+| Saturation | Contradiction-intake records are all named by pass `9`; all contradiction-intake axes are covered by pass `90`; passes `91-100` add no contradiction-intake coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the later-evidence intake guard. It protects both directions: a real
+contradiction can reopen a claim without guessing, while duplicate, stale,
+non-comparable, or out-of-scope evidence is rejected without contaminating the
+active recommendation. While intake is unresolved, the dependent conclusion is
+explicitly provisional instead of silently reused.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

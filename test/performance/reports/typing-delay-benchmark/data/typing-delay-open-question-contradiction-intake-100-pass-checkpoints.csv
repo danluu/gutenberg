@@ -1,0 +1,10 @@
+pass_id,cumulative_contradiction_intake_records,cumulative_contradiction_intake_axes,cumulative_contradiction_intake_states,cumulative_contradiction_intake_owners,cumulative_contradiction_intake_consumers,cumulative_contradiction_intake_value,cumulative_contradiction_intake_drop_risk_value,cumulative_timing_only_contradiction_intake_value,cumulative_analysis_only_value
+1,1,1,1,1,1,180383734,85210648,0,0
+5,5,5,2,5,4,727624494,343719207,0,0
+9,9,9,3,9,8,865761151,408972929,0,0
+10,9,10,3,9,8,865761151,408972929,0,0
+20,9,20,3,9,8,865761151,408972929,0,0
+50,9,50,3,9,8,865761151,408972929,0,0
+90,9,90,3,9,8,865761151,408972929,0,0
+91,9,90,3,9,8,865761151,408972929,0,0
+100,9,90,3,9,8,865761151,408972929,0,0
