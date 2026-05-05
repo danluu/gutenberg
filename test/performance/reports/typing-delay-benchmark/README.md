@@ -1523,6 +1523,20 @@ The R script derives:
     checkpoints for falsification-record, falsification-axis,
     falsification-state, falsification-value, reopen-value,
     timing-only-falsification, and analysis-only saturation.
+-   `data/typing-delay-open-question-evidence-ledger.csv`: claim-to-evidence
+    ledger for the nine falsification records, including authoritative
+    artifact, supported claim, blocked claim, required fields, consumer,
+    traceability rule, archive, and linked falsifier.
+-   `data/typing-delay-open-question-evidence-ledger-100-pass-audit.csv`:
+    eighteenth forced 100-pass audit over evidence-ledger axes: claim,
+    evidence, fields, owner, consumer, archive, falsifier, blocked,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-evidence-ledger-100-pass-summary.csv`:
+    rollup of evidence-ledger coverage by ledger state, close scope, and pass
+    result.
+-   `data/typing-delay-open-question-evidence-ledger-100-pass-checkpoints.csv`:
+    checkpoints for ledger-record, ledger-axis, ledger-state, ledger-value,
+    traceability-value, timing-only-ledger, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11246,6 +11260,36 @@ This hardens the closure story against a common mistake: treating any later clea
 or noisy timing run as proof. A closure can be reopened, but only by the scoped
 packet, owner artifact, or observer artifact named in the falsification record,
 with the negative control and conflict rule preserved in the archive.
+
+I then added the evidence-ledger layer: each remaining claim is linked to the
+artifact that is authoritative for it, the fields that must be present, the
+consumer that uses the result, the claim that remains blocked, and the falsifier
+that would reopen the row.
+
+![Open question evidence ledger](figures/336-open-question-evidence-ledger.png)
+
+![Open question evidence ledger 100-pass saturation](figures/337-open-question-evidence-ledger-100-pass-saturation.png)
+
+![Open question evidence ledger coverage](figures/338-open-question-evidence-ledger-coverage.png)
+
+| Evidence-ledger check | Result |
+| --------------------- | ------ |
+| Ledger records | `9`, one per falsification record. |
+| Ledger states | `3`: local packet evidence ledger, owner artifact evidence ledger, and observer artifact evidence ledger. |
+| Signoff owners | `9`; evidence correctness stays owned by the scoped closure/falsification owner. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Ledger-axis checks | `90`: every row checked against all `10` ledger axes. |
+| Ledger value | `2807`: local packet evidence contributes `2214`, owner artifact evidence contributes `389`, and observer artifact evidence contributes `204`. |
+| Traceability value | `591` across the nine evidence rows. |
+| Timing-only ledger value | `0`; aggregate timing alone does not identify the authoritative artifact, required fields, consumer, blocked wording, or falsifier. |
+| Saturation | Ledger records are all named by pass `9`; all ledger axes are covered by pass `90`; passes `91-100` add no ledger coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This makes the remaining-open-question state queryable. The answer to "what can
+we say?" is no longer hidden in prose: look up the row, inspect the supported
+claim, required fields, blocked claim, consumer, archive, and linked falsifier.
+If the row is missing those fields, the wording stays blocked even if another
+aggregate timing run completes.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,11 @@
+ledger_state,close_scope,pass_result,passes,first_pass,ledger_records,axis_checks,signoff_owners,ledger_consumers,ledger_value,traceability_value,timing_only_ledger_value,analysis_only_value
+local packet evidence ledger,CI wait decision,ledger: local packet evidence,20,2,2,20,2,1,1158,226,0,0
+local packet evidence ledger,source prototype decision,ledger: local packet evidence,10,1,1,10,1,1,613,118,0,0
+local packet evidence ledger,benchmark method wording,ledger: local packet evidence,10,4,1,10,1,1,443,85,0,0
+owner artifact evidence ledger,broader claim wording,ledger: owner or observer evidence,20,5,2,20,2,2,389,97,0,0
+observer artifact evidence ledger,broader claim wording,ledger: owner or observer evidence,30,7,3,30,3,3,204,65,0,0
+local packet evidence ledger,source prototype decision,repeat: ledger-axis already checked,2,91,1,0,1,1,0,0,0,0
+local packet evidence ledger,CI wait decision,repeat: ledger-axis already checked,2,92,2,0,2,1,0,0,0,0
+local packet evidence ledger,benchmark method wording,repeat: ledger-axis already checked,1,94,1,0,1,1,0,0,0,0
+owner artifact evidence ledger,broader claim wording,repeat: ledger-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact evidence ledger,broader claim wording,repeat: ledger-axis already checked,3,97,3,0,3,3,0,0,0,0

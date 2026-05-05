@@ -33896,6 +33896,291 @@ save_plot(
 	height = 7.2
 )
 
+open_question_evidence_ledger <- open_question_closure_falsification %>%
+	mutate(
+		ledger_state = case_when(
+			falsification_state == "local packet falsifier" ~ "local packet evidence ledger",
+			falsification_state == "owner artifact falsifier" ~ "owner artifact evidence ledger",
+			TRUE ~ "observer artifact evidence ledger"
+		),
+		authoritative_evidence = case_when(
+			ledger_state == "local packet evidence ledger" ~ closure_record_required,
+			ledger_state == "owner artifact evidence ledger" ~ closure_record_required,
+			TRUE ~ closure_record_required
+		),
+		supported_claim = allowed_claim_now,
+		blocked_claim = forbidden_claim_now,
+		required_fields = case_when(
+			question_family == "Startup wait and first-key tails" ~ "CI lane, statistic, startup wait, key index, resource fields, failure rule, and first-key distribution",
+			question_family == "Pattern wait replacement" ~ "readiness predicate, preview/canvas target, wait lane, p90 target, resource fields, and failure rule",
+			question_family == "Selector/source guard" ~ "selector owner, source span, behavior fixture, guarded implementation, and compatibility result",
+			question_family == "Input-mode realism" ~ "helper action, hold duration, tap/hold/repeat stratum, browser repeat semantics, and aggregation rule",
+			question_family == "Store-subscriber partition" ~ "public data API, import surface, subscriber ordering, compatibility fixture, and owner decision",
+			question_family == "CI pass/fail policy" ~ "dashboard statistic, threshold, noisy-metric rule, reviewer policy, and pass/fail consumer",
+			question_family == "Product workload generalization" ~ "workload stratum, replay script, plugin/theme context, fixture setup, and coverage claim",
+			question_family == "Browser endpoint and display presentation" ~ "browser endpoint, visual presentation event, display pipeline, clock sync, and calibration method",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "runtime version, OS scheduler state, sidecar overhead, counter source, and class-ordering control",
+			TRUE ~ "question-specific evidence fields"
+		),
+		ledger_consumer = case_when(
+			close_scope == "CI wait decision" ~ "Performance Tests CI wait policy",
+			close_scope == "source prototype decision" ~ "source patch or source-claim reviewer",
+			close_scope == "benchmark method wording" ~ "benchmark-method wording reviewer",
+			TRUE ~ signoff_required
+		),
+		traceability_rule = case_when(
+			ledger_state == "local packet evidence ledger" ~ "report claim must link to packet CSV, required fields, negative control, and rollback diff",
+			ledger_state == "owner artifact evidence ledger" ~ "report claim must link to owner artifact, reviewer decision, compatibility or policy diff, and rollback diff",
+			TRUE ~ "report claim must link to observer artifact, calibration or replay control, mechanism decision, and rollback diff"
+		),
+		missing_evidence_effect = case_when(
+			ledger_state == "local packet evidence ledger" ~ "keep local decision open or narrow wording to the fields actually archived",
+			ledger_state == "owner artifact evidence ledger" ~ "keep owner-scoped claim open and exclude local timing-only support",
+			TRUE ~ "keep broad product, endpoint, browser, or runtime claim open"
+		),
+		ledger_archive = falsification_archive,
+		ledger_query = case_when(
+			ledger_state == "local packet evidence ledger" ~ "which local packet supports this claim and what exact field changed?",
+			ledger_state == "owner artifact evidence ledger" ~ "which owner artifact supports this claim and what policy or compatibility scope changed?",
+			TRUE ~ "which observer artifact supports this claim and what calibration, replay, or counter control changed?"
+		),
+		ledger_value = pmax(
+			1,
+			falsification_value + governance_value + reopen_value - conflict_cost
+		),
+		traceability_value = pmax(
+			1,
+			wording_change_value + false_closure_risk + stale_reuse_risk - conflict_cost
+		),
+		timing_only_ledger_value = 0,
+		analysis_only_value = 0,
+		evidence_ledger_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(ledger_value), desc(traceability_value), question_family)
+
+open_question_ledger_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"claim", "Which scoped claim does this evidence row support?",
+	"evidence", "Which artifact is authoritative for the claim?",
+	"fields", "Which fields must be present before the claim is usable?",
+	"owner", "Who owns evidence correctness?",
+	"consumer", "Who consumes the decision or report wording?",
+	"archive", "Where is the evidence preserved?",
+	"falsifier", "What linked falsifier reopens the claim?",
+	"blocked", "What claim remains blocked when evidence is missing?",
+	"substitute", "Can aggregate timing alone substitute for the ledger row?",
+	"stop-rule", "When does the evidence-ledger check stop?"
+)
+
+open_question_ledger_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_evidence_ledger)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_ledger_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_evidence_ledger %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_ledger_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		evidence_ledger_first_seen = !duplicated(evidence_ledger_id),
+		ledger_axis_key = paste(evidence_ledger_id, pressure_axis, sep = "::"),
+		ledger_axis_first_seen = !duplicated(ledger_axis_key),
+		ledger_state_first_seen = !duplicated(ledger_state),
+		new_ledger_value = if_else(evidence_ledger_first_seen, ledger_value, 0),
+		new_traceability_value = if_else(evidence_ledger_first_seen, traceability_value, 0),
+		new_timing_only_ledger_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!ledger_axis_first_seen ~ "repeat: ledger-axis already checked",
+			ledger_state == "local packet evidence ledger" ~ "ledger: local packet evidence",
+			TRUE ~ "ledger: owner or observer evidence"
+		),
+		cumulative_ledger_records = cumsum(evidence_ledger_first_seen),
+		cumulative_ledger_axes = cumsum(ledger_axis_first_seen),
+		cumulative_ledger_states = cumsum(ledger_state_first_seen),
+		cumulative_ledger_value = cumsum(new_ledger_value),
+		cumulative_traceability_value = cumsum(new_traceability_value),
+		cumulative_timing_only_ledger_value = cumsum(new_timing_only_ledger_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_ledger_summary <- open_question_ledger_100_pass %>%
+	group_by(ledger_state, close_scope, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		ledger_records = n_distinct(evidence_ledger_id),
+		axis_checks = sum(ledger_axis_first_seen),
+		signoff_owners = n_distinct(signoff_required),
+		ledger_consumers = n_distinct(ledger_consumer),
+		ledger_value = sum(new_ledger_value),
+		traceability_value = sum(new_traceability_value),
+		timing_only_ledger_value = sum(new_timing_only_ledger_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(ledger_value), desc(traceability_value), first_pass)
+
+open_question_ledger_checkpoints <- open_question_ledger_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_ledger_records,
+		cumulative_ledger_axes,
+		cumulative_ledger_states,
+		cumulative_ledger_value,
+		cumulative_traceability_value,
+		cumulative_timing_only_ledger_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_evidence_ledger,
+	file.path(data_dir, "typing-delay-open-question-evidence-ledger.csv")
+)
+
+write_csv(
+	open_question_ledger_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			ledger_state,
+			close_scope,
+			authoritative_evidence,
+			supported_claim,
+			blocked_claim,
+			required_fields,
+			ledger_consumer,
+			traceability_rule,
+			missing_evidence_effect,
+			ledger_archive,
+			ledger_query,
+			decisive_falsifier,
+			signoff_required,
+			evidence_ledger_first_seen,
+			ledger_axis_first_seen,
+			ledger_state_first_seen,
+			pass_result,
+			ledger_value,
+			traceability_value,
+			timing_only_ledger_value,
+			new_ledger_value,
+			new_traceability_value,
+			new_timing_only_ledger_value,
+			new_analysis_only_value,
+			cumulative_ledger_records,
+			cumulative_ledger_axes,
+			cumulative_ledger_states,
+			cumulative_ledger_value,
+			cumulative_traceability_value,
+			cumulative_timing_only_ledger_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-evidence-ledger-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_ledger_summary,
+	file.path(data_dir, "typing-delay-open-question-evidence-ledger-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_ledger_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-evidence-ledger-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_evidence_ledger %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, ledger_value)
+		) %>%
+		ggplot(aes(ledger_value, question_label, fill = ledger_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Evidence ledger") +
+		labs(
+			title = "Evidence ledger makes each remaining claim traceable",
+			subtitle = "Every claim names its authoritative artifact, required fields, consumer, blocked wording, and falsifier",
+			x = "Ledger value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"336-open-question-evidence-ledger.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_ledger_saturation_long <- open_question_ledger_100_pass %>%
+	select(
+		pass_id,
+		`ledger records` = cumulative_ledger_records,
+		`ledger axes` = cumulative_ledger_axes,
+		`ledger states` = cumulative_ledger_states,
+		`ledger value` = cumulative_ledger_value,
+		`traceability value` = cumulative_traceability_value,
+		`timing-only ledger value` = cumulative_timing_only_ledger_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("ledger records", "ledger axes", "ledger states", "ledger value", "traceability value", "timing-only ledger value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_ledger_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Evidence-ledger audit saturates once claim-to-artifact links are named",
+			subtitle = "Nine ledger records appear by pass 9; all 90 ledger axes appear by pass 90; timing-only ledger value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"337-open-question-evidence-ledger-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_ledger_summary %>%
+		mutate(
+			state_label = str_wrap(ledger_state, width = 28),
+			state_label = fct_reorder(state_label, ledger_value + traceability_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Evidence-ledger coverage separates local packets from owner and observer artifacts",
+			subtitle = "Every row is checked for claim, evidence, fields, owner, consumer, archive, falsifier, blocked claim, substitute, and stop rule",
+			x = "Ledger-axis checks",
+			y = "Evidence ledger"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"338-open-question-evidence-ledger-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

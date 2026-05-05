@@ -1,0 +1,10 @@
+pass_id,cumulative_ledger_records,cumulative_ledger_axes,cumulative_ledger_states,cumulative_ledger_value,cumulative_traceability_value,cumulative_timing_only_ledger_value,cumulative_analysis_only_value
+1,1,1,1,613,118,0,0
+5,5,5,2,2436,483,0,0
+9,9,9,3,2807,591,0,0
+10,9,10,3,2807,591,0,0
+20,9,20,3,2807,591,0,0
+50,9,50,3,2807,591,0,0
+90,9,90,3,2807,591,0,0
+91,9,90,3,2807,591,0,0
+100,9,90,3,2807,591,0,0
