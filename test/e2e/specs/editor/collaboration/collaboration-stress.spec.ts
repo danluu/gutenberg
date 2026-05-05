@@ -567,6 +567,68 @@ test.describe( 'Collaboration - Stress Test', () => {
 		await editor.publishPost();
 	} );
 
+	test( 'two users preserve simultaneous paragraph edits after refresh in a large post', async ( {
+		collaborationUtils,
+		requestUtils,
+		editor,
+		page,
+	} ) => {
+		test.slow();
+
+		await requestUtils.createUser( STRESS_USERS[ 0 ] );
+
+		const post = await requestUtils.createPost( {
+			title: 'RTC Stress Race Repro',
+			content: generateStressContent(),
+			status: 'draft',
+			date_gmt: new Date().toISOString(),
+		} );
+
+		await collaborationUtils.openPost( post.id );
+
+		const { page: page2, editor: editor2 } =
+			await collaborationUtils.joinUser( post.id, STRESS_USERS[ 0 ] );
+		await collaborationUtils.waitForMutualDiscovery();
+
+		await typeNewParagraphAfterHeading(
+			editor,
+			page,
+			'Conclusion',
+			'Admin prepared this post before refreshing.'
+		);
+		await editor.saveDraft();
+
+		await page.reload( { waitUntil: 'load' } );
+		await collaborationUtils.waitForCollaborationReady( page );
+		await collaborationUtils.waitForMutualDiscovery();
+
+		await Promise.all( [
+			( async () => {
+				await editor.canvas
+					.getByText( 'shared editing target' )
+					.click();
+				await page.keyboard.press( 'End' );
+				await page.keyboard.insertText( ' -- Admin was here.' );
+			} )(),
+			( async () => {
+				await editor2.canvas
+					.getByText( 'shared editing target' )
+					.click();
+				await page2.keyboard.press( 'End' );
+				await page2.keyboard.insertText( ' -- Editor was here.' );
+			} )(),
+		] );
+
+		for ( const ed of [ editor, editor2 ] ) {
+			await expect( async () => {
+				const blocks = await ed.getBlocks();
+				const allContent = JSON.stringify( blocks );
+				expect( allContent ).toContain( 'Admin was here' );
+				expect( allContent ).toContain( 'Editor was here' );
+			} ).toPass( { timeout: 10_000 } );
+		}
+	} );
+
 	test( 'two users concurrently move list items', async ( {
 		collaborationUtils,
 		requestUtils,
