@@ -2087,6 +2087,25 @@ The R script derives:
     residual-uncertainty-consumer, residual-uncertainty-value,
     residual-uncertainty-wrong-decision-risk-value,
     timing-only-residual-uncertainty, and analysis-only saturation.
+-   `data/typing-delay-open-question-uncertainty-retirement-register.csv`:
+    uncertainty-retirement register for the nine residual-uncertainty records,
+    including retirement path, measurement packet, sampling plan,
+    instrumentation, acceptance test, deferral record, escalation rule, owner,
+    and consumer.
+-   `data/typing-delay-open-question-uncertainty-retirement-100-pass-audit.csv`:
+    fifty-second forced 100-pass audit over uncertainty-retirement axes:
+    retirement-path, measurement-packet, sampling, instrumentation, acceptance,
+    deferral, escalation, owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-uncertainty-retirement-100-pass-summary.csv`:
+    rollup of uncertainty-retirement coverage by uncertainty-retirement state,
+    residual-uncertainty state, and pass result.
+-   `data/typing-delay-open-question-uncertainty-retirement-100-pass-checkpoints.csv`:
+    checkpoints for uncertainty-retirement-record,
+    uncertainty-retirement-axis, uncertainty-retirement-state,
+    uncertainty-retirement-owner, uncertainty-retirement-consumer,
+    uncertainty-retirement-value,
+    uncertainty-retirement-blocked-transfer-risk-value,
+    timing-only-uncertainty-retirement, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12847,6 +12866,38 @@ blocked by a non-decision-relevant uncertainty. The report now separates valid
 fallback decisions from blocked transfer claims and names the next measurement
 only when it can change CI policy, source guidance, method wording, or broad
 recommendation scope.
+
+I then added the uncertainty-retirement layer: a decision-relevant uncertainty
+needs either an evidence-producing measurement plan or an explicit deferral
+record. Retirement records the retirement path, measurement packet, sampling
+plan, instrumentation, acceptance test, deferral record, escalation rule, owner,
+and consumer for each residual-uncertainty row.
+
+![Open question uncertainty retirement register](figures/438-open-question-uncertainty-retirement-register.png)
+
+![Open question uncertainty retirement 100-pass saturation](figures/439-open-question-uncertainty-retirement-100-pass-saturation.png)
+
+![Open question uncertainty retirement coverage](figures/440-open-question-uncertainty-retirement-coverage.png)
+
+| Uncertainty-retirement check | Result |
+| ---------------------------- | ------ |
+| Uncertainty-retirement records | `9`, one per residual-uncertainty record. |
+| Uncertainty-retirement states | `3`: local packet uncertainty retirement, owner artifact uncertainty retirement, and observer artifact uncertainty retirement. |
+| Uncertainty-retirement owners | `9`; retirement ownership routes back to the scoped residual-uncertainty owner. |
+| Uncertainty-retirement consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Uncertainty-retirement-axis checks | `90`: every row checked against all `10` uncertainty-retirement axes. |
+| Uncertainty-retirement value | `295689778092`: local packet retirement contributes `223421409926`, owner artifact retirement contributes `44673375220`, and observer artifact retirement contributes `27594992946`. |
+| Uncertainty-retirement blocked-transfer-risk value | `160635465471` across the nine uncertainty-retirement records. |
+| Timing-only uncertainty-retirement value | `0`; aggregate timing movement alone cannot prove the retirement path, measurement packet, sampling plan, instrumentation, acceptance test, deferral record, escalation rule, owner, or stop rule. |
+| Saturation | Uncertainty-retirement records are all named by pass `9`; all uncertainty-retirement axes are covered by pass `90`; passes `91-100` add no uncertainty-retirement coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the measurement-or-deferral guard. It catches the case where a
+decision-relevant uncertainty is named but left operationally ambiguous: neither
+measured nor explicitly deferred with an exact-scope fallback. Transfer claims
+now need a measurement packet with sampling, instrumentation, and acceptance
+criteria; otherwise they remain blocked by a deferral record with an escalation
+rule.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

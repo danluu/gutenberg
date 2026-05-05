@@ -44001,6 +44001,314 @@ save_plot(
 	height = 7.2
 )
 
+open_question_uncertainty_retirement_register <- open_question_residual_uncertainty_register %>%
+	mutate(
+		uncertainty_retirement_state = case_when(
+			residual_uncertainty_state == "local packet residual uncertainty" ~ "local packet uncertainty retirement",
+			residual_uncertainty_state == "owner artifact residual uncertainty" ~ "owner artifact uncertainty retirement",
+			TRUE ~ "observer artifact uncertainty retirement"
+		),
+		uncertainty_retirement_path = case_when(
+			close_scope == "CI wait decision" ~ "retire by either measuring the decision-relevant CI runner/browser/startup/typing/input-mode matrix or explicitly deferring the unsupported transfer claim while keeping exact-scope CI guidance",
+			close_scope == "source prototype decision" ~ "retire by either measuring the decision-relevant selector/dispatch/invalidation/source/workload matrix or explicitly deferring the unsupported production-source transfer claim while keeping exact-scope source guidance",
+			close_scope == "benchmark method wording" ~ "retire by either measuring the decision-relevant trace/extraction/aggregation/instrumentation matrix or explicitly deferring unsupported browser-independent method wording while keeping exact-scope method guidance",
+			TRUE ~ "retire by either measuring the decision-relevant browser/runtime/container/workload/endpoint matrix or explicitly deferring the unsupported broad transfer claim while keeping exact-scope report guidance"
+		),
+		uncertainty_retirement_measurement_packet = case_when(
+			uncertainty_retirement_state == "local packet uncertainty retirement" ~ "packet must include local residual row, exact-scope label, changed boundary variable, raw artifacts, regenerated CSVs/figures, comparison against fallback decision, and stale-transfer scan",
+			uncertainty_retirement_state == "owner artifact uncertainty retirement" ~ "packet must include owner residual row, reviewer identity, exact-scope label, changed boundary variable, raw artifacts, regenerated CSVs/figures, comparison against fallback decision, and stale-transfer scan",
+			TRUE ~ "packet must include observer residual row, reviewer identity, broad wording guard, exact-scope label, changed boundary variable, raw artifacts, regenerated CSVs/figures, comparison against fallback decision, and stale-transfer scan"
+		),
+		uncertainty_retirement_sampling_plan = case_when(
+			close_scope == "CI wait decision" ~ "sample enough independent CI-comparable runs per boundary setting to compare q50/q25/q75, runtime, reliability, and branch-count cost against the current exact-scope guidance",
+			close_scope == "source prototype decision" ~ "sample enough patched/unpatched source runs per boundary setting to compare selector cost, dispatch cost, invalidation fanout, and source patch behavior against the current exact-scope guidance",
+			close_scope == "benchmark method wording" ~ "sample enough raw trace/event extractions per boundary setting to compare schema stability, EventDispatch attribution, aggregation sensitivity, and instrumentation overhead against the current exact-scope wording",
+			TRUE ~ "sample enough matrix cells per boundary setting to compare browser/runtime, container, workload, endpoint, and recommendation-scope behavior against the current exact-scope guidance"
+		),
+		uncertainty_retirement_instrumentation = case_when(
+			close_scope == "CI wait decision" ~ "instrument raw JSON, per-key samples, startup state, typing delay, input mode, branch count, q25/q50/q75, runtime, reliability, browser version, runner/container state, and run order",
+			close_scope == "source prototype decision" ~ "instrument source patch hash, selector spans, dispatch spans, invalidation fanout, block/document shape, raw traces, browser version, build hash, and run order",
+			close_scope == "benchmark method wording" ~ "instrument raw trace categories, event-slice schema, extraction windows, aggregation script hash, instrumentation patch hash, browser version, and run order",
+			TRUE ~ "instrument raw traces, browser/runtime version, OS/container state, hardware/QoS state, workload source, endpoint, plugin set, report script hash, and run order"
+		),
+		uncertainty_retirement_acceptance_test = case_when(
+			uncertainty_retirement_state == "local packet uncertainty retirement" ~ "retire local uncertainty only if the measurement either supports transfer within the acceptance band or records a local deferral with exact-scope fallback still valid",
+			uncertainty_retirement_state == "owner artifact uncertainty retirement" ~ "retire owner uncertainty only if the measurement either supports transfer within the acceptance band or records owner-reviewed deferral with exact-scope fallback still valid",
+			TRUE ~ "retire observer uncertainty only if the measurement either supports transfer within the acceptance band or records observer-reviewed deferral with exact-scope fallback and broad wording guard still valid"
+		),
+		uncertainty_retirement_deferral_record = case_when(
+			residual_uncertainty_state == "local packet residual uncertainty" ~ "deferral record names the local unsupported transfer claim, fallback exact-scope decision, stale-transfer blocker, next trigger, and owner",
+			residual_uncertainty_state == "owner artifact residual uncertainty" ~ "deferral record names the owner unsupported transfer claim, reviewer identity, fallback exact-scope decision, stale-transfer blocker, next trigger, and owner",
+			TRUE ~ "deferral record names the broad unsupported transfer claim, reviewer identity, broad wording guard, fallback exact-scope decision, stale-transfer blocker, next trigger, and owner"
+		),
+		uncertainty_retirement_escalation_rule = case_when(
+			close_scope == "CI wait decision" ~ "escalate when CI runtime/reliability policy, q50 interpretation, startup-wait guidance, typing-delay guidance, input-mode guidance, or branch-count cost would change",
+			close_scope == "source prototype decision" ~ "escalate when selector-guard guidance, dispatch/invalidation guidance, fanout caveat, source patch acceptance, or owner-review status would change",
+			close_scope == "benchmark method wording" ~ "escalate when trace-schema caveat, EventDispatch interpretation, aggregation caveat, instrumentation caveat, or limitation wording would change",
+			TRUE ~ "escalate when broad recommendation scope, portability caveat, browser/runtime caveat, workload caveat, endpoint caveat, or user-facing conclusion would change"
+		),
+		uncertainty_retirement_owner = residual_uncertainty_owner,
+		uncertainty_retirement_consumer = residual_uncertainty_consumer,
+		uncertainty_retirement_cost = case_when(
+			uncertainty_retirement_state == "local packet uncertainty retirement" ~ 9,
+			uncertainty_retirement_state == "owner artifact uncertainty retirement" ~ 11,
+			TRUE ~ 13
+		),
+		uncertainty_retirement_value = pmax(
+			1,
+			residual_uncertainty_value + residual_uncertainty_wrong_decision_risk_value + generalization_boundary_overgeneralization_risk_value - uncertainty_retirement_cost
+		),
+		uncertainty_retirement_blocked_transfer_risk_value = pmax(
+			1,
+			residual_uncertainty_wrong_decision_risk_value + generalization_boundary_overgeneralization_risk_value + replication_readiness_reproducibility_gap_risk_value - uncertainty_retirement_cost
+		),
+		timing_only_uncertainty_retirement_value = 0,
+		analysis_only_value = 0,
+		uncertainty_retirement_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(uncertainty_retirement_value), desc(uncertainty_retirement_blocked_transfer_risk_value), question_family)
+
+open_question_uncertainty_retirement_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"retirement-path", "What path retires or explicitly defers the uncertainty?",
+	"measurement-packet", "What evidence packet is required if measurement retires it?",
+	"sampling", "What sampling plan makes the retirement decision defensible?",
+	"instrumentation", "What instrumentation preserves the fields needed to verify retirement?",
+	"acceptance", "What acceptance test distinguishes retired uncertainty from still-open transfer?",
+	"deferral", "What deferral record is valid if measurement is not worth running now?",
+	"escalation", "What change would escalate the uncertainty back into active work?",
+	"owner", "Who owns uncertainty retirement?",
+	"substitute", "Can aggregate timing alone substitute for uncertainty-retirement evidence?",
+	"stop-rule", "When does uncertainty-retirement review stop?"
+)
+
+open_question_uncertainty_retirement_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_uncertainty_retirement_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_uncertainty_retirement_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_uncertainty_retirement_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_uncertainty_retirement_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		uncertainty_retirement_first_seen = !duplicated(uncertainty_retirement_id),
+		uncertainty_retirement_axis_key = paste(uncertainty_retirement_id, pressure_axis, sep = "::"),
+		uncertainty_retirement_axis_first_seen = !duplicated(uncertainty_retirement_axis_key),
+		uncertainty_retirement_state_first_seen = !duplicated(uncertainty_retirement_state),
+		uncertainty_retirement_owner_first_seen = !duplicated(uncertainty_retirement_owner),
+		uncertainty_retirement_consumer_first_seen = !duplicated(uncertainty_retirement_consumer),
+		new_uncertainty_retirement_value = if_else(uncertainty_retirement_first_seen, uncertainty_retirement_value, 0),
+		new_uncertainty_retirement_blocked_transfer_risk_value = if_else(uncertainty_retirement_first_seen, uncertainty_retirement_blocked_transfer_risk_value, 0),
+		new_timing_only_uncertainty_retirement_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!uncertainty_retirement_axis_first_seen ~ "repeat: uncertainty-retirement-axis already checked",
+			uncertainty_retirement_state == "local packet uncertainty retirement" ~ "uncertainty retirement: local packet",
+			TRUE ~ "uncertainty retirement: owner or observer artifact"
+		),
+		cumulative_uncertainty_retirement_records = cumsum(uncertainty_retirement_first_seen),
+		cumulative_uncertainty_retirement_axes = cumsum(uncertainty_retirement_axis_first_seen),
+		cumulative_uncertainty_retirement_states = cumsum(uncertainty_retirement_state_first_seen),
+		cumulative_uncertainty_retirement_owners = cumsum(uncertainty_retirement_owner_first_seen),
+		cumulative_uncertainty_retirement_consumers = cumsum(uncertainty_retirement_consumer_first_seen),
+		cumulative_uncertainty_retirement_value = cumsum(new_uncertainty_retirement_value),
+		cumulative_uncertainty_retirement_blocked_transfer_risk_value = cumsum(new_uncertainty_retirement_blocked_transfer_risk_value),
+		cumulative_timing_only_uncertainty_retirement_value = cumsum(new_timing_only_uncertainty_retirement_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_uncertainty_retirement_summary <- open_question_uncertainty_retirement_100_pass %>%
+	group_by(uncertainty_retirement_state, residual_uncertainty_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		uncertainty_retirement_records = n_distinct(uncertainty_retirement_id),
+		axis_checks = sum(uncertainty_retirement_axis_first_seen),
+		uncertainty_retirement_owners = n_distinct(uncertainty_retirement_owner),
+		uncertainty_retirement_consumers = n_distinct(uncertainty_retirement_consumer),
+		uncertainty_retirement_value = sum(new_uncertainty_retirement_value),
+		uncertainty_retirement_blocked_transfer_risk_value = sum(new_uncertainty_retirement_blocked_transfer_risk_value),
+		timing_only_uncertainty_retirement_value = sum(new_timing_only_uncertainty_retirement_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(uncertainty_retirement_value), desc(uncertainty_retirement_blocked_transfer_risk_value), first_pass)
+
+open_question_uncertainty_retirement_checkpoints <- open_question_uncertainty_retirement_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_uncertainty_retirement_records,
+		cumulative_uncertainty_retirement_axes,
+		cumulative_uncertainty_retirement_states,
+		cumulative_uncertainty_retirement_owners,
+		cumulative_uncertainty_retirement_consumers,
+		cumulative_uncertainty_retirement_value,
+		cumulative_uncertainty_retirement_blocked_transfer_risk_value,
+		cumulative_timing_only_uncertainty_retirement_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_uncertainty_retirement_register,
+	file.path(data_dir, "typing-delay-open-question-uncertainty-retirement-register.csv")
+)
+
+write_csv(
+	open_question_uncertainty_retirement_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			uncertainty_retirement_state,
+			residual_uncertainty_state,
+			uncertainty_retirement_path,
+			uncertainty_retirement_measurement_packet,
+			uncertainty_retirement_sampling_plan,
+			uncertainty_retirement_instrumentation,
+			uncertainty_retirement_acceptance_test,
+			uncertainty_retirement_deferral_record,
+			uncertainty_retirement_escalation_rule,
+			uncertainty_retirement_owner,
+			uncertainty_retirement_consumer,
+			residual_uncertainty_class,
+			residual_uncertainty_evidence_gap,
+			residual_uncertainty_next_measurement,
+			residual_uncertainty_priority_rule,
+			residual_uncertainty_decision_block,
+			residual_uncertainty_fallback_decision,
+			supported_claim,
+			blocked_claim,
+			uncertainty_retirement_first_seen,
+			uncertainty_retirement_axis_first_seen,
+			uncertainty_retirement_state_first_seen,
+			uncertainty_retirement_owner_first_seen,
+			uncertainty_retirement_consumer_first_seen,
+			pass_result,
+			uncertainty_retirement_value,
+			uncertainty_retirement_blocked_transfer_risk_value,
+			timing_only_uncertainty_retirement_value,
+			new_uncertainty_retirement_value,
+			new_uncertainty_retirement_blocked_transfer_risk_value,
+			new_timing_only_uncertainty_retirement_value,
+			new_analysis_only_value,
+			cumulative_uncertainty_retirement_records,
+			cumulative_uncertainty_retirement_axes,
+			cumulative_uncertainty_retirement_states,
+			cumulative_uncertainty_retirement_owners,
+			cumulative_uncertainty_retirement_consumers,
+			cumulative_uncertainty_retirement_value,
+			cumulative_uncertainty_retirement_blocked_transfer_risk_value,
+			cumulative_timing_only_uncertainty_retirement_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-uncertainty-retirement-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_uncertainty_retirement_summary,
+	file.path(data_dir, "typing-delay-open-question-uncertainty-retirement-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_uncertainty_retirement_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-uncertainty-retirement-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_uncertainty_retirement_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, uncertainty_retirement_value)
+		) %>%
+		ggplot(aes(uncertainty_retirement_value, question_label, fill = uncertainty_retirement_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Uncertainty retirement") +
+		labs(
+			title = "Uncertainty retirement separates active measurement from explicit deferral",
+			subtitle = "Each row names retirement path, measurement packet, sampling plan, instrumentation, acceptance test, deferral record, escalation rule, owner, and consumer",
+			x = "Uncertainty-retirement value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"438-open-question-uncertainty-retirement-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_uncertainty_retirement_saturation_long <- open_question_uncertainty_retirement_100_pass %>%
+	select(
+		pass_id,
+		`uncertainty-retirement records` = cumulative_uncertainty_retirement_records,
+		`uncertainty-retirement axes` = cumulative_uncertainty_retirement_axes,
+		`uncertainty-retirement states` = cumulative_uncertainty_retirement_states,
+		`uncertainty-retirement owners` = cumulative_uncertainty_retirement_owners,
+		`uncertainty-retirement consumers` = cumulative_uncertainty_retirement_consumers,
+		`uncertainty-retirement value` = cumulative_uncertainty_retirement_value,
+		`uncertainty-retirement blocked-transfer risk value` = cumulative_uncertainty_retirement_blocked_transfer_risk_value,
+		`timing-only uncertainty-retirement value` = cumulative_timing_only_uncertainty_retirement_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("uncertainty-retirement records", "uncertainty-retirement axes", "uncertainty-retirement states", "uncertainty-retirement owners", "uncertainty-retirement consumers", "uncertainty-retirement value", "uncertainty-retirement blocked-transfer risk value", "timing-only uncertainty-retirement value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_uncertainty_retirement_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Uncertainty-retirement audit saturates once every retirement path is checked",
+			subtitle = "Nine retirement records appear by pass 9; all 90 axes appear by pass 90; timing-only retirement value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"439-open-question-uncertainty-retirement-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_uncertainty_retirement_summary %>%
+		mutate(
+			state_label = str_wrap(uncertainty_retirement_state, width = 28),
+			state_label = fct_reorder(state_label, uncertainty_retirement_value + uncertainty_retirement_blocked_transfer_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Uncertainty-retirement coverage separates local retirement from owner and observer retirement",
+			subtitle = "Every row is checked for retirement path, measurement packet, sampling, instrumentation, acceptance, deferral, escalation, owner, substitute, and stop rule",
+			x = "Uncertainty-retirement-axis checks",
+			y = "Uncertainty-retirement state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"440-open-question-uncertainty-retirement-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

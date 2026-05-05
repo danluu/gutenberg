@@ -1,0 +1,10 @@
+pass_id,cumulative_uncertainty_retirement_records,cumulative_uncertainty_retirement_axes,cumulative_uncertainty_retirement_states,cumulative_uncertainty_retirement_owners,cumulative_uncertainty_retirement_consumers,cumulative_uncertainty_retirement_value,cumulative_uncertainty_retirement_blocked_transfer_risk_value,cumulative_timing_only_uncertainty_retirement_value,cumulative_analysis_only_value
+1,1,1,1,1,1,61607791079,33468847868,0,0
+5,5,5,2,5,4,248510971055,135005260499,0,0
+9,9,9,3,9,8,295689778092,160635465471,0,0
+10,9,10,3,9,8,295689778092,160635465471,0,0
+20,9,20,3,9,8,295689778092,160635465471,0,0
+50,9,50,3,9,8,295689778092,160635465471,0,0
+90,9,90,3,9,8,295689778092,160635465471,0,0
+91,9,90,3,9,8,295689778092,160635465471,0,0
+100,9,90,3,9,8,295689778092,160635465471,0,0

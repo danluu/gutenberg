@@ -1,0 +1,7 @@
+uncertainty_retirement_state,residual_uncertainty_state,pass_result,passes,first_pass,uncertainty_retirement_records,axis_checks,uncertainty_retirement_owners,uncertainty_retirement_consumers,uncertainty_retirement_value,uncertainty_retirement_blocked_transfer_risk_value,timing_only_uncertainty_retirement_value,analysis_only_value
+local packet uncertainty retirement,local packet residual uncertainty,uncertainty retirement: local packet,40,1,4,40,4,3,223421409926,121375187263,0,0
+owner artifact uncertainty retirement,owner artifact residual uncertainty,uncertainty retirement: owner or observer artifact,20,5,2,20,2,2,44673375220,24269112272,0,0
+observer artifact uncertainty retirement,observer artifact residual uncertainty,uncertainty retirement: owner or observer artifact,30,7,3,30,3,3,27594992946,14991165936,0,0
+local packet uncertainty retirement,local packet residual uncertainty,repeat: uncertainty-retirement-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact uncertainty retirement,owner artifact residual uncertainty,repeat: uncertainty-retirement-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact uncertainty retirement,observer artifact residual uncertainty,repeat: uncertainty-retirement-axis already checked,3,97,3,0,3,3,0,0,0,0
