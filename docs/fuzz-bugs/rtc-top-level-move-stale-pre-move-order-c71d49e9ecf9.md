@@ -44,6 +44,18 @@ natural user actions as the source repro and failed after 43.3s with primary
 state `[inserted paragraph, another paragraph, emoji paragraph]` and secondary
 state `[inserted paragraph, emoji paragraph, emoji paragraph]`.
 
+Pass 40 rechecked the evidence after rebasing both branches onto
+`origin/trunk` at `e7f55c1b4d2`. The original source log and Playwright trace
+again show completed user actions followed by a state assertion failure, not a
+timeout or missing locator. A fresh HTTP rerun against the known-fixes base at
+`http://localhost:9908` failed in 42.8s with the same primary/secondary split.
+Applying only the non-Playwright regression-test commit to the known-fixes base
+failed the same-array-reference reorder case with expected
+`[Inserted, Another, Emoji]` and received `[Inserted, Emoji, Another]`. The
+fixed branch then passed the focused regression tests, the full
+`crdt-blocks.ts` unit suite, JS lint for the touched files, and the natural-user
+Playwright repro on the same HTTP transport.
+
 The narrowest pass-39 proof is lower than Playwright: applying only the
 regression-test commit to the known-fixes base shows that the base already
 survives the pure stale-snapshot interleaving when each editor emits a fresh
