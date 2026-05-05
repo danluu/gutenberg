@@ -362,6 +362,242 @@ describe( 'crdt-blocks', () => {
 			expect( content1.toString() ).toBe( 'First' );
 		} );
 
+		it( 'preserves a remotely inserted block and the moved sibling after a stale top-level move', () => {
+			const heading = {
+				name: 'core/heading',
+				attributes: { content: 'Heading' },
+				innerBlocks: [],
+				clientId: 'heading',
+			};
+			const emoji = {
+				name: 'core/paragraph',
+				attributes: { content: 'Emoji and multibyte' },
+				innerBlocks: [],
+				clientId: 'emoji',
+			};
+			const another = {
+				name: 'core/paragraph',
+				attributes: { content: 'Another paragraph' },
+				innerBlocks: [],
+				clientId: 'another',
+			};
+			const inserted = {
+				name: 'core/paragraph',
+				attributes: { content: 'Inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted',
+			};
+
+			const initialBlocks = [ heading, emoji, another ];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			const remoteDoc = new Y.Doc();
+			const remoteBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// User A deletes the first block.
+			mergeCrdtBlocks( yblocks, [ emoji, another ], null );
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// User B inserts a block before the paragraph that User A will move.
+			mergeCrdtBlocks( remoteBlocks, [ inserted, emoji, another ], null );
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			// User A's editor can echo the converged remote insertion before
+			// the user performs the next structural edit.
+			mergeCrdtBlocks( yblocks, [ inserted, emoji, another ], null );
+
+			// User A moves the emoji paragraph down below its sibling.
+			mergeCrdtBlocks( yblocks, [ inserted, another, emoji ], null );
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// The receiving editor may still emit the last local full-block
+			// snapshot it had before applying the remote move. That stale
+			// snapshot must not undo the move or duplicate either sibling.
+			mergeCrdtBlocks( remoteBlocks, [ inserted, emoji, another ], null );
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			const expectedContents = [
+				'Inserted paragraph',
+				'Another paragraph',
+				'Emoji and multibyte',
+			];
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				)
+			).toEqual( expectedContents );
+			expect(
+				( remoteBlocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				)
+			).toEqual( expectedContents );
+
+			remoteDoc.destroy();
+		} );
+
+		it( 'does not duplicate a remote insert when the local editor echoes an unchanged top-level order', () => {
+			const emoji = {
+				name: 'core/paragraph',
+				attributes: { content: 'Emoji and multibyte' },
+				innerBlocks: [],
+				clientId: 'emoji',
+			};
+			const another = {
+				name: 'core/paragraph',
+				attributes: { content: 'Another paragraph' },
+				innerBlocks: [],
+				clientId: 'another',
+			};
+			const inserted = {
+				name: 'core/paragraph',
+				attributes: { content: 'Inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted',
+			};
+
+			mergeCrdtBlocks( yblocks, [ emoji, another ], null );
+
+			const remoteDoc = new Y.Doc();
+			const remoteBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			mergeCrdtBlocks( remoteBlocks, [ inserted, emoji, another ], null );
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			// The local block editor can emit the newly-converged order back
+			// into the CRDT document. This is an echo of the remote insertion,
+			// not a second local insertion.
+			mergeCrdtBlocks( yblocks, [ inserted, emoji, another ], null );
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				)
+			).toEqual( [
+				'Inserted paragraph',
+				'Emoji and multibyte',
+				'Another paragraph',
+			] );
+
+			remoteDoc.destroy();
+		} );
+
+		it( 'does not preserve a stale remote order when the previous local base has disjoint client IDs', () => {
+			const heading = {
+				name: 'core/heading',
+				attributes: { content: 'Seed heading' },
+				innerBlocks: [],
+				clientId: 'heading',
+			};
+			const emoji = {
+				name: 'core/paragraph',
+				attributes: { content: 'Emoji and multibyte' },
+				innerBlocks: [],
+				clientId: 'emoji',
+			};
+			const another = {
+				name: 'core/paragraph',
+				attributes: { content: 'Another paragraph' },
+				innerBlocks: [],
+				clientId: 'another',
+			};
+			const inserted = {
+				name: 'core/paragraph',
+				attributes: { content: 'Inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted',
+			};
+
+			mergeCrdtBlocks( yblocks, [ heading, emoji, another ], null );
+
+			const remoteDoc = new Y.Doc();
+			const remoteBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			// User A performs a local structural edit whose block snapshot has
+			// client IDs that do not overlap the next remote snapshot.
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					{
+						...emoji,
+						attributes: {},
+						clientId: 'local-emoji',
+					},
+					{
+						...another,
+						attributes: {},
+						clientId: 'local-another',
+					},
+				],
+				null
+			);
+
+			// User B concurrently inserts before the original emoji paragraph.
+			mergeCrdtBlocks(
+				remoteBlocks,
+				[ heading, inserted, emoji, another ],
+				null
+			);
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			// User A then moves the emoji paragraph below its sibling. The stale
+			// previous local base cannot prove that the current order is unchanged,
+			// because it shares fewer than two client IDs with this snapshot.
+			mergeCrdtBlocks( yblocks, [ inserted, another, emoji ], null );
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				)
+			).toEqual( [
+				'Inserted paragraph',
+				'Another paragraph',
+				'Emoji and multibyte',
+			] );
+
+			remoteDoc.destroy();
+		} );
+
+		it( 'observes reordered blocks when the editor reuses the same block array reference', () => {
+			const inserted = {
+				name: 'core/paragraph',
+				attributes: { content: 'Inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted',
+			};
+			const emoji = {
+				name: 'core/paragraph',
+				attributes: { content: 'Emoji and multibyte' },
+				innerBlocks: [],
+				clientId: 'emoji',
+			};
+			const another = {
+				name: 'core/paragraph',
+				attributes: { content: 'Another paragraph' },
+				innerBlocks: [],
+				clientId: 'another',
+			};
+			const blocks = [ inserted, emoji, another ];
+
+			mergeCrdtBlocks( yblocks, blocks, null );
+
+			blocks.splice( 1, 2, another, emoji );
+			mergeCrdtBlocks( yblocks, blocks, null );
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				)
+			).toEqual( [
+				'Inserted paragraph',
+				'Another paragraph',
+				'Emoji and multibyte',
+			] );
+		} );
+
 		it( 'creates Y.Text for rich-text attributes', () => {
 			const blocks: Block[] = [
 				{
