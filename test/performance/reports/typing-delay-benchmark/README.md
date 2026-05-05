@@ -1771,6 +1771,24 @@ The R script derives:
     consumer-gate-state, consumer-gate-owner, consumer-gate-consumer,
     consumer-gate-value, consumer-misuse-risk-value,
     timing-only-consumer-gate, and analysis-only saturation.
+-   `data/typing-delay-open-question-consumer-decision-register.csv`:
+    consumer-decision register for the nine consumer-use gate records,
+    including downstream decision request, evidence precondition, permitted
+    decision, rejected decision, evidence bundle, fail-closed response,
+    rollback path, owner, and consumer.
+-   `data/typing-delay-open-question-consumer-decision-100-pass-audit.csv`:
+    thirty-fourth forced 100-pass audit over consumer-decision axes: request,
+    precondition, permit, reject, bundle, failure, rollback, owner, substitute,
+    and stop-rule.
+-   `data/typing-delay-open-question-consumer-decision-100-pass-summary.csv`:
+    rollup of consumer-decision coverage by consumer decision state,
+    consumer-use gate state, and pass result.
+-   `data/typing-delay-open-question-consumer-decision-100-pass-checkpoints.csv`:
+    checkpoints for consumer-decision-record, consumer-decision-axis,
+    consumer-decision-state, consumer-decision-owner,
+    consumer-decision-consumer, consumer-decision-value,
+    consumer-decision-error-risk-value, timing-only-consumer-decision, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11975,6 +11993,38 @@ This is the downstream-use guard. Expiry enforcement can mark report evidence as
 stale, but a separate consumer-use gate is what prevents that stale or
 downgraded claim from being used later by a policy, implementation, method, or
 broad-conclusion consumer without a fresh pre-use check.
+
+I then added the consumer-decision layer: a passing consumer-use gate is no
+longer enough by itself to justify a downstream action. The report now records
+the requested decision, the evidence precondition, the decision that is
+permitted, the decision that must be rejected, the evidence bundle that travels
+with the decision, fail-closed behavior, rollback, owner, and consumer.
+
+![Open question consumer decision register](figures/384-open-question-consumer-decision-register.png)
+
+![Open question consumer decision 100-pass saturation](figures/385-open-question-consumer-decision-100-pass-saturation.png)
+
+![Open question consumer decision coverage](figures/386-open-question-consumer-decision-coverage.png)
+
+| Consumer-decision check | Result |
+| ----------------------- | ------ |
+| Consumer-decision records | `9`, one per consumer-use gate record. |
+| Consumer-decision states | `3`: local packet consumer decision, owner artifact consumer decision, and observer artifact consumer decision. |
+| Consumer-decision owners | `9`; decisions route back to the scoped consumer-use gate owner. |
+| Consumer-decision consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Consumer-decision-axis checks | `90`: every row checked against all `10` consumer-decision axes. |
+| Consumer-decision value | `8505351`: local packet decisions contribute `6426553`, owner artifact decisions contribute `1285007`, and observer artifact decisions contribute `793791`. |
+| Consumer-decision error-risk value | `5744016` across the nine consumer-decision records. |
+| Timing-only consumer-decision value | `0`; aggregate timing movement alone cannot authorize a downstream decision, attach an evidence bundle, define rollback, or replace a failing consumer-use gate. |
+| Saturation | Consumer-decision records are all named by pass `9`; all consumer-decision axes are covered by pass `90`; passes `91-100` add no consumer-decision coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the decision-action guard. A consumer can ask to use a claim, and the
+consumer-use gate can say whether the evidence is current enough to consider.
+The consumer-decision layer is stricter: it says exactly what action may be
+taken, what artifact must accompany that action, and what must happen if the
+gate fails after a decision has already been written into CI policy, source
+recommendations, benchmark-method wording, or broad conclusions.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

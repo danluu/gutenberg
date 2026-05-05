@@ -38585,6 +38585,307 @@ save_plot(
 	height = 7.2
 )
 
+open_question_consumer_decision_register <- open_question_consumer_use_gate_register %>%
+	mutate(
+		consumer_decision_state = case_when(
+			consumer_gate_state == "local packet consumer-use gate" ~ "local packet consumer decision",
+			consumer_gate_state == "owner artifact consumer-use gate" ~ "owner artifact consumer decision",
+			TRUE ~ "observer artifact consumer decision"
+		),
+		consumer_decision_request = case_when(
+			close_scope == "CI wait decision" ~ "choose whether the Performance Tests CI wait policy may change runtime, startup wait, typing delay, or input mode",
+			close_scope == "source prototype decision" ~ "choose whether source or selector recommendations may be implemented from this evidence",
+			close_scope == "benchmark method wording" ~ "choose whether benchmark-method wording may describe the harness, trace slice, aggregation, or instrumentation as settled",
+			TRUE ~ "choose whether broad product, browser, endpoint, runtime, workload, or portability conclusions may be stated as current"
+		),
+		consumer_decision_precondition = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ "passing consumer-use gate, current local evidence packet, matching active-claim ledger row, and no open expiry or retirement block",
+			consumer_decision_state == "owner artifact consumer decision" ~ "passing consumer-use gate, current owner artifact, reviewer identity, matching active-claim ledger row, and no open expiry or retirement block",
+			TRUE ~ "passing consumer-use gate, current observer artifact, reviewer identity, matching active-claim ledger row, and no open expiry or retirement block"
+		),
+		permitted_consumer_decision = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ "make only the local decision named by the supported claim; cite the packet, gate proof, and report diff",
+			consumer_decision_state == "owner artifact consumer decision" ~ "make only the owner-scoped decision named by the supported claim; cite the owner artifact, gate proof, reviewer identity, and report diff",
+			TRUE ~ "make only the broad decision named by the supported claim; cite the observer artifact, gate proof, reviewer identity, and report diff"
+		),
+		rejected_consumer_decision = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ "do not turn stale local packet evidence into CI policy, source changes, method wording, or broad conclusions",
+			consumer_decision_state == "owner artifact consumer decision" ~ "do not turn stale owner evidence into owner-scoped recommendations, policy changes, method wording, or broad conclusions",
+			TRUE ~ "do not turn stale observer evidence into broad recommendations, portability statements, or externalized conclusions"
+		),
+		consumer_decision_evidence_bundle = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ "supported claim, local packet path, renewal result, expiry-enforcement result, consumer-use gate proof, retained failure row, and report diff",
+			consumer_decision_state == "owner artifact consumer decision" ~ "supported claim, owner artifact path, reviewer identity, renewal result, expiry-enforcement result, consumer-use gate proof, retained failure row, and report diff",
+			TRUE ~ "supported claim, observer artifact path, reviewer identity, renewal result, expiry-enforcement result, consumer-use gate proof, retained failure row, and report diff"
+		),
+		consumer_decision_failure_response = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ "fail closed to no local decision, retain the failed gate row, request packet renewal, and keep old CI/source/method wording unchanged",
+			consumer_decision_state == "owner artifact consumer decision" ~ "fail closed to no owner-scoped decision, retain the failed gate row, request owner renewal, and keep old recommendation wording unchanged",
+			TRUE ~ "fail closed to no broad decision, retain the failed gate row, request observer renewal, and keep broad conclusions downgraded"
+		),
+		consumer_decision_rollback = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ "revert or withhold local decision text and link the failed gate to the renewal packet needed for reinstatement",
+			consumer_decision_state == "owner artifact consumer decision" ~ "revert or withhold owner-scoped decision text and link the failed gate to the owner artifact needed for reinstatement",
+			TRUE ~ "revert or withhold broad decision text and link the failed gate to the observer artifact needed for reinstatement"
+		),
+		consumer_decision_owner = consumer_gate_owner,
+		consumer_decision_consumer = consumer_gate_consumer,
+		consumer_decision_cost = case_when(
+			consumer_decision_state == "local packet consumer decision" ~ 2,
+			consumer_decision_state == "owner artifact consumer decision" ~ 4,
+			TRUE ~ 6
+		),
+		consumer_decision_value = pmax(
+			1,
+			consumer_gate_value + consumer_misuse_risk_value + false_closure_risk - consumer_decision_cost
+		),
+		consumer_decision_error_risk_value = pmax(
+			1,
+			consumer_misuse_risk_value + stale_active_claim_risk_value + stale_reuse_risk - consumer_decision_cost
+		),
+		timing_only_consumer_decision_value = 0,
+		analysis_only_value = 0,
+		consumer_decision_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(consumer_decision_value), desc(consumer_decision_error_risk_value), question_family)
+
+open_question_consumer_decision_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"request", "What downstream decision is being requested?",
+	"precondition", "What evidence precondition must pass before the decision?",
+	"permit", "What decision is permitted after the precondition passes?",
+	"reject", "What decision is rejected when the gate or precondition fails?",
+	"bundle", "What evidence bundle must travel with the decision?",
+	"failure", "What fail-closed response handles a failed decision check?",
+	"rollback", "How is an already-written decision rolled back?",
+	"owner", "Who owns the consumer decision result?",
+	"substitute", "Can aggregate timing alone substitute for the consumer decision check?",
+	"stop-rule", "When does consumer-decision review stop?"
+)
+
+open_question_consumer_decision_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_consumer_decision_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_consumer_decision_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_consumer_decision_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_consumer_decision_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		consumer_decision_first_seen = !duplicated(consumer_decision_id),
+		consumer_decision_axis_key = paste(consumer_decision_id, pressure_axis, sep = "::"),
+		consumer_decision_axis_first_seen = !duplicated(consumer_decision_axis_key),
+		consumer_decision_state_first_seen = !duplicated(consumer_decision_state),
+		consumer_decision_owner_first_seen = !duplicated(consumer_decision_owner),
+		consumer_decision_consumer_first_seen = !duplicated(consumer_decision_consumer),
+		new_consumer_decision_value = if_else(consumer_decision_first_seen, consumer_decision_value, 0),
+		new_consumer_decision_error_risk_value = if_else(consumer_decision_first_seen, consumer_decision_error_risk_value, 0),
+		new_timing_only_consumer_decision_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!consumer_decision_axis_first_seen ~ "repeat: consumer-decision-axis already checked",
+			consumer_decision_state == "local packet consumer decision" ~ "consumer decision: local packet",
+			TRUE ~ "consumer decision: owner or observer artifact"
+		),
+		cumulative_consumer_decision_records = cumsum(consumer_decision_first_seen),
+		cumulative_consumer_decision_axes = cumsum(consumer_decision_axis_first_seen),
+		cumulative_consumer_decision_states = cumsum(consumer_decision_state_first_seen),
+		cumulative_consumer_decision_owners = cumsum(consumer_decision_owner_first_seen),
+		cumulative_consumer_decision_consumers = cumsum(consumer_decision_consumer_first_seen),
+		cumulative_consumer_decision_value = cumsum(new_consumer_decision_value),
+		cumulative_consumer_decision_error_risk_value = cumsum(new_consumer_decision_error_risk_value),
+		cumulative_timing_only_consumer_decision_value = cumsum(new_timing_only_consumer_decision_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_consumer_decision_summary <- open_question_consumer_decision_100_pass %>%
+	group_by(consumer_decision_state, consumer_gate_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		consumer_decision_records = n_distinct(consumer_decision_id),
+		axis_checks = sum(consumer_decision_axis_first_seen),
+		consumer_decision_owners = n_distinct(consumer_decision_owner),
+		consumer_decision_consumers = n_distinct(consumer_decision_consumer),
+		consumer_decision_value = sum(new_consumer_decision_value),
+		consumer_decision_error_risk_value = sum(new_consumer_decision_error_risk_value),
+		timing_only_consumer_decision_value = sum(new_timing_only_consumer_decision_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(consumer_decision_value), desc(consumer_decision_error_risk_value), first_pass)
+
+open_question_consumer_decision_checkpoints <- open_question_consumer_decision_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_consumer_decision_records,
+		cumulative_consumer_decision_axes,
+		cumulative_consumer_decision_states,
+		cumulative_consumer_decision_owners,
+		cumulative_consumer_decision_consumers,
+		cumulative_consumer_decision_value,
+		cumulative_consumer_decision_error_risk_value,
+		cumulative_timing_only_consumer_decision_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_consumer_decision_register,
+	file.path(data_dir, "typing-delay-open-question-consumer-decision-register.csv")
+)
+
+write_csv(
+	open_question_consumer_decision_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			consumer_decision_state,
+			consumer_gate_state,
+			consumer_decision_request,
+			consumer_decision_precondition,
+			permitted_consumer_decision,
+			rejected_consumer_decision,
+			consumer_decision_evidence_bundle,
+			consumer_decision_failure_response,
+			consumer_decision_rollback,
+			consumer_decision_owner,
+			consumer_decision_consumer,
+			consumer_use_request,
+			consumer_pre_use_check,
+			supported_claim,
+			blocked_claim,
+			consumer_decision_first_seen,
+			consumer_decision_axis_first_seen,
+			consumer_decision_state_first_seen,
+			consumer_decision_owner_first_seen,
+			consumer_decision_consumer_first_seen,
+			pass_result,
+			consumer_decision_value,
+			consumer_decision_error_risk_value,
+			timing_only_consumer_decision_value,
+			new_consumer_decision_value,
+			new_consumer_decision_error_risk_value,
+			new_timing_only_consumer_decision_value,
+			new_analysis_only_value,
+			cumulative_consumer_decision_records,
+			cumulative_consumer_decision_axes,
+			cumulative_consumer_decision_states,
+			cumulative_consumer_decision_owners,
+			cumulative_consumer_decision_consumers,
+			cumulative_consumer_decision_value,
+			cumulative_consumer_decision_error_risk_value,
+			cumulative_timing_only_consumer_decision_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-consumer-decision-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_consumer_decision_summary,
+	file.path(data_dir, "typing-delay-open-question-consumer-decision-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_consumer_decision_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-consumer-decision-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_consumer_decision_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, consumer_decision_value)
+		) %>%
+		ggplot(aes(consumer_decision_value, question_label, fill = consumer_decision_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Consumer decision") +
+		labs(
+			title = "Consumer decisions require evidence bundles, fail-closed behavior, and rollback",
+			subtitle = "Each row turns a passing consumer-use gate into a scoped downstream decision or blocks the decision when evidence is stale",
+			x = "Consumer-decision value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"384-open-question-consumer-decision-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_consumer_decision_saturation_long <- open_question_consumer_decision_100_pass %>%
+	select(
+		pass_id,
+		`consumer-decision records` = cumulative_consumer_decision_records,
+		`consumer-decision axes` = cumulative_consumer_decision_axes,
+		`consumer-decision states` = cumulative_consumer_decision_states,
+		`consumer-decision owners` = cumulative_consumer_decision_owners,
+		`consumer-decision consumers` = cumulative_consumer_decision_consumers,
+		`consumer-decision value` = cumulative_consumer_decision_value,
+		`consumer-decision error risk value` = cumulative_consumer_decision_error_risk_value,
+		`timing-only consumer-decision value` = cumulative_timing_only_consumer_decision_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("consumer-decision records", "consumer-decision axes", "consumer-decision states", "consumer-decision owners", "consumer-decision consumers", "consumer-decision value", "consumer-decision error risk value", "timing-only consumer-decision value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_consumer_decision_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Set3", name = "Cumulative metric") +
+		labs(
+			title = "Consumer-decision audit saturates once decision checks cover every gate",
+			subtitle = "Nine decision records appear by pass 9; all 90 axes appear by pass 90; timing-only decision value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"385-open-question-consumer-decision-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_consumer_decision_summary %>%
+		mutate(
+			state_label = str_wrap(consumer_decision_state, width = 28),
+			state_label = fct_reorder(state_label, consumer_decision_value + consumer_decision_error_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Accent", name = "Pass result") +
+		labs(
+			title = "Consumer-decision coverage separates local decisions from owner and observer decisions",
+			subtitle = "Every row is checked for request, precondition, permit, reject, bundle, failure, rollback, owner, substitute, and stop rule",
+			x = "Consumer-decision-axis checks",
+			y = "Consumer-decision state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"386-open-question-consumer-decision-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
