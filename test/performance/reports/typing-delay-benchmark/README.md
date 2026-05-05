@@ -1251,6 +1251,12 @@ The R script derives:
     risk owner, finality class, next-work pressure, and stop strength.
 -   `data/typing-delay-open-question-finality-audit-long.csv`: long-form
     finality scores used for the stop-state and next-work-pressure plots.
+-   `data/typing-delay-open-question-action-contract.csv`: safe-action contract
+    for remaining open question families, including what can be said now, what
+    can be done now, the blocked action, artifact that would unblock it, pass/fail
+    decisions, owner, safe-action class, and implementation/rollout risk scores.
+-   `data/typing-delay-open-question-action-contract-long.csv`: long-form
+    safe-action scores used for the action-contract heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10370,6 +10376,30 @@ implementation readiness are the gated CI/source rows. The high stop-strength
 rows should stop under unchanged conditions. The mechanism and product/display
 rows are not "do nothing forever"; they are "do not run more of this harness and
 pretend it closes a different observer problem."
+
+The action-contract audit turns that terminal-state view into concrete safe and
+blocked actions. This is the layer that prevents the benchmark from being used
+as a permission slip for the wrong change: a row can be safe to describe, but
+still unsafe to implement or roll out.
+
+![Open question action contract](figures/270-open-question-action-contract.png)
+
+![Open question safe action space](figures/271-open-question-safe-action-space.png)
+
+| Safe-action class | Current contract |
+| ----------------- | ---------------- |
+| Safe wording only | held-key cliff and persistence ordering can be stated with scoped metric/ordering wording, but not broadened to product typing or work-placement mechanisms |
+| Prototype under gate | selector/source guard work is the one current prototype candidate, but only behind behavior fixtures and targeted source-span collapse |
+| CI gate required | startup and pattern wait changes require target-topology validation before any wait is changed or runtime saving is counted |
+| API/source gate required | store subscriber partitioning remains blocked for public behavior until compatibility fixtures pass |
+| Claim blocked | runtime, CPU/QoS, product workload, external display, and CI pass/fail policy rows need new observers, replay, calibrated endpoints, or policy joins before broader claims |
+
+The safe-action-space plot shows why a specific artifact is not the same as a
+safe implementation. Startup and pattern rows have specific gates, but the safe
+implementation score is still low until those gates pass. Mechanism and
+claim-expansion rows have high action-risk pressure and should stay wording-only.
+That leaves one near-term source prototype lane and two CI validation lanes; the
+rest are explicit claim boundaries.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,97 @@
+question_family,question_label,safe_action_class,action_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe wording only,safe to say,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe wording only,safe to implement,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe wording only,rollout dependency,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe wording only,artifact specificity,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe wording only,misstatement risk,2
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe wording only,rollback difficulty,2
+Persistence ordering boundary,Persistence ordering boundary,safe wording only,safe to say,4
+Persistence ordering boundary,Persistence ordering boundary,safe wording only,safe to implement,1
+Persistence ordering boundary,Persistence ordering boundary,safe wording only,rollout dependency,4
+Persistence ordering boundary,Persistence ordering boundary,safe wording only,artifact specificity,4
+Persistence ordering boundary,Persistence ordering boundary,safe wording only,misstatement risk,5
+Persistence ordering boundary,Persistence ordering boundary,safe wording only,rollback difficulty,2
+Input mode versus product typing,"Input mode versus product
+typing",claim blocked,safe to say,4
+Input mode versus product typing,"Input mode versus product
+typing",claim blocked,safe to implement,1
+Input mode versus product typing,"Input mode versus product
+typing",claim blocked,rollout dependency,5
+Input mode versus product typing,"Input mode versus product
+typing",claim blocked,artifact specificity,4
+Input mode versus product typing,"Input mode versus product
+typing",claim blocked,misstatement risk,5
+Input mode versus product typing,"Input mode versus product
+typing",claim blocked,rollback difficulty,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim blocked,safe to say,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim blocked,safe to implement,1
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim blocked,rollout dependency,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim blocked,artifact specificity,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim blocked,misstatement risk,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim blocked,rollback difficulty,3
+CPU/QoS mechanism,CPU/QoS mechanism,claim blocked,safe to say,3
+CPU/QoS mechanism,CPU/QoS mechanism,claim blocked,safe to implement,1
+CPU/QoS mechanism,CPU/QoS mechanism,claim blocked,rollout dependency,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim blocked,artifact specificity,3
+CPU/QoS mechanism,CPU/QoS mechanism,claim blocked,misstatement risk,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim blocked,rollback difficulty,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI gate required,safe to say,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI gate required,safe to implement,2
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI gate required,rollout dependency,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI gate required,artifact specificity,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI gate required,misstatement risk,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI gate required,rollback difficulty,4
+Pattern wait replacement,Pattern wait replacement,CI gate required,safe to say,4
+Pattern wait replacement,Pattern wait replacement,CI gate required,safe to implement,2
+Pattern wait replacement,Pattern wait replacement,CI gate required,rollout dependency,4
+Pattern wait replacement,Pattern wait replacement,CI gate required,artifact specificity,5
+Pattern wait replacement,Pattern wait replacement,CI gate required,misstatement risk,4
+Pattern wait replacement,Pattern wait replacement,CI gate required,rollback difficulty,4
+Selector/source guard,Selector/source guard,prototype under gate,safe to say,4
+Selector/source guard,Selector/source guard,prototype under gate,safe to implement,3
+Selector/source guard,Selector/source guard,prototype under gate,rollout dependency,3
+Selector/source guard,Selector/source guard,prototype under gate,artifact specificity,5
+Selector/source guard,Selector/source guard,prototype under gate,misstatement risk,4
+Selector/source guard,Selector/source guard,prototype under gate,rollback difficulty,5
+Store subscriber partition,Store subscriber partition,API/source gate required,safe to say,3
+Store subscriber partition,Store subscriber partition,API/source gate required,safe to implement,1
+Store subscriber partition,Store subscriber partition,API/source gate required,rollout dependency,4
+Store subscriber partition,Store subscriber partition,API/source gate required,artifact specificity,4
+Store subscriber partition,Store subscriber partition,API/source gate required,misstatement risk,5
+Store subscriber partition,Store subscriber partition,API/source gate required,rollback difficulty,5
+Product workload generalization,"Product workload
+generalization",claim blocked,safe to say,3
+Product workload generalization,"Product workload
+generalization",claim blocked,safe to implement,1
+Product workload generalization,"Product workload
+generalization",claim blocked,rollout dependency,5
+Product workload generalization,"Product workload
+generalization",claim blocked,artifact specificity,4
+Product workload generalization,"Product workload
+generalization",claim blocked,misstatement risk,5
+Product workload generalization,"Product workload
+generalization",claim blocked,rollback difficulty,4
+External display endpoint,External display endpoint,claim blocked,safe to say,3
+External display endpoint,External display endpoint,claim blocked,safe to implement,1
+External display endpoint,External display endpoint,claim blocked,rollout dependency,5
+External display endpoint,External display endpoint,claim blocked,artifact specificity,4
+External display endpoint,External display endpoint,claim blocked,misstatement risk,5
+External display endpoint,External display endpoint,claim blocked,rollback difficulty,4
+CI pass/fail policy,CI pass/fail policy,claim blocked,safe to say,3
+CI pass/fail policy,CI pass/fail policy,claim blocked,safe to implement,1
+CI pass/fail policy,CI pass/fail policy,claim blocked,rollout dependency,5
+CI pass/fail policy,CI pass/fail policy,claim blocked,artifact specificity,4
+CI pass/fail policy,CI pass/fail policy,claim blocked,misstatement risk,5
+CI pass/fail policy,CI pass/fail policy,claim blocked,rollback difficulty,3

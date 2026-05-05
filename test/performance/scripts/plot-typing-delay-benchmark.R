@@ -27401,6 +27401,203 @@ save_plot(
 	height = 7.8
 )
 
+open_question_action_contract <- tribble(
+	~question_family, ~safe_to_say_now, ~safe_to_do_now, ~blocked_action, ~unblock_artifact, ~decision_if_passes, ~decision_if_fails, ~action_owner, ~safe_statement_score, ~safe_implementation_score, ~rollout_dependency_score, ~artifact_specificity_score, ~misstatement_risk, ~rollback_difficulty,
+	"Held-key cliff and metric split", "The held-key cliff is a current-metric fact, and held key is not complete-keypress-then-wait.", "Keep the metric split and avoid another unchanged broad sweep.", "Treat the held-key curve as product typing or combine helper families.", "Exact-spec rerun only after metric-definition drift.", "Reopen the metric definition only if the drifted metric removes or reverses the split.", "Keep the current split and stop rerunning unchanged rows.", "benchmark metric owner", 5, 1, 1, 5, 2, 2,
+	"Persistence ordering boundary", "Persistence timing is an ordering marker near the transition.", "Keep wording scoped to ordering; remove work-shift wording.", "Claim the timer callback moved work out of the next key.", "Joined callback/task/next-key work-placement trace.", "Name only the proven placement mechanism.", "Keep ordering-only wording.", "benchmark wording owner", 4, 1, 4, 4, 5, 2,
+	"Input mode versus product typing", "The cliff is held-key benchmark behavior and does not generalize to tap or complete-keypress rows.", "Report held-key and product-typing claims separately.", "Use fixed-`x` held-key rows as product-wide typing evidence.", "Representative replay strata with assertions and source spans.", "Widen only to passing strata.", "Keep product wording blocked.", "product workload owner", 4, 1, 5, 4, 5, 3,
+	"Runtime checkpoint mechanism", "Runtime checkpoints affect the measured boundary, but the exact runtime mechanism is unnamed.", "Keep the result empirical.", "Name V8, task priority, protocol checkpoint, or scheduler internals from current rows.", "Passive retained-key runtime sidecar with observer-off baseline.", "Name the separating runtime field only.", "Keep empirical runtime-boundary wording.", "mechanism owner", 3, 1, 5, 3, 4, 3,
+	"CPU/QoS mechanism", "CPU/system state can modulate latency, but the exact layer is unnamed.", "Keep the result empirical.", "Name frequency, QoS, cache, residency, scheduler, or timer-wakeup causality from aggregate rows.", "Accepted sidecar plus joined counters.", "Name only the passing counter layer.", "Keep empirical CPU/system-state sensitivity wording.", "system mechanism owner", 3, 1, 5, 3, 5, 3,
+	"Startup wait and first-key tails", "Local retained q50 does not justify adding a Typing startup wait or hiding first-key cost.", "Run the target-topology readiness artifact before changing waits.", "Reduce or add startup waits from local retained q50 alone.", "Performance Tests topology artifact with resources, failures, retained rows, and key position.", "Change only passing wait lanes and split idle-input if needed.", "Keep current startup behavior or report separate first-input/tail metrics.", "CI runtime owner", 4, 2, 4, 5, 4, 4,
+	"Pattern wait replacement", "Shorter waits and predicates are candidates, not rollout proof.", "Run per-spec predicate/fallback validation.", "Remove fixed waits from aggregate q50 while moving preview/canvas or endpoint work.", "Predicate plus resource-quiet validation with endpoint composition and per-spec veto gates.", "Change only passing Site/Post/container lanes and report savings separately.", "Keep fixed fallback for failing lanes.", "pattern benchmark owner", 4, 2, 4, 5, 4, 4,
+	"Selector/source guard", "Broad subscriber fanout is a credible source-cost target.", "Prototype only behind behavior fixtures and targeted source spans.", "Ship or cite aggregate p50 before behavior and source attribution pass.", "Behavior fixtures plus before/after source-span microscope.", "Cite aggregate p50 only after behavior passes and targeted span collapses.", "Rescope or reject the patch before timing claims.", "source optimization owner", 4, 3, 3, 5, 4, 5,
+	"Store subscriber partition", "Fanout reduction is interesting, but public compatibility is unproven.", "Keep public root-notification semantics unchanged.", "Use private side-channel timing wins to justify public data-layer partitioning.", "Public subscriber, persistence, dependency, cross-store, and async compatibility matrix.", "Restrict change to compatible classes only.", "Keep public semantics or a private-only path.", "data-layer API owner", 3, 1, 4, 4, 5, 5,
+	"Product workload generalization", "Fixed-`x` is benchmark/source evidence, not product-wide editor latency.", "Keep product claims blocked.", "Recommend product behavior or user-visible wins from fixed-character rows alone.", "Synthetic and recorded replay strata with assertions and source spans.", "Widen only to the passing workload strata.", "Keep fixed-`x` as a stressor only.", "product workload owner", 3, 1, 5, 4, 5, 4,
+	"External display endpoint", "Current visual claims are internal propagation claims, not calibrated physical display latency.", "Keep display wording at the deepest measured endpoint.", "Claim physical display latency from Paint, DrawFrame, screenshot, or OCR proxies without calibration.", "Calibrated OCR/present/camera endpoint ladder joined to retained keys.", "Widen only to the deepest passing calibrated endpoint.", "Keep physical-display wording blocked.", "display measurement owner", 3, 1, 5, 4, 5, 4,
+	"CI pass/fail policy", "The repository produces q50 artifacts; pass/fail policy remains external.", "Do not predict pass/fail from local q50 alone.", "Treat q50 movement as the dashboard or reviewer decision rule.", "Archived CI artifact to dashboard, threshold, noisy-metric, and reviewer decision join.", "Predict pass/fail only under the documented policy.", "Report q50 evidence without gate semantics.", "CI policy owner", 3, 1, 5, 4, 5, 3
+) %>%
+	left_join(
+		open_question_finality_audit %>%
+			select(question_family, finality_class, terminal_state, next_work_pressure, stop_strength),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		action_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		action_risk_pressure = misstatement_risk + rollout_dependency_score + rollback_difficulty - safe_implementation_score,
+		safe_action_class = case_when(
+			safe_implementation_score >= 3 & artifact_specificity_score >= 5 ~ "prototype under gate",
+			rollout_dependency_score >= 5 & str_detect(action_owner, "product|display|policy|mechanism|system") ~ "claim blocked",
+			rollout_dependency_score >= 4 & str_detect(action_owner, "CI|pattern") ~ "CI gate required",
+			rollback_difficulty >= 5 ~ "API/source gate required",
+			safe_statement_score >= 4 ~ "safe wording only",
+			TRUE ~ "blocked wording"
+		),
+		safe_action_class = factor(
+			safe_action_class,
+			levels = c("safe wording only", "prototype under gate", "CI gate required", "API/source gate required", "claim blocked", "blocked wording")
+		)
+	)
+
+open_question_action_contract_long <- open_question_action_contract %>%
+	select(
+		question_family,
+		question_label,
+		safe_action_class,
+		safe_statement_score,
+		safe_implementation_score,
+		rollout_dependency_score,
+		artifact_specificity_score,
+		misstatement_risk,
+		rollback_difficulty
+	) %>%
+	pivot_longer(
+		cols = c(
+			safe_statement_score,
+			safe_implementation_score,
+			rollout_dependency_score,
+			artifact_specificity_score,
+			misstatement_risk,
+			rollback_difficulty
+		),
+		names_to = "action_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		action_dimension = recode(
+			action_dimension,
+			safe_statement_score = "safe to say",
+			safe_implementation_score = "safe to implement",
+			rollout_dependency_score = "rollout dependency",
+			artifact_specificity_score = "artifact specificity",
+			misstatement_risk = "misstatement risk",
+			rollback_difficulty = "rollback difficulty"
+		),
+		action_dimension = factor(
+			action_dimension,
+			levels = c("safe to say", "safe to implement", "rollout dependency", "artifact specificity", "misstatement risk", "rollback difficulty")
+		),
+		question_label = fct_reorder(question_label, as.numeric(safe_action_class), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_action_contract %>%
+		select(
+			question_family,
+			safe_action_class,
+			finality_class,
+			terminal_state,
+			action_owner,
+			safe_to_say_now,
+			safe_to_do_now,
+			blocked_action,
+			unblock_artifact,
+			decision_if_passes,
+			decision_if_fails,
+			safe_statement_score,
+			safe_implementation_score,
+			rollout_dependency_score,
+			artifact_specificity_score,
+			misstatement_risk,
+			rollback_difficulty,
+			action_risk_pressure,
+			next_work_pressure,
+			stop_strength
+		),
+	file.path(data_dir, "typing-delay-open-question-action-contract.csv")
+)
+
+write_csv(
+	open_question_action_contract_long,
+	file.path(data_dir, "typing-delay-open-question-action-contract-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_action_contract_long, aes(action_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.6, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Score") +
+		labs(
+			title = "Action contract separates safe wording from blocked implementation",
+			subtitle = "Most rows are safe to describe only with scoped wording; source and CI changes need their named gates before action",
+			x = "Action dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"270-open-question-action-contract.png",
+	width = 13.8,
+	height = 8.8
+)
+
+open_question_action_contract_plot <- open_question_action_contract %>%
+	group_by(artifact_specificity_score, safe_implementation_score) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.16),
+		point_artifact_specificity_score = artifact_specificity_score + overlap_radius * cos(overlap_angle),
+		point_safe_implementation_score = safe_implementation_score + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_artifact_specificity_score = point_artifact_specificity_score + if_else(label_left, -0.08, 0.08),
+		label_safe_implementation_score = point_safe_implementation_score + case_when(
+			overlap_count == 1L ~ 0,
+			TRUE ~ (overlap_index - (overlap_count + 1) / 2) * 0.12
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_action_contract_plot,
+		aes(point_artifact_specificity_score, point_safe_implementation_score, color = safe_action_class, size = action_risk_pressure)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_artifact_specificity_score,
+				y = label_safe_implementation_score,
+				label = str_wrap(action_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Safe action class") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = seq(4, 14, by = 2), name = "Action-risk pressure") +
+		scale_x_continuous(breaks = 1:5, limits = c(2.7, 5.35)) +
+		scale_y_continuous(breaks = 1:5, limits = c(0.7, 3.45)) +
+		labs(
+			title = "Specific gates do not make implementation safe until the gate passes",
+			subtitle = "Only the selector/source row is a prototype candidate now; CI rows require validation, and claim rows remain wording-only",
+			x = "Artifact specificity",
+			y = "Safe implementation score today"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"271-open-question-safe-action-space.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
