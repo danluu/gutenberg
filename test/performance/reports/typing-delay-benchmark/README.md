@@ -1245,6 +1245,12 @@ The R script derives:
     risk scores, rebuttal strength, and action safety.
 -   `data/typing-delay-open-question-adversarial-review-long.csv`: long-form
     adversarial-review scores used for the review-dimension heatmap.
+-   `data/typing-delay-open-question-finality-audit.csv`: terminal-state audit
+    for remaining open question families, including why more same-harness rows
+    are not decisive, the next allowed artifact, stop condition, reopen trigger,
+    risk owner, finality class, next-work pressure, and stop strength.
+-   `data/typing-delay-open-question-finality-audit-long.csv`: long-form
+    finality scores used for the stop-state and next-work-pressure plots.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10339,6 +10345,31 @@ above or near the diagonal are the scoped local conclusions. This is the cleares
 way to avoid another rationalization loop: for each open question, the current
 safe action is defined by the weakest review axis, not by the most favorable
 latency statistic.
+
+The finality audit is the terminal-state view of the same evidence. It asks
+whether the remaining question should stop, proceed to a specific gated artifact,
+or wait for a claim-expansion trigger. This is different from a priority list:
+some high-risk rows have high stop strength because the safe action is already
+to keep the wording scoped or to block a rollout.
+
+![Open question finality audit](figures/268-open-question-finality-audit.png)
+
+![Open question next work pressure](figures/269-open-question-next-work-pressure.png)
+
+| Finality class | Current terminal state |
+| -------------- | ---------------------- |
+| Stop/recheck only | held-key cliff, persistence ordering, and input-mode split should not get another broad same-harness sweep unless the metric or claim changes |
+| Near-term gated work | startup wait, pattern wait, and selector/source guard work have enough decision value to run, but only through their target-topology or behavior/source-span gates |
+| Safety blocker | store subscriber partitioning remains an investigation until public compatibility fixtures pass |
+| External policy | CI pass/fail claims require a dashboard/reviewer policy join; local q50 production is not enough |
+| Claim or mechanism expansion | runtime, CPU/QoS, product workload, and external display rows need sidecars, counters, replay, or calibrated endpoints before the report can widen its claims |
+
+The next-work-pressure plot is the clearest answer to further open-question
+requests. The only rows with both high residual decision value and near-term
+implementation readiness are the gated CI/source rows. The high stop-strength
+rows should stop under unchanged conditions. The mechanism and product/display
+rows are not "do nothing forever"; they are "do not run more of this harness and
+pretend it closes a different observer problem."
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

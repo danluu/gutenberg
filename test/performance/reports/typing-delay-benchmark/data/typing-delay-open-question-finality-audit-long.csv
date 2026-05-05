@@ -1,0 +1,97 @@
+question_family,question_label,finality_class,finality_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",stop/recheck only,residual decision value,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",stop/recheck only,minimum artifact cost,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",stop/recheck only,external blocker,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",stop/recheck only,safe current action,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",stop/recheck only,overanalysis risk,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",stop/recheck only,implementation readiness,1
+Persistence ordering boundary,Persistence ordering boundary,stop/recheck only,residual decision value,1
+Persistence ordering boundary,Persistence ordering boundary,stop/recheck only,minimum artifact cost,4
+Persistence ordering boundary,Persistence ordering boundary,stop/recheck only,external blocker,4
+Persistence ordering boundary,Persistence ordering boundary,stop/recheck only,safe current action,5
+Persistence ordering boundary,Persistence ordering boundary,stop/recheck only,overanalysis risk,5
+Persistence ordering boundary,Persistence ordering boundary,stop/recheck only,implementation readiness,1
+Input mode versus product typing,"Input mode versus product
+typing",stop/recheck only,residual decision value,2
+Input mode versus product typing,"Input mode versus product
+typing",stop/recheck only,minimum artifact cost,4
+Input mode versus product typing,"Input mode versus product
+typing",stop/recheck only,external blocker,5
+Input mode versus product typing,"Input mode versus product
+typing",stop/recheck only,safe current action,5
+Input mode versus product typing,"Input mode versus product
+typing",stop/recheck only,overanalysis risk,4
+Input mode versus product typing,"Input mode versus product
+typing",stop/recheck only,implementation readiness,2
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim or mechanism expansion,residual decision value,2
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim or mechanism expansion,minimum artifact cost,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim or mechanism expansion,external blocker,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim or mechanism expansion,safe current action,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim or mechanism expansion,overanalysis risk,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim or mechanism expansion,implementation readiness,1
+CPU/QoS mechanism,CPU/QoS mechanism,claim or mechanism expansion,residual decision value,2
+CPU/QoS mechanism,CPU/QoS mechanism,claim or mechanism expansion,minimum artifact cost,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim or mechanism expansion,external blocker,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim or mechanism expansion,safe current action,4
+CPU/QoS mechanism,CPU/QoS mechanism,claim or mechanism expansion,overanalysis risk,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim or mechanism expansion,implementation readiness,1
+Startup wait and first-key tails,"Startup wait and first-key
+tails",near-term gated work,residual decision value,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",near-term gated work,minimum artifact cost,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",near-term gated work,external blocker,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",near-term gated work,safe current action,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",near-term gated work,overanalysis risk,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",near-term gated work,implementation readiness,4
+Pattern wait replacement,Pattern wait replacement,near-term gated work,residual decision value,5
+Pattern wait replacement,Pattern wait replacement,near-term gated work,minimum artifact cost,3
+Pattern wait replacement,Pattern wait replacement,near-term gated work,external blocker,3
+Pattern wait replacement,Pattern wait replacement,near-term gated work,safe current action,3
+Pattern wait replacement,Pattern wait replacement,near-term gated work,overanalysis risk,3
+Pattern wait replacement,Pattern wait replacement,near-term gated work,implementation readiness,4
+Selector/source guard,Selector/source guard,near-term gated work,residual decision value,4
+Selector/source guard,Selector/source guard,near-term gated work,minimum artifact cost,3
+Selector/source guard,Selector/source guard,near-term gated work,external blocker,3
+Selector/source guard,Selector/source guard,near-term gated work,safe current action,2
+Selector/source guard,Selector/source guard,near-term gated work,overanalysis risk,3
+Selector/source guard,Selector/source guard,near-term gated work,implementation readiness,5
+Store subscriber partition,Store subscriber partition,safety blocker,residual decision value,4
+Store subscriber partition,Store subscriber partition,safety blocker,minimum artifact cost,4
+Store subscriber partition,Store subscriber partition,safety blocker,external blocker,4
+Store subscriber partition,Store subscriber partition,safety blocker,safe current action,1
+Store subscriber partition,Store subscriber partition,safety blocker,overanalysis risk,4
+Store subscriber partition,Store subscriber partition,safety blocker,implementation readiness,2
+Product workload generalization,"Product workload
+generalization",claim or mechanism expansion,residual decision value,2
+Product workload generalization,"Product workload
+generalization",claim or mechanism expansion,minimum artifact cost,5
+Product workload generalization,"Product workload
+generalization",claim or mechanism expansion,external blocker,5
+Product workload generalization,"Product workload
+generalization",claim or mechanism expansion,safe current action,3
+Product workload generalization,"Product workload
+generalization",claim or mechanism expansion,overanalysis risk,5
+Product workload generalization,"Product workload
+generalization",claim or mechanism expansion,implementation readiness,1
+External display endpoint,External display endpoint,claim or mechanism expansion,residual decision value,1
+External display endpoint,External display endpoint,claim or mechanism expansion,minimum artifact cost,5
+External display endpoint,External display endpoint,claim or mechanism expansion,external blocker,5
+External display endpoint,External display endpoint,claim or mechanism expansion,safe current action,3
+External display endpoint,External display endpoint,claim or mechanism expansion,overanalysis risk,5
+External display endpoint,External display endpoint,claim or mechanism expansion,implementation readiness,1
+CI pass/fail policy,CI pass/fail policy,external policy,residual decision value,4
+CI pass/fail policy,CI pass/fail policy,external policy,minimum artifact cost,4
+CI pass/fail policy,CI pass/fail policy,external policy,external blocker,5
+CI pass/fail policy,CI pass/fail policy,external policy,safe current action,2
+CI pass/fail policy,CI pass/fail policy,external policy,overanalysis risk,4
+CI pass/fail policy,CI pass/fail policy,external policy,implementation readiness,2

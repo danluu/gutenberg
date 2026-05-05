@@ -27190,6 +27190,217 @@ save_plot(
 	height = 7.8
 )
 
+open_question_finality_audit <- tribble(
+	~question_family, ~terminal_state, ~why_not_more_same_harness, ~next_allowed_artifact, ~stop_condition, ~reopen_trigger, ~remaining_risk_owner, ~residual_decision_value, ~minimum_artifact_cost, ~external_blocker_score, ~safe_current_action_score, ~overanalysis_risk, ~implementation_readiness,
+	"Held-key cliff and metric split", "stop unless metric changes", "The current held-key metric is already dense, fresh, randomized, and helper-checked.", "Exact-spec recheck only after helper/browser/statistic/trace/throwaway drift.", "Keep separate held-key and complete-keypress metrics.", "Metric-definition drift removes or reverses the cliff or mode split.", "benchmark metric owner", 1, 1, 1, 5, 5, 1,
+	"Persistence ordering boundary", "stop at scoped wording", "Repeating timer alignment cannot prove callback work placement.", "Joined task/runtime trace only if wording expands to work placement.", "Say ordering marker; do not say work moved.", "Joined trace proves callback work and counterfactual placement.", "benchmark wording owner", 1, 4, 4, 5, 5, 1,
+	"Input mode versus product typing", "stop for held-key, defer product claim", "More fixed-`x` held-key rows cannot become product typing evidence.", "Representative replay strata if product wording is required.", "Keep held-key/tap/complete-keypress separated.", "Replay reproduces the same effect across realistic input strata.", "product workload owner", 2, 4, 5, 5, 4, 2,
+	"Runtime checkpoint mechanism", "defer mechanism naming", "Same-harness checkpoints are perturbing probes, not passive mechanism identifiers.", "Passive retained-key sidecar with observer-off baseline and runtime fields.", "Keep empirical runtime-boundary wording.", "Passive sidecar names a runtime field that separates retained classes.", "mechanism owner", 2, 5, 5, 4, 5, 1,
+	"CPU/QoS mechanism", "defer mechanism naming", "Latency movement alone cannot choose among frequency, residency, cache, QoS, scheduler, or timer-wakeup explanations.", "Accepted sidecar plus joined powermetrics, trace, or browser-counter windows.", "Keep empirical CPU/system-state sensitivity wording.", "Joined counters separate retained classes without perturbation.", "system mechanism owner", 2, 5, 5, 4, 5, 1,
+	"Startup wait and first-key tails", "target-topology gate", "Local retained q50 cannot answer failures, resources, first-key tails, or real job topology.", "Real Performance Tests topology artifact with key position and readiness fields.", "Do not add a Typing startup wait from local q50 alone.", "Target topology shows wait reduction changes q50, failures, resources, or first-key tails.", "CI runtime owner", 5, 3, 3, 3, 3, 4,
+	"Pattern wait replacement", "target-topology gate", "Local q50 cannot prove endpoint composition or Site/Post/container readiness.", "Predicate plus resource-quiet validation with per-spec veto gates.", "Treat shorter waits as candidates, not rollout proof.", "Target lanes preserve q50, p90, failures, retained counts, preview/canvas, and endpoint composition.", "pattern benchmark owner", 5, 3, 3, 3, 3, 4,
+	"Selector/source guard", "prototype behind gates", "More aggregate latency will not prove behavior safety or source attribution.", "Behavior fixtures plus targeted before/after source-span microscope.", "Prototype only after behavior/source-span gates pass.", "Behavior passes and targeted source spans collapse before aggregate p50 is cited.", "source optimization owner", 4, 3, 3, 2, 3, 5,
+	"Store subscriber partition", "block public change", "Private timing wins cannot prove public data-layer compatibility.", "Public subscriber, persistence, dependency, cross-store, and async compatibility matrix.", "Do not change public root notification semantics from timing alone.", "Compatibility matrix passes and fanout reduction is isolated to safe classes.", "data-layer API owner", 4, 4, 4, 1, 4, 2,
+	"Product workload generalization", "claim-expansion only", "More fixed-character rows cannot supply representative workload coverage.", "Synthetic and recorded workload replay strata with assertions and source spans.", "Keep product-wide latency wording blocked.", "Replay strata reproduce relevant owners/effects and pass assertions.", "product workload owner", 2, 5, 5, 3, 5, 1,
+	"External display endpoint", "claim-expansion only", "Internal browser milestones cannot become calibrated physical display timing by repetition.", "Calibrated OCR/present/camera endpoint ladder joined to retained keys.", "Keep display wording at the deepest measured endpoint.", "External endpoint preserves ordering and joins retained keys without perturbation.", "display measurement owner", 1, 5, 5, 3, 5, 1,
+	"CI pass/fail policy", "external policy join", "Local q50 production cannot identify dashboard/reviewer pass/fail semantics.", "Archived CI artifact to dashboard, threshold, noisy-metric, and reviewer-decision join.", "Do not predict pass/fail from local q50 alone.", "Policy join maps raw q50 movement to actual dashboard or reviewer outcome.", "CI policy owner", 4, 4, 5, 2, 4, 2
+) %>%
+	left_join(
+		open_question_adversarial_review %>%
+			select(question_family, review_class, strongest_risk_score, current_rebuttal_strength),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		finality_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		next_work_pressure = residual_decision_value + external_blocker_score + implementation_readiness - safe_current_action_score,
+		stop_strength = safe_current_action_score + current_rebuttal_strength + overanalysis_risk - residual_decision_value,
+		terminal_state = factor(
+			terminal_state,
+			levels = c(
+				"stop unless metric changes",
+				"stop at scoped wording",
+				"stop for held-key, defer product claim",
+				"target-topology gate",
+				"prototype behind gates",
+				"block public change",
+				"defer mechanism naming",
+				"claim-expansion only",
+				"external policy join"
+			)
+		),
+		finality_class = case_when(
+			str_detect(as.character(terminal_state), "^stop") ~ "stop/recheck only",
+			terminal_state %in% c("target-topology gate", "prototype behind gates") ~ "near-term gated work",
+			terminal_state == "block public change" ~ "safety blocker",
+			terminal_state == "external policy join" ~ "external policy",
+			TRUE ~ "claim or mechanism expansion"
+		),
+		finality_class = factor(
+			finality_class,
+			levels = c("stop/recheck only", "near-term gated work", "safety blocker", "external policy", "claim or mechanism expansion")
+		)
+	)
+
+open_question_finality_audit_long <- open_question_finality_audit %>%
+	select(
+		question_family,
+		question_label,
+		finality_class,
+		residual_decision_value,
+		minimum_artifact_cost,
+		external_blocker_score,
+		safe_current_action_score,
+		overanalysis_risk,
+		implementation_readiness
+	) %>%
+	pivot_longer(
+		cols = c(
+			residual_decision_value,
+			minimum_artifact_cost,
+			external_blocker_score,
+			safe_current_action_score,
+			overanalysis_risk,
+			implementation_readiness
+		),
+		names_to = "finality_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		finality_dimension = recode(
+			finality_dimension,
+			residual_decision_value = "residual decision value",
+			minimum_artifact_cost = "minimum artifact cost",
+			external_blocker_score = "external blocker",
+			safe_current_action_score = "safe current action",
+			overanalysis_risk = "overanalysis risk",
+			implementation_readiness = "implementation readiness"
+		),
+		finality_dimension = factor(
+			finality_dimension,
+			levels = c("residual decision value", "minimum artifact cost", "external blocker", "safe current action", "overanalysis risk", "implementation readiness")
+		),
+		question_label = fct_reorder(question_label, as.numeric(finality_class), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_finality_audit %>%
+		select(
+			question_family,
+			finality_class,
+			terminal_state,
+			review_class,
+			remaining_risk_owner,
+			why_not_more_same_harness,
+			next_allowed_artifact,
+			stop_condition,
+			reopen_trigger,
+			residual_decision_value,
+			minimum_artifact_cost,
+			external_blocker_score,
+			safe_current_action_score,
+			overanalysis_risk,
+			implementation_readiness,
+			next_work_pressure,
+			stop_strength,
+			strongest_risk_score,
+			current_rebuttal_strength
+		),
+	file.path(data_dir, "typing-delay-open-question-finality-audit.csv")
+)
+
+write_csv(
+	open_question_finality_audit_long,
+	file.path(data_dir, "typing-delay-open-question-finality-audit-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_finality_audit_long, aes(finality_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.6, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Score") +
+		labs(
+			title = "Finality audit separates stop states from gated work",
+			subtitle = "High overanalysis risk means unchanged same-harness samples should stop; high readiness/value means run the specific gate",
+			x = "Finality dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"268-open-question-finality-audit.png",
+	width = 13.8,
+	height = 8.8
+)
+
+open_question_finality_work_plot <- open_question_finality_audit %>%
+	group_by(next_work_pressure, stop_strength) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.18),
+		point_next_work_pressure = next_work_pressure + overlap_radius * cos(overlap_angle),
+		point_stop_strength = stop_strength + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_next_work_pressure = point_next_work_pressure + if_else(label_left, -0.1, 0.1),
+		label_stop_strength = point_stop_strength + case_when(
+			overlap_count == 1L ~ 0,
+			TRUE ~ (overlap_index - (overlap_count + 1) / 2) * 0.16
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_finality_work_plot,
+		aes(point_next_work_pressure, point_stop_strength, color = finality_class, size = residual_decision_value)
+	) +
+		geom_vline(xintercept = 4.5, color = "grey75", linewidth = 0.35, linetype = "dashed") +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_next_work_pressure,
+				y = label_stop_strength,
+				label = str_wrap(finality_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Finality class") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "Residual decision value") +
+		scale_x_continuous(breaks = seq(-2, 10, by = 2), limits = c(-2.7, 10.8)) +
+		scale_y_continuous(breaks = seq(2, 14, by = 2), limits = c(2.4, 14.8)) +
+		labs(
+			title = "Only the gated CI/source rows have enough pressure for near-term work",
+			subtitle = "Stop-strength is high for closed or scoped claims; mechanism and product rows need claim-expansion artifacts, not repeated sweeps",
+			x = "Next-work pressure",
+			y = "Stop strength for unchanged same-harness analysis"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"269-open-question-next-work-pressure.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
