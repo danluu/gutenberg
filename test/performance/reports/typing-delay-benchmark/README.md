@@ -2220,6 +2220,28 @@ The R script derives:
     reopen-drill-evidence-retention-value,
     reopen-drill-evidence-loss-risk-value,
     timing-only-reopen-drill-evidence-retention, and analysis-only saturation.
+-   `data/typing-delay-open-question-reopen-drill-retention-replay-register.csv`:
+    reopen-drill-retention-replay register for the nine
+    reopen-drill-evidence-retention records, including input lock,
+    environment pin, hash check, consumer-link check, expiry classification,
+    supersession walk, missing-artifact failure, result publication, owner,
+    and consumer.
+-   `data/typing-delay-open-question-reopen-drill-retention-replay-100-pass-audit.csv`:
+    fifty-ninth forced 100-pass audit over reopen-drill-retention-replay axes:
+    input-lock, environment, hash-check, consumer-link, expiry-classification,
+    supersession-walk, missing-artifact, publication, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-reopen-drill-retention-replay-100-pass-summary.csv`:
+    rollup of reopen-drill-retention-replay coverage by replay state,
+    reopen-drill-evidence-retention state, and pass result.
+-   `data/typing-delay-open-question-reopen-drill-retention-replay-100-pass-checkpoints.csv`:
+    checkpoints for reopen-drill-retention-replay-record,
+    reopen-drill-retention-replay-axis, reopen-drill-retention-replay-state,
+    reopen-drill-retention-replay-owner,
+    reopen-drill-retention-replay-consumer,
+    reopen-drill-retention-replay-value,
+    reopen-drill-unreplayable-evidence-risk-value,
+    timing-only-reopen-drill-retention-replay, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -13212,6 +13234,40 @@ packet superseded it without preserving the old rollback pointer. A retained
 verification bundle must be reachable from the recommendation it supports,
 hash-checkable against the generated CSVs/figures/report section, replayable
 from the named raw artifacts, and superseded without orphaning the prior claim.
+
+I then added the reopen-drill-retention-replay layer: retained evidence must be
+replayed, not just described. The replay record names the input lock,
+environment pin, hash check, consumer-link check, expiry classification,
+supersession walk, missing-artifact failure, result publication, owner, and
+consumer for each retained evidence row.
+
+![Open question reopen drill retention replay register](figures/459-open-question-reopen-drill-retention-replay-register.png)
+
+![Open question reopen drill retention replay 100-pass saturation](figures/460-open-question-reopen-drill-retention-replay-100-pass-saturation.png)
+
+![Open question reopen drill retention replay coverage](figures/461-open-question-reopen-drill-retention-replay-coverage.png)
+
+| Reopen-drill-retention-replay check | Result |
+| ----------------------------------- | ------ |
+| Reopen-drill-retention-replay records | `9`, one per reopen-drill-evidence-retention record. |
+| Reopen-drill-retention-replay states | `3`: local packet reopen-drill retention replay, owner artifact reopen-drill retention replay, and observer artifact reopen-drill retention replay. |
+| Reopen-drill-retention-replay owners | `9`; replay ownership routes back to the scoped retained-evidence owner. |
+| Reopen-drill-retention-replay consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Reopen-drill-retention-replay-axis checks | `90`: every row checked against all `10` reopen-drill-retention-replay axes. |
+| Reopen-drill-retention-replay value | `21040112883863`: local packet replay contributes `15897782188292`, owner artifact replay contributes `3178780353408`, and observer artifact replay contributes `1963550342163`. |
+| Reopen-drill-unreplayable-evidence-risk value | `11439153677424` across the nine reopen-drill-retention-replay records. |
+| Timing-only reopen-drill-retention-replay value | `0`; aggregate timing movement alone cannot prove the input lock, environment pin, hash check, consumer link, expiry classification, supersession walk, missing-artifact failure, result publication, owner, or stop rule. |
+| Saturation | Reopen-drill-retention-replay records are all named by pass `9`; all reopen-drill-retention-replay axes are covered by pass `90`; passes `91-100` add no reopen-drill-retention-replay coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the retained-evidence health check. It catches the case where the
+retained bundle still exists but cannot be used: the environment is not pinned,
+hashes have drifted without a supersession record, the consumer path no longer
+resolves to the packet, expiry is not classified, the supersession chain
+orphans an old claim, or a missing artifact fails open. A retained packet stays
+usable only if replay publishes a current, expired, superseded, or failed-closed
+result with the packet id, hash status, consumer path, stale-row status, and
+rollback pointer.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
