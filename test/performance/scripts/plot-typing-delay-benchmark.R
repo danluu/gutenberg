@@ -27598,6 +27598,201 @@ save_plot(
 	height = 7.8
 )
 
+open_question_minimum_decisive_artifact <- tribble(
+	~question_family, ~minimum_decisive_artifact, ~first_field_to_check, ~pass_condition, ~fail_condition, ~waste_to_avoid, ~mixed_result_action, ~owner, ~decision_value, ~artifact_cost, ~same_harness_futility, ~ambiguity_if_missing, ~artifact_readiness, ~stop_if_no_trigger,
+	"Held-key cliff and metric split", "exact-spec rerun only after metric-definition drift", "helper/browser/statistic/trace/throwaway identity", "drifted metric preserves held-key/tap split", "drifted metric removes or reverses the split", "another unchanged dense held-key sweep", "split old and new metric names; do not pool thresholds", "benchmark metric owner", 1, 1, 5, 1, 5, 5,
+	"Persistence ordering boundary", "joined callback/task/next-key work-placement trace", "same retained key has callback work, next-key work, and counterfactual placement", "trace proves work-placement ordering, not just marker ordering", "trace lacks counterfactual placement or only repeats marker alignment", "more marker-alignment rows called mechanism proof", "keep ordering wording and list mechanism as unproved", "benchmark wording owner", 1, 4, 5, 4, 2, 5,
+	"Input mode versus product typing", "representative replay strata with assertions and source spans", "input-shape and workload stratum identity", "realistic strata reproduce the relevant effect and owners", "tap/replay strata do not reproduce the held-key result", "more fixed-`x` held-key rows sold as product typing", "scope claims to passing strata only", "product workload owner", 2, 4, 5, 5, 2, 4,
+	"Runtime checkpoint mechanism", "passive retained-key runtime sidecar", "observer-off/on equality and per-key runtime field join", "passive field separates retained classes without perturbing ordering", "observer perturbs ordering or no field separates classes", "active DevTools checkpoint rows renamed as mechanism", "keep empirical runtime-boundary wording", "mechanism owner", 2, 5, 5, 5, 1, 5,
+	"CPU/QoS mechanism", "accepted sidecar plus joined CPU/system counters", "per-key counter window and clock synchronization", "joined counters separate retained classes without perturbation", "counters fail to separate, cannot join, or perturb scheduling", "aggregate latency movement renamed as frequency/QoS/cache cause", "keep empirical system-state sensitivity", "system mechanism owner", 2, 5, 5, 5, 1, 5,
+	"Startup wait and first-key tails", "real Performance Tests topology startup-wait artifact", "failures, resources, retained counts, and key-position tails", "shorter wait preserves q50 and veto fields in target topology", "q50 win comes with failures, resource shift, missing rows, or first-key tail regression", "local retained-q50-only wait tuning", "split retained typing, first-input, and idle-return metrics", "CI runtime owner", 5, 3, 3, 4, 4, 3,
+	"Pattern wait replacement", "predicate plus resource-quiet validation with per-spec veto gates", "endpoint composition and preview/canvas placement", "validated lane preserves workload and readiness while reducing wait", "predicate/fallback moves measured work before timing or fails in a lane", "aggregate q50 wait removal without endpoint composition", "change only passing lanes and keep fallback elsewhere", "pattern benchmark owner", 5, 3, 3, 4, 4, 3,
+	"Selector/source guard", "behavior fixtures plus targeted source-span before/after", "behavior pass and targeted owner span collapse", "behavior passes and targeted source span/fanout collapses before p50 claims", "behavior changes or aggregate p50 moves without targeted source proof", "aggregate timing-only source patch", "rescope to another owner or keep prototype local", "source optimization owner", 4, 3, 3, 4, 5, 2,
+	"Store subscriber partition", "public subscriber compatibility matrix", "public subscriber, persistence, dependency, cross-store, and async semantics", "compatibility passes and fanout collapse is isolated to safe classes", "any public subscriber or ordering semantic changes", "private side-channel win treated as public API safety", "restrict to private path or keep public semantics", "data-layer API owner", 4, 4, 4, 5, 2, 4,
+	"Product workload generalization", "synthetic and recorded workload replay strata", "workload stratum coverage and assertions", "passing strata reproduce relevant owners/effects with assertions", "strata show different owners, opposite effects, failures, or missing assertions", "more fixed-`x` samples called product coverage", "report fixed-`x` and passing strata separately", "product workload owner", 2, 5, 5, 5, 1, 5,
+	"External display endpoint", "calibrated OCR/present/camera endpoint ladder", "clock calibration and retained-key join", "external endpoint preserves ordering and joins retained keys without perturbation", "endpoint disagrees, cannot join, or perturbs ordering", "calling Paint, DrawFrame, screenshot, or OCR physical display latency", "name only the deepest passing endpoint", "display measurement owner", 1, 5, 5, 5, 1, 5,
+	"CI pass/fail policy", "archived CI artifact to dashboard/reviewer policy join", "raw q50 to dashboard threshold/noisy-metric/reviewer decision mapping", "documented policy maps raw q50 movement to actual outcome", "policy uses another statistic, threshold, noisy rule, or manual path", "local q50 movement called pass/fail behavior", "report q50 evidence and leave gate semantics external", "CI policy owner", 4, 4, 4, 5, 2, 4
+) %>%
+	left_join(
+		open_question_action_contract %>%
+			select(question_family, safe_action_class, action_risk_pressure),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		artifact_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		decisiveness_gap = ambiguity_if_missing + same_harness_futility - artifact_readiness,
+		artifact_lane = case_when(
+			stop_if_no_trigger >= 5 & decision_value <= 1 ~ "trigger-only",
+			artifact_readiness >= 4 & decision_value >= 4 ~ "ready gate",
+			artifact_readiness >= 4 ~ "ready guardrail",
+			artifact_cost >= 5 & decision_value <= 2 ~ "claim-expansion only",
+			artifact_cost >= 5 ~ "new observer",
+			TRUE ~ "targeted artifact"
+		),
+		artifact_lane = factor(
+			artifact_lane,
+			levels = c("trigger-only", "ready gate", "ready guardrail", "targeted artifact", "new observer", "claim-expansion only")
+		)
+	)
+
+open_question_minimum_decisive_artifact_long <- open_question_minimum_decisive_artifact %>%
+	select(
+		question_family,
+		question_label,
+		artifact_lane,
+		decision_value,
+		artifact_cost,
+		same_harness_futility,
+		ambiguity_if_missing,
+		artifact_readiness,
+		stop_if_no_trigger
+	) %>%
+	pivot_longer(
+		cols = c(
+			decision_value,
+			artifact_cost,
+			same_harness_futility,
+			ambiguity_if_missing,
+			artifact_readiness,
+			stop_if_no_trigger
+		),
+		names_to = "artifact_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		artifact_dimension = recode(
+			artifact_dimension,
+			decision_value = "decision value",
+			artifact_cost = "artifact cost",
+			same_harness_futility = "same-harness futility",
+			ambiguity_if_missing = "ambiguity if missing",
+			artifact_readiness = "artifact readiness",
+			stop_if_no_trigger = "stop without trigger"
+		),
+		artifact_dimension = factor(
+			artifact_dimension,
+			levels = c("decision value", "artifact cost", "same-harness futility", "ambiguity if missing", "artifact readiness", "stop without trigger")
+		),
+		question_label = fct_reorder(question_label, as.numeric(artifact_lane), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_minimum_decisive_artifact %>%
+		select(
+			question_family,
+			artifact_lane,
+			safe_action_class,
+			owner,
+			minimum_decisive_artifact,
+			first_field_to_check,
+			pass_condition,
+			fail_condition,
+			waste_to_avoid,
+			mixed_result_action,
+			decision_value,
+			artifact_cost,
+			same_harness_futility,
+			ambiguity_if_missing,
+			artifact_readiness,
+			stop_if_no_trigger,
+			decisiveness_gap,
+			action_risk_pressure
+		),
+	file.path(data_dir, "typing-delay-open-question-minimum-decisive-artifact.csv")
+)
+
+write_csv(
+	open_question_minimum_decisive_artifact_long,
+	file.path(data_dir, "typing-delay-open-question-minimum-decisive-artifact-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_minimum_decisive_artifact_long, aes(artifact_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.6, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "PuBuGn", direction = 1, name = "Score") +
+		labs(
+			title = "Minimum decisive artifacts separate real next work from wasted repeats",
+			subtitle = "High same-harness futility means the next artifact must add the named missing field, not more rows of the old harness",
+			x = "Artifact dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"272-open-question-minimum-decisive-artifact.png",
+	width = 13.8,
+	height = 8.8
+)
+
+open_question_minimum_artifact_plot <- open_question_minimum_decisive_artifact %>%
+	group_by(artifact_readiness, same_harness_futility) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.18),
+		point_artifact_readiness = artifact_readiness + overlap_radius * cos(overlap_angle),
+		point_same_harness_futility = same_harness_futility + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_artifact_readiness = point_artifact_readiness + if_else(label_left, -0.09, 0.09),
+		label_same_harness_futility = point_same_harness_futility + case_when(
+			overlap_count == 1L ~ 0,
+			TRUE ~ (overlap_index - (overlap_count + 1) / 2) * 0.14
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_minimum_artifact_plot,
+		aes(point_artifact_readiness, point_same_harness_futility, color = artifact_lane, size = decision_value)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_artifact_readiness,
+				y = label_same_harness_futility,
+				label = str_wrap(artifact_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Artifact lane") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "Decision value") +
+		scale_x_continuous(breaks = 1:5, limits = c(0.65, 5.45)) +
+		scale_y_continuous(breaks = 1:5, limits = c(2.65, 5.45)) +
+		labs(
+			title = "Ready gates are few; most unresolved questions need a new field first",
+			subtitle = "Upper-left rows are not actionable locally despite high futility for more same-harness samples",
+			x = "Artifact readiness",
+			y = "Futility of more same-harness samples"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"273-open-question-artifact-readiness.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

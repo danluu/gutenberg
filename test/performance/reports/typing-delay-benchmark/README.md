@@ -1257,6 +1257,12 @@ The R script derives:
     decisions, owner, safe-action class, and implementation/rollout risk scores.
 -   `data/typing-delay-open-question-action-contract-long.csv`: long-form
     safe-action scores used for the action-contract heatmap.
+-   `data/typing-delay-open-question-minimum-decisive-artifact.csv`: minimum
+    decisive-artifact audit for remaining open question families, including the
+    first missing field to check, pass/fail condition, wasted work to avoid,
+    mixed-result action, owner, artifact lane, and readiness/futility scores.
+-   `data/typing-delay-open-question-minimum-decisive-artifact-long.csv`:
+    long-form minimum-artifact scores used for the decisive-artifact heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10400,6 +10406,28 @@ implementation score is still low until those gates pass. Mechanism and
 claim-expansion rows have high action-risk pressure and should stay wording-only.
 That leaves one near-term source prototype lane and two CI validation lanes; the
 rest are explicit claim boundaries.
+
+The minimum-decisive-artifact audit names the first missing field that would
+actually settle each remaining row. This is the practical guard against
+collecting more numbers that look useful but leave the same question open.
+
+![Open question minimum decisive artifact](figures/272-open-question-minimum-decisive-artifact.png)
+
+![Open question artifact readiness](figures/273-open-question-artifact-readiness.png)
+
+| Artifact lane | Minimum decisive artifact |
+| ------------- | ------------------------- |
+| Trigger-only | held-key cliff, persistence wording, and input-mode split need no new run unless the metric or claim changes; otherwise the required artifact is an exact-spec or work-placement recheck |
+| Ready gate | startup wait, pattern wait, and selector/source guard have concrete near-term artifacts: target-topology readiness rows or behavior/source-span gates |
+| Targeted artifact | store subscriber partition and CI policy need compatibility or policy joins before action semantics are allowed |
+| Claim-expansion only | runtime, CPU/QoS, product workload, and external display rows need sidecars, counters, replay, or calibrated endpoints before broader claims |
+
+The key result is the readiness/futility split. High same-harness futility does
+not mean "do the ready gate"; it often means the old harness cannot observe the
+missing field. The ready gates are startup wait, pattern wait, and selector
+source spans. Runtime, CPU/QoS, display, and product workload are high-futility
+but low-readiness rows, so repeating the current benchmark would be a polished
+way to avoid collecting the only evidence that could change the answer.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

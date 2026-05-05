@@ -1,0 +1,97 @@
+question_family,question_label,artifact_lane,artifact_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only,decision value,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only,artifact cost,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only,same-harness futility,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only,ambiguity if missing,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only,artifact readiness,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only,stop without trigger,5
+Persistence ordering boundary,Persistence ordering boundary,trigger-only,decision value,1
+Persistence ordering boundary,Persistence ordering boundary,trigger-only,artifact cost,4
+Persistence ordering boundary,Persistence ordering boundary,trigger-only,same-harness futility,5
+Persistence ordering boundary,Persistence ordering boundary,trigger-only,ambiguity if missing,4
+Persistence ordering boundary,Persistence ordering boundary,trigger-only,artifact readiness,2
+Persistence ordering boundary,Persistence ordering boundary,trigger-only,stop without trigger,5
+Input mode versus product typing,"Input mode versus product
+typing",targeted artifact,decision value,2
+Input mode versus product typing,"Input mode versus product
+typing",targeted artifact,artifact cost,4
+Input mode versus product typing,"Input mode versus product
+typing",targeted artifact,same-harness futility,5
+Input mode versus product typing,"Input mode versus product
+typing",targeted artifact,ambiguity if missing,5
+Input mode versus product typing,"Input mode versus product
+typing",targeted artifact,artifact readiness,2
+Input mode versus product typing,"Input mode versus product
+typing",targeted artifact,stop without trigger,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion only,decision value,2
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion only,artifact cost,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion only,same-harness futility,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion only,ambiguity if missing,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion only,artifact readiness,1
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,claim-expansion only,stop without trigger,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion only,decision value,2
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion only,artifact cost,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion only,same-harness futility,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion only,ambiguity if missing,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion only,artifact readiness,1
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion only,stop without trigger,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",ready gate,decision value,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",ready gate,artifact cost,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",ready gate,same-harness futility,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",ready gate,ambiguity if missing,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",ready gate,artifact readiness,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",ready gate,stop without trigger,3
+Pattern wait replacement,Pattern wait replacement,ready gate,decision value,5
+Pattern wait replacement,Pattern wait replacement,ready gate,artifact cost,3
+Pattern wait replacement,Pattern wait replacement,ready gate,same-harness futility,3
+Pattern wait replacement,Pattern wait replacement,ready gate,ambiguity if missing,4
+Pattern wait replacement,Pattern wait replacement,ready gate,artifact readiness,4
+Pattern wait replacement,Pattern wait replacement,ready gate,stop without trigger,3
+Selector/source guard,Selector/source guard,ready gate,decision value,4
+Selector/source guard,Selector/source guard,ready gate,artifact cost,3
+Selector/source guard,Selector/source guard,ready gate,same-harness futility,3
+Selector/source guard,Selector/source guard,ready gate,ambiguity if missing,4
+Selector/source guard,Selector/source guard,ready gate,artifact readiness,5
+Selector/source guard,Selector/source guard,ready gate,stop without trigger,2
+Store subscriber partition,Store subscriber partition,targeted artifact,decision value,4
+Store subscriber partition,Store subscriber partition,targeted artifact,artifact cost,4
+Store subscriber partition,Store subscriber partition,targeted artifact,same-harness futility,4
+Store subscriber partition,Store subscriber partition,targeted artifact,ambiguity if missing,5
+Store subscriber partition,Store subscriber partition,targeted artifact,artifact readiness,2
+Store subscriber partition,Store subscriber partition,targeted artifact,stop without trigger,4
+Product workload generalization,"Product workload
+generalization",claim-expansion only,decision value,2
+Product workload generalization,"Product workload
+generalization",claim-expansion only,artifact cost,5
+Product workload generalization,"Product workload
+generalization",claim-expansion only,same-harness futility,5
+Product workload generalization,"Product workload
+generalization",claim-expansion only,ambiguity if missing,5
+Product workload generalization,"Product workload
+generalization",claim-expansion only,artifact readiness,1
+Product workload generalization,"Product workload
+generalization",claim-expansion only,stop without trigger,5
+External display endpoint,External display endpoint,trigger-only,decision value,1
+External display endpoint,External display endpoint,trigger-only,artifact cost,5
+External display endpoint,External display endpoint,trigger-only,same-harness futility,5
+External display endpoint,External display endpoint,trigger-only,ambiguity if missing,5
+External display endpoint,External display endpoint,trigger-only,artifact readiness,1
+External display endpoint,External display endpoint,trigger-only,stop without trigger,5
+CI pass/fail policy,CI pass/fail policy,targeted artifact,decision value,4
+CI pass/fail policy,CI pass/fail policy,targeted artifact,artifact cost,4
+CI pass/fail policy,CI pass/fail policy,targeted artifact,same-harness futility,4
+CI pass/fail policy,CI pass/fail policy,targeted artifact,ambiguity if missing,5
+CI pass/fail policy,CI pass/fail policy,targeted artifact,artifact readiness,2
+CI pass/fail policy,CI pass/fail policy,targeted artifact,stop without trigger,4
