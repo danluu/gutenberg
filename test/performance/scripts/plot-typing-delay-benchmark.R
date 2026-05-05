@@ -25323,6 +25323,164 @@ save_plot(
 	height = 8.0
 )
 
+open_question_claim_proof_chain <- tribble(
+	~claim, ~lane, ~proof_status, ~direct_observation, ~allowed_inference, ~blocked_inference, ~next_evidence_if_claim_expands, ~directness_score, ~artifact_strength_score, ~mechanism_gap_score, ~decision_risk_score,
+	"1000ms held-key cliff exists in this benchmark", "Benchmark artifact", "closed benchmark fact", "Dense held-key delay sweeps show the retained latency drop around the rich-text persistence interval.", "The benchmark has a real delay-dependent measurement boundary for held-key input.", "Generic user typing gets faster at 1000ms, or the cliff is only a plotting artifact.", "Only needed if the claim expands from fixed-key benchmark behavior to product-wide typing behavior.", 5, 5, 2, 2,
+	"Held key and complete keypress are different metrics", "Benchmark artifact", "closed benchmark fact", "Matched tap/complete-keypress versus held-key rows do not share the same delay curve.", "A benchmark using Playwright held-key delay is not measuring the same workload as keypress-then-wait.", "Delay-between-characters, key hold, tap, and complete-keypress helper calls are interchangeable.", "Repeat only when Playwright helper internals or CI helper spelling changes.", 5, 5, 1, 4,
+	"Firefox similarity rules out Chrome-only EventDispatch wording", "Benchmark artifact", "bounded inference", "The controlled Firefox lane preserves a similar dip under comparable benchmark conditions.", "The dip should not be explained solely as Chrome's EventDispatch accounting.", "Firefox and Chromium necessarily share the same lower-level mechanism.", "A same-grid, same-key-mode browser trace or sidecar artifact if browser-mechanism naming becomes the claim.", 4, 4, 4, 3,
+	"Gutenberg persistence timing is an ordering marker, not a proven work-shift cause", "Benchmark artifact", "bounded inference", "Persistence markers and timer events align with the transition, while no-op/raw-action controls reject several simple store-work explanations.", "The Gutenberg state boundary is part of the event ordering that separates slow and fast retained-key classes.", "The timer callback makes the next key faster by doing work that otherwise would have been charged to that key.", "Per-retained-key task/runtime joins that show the callback, subsequent key event, and browser/runtime checkpoint state without perturbing ordering.", 4, 4, 4, 5,
+	"Ordinary post-keyup waiting is not sufficient", "Runtime boundary", "closed local negative control", "Raw CDP ordinary waits from very short delays through multi-second delays do not reproduce the same fast class.", "Sleeping longer, draining queued JS, or letting the page rest is not enough by itself.", "Any delay past the timer should automatically produce the low-latency class.", "No more ordinary-wait extensions unless browser revision or helper family changes.", 5, 4, 4, 2,
+	"Runtime checkpoint state remains unnamed", "Runtime boundary", "open mechanism", "Runtime-repeat and checkpoint controls bound the effect below ordinary JS scheduler and data-action traces.", "The remaining mechanism sits below the current JavaScript/browser-table observability layer.", "The current artifact proves V8, compositor, scheduler, or protocol-state causality.", "Accepted passive sidecar joined to retained keys before root counters or heavyweight trace.", 3, 4, 5, 3,
+	"CPU/QoS may modulate absolute latency but is not named", "CPU/QoS", "open mechanism", "External CPU and finite-duration controls move absolute latency while preserving several benchmark orderings.", "System state is a plausible contributor to residual absolute time and portability.", "Frequency, QoS, cache, or scheduler policy has been identified as the cause.", "Sidecar-accepted runs with joined frequency, residency, QoS, runnable-latency, and power windows.", 3, 3, 5, 3,
+	"Startup-wait reduction must be gated by non-q50 readiness", "CI/readiness", "bounded inference", "Startup-wait artifacts show retained aggregates and early-key distributions, but readiness/failure/resource fields decide whether wait can be removed.", "A shorter wait can be considered only when q50 and readiness fields move together.", "A lower retained q50 alone means CI can safely remove startup wait.", "Real Performance Tests artifact retaining failures, retries, resources, first-key tails, run order, and environment metadata.", 4, 4, 3, 5,
+	"Pattern wait can probably be shortened locally, but rollout is not closed", "CI/readiness", "bounded inference", "Local pattern-readiness rows favor shorter fixed waits or source readiness over the current sleep in selected lanes.", "The current fixed wait is locally conservative and not always needed.", "The local result is enough to change CI across mac, container, and Site Editor paths.", "CI/mac/container validation with predicate, resource quiet, preview/canvas, actionability, failures, and retained rows.", 4, 4, 3, 4,
+	"Selector guards are source-safety questions before p50 questions", "Source/code", "bounded inference", "Owner-span audits identify broad subscriber fanout and candidate owners, with behavior-sensitive selector boundaries still present.", "Low-risk local guards can be prototyped when behavior fixtures and source-span collapse pass.", "Aggregate p50 improvement proves selector semantics are safe.", "Behavior fixture matrix plus targeted source-span before/after rows for the exact owner.", 4, 4, 3, 4,
+	"Product workload, physical display, and pass/fail policy claims remain blocked", "Claim expansion", "blocked expansion", "The existing evidence is mostly fixed-key benchmark, Chromium-internal endpoint, and repository artifact analysis.", "The report can make benchmark-scoped claims and explicitly mark broader claims as not measured.", "The same data proves product-wide editor latency, physical display latency, or CI pass/fail policy.", "Workload replay strata, calibrated external display endpoint, or dashboard/reviewer policy join, depending on the claim.", 2, 2, 5, 5
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Runtime boundary", "CPU/QoS", "Claim expansion")),
+		proof_status = factor(proof_status, levels = c("closed benchmark fact", "closed local negative control", "bounded inference", "open mechanism", "blocked expansion")),
+		claim_label = str_wrap(claim, width = 31),
+		overclaim_pressure = mechanism_gap_score + decision_risk_score - directness_score,
+		allowed_claim_strength = directness_score + artifact_strength_score - mechanism_gap_score,
+		next_action = case_when(
+			proof_status %in% c("closed benchmark fact", "closed local negative control") ~ "do not reopen without new metric",
+			proof_status == "bounded inference" & decision_risk_score >= 5 ~ "gate before rollout",
+			proof_status == "bounded inference" ~ "keep wording scoped",
+			proof_status == "open mechanism" ~ "require joined observer",
+			TRUE ~ "block broader claim"
+		),
+		next_action = factor(
+			next_action,
+			levels = c("do not reopen without new metric", "keep wording scoped", "gate before rollout", "require joined observer", "block broader claim")
+		)
+	)
+
+open_question_claim_proof_chain_long <- open_question_claim_proof_chain %>%
+	select(
+		claim,
+		claim_label,
+		lane,
+		proof_status,
+		directness_score,
+		artifact_strength_score,
+		mechanism_gap_score,
+		decision_risk_score
+	) %>%
+	pivot_longer(
+		cols = c(
+			directness_score,
+			artifact_strength_score,
+			mechanism_gap_score,
+			decision_risk_score
+		),
+		names_to = "proof_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		proof_dimension = recode(
+			proof_dimension,
+			directness_score = "direct observation",
+			artifact_strength_score = "artifact strength",
+			mechanism_gap_score = "mechanism gap",
+			decision_risk_score = "decision risk"
+		),
+		proof_dimension = factor(
+			proof_dimension,
+			levels = c("direct observation", "artifact strength", "mechanism gap", "decision risk")
+		),
+		claim_label = fct_reorder(claim_label, as.numeric(proof_status), .desc = TRUE)
+	)
+
+open_question_claim_proof_chain_summary <- open_question_claim_proof_chain %>%
+	count(lane, proof_status, next_action, name = "claims") %>%
+	group_by(lane) %>%
+	mutate(lane_claims = sum(claims)) %>%
+	ungroup()
+
+write_csv(
+	open_question_claim_proof_chain %>%
+		select(
+			claim,
+			lane,
+			proof_status,
+			next_action,
+			direct_observation,
+			allowed_inference,
+			blocked_inference,
+			next_evidence_if_claim_expands,
+			directness_score,
+			artifact_strength_score,
+			mechanism_gap_score,
+			decision_risk_score,
+			allowed_claim_strength,
+			overclaim_pressure
+		),
+	file.path(data_dir, "typing-delay-open-question-claim-proof-chain.csv")
+)
+
+write_csv(
+	open_question_claim_proof_chain_long,
+	file.path(data_dir, "typing-delay-open-question-claim-proof-chain-long.csv")
+)
+
+write_csv(
+	open_question_claim_proof_chain_summary,
+	file.path(data_dir, "typing-delay-open-question-claim-proof-chain-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_claim_proof_chain_long, aes(proof_dimension, claim_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.7, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Score") +
+		labs(
+			title = "Open questions split direct evidence from mechanism and rollout risk",
+			subtitle = "Closed benchmark facts have high directness; broader mechanism, readiness, and policy claims stay gated",
+			x = "Proof dimension",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"248-open-question-claim-proof-chain.png",
+	width = 13.4,
+	height = 8.4
+)
+
+save_plot(
+	ggplot(
+		open_question_claim_proof_chain %>%
+			mutate(claim_label = fct_reorder(claim_label, overclaim_pressure)),
+		aes(overclaim_pressure, claim_label, color = proof_status, shape = next_action, size = decision_risk_score)
+	) +
+		geom_vline(xintercept = 0, color = "grey72", linewidth = 0.45) +
+		geom_point(alpha = 0.88) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Proof status") +
+		scale_shape_manual(
+			values = c(
+				"do not reopen without new metric" = 16,
+				"keep wording scoped" = 17,
+				"gate before rollout" = 15,
+				"require joined observer" = 18,
+				"block broader claim" = 8
+			),
+			name = "Next action"
+		) +
+		scale_size_continuous(range = c(2.4, 7.4), breaks = 1:5, name = "Decision risk") +
+		scale_x_continuous(breaks = -2:8, limits = c(-2.2, 8.2)) +
+		labs(
+			title = "Proof-boundary pressure comes from mechanism gaps plus decision risk",
+			subtitle = "Negative or near-zero rows are closed benchmark facts; high-pressure rows need scoped wording, rollout gates, or new observers",
+			x = "Overclaim pressure: mechanism gap + decision risk - direct observation",
+			y = "Claim"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"249-open-question-proof-boundaries.png",
+	width = 13.0,
+	height = 8.0
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

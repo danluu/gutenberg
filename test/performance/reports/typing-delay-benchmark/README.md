@@ -1175,6 +1175,15 @@ The R script derives:
     controls, joins, and decision rules.
 -   `data/typing-delay-open-question-frontier-handoff-summary.csv`: rollup of
     handoff actions by claim lane.
+-   `data/typing-delay-open-question-claim-proof-chain.csv`: proof-boundary
+    audit for remaining claims, separating direct observations, allowed
+    inferences, blocked overclaims, and next evidence required if the claim
+    expands.
+-   `data/typing-delay-open-question-claim-proof-chain-long.csv`: long-form
+    proof-dimension scores for direct observation, artifact strength, mechanism
+    gap, and decision risk.
+-   `data/typing-delay-open-question-claim-proof-chain-summary.csv`: rollup of
+    proof status and next action by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10001,6 +10010,35 @@ This closes another practical loophole in the open-question plan. The frontier
 artifacts must be complete enough to be consumed by someone who did not run them.
 Otherwise they become another ambiguous benchmark run instead of evidence that
 can close or narrow an open question.
+
+The proof-chain audit is the anti-overclaim version of the same plan. It splits
+each important remaining claim into direct observations, allowed inferences,
+blocked inferences, and the evidence required if the wording expands. This is
+where the earlier timer-work explanation gets corrected: the current evidence
+supports persistence timing as an ordering marker for the held-key transition;
+it does not prove that the timer callback makes the next key faster by doing
+work that would otherwise be charged to that key.
+
+![Open question claim proof chain](figures/248-open-question-claim-proof-chain.png)
+
+![Open question proof boundaries](figures/249-open-question-proof-boundaries.png)
+
+| Claim | Current proof boundary | Blocked overclaim |
+| ----- | ---------------------- | ----------------- |
+| `1000ms` held-key cliff | closed benchmark fact: dense held-key sweeps show the latency drop around the rich-text persistence interval | generic user typing gets faster at `1000ms` |
+| Held key versus complete keypress | closed benchmark fact: matched rows show these are different metrics | delay-between-characters, tap, key hold, and complete-keypress helpers are interchangeable |
+| Firefox similarity | bounded inference: Chrome-only `EventDispatch` wording is too narrow | Firefox and Chromium necessarily share the same lower-level mechanism |
+| Gutenberg persistence timing | bounded inference: persistence markers align with the transition and simple store-work explanations are rejected | the timer callback is proven to move work out of the next-key measurement slice |
+| Runtime and CPU/QoS mechanisms | open mechanism: local controls bound the layer but do not name it | the current artifact proves V8, compositor, frequency, QoS, cache, or scheduler causality |
+| Startup, pattern, selector, product, display, and policy claims | rollout or claim-expansion gates: q50 is secondary to readiness, behavior fixtures, external endpoints, or policy joins | a lower q50 alone proves CI can remove waits, source patches are safe, display latency changed, or pass/fail policy moved |
+
+That is the current answer to the open-question loop. Some facts are now closed
+inside the benchmark: the held-key cliff exists, held key and complete keypress
+are different workloads, and ordinary post-keyup waiting is not sufficient. The
+still-open pieces are not excuses to keep inventing mechanisms. They are claim
+boundaries: name a runtime/OS mechanism only after joined observers, reduce CI
+waits only after readiness gates, and broaden to product/display/pass-fail claims
+only after those endpoints are actually measured.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

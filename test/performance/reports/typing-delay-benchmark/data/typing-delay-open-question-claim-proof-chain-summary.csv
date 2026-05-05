@@ -1,0 +1,11 @@
+lane,proof_status,next_action,claims,lane_claims
+Benchmark artifact,closed benchmark fact,do not reopen without new metric,2,4
+Benchmark artifact,bounded inference,keep wording scoped,1,4
+Benchmark artifact,bounded inference,gate before rollout,1,4
+CI/readiness,bounded inference,keep wording scoped,1,2
+CI/readiness,bounded inference,gate before rollout,1,2
+Source/code,bounded inference,keep wording scoped,1,1
+Runtime boundary,closed local negative control,do not reopen without new metric,1,2
+Runtime boundary,open mechanism,require joined observer,1,2
+CPU/QoS,open mechanism,require joined observer,1,1
+Claim expansion,blocked expansion,block broader claim,1,1

@@ -1,0 +1,109 @@
+claim,claim_label,lane,proof_status,proof_dimension,score
+1000ms held-key cliff exists in this benchmark,"1000ms held-key cliff exists in
+this benchmark",Benchmark artifact,closed benchmark fact,direct observation,5
+1000ms held-key cliff exists in this benchmark,"1000ms held-key cliff exists in
+this benchmark",Benchmark artifact,closed benchmark fact,artifact strength,5
+1000ms held-key cliff exists in this benchmark,"1000ms held-key cliff exists in
+this benchmark",Benchmark artifact,closed benchmark fact,mechanism gap,2
+1000ms held-key cliff exists in this benchmark,"1000ms held-key cliff exists in
+this benchmark",Benchmark artifact,closed benchmark fact,decision risk,2
+Held key and complete keypress are different metrics,"Held key and complete keypress
+are different metrics",Benchmark artifact,closed benchmark fact,direct observation,5
+Held key and complete keypress are different metrics,"Held key and complete keypress
+are different metrics",Benchmark artifact,closed benchmark fact,artifact strength,5
+Held key and complete keypress are different metrics,"Held key and complete keypress
+are different metrics",Benchmark artifact,closed benchmark fact,mechanism gap,1
+Held key and complete keypress are different metrics,"Held key and complete keypress
+are different metrics",Benchmark artifact,closed benchmark fact,decision risk,4
+Firefox similarity rules out Chrome-only EventDispatch wording,"Firefox similarity rules out
+Chrome-only EventDispatch
+wording",Benchmark artifact,bounded inference,direct observation,4
+Firefox similarity rules out Chrome-only EventDispatch wording,"Firefox similarity rules out
+Chrome-only EventDispatch
+wording",Benchmark artifact,bounded inference,artifact strength,4
+Firefox similarity rules out Chrome-only EventDispatch wording,"Firefox similarity rules out
+Chrome-only EventDispatch
+wording",Benchmark artifact,bounded inference,mechanism gap,4
+Firefox similarity rules out Chrome-only EventDispatch wording,"Firefox similarity rules out
+Chrome-only EventDispatch
+wording",Benchmark artifact,bounded inference,decision risk,3
+"Gutenberg persistence timing is an ordering marker, not a proven work-shift cause","Gutenberg persistence timing
+is an ordering marker, not a
+proven work-shift cause",Benchmark artifact,bounded inference,direct observation,4
+"Gutenberg persistence timing is an ordering marker, not a proven work-shift cause","Gutenberg persistence timing
+is an ordering marker, not a
+proven work-shift cause",Benchmark artifact,bounded inference,artifact strength,4
+"Gutenberg persistence timing is an ordering marker, not a proven work-shift cause","Gutenberg persistence timing
+is an ordering marker, not a
+proven work-shift cause",Benchmark artifact,bounded inference,mechanism gap,4
+"Gutenberg persistence timing is an ordering marker, not a proven work-shift cause","Gutenberg persistence timing
+is an ordering marker, not a
+proven work-shift cause",Benchmark artifact,bounded inference,decision risk,5
+Ordinary post-keyup waiting is not sufficient,"Ordinary post-keyup waiting is
+not sufficient",Runtime boundary,closed local negative control,direct observation,5
+Ordinary post-keyup waiting is not sufficient,"Ordinary post-keyup waiting is
+not sufficient",Runtime boundary,closed local negative control,artifact strength,4
+Ordinary post-keyup waiting is not sufficient,"Ordinary post-keyup waiting is
+not sufficient",Runtime boundary,closed local negative control,mechanism gap,4
+Ordinary post-keyup waiting is not sufficient,"Ordinary post-keyup waiting is
+not sufficient",Runtime boundary,closed local negative control,decision risk,2
+Runtime checkpoint state remains unnamed,"Runtime checkpoint state
+remains unnamed",Runtime boundary,open mechanism,direct observation,3
+Runtime checkpoint state remains unnamed,"Runtime checkpoint state
+remains unnamed",Runtime boundary,open mechanism,artifact strength,4
+Runtime checkpoint state remains unnamed,"Runtime checkpoint state
+remains unnamed",Runtime boundary,open mechanism,mechanism gap,5
+Runtime checkpoint state remains unnamed,"Runtime checkpoint state
+remains unnamed",Runtime boundary,open mechanism,decision risk,3
+CPU/QoS may modulate absolute latency but is not named,"CPU/QoS may modulate absolute
+latency but is not named",CPU/QoS,open mechanism,direct observation,3
+CPU/QoS may modulate absolute latency but is not named,"CPU/QoS may modulate absolute
+latency but is not named",CPU/QoS,open mechanism,artifact strength,3
+CPU/QoS may modulate absolute latency but is not named,"CPU/QoS may modulate absolute
+latency but is not named",CPU/QoS,open mechanism,mechanism gap,5
+CPU/QoS may modulate absolute latency but is not named,"CPU/QoS may modulate absolute
+latency but is not named",CPU/QoS,open mechanism,decision risk,3
+Startup-wait reduction must be gated by non-q50 readiness,"Startup-wait reduction must be
+gated by non-q50 readiness",CI/readiness,bounded inference,direct observation,4
+Startup-wait reduction must be gated by non-q50 readiness,"Startup-wait reduction must be
+gated by non-q50 readiness",CI/readiness,bounded inference,artifact strength,4
+Startup-wait reduction must be gated by non-q50 readiness,"Startup-wait reduction must be
+gated by non-q50 readiness",CI/readiness,bounded inference,mechanism gap,3
+Startup-wait reduction must be gated by non-q50 readiness,"Startup-wait reduction must be
+gated by non-q50 readiness",CI/readiness,bounded inference,decision risk,5
+"Pattern wait can probably be shortened locally, but rollout is not closed","Pattern wait can probably be
+shortened locally, but rollout
+is not closed",CI/readiness,bounded inference,direct observation,4
+"Pattern wait can probably be shortened locally, but rollout is not closed","Pattern wait can probably be
+shortened locally, but rollout
+is not closed",CI/readiness,bounded inference,artifact strength,4
+"Pattern wait can probably be shortened locally, but rollout is not closed","Pattern wait can probably be
+shortened locally, but rollout
+is not closed",CI/readiness,bounded inference,mechanism gap,3
+"Pattern wait can probably be shortened locally, but rollout is not closed","Pattern wait can probably be
+shortened locally, but rollout
+is not closed",CI/readiness,bounded inference,decision risk,4
+Selector guards are source-safety questions before p50 questions,"Selector guards are
+source-safety questions before
+p50 questions",Source/code,bounded inference,direct observation,4
+Selector guards are source-safety questions before p50 questions,"Selector guards are
+source-safety questions before
+p50 questions",Source/code,bounded inference,artifact strength,4
+Selector guards are source-safety questions before p50 questions,"Selector guards are
+source-safety questions before
+p50 questions",Source/code,bounded inference,mechanism gap,3
+Selector guards are source-safety questions before p50 questions,"Selector guards are
+source-safety questions before
+p50 questions",Source/code,bounded inference,decision risk,4
+"Product workload, physical display, and pass/fail policy claims remain blocked","Product workload, physical
+display, and pass/fail policy
+claims remain blocked",Claim expansion,blocked expansion,direct observation,2
+"Product workload, physical display, and pass/fail policy claims remain blocked","Product workload, physical
+display, and pass/fail policy
+claims remain blocked",Claim expansion,blocked expansion,artifact strength,2
+"Product workload, physical display, and pass/fail policy claims remain blocked","Product workload, physical
+display, and pass/fail policy
+claims remain blocked",Claim expansion,blocked expansion,mechanism gap,5
+"Product workload, physical display, and pass/fail policy claims remain blocked","Product workload, physical
+display, and pass/fail policy
+claims remain blocked",Claim expansion,blocked expansion,decision risk,5
