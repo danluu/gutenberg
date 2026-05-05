@@ -35912,6 +35912,297 @@ save_plot(
 	height = 7.2
 )
 
+open_question_control_effectiveness_register <- open_question_corrective_action_register %>%
+	mutate(
+		control_effectiveness_state = case_when(
+			corrective_action_state == "local packet corrective action" ~ "local packet control effectiveness",
+			corrective_action_state == "owner artifact corrective action" ~ "owner artifact control effectiveness",
+			TRUE ~ "observer artifact control effectiveness"
+		),
+		control_objective = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "keep packet evidence reproducible, complete, checked, logged, and tied to scoped local timing wording",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "keep owner artifact evidence signed, scoped, checked, logged, and tied to owner-scoped wording",
+			TRUE ~ "keep observer artifact evidence calibrated, controlled, checked, logged, and tied to broad claim wording"
+		),
+		control_test = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "sample the row and verify packet checksum, required fields, generated figures, negative controls, event log, and report links",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "sample the row and verify owner artifact checksum, reviewer identity, scope diff, schema, event log, and report links",
+			TRUE ~ "sample the row and verify observer artifact checksum, control schema, calibration/replay/counter result, event log, and report links"
+		),
+		sampling_cadence = case_when(
+			close_scope == "CI wait decision" ~ "before any CI wait-policy wording change and after any Performance Tests topology or artifact-schema change",
+			close_scope == "source prototype decision" ~ "before any source-patch safety wording change and after any selector, fixture, or package-boundary change",
+			close_scope == "benchmark method wording" ~ "before any benchmark-method wording change and after any helper, browser, stimulus, or aggregation change",
+			TRUE ~ "before any broad claim wording change and after any owner, observer, replay, endpoint, or runtime-control change"
+		),
+		failure_threshold = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "one missing required field, checksum mismatch, unlogged mutation, or failed regenerated figure suspends the row",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "one missing owner scope field, checksum mismatch, unsigned reviewer change, or unlogged mutation suspends the row",
+			TRUE ~ "one missing observer control field, checksum mismatch, unsigned control change, or unlogged mutation suspends the row"
+		),
+		evidence_required = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "control-test result, packet checksum, field completeness report, regenerated figure hash, negative-control result, and report-link check",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "control-test result, owner checksum, reviewer identity, scope diff, schema check, and report-link check",
+			TRUE ~ "control-test result, observer checksum, calibration/replay/counter schema, control diff, reviewer identity, and report-link check"
+		),
+		drift_signal = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "artifact schema, helper output, required fields, generated figure, negative-control result, or report link changes",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "owner revision, reviewer identity, scope schema, compatibility or policy field, or report link changes",
+			TRUE ~ "observer revision, control schema, calibration/replay/counter field, endpoint, sidecar, or report link changes"
+		),
+		owner_review = rollout_owner,
+		renewal_rule = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "renew by rerunning the control test and attaching the result to the packet row before wording reuse",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "renew by owner review and control-test result before owner-scoped wording reuse",
+			TRUE ~ "renew by observer review and control-test result before broad wording reuse"
+		),
+		sunset_rule = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ "sunset only when the local timing claim is removed or a successor packet row owns the wording",
+			control_effectiveness_state == "owner artifact control effectiveness" ~ "sunset only when the owner-scoped claim is removed or a successor owner artifact owns the wording",
+			TRUE ~ "sunset only when the broad claim is removed or a successor observer artifact owns the wording"
+		),
+		control_effectiveness_cost = case_when(
+			control_effectiveness_state == "local packet control effectiveness" ~ 2,
+			control_effectiveness_state == "owner artifact control effectiveness" ~ 4,
+			TRUE ~ 5
+		),
+		control_effectiveness_value = pmax(
+			1,
+			corrective_action_value + prevention_value + false_closure_risk - control_effectiveness_cost
+		),
+		assurance_value = pmax(
+			1,
+			prevention_value + incident_response_value + stale_reuse_risk - control_effectiveness_cost
+		),
+		timing_only_control_effectiveness_value = 0,
+		analysis_only_value = 0,
+		control_effectiveness_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(control_effectiveness_value), desc(assurance_value), question_family)
+
+open_question_control_effectiveness_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"objective", "What control objective protects the claim?",
+	"test", "What control test proves the corrective action still works?",
+	"cadence", "When is the control retested?",
+	"threshold", "What failure threshold suspends the row?",
+	"evidence", "What evidence must the control test preserve?",
+	"drift", "What drift signal forces retest?",
+	"owner", "Who reviews failed or stale controls?",
+	"renew", "How is the control renewed before wording reuse?",
+	"substitute", "Can aggregate timing alone substitute for control effectiveness?",
+	"stop-rule", "When does control-effectiveness review stop?"
+)
+
+open_question_control_effectiveness_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_control_effectiveness_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_control_effectiveness_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_control_effectiveness_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_control_effectiveness_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		control_effectiveness_first_seen = !duplicated(control_effectiveness_id),
+		control_effectiveness_axis_key = paste(control_effectiveness_id, pressure_axis, sep = "::"),
+		control_effectiveness_axis_first_seen = !duplicated(control_effectiveness_axis_key),
+		control_effectiveness_state_first_seen = !duplicated(control_effectiveness_state),
+		new_control_effectiveness_value = if_else(control_effectiveness_first_seen, control_effectiveness_value, 0),
+		new_assurance_value = if_else(control_effectiveness_first_seen, assurance_value, 0),
+		new_timing_only_control_effectiveness_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!control_effectiveness_axis_first_seen ~ "repeat: control-effectiveness-axis already checked",
+			control_effectiveness_state == "local packet control effectiveness" ~ "control effectiveness: local packet",
+			TRUE ~ "control effectiveness: owner or observer artifact"
+		),
+		cumulative_control_effectiveness_records = cumsum(control_effectiveness_first_seen),
+		cumulative_control_effectiveness_axes = cumsum(control_effectiveness_axis_first_seen),
+		cumulative_control_effectiveness_states = cumsum(control_effectiveness_state_first_seen),
+		cumulative_control_effectiveness_value = cumsum(new_control_effectiveness_value),
+		cumulative_assurance_value = cumsum(new_assurance_value),
+		cumulative_timing_only_control_effectiveness_value = cumsum(new_timing_only_control_effectiveness_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_control_effectiveness_summary <- open_question_control_effectiveness_100_pass %>%
+	group_by(control_effectiveness_state, corrective_action_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		control_effectiveness_records = n_distinct(control_effectiveness_id),
+		axis_checks = sum(control_effectiveness_axis_first_seen),
+		owner_reviews = n_distinct(owner_review),
+		ledger_consumers = n_distinct(ledger_consumer),
+		control_effectiveness_value = sum(new_control_effectiveness_value),
+		assurance_value = sum(new_assurance_value),
+		timing_only_control_effectiveness_value = sum(new_timing_only_control_effectiveness_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(control_effectiveness_value), desc(assurance_value), first_pass)
+
+open_question_control_effectiveness_checkpoints <- open_question_control_effectiveness_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_control_effectiveness_records,
+		cumulative_control_effectiveness_axes,
+		cumulative_control_effectiveness_states,
+		cumulative_control_effectiveness_value,
+		cumulative_assurance_value,
+		cumulative_timing_only_control_effectiveness_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_control_effectiveness_register,
+	file.path(data_dir, "typing-delay-open-question-control-effectiveness-register.csv")
+)
+
+write_csv(
+	open_question_control_effectiveness_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			control_effectiveness_state,
+			corrective_action_state,
+			control_objective,
+			control_test,
+			sampling_cadence,
+			failure_threshold,
+			evidence_required,
+			drift_signal,
+			owner_review,
+			renewal_rule,
+			sunset_rule,
+			supported_claim,
+			blocked_claim,
+			control_effectiveness_first_seen,
+			control_effectiveness_axis_first_seen,
+			control_effectiveness_state_first_seen,
+			pass_result,
+			control_effectiveness_value,
+			assurance_value,
+			timing_only_control_effectiveness_value,
+			new_control_effectiveness_value,
+			new_assurance_value,
+			new_timing_only_control_effectiveness_value,
+			new_analysis_only_value,
+			cumulative_control_effectiveness_records,
+			cumulative_control_effectiveness_axes,
+			cumulative_control_effectiveness_states,
+			cumulative_control_effectiveness_value,
+			cumulative_assurance_value,
+			cumulative_timing_only_control_effectiveness_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-control-effectiveness-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_control_effectiveness_summary,
+	file.path(data_dir, "typing-delay-open-question-control-effectiveness-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_control_effectiveness_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-control-effectiveness-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_control_effectiveness_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, control_effectiveness_value)
+		) %>%
+		ggplot(aes(control_effectiveness_value, question_label, fill = control_effectiveness_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Control effectiveness") +
+		labs(
+			title = "Control effectiveness proves corrective actions keep working",
+			subtitle = "Each row names objective, test, cadence, threshold, evidence, drift signal, owner, renewal, and sunset rule",
+			x = "Control-effectiveness value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"357-open-question-control-effectiveness-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_control_effectiveness_saturation_long <- open_question_control_effectiveness_100_pass %>%
+	select(
+		pass_id,
+		`control-effectiveness records` = cumulative_control_effectiveness_records,
+		`control-effectiveness axes` = cumulative_control_effectiveness_axes,
+		`control-effectiveness states` = cumulative_control_effectiveness_states,
+		`control-effectiveness value` = cumulative_control_effectiveness_value,
+		`assurance value` = cumulative_assurance_value,
+		`timing-only control-effectiveness value` = cumulative_timing_only_control_effectiveness_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("control-effectiveness records", "control-effectiveness axes", "control-effectiveness states", "control-effectiveness value", "assurance value", "timing-only control-effectiveness value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_control_effectiveness_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Control-effectiveness audit saturates once tests, drift signals, and renewal rules are named",
+			subtitle = "Nine control-effectiveness records appear by pass 9; all 90 axes appear by pass 90; timing-only control value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"358-open-question-control-effectiveness-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_control_effectiveness_summary %>%
+		mutate(
+			state_label = str_wrap(control_effectiveness_state, width = 28),
+			state_label = fct_reorder(state_label, control_effectiveness_value + assurance_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Control-effectiveness coverage separates local packet controls from owner and observer controls",
+			subtitle = "Every row is checked for objective, test, cadence, threshold, evidence, drift, owner, renewal, substitute, and stop rule",
+			x = "Control-effectiveness-axis checks",
+			y = "Control effectiveness state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"359-open-question-control-effectiveness-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

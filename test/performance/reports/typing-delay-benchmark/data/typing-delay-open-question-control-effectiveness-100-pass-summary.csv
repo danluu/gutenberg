@@ -1,0 +1,7 @@
+control_effectiveness_state,corrective_action_state,pass_result,passes,first_pass,control_effectiveness_records,axis_checks,owner_reviews,ledger_consumers,control_effectiveness_value,assurance_value,timing_only_control_effectiveness_value,analysis_only_value
+local packet control effectiveness,local packet corrective action,control effectiveness: local packet,40,1,4,40,4,3,41952,32562,0,0
+owner artifact control effectiveness,owner artifact corrective action,control effectiveness: owner or observer artifact,20,5,2,20,2,2,8394,6513,0,0
+observer artifact control effectiveness,observer artifact corrective action,control effectiveness: owner or observer artifact,30,7,3,30,3,3,5189,4018,0,0
+local packet control effectiveness,local packet corrective action,repeat: control-effectiveness-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact control effectiveness,owner artifact corrective action,repeat: control-effectiveness-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact control effectiveness,observer artifact corrective action,repeat: control-effectiveness-axis already checked,3,97,3,0,3,3,0,0,0,0

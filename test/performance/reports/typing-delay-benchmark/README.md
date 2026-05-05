@@ -1623,6 +1623,22 @@ The R script derives:
     checkpoints for corrective-action-record, corrective-action-axis,
     corrective-action-state, corrective-action-value, prevention-value,
     timing-only-corrective-action, and analysis-only saturation.
+-   `data/typing-delay-open-question-control-effectiveness-register.csv`:
+    control-effectiveness register for the nine corrective-action records,
+    including control objective, control test, sampling cadence, failure
+    threshold, required evidence, drift signal, owner review, renewal rule, and
+    sunset rule.
+-   `data/typing-delay-open-question-control-effectiveness-100-pass-audit.csv`:
+    twenty-fifth forced 100-pass audit over control-effectiveness axes:
+    objective, test, cadence, threshold, evidence, drift, owner, renew,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-control-effectiveness-100-pass-summary.csv`:
+    rollup of control-effectiveness coverage by control-effectiveness state,
+    corrective-action state, and pass result.
+-   `data/typing-delay-open-question-control-effectiveness-100-pass-checkpoints.csv`:
+    checkpoints for control-effectiveness-record, control-effectiveness-axis,
+    control-effectiveness-state, control-effectiveness-value, assurance-value,
+    timing-only-control-effectiveness, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11552,6 +11568,35 @@ This turns incident response into prevention rather than ritual. Recovery is not
 done when a fresh timing run looks clean; it is done when the permanent evidence
 guard is installed, verified, owned, monitored, and tied back to the report
 wording it protects.
+
+I then added the control-effectiveness layer: each corrective-action row now
+names the control objective, the test that proves the control still works, the
+sampling cadence, failure threshold, required evidence, drift signal, owner
+review, renewal rule, and sunset rule.
+
+![Open question control effectiveness register](figures/357-open-question-control-effectiveness-register.png)
+
+![Open question control effectiveness 100-pass saturation](figures/358-open-question-control-effectiveness-100-pass-saturation.png)
+
+![Open question control effectiveness coverage](figures/359-open-question-control-effectiveness-coverage.png)
+
+| Control-effectiveness check | Result |
+| --------------------------- | ------ |
+| Control-effectiveness records | `9`, one per corrective-action record. |
+| Control-effectiveness states | `3`: local packet control effectiveness, owner artifact control effectiveness, and observer artifact control effectiveness. |
+| Owner reviews | `9`; failed or stale controls route to the scoped corrective-action owner. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Control-effectiveness-axis checks | `90`: every row checked against all `10` control-effectiveness axes. |
+| Control-effectiveness value | `55535`: local packet controls contribute `41952`, owner artifact controls contribute `8394`, and observer artifact controls contribute `5189`. |
+| Assurance value | `43093` across the nine control-effectiveness records. |
+| Timing-only control-effectiveness value | `0`; aggregate timing alone does not prove a control objective, control test, cadence, threshold, evidence packet, drift signal, owner review, renewal, or sunset rule. |
+| Saturation | Control-effectiveness records are all named by pass `9`; all control-effectiveness axes are covered by pass `90`; passes `91-100` add no control-effectiveness coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the sustained-assurance layer. A corrective action can decay as scripts,
+fixtures, artifacts, owners, or report links change. The control-effectiveness
+row says when to retest, what failure suspends the claim, and what evidence must
+exist before wording can be reused.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

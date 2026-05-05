@@ -1,0 +1,10 @@
+pass_id,cumulative_control_effectiveness_records,cumulative_control_effectiveness_axes,cumulative_control_effectiveness_states,cumulative_control_effectiveness_value,cumulative_assurance_value,cumulative_timing_only_control_effectiveness_value,cumulative_analysis_only_value
+1,1,1,1,11568,8979,0,0
+5,5,5,2,46666,36220,0,0
+9,9,9,3,55535,43093,0,0
+10,9,10,3,55535,43093,0,0
+20,9,20,3,55535,43093,0,0
+50,9,50,3,55535,43093,0,0
+90,9,90,3,55535,43093,0,0
+91,9,90,3,55535,43093,0,0
+100,9,90,3,55535,43093,0,0
