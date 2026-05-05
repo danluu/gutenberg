@@ -11,6 +11,10 @@ import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 /**
  * Mock getBlockTypes so CRDT merging can identify rich-text attributes.
  */
+jest.mock( '@wordpress/block-editor', () => ( {
+	store: { name: 'core/block-editor' },
+} ) );
+
 jest.mock( '@wordpress/blocks', () => {
 	const actual = jest.requireActual( '@wordpress/blocks' ) as Record<
 		string,
@@ -63,7 +67,7 @@ import {
 	type PostChanges,
 	type YPostRecord,
 } from '../crdt';
-import type { YBlock, YBlockRecord, YBlocks } from '../crdt-blocks';
+import type { Block, YBlock, YBlockRecord, YBlocks } from '../crdt-blocks';
 import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
@@ -615,6 +619,318 @@ describe( 'crdt', () => {
 			expect( block.attributes.content.text ).toBe( 'Hello world' );
 		} );
 
+		it( 'uses CRDT-read blocks as the merge base for the next local block edit', () => {
+			const remoteDoc = new Y.Doc();
+			const initialBlocks = [
+				paragraphBlock( 'block-baseline', 'Baseline' ),
+				paragraphBlock( 'block-shared', 'Shared anchor' ),
+				paragraphBlock( 'block-trailing', 'Trailing' ),
+			];
+			const primaryBlock = paragraphBlock(
+				'block-primary',
+				'Primary paragraph'
+			);
+			const collaboratorBlock = paragraphBlock(
+				'block-collaborator',
+				'Collaborator paragraph'
+			);
+
+			try {
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{ blocks: initialBlocks } as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+				const hydratedChanges = getPostChangesFromCRDTDoc(
+					doc,
+					{ blocks: [] } as unknown as Post,
+					defaultSyncedProperties
+				);
+				expect(
+					getPlainBlockContents( hydratedChanges.blocks as Block[] )
+				).toEqual( [ 'Baseline', 'Shared anchor', 'Trailing' ] );
+
+				const localStateVector = Y.encodeStateVector( doc );
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{
+						blocks: [
+							initialBlocks[ 0 ],
+							initialBlocks[ 1 ],
+							primaryBlock,
+							initialBlocks[ 2 ],
+						],
+					} as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate(
+					doc,
+					Y.encodeStateAsUpdate( remoteDoc, localStateVector )
+				);
+
+				applyPostChangesToCRDTDoc(
+					doc,
+					{
+						blocks: [
+							initialBlocks[ 0 ],
+							initialBlocks[ 1 ],
+							collaboratorBlock,
+							initialBlocks[ 2 ],
+						],
+					} as PostChanges,
+					defaultSyncedProperties
+				);
+
+				const localBlocks = map.get( 'blocks' ) as YBlocks;
+				const contents = getYBlockContents( localBlocks );
+
+				expect( contents ).toHaveLength( 5 );
+				expect( contents[ 0 ] ).toBe( 'Baseline' );
+				expect( contents[ 1 ] ).toBe( 'Shared anchor' );
+				expect( contents[ 4 ] ).toBe( 'Trailing' );
+				expect( contents ).toContain( 'Primary paragraph' );
+				expect( contents ).toContain( 'Collaborator paragraph' );
+			} finally {
+				remoteDoc.destroy();
+			}
+		} );
+
+		it( 'keeps unobserved remote inserts after a CRDT-read stale no-op block snapshot', () => {
+			const remoteDoc = new Y.Doc();
+			const initialBlocks = [
+				paragraphBlock( 'block-baseline', 'Baseline' ),
+				paragraphBlock( 'block-shared', 'Shared anchor' ),
+				paragraphBlock( 'block-trailing', 'Trailing' ),
+			];
+			const primaryBlock = paragraphBlock(
+				'block-primary',
+				'Primary paragraph'
+			);
+
+			try {
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{ blocks: initialBlocks } as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+				const hydratedChanges = getPostChangesFromCRDTDoc(
+					doc,
+					{ blocks: [] } as unknown as Post,
+					defaultSyncedProperties
+				);
+				expect(
+					getPlainBlockContents( hydratedChanges.blocks as Block[] )
+				).toEqual( [ 'Baseline', 'Shared anchor', 'Trailing' ] );
+
+				const localStateVector = Y.encodeStateVector( doc );
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{
+						blocks: [
+							initialBlocks[ 0 ],
+							initialBlocks[ 1 ],
+							primaryBlock,
+							initialBlocks[ 2 ],
+						],
+					} as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate(
+					doc,
+					Y.encodeStateAsUpdate( remoteDoc, localStateVector )
+				);
+
+				applyPostChangesToCRDTDoc(
+					doc,
+					{ blocks: initialBlocks } as PostChanges,
+					defaultSyncedProperties
+				);
+
+				const localBlocks = map.get( 'blocks' ) as YBlocks;
+				expect( getYBlockContents( localBlocks ) ).toEqual( [
+					'Baseline',
+					'Shared anchor',
+					'Primary paragraph',
+					'Trailing',
+				] );
+			} finally {
+				remoteDoc.destroy();
+			}
+		} );
+
+		it( 'persists both sibling appends after a CRDT-read stale local snapshot', () => {
+			const remoteDoc = new Y.Doc();
+			const reloadDoc = new Y.Doc();
+			const initialBlocks = [
+				paragraphBlock( 'block-baseline', 'Baseline' ),
+				paragraphBlock( 'block-shared', 'Shared anchor' ),
+				paragraphBlock( 'block-trailing', 'Trailing' ),
+			];
+			const primaryBlock = paragraphBlock(
+				'block-primary',
+				'Primary paragraph'
+			);
+			const collaboratorBlock = paragraphBlock(
+				'block-collaborator',
+				'Collaborator paragraph'
+			);
+
+			try {
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{ blocks: initialBlocks } as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+				const hydratedChanges = getPostChangesFromCRDTDoc(
+					doc,
+					{ blocks: [] } as unknown as Post,
+					defaultSyncedProperties
+				);
+				expect(
+					getPlainBlockContents( hydratedChanges.blocks as Block[] )
+				).toEqual( [ 'Baseline', 'Shared anchor', 'Trailing' ] );
+
+				const localStateVector = Y.encodeStateVector( doc );
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{
+						blocks: [
+							initialBlocks[ 0 ],
+							initialBlocks[ 1 ],
+							primaryBlock,
+							initialBlocks[ 2 ],
+						],
+					} as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate(
+					doc,
+					Y.encodeStateAsUpdate( remoteDoc, localStateVector )
+				);
+
+				applyPostChangesToCRDTDoc(
+					doc,
+					{
+						blocks: [
+							initialBlocks[ 0 ],
+							initialBlocks[ 1 ],
+							collaboratorBlock,
+							initialBlocks[ 2 ],
+						],
+					} as PostChanges,
+					defaultSyncedProperties
+				);
+
+				Y.applyUpdate( reloadDoc, Y.encodeStateAsUpdate( doc ) );
+				const reloadedMap = getRootMap< YPostRecord >(
+					reloadDoc,
+					CRDT_RECORD_MAP_KEY
+				);
+				const reloadedBlocks = reloadedMap.get( 'blocks' ) as YBlocks;
+				const contents = getYBlockContents( reloadedBlocks );
+
+				expect( contents ).toHaveLength( 5 );
+				expect( contents[ 0 ] ).toBe( 'Baseline' );
+				expect( contents[ 1 ] ).toBe( 'Shared anchor' );
+				expect( contents[ 4 ] ).toBe( 'Trailing' );
+				expect( contents ).toEqual(
+					expect.arrayContaining( [
+						'Primary paragraph',
+						'Collaborator paragraph',
+					] )
+				);
+			} finally {
+				remoteDoc.destroy();
+				reloadDoc.destroy();
+			}
+		} );
+
+		it( 'keeps unobserved remote inner-block inserts after a CRDT-read stale local inner-block snapshot', () => {
+			const remoteDoc = new Y.Doc();
+			const initialBlocks = [
+				groupBlock( 'block-group', [
+					paragraphBlock( 'block-inner-anchor', 'Nested anchor' ),
+					paragraphBlock( 'block-inner-trailing', 'Nested trailing' ),
+				] ),
+			];
+			const remoteBlocks = [
+				groupBlock( 'block-group', [
+					paragraphBlock( 'block-inner-anchor', 'Nested anchor' ),
+					paragraphBlock(
+						'block-inner-primary',
+						'Primary nested paragraph'
+					),
+					paragraphBlock( 'block-inner-trailing', 'Nested trailing' ),
+				] ),
+			];
+			const staleLocalBlocks = [
+				groupBlock( 'block-group', [
+					paragraphBlock( 'block-inner-anchor', 'Nested anchor' ),
+					paragraphBlock(
+						'block-inner-collaborator',
+						'Collaborator nested paragraph'
+					),
+					paragraphBlock( 'block-inner-trailing', 'Nested trailing' ),
+				] ),
+			];
+
+			try {
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{ blocks: initialBlocks } as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+				const hydratedChanges = getPostChangesFromCRDTDoc(
+					doc,
+					{ blocks: [] } as unknown as Post,
+					defaultSyncedProperties
+				);
+				expect(
+					getAllPlainBlockContents( hydratedChanges.blocks as Block[] )
+				).toEqual( [ 'Nested anchor', 'Nested trailing' ] );
+
+				const localStateVector = Y.encodeStateVector( doc );
+				applyPostChangesToCRDTDoc(
+					remoteDoc,
+					{ blocks: remoteBlocks } as PostChanges,
+					defaultSyncedProperties
+				);
+				Y.applyUpdate(
+					doc,
+					Y.encodeStateAsUpdate( remoteDoc, localStateVector )
+				);
+
+				applyPostChangesToCRDTDoc(
+					doc,
+					{ blocks: staleLocalBlocks } as PostChanges,
+					defaultSyncedProperties
+				);
+
+				const localBlocks = map.get( 'blocks' ) as YBlocks;
+				const contents = getAllYBlockContents( localBlocks );
+
+				expect( contents ).toHaveLength( 4 );
+				expect( contents[ 0 ] ).toBe( 'Nested anchor' );
+				expect( contents[ 3 ] ).toBe( 'Nested trailing' );
+				expect( contents ).toEqual(
+					expect.arrayContaining( [
+						'Primary nested paragraph',
+						'Collaborator nested paragraph',
+					] )
+				);
+			} finally {
+				remoteDoc.destroy();
+			}
+		} );
+
 		it( 'returns nested rich-text in array attributes as RichTextData', () => {
 			// Add a table block to the CRDT doc with nested cell content
 			// stored as plain strings.
@@ -993,4 +1309,52 @@ function addBlockToDoc(
 	( blocks as YBlocks ).push( [ block ] );
 
 	return ytext;
+}
+
+function paragraphBlock( clientId: string, content: string ): Block {
+	return {
+		name: 'core/paragraph',
+		clientId,
+		attributes: { content },
+		innerBlocks: [],
+	};
+}
+
+function groupBlock( clientId: string, innerBlocks: Block[] ): Block {
+	return {
+		name: 'core/group',
+		clientId,
+		attributes: {},
+		innerBlocks,
+	};
+}
+
+function getPlainBlockContents( blocks: Block[] ): string[] {
+	return blocks.map( ( block ) =>
+		String(
+			block.attributes.content instanceof RichTextData
+				? block.attributes.content.text
+				: block.attributes.content ?? ''
+			)
+	);
+}
+
+function getAllPlainBlockContents( blocks: Block[] ): string[] {
+	return blocks.flatMap( ( block ) => [
+		...getPlainBlockContents( [ block ] ).filter( Boolean ),
+		...getAllPlainBlockContents( block.innerBlocks ?? [] ),
+	] );
+}
+
+function getYBlockContents( blocks: YBlocks ): string[] {
+	return blocks
+		.toJSON()
+		.map( ( block: Block ) => String( block.attributes.content ?? '' ) );
+}
+
+function getAllYBlockContents( blocks: YBlocks ): string[] {
+	return ( blocks.toJSON() as Block[] ).flatMap( ( block ) => [
+		String( block.attributes.content ?? '' ),
+		...getAllPlainBlockContents( block.innerBlocks ?? [] ),
+	] ).filter( Boolean );
 }

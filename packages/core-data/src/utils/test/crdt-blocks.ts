@@ -130,6 +130,21 @@ function createCursorSelection( offset: number ): WPBlockSelection {
 	};
 }
 
+function paragraphBlock( clientId: string, content: string ): Block {
+	return {
+		name: 'core/paragraph',
+		attributes: { content },
+		innerBlocks: [],
+		clientId,
+	};
+}
+
+function getParagraphContents( blocks: YBlocks ): string[] {
+	return blocks.toJSON().map( ( block: Block ) => {
+		return String( block.attributes.content ?? '' );
+	} );
+}
+
 describe( 'crdt-blocks', () => {
 	let doc: Y.Doc;
 	let yblocks: Y.Array< YBlock >;
@@ -360,6 +375,111 @@ describe( 'crdt-blocks', () => {
 				block1.get( 'attributes' ) as YBlockAttributes
 			 ).get( 'content' ) as Y.Text;
 			expect( content1.toString() ).toBe( 'First' );
+		} );
+
+		it( 'preserves a remote top-level insert when applying a stale local append after the same anchor', () => {
+			const initialBlocks: Block[] = [
+				paragraphBlock( 'block-baseline', 'Baseline' ),
+				paragraphBlock( 'block-shared', 'Shared anchor' ),
+				paragraphBlock( 'block-trailing', 'Trailing' ),
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			const remoteDoc = new Y.Doc();
+			const remoteBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			mergeCrdtBlocks(
+				remoteBlocks,
+				[
+					paragraphBlock( 'block-baseline', 'Baseline' ),
+					paragraphBlock( 'block-shared', 'Shared anchor' ),
+					paragraphBlock( 'block-primary', 'Primary paragraph' ),
+					paragraphBlock( 'block-trailing', 'Trailing' ),
+				],
+				null
+			);
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			expect( getParagraphContents( yblocks ) ).toEqual( [
+				'Baseline',
+				'Shared anchor',
+				'Primary paragraph',
+				'Trailing',
+			] );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					paragraphBlock( 'block-baseline', 'Baseline' ),
+					paragraphBlock( 'block-shared', 'Shared anchor' ),
+					paragraphBlock(
+						'block-collaborator',
+						'Collaborator paragraph'
+					),
+					paragraphBlock( 'block-trailing', 'Trailing' ),
+				],
+				null
+			);
+
+			const contents = getParagraphContents( yblocks );
+			expect( contents ).toHaveLength( 5 );
+			expect( contents[ 0 ] ).toBe( 'Baseline' );
+			expect( contents[ 1 ] ).toBe( 'Shared anchor' );
+			expect( contents[ 4 ] ).toBe( 'Trailing' );
+			expect( contents ).toEqual(
+				expect.arrayContaining( [
+					'Primary paragraph',
+					'Collaborator paragraph',
+				] )
+			);
+
+			remoteDoc.destroy();
+		} );
+
+		it( 'preserves a remote top-level insert when applying an unchanged stale local snapshot', () => {
+			const initialBlocks: Block[] = [
+				paragraphBlock( 'block-baseline', 'Baseline' ),
+				paragraphBlock( 'block-shared', 'Shared anchor' ),
+				paragraphBlock( 'block-trailing', 'Trailing' ),
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			const remoteDoc = new Y.Doc();
+			const remoteBlocks = remoteDoc.getArray< YBlock >();
+			Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+			mergeCrdtBlocks(
+				remoteBlocks,
+				[
+					paragraphBlock( 'block-baseline', 'Baseline' ),
+					paragraphBlock( 'block-shared', 'Shared anchor' ),
+					paragraphBlock( 'block-primary', 'Primary paragraph' ),
+					paragraphBlock( 'block-trailing', 'Trailing' ),
+				],
+				null
+			);
+			Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+			expect( getParagraphContents( yblocks ) ).toEqual( [
+				'Baseline',
+				'Shared anchor',
+				'Primary paragraph',
+				'Trailing',
+			] );
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			expect( getParagraphContents( yblocks ) ).toEqual( [
+				'Baseline',
+				'Shared anchor',
+				'Primary paragraph',
+				'Trailing',
+			] );
+
+			remoteDoc.destroy();
 		} );
 
 		it( 'creates Y.Text for rich-text attributes', () => {
