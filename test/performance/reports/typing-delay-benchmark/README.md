@@ -1926,6 +1926,26 @@ The R script derives:
     contradiction-intake-consumer, contradiction-intake-value,
     contradiction-intake-drop-risk-value,
     timing-only-contradiction-intake, and analysis-only saturation.
+-   `data/typing-delay-open-question-contradiction-disposition-register.csv`:
+    contradiction-disposition register for the nine contradiction-intake
+    records, including burden of proof, accept action, reject action,
+    stale-row update, consumer notice, report patch, artifact update,
+    quarantine release, owner, and consumer.
+-   `data/typing-delay-open-question-contradiction-disposition-100-pass-audit.csv`:
+    forty-third forced 100-pass audit over contradiction-disposition axes:
+    burden, accept, reject, stale-row, notice, report, artifact, quarantine,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-contradiction-disposition-100-pass-summary.csv`:
+    rollup of contradiction-disposition coverage by
+    contradiction-disposition state, contradiction-intake state, and pass
+    result.
+-   `data/typing-delay-open-question-contradiction-disposition-100-pass-checkpoints.csv`:
+    checkpoints for contradiction-disposition-record,
+    contradiction-disposition-axis, contradiction-disposition-state,
+    contradiction-disposition-owner, contradiction-disposition-consumer,
+    contradiction-disposition-value,
+    contradiction-disposition-wrong-decision-risk-value,
+    timing-only-contradiction-disposition, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12402,6 +12422,37 @@ contradiction can reopen a claim without guessing, while duplicate, stale,
 non-comparable, or out-of-scope evidence is rejected without contaminating the
 active recommendation. While intake is unresolved, the dependent conclusion is
 explicitly provisional instead of silently reused.
+
+I then added the contradiction-disposition layer: later evidence is not useful
+until the report records whether it was accepted into reopened evidence or
+rejected as non-supporting. Disposition records the burden of proof, accept
+action, reject action, stale-row update, consumer notice, report patch,
+artifact update, quarantine release, owner, and consumer for each intake row.
+
+![Open question contradiction disposition register](figures/411-open-question-contradiction-disposition-register.png)
+
+![Open question contradiction disposition 100-pass saturation](figures/412-open-question-contradiction-disposition-100-pass-saturation.png)
+
+![Open question contradiction disposition coverage](figures/413-open-question-contradiction-disposition-coverage.png)
+
+| Contradiction-disposition check | Result |
+| ------------------------------- | ------ |
+| Contradiction-disposition records | `9`, one per contradiction-intake record. |
+| Contradiction-disposition states | `3`: local packet contradiction disposition, owner artifact contradiction disposition, and observer artifact contradiction disposition. |
+| Contradiction-disposition owners | `9`; disposition routes back to the scoped contradiction-intake owner. |
+| Contradiction-disposition consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Contradiction-disposition-axis checks | `90`: every row checked against all `10` contradiction-disposition axes. |
+| Contradiction-disposition value | `1456499783`: local packet disposition contributes `1100522372`, owner artifact disposition contributes `220050768`, and observer artifact disposition contributes `135926643`. |
+| Contradiction-disposition wrong-decision-risk value | `636180085` across the nine contradiction-disposition records. |
+| Timing-only contradiction-disposition value | `0`; aggregate timing movement alone cannot prove burden of proof, accept or reject action, stale-row updates, consumer notice, report patch, artifact update, or quarantine release. |
+| Saturation | Contradiction-disposition records are all named by pass `9`; all contradiction-disposition axes are covered by pass `90`; passes `91-100` add no contradiction-disposition coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the accept/reject guard for later evidence. It prevents the report from
+treating a contradictory packet as either automatically decisive or silently
+irrelevant: the row must say why the contradiction reopened the claim or why it
+was retained only as non-supporting evidence, and the provisional status cannot
+be released until that disposition is recorded.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

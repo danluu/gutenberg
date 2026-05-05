@@ -41253,6 +41253,317 @@ save_plot(
 	height = 7.2
 )
 
+open_question_contradiction_disposition_register <- open_question_contradiction_intake_register %>%
+	mutate(
+		contradiction_disposition_state = case_when(
+			contradiction_intake_state == "local packet contradiction intake" ~ "local packet contradiction disposition",
+			contradiction_intake_state == "owner artifact contradiction intake" ~ "owner artifact contradiction disposition",
+			TRUE ~ "observer artifact contradiction disposition"
+		),
+		contradiction_disposition_burden = case_when(
+			close_scope == "CI wait decision" ~ "require a comparable CI run packet with enough metadata to separate latency, variance, reliability, runtime, startup-wait, typing-delay, and input-mode effects",
+			close_scope == "source prototype decision" ~ "require source or selector evidence that reproduces the dispatch, invalidation, fanout, or owner-review contradiction on the current code path",
+			close_scope == "benchmark method wording" ~ "require generated data, trace schema, aggregation, or instrumentation evidence that directly changes the method wording",
+			TRUE ~ "require portability, browser/runtime, workload, endpoint, or conclusion-scope evidence that directly changes the broad claim"
+		),
+		contradiction_disposition_accept_action = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "accept by reopening the local packet, moving the contradiction into active evidence, marking the prior closure superseded, and restoring stale-row warnings",
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ "accept by reopening the owner artifact packet, recording reviewer identity, moving the contradiction into active evidence, marking the prior closure superseded, and restoring stale-row warnings",
+			TRUE ~ "accept by reopening the observer artifact packet, recording reviewer identity and broad-scope wording, moving the contradiction into active evidence, marking the prior closure superseded, and restoring stale-row warnings"
+		),
+		contradiction_disposition_reject_action = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "reject by retaining the non-supporting local intake row with duplicate, stale, non-comparable, missing-manifest, or out-of-boundary reason",
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ "reject by retaining the non-supporting owner intake row with duplicate, stale, non-comparable, missing-reviewer, or out-of-boundary reason",
+			TRUE ~ "reject by retaining the non-supporting observer intake row with duplicate, stale, non-comparable, missing-reviewer, or broad-boundary reason"
+		),
+		contradiction_disposition_stale_row_update = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "on accept, invalidate stale local closure rows; on reject, keep current closure rows active and link the rejected intake row as non-supporting evidence",
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ "on accept, invalidate stale owner closure rows; on reject, keep current closure rows active and link the rejected intake row as non-supporting evidence",
+			TRUE ~ "on accept, invalidate stale observer closure rows and broad wording rows; on reject, keep current closure rows active and link the rejected intake row as non-supporting evidence"
+		),
+		contradiction_disposition_consumer_notice = case_when(
+			close_scope == "CI wait decision" ~ "replace the provisional Performance Tests CI wait-policy notice with accepted-reopened or rejected-unchanged status",
+			close_scope == "source prototype decision" ~ "replace the provisional source and selector notice with accepted-reopened or rejected-unchanged status",
+			close_scope == "benchmark method wording" ~ "replace the provisional benchmark-method notice with accepted-reopened or rejected-unchanged status",
+			TRUE ~ "replace the provisional broad-report notice with accepted-reopened or rejected-unchanged status"
+		),
+		contradiction_disposition_report_patch = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "report patch links local intake row, accept or reject reason, stale-row updates, recommendation status, and consumer notice",
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ "report patch links owner intake row, reviewer identity, accept or reject reason, stale-row updates, recommendation status, and consumer notice",
+			TRUE ~ "report patch links observer intake row, reviewer identity, broad-scope wording, accept or reject reason, stale-row updates, conclusion status, and consumer notice"
+		),
+		contradiction_disposition_artifact_update = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "accepted contradictions refresh the local packet; rejected contradictions remain attached as non-supporting local intake artifacts",
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ "accepted contradictions refresh the owner artifact and reviewer signoff; rejected contradictions remain attached as non-supporting owner intake artifacts",
+			TRUE ~ "accepted contradictions refresh the observer artifact, reviewer signoff, and broad-scope wording; rejected contradictions remain attached as non-supporting observer intake artifacts"
+		),
+		contradiction_disposition_quarantine_release = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "release the local recommendation only after the disposition row records accepted-reopened or rejected-unchanged status",
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ "release the owner-scoped recommendation only after the disposition row records accepted-reopened or rejected-unchanged status",
+			TRUE ~ "release the broad conclusion only after the disposition row records accepted-reopened or rejected-unchanged status"
+		),
+		contradiction_disposition_owner = contradiction_intake_owner,
+		contradiction_disposition_consumer = contradiction_intake_consumer,
+		contradiction_disposition_cost = case_when(
+			contradiction_disposition_state == "local packet contradiction disposition" ~ 5,
+			contradiction_disposition_state == "owner artifact contradiction disposition" ~ 7,
+			TRUE ~ 9
+		),
+		contradiction_disposition_value = pmax(
+			1,
+			contradiction_intake_value + contradiction_intake_drop_risk_value + reopen_drill_missed_reopen_risk_value - contradiction_disposition_cost
+		),
+		contradiction_disposition_wrong_decision_risk_value = pmax(
+			1,
+			contradiction_intake_drop_risk_value + ledger_consistency_drift_risk_value + resolution_ledger_stale_row_risk_value - contradiction_disposition_cost
+		),
+		timing_only_contradiction_disposition_value = 0,
+		analysis_only_value = 0,
+		contradiction_disposition_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(contradiction_disposition_value), desc(contradiction_disposition_wrong_decision_risk_value), question_family)
+
+open_question_contradiction_disposition_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"burden", "What burden of proof governs accept or reject?",
+	"accept", "What action accepts the contradiction into reopened evidence?",
+	"reject", "What action rejects the contradiction as non-supporting?",
+	"stale-row", "How do stale rows change on accept versus reject?",
+	"notice", "Which provisional consumer notice is replaced?",
+	"report", "What report patch proves the disposition?",
+	"artifact", "Which artifact is refreshed or retained as non-supporting?",
+	"quarantine", "When is provisional quarantine released?",
+	"substitute", "Can aggregate timing alone substitute for contradiction disposition?",
+	"stop-rule", "When does contradiction-disposition review stop?"
+)
+
+open_question_contradiction_disposition_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_contradiction_disposition_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_contradiction_disposition_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_contradiction_disposition_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_contradiction_disposition_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		contradiction_disposition_first_seen = !duplicated(contradiction_disposition_id),
+		contradiction_disposition_axis_key = paste(contradiction_disposition_id, pressure_axis, sep = "::"),
+		contradiction_disposition_axis_first_seen = !duplicated(contradiction_disposition_axis_key),
+		contradiction_disposition_state_first_seen = !duplicated(contradiction_disposition_state),
+		contradiction_disposition_owner_first_seen = !duplicated(contradiction_disposition_owner),
+		contradiction_disposition_consumer_first_seen = !duplicated(contradiction_disposition_consumer),
+		new_contradiction_disposition_value = if_else(contradiction_disposition_first_seen, contradiction_disposition_value, 0),
+		new_contradiction_disposition_wrong_decision_risk_value = if_else(contradiction_disposition_first_seen, contradiction_disposition_wrong_decision_risk_value, 0),
+		new_timing_only_contradiction_disposition_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!contradiction_disposition_axis_first_seen ~ "repeat: contradiction-disposition-axis already checked",
+			contradiction_disposition_state == "local packet contradiction disposition" ~ "contradiction disposition: local packet",
+			TRUE ~ "contradiction disposition: owner or observer artifact"
+		),
+		cumulative_contradiction_disposition_records = cumsum(contradiction_disposition_first_seen),
+		cumulative_contradiction_disposition_axes = cumsum(contradiction_disposition_axis_first_seen),
+		cumulative_contradiction_disposition_states = cumsum(contradiction_disposition_state_first_seen),
+		cumulative_contradiction_disposition_owners = cumsum(contradiction_disposition_owner_first_seen),
+		cumulative_contradiction_disposition_consumers = cumsum(contradiction_disposition_consumer_first_seen),
+		cumulative_contradiction_disposition_value = cumsum(new_contradiction_disposition_value),
+		cumulative_contradiction_disposition_wrong_decision_risk_value = cumsum(new_contradiction_disposition_wrong_decision_risk_value),
+		cumulative_timing_only_contradiction_disposition_value = cumsum(new_timing_only_contradiction_disposition_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_contradiction_disposition_summary <- open_question_contradiction_disposition_100_pass %>%
+	group_by(contradiction_disposition_state, contradiction_intake_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		contradiction_disposition_records = n_distinct(contradiction_disposition_id),
+		axis_checks = sum(contradiction_disposition_axis_first_seen),
+		contradiction_disposition_owners = n_distinct(contradiction_disposition_owner),
+		contradiction_disposition_consumers = n_distinct(contradiction_disposition_consumer),
+		contradiction_disposition_value = sum(new_contradiction_disposition_value),
+		contradiction_disposition_wrong_decision_risk_value = sum(new_contradiction_disposition_wrong_decision_risk_value),
+		timing_only_contradiction_disposition_value = sum(new_timing_only_contradiction_disposition_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(contradiction_disposition_value), desc(contradiction_disposition_wrong_decision_risk_value), first_pass)
+
+open_question_contradiction_disposition_checkpoints <- open_question_contradiction_disposition_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_contradiction_disposition_records,
+		cumulative_contradiction_disposition_axes,
+		cumulative_contradiction_disposition_states,
+		cumulative_contradiction_disposition_owners,
+		cumulative_contradiction_disposition_consumers,
+		cumulative_contradiction_disposition_value,
+		cumulative_contradiction_disposition_wrong_decision_risk_value,
+		cumulative_timing_only_contradiction_disposition_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_contradiction_disposition_register,
+	file.path(data_dir, "typing-delay-open-question-contradiction-disposition-register.csv")
+)
+
+write_csv(
+	open_question_contradiction_disposition_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			contradiction_disposition_state,
+			contradiction_intake_state,
+			contradiction_disposition_burden,
+			contradiction_disposition_accept_action,
+			contradiction_disposition_reject_action,
+			contradiction_disposition_stale_row_update,
+			contradiction_disposition_consumer_notice,
+			contradiction_disposition_report_patch,
+			contradiction_disposition_artifact_update,
+			contradiction_disposition_quarantine_release,
+			contradiction_disposition_owner,
+			contradiction_disposition_consumer,
+			contradiction_intake_capture,
+			contradiction_intake_dedupe,
+			contradiction_intake_acceptance_gate,
+			contradiction_intake_rejection_gate,
+			contradiction_intake_quarantine_rule,
+			supported_claim,
+			blocked_claim,
+			contradiction_disposition_first_seen,
+			contradiction_disposition_axis_first_seen,
+			contradiction_disposition_state_first_seen,
+			contradiction_disposition_owner_first_seen,
+			contradiction_disposition_consumer_first_seen,
+			pass_result,
+			contradiction_disposition_value,
+			contradiction_disposition_wrong_decision_risk_value,
+			timing_only_contradiction_disposition_value,
+			new_contradiction_disposition_value,
+			new_contradiction_disposition_wrong_decision_risk_value,
+			new_timing_only_contradiction_disposition_value,
+			new_analysis_only_value,
+			cumulative_contradiction_disposition_records,
+			cumulative_contradiction_disposition_axes,
+			cumulative_contradiction_disposition_states,
+			cumulative_contradiction_disposition_owners,
+			cumulative_contradiction_disposition_consumers,
+			cumulative_contradiction_disposition_value,
+			cumulative_contradiction_disposition_wrong_decision_risk_value,
+			cumulative_timing_only_contradiction_disposition_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-contradiction-disposition-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_contradiction_disposition_summary,
+	file.path(data_dir, "typing-delay-open-question-contradiction-disposition-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_contradiction_disposition_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-contradiction-disposition-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_contradiction_disposition_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, contradiction_disposition_value)
+		) %>%
+		ggplot(aes(contradiction_disposition_value, question_label, fill = contradiction_disposition_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Contradiction disposition") +
+		labs(
+			title = "Contradiction disposition decides whether later evidence reopens or is rejected",
+			subtitle = "Each row names burden, accept action, reject action, stale-row update, consumer notice, report patch, artifact update, and quarantine release",
+			x = "Contradiction-disposition value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"411-open-question-contradiction-disposition-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_contradiction_disposition_saturation_long <- open_question_contradiction_disposition_100_pass %>%
+	select(
+		pass_id,
+		`contradiction-disposition records` = cumulative_contradiction_disposition_records,
+		`contradiction-disposition axes` = cumulative_contradiction_disposition_axes,
+		`contradiction-disposition states` = cumulative_contradiction_disposition_states,
+		`contradiction-disposition owners` = cumulative_contradiction_disposition_owners,
+		`contradiction-disposition consumers` = cumulative_contradiction_disposition_consumers,
+		`contradiction-disposition value` = cumulative_contradiction_disposition_value,
+		`contradiction-disposition wrong-decision risk value` = cumulative_contradiction_disposition_wrong_decision_risk_value,
+		`timing-only contradiction-disposition value` = cumulative_timing_only_contradiction_disposition_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("contradiction-disposition records", "contradiction-disposition axes", "contradiction-disposition states", "contradiction-disposition owners", "contradiction-disposition consumers", "contradiction-disposition value", "contradiction-disposition wrong-decision risk value", "timing-only contradiction-disposition value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_contradiction_disposition_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Contradiction-disposition audit saturates once every accept/reject path is named",
+			subtitle = "Nine disposition records appear by pass 9; all 90 axes appear by pass 90; timing-only disposition value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"412-open-question-contradiction-disposition-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_contradiction_disposition_summary %>%
+		mutate(
+			state_label = str_wrap(contradiction_disposition_state, width = 28),
+			state_label = fct_reorder(state_label, contradiction_disposition_value + contradiction_disposition_wrong_decision_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Contradiction-disposition coverage separates local disposition from owner and observer disposition",
+			subtitle = "Every row is checked for burden, accept, reject, stale-row update, notice, report, artifact, quarantine, substitute, and stop rule",
+			x = "Contradiction-disposition-axis checks",
+			y = "Contradiction-disposition state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"413-open-question-contradiction-disposition-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

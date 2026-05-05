@@ -1,0 +1,7 @@
+contradiction_disposition_state,contradiction_intake_state,pass_result,passes,first_pass,contradiction_disposition_records,axis_checks,contradiction_disposition_owners,contradiction_disposition_consumers,contradiction_disposition_value,contradiction_disposition_wrong_decision_risk_value,timing_only_contradiction_disposition_value,analysis_only_value
+local packet contradiction disposition,local packet contradiction intake,contradiction disposition: local packet,40,1,4,40,4,3,1100522372,480693817,0,0
+owner artifact contradiction disposition,owner artifact contradiction intake,contradiction disposition: owner or observer artifact,20,5,2,20,2,2,220050768,96115302,0,0
+observer artifact contradiction disposition,observer artifact contradiction intake,contradiction disposition: owner or observer artifact,30,7,3,30,3,3,135926643,59370966,0,0
+local packet contradiction disposition,local packet contradiction intake,repeat: contradiction-disposition-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact contradiction disposition,owner artifact contradiction intake,repeat: contradiction-disposition-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact contradiction disposition,observer artifact contradiction intake,repeat: contradiction-disposition-axis already checked,3,97,3,0,3,3,0,0,0,0

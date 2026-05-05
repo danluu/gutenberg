@@ -1,0 +1,10 @@
+pass_id,cumulative_contradiction_disposition_records,cumulative_contradiction_disposition_axes,cumulative_contradiction_disposition_states,cumulative_contradiction_disposition_owners,cumulative_contradiction_disposition_consumers,cumulative_contradiction_disposition_value,cumulative_contradiction_disposition_wrong_decision_risk_value,cumulative_timing_only_contradiction_disposition_value,cumulative_analysis_only_value
+1,1,1,1,1,1,303465778,132549894,0,0
+5,5,5,2,5,4,1224107775,534674308,0,0
+9,9,9,3,9,8,1456499783,636180085,0,0
+10,9,10,3,9,8,1456499783,636180085,0,0
+20,9,20,3,9,8,1456499783,636180085,0,0
+50,9,50,3,9,8,1456499783,636180085,0,0
+90,9,90,3,9,8,1456499783,636180085,0,0
+91,9,90,3,9,8,1456499783,636180085,0,0
+100,9,90,3,9,8,1456499783,636180085,0,0
