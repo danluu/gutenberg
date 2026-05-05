@@ -1,0 +1,28 @@
+observation_id,observation,leverage_class,theories_checked,strong_matches,scope_matches,neutral,weakens,falsifiers,support_weight,rejection_weight,discrimination_weight,net_prediction_score,supported_theories,rejected_or_weakened_theories,next_use
+DENSE,dense and randomized held-key reproduction,single-theory falsifier,1,0,0,0,0,1,0,2,2,-2,,Plotting/sample artifact,"rerun only on helper, browser, or fixture change"
+FIXTURE,"container, browser, and volatility controls",metadata,1,0,0,0,1,0,0,1,1,-1,,Plotting/sample artifact,"rerun only on helper, browser, or fixture change"
+MODE,matched input-mode controls,high-leverage discriminator,2,1,0,0,0,1,2,2,4,0,Held-key metric-definition effect,Plotting/sample artifact,"rerun only on helper, browser, or fixture change"
+HOLD,observed hold and post-keyup controls,scope guard,1,0,1,0,0,0,1,0,1,1,Held-key metric-definition effect,,"rerun only on helper, browser, or fixture change"
+TIMER,timer rewrite and persistence markers,supports survivor,2,1,1,0,0,0,3,0,3,3,Persistence ordering boundary; Timer callback shifts work,,keep wording at ordering unless joined work placement appears
+NOOP,raw/no-op/direct-callback controls,high-leverage discriminator,2,1,0,0,0,1,2,2,4,0,Persistence ordering boundary,Timer callback shifts work,keep wording at ordering unless joined work placement appears
+WORK,callback work placement,single-theory falsifier,2,0,1,0,0,1,1,2,3,-1,Persistence ordering boundary,Timer callback shifts work,keep wording at ordering unless joined work placement appears
+EDISP,Chrome EventDispatch/input slice movement,scope guard,1,0,1,0,0,0,1,0,1,1,Chrome EventDispatch accounting only,,"use as causal portability, not threshold portability"
+FF,Firefox controlled dip,single-theory falsifier,1,0,0,0,0,1,0,2,2,-2,,Chrome EventDispatch accounting only,"use as causal portability, not threshold portability"
+WAIT,ordinary post-keyup wait extension,high-leverage discriminator,2,1,0,0,0,1,2,2,4,0,Runtime checkpoint state,Ordinary sleep or queued-JS drain,retain as falsifier for reopened theories
+RT,runtime checkpoint dose response,high-leverage discriminator,3,1,0,1,0,1,2,2,4,0,Runtime checkpoint state,Ordinary sleep or queued-JS drain,retain as falsifier for reopened theories
+PAYLOAD,matched event payload controls,metadata,1,0,0,0,1,0,0,1,1,-1,,Ordinary sleep or queued-JS drain,retain as falsifier for reopened theories
+VISUAL,EventDispatch versus visual/render tail,single-theory falsifier,1,0,0,0,0,1,0,2,2,-2,,React render primary cause,retain as falsifier for reopened theories
+FANOUT,source-span fanout,supports survivor,3,1,1,0,1,0,3,1,4,2,Broad subscriber fanout source cost; Store partition timing-only safety,React render primary cause,keep for source/API safety gates
+OWNER,single-owner controls,scope guard,1,0,1,0,0,0,1,0,1,1,Broad subscriber fanout source cost,,keep for source/API safety gates
+CPU,CPU/QoS controls,metadata,1,1,0,0,0,0,2,0,2,2,CPU/QoS system state,,add joined mechanism fields before naming the mechanism
+START,startup wait matrices,single-theory falsifier,1,0,0,0,0,1,0,2,2,-2,,Startup wait determines retained typing,keep for wait-rollout gates
+KEYPOS,per-key position distributions,metadata,1,0,0,0,1,0,0,1,1,-1,,Startup wait determines retained typing,keep for wait-rollout gates
+PATTERN,pattern wait local matrices,single-theory falsifier,1,0,0,0,0,1,0,2,2,-2,,Pattern/source wait q50-only rollout,keep for wait-rollout gates
+READY,readiness/resource fields,mostly rejects,2,0,0,0,0,2,0,4,4,-4,,Startup wait determines retained typing; Pattern/source wait q50-only rollout,keep for wait-rollout gates
+CI,CI/container topology,metadata,1,0,0,0,1,0,0,1,1,-1,,Pattern/source wait q50-only rollout,keep for wait-rollout gates
+COMPAT,compatibility requirements,single-theory falsifier,2,0,1,0,0,1,1,2,3,-1,Broad subscriber fanout source cost,Store partition timing-only safety,keep for source/API safety gates
+SIDECH,private side-channel controls,single-theory falsifier,1,0,0,0,0,1,0,2,2,-2,,Store partition timing-only safety,keep for source/API safety gates
+MECH,mechanism naming field,scope guard,2,0,2,0,0,0,2,0,2,2,Runtime checkpoint state; CPU/QoS system state,,add joined mechanism fields before naming the mechanism
+THRESH,threshold portability,scope guard,1,0,1,0,0,0,1,0,1,1,Chrome EventDispatch accounting only,,"use as causal portability, not threshold portability"
+PRODUCT,product typing generalization,scope guard,1,0,1,0,0,0,1,0,1,1,Held-key metric-definition effect,,retain as falsifier for reopened theories
+PROF,profiler usefulness,metadata,1,0,0,0,1,0,0,1,1,-1,,React render primary cause,retain as falsifier for reopened theories

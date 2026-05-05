@@ -26026,6 +26026,185 @@ save_plot(
 	height = 8.0
 )
 
+open_question_observation_leverage <- open_question_theory_predictions %>%
+	group_by(observation_id, observation) %>%
+	summarize(
+		theories_checked = n(),
+		strong_matches = sum(score >= 2),
+		scope_matches = sum(score == 1),
+		neutral = sum(score == 0),
+		weakens = sum(score == -1),
+		falsifiers = sum(score <= -2),
+		support_weight = sum(pmax(score, 0)),
+		rejection_weight = sum(abs(pmin(score, 0))),
+		discrimination_weight = sum(abs(score)),
+		net_prediction_score = sum(score),
+		supported_theories = paste(theory[score > 0], collapse = "; "),
+		rejected_or_weakened_theories = paste(theory[score < 0], collapse = "; "),
+		.groups = "drop"
+	) %>%
+	mutate(
+		observation_id = factor(observation_id, levels = levels(open_question_theory_predictions$observation_id)),
+		observation_label = str_wrap(as.character(observation), width = 34),
+		leverage_class = case_when(
+			falsifiers >= 2 & support_weight >= 2 ~ "splits theories",
+			falsifiers >= 2 ~ "mostly rejects",
+			falsifiers >= 1 & support_weight >= 2 ~ "high-leverage discriminator",
+			falsifiers >= 1 ~ "single-theory falsifier",
+			rejection_weight >= 3 ~ "rejects weak theory",
+			support_weight >= 3 & falsifiers == 0 ~ "supports survivor",
+			neutral > 0 | scope_matches > 0 ~ "scope guard",
+			TRUE ~ "metadata"
+		),
+		leverage_class = factor(
+			leverage_class,
+			levels = c("metadata", "scope guard", "supports survivor", "single-theory falsifier", "rejects weak theory", "mostly rejects", "high-leverage discriminator", "splits theories")
+		),
+		next_use = case_when(
+			observation_id %in% c("MECH", "CPU") ~ "add joined mechanism fields before naming the mechanism",
+			observation_id %in% c("READY", "CI", "PATTERN", "START", "KEYPOS") ~ "keep for wait-rollout gates",
+			observation_id %in% c("COMPAT", "SIDECH", "FANOUT", "OWNER") ~ "keep for source/API safety gates",
+			observation_id %in% c("DENSE", "FIXTURE", "MODE", "HOLD") ~ "rerun only on helper, browser, or fixture change",
+			observation_id %in% c("TIMER", "NOOP", "WORK") ~ "keep wording at ordering unless joined work placement appears",
+			observation_id %in% c("EDISP", "FF", "THRESH") ~ "use as causal portability, not threshold portability",
+			TRUE ~ "retain as falsifier for reopened theories"
+		)
+	)
+
+open_question_observation_leverage_long <- open_question_observation_leverage %>%
+	select(
+		observation_id,
+		observation,
+		observation_label,
+		leverage_class,
+		strong_matches,
+		scope_matches,
+		neutral,
+		weakens,
+		falsifiers,
+		support_weight,
+		rejection_weight,
+		discrimination_weight
+	) %>%
+	pivot_longer(
+		cols = c(
+			strong_matches,
+			scope_matches,
+			neutral,
+			weakens,
+			falsifiers,
+			support_weight,
+			rejection_weight,
+			discrimination_weight
+		),
+		names_to = "leverage_dimension",
+		values_to = "value"
+	) %>%
+	mutate(
+		leverage_dimension = recode(
+			leverage_dimension,
+			strong_matches = "strong matches",
+			scope_matches = "scope matches",
+			neutral = "neutral",
+			weakens = "weakens",
+			falsifiers = "falsifiers",
+			support_weight = "support weight",
+			rejection_weight = "rejection weight",
+			discrimination_weight = "discrimination weight"
+		),
+		leverage_dimension = factor(
+			leverage_dimension,
+			levels = c("strong matches", "scope matches", "neutral", "weakens", "falsifiers", "support weight", "rejection weight", "discrimination weight")
+		)
+	)
+
+write_csv(
+	open_question_observation_leverage %>%
+		select(
+			observation_id,
+			observation,
+			leverage_class,
+			theories_checked,
+			strong_matches,
+			scope_matches,
+			neutral,
+			weakens,
+			falsifiers,
+			support_weight,
+			rejection_weight,
+			discrimination_weight,
+			net_prediction_score,
+			supported_theories,
+			rejected_or_weakened_theories,
+			next_use
+		),
+	file.path(data_dir, "typing-delay-open-question-observation-leverage.csv")
+)
+
+write_csv(
+	open_question_observation_leverage_long,
+	file.path(data_dir, "typing-delay-open-question-observation-leverage-long.csv")
+)
+
+save_plot(
+	ggplot(
+		open_question_observation_leverage %>%
+			mutate(observation_id = fct_reorder(observation_id, discrimination_weight)),
+		aes(discrimination_weight, observation_id, fill = leverage_class)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Leverage class") +
+		labs(
+			title = "A few observations do most of the work of rejecting theories",
+			subtitle = "Discrimination weight is the total absolute prediction score across theories checked by that observation",
+			x = "Discrimination weight",
+			y = "Observation id"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"256-open-question-observation-leverage.png",
+	width = 12.4,
+	height = 7.6
+)
+
+open_question_observation_support_plot <- open_question_observation_leverage %>%
+	group_by(rejection_weight, support_weight) %>%
+	arrange(as.character(observation_id), .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.10),
+		point_rejection_weight = rejection_weight + overlap_radius * cos(overlap_angle),
+		point_support_weight = support_weight + overlap_radius * sin(overlap_angle)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_observation_support_plot,
+		aes(point_rejection_weight, point_support_weight, color = leverage_class, size = theories_checked)
+	) +
+		geom_abline(slope = 1, intercept = 0, color = "grey72", linewidth = 0.45) +
+		geom_point(alpha = 0.9) +
+		geom_text(aes(label = observation_id), size = 2.7, hjust = -0.15, vjust = 0.45, check_overlap = TRUE, show.legend = FALSE) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Leverage class") +
+		scale_size_continuous(range = c(2.4, 7.0), breaks = 1:4, name = "Theories checked") +
+		scale_x_continuous(limits = c(-0.2, max(open_question_observation_support_plot$point_rejection_weight, na.rm = TRUE) + 0.8)) +
+		scale_y_continuous(limits = c(-0.2, max(open_question_observation_support_plot$point_support_weight, na.rm = TRUE) + 0.8)) +
+		labs(
+			title = "Observation leverage separates support from rejection",
+			subtitle = "Upper-left observations support survivors; lower-right observations falsify discarded theories; upper-right observations split theories",
+			x = "Rejection weight",
+			y = "Support weight"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"257-open-question-observation-support-rejection.png",
+	width = 12.6,
+	height = 7.6
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1,0 +1,265 @@
+observation_id,observation,observation_label,leverage_class,leverage_dimension,value
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,strong matches,0
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,scope matches,0
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,neutral,0
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,weakens,0
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,falsifiers,1
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,support weight,0
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,rejection weight,2
+DENSE,dense and randomized held-key reproduction,"dense and randomized held-key
+reproduction",single-theory falsifier,discrimination weight,2
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,strong matches,0
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,scope matches,0
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,neutral,0
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,weakens,1
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,falsifiers,0
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,support weight,0
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,rejection weight,1
+FIXTURE,"container, browser, and volatility controls","container, browser, and volatility
+controls",metadata,discrimination weight,1
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,strong matches,1
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,scope matches,0
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,neutral,0
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,weakens,0
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,falsifiers,1
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,support weight,2
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,rejection weight,2
+MODE,matched input-mode controls,matched input-mode controls,high-leverage discriminator,discrimination weight,4
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,strong matches,0
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,scope matches,1
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,neutral,0
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,weakens,0
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,falsifiers,0
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,support weight,1
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,rejection weight,0
+HOLD,observed hold and post-keyup controls,"observed hold and post-keyup
+controls",scope guard,discrimination weight,1
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,strong matches,1
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,scope matches,1
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,neutral,0
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,weakens,0
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,falsifiers,0
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,support weight,3
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,rejection weight,0
+TIMER,timer rewrite and persistence markers,"timer rewrite and persistence
+markers",supports survivor,discrimination weight,3
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,strong matches,1
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,scope matches,0
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,neutral,0
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,weakens,0
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,falsifiers,1
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,support weight,2
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,rejection weight,2
+NOOP,raw/no-op/direct-callback controls,raw/no-op/direct-callback controls,high-leverage discriminator,discrimination weight,4
+WORK,callback work placement,callback work placement,single-theory falsifier,strong matches,0
+WORK,callback work placement,callback work placement,single-theory falsifier,scope matches,1
+WORK,callback work placement,callback work placement,single-theory falsifier,neutral,0
+WORK,callback work placement,callback work placement,single-theory falsifier,weakens,0
+WORK,callback work placement,callback work placement,single-theory falsifier,falsifiers,1
+WORK,callback work placement,callback work placement,single-theory falsifier,support weight,1
+WORK,callback work placement,callback work placement,single-theory falsifier,rejection weight,2
+WORK,callback work placement,callback work placement,single-theory falsifier,discrimination weight,3
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,strong matches,0
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,scope matches,1
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,neutral,0
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,weakens,0
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,falsifiers,0
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,support weight,1
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,rejection weight,0
+EDISP,Chrome EventDispatch/input slice movement,"Chrome EventDispatch/input slice
+movement",scope guard,discrimination weight,1
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,strong matches,0
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,scope matches,0
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,neutral,0
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,weakens,0
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,falsifiers,1
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,support weight,0
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,rejection weight,2
+FF,Firefox controlled dip,Firefox controlled dip,single-theory falsifier,discrimination weight,2
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,strong matches,1
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,scope matches,0
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,neutral,0
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,weakens,0
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,falsifiers,1
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,support weight,2
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,rejection weight,2
+WAIT,ordinary post-keyup wait extension,ordinary post-keyup wait extension,high-leverage discriminator,discrimination weight,4
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,strong matches,1
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,scope matches,0
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,neutral,1
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,weakens,0
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,falsifiers,1
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,support weight,2
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,rejection weight,2
+RT,runtime checkpoint dose response,runtime checkpoint dose response,high-leverage discriminator,discrimination weight,4
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,strong matches,0
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,scope matches,0
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,neutral,0
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,weakens,1
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,falsifiers,0
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,support weight,0
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,rejection weight,1
+PAYLOAD,matched event payload controls,matched event payload controls,metadata,discrimination weight,1
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,strong matches,0
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,scope matches,0
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,neutral,0
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,weakens,0
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,falsifiers,1
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,support weight,0
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,rejection weight,2
+VISUAL,EventDispatch versus visual/render tail,"EventDispatch versus visual/render
+tail",single-theory falsifier,discrimination weight,2
+FANOUT,source-span fanout,source-span fanout,supports survivor,strong matches,1
+FANOUT,source-span fanout,source-span fanout,supports survivor,scope matches,1
+FANOUT,source-span fanout,source-span fanout,supports survivor,neutral,0
+FANOUT,source-span fanout,source-span fanout,supports survivor,weakens,1
+FANOUT,source-span fanout,source-span fanout,supports survivor,falsifiers,0
+FANOUT,source-span fanout,source-span fanout,supports survivor,support weight,3
+FANOUT,source-span fanout,source-span fanout,supports survivor,rejection weight,1
+FANOUT,source-span fanout,source-span fanout,supports survivor,discrimination weight,4
+OWNER,single-owner controls,single-owner controls,scope guard,strong matches,0
+OWNER,single-owner controls,single-owner controls,scope guard,scope matches,1
+OWNER,single-owner controls,single-owner controls,scope guard,neutral,0
+OWNER,single-owner controls,single-owner controls,scope guard,weakens,0
+OWNER,single-owner controls,single-owner controls,scope guard,falsifiers,0
+OWNER,single-owner controls,single-owner controls,scope guard,support weight,1
+OWNER,single-owner controls,single-owner controls,scope guard,rejection weight,0
+OWNER,single-owner controls,single-owner controls,scope guard,discrimination weight,1
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,strong matches,1
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,scope matches,0
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,neutral,0
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,weakens,0
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,falsifiers,0
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,support weight,2
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,rejection weight,0
+CPU,CPU/QoS controls,CPU/QoS controls,metadata,discrimination weight,2
+START,startup wait matrices,startup wait matrices,single-theory falsifier,strong matches,0
+START,startup wait matrices,startup wait matrices,single-theory falsifier,scope matches,0
+START,startup wait matrices,startup wait matrices,single-theory falsifier,neutral,0
+START,startup wait matrices,startup wait matrices,single-theory falsifier,weakens,0
+START,startup wait matrices,startup wait matrices,single-theory falsifier,falsifiers,1
+START,startup wait matrices,startup wait matrices,single-theory falsifier,support weight,0
+START,startup wait matrices,startup wait matrices,single-theory falsifier,rejection weight,2
+START,startup wait matrices,startup wait matrices,single-theory falsifier,discrimination weight,2
+KEYPOS,per-key position distributions,per-key position distributions,metadata,strong matches,0
+KEYPOS,per-key position distributions,per-key position distributions,metadata,scope matches,0
+KEYPOS,per-key position distributions,per-key position distributions,metadata,neutral,0
+KEYPOS,per-key position distributions,per-key position distributions,metadata,weakens,1
+KEYPOS,per-key position distributions,per-key position distributions,metadata,falsifiers,0
+KEYPOS,per-key position distributions,per-key position distributions,metadata,support weight,0
+KEYPOS,per-key position distributions,per-key position distributions,metadata,rejection weight,1
+KEYPOS,per-key position distributions,per-key position distributions,metadata,discrimination weight,1
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,strong matches,0
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,scope matches,0
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,neutral,0
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,weakens,0
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,falsifiers,1
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,support weight,0
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,rejection weight,2
+PATTERN,pattern wait local matrices,pattern wait local matrices,single-theory falsifier,discrimination weight,2
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,strong matches,0
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,scope matches,0
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,neutral,0
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,weakens,0
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,falsifiers,2
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,support weight,0
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,rejection weight,4
+READY,readiness/resource fields,readiness/resource fields,mostly rejects,discrimination weight,4
+CI,CI/container topology,CI/container topology,metadata,strong matches,0
+CI,CI/container topology,CI/container topology,metadata,scope matches,0
+CI,CI/container topology,CI/container topology,metadata,neutral,0
+CI,CI/container topology,CI/container topology,metadata,weakens,1
+CI,CI/container topology,CI/container topology,metadata,falsifiers,0
+CI,CI/container topology,CI/container topology,metadata,support weight,0
+CI,CI/container topology,CI/container topology,metadata,rejection weight,1
+CI,CI/container topology,CI/container topology,metadata,discrimination weight,1
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,strong matches,0
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,scope matches,1
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,neutral,0
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,weakens,0
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,falsifiers,1
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,support weight,1
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,rejection weight,2
+COMPAT,compatibility requirements,compatibility requirements,single-theory falsifier,discrimination weight,3
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,strong matches,0
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,scope matches,0
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,neutral,0
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,weakens,0
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,falsifiers,1
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,support weight,0
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,rejection weight,2
+SIDECH,private side-channel controls,private side-channel controls,single-theory falsifier,discrimination weight,2
+MECH,mechanism naming field,mechanism naming field,scope guard,strong matches,0
+MECH,mechanism naming field,mechanism naming field,scope guard,scope matches,2
+MECH,mechanism naming field,mechanism naming field,scope guard,neutral,0
+MECH,mechanism naming field,mechanism naming field,scope guard,weakens,0
+MECH,mechanism naming field,mechanism naming field,scope guard,falsifiers,0
+MECH,mechanism naming field,mechanism naming field,scope guard,support weight,2
+MECH,mechanism naming field,mechanism naming field,scope guard,rejection weight,0
+MECH,mechanism naming field,mechanism naming field,scope guard,discrimination weight,2
+THRESH,threshold portability,threshold portability,scope guard,strong matches,0
+THRESH,threshold portability,threshold portability,scope guard,scope matches,1
+THRESH,threshold portability,threshold portability,scope guard,neutral,0
+THRESH,threshold portability,threshold portability,scope guard,weakens,0
+THRESH,threshold portability,threshold portability,scope guard,falsifiers,0
+THRESH,threshold portability,threshold portability,scope guard,support weight,1
+THRESH,threshold portability,threshold portability,scope guard,rejection weight,0
+THRESH,threshold portability,threshold portability,scope guard,discrimination weight,1
+PRODUCT,product typing generalization,product typing generalization,scope guard,strong matches,0
+PRODUCT,product typing generalization,product typing generalization,scope guard,scope matches,1
+PRODUCT,product typing generalization,product typing generalization,scope guard,neutral,0
+PRODUCT,product typing generalization,product typing generalization,scope guard,weakens,0
+PRODUCT,product typing generalization,product typing generalization,scope guard,falsifiers,0
+PRODUCT,product typing generalization,product typing generalization,scope guard,support weight,1
+PRODUCT,product typing generalization,product typing generalization,scope guard,rejection weight,0
+PRODUCT,product typing generalization,product typing generalization,scope guard,discrimination weight,1
+PROF,profiler usefulness,profiler usefulness,metadata,strong matches,0
+PROF,profiler usefulness,profiler usefulness,metadata,scope matches,0
+PROF,profiler usefulness,profiler usefulness,metadata,neutral,0
+PROF,profiler usefulness,profiler usefulness,metadata,weakens,1
+PROF,profiler usefulness,profiler usefulness,metadata,falsifiers,0
+PROF,profiler usefulness,profiler usefulness,metadata,support weight,0
+PROF,profiler usefulness,profiler usefulness,metadata,rejection weight,1
+PROF,profiler usefulness,profiler usefulness,metadata,discrimination weight,1

@@ -1208,6 +1208,13 @@ The R script derives:
 -   `data/typing-delay-open-question-theory-prediction-summary.csv`: per-theory
     prediction balance, strong matches, falsifiers, weakening observations, and
     survivor/rejection status.
+-   `data/typing-delay-open-question-observation-leverage.csv`: observation-level
+    inversion of the prediction matrix, including support/rejection weights,
+    falsifier counts, leverage class, theories supported or weakened, and next
+    use for each observation.
+-   `data/typing-delay-open-question-observation-leverage-long.csv`: long-form
+    observation-leverage scores used for the support/rejection and leverage
+    plots.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10154,6 +10161,31 @@ Chrome-only accounting theories are rejected or mostly rejected by direct
 predictions. That is why the remaining work is not more broad sampling. It is
 either scoped wording for surviving theories or new fields for the mechanisms
 whose predictions are still under-observed.
+
+The observation-leverage inversion asks which observations did the most work.
+This guards against treating every row in the prediction matrix as equally
+useful. Some observations are true discriminators because they both support one
+theory and falsify another; others are scope guards, provenance checks, or
+single-theory falsifiers.
+
+![Open question observation leverage](figures/256-open-question-observation-leverage.png)
+
+![Open question observation support rejection](figures/257-open-question-observation-support-rejection.png)
+
+| Observation class | What it tells us |
+| ----------------- | ---------------- |
+| High-leverage discriminators | `MODE`, `NOOP`, `WAIT`, and `RT` split alternatives instead of merely adding more samples. These are the rows that most directly changed which explanations survived. |
+| Mostly rejects | `READY` mainly rejects the wait-rollout explanation, so it is a decision guard for CI-speedup proposals rather than a mechanism proof. |
+| Supports survivor | `TIMER` and `FANOUT` support scoped surviving theories, but they do not by themselves prove the lower-level browser, scheduler, or semantic-safety mechanism. |
+| Single-theory falsifiers | `DENSE`, `WORK`, `FF`, `VISUAL`, `START`, `PATTERN`, `COMPAT`, and `SIDECH` mostly knock down one overbroad explanation each. They are useful because they prevent convenient but wrong stories from reappearing. |
+| Scope guards | `HOLD`, `EDISP`, `OWNER`, `MECH`, `THRESH`, and `PRODUCT` prevent overclaiming by marking where the current evidence stops. |
+| Metadata or low-discrimination rows | `FIXTURE`, `PAYLOAD`, `CPU`, `KEYPOS`, `CI`, and `PROF` are provenance or context checks in this matrix. They still matter, but they do not separate many theories by themselves. |
+
+This changes the next-work priority. To close more theories, run rows that look
+like `MODE`, `NOOP`, `RT`, and `WAIT`: they split alternatives. To broaden
+claims, add the missing scope-guard fields: work placement for the timer theory,
+mechanism fields for runtime/CPU, product replay for typing claims, and policy
+joins for pass/fail claims.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
