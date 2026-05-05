@@ -45859,6 +45859,331 @@ save_plot(
 	height = 7.2
 )
 
+open_question_reopen_drill_evidence_retention_register <- open_question_reopen_drill_verification_register %>%
+	mutate(
+		reopen_drill_evidence_retention_state = case_when(
+			reopen_drill_verification_state == "local packet reopen-drill verification" ~ "local packet reopen-drill evidence retention",
+			reopen_drill_verification_state == "owner artifact reopen-drill verification" ~ "owner artifact reopen-drill evidence retention",
+			TRUE ~ "observer artifact reopen-drill evidence retention"
+		),
+		reopen_drill_evidence_retention_manifest = case_when(
+			close_scope == "CI wait decision" ~ "manifest retains raw CI JSON, q25/q50/q75 tables, runtime and reliability tables, branch-count model, input-mode evidence, stale-row scan, negative control, duplicate packet, consumer diff, and rollback proof",
+			close_scope == "source prototype decision" ~ "manifest retains raw source-span artifacts, behavior fixture result, fanout table, source patch, owner-review status, stale-row scan, negative control, duplicate packet, consumer diff, and rollback proof",
+			close_scope == "benchmark method wording" ~ "manifest retains raw trace events, EventDispatch extraction, aggregation output, instrumentation patch hash, method wording diff, stale-row scan, negative control, duplicate packet, consumer diff, and rollback proof",
+			TRUE ~ "manifest retains browser/runtime manifest, OS/container manifest, workload or endpoint evidence, plugin-set evidence, transfer-boundary label, stale-row scan, negative control, duplicate packet, consumer diff, and rollback proof"
+		),
+		reopen_drill_evidence_retention_storage_location = case_when(
+			reopen_drill_evidence_retention_state == "local packet reopen-drill evidence retention" ~ "store the local verification bundle under the report data directory with figure references, raw-artifact hashes, script commit, and consumer-path snapshot",
+			reopen_drill_evidence_retention_state == "owner artifact reopen-drill evidence retention" ~ "store the owner verification bundle under the report data directory with reviewer-visible references, raw-artifact hashes, script commit, and consumer-path snapshot",
+			TRUE ~ "store the observer verification bundle under the report data directory with broad-scope references, reviewer-visible references, raw-artifact hashes, script commit, and consumer-path snapshot"
+		),
+		reopen_drill_evidence_retention_replay_command = case_when(
+			close_scope == "CI wait decision" ~ "replay by regenerating the CI wait-policy tables and figures from the retained raw artifacts, then compare latency, runtime, reliability, branch-count, input-mode, stale-row, and rollback outputs",
+			close_scope == "source prototype decision" ~ "replay by regenerating the source-span, behavior-fixture, fanout, owner-review, stale-row, and rollback outputs from the retained raw artifacts and source patch",
+			close_scope == "benchmark method wording" ~ "replay by regenerating trace extraction, EventDispatch interpretation, aggregation, instrumentation, method wording, stale-row, and rollback outputs from the retained raw artifacts",
+			TRUE ~ "replay by regenerating browser/runtime, environment, workload, endpoint, plugin-set, transfer-boundary, stale-row, and rollback outputs from the retained raw artifacts"
+		),
+		reopen_drill_evidence_retention_integrity_check = case_when(
+			reopen_drill_evidence_retention_state == "local packet reopen-drill evidence retention" ~ "integrity check compares local raw-artifact hashes, generated CSV hashes, figure hashes, report-section hash, stale-row scan hash, and consumer-path snapshot hash",
+			reopen_drill_evidence_retention_state == "owner artifact reopen-drill evidence retention" ~ "integrity check compares owner raw-artifact hashes, generated CSV hashes, figure hashes, report-section hash, reviewer-visible status hash, stale-row scan hash, and consumer-path snapshot hash",
+			TRUE ~ "integrity check compares observer raw-artifact hashes, generated CSV hashes, figure hashes, report-section hash, broad wording hash, reviewer-visible status hash, stale-row scan hash, and consumer-path snapshot hash"
+		),
+		reopen_drill_evidence_retention_retrieval_test = case_when(
+			close_scope == "CI wait decision" ~ "retrieval test starts from the CI wait-policy recommendation and must find the retained contradiction packet, recompute evidence, stale injection, negative control, duplicate classification, and rollback proof",
+			close_scope == "source prototype decision" ~ "retrieval test starts from the source optimization recommendation and must find the retained contradiction packet, recompute evidence, stale injection, negative control, duplicate classification, and rollback proof",
+			close_scope == "benchmark method wording" ~ "retrieval test starts from the benchmark-method wording and must find the retained contradiction packet, recompute evidence, stale injection, negative control, duplicate classification, and rollback proof",
+			TRUE ~ "retrieval test starts from the broad recommendation and must find the retained contradiction packet, recompute evidence, stale injection, negative control, duplicate classification, and rollback proof"
+		),
+		reopen_drill_evidence_retention_expiry_rule = case_when(
+			close_scope == "CI wait decision" ~ "expire or supersede when CI runner/browser, wait-policy, startup-wait, typing-delay, input-mode, branch-count, script, or raw-artifact schema changes without a refreshed retained packet",
+			close_scope == "source prototype decision" ~ "expire or supersede when selector graph, dispatch path, invalidation fanout, behavior fixture, source patch, owner-review status, script, or raw-artifact schema changes without a refreshed retained packet",
+			close_scope == "benchmark method wording" ~ "expire or supersede when trace schema, EventDispatch interpretation, aggregation window, instrumentation patch, browser/Playwright version, script, or raw-artifact schema changes without a refreshed retained packet",
+			TRUE ~ "expire or supersede when browser/runtime, OS/container, hardware/QoS, workload, endpoint, plugin set, script, or raw-artifact schema changes without a refreshed retained packet"
+		),
+		reopen_drill_evidence_retention_access_policy = case_when(
+			reopen_drill_evidence_retention_state == "local packet reopen-drill evidence retention" ~ "local consumers may read retained evidence; writes require regenerating the packet, integrity hashes, stale-row scan, and consumer-path snapshot together",
+			reopen_drill_evidence_retention_state == "owner artifact reopen-drill evidence retention" ~ "owner consumers and reviewers may read retained evidence; writes require regenerating the packet, integrity hashes, stale-row scan, reviewer-visible status, and consumer-path snapshot together",
+			TRUE ~ "observer consumers, reviewers, and broad-scope owners may read retained evidence; writes require regenerating the packet, integrity hashes, stale-row scan, broad wording status, and consumer-path snapshot together"
+		),
+		reopen_drill_evidence_retention_supersession_rule = case_when(
+			reopen_drill_evidence_retention_state == "local packet reopen-drill evidence retention" ~ "a newer local retained packet supersedes the old one only if it preserves the old id, old hashes, supersession reason, consumer notice, and rollback pointer",
+			reopen_drill_evidence_retention_state == "owner artifact reopen-drill evidence retention" ~ "a newer owner retained packet supersedes the old one only if it preserves the old id, old hashes, reviewer-visible supersession reason, consumer notice, and rollback pointer",
+			TRUE ~ "a newer observer retained packet supersedes the old one only if it preserves the old id, old hashes, broad-scope supersession reason, reviewer-visible status, consumer notice, and rollback pointer"
+		),
+		reopen_drill_evidence_retention_orphan_guard = case_when(
+			close_scope == "CI wait decision" ~ "orphan guard fails if any CI wait-policy recommendation cites a reopened or closed row whose retained verification bundle cannot be reached from the artifact index",
+			close_scope == "source prototype decision" ~ "orphan guard fails if any source optimization recommendation cites a reopened or closed row whose retained verification bundle cannot be reached from the artifact index",
+			close_scope == "benchmark method wording" ~ "orphan guard fails if any benchmark-method recommendation cites a reopened or closed row whose retained verification bundle cannot be reached from the artifact index",
+			TRUE ~ "orphan guard fails if any broad recommendation cites a reopened or closed row whose retained verification bundle cannot be reached from the artifact index"
+		),
+		reopen_drill_evidence_retention_owner = reopen_drill_verification_owner,
+		reopen_drill_evidence_retention_consumer = reopen_drill_verification_consumer,
+		reopen_drill_evidence_retention_cost = case_when(
+			reopen_drill_evidence_retention_state == "local packet reopen-drill evidence retention" ~ 15,
+			reopen_drill_evidence_retention_state == "owner artifact reopen-drill evidence retention" ~ 17,
+			TRUE ~ 19
+		),
+		reopen_drill_evidence_retention_value = pmax(
+			1,
+			reopen_drill_verification_value + reopen_drill_verification_false_confidence_risk_value + closure_reopen_drill_missed_reopen_risk_value - reopen_drill_evidence_retention_cost
+		),
+		reopen_drill_evidence_loss_risk_value = pmax(
+			1,
+			reopen_drill_verification_false_confidence_risk_value + closure_reopen_drill_missed_reopen_risk_value + closure_monitoring_reopen_risk_value - reopen_drill_evidence_retention_cost
+		),
+		timing_only_reopen_drill_evidence_retention_value = 0,
+		analysis_only_value = 0,
+		reopen_drill_evidence_retention_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(reopen_drill_evidence_retention_value), desc(reopen_drill_evidence_loss_risk_value), question_family)
+
+open_question_reopen_drill_evidence_retention_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"manifest", "What retained manifest names every verification artifact?",
+	"storage", "Where is the retained evidence stored?",
+	"replay", "What command or procedure replays the verification?",
+	"integrity", "What integrity checks detect drift or tampering?",
+	"retrieval", "Can the consumer path retrieve the retained packet?",
+	"expiry", "When does retained evidence expire or require supersession?",
+	"access", "Who may read or mutate retained evidence?",
+	"supersession", "How is retained evidence superseded without orphaning old claims?",
+	"substitute", "Can aggregate timing alone substitute for retained evidence?",
+	"stop-rule", "When does evidence-retention review stop?"
+)
+
+open_question_reopen_drill_evidence_retention_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_evidence_retention_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_evidence_retention_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_reopen_drill_evidence_retention_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_reopen_drill_evidence_retention_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		reopen_drill_evidence_retention_first_seen = !duplicated(reopen_drill_evidence_retention_id),
+		reopen_drill_evidence_retention_axis_key = paste(reopen_drill_evidence_retention_id, pressure_axis, sep = "::"),
+		reopen_drill_evidence_retention_axis_first_seen = !duplicated(reopen_drill_evidence_retention_axis_key),
+		reopen_drill_evidence_retention_state_first_seen = !duplicated(reopen_drill_evidence_retention_state),
+		reopen_drill_evidence_retention_owner_first_seen = !duplicated(reopen_drill_evidence_retention_owner),
+		reopen_drill_evidence_retention_consumer_first_seen = !duplicated(reopen_drill_evidence_retention_consumer),
+		new_reopen_drill_evidence_retention_value = if_else(reopen_drill_evidence_retention_first_seen, reopen_drill_evidence_retention_value, 0),
+		new_reopen_drill_evidence_loss_risk_value = if_else(reopen_drill_evidence_retention_first_seen, reopen_drill_evidence_loss_risk_value, 0),
+		new_timing_only_reopen_drill_evidence_retention_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!reopen_drill_evidence_retention_axis_first_seen ~ "repeat: reopen-drill-evidence-retention-axis already checked",
+			reopen_drill_evidence_retention_state == "local packet reopen-drill evidence retention" ~ "reopen-drill evidence retention: local packet",
+			TRUE ~ "reopen-drill evidence retention: owner or observer artifact"
+		),
+		cumulative_reopen_drill_evidence_retention_records = cumsum(reopen_drill_evidence_retention_first_seen),
+		cumulative_reopen_drill_evidence_retention_axes = cumsum(reopen_drill_evidence_retention_axis_first_seen),
+		cumulative_reopen_drill_evidence_retention_states = cumsum(reopen_drill_evidence_retention_state_first_seen),
+		cumulative_reopen_drill_evidence_retention_owners = cumsum(reopen_drill_evidence_retention_owner_first_seen),
+		cumulative_reopen_drill_evidence_retention_consumers = cumsum(reopen_drill_evidence_retention_consumer_first_seen),
+		cumulative_reopen_drill_evidence_retention_value = cumsum(new_reopen_drill_evidence_retention_value),
+		cumulative_reopen_drill_evidence_loss_risk_value = cumsum(new_reopen_drill_evidence_loss_risk_value),
+		cumulative_timing_only_reopen_drill_evidence_retention_value = cumsum(new_timing_only_reopen_drill_evidence_retention_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_reopen_drill_evidence_retention_summary <- open_question_reopen_drill_evidence_retention_100_pass %>%
+	group_by(reopen_drill_evidence_retention_state, reopen_drill_verification_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		reopen_drill_evidence_retention_records = n_distinct(reopen_drill_evidence_retention_id),
+		axis_checks = sum(reopen_drill_evidence_retention_axis_first_seen),
+		reopen_drill_evidence_retention_owners = n_distinct(reopen_drill_evidence_retention_owner),
+		reopen_drill_evidence_retention_consumers = n_distinct(reopen_drill_evidence_retention_consumer),
+		reopen_drill_evidence_retention_value = sum(new_reopen_drill_evidence_retention_value),
+		reopen_drill_evidence_loss_risk_value = sum(new_reopen_drill_evidence_loss_risk_value),
+		timing_only_reopen_drill_evidence_retention_value = sum(new_timing_only_reopen_drill_evidence_retention_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(reopen_drill_evidence_retention_value), desc(reopen_drill_evidence_loss_risk_value), first_pass)
+
+open_question_reopen_drill_evidence_retention_checkpoints <- open_question_reopen_drill_evidence_retention_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_reopen_drill_evidence_retention_records,
+		cumulative_reopen_drill_evidence_retention_axes,
+		cumulative_reopen_drill_evidence_retention_states,
+		cumulative_reopen_drill_evidence_retention_owners,
+		cumulative_reopen_drill_evidence_retention_consumers,
+		cumulative_reopen_drill_evidence_retention_value,
+		cumulative_reopen_drill_evidence_loss_risk_value,
+		cumulative_timing_only_reopen_drill_evidence_retention_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_reopen_drill_evidence_retention_register,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-evidence-retention-register.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_evidence_retention_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			reopen_drill_evidence_retention_state,
+			reopen_drill_verification_state,
+			reopen_drill_evidence_retention_manifest,
+			reopen_drill_evidence_retention_storage_location,
+			reopen_drill_evidence_retention_replay_command,
+			reopen_drill_evidence_retention_integrity_check,
+			reopen_drill_evidence_retention_retrieval_test,
+			reopen_drill_evidence_retention_expiry_rule,
+			reopen_drill_evidence_retention_access_policy,
+			reopen_drill_evidence_retention_supersession_rule,
+			reopen_drill_evidence_retention_orphan_guard,
+			reopen_drill_evidence_retention_owner,
+			reopen_drill_evidence_retention_consumer,
+			reopen_drill_verification_evidence_bundle,
+			reopen_drill_verification_independent_recompute,
+			reopen_drill_verification_stale_artifact_injection,
+			reopen_drill_verification_negative_control,
+			reopen_drill_verification_idempotence_rule,
+			reopen_drill_verification_consumer_path_check,
+			reopen_drill_verification_failure_reproduction,
+			reopen_drill_verification_signoff_gate,
+			closure_reopen_drill_contradiction_packet,
+			closure_reopen_drill_rollback_check,
+			supported_claim,
+			blocked_claim,
+			reopen_drill_evidence_retention_first_seen,
+			reopen_drill_evidence_retention_axis_first_seen,
+			reopen_drill_evidence_retention_state_first_seen,
+			reopen_drill_evidence_retention_owner_first_seen,
+			reopen_drill_evidence_retention_consumer_first_seen,
+			pass_result,
+			reopen_drill_evidence_retention_value,
+			reopen_drill_evidence_loss_risk_value,
+			timing_only_reopen_drill_evidence_retention_value,
+			new_reopen_drill_evidence_retention_value,
+			new_reopen_drill_evidence_loss_risk_value,
+			new_timing_only_reopen_drill_evidence_retention_value,
+			new_analysis_only_value,
+			cumulative_reopen_drill_evidence_retention_records,
+			cumulative_reopen_drill_evidence_retention_axes,
+			cumulative_reopen_drill_evidence_retention_states,
+			cumulative_reopen_drill_evidence_retention_owners,
+			cumulative_reopen_drill_evidence_retention_consumers,
+			cumulative_reopen_drill_evidence_retention_value,
+			cumulative_reopen_drill_evidence_loss_risk_value,
+			cumulative_timing_only_reopen_drill_evidence_retention_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-evidence-retention-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_evidence_retention_summary,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-evidence-retention-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_evidence_retention_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-evidence-retention-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_reopen_drill_evidence_retention_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, reopen_drill_evidence_retention_value)
+		) %>%
+		ggplot(aes(reopen_drill_evidence_retention_value, question_label, fill = reopen_drill_evidence_retention_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set3", name = "Retention") +
+		labs(
+			title = "Reopen-drill evidence retention keeps verified stale-closure proofs replayable",
+			subtitle = "Each row names manifest, storage, replay, integrity, retrieval, expiry, access, supersession, orphan guard, owner, and consumer",
+			x = "Reopen-drill-evidence-retention value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"456-open-question-reopen-drill-evidence-retention-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_reopen_drill_evidence_retention_saturation_long <- open_question_reopen_drill_evidence_retention_100_pass %>%
+	select(
+		pass_id,
+		`reopen-drill-evidence-retention records` = cumulative_reopen_drill_evidence_retention_records,
+		`reopen-drill-evidence-retention axes` = cumulative_reopen_drill_evidence_retention_axes,
+		`reopen-drill-evidence-retention states` = cumulative_reopen_drill_evidence_retention_states,
+		`reopen-drill-evidence-retention owners` = cumulative_reopen_drill_evidence_retention_owners,
+		`reopen-drill-evidence-retention consumers` = cumulative_reopen_drill_evidence_retention_consumers,
+		`reopen-drill-evidence-retention value` = cumulative_reopen_drill_evidence_retention_value,
+		`reopen-drill-evidence-loss risk value` = cumulative_reopen_drill_evidence_loss_risk_value,
+		`timing-only reopen-drill-evidence-retention value` = cumulative_timing_only_reopen_drill_evidence_retention_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("reopen-drill-evidence-retention records", "reopen-drill-evidence-retention axes", "reopen-drill-evidence-retention states", "reopen-drill-evidence-retention owners", "reopen-drill-evidence-retention consumers", "reopen-drill-evidence-retention value", "reopen-drill-evidence-loss risk value", "timing-only reopen-drill-evidence-retention value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_reopen_drill_evidence_retention_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Reopen-drill-evidence-retention audit saturates once every retained proof path is covered",
+			subtitle = "Nine retention records appear by pass 9; all 90 axes appear by pass 90; timing-only retention value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"457-open-question-reopen-drill-evidence-retention-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_reopen_drill_evidence_retention_summary %>%
+		mutate(
+			state_label = str_wrap(reopen_drill_evidence_retention_state, width = 28),
+			state_label = fct_reorder(state_label, reopen_drill_evidence_retention_value + reopen_drill_evidence_loss_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Reopen-drill-evidence-retention coverage separates local retained evidence from owner and observer retained evidence",
+			subtitle = "Every row is checked for manifest, storage, replay, integrity, retrieval, expiry, access, supersession, substitute, and stop rule",
+			x = "Reopen-drill-evidence-retention-axis checks",
+			y = "Reopen-drill-evidence-retention state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"458-open-question-reopen-drill-evidence-retention-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

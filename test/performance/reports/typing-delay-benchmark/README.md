@@ -2199,6 +2199,27 @@ The R script derives:
     reopen-drill-verification-value,
     reopen-drill-verification-false-confidence-risk-value,
     timing-only-reopen-drill-verification, and analysis-only saturation.
+-   `data/typing-delay-open-question-reopen-drill-evidence-retention-register.csv`:
+    reopen-drill-evidence-retention register for the nine
+    reopen-drill-verification records, including manifest, storage location,
+    replay command, integrity check, retrieval test, expiry rule, access
+    policy, supersession rule, orphan guard, owner, and consumer.
+-   `data/typing-delay-open-question-reopen-drill-evidence-retention-100-pass-audit.csv`:
+    fifty-eighth forced 100-pass audit over reopen-drill-evidence-retention
+    axes: manifest, storage, replay, integrity, retrieval, expiry, access,
+    supersession, substitute, and stop-rule.
+-   `data/typing-delay-open-question-reopen-drill-evidence-retention-100-pass-summary.csv`:
+    rollup of reopen-drill-evidence-retention coverage by retention state,
+    reopen-drill-verification state, and pass result.
+-   `data/typing-delay-open-question-reopen-drill-evidence-retention-100-pass-checkpoints.csv`:
+    checkpoints for reopen-drill-evidence-retention-record,
+    reopen-drill-evidence-retention-axis,
+    reopen-drill-evidence-retention-state,
+    reopen-drill-evidence-retention-owner,
+    reopen-drill-evidence-retention-consumer,
+    reopen-drill-evidence-retention-value,
+    reopen-drill-evidence-loss-risk-value,
+    timing-only-reopen-drill-evidence-retention, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -13157,6 +13178,40 @@ recommendation. A verified reopen drill must pass an independent recompute,
 block an injected stale artifact, keep the negative control closed, dedupe the
 same contradiction, update the consumer path, and fail to reproduce the old
 stale conclusion.
+
+I then added the reopen-drill-evidence-retention layer: verified reopen evidence
+must remain findable and replayable after the report changes. The retention
+record names the manifest, storage location, replay command, integrity check,
+retrieval test, expiry rule, access policy, supersession rule, orphan guard,
+owner, and consumer for each reopen-drill-verification row.
+
+![Open question reopen drill evidence retention register](figures/456-open-question-reopen-drill-evidence-retention-register.png)
+
+![Open question reopen drill evidence retention 100-pass saturation](figures/457-open-question-reopen-drill-evidence-retention-100-pass-saturation.png)
+
+![Open question reopen drill evidence retention coverage](figures/458-open-question-reopen-drill-evidence-retention-coverage.png)
+
+| Reopen-drill-evidence-retention check | Result |
+| ------------------------------------- | ------ |
+| Reopen-drill-evidence-retention records | `9`, one per reopen-drill-verification record. |
+| Reopen-drill-evidence-retention states | `3`: local packet reopen-drill evidence retention, owner artifact reopen-drill evidence retention, and observer artifact reopen-drill evidence retention. |
+| Reopen-drill-evidence-retention owners | `9`; retention ownership routes back to the scoped verification owner. |
+| Reopen-drill-evidence-retention consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Reopen-drill-evidence-retention-axis checks | `90`: every row checked against all `10` reopen-drill-evidence-retention axes. |
+| Reopen-drill-evidence-retention value | `11439383258589`: local packet retention contributes `8643528882958`, owner artifact retention contributes `1728283824254`, and observer artifact retention contributes `1067570551377`. |
+| Reopen-drill-evidence-loss-risk value | `6219341718124` across the nine reopen-drill-evidence-retention records. |
+| Timing-only reopen-drill-evidence-retention value | `0`; aggregate timing movement alone cannot prove the manifest, storage location, replay command, integrity check, retrieval test, expiry rule, access policy, supersession rule, orphan guard, or stop rule. |
+| Saturation | Reopen-drill-evidence-retention records are all named by pass `9`; all reopen-drill-evidence-retention axes are covered by pass `90`; passes `91-100` add no reopen-drill-evidence-retention coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the replayability guard for closed questions. It catches the case where
+a verification was valid when written but later cannot be audited because raw
+artifacts were lost, hashes drifted, the replay command no longer names the
+right script and inputs, the consumer path cannot find the packet, or a newer
+packet superseded it without preserving the old rollback pointer. A retained
+verification bundle must be reachable from the recommendation it supports,
+hash-checkable against the generated CSVs/figures/report section, replayable
+from the named raw artifacts, and superseded without orphaning the prior claim.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
