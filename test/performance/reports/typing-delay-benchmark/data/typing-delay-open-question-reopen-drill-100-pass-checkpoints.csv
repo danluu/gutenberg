@@ -1,0 +1,10 @@
+pass_id,cumulative_reopen_drill_records,cumulative_reopen_drill_axes,cumulative_reopen_drill_states,cumulative_reopen_drill_owners,cumulative_reopen_drill_consumers,cumulative_reopen_drill_value,cumulative_reopen_drill_missed_reopen_risk_value,cumulative_timing_only_reopen_drill_value,cumulative_analysis_only_value
+1,1,1,1,1,1,114108786,37871401,0,0
+5,5,5,2,5,4,460287337,152764101,0,0
+9,9,9,3,9,8,547671109,181765764,0,0
+10,9,10,3,9,8,547671109,181765764,0,0
+20,9,20,3,9,8,547671109,181765764,0,0
+50,9,50,3,9,8,547671109,181765764,0,0
+90,9,90,3,9,8,547671109,181765764,0,0
+91,9,90,3,9,8,547671109,181765764,0,0
+100,9,90,3,9,8,547671109,181765764,0,0

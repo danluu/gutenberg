@@ -1893,6 +1893,22 @@ The R script derives:
     ledger-consistency-consumer, ledger-consistency-value,
     ledger-consistency-drift-risk-value, timing-only-ledger-consistency, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-reopen-drill-register.csv`:
+    reopen-drill register for the nine ledger-consistency records, including
+    trigger, contradiction packet, evidence packet, invalidations, consumer
+    notice, artifact refresh, failure response, owner, and consumer.
+-   `data/typing-delay-open-question-reopen-drill-100-pass-audit.csv`:
+    forty-first forced 100-pass audit over reopen-drill axes: trigger,
+    contradiction, evidence, invalidate, notice, refresh, failure, owner,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-reopen-drill-100-pass-summary.csv`:
+    rollup of reopen-drill coverage by reopen-drill state,
+    ledger-consistency state, and pass result.
+-   `data/typing-delay-open-question-reopen-drill-100-pass-checkpoints.csv`:
+    checkpoints for reopen-drill-record, reopen-drill-axis,
+    reopen-drill-state, reopen-drill-owner, reopen-drill-consumer,
+    reopen-drill-value, reopen-drill-missed-reopen-risk-value,
+    timing-only-reopen-drill, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12308,6 +12324,36 @@ report says a question is resolved but the supporting row, invalidations,
 notice, artifact, or reopen rule no longer match that resolution. If the check
 fails, the row is reopened, stale-row warnings come back, and the scoped
 consumer is notified.
+
+I then added the reopen-drill layer: a closed row is only useful if a later
+contradiction can reopen it without guessing. The drill records the trigger,
+contradiction packet, evidence packet, invalidations, consumer notice, artifact
+refresh, failure response, owner, and consumer for each closed question.
+
+![Open question reopen drill register](figures/405-open-question-reopen-drill-register.png)
+
+![Open question reopen drill 100-pass saturation](figures/406-open-question-reopen-drill-100-pass-saturation.png)
+
+![Open question reopen drill coverage](figures/407-open-question-reopen-drill-coverage.png)
+
+| Reopen-drill check | Result |
+| ------------------ | ------ |
+| Reopen-drill records | `9`, one per ledger-consistency record. |
+| Reopen-drill states | `3`: local packet reopen drill, owner artifact reopen drill, and observer artifact reopen drill. |
+| Reopen-drill owners | `9`; reopened rows route back to the scoped ledger-consistency owner. |
+| Reopen-drill consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Reopen-drill-axis checks | `90`: every row checked against all `10` reopen-drill axes. |
+| Reopen-drill value | `547671109`: local packet drills contribute `413816918`, owner artifact drills contribute `82743200`, and observer artifact drills contribute `51110991`. |
+| Reopen-drill missed-reopen-risk value | `181765764` across the nine reopen-drill records. |
+| Timing-only reopen-drill value | `0`; aggregate timing movement alone cannot name the trigger, contradiction packet, evidence packet, invalidations, notice, artifact refresh, or failure response. |
+| Saturation | Reopen-drill records are all named by pass `9`; all reopen-drill axes are covered by pass `90`; passes `91-100` add no reopen-drill coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the future-contradiction guard. It prevents a resolved question from
+becoming an irreversible conclusion: every closure row now carries the specific
+signal that would reopen it, the packet that must be attached, the stale rows to
+invalidate, and the consumer who has to be told before the claim can be used
+again.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

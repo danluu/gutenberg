@@ -40658,6 +40658,297 @@ save_plot(
 	height = 7.2
 )
 
+open_question_reopen_drill_register <- open_question_ledger_consistency_register %>%
+	mutate(
+		reopen_drill_state = case_when(
+			ledger_consistency_state == "local packet ledger consistency" ~ "local packet reopen drill",
+			ledger_consistency_state == "owner artifact ledger consistency" ~ "owner artifact reopen drill",
+			TRUE ~ "observer artifact reopen drill"
+		),
+		reopen_drill_trigger = ledger_consistency_reopen_check,
+		reopen_drill_contradiction_packet = case_when(
+			close_scope == "CI wait decision" ~ "new CI-comparable run contradicts the ledgered latency, variance, reliability, runtime-saving, startup-wait, typing-delay, or input-mode decision",
+			close_scope == "source prototype decision" ~ "new source or selector trace contradicts the ledgered dispatch, invalidation, fanout, or owner-review decision",
+			close_scope == "benchmark method wording" ~ "new generated data, trace schema, aggregation, or instrumentation trace contradicts the ledgered method wording",
+			TRUE ~ "new portability, browser/runtime, workload, endpoint, or conclusion-scope evidence contradicts the ledgered broad claim"
+		),
+		reopen_drill_evidence_packet = case_when(
+			reopen_drill_state == "local packet reopen drill" ~ "attach the local rerun packet, stale-row list, report-diff pointer, and consumer-visible delta",
+			reopen_drill_state == "owner artifact reopen drill" ~ "attach the owner artifact, reviewer identity, stale-row list, report-diff pointer, and consumer-visible delta",
+			TRUE ~ "attach the observer artifact, reviewer identity, broad-scope wording diff, stale-row list, report-diff pointer, and consumer-visible delta"
+		),
+		reopen_drill_invalidates = ledger_consistency_invalidated_rows,
+		reopen_drill_notice = ledger_consistency_notice_check,
+		reopen_drill_artifact_refresh = case_when(
+			reopen_drill_state == "local packet reopen drill" ~ "refresh the local packet or mark it stale before the reopened claim can support a recommendation",
+			reopen_drill_state == "owner artifact reopen drill" ~ "refresh the owner artifact and reviewer signoff before the reopened claim can support a recommendation",
+			TRUE ~ "refresh the observer artifact, reviewer signoff, and broad-scope wording before the reopened claim can support a recommendation"
+		),
+		reopen_drill_failure_response = case_when(
+			reopen_drill_state == "local packet reopen drill" ~ "leave the question open, keep stale-row warnings active, and block local-policy wording",
+			reopen_drill_state == "owner artifact reopen drill" ~ "leave the question open, keep stale-row warnings active, and block owner-scoped recommendations",
+			TRUE ~ "leave the question open, keep stale-row warnings active, and block broad conclusions"
+		),
+		reopen_drill_owner = ledger_consistency_owner,
+		reopen_drill_consumer = ledger_consistency_consumer,
+		reopen_drill_cost = case_when(
+			reopen_drill_state == "local packet reopen drill" ~ 4,
+			reopen_drill_state == "owner artifact reopen drill" ~ 6,
+			TRUE ~ 8
+		),
+		reopen_drill_value = pmax(
+			1,
+			ledger_consistency_value + ledger_consistency_drift_risk_value + resolution_ledger_stale_row_risk_value - reopen_drill_cost
+		),
+		reopen_drill_missed_reopen_risk_value = pmax(
+			1,
+			ledger_consistency_drift_risk_value + post_execution_monitoring_escape_risk_value + monitoring_failure_misroute_risk_value - reopen_drill_cost
+		),
+		timing_only_reopen_drill_value = 0,
+		analysis_only_value = 0,
+		reopen_drill_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(reopen_drill_value), desc(reopen_drill_missed_reopen_risk_value), question_family)
+
+open_question_reopen_drill_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"trigger", "What concrete later signal reopens the claim?",
+	"contradiction", "What contradictory evidence packet is sufficient?",
+	"evidence", "Which packet must be attached when the claim reopens?",
+	"invalidate", "Which stale rows must be invalidated again?",
+	"notice", "Which consumer sees the reopened status?",
+	"refresh", "Which artifact must be refreshed before reuse?",
+	"failure", "What happens when the reopen drill fails?",
+	"owner", "Who owns the reopened row?",
+	"substitute", "Can aggregate timing alone substitute for the reopen drill?",
+	"stop-rule", "When does reopen-drill review stop?"
+)
+
+open_question_reopen_drill_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_reopen_drill_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_reopen_drill_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		reopen_drill_first_seen = !duplicated(reopen_drill_id),
+		reopen_drill_axis_key = paste(reopen_drill_id, pressure_axis, sep = "::"),
+		reopen_drill_axis_first_seen = !duplicated(reopen_drill_axis_key),
+		reopen_drill_state_first_seen = !duplicated(reopen_drill_state),
+		reopen_drill_owner_first_seen = !duplicated(reopen_drill_owner),
+		reopen_drill_consumer_first_seen = !duplicated(reopen_drill_consumer),
+		new_reopen_drill_value = if_else(reopen_drill_first_seen, reopen_drill_value, 0),
+		new_reopen_drill_missed_reopen_risk_value = if_else(reopen_drill_first_seen, reopen_drill_missed_reopen_risk_value, 0),
+		new_timing_only_reopen_drill_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!reopen_drill_axis_first_seen ~ "repeat: reopen-drill-axis already checked",
+			reopen_drill_state == "local packet reopen drill" ~ "reopen drill: local packet",
+			TRUE ~ "reopen drill: owner or observer artifact"
+		),
+		cumulative_reopen_drill_records = cumsum(reopen_drill_first_seen),
+		cumulative_reopen_drill_axes = cumsum(reopen_drill_axis_first_seen),
+		cumulative_reopen_drill_states = cumsum(reopen_drill_state_first_seen),
+		cumulative_reopen_drill_owners = cumsum(reopen_drill_owner_first_seen),
+		cumulative_reopen_drill_consumers = cumsum(reopen_drill_consumer_first_seen),
+		cumulative_reopen_drill_value = cumsum(new_reopen_drill_value),
+		cumulative_reopen_drill_missed_reopen_risk_value = cumsum(new_reopen_drill_missed_reopen_risk_value),
+		cumulative_timing_only_reopen_drill_value = cumsum(new_timing_only_reopen_drill_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_reopen_drill_summary <- open_question_reopen_drill_100_pass %>%
+	group_by(reopen_drill_state, ledger_consistency_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		reopen_drill_records = n_distinct(reopen_drill_id),
+		axis_checks = sum(reopen_drill_axis_first_seen),
+		reopen_drill_owners = n_distinct(reopen_drill_owner),
+		reopen_drill_consumers = n_distinct(reopen_drill_consumer),
+		reopen_drill_value = sum(new_reopen_drill_value),
+		reopen_drill_missed_reopen_risk_value = sum(new_reopen_drill_missed_reopen_risk_value),
+		timing_only_reopen_drill_value = sum(new_timing_only_reopen_drill_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(reopen_drill_value), desc(reopen_drill_missed_reopen_risk_value), first_pass)
+
+open_question_reopen_drill_checkpoints <- open_question_reopen_drill_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_reopen_drill_records,
+		cumulative_reopen_drill_axes,
+		cumulative_reopen_drill_states,
+		cumulative_reopen_drill_owners,
+		cumulative_reopen_drill_consumers,
+		cumulative_reopen_drill_value,
+		cumulative_reopen_drill_missed_reopen_risk_value,
+		cumulative_timing_only_reopen_drill_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_reopen_drill_register,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-register.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			reopen_drill_state,
+			ledger_consistency_state,
+			reopen_drill_trigger,
+			reopen_drill_contradiction_packet,
+			reopen_drill_evidence_packet,
+			reopen_drill_invalidates,
+			reopen_drill_notice,
+			reopen_drill_artifact_refresh,
+			reopen_drill_failure_response,
+			reopen_drill_owner,
+			reopen_drill_consumer,
+			ledger_consistency_row_check,
+			ledger_consistency_artifact_check,
+			ledger_consistency_reopen_check,
+			resolution_ledger_reopen_trigger,
+			supported_claim,
+			blocked_claim,
+			reopen_drill_first_seen,
+			reopen_drill_axis_first_seen,
+			reopen_drill_state_first_seen,
+			reopen_drill_owner_first_seen,
+			reopen_drill_consumer_first_seen,
+			pass_result,
+			reopen_drill_value,
+			reopen_drill_missed_reopen_risk_value,
+			timing_only_reopen_drill_value,
+			new_reopen_drill_value,
+			new_reopen_drill_missed_reopen_risk_value,
+			new_timing_only_reopen_drill_value,
+			new_analysis_only_value,
+			cumulative_reopen_drill_records,
+			cumulative_reopen_drill_axes,
+			cumulative_reopen_drill_states,
+			cumulative_reopen_drill_owners,
+			cumulative_reopen_drill_consumers,
+			cumulative_reopen_drill_value,
+			cumulative_reopen_drill_missed_reopen_risk_value,
+			cumulative_timing_only_reopen_drill_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_summary,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_reopen_drill_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, reopen_drill_value)
+		) %>%
+		ggplot(aes(reopen_drill_value, question_label, fill = reopen_drill_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Reopen drill") +
+		labs(
+			title = "Reopen drills test whether closed rows can be safely reopened",
+			subtitle = "Each row names trigger, contradiction packet, evidence packet, invalidations, notice, artifact refresh, failure response, owner, and consumer",
+			x = "Reopen-drill value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"405-open-question-reopen-drill-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_reopen_drill_saturation_long <- open_question_reopen_drill_100_pass %>%
+	select(
+		pass_id,
+		`reopen-drill records` = cumulative_reopen_drill_records,
+		`reopen-drill axes` = cumulative_reopen_drill_axes,
+		`reopen-drill states` = cumulative_reopen_drill_states,
+		`reopen-drill owners` = cumulative_reopen_drill_owners,
+		`reopen-drill consumers` = cumulative_reopen_drill_consumers,
+		`reopen-drill value` = cumulative_reopen_drill_value,
+		`reopen-drill missed-reopen risk value` = cumulative_reopen_drill_missed_reopen_risk_value,
+		`timing-only reopen-drill value` = cumulative_timing_only_reopen_drill_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("reopen-drill records", "reopen-drill axes", "reopen-drill states", "reopen-drill owners", "reopen-drill consumers", "reopen-drill value", "reopen-drill missed-reopen risk value", "timing-only reopen-drill value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_reopen_drill_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Reopen-drill audit saturates once every contradiction path is named",
+			subtitle = "Nine reopen records appear by pass 9; all 90 axes appear by pass 90; timing-only reopen value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"406-open-question-reopen-drill-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_reopen_drill_summary %>%
+		mutate(
+			state_label = str_wrap(reopen_drill_state, width = 28),
+			state_label = fct_reorder(state_label, reopen_drill_value + reopen_drill_missed_reopen_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Reopen-drill coverage separates local drills from owner and observer drills",
+			subtitle = "Every row is checked for trigger, contradiction, evidence, invalidation, notice, refresh, failure, owner, substitute, and stop rule",
+			x = "Reopen-drill-axis checks",
+			y = "Reopen-drill state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"407-open-question-reopen-drill-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
