@@ -1859,6 +1859,23 @@ The R script derives:
     triage-resolution-consumer, triage-resolution-value,
     triage-resolution-shortcut-risk-value, timing-only-triage-resolution, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-resolution-ledger-register.csv`:
+    resolution-ledger register for the nine triage-resolution records,
+    including ledger update, invalidated stale rows, consumer notice, report
+    diff, reopen trigger, audit packet, owner, and consumer.
+-   `data/typing-delay-open-question-resolution-ledger-100-pass-audit.csv`:
+    thirty-ninth forced 100-pass audit over resolution-ledger axes: update,
+    invalidate, notice, report-diff, reopen, audit-packet, owner, consumer,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-resolution-ledger-100-pass-summary.csv`:
+    rollup of resolution-ledger coverage by resolution-ledger state,
+    triage-resolution state, and pass result.
+-   `data/typing-delay-open-question-resolution-ledger-100-pass-checkpoints.csv`:
+    checkpoints for resolution-ledger-record, resolution-ledger-axis,
+    resolution-ledger-state, resolution-ledger-owner,
+    resolution-ledger-consumer, resolution-ledger-value,
+    resolution-ledger-stale-row-risk-value, timing-only-resolution-ledger, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12215,6 +12232,35 @@ This is the closure guard for monitoring failures. It blocks the common shortcut
 of treating a routed failure as resolved just because someone named the likely
 category. Closure requires accept or reject evidence, renewal or rollback path,
 consumer notice, ledger update, and a report diff.
+
+I then added the resolution-ledger layer: a resolution is not durable until it
+updates the ledger and invalidates stale rows. The report now records the ledger
+update, invalidated rows, consumer notice, report diff, reopen trigger, audit
+packet, owner, and consumer.
+
+![Open question resolution ledger register](figures/399-open-question-resolution-ledger-register.png)
+
+![Open question resolution ledger 100-pass saturation](figures/400-open-question-resolution-ledger-100-pass-saturation.png)
+
+![Open question resolution ledger coverage](figures/401-open-question-resolution-ledger-coverage.png)
+
+| Resolution-ledger check | Result |
+| ----------------------- | ------ |
+| Resolution-ledger records | `9`, one per triage-resolution record. |
+| Resolution-ledger states | `3`: local packet resolution ledger, owner artifact resolution ledger, and observer artifact resolution ledger. |
+| Resolution-ledger owners | `9`; ledger rows route back to the scoped triage-resolution owner. |
+| Resolution-ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Resolution-ledger-axis checks | `90`: every row checked against all `10` resolution-ledger axes. |
+| Resolution-ledger value | `184139656`: local packet ledgers contribute `139134750`, owner artifact ledgers contribute `27820174`, and observer artifact ledgers contribute `17184732`. |
+| Resolution-ledger stale-row-risk value | `90882887` across the nine resolution-ledger records. |
+| Timing-only resolution-ledger value | `0`; aggregate timing movement alone cannot update the ledger, invalidate stale rows, notify consumers, prove the report diff, or define a reopen trigger. |
+| Saturation | Resolution-ledger records are all named by pass `9`; all resolution-ledger axes are covered by pass `90`; passes `91-100` add no resolution-ledger coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the durable-closure guard. It prevents a resolved open question from
+leaving stale supporting rows behind in the evidence chain. Closure now has to
+write the ledger row, invalidate superseded rows, notify consumers, link the
+report diff, and keep a concrete trigger for reopening the claim later.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

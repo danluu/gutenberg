@@ -1,0 +1,7 @@
+resolution_ledger_state,triage_resolution_state,pass_result,passes,first_pass,resolution_ledger_records,axis_checks,resolution_ledger_owners,resolution_ledger_consumers,resolution_ledger_value,resolution_ledger_stale_row_risk_value,timing_only_resolution_ledger_value,analysis_only_value
+local packet resolution ledger,local packet triage resolution,resolution ledger: local packet,40,1,4,40,4,3,139134750,68670549,0,0
+owner artifact resolution ledger,owner artifact triage resolution,resolution ledger: owner or observer artifact,20,5,2,20,2,2,27820174,13730762,0,0
+observer artifact resolution ledger,observer artifact triage resolution,resolution ledger: owner or observer artifact,30,7,3,30,3,3,17184732,8481576,0,0
+local packet resolution ledger,local packet triage resolution,repeat: resolution-ledger-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact resolution ledger,owner artifact triage resolution,repeat: resolution-ledger-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact resolution ledger,observer artifact triage resolution,repeat: resolution-ledger-axis already checked,3,97,3,0,3,3,0,0,0,0

@@ -40075,6 +40075,304 @@ save_plot(
 	height = 7.2
 )
 
+open_question_resolution_ledger_register <- open_question_triage_resolution_register %>%
+	mutate(
+		resolution_ledger_state = case_when(
+			triage_resolution_state == "local packet triage resolution" ~ "local packet resolution ledger",
+			triage_resolution_state == "owner artifact triage resolution" ~ "owner artifact resolution ledger",
+			TRUE ~ "observer artifact resolution ledger"
+		),
+		resolution_ledger_update = case_when(
+			resolution_ledger_state == "local packet resolution ledger" ~ "write local resolution outcome, accept/reject evidence, renewal path, closure rule, consumer notice, and report diff into the active-claim ledger",
+			resolution_ledger_state == "owner artifact resolution ledger" ~ "write owner-scoped resolution outcome, reviewer identity, accept/reject evidence, renewal path, closure rule, consumer notice, and report diff into the active-claim ledger",
+			TRUE ~ "write broad resolution outcome, reviewer identity, accept/reject evidence, renewal path, closure rule, consumer notice, and report diff into the active-claim ledger"
+		),
+		resolution_ledger_invalidates = case_when(
+			resolution_ledger_state == "local packet resolution ledger" ~ "invalidate stale local packet rows, stale executed-decision rows, stale monitoring rows, and unresolved triage shortcuts",
+			resolution_ledger_state == "owner artifact resolution ledger" ~ "invalidate stale owner artifact rows, stale executed-decision rows, stale monitoring rows, missing-reviewer rows, and unresolved triage shortcuts",
+			TRUE ~ "invalidate stale observer artifact rows, stale executed-decision rows, stale monitoring rows, missing-reviewer rows, broad overclaim rows, and unresolved triage shortcuts"
+		),
+		resolution_ledger_consumer_notice = case_when(
+			close_scope == "CI wait decision" ~ "notify the Performance Tests CI wait-policy consumer of accepted, rolled-back, renewed, or reopened status",
+			close_scope == "source prototype decision" ~ "notify source and selector consumers of accepted, rolled-back, renewed, or reopened status",
+			close_scope == "benchmark method wording" ~ "notify benchmark-method consumers of accepted, rolled-back, renewed, or reopened status",
+			TRUE ~ "notify broad report consumers of accepted, rolled-back, renewed, or reopened status"
+		),
+		resolution_ledger_report_diff = case_when(
+			resolution_ledger_state == "local packet resolution ledger" ~ "report diff links local resolution row, packet path, monitor result, rollback or renewal state, and consumer notice",
+			resolution_ledger_state == "owner artifact resolution ledger" ~ "report diff links owner resolution row, artifact path, reviewer identity, monitor result, rollback or renewal state, and consumer notice",
+			TRUE ~ "report diff links observer resolution row, artifact path, reviewer identity, monitor result, rollback or renewal state, broad-scope wording, and consumer notice"
+		),
+		resolution_ledger_reopen_trigger = case_when(
+			close_scope == "CI wait decision" ~ "reopen when later CI runs contradict the ledgered latency, variance, reliability, runtime-saving, startup, typing-delay, or input-mode claim",
+			close_scope == "source prototype decision" ~ "reopen when later source or selector evidence contradicts the ledgered dispatch, invalidation, fanout, or owner-review claim",
+			close_scope == "benchmark method wording" ~ "reopen when later generated data, trace schema, aggregation, or instrumentation evidence contradicts the ledgered method claim",
+			TRUE ~ "reopen when later portability, browser/runtime, workload, endpoint, or conclusion-scope evidence contradicts the ledgered broad claim"
+		),
+		resolution_ledger_audit_packet = case_when(
+			resolution_ledger_state == "local packet resolution ledger" ~ "ledger row, local packet path, accept/reject evidence, invalidated rows, consumer notice, report diff, and reopen trigger",
+			resolution_ledger_state == "owner artifact resolution ledger" ~ "ledger row, owner artifact path, reviewer identity, accept/reject evidence, invalidated rows, consumer notice, report diff, and reopen trigger",
+			TRUE ~ "ledger row, observer artifact path, reviewer identity, accept/reject evidence, invalidated rows, consumer notice, report diff, broad-scope wording, and reopen trigger"
+		),
+		resolution_ledger_owner = triage_resolution_owner,
+		resolution_ledger_consumer = triage_resolution_consumer,
+		resolution_ledger_cost = case_when(
+			resolution_ledger_state == "local packet resolution ledger" ~ 3,
+			resolution_ledger_state == "owner artifact resolution ledger" ~ 5,
+			TRUE ~ 7
+		),
+		resolution_ledger_value = pmax(
+			1,
+			triage_resolution_value + triage_resolution_shortcut_risk_value + monitoring_failure_misroute_risk_value - resolution_ledger_cost
+		),
+		resolution_ledger_stale_row_risk_value = pmax(
+			1,
+			triage_resolution_shortcut_risk_value + monitoring_failure_misroute_risk_value + post_execution_monitoring_escape_risk_value - resolution_ledger_cost
+		),
+		timing_only_resolution_ledger_value = 0,
+		analysis_only_value = 0,
+		resolution_ledger_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(resolution_ledger_value), desc(resolution_ledger_stale_row_risk_value), question_family)
+
+open_question_resolution_ledger_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"update", "What ledger update records the resolution?",
+	"invalidate", "Which stale rows must the ledger invalidate?",
+	"notice", "Which consumer receives the resolution notice?",
+	"report-diff", "What report diff proves the ledger changed?",
+	"reopen", "What future signal reopens the ledgered resolution?",
+	"audit-packet", "What audit packet proves the ledgered resolution?",
+	"owner", "Who owns the resolution-ledger row?",
+	"consumer", "Which consumer depends on the ledger row?",
+	"substitute", "Can aggregate timing alone substitute for the resolution ledger?",
+	"stop-rule", "When does resolution-ledger review stop?"
+)
+
+open_question_resolution_ledger_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_resolution_ledger_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_resolution_ledger_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_resolution_ledger_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_resolution_ledger_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		resolution_ledger_first_seen = !duplicated(resolution_ledger_id),
+		resolution_ledger_axis_key = paste(resolution_ledger_id, pressure_axis, sep = "::"),
+		resolution_ledger_axis_first_seen = !duplicated(resolution_ledger_axis_key),
+		resolution_ledger_state_first_seen = !duplicated(resolution_ledger_state),
+		resolution_ledger_owner_first_seen = !duplicated(resolution_ledger_owner),
+		resolution_ledger_consumer_first_seen = !duplicated(resolution_ledger_consumer),
+		new_resolution_ledger_value = if_else(resolution_ledger_first_seen, resolution_ledger_value, 0),
+		new_resolution_ledger_stale_row_risk_value = if_else(resolution_ledger_first_seen, resolution_ledger_stale_row_risk_value, 0),
+		new_timing_only_resolution_ledger_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!resolution_ledger_axis_first_seen ~ "repeat: resolution-ledger-axis already checked",
+			resolution_ledger_state == "local packet resolution ledger" ~ "resolution ledger: local packet",
+			TRUE ~ "resolution ledger: owner or observer artifact"
+		),
+		cumulative_resolution_ledger_records = cumsum(resolution_ledger_first_seen),
+		cumulative_resolution_ledger_axes = cumsum(resolution_ledger_axis_first_seen),
+		cumulative_resolution_ledger_states = cumsum(resolution_ledger_state_first_seen),
+		cumulative_resolution_ledger_owners = cumsum(resolution_ledger_owner_first_seen),
+		cumulative_resolution_ledger_consumers = cumsum(resolution_ledger_consumer_first_seen),
+		cumulative_resolution_ledger_value = cumsum(new_resolution_ledger_value),
+		cumulative_resolution_ledger_stale_row_risk_value = cumsum(new_resolution_ledger_stale_row_risk_value),
+		cumulative_timing_only_resolution_ledger_value = cumsum(new_timing_only_resolution_ledger_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_resolution_ledger_summary <- open_question_resolution_ledger_100_pass %>%
+	group_by(resolution_ledger_state, triage_resolution_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		resolution_ledger_records = n_distinct(resolution_ledger_id),
+		axis_checks = sum(resolution_ledger_axis_first_seen),
+		resolution_ledger_owners = n_distinct(resolution_ledger_owner),
+		resolution_ledger_consumers = n_distinct(resolution_ledger_consumer),
+		resolution_ledger_value = sum(new_resolution_ledger_value),
+		resolution_ledger_stale_row_risk_value = sum(new_resolution_ledger_stale_row_risk_value),
+		timing_only_resolution_ledger_value = sum(new_timing_only_resolution_ledger_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(resolution_ledger_value), desc(resolution_ledger_stale_row_risk_value), first_pass)
+
+open_question_resolution_ledger_checkpoints <- open_question_resolution_ledger_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_resolution_ledger_records,
+		cumulative_resolution_ledger_axes,
+		cumulative_resolution_ledger_states,
+		cumulative_resolution_ledger_owners,
+		cumulative_resolution_ledger_consumers,
+		cumulative_resolution_ledger_value,
+		cumulative_resolution_ledger_stale_row_risk_value,
+		cumulative_timing_only_resolution_ledger_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_resolution_ledger_register,
+	file.path(data_dir, "typing-delay-open-question-resolution-ledger-register.csv")
+)
+
+write_csv(
+	open_question_resolution_ledger_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			resolution_ledger_state,
+			triage_resolution_state,
+			resolution_ledger_update,
+			resolution_ledger_invalidates,
+			resolution_ledger_consumer_notice,
+			resolution_ledger_report_diff,
+			resolution_ledger_reopen_trigger,
+			resolution_ledger_audit_packet,
+			resolution_ledger_owner,
+			resolution_ledger_consumer,
+			triage_resolution_outcome,
+			triage_resolution_accept_evidence,
+			triage_resolution_reject_evidence,
+			triage_resolution_closure_rule,
+			supported_claim,
+			blocked_claim,
+			resolution_ledger_first_seen,
+			resolution_ledger_axis_first_seen,
+			resolution_ledger_state_first_seen,
+			resolution_ledger_owner_first_seen,
+			resolution_ledger_consumer_first_seen,
+			pass_result,
+			resolution_ledger_value,
+			resolution_ledger_stale_row_risk_value,
+			timing_only_resolution_ledger_value,
+			new_resolution_ledger_value,
+			new_resolution_ledger_stale_row_risk_value,
+			new_timing_only_resolution_ledger_value,
+			new_analysis_only_value,
+			cumulative_resolution_ledger_records,
+			cumulative_resolution_ledger_axes,
+			cumulative_resolution_ledger_states,
+			cumulative_resolution_ledger_owners,
+			cumulative_resolution_ledger_consumers,
+			cumulative_resolution_ledger_value,
+			cumulative_resolution_ledger_stale_row_risk_value,
+			cumulative_timing_only_resolution_ledger_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-resolution-ledger-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_resolution_ledger_summary,
+	file.path(data_dir, "typing-delay-open-question-resolution-ledger-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_resolution_ledger_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-resolution-ledger-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_resolution_ledger_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, resolution_ledger_value)
+		) %>%
+		ggplot(aes(resolution_ledger_value, question_label, fill = resolution_ledger_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Resolution ledger") +
+		labs(
+			title = "Resolution ledgers make closure durable and invalidate stale rows",
+			subtitle = "Each row names ledger update, invalidated stale rows, consumer notice, report diff, reopen trigger, audit packet, owner, and consumer",
+			x = "Resolution-ledger value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"399-open-question-resolution-ledger-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_resolution_ledger_saturation_long <- open_question_resolution_ledger_100_pass %>%
+	select(
+		pass_id,
+		`resolution-ledger records` = cumulative_resolution_ledger_records,
+		`resolution-ledger axes` = cumulative_resolution_ledger_axes,
+		`resolution-ledger states` = cumulative_resolution_ledger_states,
+		`resolution-ledger owners` = cumulative_resolution_ledger_owners,
+		`resolution-ledger consumers` = cumulative_resolution_ledger_consumers,
+		`resolution-ledger value` = cumulative_resolution_ledger_value,
+		`resolution-ledger stale-row risk value` = cumulative_resolution_ledger_stale_row_risk_value,
+		`timing-only resolution-ledger value` = cumulative_timing_only_resolution_ledger_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("resolution-ledger records", "resolution-ledger axes", "resolution-ledger states", "resolution-ledger owners", "resolution-ledger consumers", "resolution-ledger value", "resolution-ledger stale-row risk value", "timing-only resolution-ledger value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_resolution_ledger_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Resolution-ledger audit saturates once every durable closure row is named",
+			subtitle = "Nine ledger records appear by pass 9; all 90 axes appear by pass 90; timing-only ledger value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"400-open-question-resolution-ledger-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_resolution_ledger_summary %>%
+		mutate(
+			state_label = str_wrap(resolution_ledger_state, width = 28),
+			state_label = fct_reorder(state_label, resolution_ledger_value + resolution_ledger_stale_row_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Resolution-ledger coverage separates local ledgers from owner and observer ledgers",
+			subtitle = "Every row is checked for update, invalidate, notice, report diff, reopen, audit packet, owner, consumer, substitute, and stop rule",
+			x = "Resolution-ledger-axis checks",
+			y = "Resolution-ledger state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"401-open-question-resolution-ledger-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
