@@ -28988,6 +28988,263 @@ if (length(open_question_caveat_disposition_rows) > 0) {
 	)
 }
 
+open_question_100_pass_axes <- tribble(
+	~pressure_axis, ~challenge, ~repeat_failure_mode, ~useful_artifact_class,
+	"decision", "What would change a near-term engineering action?", "Restating the same recommendation without naming the action boundary.", "decision gate",
+	"counterexample", "What counterexample would overturn the current wording?", "Inventing a vague possible failure without a decisive observation.", "falsifier",
+	"triangulation", "What independent artifact would corroborate or conflict?", "Adding another same-harness row where a different observer is required.", "independent artifact",
+	"closure", "What exact field closes the question?", "Treating uncertainty as low sample count when the missing field is absent.", "closing field",
+	"intervention", "What controlled intervention separates mechanisms?", "Changing multiple knobs and calling the result causal.", "controlled intervention",
+	"policy", "What external rule turns an artifact into pass/fail?", "Calling local q50 a policy decision.", "policy join",
+	"tail", "Can q50 survive mean, p90, first-key, or failure vetoes?", "Averaging away retained-tail or first-key caveats.", "tail veto",
+	"source", "Is the source or behavior gate strong enough before timing?", "Using aggregate p50 to prove semantic safety.", "behavior/source gate",
+	"topology", "Does the target runner/spec lane preserve the local result?", "Shipping a local candidate without target-topology checks.", "topology validation",
+	"claim", "Which wording is still blocked by missing observers?", "Broadening a scoped benchmark fact into a product or mechanism claim.", "claim boundary"
+)
+
+open_question_100_pass_question_pool <- open_question_minimum_decisive_artifact %>%
+	select(
+		question_family,
+		artifact_lane,
+		owner,
+		minimum_decisive_artifact,
+		first_field_to_check,
+		pass_condition,
+		fail_condition,
+		waste_to_avoid,
+		mixed_result_action,
+		decision_value,
+		artifact_cost,
+		same_harness_futility,
+		ambiguity_if_missing,
+		artifact_readiness,
+		stop_if_no_trigger
+	) %>%
+	left_join(
+		open_question_residual_uncertainty_budget %>%
+			select(
+				question_family,
+				budget_class,
+				local_reducible_score,
+				external_reducible_score,
+				claim_boundary_score,
+				decision_urgency_score,
+				wrong_action_risk,
+				stop_confidence
+			),
+		by = "question_family"
+	) %>%
+	mutate(
+		evidence_lane = case_when(
+			artifact_lane == "trigger-only" ~ "trigger-only recheck",
+			str_detect(question_family, "Startup|Pattern") ~ "target-topology gate",
+			str_detect(question_family, "Selector") ~ "behavior/source gate",
+			str_detect(question_family, "Store") ~ "compatibility gate",
+			str_detect(question_family, "Runtime|CPU") ~ "sidecar/counter observer",
+			str_detect(question_family, "Product|Input mode") ~ "workload/replay claim",
+			str_detect(question_family, "External display") ~ "external endpoint",
+			str_detect(question_family, "CI pass/fail") ~ "policy join",
+			TRUE ~ "claim-boundary guard"
+		),
+		action_boundary = case_when(
+			str_detect(question_family, "Startup") ~ "can change reporting, not retained-q50 wait",
+			str_detect(question_family, "Pattern") ~ "can change rollout wording after tail/topology policy",
+			str_detect(question_family, "Selector") ~ "can change one guarded prototype after behavior/source gates",
+			str_detect(question_family, "Store") ~ "blocks public data-layer action until compatibility passes",
+			artifact_lane == "trigger-only" ~ "stop unless metric or wording trigger changes",
+			str_detect(question_family, "CI pass/fail") ~ "blocks pass/fail prediction until policy join",
+			TRUE ~ "blocks broader claim, not local benchmark fact"
+		)
+	)
+
+open_question_100_pass_audit <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_100_pass_question_pool)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_100_pass_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_100_pass_question_pool %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_100_pass_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		evidence_requirement_key = paste(evidence_lane, first_field_to_check, sep = " :: "),
+		question_first_seen = !duplicated(question_family),
+		evidence_requirement_first_seen = !duplicated(evidence_requirement_key),
+		lane_first_seen = !duplicated(evidence_lane),
+		same_harness_repeat = same_harness_futility >= 4 & artifact_readiness <= 3,
+		pass_disposition = case_when(
+			stop_if_no_trigger >= 5 & !question_first_seen ~ "stop: trigger-only repeat",
+			same_harness_repeat & !evidence_requirement_first_seen ~ "stop: same-harness repeat",
+			str_detect(question_family, "Startup") ~ "metric split, not startup wait",
+			str_detect(question_family, "Pattern") ~ "candidate: tail/topology gate",
+			str_detect(question_family, "Selector") ~ "prototype only after source gates",
+			str_detect(question_family, "Store") ~ "block until compatibility",
+			str_detect(question_family, "CI pass/fail") ~ "block until policy join",
+			external_reducible_score >= 5 | claim_boundary_score >= 5 ~ "claim expansion only",
+			TRUE ~ "scoped wording only"
+		),
+		marginal_decision_value = case_when(
+			pass_disposition == "candidate: tail/topology gate" & evidence_requirement_first_seen ~ 4,
+			pass_disposition == "prototype only after source gates" & evidence_requirement_first_seen ~ 3,
+			pass_disposition == "metric split, not startup wait" & evidence_requirement_first_seen ~ 2,
+			pass_disposition %in% c("block until compatibility", "block until policy join") & evidence_requirement_first_seen ~ 2,
+			evidence_requirement_first_seen & lane_first_seen ~ 1,
+			TRUE ~ 0
+		),
+		cumulative_question_families = cumsum(question_first_seen),
+		cumulative_evidence_requirements = cumsum(evidence_requirement_first_seen),
+		cumulative_lanes = cumsum(lane_first_seen),
+		cumulative_decision_value = cumsum(marginal_decision_value),
+		pass_label = sprintf("pass %03d", pass_id)
+	)
+
+open_question_100_pass_summary <- open_question_100_pass_audit %>%
+	group_by(evidence_lane, pass_disposition) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		new_evidence_requirements = sum(evidence_requirement_first_seen),
+		marginal_decision_value = sum(marginal_decision_value),
+		max_decision_value = max(decision_value, na.rm = TRUE),
+		median_same_harness_futility = median(same_harness_futility, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(marginal_decision_value), first_pass)
+
+open_question_100_pass_checkpoint <- open_question_100_pass_audit %>%
+	filter(pass_id %in% c(1, 5, 10, 12, 20, 25, 50, 75, 100)) %>%
+	select(
+		pass_id,
+		cumulative_question_families,
+		cumulative_evidence_requirements,
+		cumulative_lanes,
+		cumulative_decision_value
+	)
+
+write_csv(
+	open_question_100_pass_audit %>%
+		select(
+			pass_id,
+			pressure_axis,
+			question_family,
+			evidence_lane,
+			pass_disposition,
+			challenge,
+			minimum_decisive_artifact,
+			first_field_to_check,
+			action_boundary,
+			waste_to_avoid,
+			repeat_failure_mode,
+			useful_artifact_class,
+			question_first_seen,
+			evidence_requirement_first_seen,
+			lane_first_seen,
+			same_harness_repeat,
+			marginal_decision_value,
+			cumulative_question_families,
+			cumulative_evidence_requirements,
+			cumulative_lanes,
+			cumulative_decision_value
+		),
+	file.path(data_dir, "typing-delay-open-question-100-pass-saturation-audit.csv")
+)
+
+write_csv(
+	open_question_100_pass_summary,
+	file.path(data_dir, "typing-delay-open-question-100-pass-saturation-summary.csv")
+)
+
+write_csv(
+	open_question_100_pass_checkpoint,
+	file.path(data_dir, "typing-delay-open-question-100-pass-saturation-checkpoints.csv")
+)
+
+open_question_100_pass_saturation_long <- open_question_100_pass_audit %>%
+	select(
+		pass_id,
+		`question families` = cumulative_question_families,
+		`evidence requirements` = cumulative_evidence_requirements,
+		`evidence lanes` = cumulative_lanes,
+		`decision value` = cumulative_decision_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "saturation_metric",
+		values_to = "cumulative_count"
+	) %>%
+	mutate(
+		saturation_metric = factor(
+			saturation_metric,
+			levels = c("question families", "evidence requirements", "evidence lanes", "decision value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_100_pass_saturation_long, aes(pass_id, cumulative_count, color = saturation_metric)) +
+		geom_point(alpha = 0.82, size = 1.8) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Forced 100-pass analysis saturates quickly without new artifacts",
+			subtitle = "After the distinct evidence requirements are named, additional passes mostly restate blockers or claim boundaries",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"285-open-question-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_100_pass_summary %>%
+		mutate(
+			lane_label = str_wrap(evidence_lane, width = 22),
+			lane_label = fct_reorder(lane_label, marginal_decision_value)
+		) %>%
+		ggplot(aes(marginal_decision_value, lane_label, fill = pass_disposition)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set3", name = "Disposition") +
+		labs(
+			title = "Only target-topology and source gates keep near-term decision value",
+			subtitle = "Most repeated passes are claim-boundary or external-observer work, not more local benchmark sampling",
+			x = "Marginal decision value across 100 forced passes",
+			y = "Evidence lane"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"286-open-question-100-pass-decision-value.png",
+	width = 12.8,
+	height = 8.0
+)
+
+save_plot(
+	open_question_100_pass_summary %>%
+		mutate(
+			disposition_label = str_wrap(pass_disposition, width = 24),
+			disposition_label = fct_reorder(disposition_label, passes)
+		) %>%
+		ggplot(aes(passes, disposition_label, fill = pass_disposition)) +
+		geom_col(width = 0.72, show.legend = FALSE) +
+		scale_fill_brewer(type = "qual", palette = "Paired") +
+		labs(
+			title = "The 100 forced passes mostly sort into stop, block, or claim-expansion buckets",
+			subtitle = "A larger prompt count does not create a new local measurement requirement without a new artifact",
+			x = "Forced passes",
+			y = "Disposition"
+		) +
+		theme_minimal(base_size = 12),
+	"287-open-question-100-pass-disposition-counts.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

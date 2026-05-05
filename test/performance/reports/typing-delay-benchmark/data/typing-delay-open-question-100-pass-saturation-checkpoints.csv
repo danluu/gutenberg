@@ -1,0 +1,10 @@
+pass_id,cumulative_question_families,cumulative_evidence_requirements,cumulative_lanes,cumulative_decision_value
+1,1,1,1,1
+5,5,5,3,3
+10,10,10,6,14
+12,12,12,7,16
+20,12,12,7,16
+25,12,12,7,16
+50,12,12,7,16
+75,12,12,7,16
+100,12,12,7,16

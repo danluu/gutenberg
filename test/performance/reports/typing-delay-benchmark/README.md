@@ -1310,6 +1310,14 @@ The R script derives:
     rollout-gate caveats.
 -   `data/typing-delay-open-question-caveat-disposition-long.csv`: long-form
     caveat pressure scores used for the caveat-disposition heatmap.
+-   `data/typing-delay-open-question-100-pass-saturation-audit.csv`: forced
+    100-pass audit over the remaining question families and adversarial pressure
+    axes, recording whether each pass adds a new evidence requirement, evidence
+    lane, or decision value.
+-   `data/typing-delay-open-question-100-pass-saturation-summary.csv`: rollup of
+    disposition counts and marginal decision value from the 100-pass audit.
+-   `data/typing-delay-open-question-100-pass-saturation-checkpoints.csv`: pass
+    checkpoints showing when the forced audit saturates.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10574,6 +10582,31 @@ current retained-q50 wait recommendation. Pattern p90 can still change rollout
 wording: it may become acceptable if CI/mac/container p90 stays within policy,
 or it may force a readiness predicate or a longer fixed fallback if the target
 topology amplifies the tail.
+
+I also treated the "repeat this 100 times" instruction as a forced saturation
+test. The audit cycles 100 passes across the remaining question families and
+pressure axes: decision, counterexample, triangulation, closure, intervention,
+policy, tail, source, topology, and claim boundary.
+
+![Open question 100-pass saturation](figures/285-open-question-100-pass-saturation.png)
+
+![Open question 100-pass decision value](figures/286-open-question-100-pass-decision-value.png)
+
+![Open question 100-pass disposition counts](figures/287-open-question-100-pass-disposition-counts.png)
+
+| Checkpoint | Result |
+| ---------- | ------ |
+| Pass 12 | All `12` question families and all `12` evidence requirements have been named; cumulative decision value is `16`. |
+| Passes 13-100 | No new evidence requirement, no new evidence lane, and no new decision value. |
+| Highest-value lanes | Target-topology gates and behavior/source gates. |
+| Low-value repetition | Trigger-only repeats, same-harness repeats, and claim-expansion rows without the missing external artifact. |
+
+This is the strongest stopping rule in the report. Asking for more passes is
+useful only if the next pass produces a new artifact class. Without that, extra
+passes are analysis churn. The remaining useful work is target-topology
+validation for pattern/startup/tail questions, behavior/source validation for
+the selector guard, compatibility/policy joins for blocked action rows, and
+external observers or replay only when the claim expands.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
