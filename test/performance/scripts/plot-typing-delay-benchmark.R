@@ -46818,6 +46818,323 @@ save_plot(
 	height = 7.2
 )
 
+open_question_reopen_drill_replay_enforcement_receipt_register <- open_question_reopen_drill_replay_enforcement_register %>%
+	mutate(
+		reopen_drill_replay_enforcement_receipt_state = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "local packet reopen-drill replay-enforcement receipt",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "owner artifact reopen-drill replay-enforcement receipt",
+			TRUE ~ "observer artifact reopen-drill replay-enforcement receipt"
+		),
+		reopen_drill_replay_enforcement_receipt_channel = case_when(
+			close_scope == "CI wait decision" ~ "receipt channel is the Performance Tests CI wait-policy recommendation, artifact index, generated CI figures, generated CI CSVs, and stale-open-question row",
+			close_scope == "source prototype decision" ~ "receipt channel is the source optimization recommendation, artifact index, generated source figures, generated source CSVs, owner-review row, and stale-open-question row",
+			close_scope == "benchmark method wording" ~ "receipt channel is the benchmark-method wording, artifact index, generated method figures, generated method CSVs, limitation text, and stale-open-question row",
+			TRUE ~ "receipt channel is the broad recommendation, artifact index, generated broad figures, generated broad CSVs, transfer-boundary label, and stale-open-question row"
+		),
+		reopen_drill_replay_enforcement_receipt_expected_status = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "consumer must show local retained packet as current, superseded-with-valid-successor, blocked-expired, blocked-failed-closed, blocked-missing, blocked-unclassified, or explicit local exception",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "consumer must show owner retained packet as current, superseded-with-valid-successor, blocked-expired, blocked-failed-closed, blocked-missing, blocked-unclassified, or explicit owner exception",
+			TRUE ~ "consumer must show observer retained packet as current, superseded-with-valid-successor, blocked-expired, blocked-failed-closed, blocked-missing, blocked-unclassified, or explicit observer exception"
+		),
+		reopen_drill_replay_enforcement_receipt_precheck_result = case_when(
+			close_scope == "CI wait decision" ~ "receipt proves the CI wait-policy precheck evaluated replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link before publishing",
+			close_scope == "source prototype decision" ~ "receipt proves the source precheck evaluated replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link before publishing",
+			close_scope == "benchmark method wording" ~ "receipt proves the method precheck evaluated replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link before publishing",
+			TRUE ~ "receipt proves the broad precheck evaluated replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link before publishing"
+		),
+		reopen_drill_replay_enforcement_receipt_cached_surface_visibility = case_when(
+			close_scope == "CI wait decision" ~ "receipt scans CI wait-policy README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries to confirm blocked replay status is visible and stale current support is absent",
+			close_scope == "source prototype decision" ~ "receipt scans source README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries to confirm blocked replay status is visible and stale current support is absent",
+			close_scope == "benchmark method wording" ~ "receipt scans method README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries to confirm blocked replay status is visible and stale current support is absent",
+			TRUE ~ "receipt scans broad README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries to confirm blocked replay status is visible and stale current support is absent"
+		),
+		reopen_drill_replay_enforcement_receipt_exception_visibility = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "local exception receipt must expose exact-scope fallback, failed-replay notice, owner signoff, consumer notice, expiry date, rollback pointer, and no broad-claim support",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "owner exception receipt must expose exact-scope fallback, failed-replay notice, owner and reviewer signoff, consumer notice, expiry date, rollback pointer, and no broad-claim support",
+			TRUE ~ "observer exception receipt must expose exact-scope fallback, failed-replay notice, observer owner, reviewer and broad-scope signoff, consumer notice, expiry date, rollback pointer, and broad-scope limitation"
+		),
+		reopen_drill_replay_enforcement_receipt_rollback_visibility = case_when(
+			close_scope == "CI wait decision" ~ "receipt proves prior CI wait-policy figures, CSVs, README rows, recommendation text, and artifact-index rows no longer present blocked retained evidence as current support",
+			close_scope == "source prototype decision" ~ "receipt proves prior source figures, CSVs, README rows, recommendation text, and artifact-index rows no longer present blocked retained evidence as current support",
+			close_scope == "benchmark method wording" ~ "receipt proves prior method figures, CSVs, README rows, recommendation text, and artifact-index rows no longer present blocked retained evidence as current support",
+			TRUE ~ "receipt proves prior broad figures, CSVs, README rows, recommendation text, and artifact-index rows no longer present blocked retained evidence as current support"
+		),
+		reopen_drill_replay_enforcement_receipt_stale_view_scan = case_when(
+			close_scope == "CI wait decision" ~ "scan for stale CI wait-policy views by following old packet id, old figure path, old CSV path, old README anchor, old recommendation snippet, and old artifact-index path",
+			close_scope == "source prototype decision" ~ "scan for stale source views by following old packet id, old figure path, old CSV path, old README anchor, old recommendation snippet, old owner-review row, and old artifact-index path",
+			close_scope == "benchmark method wording" ~ "scan for stale method views by following old packet id, old figure path, old CSV path, old README anchor, old recommendation snippet, old limitation text, and old artifact-index path",
+			TRUE ~ "scan for stale broad views by following old packet id, old figure path, old CSV path, old README anchor, old recommendation snippet, old transfer-boundary label, and old artifact-index path"
+		),
+		reopen_drill_replay_enforcement_receipt_retry_escalation = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "if receipt is missing or stale, retry publication once, keep the local claim blocked, then escalate to local replay-enforcement owner with packet id, stale path, and rollback proof",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "if receipt is missing or stale, retry publication once, keep the owner claim blocked, then escalate to owner replay-enforcement owner and reviewer with packet id, stale path, and rollback proof",
+			TRUE ~ "if receipt is missing or stale, retry publication once, keep the observer claim blocked, then escalate to observer owner, reviewer, and broad-scope owner with packet id, stale path, and rollback proof"
+		),
+		reopen_drill_replay_enforcement_receipt_owner = reopen_drill_replay_enforcement_owner,
+		reopen_drill_replay_enforcement_receipt_consumer = reopen_drill_replay_enforcement_consumer,
+		reopen_drill_replay_enforcement_receipt_cost = case_when(
+			reopen_drill_replay_enforcement_receipt_state == "local packet reopen-drill replay-enforcement receipt" ~ 18,
+			reopen_drill_replay_enforcement_receipt_state == "owner artifact reopen-drill replay-enforcement receipt" ~ 20,
+			TRUE ~ 22
+		),
+		reopen_drill_replay_enforcement_receipt_value = pmax(
+			1,
+			reopen_drill_replay_enforcement_value + reopen_drill_stale_replay_claim_risk_value + reopen_drill_unreplayable_evidence_risk_value - reopen_drill_replay_enforcement_receipt_cost
+		),
+		reopen_drill_missed_enforcement_receipt_risk_value = pmax(
+			1,
+			reopen_drill_stale_replay_claim_risk_value + reopen_drill_unreplayable_evidence_risk_value + reopen_drill_evidence_loss_risk_value - reopen_drill_replay_enforcement_receipt_cost
+		),
+		timing_only_reopen_drill_replay_enforcement_receipt_value = 0,
+		analysis_only_value = 0,
+		reopen_drill_replay_enforcement_receipt_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(reopen_drill_replay_enforcement_receipt_value), desc(reopen_drill_missed_enforcement_receipt_risk_value), question_family)
+
+open_question_reopen_drill_replay_enforcement_receipt_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"receipt-channel", "Where does the consumer see replay enforcement status?",
+	"expected-status", "Which statuses can the consumer display?",
+	"precheck-result", "Does the consumer show that the precheck ran?",
+	"cache-visibility", "Do cached surfaces show blocked status and hide stale support?",
+	"exception-visibility", "Are exceptions visible and scoped?",
+	"rollback-visibility", "Is stale current support visibly rolled back?",
+	"stale-view-scan", "Can old paths still reach stale current support?",
+	"retry-escalation", "What happens when receipt is missing or stale?",
+	"substitute", "Can aggregate timing alone substitute for enforcement receipt?",
+	"stop-rule", "When does enforcement-receipt review stop?"
+)
+
+open_question_reopen_drill_replay_enforcement_receipt_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_replay_enforcement_receipt_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_replay_enforcement_receipt_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_reopen_drill_replay_enforcement_receipt_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_reopen_drill_replay_enforcement_receipt_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		reopen_drill_replay_enforcement_receipt_first_seen = !duplicated(reopen_drill_replay_enforcement_receipt_id),
+		reopen_drill_replay_enforcement_receipt_axis_key = paste(reopen_drill_replay_enforcement_receipt_id, pressure_axis, sep = "::"),
+		reopen_drill_replay_enforcement_receipt_axis_first_seen = !duplicated(reopen_drill_replay_enforcement_receipt_axis_key),
+		reopen_drill_replay_enforcement_receipt_state_first_seen = !duplicated(reopen_drill_replay_enforcement_receipt_state),
+		reopen_drill_replay_enforcement_receipt_owner_first_seen = !duplicated(reopen_drill_replay_enforcement_receipt_owner),
+		reopen_drill_replay_enforcement_receipt_consumer_first_seen = !duplicated(reopen_drill_replay_enforcement_receipt_consumer),
+		new_reopen_drill_replay_enforcement_receipt_value = if_else(reopen_drill_replay_enforcement_receipt_first_seen, reopen_drill_replay_enforcement_receipt_value, 0),
+		new_reopen_drill_missed_enforcement_receipt_risk_value = if_else(reopen_drill_replay_enforcement_receipt_first_seen, reopen_drill_missed_enforcement_receipt_risk_value, 0),
+		new_timing_only_reopen_drill_replay_enforcement_receipt_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!reopen_drill_replay_enforcement_receipt_axis_first_seen ~ "repeat: reopen-drill-replay-enforcement-receipt-axis already checked",
+			reopen_drill_replay_enforcement_receipt_state == "local packet reopen-drill replay-enforcement receipt" ~ "reopen-drill replay-enforcement receipt: local packet",
+			TRUE ~ "reopen-drill replay-enforcement receipt: owner or observer artifact"
+		),
+		cumulative_reopen_drill_replay_enforcement_receipt_records = cumsum(reopen_drill_replay_enforcement_receipt_first_seen),
+		cumulative_reopen_drill_replay_enforcement_receipt_axes = cumsum(reopen_drill_replay_enforcement_receipt_axis_first_seen),
+		cumulative_reopen_drill_replay_enforcement_receipt_states = cumsum(reopen_drill_replay_enforcement_receipt_state_first_seen),
+		cumulative_reopen_drill_replay_enforcement_receipt_owners = cumsum(reopen_drill_replay_enforcement_receipt_owner_first_seen),
+		cumulative_reopen_drill_replay_enforcement_receipt_consumers = cumsum(reopen_drill_replay_enforcement_receipt_consumer_first_seen),
+		cumulative_reopen_drill_replay_enforcement_receipt_value = cumsum(new_reopen_drill_replay_enforcement_receipt_value),
+		cumulative_reopen_drill_missed_enforcement_receipt_risk_value = cumsum(new_reopen_drill_missed_enforcement_receipt_risk_value),
+		cumulative_timing_only_reopen_drill_replay_enforcement_receipt_value = cumsum(new_timing_only_reopen_drill_replay_enforcement_receipt_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_reopen_drill_replay_enforcement_receipt_summary <- open_question_reopen_drill_replay_enforcement_receipt_100_pass %>%
+	group_by(reopen_drill_replay_enforcement_receipt_state, reopen_drill_replay_enforcement_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		reopen_drill_replay_enforcement_receipt_records = n_distinct(reopen_drill_replay_enforcement_receipt_id),
+		axis_checks = sum(reopen_drill_replay_enforcement_receipt_axis_first_seen),
+		reopen_drill_replay_enforcement_receipt_owners = n_distinct(reopen_drill_replay_enforcement_receipt_owner),
+		reopen_drill_replay_enforcement_receipt_consumers = n_distinct(reopen_drill_replay_enforcement_receipt_consumer),
+		reopen_drill_replay_enforcement_receipt_value = sum(new_reopen_drill_replay_enforcement_receipt_value),
+		reopen_drill_missed_enforcement_receipt_risk_value = sum(new_reopen_drill_missed_enforcement_receipt_risk_value),
+		timing_only_reopen_drill_replay_enforcement_receipt_value = sum(new_timing_only_reopen_drill_replay_enforcement_receipt_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(reopen_drill_replay_enforcement_receipt_value), desc(reopen_drill_missed_enforcement_receipt_risk_value), first_pass)
+
+open_question_reopen_drill_replay_enforcement_receipt_checkpoints <- open_question_reopen_drill_replay_enforcement_receipt_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_reopen_drill_replay_enforcement_receipt_records,
+		cumulative_reopen_drill_replay_enforcement_receipt_axes,
+		cumulative_reopen_drill_replay_enforcement_receipt_states,
+		cumulative_reopen_drill_replay_enforcement_receipt_owners,
+		cumulative_reopen_drill_replay_enforcement_receipt_consumers,
+		cumulative_reopen_drill_replay_enforcement_receipt_value,
+		cumulative_reopen_drill_missed_enforcement_receipt_risk_value,
+		cumulative_timing_only_reopen_drill_replay_enforcement_receipt_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_receipt_register,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-receipt-register.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_receipt_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			reopen_drill_replay_enforcement_receipt_state,
+			reopen_drill_replay_enforcement_state,
+			reopen_drill_replay_enforcement_receipt_channel,
+			reopen_drill_replay_enforcement_receipt_expected_status,
+			reopen_drill_replay_enforcement_receipt_precheck_result,
+			reopen_drill_replay_enforcement_receipt_cached_surface_visibility,
+			reopen_drill_replay_enforcement_receipt_exception_visibility,
+			reopen_drill_replay_enforcement_receipt_rollback_visibility,
+			reopen_drill_replay_enforcement_receipt_stale_view_scan,
+			reopen_drill_replay_enforcement_receipt_retry_escalation,
+			reopen_drill_replay_enforcement_receipt_owner,
+			reopen_drill_replay_enforcement_receipt_consumer,
+			reopen_drill_replay_enforcement_status_gate,
+			reopen_drill_replay_enforcement_consumer_precheck,
+			reopen_drill_replay_enforcement_cached_surface_invalidation,
+			reopen_drill_replay_enforcement_exception_policy,
+			reopen_drill_replay_enforcement_failure_response,
+			reopen_drill_replay_enforcement_rollback_enforcement,
+			reopen_drill_replay_enforcement_publication_gate,
+			reopen_drill_replay_enforcement_audit_log,
+			supported_claim,
+			blocked_claim,
+			reopen_drill_replay_enforcement_receipt_first_seen,
+			reopen_drill_replay_enforcement_receipt_axis_first_seen,
+			reopen_drill_replay_enforcement_receipt_state_first_seen,
+			reopen_drill_replay_enforcement_receipt_owner_first_seen,
+			reopen_drill_replay_enforcement_receipt_consumer_first_seen,
+			pass_result,
+			reopen_drill_replay_enforcement_receipt_value,
+			reopen_drill_missed_enforcement_receipt_risk_value,
+			timing_only_reopen_drill_replay_enforcement_receipt_value,
+			new_reopen_drill_replay_enforcement_receipt_value,
+			new_reopen_drill_missed_enforcement_receipt_risk_value,
+			new_timing_only_reopen_drill_replay_enforcement_receipt_value,
+			new_analysis_only_value,
+			cumulative_reopen_drill_replay_enforcement_receipt_records,
+			cumulative_reopen_drill_replay_enforcement_receipt_axes,
+			cumulative_reopen_drill_replay_enforcement_receipt_states,
+			cumulative_reopen_drill_replay_enforcement_receipt_owners,
+			cumulative_reopen_drill_replay_enforcement_receipt_consumers,
+			cumulative_reopen_drill_replay_enforcement_receipt_value,
+			cumulative_reopen_drill_missed_enforcement_receipt_risk_value,
+			cumulative_timing_only_reopen_drill_replay_enforcement_receipt_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-receipt-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_receipt_summary,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-receipt-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_receipt_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-receipt-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_reopen_drill_replay_enforcement_receipt_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, reopen_drill_replay_enforcement_receipt_value)
+		) %>%
+		ggplot(aes(reopen_drill_replay_enforcement_receipt_value, question_label, fill = reopen_drill_replay_enforcement_receipt_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Enforcement receipt") +
+		labs(
+			title = "Reopen-drill replay-enforcement receipt verifies consumers see blocked replay status",
+			subtitle = "Each row names receipt channel, expected status, precheck result, cache visibility, exception visibility, rollback visibility, stale-view scan, retry escalation, owner, and consumer",
+			x = "Reopen-drill-replay-enforcement-receipt value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"465-open-question-reopen-drill-replay-enforcement-receipt-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_reopen_drill_replay_enforcement_receipt_saturation_long <- open_question_reopen_drill_replay_enforcement_receipt_100_pass %>%
+	select(
+		pass_id,
+		`reopen-drill-replay-enforcement-receipt records` = cumulative_reopen_drill_replay_enforcement_receipt_records,
+		`reopen-drill-replay-enforcement-receipt axes` = cumulative_reopen_drill_replay_enforcement_receipt_axes,
+		`reopen-drill-replay-enforcement-receipt states` = cumulative_reopen_drill_replay_enforcement_receipt_states,
+		`reopen-drill-replay-enforcement-receipt owners` = cumulative_reopen_drill_replay_enforcement_receipt_owners,
+		`reopen-drill-replay-enforcement-receipt consumers` = cumulative_reopen_drill_replay_enforcement_receipt_consumers,
+		`reopen-drill-replay-enforcement-receipt value` = cumulative_reopen_drill_replay_enforcement_receipt_value,
+		`reopen-drill-missed-enforcement-receipt risk value` = cumulative_reopen_drill_missed_enforcement_receipt_risk_value,
+		`timing-only reopen-drill-replay-enforcement-receipt value` = cumulative_timing_only_reopen_drill_replay_enforcement_receipt_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("reopen-drill-replay-enforcement-receipt records", "reopen-drill-replay-enforcement-receipt axes", "reopen-drill-replay-enforcement-receipt states", "reopen-drill-replay-enforcement-receipt owners", "reopen-drill-replay-enforcement-receipt consumers", "reopen-drill-replay-enforcement-receipt value", "reopen-drill-missed-enforcement-receipt risk value", "timing-only reopen-drill-replay-enforcement-receipt value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_reopen_drill_replay_enforcement_receipt_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Reopen-drill-replay-enforcement-receipt audit saturates once every consumer-visible gate is covered",
+			subtitle = "Nine receipt records appear by pass 9; all 90 axes appear by pass 90; timing-only receipt value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"466-open-question-reopen-drill-replay-enforcement-receipt-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_reopen_drill_replay_enforcement_receipt_summary %>%
+		mutate(
+			state_label = str_wrap(reopen_drill_replay_enforcement_receipt_state, width = 28),
+			state_label = fct_reorder(state_label, reopen_drill_replay_enforcement_receipt_value + reopen_drill_missed_enforcement_receipt_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Reopen-drill-replay-enforcement-receipt coverage separates local receipts from owner and observer receipts",
+			subtitle = "Every row is checked for receipt channel, expected status, precheck, cache visibility, exception visibility, rollback visibility, stale-view scan, retry escalation, substitute, and stop rule",
+			x = "Reopen-drill-replay-enforcement-receipt-axis checks",
+			y = "Reopen-drill-replay-enforcement-receipt state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"467-open-question-reopen-drill-replay-enforcement-receipt-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

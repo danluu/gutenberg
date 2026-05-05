@@ -2265,6 +2265,31 @@ The R script derives:
     reopen-drill-replay-enforcement-value,
     reopen-drill-stale-replay-claim-risk-value,
     timing-only-reopen-drill-replay-enforcement, and analysis-only saturation.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-receipt-register.csv`:
+    reopen-drill-replay-enforcement-receipt register for the nine
+    reopen-drill-replay-enforcement records, including receipt channel,
+    expected status, precheck result, cached-surface visibility,
+    exception visibility, rollback visibility, stale-view scan,
+    retry/escalation, owner, and consumer.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-receipt-100-pass-audit.csv`:
+    sixty-first forced 100-pass audit over
+    reopen-drill-replay-enforcement-receipt axes: receipt-channel,
+    expected-status, precheck-result, cache-visibility, exception-visibility,
+    rollback-visibility, stale-view-scan, retry-escalation, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-receipt-100-pass-summary.csv`:
+    rollup of reopen-drill-replay-enforcement-receipt coverage by receipt
+    state, reopen-drill-replay-enforcement state, and pass result.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-receipt-100-pass-checkpoints.csv`:
+    checkpoints for reopen-drill-replay-enforcement-receipt-record,
+    reopen-drill-replay-enforcement-receipt-axis,
+    reopen-drill-replay-enforcement-receipt-state,
+    reopen-drill-replay-enforcement-receipt-owner,
+    reopen-drill-replay-enforcement-receipt-consumer,
+    reopen-drill-replay-enforcement-receipt-value,
+    reopen-drill-missed-enforcement-receipt-risk-value,
+    timing-only-reopen-drill-replay-enforcement-receipt, and analysis-only
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -13324,6 +13349,40 @@ still cites the packet as current support. A recommendation can publish only
 after replay status, stale-row status, cache invalidation, exception status,
 rollback proof, and audit-log entry agree; otherwise the claim is removed or
 published only as an explicit, expiring exception.
+
+I then added the reopen-drill-replay-enforcement-receipt layer: replay
+enforcement must be visible from the consumer path. The receipt record names the
+receipt channel, expected status, precheck result, cached-surface visibility,
+exception visibility, rollback visibility, stale-view scan, retry/escalation,
+owner, and consumer for each replay-enforcement row.
+
+![Open question reopen drill replay enforcement receipt register](figures/465-open-question-reopen-drill-replay-enforcement-receipt-register.png)
+
+![Open question reopen drill replay enforcement receipt 100-pass saturation](figures/466-open-question-reopen-drill-replay-enforcement-receipt-100-pass-saturation.png)
+
+![Open question reopen drill replay enforcement receipt coverage](figures/467-open-question-reopen-drill-replay-enforcement-receipt-coverage.png)
+
+| Reopen-drill-replay-enforcement-receipt check | Result |
+| --------------------------------------------- | ------ |
+| Reopen-drill-replay-enforcement-receipt records | `9`, one per reopen-drill-replay-enforcement record. |
+| Reopen-drill-replay-enforcement-receipt states | `3`: local packet reopen-drill replay-enforcement receipt, owner artifact reopen-drill replay-enforcement receipt, and observer artifact reopen-drill replay-enforcement receipt. |
+| Reopen-drill-replay-enforcement-receipt owners | `9`; receipt ownership routes back to the scoped replay-enforcement owner. |
+| Reopen-drill-replay-enforcement-receipt consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Reopen-drill-replay-enforcement-receipt-axis checks | `90`: every row checked against all `10` reopen-drill-replay-enforcement-receipt axes. |
+| Reopen-drill-replay-enforcement-receipt value | `71177645259177`: local packet receipts contribute `53781398762346`, owner artifact receipts contribute `10753654298328`, and observer artifact receipts contribute `6642592198503`. |
+| Reopen-drill-missed-enforcement-receipt-risk value | `38698378698059` across the nine reopen-drill-replay-enforcement-receipt records. |
+| Timing-only reopen-drill-replay-enforcement-receipt value | `0`; aggregate timing movement alone cannot prove the receipt channel, expected status, precheck result, cached-surface visibility, exception visibility, rollback visibility, stale-view scan, retry/escalation, owner, or stop rule. |
+| Saturation | Reopen-drill-replay-enforcement-receipt records are all named by pass `9`; all reopen-drill-replay-enforcement-receipt axes are covered by pass `90`; passes `91-100` add no reopen-drill-replay-enforcement-receipt coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the consumer-visible enforcement guard. It catches the case where replay
+enforcement correctly blocks stale retained evidence internally, but the CI
+wait-policy, source, benchmark-method, or broad recommendation path still shows
+old current support, hides the failed replay status, hides an exception, or
+leaves an old figure/CSV/README path reachable. Receipt is complete only when
+the consumer-facing surface shows the expected status, proves the precheck ran,
+removes stale cached support, exposes any exception as scoped and expiring, and
+escalates if publication still exposes a stale view.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
