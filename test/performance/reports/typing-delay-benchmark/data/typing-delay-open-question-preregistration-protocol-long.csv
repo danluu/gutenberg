@@ -1,0 +1,116 @@
+artifact,artifact_label,lane,dimension,score
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,outcome flexibility,4
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,exclusion flexibility,5
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,interpretation drift,4
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,multiplicity,3
+Per-keypress retained/throwaway distributions,"Per-keypress
+retained/throwaway
+distributions",CI/readiness,protocol burden,2
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,outcome flexibility,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,exclusion flexibility,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,interpretation drift,5
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,multiplicity,4
+Real Performance Tests startup-wait artifact,"Real Performance Tests
+startup-wait artifact",CI/readiness,protocol burden,3
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,outcome flexibility,5
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,exclusion flexibility,4
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,interpretation drift,5
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,multiplicity,4
+Pattern predicate plus resource-quiet validation,"Pattern predicate plus
+resource-quiet validation",CI/readiness,protocol burden,3
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,outcome flexibility,5
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,exclusion flexibility,4
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,interpretation drift,5
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,multiplicity,3
+Selector behavior fixtures plus source spans,"Selector behavior fixtures
+plus source spans",Source/code,protocol burden,2
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,outcome flexibility,5
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,exclusion flexibility,5
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,interpretation drift,5
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,multiplicity,4
+Public subscriber compatibility matrix,"Public subscriber
+compatibility matrix",Source/code,protocol burden,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,outcome flexibility,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,exclusion flexibility,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,interpretation drift,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,multiplicity,4
+Matched tap/short-hold/held-key controls,"Matched
+tap/short-hold/held-key
+controls",Benchmark artifact,protocol burden,2
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,outcome flexibility,4
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,exclusion flexibility,4
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,interpretation drift,5
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,multiplicity,4
+Controlled cross-browser dip grid,"Controlled cross-browser dip
+grid",Benchmark artifact,protocol burden,3
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,outcome flexibility,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,exclusion flexibility,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,interpretation drift,5
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,multiplicity,3
+Passive retained-key sidecar acceptance,"Passive retained-key sidecar
+acceptance",Sidecar/mechanism,protocol burden,4
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,outcome flexibility,4
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,exclusion flexibility,4
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,interpretation drift,5
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,multiplicity,4
+Runtime checkpoint sidecar,Runtime checkpoint sidecar,Sidecar/mechanism,protocol burden,4
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,outcome flexibility,4
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,exclusion flexibility,4
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,interpretation drift,5
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,multiplicity,4
+CPU/QoS root counters,CPU/QoS root counters,CPU/QoS,protocol burden,5
+Workload replay strata,Workload replay strata,Claim expansion,outcome flexibility,5
+Workload replay strata,Workload replay strata,Claim expansion,exclusion flexibility,5
+Workload replay strata,Workload replay strata,Claim expansion,interpretation drift,5
+Workload replay strata,Workload replay strata,Claim expansion,multiplicity,5
+Workload replay strata,Workload replay strata,Claim expansion,protocol burden,5
+External display endpoint,External display endpoint,Claim expansion,outcome flexibility,4
+External display endpoint,External display endpoint,Claim expansion,exclusion flexibility,5
+External display endpoint,External display endpoint,Claim expansion,interpretation drift,5
+External display endpoint,External display endpoint,Claim expansion,multiplicity,4
+External display endpoint,External display endpoint,Claim expansion,protocol burden,5
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,outcome flexibility,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,exclusion flexibility,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,interpretation drift,5
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,multiplicity,3
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,protocol burden,3

@@ -25021,6 +25021,157 @@ save_plot(
 	height = 8.0
 )
 
+open_question_preregistration_protocol <- tribble(
+	~artifact, ~lane, ~protocol_class, ~primary_question, ~primary_metric, ~inclusion_rule, ~required_controls, ~stop_rule, ~forbidden_interpretation, ~outcome_flexibility_risk, ~exclusion_flexibility_risk, ~interpretation_drift_risk, ~multiplicity_risk, ~preregistration_burden,
+	"Per-keypress retained/throwaway distributions", "CI/readiness", "frontier", "Does CI's retained aggregate hide first-input or first-retained-key wait sensitivity?", "per-key-position latency distributions plus retained aggregate q50", "all generated keys, separately flagged as throwaway, first retained, later retained, failure, retry, or missing", "same startup waits, same post setup, same key mode, same retained-key rule", "split retained typing from idle-input metric if key-position tails remain", "calling flat retained q50 proof that first input after idle is stable", 4, 5, 4, 3, 2,
+	"Real Performance Tests startup-wait artifact", "CI/readiness", "frontier", "Can startup waits be reduced without moving readiness work into measurement?", "reported q50 plus failures, retries, resources, first-key tails, retained counts, and run order", "all target-lane runs, including failed/actionability rows and late resources", "current wait, zero/short waits, longer wait, resource and failure capture", "wait reduction passes only if all non-q50 readiness fields pass", "using improved q50 while ignoring failures, retries, resources, or first-key tails", 5, 5, 5, 4, 3,
+	"Pattern predicate plus resource-quiet validation", "CI/readiness", "frontier", "Can a source predicate replace the fixed pattern wait without moving preview/canvas/resource work?", "pattern readiness time, resource quiet, preview/canvas state, failures, retained q50", "all site/post pattern-loading rows with predicate fires, resources, and preview/canvas checks retained", "fixed 500ms/1000ms, predicate-only, predicate-plus-resource-quiet", "keep fixed fallback unless predicate and resource quiet preserve behavior", "using predicate q50 without proving it marks the same readiness boundary", 5, 4, 5, 4, 3,
+	"Selector behavior fixtures plus source spans", "Source/code", "frontier", "Does a selector guard preserve behavior and collapse the targeted source span?", "behavior fixture pass/fail, targeted source-span count/time, then aggregate p50", "all behavior fixtures before timing rows; all source-span rows for the targeted owner", "baseline source spans, guarded source spans, aggregate p50 only after behavior passes", "do not cite timing if behavior fails or source span does not collapse", "calling aggregate p50 a safe source optimization", 5, 4, 5, 3, 2,
+	"Public subscriber compatibility matrix", "Source/code", "conditional", "Can fanout reduction preserve public data semantics?", "public subscribe order, persistence selector behavior, dynamic/cross-store dependency behavior, marker-only fanout", "all compatibility fixtures, including plugin/public subscriber smoke and async/race cases", "current public root subscribe, private/internal filtered lane, marker-only fanout control", "veto public-path fanout on any compatibility failure", "treating listener-count reduction as API compatibility", 5, 5, 5, 4, 4,
+	"Matched tap/short-hold/held-key controls", "Benchmark artifact", "conditional", "Is the held-key cliff specific to key-hold input shape?", "delay sweep q50 by key mode with persistence markers and retained-key rules fixed", "matched startup state, retained-key filtering, key mode, and browser revision", "tap-then-wait, fixed short hold, Playwright held-key path", "narrow input-shape wording if tap or short hold reproduces the cliff", "calling a held-key-only result general typing behavior", 4, 4, 4, 4, 2,
+	"Controlled cross-browser dip grid", "Benchmark artifact", "conditional", "Do browser lanes preserve the controlled dip under the same input and persistence markers?", "per-browser delay curve, key mode, persistence markers, and retained-key ordering", "all browser rows under same key-mode and inclusion rules", "same delay grid and key-mode controls in each browser", "split browser wording if any browser loses the controlled dip", "naming a one-browser mechanism from cross-browser aggregate similarity", 4, 4, 5, 4, 3,
+	"Passive retained-key sidecar acceptance", "Sidecar/mechanism", "conditional", "Can sidecar observation join retained keys without perturbing ordering?", "join coverage, clock-sync error, renderer/helper identity, observer-on/off ordering", "all retained keys and all observer-off/on paired rows", "observer-off baseline, passive sidecar, repeated checkpoint controls", "do not proceed to root counters or trace if joins or ordering fail", "naming mechanisms from a sidecar that changed class ordering", 5, 5, 5, 3, 4,
+	"Runtime checkpoint sidecar", "Sidecar/mechanism", "deferred", "Which runtime checkpoint state, if any, separates fast and slow retained-key classes?", "joined runtime checkpoint fields by retained-key class with observer overhead check", "only rows from an accepted passive sidecar schema", "observer-off/on controls and runtime-repeat controls", "keep empirical wording unless runtime fields separate classes without perturbation", "renaming aggregate latency classes as V8 or scheduler state", 4, 4, 5, 4, 4,
+	"CPU/QoS root counters", "CPU/QoS", "deferred", "Do CPU/QoS counters separate fast and slow retained-key classes?", "joined frequency, residency, QoS, power, and runnable-latency counters by retained key", "only rows from accepted passive sidecar plus complete root-counter windows", "sidecar accepted baseline, powermetrics, root trace only if counters fail", "do not name CPU/QoS mechanism unless joined counters separate classes", "calling latency classes frequency, QoS, cache, or scheduler causes", 4, 4, 5, 4, 5,
+	"Workload replay strata", "Claim expansion", "deferred", "Do non-fixed-x workloads reproduce the same owners, effects, and failures?", "per-stratum behavior assertions, source spans, endpoints, and q50/p90 summaries", "all replay strata, including failures and missing assertions", "fixed-x baseline, synthetic replay, recorded/specialized strata", "generalize only to strata that reproduce the effect", "averaging missing or failing strata into a product-latency claim", 5, 5, 5, 5, 5,
+	"External display endpoint", "Claim expansion", "deferred", "Does user-visible or physical display timing preserve the internal endpoint ordering?", "calibrated OCR/present/camera endpoint joined to retained-key windows", "all endpoint rows with calibration, dropped-frame, and join-status flags", "Chromium screenshot/paint/DrawFrame, external endpoint, calibration control", "keep Chromium-internal wording unless external endpoint preserves ordering", "calling screenshots physical display latency", 4, 5, 5, 4, 5,
+	"Dashboard/reviewer policy join", "External policy", "conditional", "Does repository q50 movement map to pass/fail or reviewer action?", "archived raw CI artifact movement joined to dashboard/reviewer policy outcomes", "all available artifacts, including noisy-metric and non-actioned rows", "raw artifact, displayed q50, dashboard/reviewer threshold or decision", "do not predict pass/fail until policy matches raw artifact movement", "treating printed q50 as the pass/fail rule", 4, 4, 5, 3, 3
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		protocol_class = factor(protocol_class, levels = c("frontier", "conditional", "deferred")),
+		artifact_label = str_wrap(artifact, width = 30),
+		total_analysis_drift_risk = outcome_flexibility_risk + exclusion_flexibility_risk + interpretation_drift_risk + multiplicity_risk,
+		protocol_priority = total_analysis_drift_risk - preregistration_burden,
+		protocol_action = case_when(
+			protocol_class == "frontier" ~ "pre-register before run",
+			total_analysis_drift_risk >= 18 ~ "pre-register if run",
+			interpretation_drift_risk >= 5 ~ "lock wording before run",
+			TRUE ~ "record controls"
+		),
+		protocol_action = factor(
+			protocol_action,
+			levels = c("record controls", "lock wording before run", "pre-register if run", "pre-register before run")
+		)
+	)
+
+open_question_preregistration_protocol_long <- open_question_preregistration_protocol %>%
+	select(
+		artifact,
+		artifact_label,
+		lane,
+		outcome_flexibility_risk,
+		exclusion_flexibility_risk,
+		interpretation_drift_risk,
+		multiplicity_risk,
+		preregistration_burden
+	) %>%
+	pivot_longer(
+		cols = c(
+			outcome_flexibility_risk,
+			exclusion_flexibility_risk,
+			interpretation_drift_risk,
+			multiplicity_risk,
+			preregistration_burden
+		),
+		names_to = "dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		dimension = recode(
+			dimension,
+			outcome_flexibility_risk = "outcome flexibility",
+			exclusion_flexibility_risk = "exclusion flexibility",
+			interpretation_drift_risk = "interpretation drift",
+			multiplicity_risk = "multiplicity",
+			preregistration_burden = "protocol burden"
+		),
+		dimension = factor(
+			dimension,
+			levels = c("outcome flexibility", "exclusion flexibility", "interpretation drift", "multiplicity", "protocol burden")
+		),
+		artifact_label = fct_reorder(artifact_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_preregistration_protocol_summary <- open_question_preregistration_protocol %>%
+	count(lane, protocol_action, name = "artifacts") %>%
+	group_by(lane) %>%
+	mutate(lane_artifacts = sum(artifacts)) %>%
+	ungroup()
+
+write_csv(
+	open_question_preregistration_protocol %>%
+		select(
+			artifact,
+			lane,
+			protocol_class,
+			protocol_action,
+			primary_question,
+			primary_metric,
+			inclusion_rule,
+			required_controls,
+			stop_rule,
+			forbidden_interpretation,
+			outcome_flexibility_risk,
+			exclusion_flexibility_risk,
+			interpretation_drift_risk,
+			multiplicity_risk,
+			total_analysis_drift_risk,
+			preregistration_burden,
+			protocol_priority
+		),
+	file.path(data_dir, "typing-delay-open-question-preregistration-protocol.csv")
+)
+
+write_csv(
+	open_question_preregistration_protocol_long,
+	file.path(data_dir, "typing-delay-open-question-preregistration-protocol-long.csv")
+)
+
+write_csv(
+	open_question_preregistration_protocol_summary,
+	file.path(data_dir, "typing-delay-open-question-preregistration-protocol-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_preregistration_protocol_long, aes(dimension, artifact_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.65, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "PuRd", direction = 1, name = "Score") +
+		labs(
+			title = "Remaining experiments need predeclared metrics, inclusion rules, and interpretations",
+			subtitle = "Analysis-drift risk is highest when failures, exclusions, endpoint choice, or claim wording can move after seeing results",
+			x = "Protocol dimension",
+			y = "Candidate artifact"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"244-open-question-preregistration-protocol.png",
+	width = 13.4,
+	height = 8.6
+)
+
+save_plot(
+	ggplot(
+		open_question_preregistration_protocol %>%
+			mutate(artifact_label = fct_reorder(artifact_label, protocol_priority)),
+		aes(protocol_priority, artifact_label, fill = protocol_action)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Protocol action") +
+		labs(
+			title = "The next runs should be protocol-locked before data collection",
+			subtitle = "Priority subtracts protocol burden from outcome, exclusion, interpretation, and multiplicity drift risk",
+			x = "Protocol priority",
+			y = "Candidate artifact"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"245-open-question-analysis-drift-risk.png",
+	width = 12.8,
+	height = 8.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

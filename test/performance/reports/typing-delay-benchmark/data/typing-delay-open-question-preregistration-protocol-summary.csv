@@ -1,0 +1,11 @@
+lane,protocol_action,artifacts,lane_artifacts
+Benchmark artifact,record controls,1,2
+Benchmark artifact,lock wording before run,1,2
+CI/readiness,pre-register before run,3,3
+Source/code,pre-register if run,1,2
+Source/code,pre-register before run,1,2
+Sidecar/mechanism,lock wording before run,1,2
+Sidecar/mechanism,pre-register if run,1,2
+CPU/QoS,lock wording before run,1,1
+Claim expansion,pre-register if run,2,2
+External policy,lock wording before run,1,1

@@ -1157,6 +1157,15 @@ The R script derives:
     budget-dimension scores used for the experiment-budget heatmap.
 -   `data/typing-delay-open-question-experiment-budget-summary.csv`: rollup of
     frontier, conditional, and deferred artifacts by claim lane.
+-   `data/typing-delay-open-question-preregistration-protocol.csv`: protocol
+    audit for remaining open-question artifacts, including primary questions,
+    primary metrics, inclusion rules, required controls, stop rules, forbidden
+    interpretations, and analysis-drift risk.
+-   `data/typing-delay-open-question-preregistration-protocol-long.csv`: long-form
+    outcome-flexibility, exclusion-flexibility, interpretation-drift,
+    multiplicity, and protocol-burden scores used for the protocol heatmap.
+-   `data/typing-delay-open-question-preregistration-protocol-summary.csv`:
+    rollup of protocol actions by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9939,6 +9948,28 @@ This is the current budget-aware answer to what remains open. The actionable
 frontier is CI/readiness plus source safety. Mechanism and product/display work
 is not wrong, but it is expensive and should not be used to delay the narrower
 benchmark conclusions unless the report intentionally makes those broader claims.
+
+The pre-registration audit covers the last major analysis risk: after a targeted
+artifact exists, it is still easy to change the metric, inclusion rule, endpoint,
+or wording after seeing the data. The protocol rows below lock the primary
+question, primary metric, inclusion rule, required controls, stop rule, and
+forbidden interpretation before each run.
+
+![Open question preregistration protocol](figures/244-open-question-preregistration-protocol.png)
+
+![Open question analysis drift risk](figures/245-open-question-analysis-drift-risk.png)
+
+| Artifact class | Lock before data collection | Do not do after seeing results |
+| -------------- | --------------------------- | ------------------------------- |
+| CI/readiness frontier | generated-key inclusion, first-key labels, failure/retry/resource retention, and the exact q50 plus non-q50 pass gate | accept a q50 improvement while dropping failures, retries, resources, or first-key tails |
+| Source/code frontier | behavior fixtures first, targeted source-span owner, source-span collapse rule, and aggregate p50 as secondary | call aggregate p50 a safe source optimization |
+| Input-shape and browser controls | key mode, startup state, persistence markers, retained-key rule, browser revision, and browser-specific wording | generalize a held-key-only result to typing or name a one-browser mechanism |
+| Sidecar, runtime, and CPU/QoS work | observer-off baseline, join coverage, clock-sync limits, class-order preservation, and root-counter escalation rule | name runtime or OS mechanisms from an observer that perturbs ordering |
+| Workload, display, and policy expansion | replay strata, assertions, endpoint calibration, dropped-frame/join flags, and dashboard/reviewer decision join | average missing strata, call internal screenshots physical display latency, or treat printed q50 as pass/fail policy |
+
+This means the next runs should be protocol-locked, not just targeted. If a row
+is worth running, it is worth deciding in advance which rows count, which endpoint
+is primary, which failures stay in the dataset, and what result stops the claim.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
