@@ -24,11 +24,21 @@ plus the known RTC fixes from `latest-known-ws-repro-with-tests`, rebuilt with
 `npm run build -- --skip-types`, and served through the local WebSocket RTC test
 provider on port `18991`.
 
-That current-baseline run gives valid evidence for two bugs still failing after
-recent trunk plus the known fixes:
+That current-baseline run gives valid user-visible evidence for one bug still
+failing after recent trunk plus the known fixes:
 
-- same-user title reload loss/corruption;
-- duplicate table row content loss.
+- same-user title reload loss/corruption.
+
+The duplicate-table run does still expose a stale internal table attribute on
+Browser B, but the original table video was invalid as user-visible evidence:
+Browser B's visible table, textboxes, edited post serialization, saved REST
+content, and reload all kept `anchor`, `same`, `same` in the direct repro. A
+deeper natural follow-up path can make the stale table object worse across
+duplicate/reload/edit operations, and `Save draft` can briefly return before
+REST raw content reflects a newly inserted row, but the row appeared after a
+short poll and was present after publish/front-end view. Treat this as an
+internal stale-state bug with follow-up risk, not as a confirmed durable
+user-visible table content-loss repro from the current evidence.
 
 The current PR branch also contains a fix for concurrent list-item move loss.
 That bug has earlier valid trace-level evidence and a natural-user video, but
@@ -57,21 +67,25 @@ Results:
 | Repro | Result on recent trunk plus known fixes | Evidence |
 | --- | --- | --- |
 | Same-user title reload | Failed 5/5 | `/private/tmp/gutenberg-rerun-defaultws-20260504/title-video-source-rerun.log` |
-| Duplicate table rows | Failed 1/1 | `/private/tmp/gutenberg-rerun-defaultws-20260504/table-rerun.log` |
+| Duplicate table rows | Internal stale attribute reproduced; direct visible loss disconfirmed | `/private/tmp/gutenberg-table-duplicate-current-diagnostics.json`, `/private/tmp/gutenberg-table-stale-visible-followups.json` |
 | Concurrent list-item moves | Inconclusive | `/private/tmp/gutenberg-rerun-defaultws-20260504/list-rerun.log` |
 | Undo selection with another synced entity loaded | Passed 5/5 | `/private/tmp/gutenberg-rerun-defaultws-20260504/undo-rerun.log` |
 | Same-user excerpt reload divergence | Did not reproduce | `/private/tmp/gutenberg-rerun-defaultws-20260504/excerpt-rerun.log` |
 
-Fresh annotated videos for the current-baseline failures:
+Fresh annotated video for the current-baseline user-visible failure:
 
 - title reload loss:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-annotated.mp4`;
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-repro.mp4`;
 - title action log:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-annotated-action-log.md`;
-- duplicate table row content loss:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-content-loss-current-known-fixes.mp4`;
-- table action log:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-content-loss-current-known-fixes-action-log.md`.
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-action-log.md`.
+
+Superseded artifacts that should not be cited as current proof:
+
+- `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-annotated.mp4`
+  was a stitched still artifact, not an action video;
+- `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-content-loss-current-known-fixes.mp4`
+  asserted table loss from a stale internal value while the visible table
+  content was still correct.
 
 Existing list-move videos are still useful for the user-visible failure shape,
 but they are not proof from the latest current-baseline rerun:
@@ -97,8 +111,8 @@ Current evidence:
 
 - failed 5/5 in
   `/private/tmp/gutenberg-rerun-defaultws-20260504/title-video-source-rerun.log`;
-- fresh annotated video:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-annotated.mp4`.
+- fresh trace-derived annotated video:
+  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/ws-title-reload-loss-current-known-fixes-trace-repro.mp4`.
 
 How it was introduced:
 
@@ -140,23 +154,40 @@ stale REST fields to the collaborative document. It also fixes the WebSocket
 test provider handshake so a joining/reloading peer is not considered ready
 until it has received a real room snapshot or peer-state response.
 
-### 2. Duplicate table row content loss
+### 2. Duplicate table row internal stale state
 
 Natural user flow:
 
 1. Browser A inserts a normal Table block through the editor UI.
 2. Browser A creates a 3-row, 1-column table.
 3. Browser A types `anchor`, `same`, `same`.
-4. Expected Browser B table body: `anchor`, `same`, `same`.
-5. Actual on the current known-fixes baseline: Browser B sees
-   `anchor`, `same`, `undefined`.
+4. Expected Browser B table body and block attributes: `anchor`, `same`,
+   `same`.
+5. Actual on the current known-fixes baseline: Browser B's internal table block
+   attributes can be `anchor`, `same`, `null`.
+
+The direct repro is not a valid user-visible table-loss repro. Browser B's
+visible table, textboxes, edited post serialization, saved REST content, and
+reload all stayed `anchor`, `same`, `same`.
+
+Natural follow-up experiments show the stale object can persist and deepen:
+duplicating the stale table creates another table whose internal duplicate row
+is `null`; after save/reload, the duplicated table can have internal
+`null`, `null`, `null` while still visibly rendering all rows. Editing or
+inserting rows through the UI updates visible/editor serialization correctly.
+One `Save draft` check returned before REST raw content contained a newly
+inserted row, but a short poll later did contain it, and publishing plus the
+front-end view also contained it. This is follow-up risk, not current durable
+visible data-loss evidence.
 
 Current evidence:
 
-- failed 1/1 in
-  `/private/tmp/gutenberg-rerun-defaultws-20260504/table-rerun.log`;
-- fresh annotated video:
-  `/private/tmp/gutenberg-ws-current-known-fixes-videos-20260505/table-duplicate-row-content-loss-current-known-fixes.mp4`.
+- direct diagnostics:
+  `/private/tmp/gutenberg-table-duplicate-current-diagnostics.json`;
+- follow-up natural workflow diagnostics:
+  `/private/tmp/gutenberg-table-stale-visible-followups.json`;
+- screenshots:
+  `/private/tmp/gutenberg-table-stale-visible-followups-screenshots/`.
 
 How it was introduced:
 
