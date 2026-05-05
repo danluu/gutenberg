@@ -4,20 +4,23 @@ import http from 'node:http';
 import process from 'node:process';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import ws from 'ws';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as Y from 'yjs';
 
 const WebSocketServer = ws.WebSocketServer || ws.Server;
 
 /**
  * @typedef {import('ws').RawData} RawData
  * @typedef {import('ws').WebSocket & { roomName?: string, clientId?: string | number }} TestSocket
- * @typedef {{ awareness: Map<string, unknown>, clients: Set<TestSocket>, updates: string[] }} Room
- * @typedef {{ type?: string, room?: string, clientId?: string | number, state?: string, awareness?: unknown, update?: string }} TestMessage
+ * @typedef {{ awareness: Map<string, unknown>, clients: Set<TestSocket>, doc: Y.Doc, updates: string[] }} Room
+ * @typedef {{ type?: string, room?: string, clientId?: string | number, state?: string, stateVector?: string, awareness?: unknown, update?: string }} TestMessage
  */
 
 const DEFAULT_PORT = 18991;
 const PORT = parsePortArg();
 /** @type {Map<string, Room>} */
 const rooms = new Map();
+const emptyYjsUpdateV2Base64 = createEmptyYjsUpdateV2Base64();
 
 function parsePortArg() {
 	const portIndex = process.argv.indexOf( '--port' );
@@ -47,11 +50,32 @@ function getRoom( roomName ) {
 		room = {
 			awareness: new Map(),
 			clients: new Set(),
+			doc: new Y.Doc(),
 			updates: [],
 		};
 		rooms.set( roomName, room );
 	}
 	return room;
+}
+
+/**
+ * @param {string} value Base64 value.
+ * @return {Uint8Array} Decoded bytes.
+ */
+function fromBase64( value ) {
+	return new Uint8Array( Buffer.from( value, 'base64' ) );
+}
+
+/**
+ * @return {string} Empty Yjs update encoded as base64.
+ */
+function createEmptyYjsUpdateV2Base64() {
+	const emptyDoc = new Y.Doc();
+	const encoded = Buffer.from(
+		Y.encodeStateAsUpdateV2( emptyDoc, Y.encodeStateVector( emptyDoc ) )
+	).toString( 'base64' );
+	emptyDoc.destroy();
+	return encoded;
 }
 
 /**
@@ -120,9 +144,6 @@ function handleJoin( socket, message ) {
 	socket.clientId = message.clientId;
 	room.clients.add( socket );
 
-	if ( message.state ) {
-		room.updates.push( message.state );
-	}
 	if ( Object.prototype.hasOwnProperty.call( message, 'awareness' ) ) {
 		room.awareness.set( String( message.clientId ), message.awareness );
 	}
@@ -132,20 +153,19 @@ function handleJoin( socket, message ) {
 		room: message.room,
 		updates: room.updates,
 		awareness: roomAwarenessObject( room ),
+		peerCount: room.clients.size,
 	} );
 
-	if ( message.state ) {
-		broadcastJson(
-			room,
-			{
-				type: 'update',
-				room: message.room,
-				clientId: message.clientId,
-				update: message.state,
-			},
-			socket
-		);
-	}
+	broadcastJson(
+		room,
+		{
+			type: 'sync-request',
+			room: message.room,
+			clientId: message.clientId,
+			stateVector: message.stateVector,
+		},
+		socket
+	);
 
 	broadcastJson(
 		room,
@@ -169,7 +189,16 @@ function handleUpdate( socket, message ) {
 		return;
 	}
 
+	if ( message.update === emptyYjsUpdateV2Base64 ) {
+		return;
+	}
+
 	const room = getRoom( socket.roomName );
+	try {
+		Y.applyUpdateV2( room.doc, fromBase64( message.update ) );
+	} catch {
+		return;
+	}
 	room.updates.push( message.update );
 	broadcastJson(
 		room,
@@ -246,6 +275,7 @@ function reset() {
 		for ( const client of room.clients ) {
 			client.close( 1001, 'reset' );
 		}
+		room.doc.destroy();
 	}
 	rooms.clear();
 }
