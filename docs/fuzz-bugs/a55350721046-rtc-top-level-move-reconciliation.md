@@ -95,6 +95,8 @@ Pass 39 isolated the cache more directly. In a temporary known-fixes-base worktr
 
 made the same test pass, and the three focused regressions passed together. That rules out the later stale-snapshot reconciliation as the remaining blocker for this signature and pins the observed known-fixes-base failure on the cache hiding a real reorder.
 
+Pass 40 refreshed that proof after rebasing the PR branch onto `origin/trunk` at `e7f55c1b4d23b3eaebde1288b258b0d1c3bce938`. With only the current regression-test commit applied, current trunk fails all three focused repros. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908` passes the two stale-snapshot Y.Doc repros but still fails the same-array-reference reorder repro. The rebased PR branch passes the same focused set and the full `crdt-blocks` unit suite. This separates the bug into two layers: known fixes already cover stale snapshot authority, while this signature still requires removing the object-identity serialization cache so same-reference editor reorders are observable.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
