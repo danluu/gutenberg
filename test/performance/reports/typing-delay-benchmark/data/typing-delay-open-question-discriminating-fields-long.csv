@@ -1,0 +1,85 @@
+field_bundle,field_label,lane,status,field_dimension,score
+Generated-key row identity,Generated-key row identity,Benchmark artifact,partly present,decision value,5
+Generated-key row identity,Generated-key row identity,Benchmark artifact,partly present,collection burden,2
+Generated-key row identity,Generated-key row identity,Benchmark artifact,partly present,ambiguity if missing,5
+Generated-key row identity,Generated-key row identity,Benchmark artifact,partly present,overclaim risk,4
+Input helper and event-shape fields,"Input helper and event-shape
+fields",Benchmark artifact,partly present,decision value,5
+Input helper and event-shape fields,"Input helper and event-shape
+fields",Benchmark artifact,partly present,collection burden,2
+Input helper and event-shape fields,"Input helper and event-shape
+fields",Benchmark artifact,partly present,ambiguity if missing,4
+Input helper and event-shape fields,"Input helper and event-shape
+fields",Benchmark artifact,partly present,overclaim risk,5
+Persistence/timer relative ordering,"Persistence/timer relative
+ordering",Benchmark artifact,present locally,decision value,4
+Persistence/timer relative ordering,"Persistence/timer relative
+ordering",Benchmark artifact,present locally,collection burden,2
+Persistence/timer relative ordering,"Persistence/timer relative
+ordering",Benchmark artifact,present locally,ambiguity if missing,4
+Persistence/timer relative ordering,"Persistence/timer relative
+ordering",Benchmark artifact,present locally,overclaim risk,5
+Joined task/runtime checkpoint state,"Joined task/runtime checkpoint
+state",Runtime boundary,missing,decision value,4
+Joined task/runtime checkpoint state,"Joined task/runtime checkpoint
+state",Runtime boundary,missing,collection burden,4
+Joined task/runtime checkpoint state,"Joined task/runtime checkpoint
+state",Runtime boundary,missing,ambiguity if missing,5
+Joined task/runtime checkpoint state,"Joined task/runtime checkpoint
+state",Runtime boundary,missing,overclaim risk,5
+Renderer identity and clock sync,"Renderer identity and clock
+sync",Runtime boundary,missing,decision value,5
+Renderer identity and clock sync,"Renderer identity and clock
+sync",Runtime boundary,missing,collection burden,3
+Renderer identity and clock sync,"Renderer identity and clock
+sync",Runtime boundary,missing,ambiguity if missing,5
+Renderer identity and clock sync,"Renderer identity and clock
+sync",Runtime boundary,missing,overclaim risk,5
+CPU/QoS counter windows,CPU/QoS counter windows,CPU/QoS,missing,decision value,4
+CPU/QoS counter windows,CPU/QoS counter windows,CPU/QoS,missing,collection burden,5
+CPU/QoS counter windows,CPU/QoS counter windows,CPU/QoS,missing,ambiguity if missing,5
+CPU/QoS counter windows,CPU/QoS counter windows,CPU/QoS,missing,overclaim risk,5
+Readiness/resource/actionability fields,"Readiness/resource/actionability
+fields",CI/readiness,partial,decision value,5
+Readiness/resource/actionability fields,"Readiness/resource/actionability
+fields",CI/readiness,partial,collection burden,3
+Readiness/resource/actionability fields,"Readiness/resource/actionability
+fields",CI/readiness,partial,ambiguity if missing,5
+Readiness/resource/actionability fields,"Readiness/resource/actionability
+fields",CI/readiness,partial,overclaim risk,5
+Source-span owner and behavior fixtures,"Source-span owner and behavior
+fixtures",Source/code,partial,decision value,5
+Source-span owner and behavior fixtures,"Source-span owner and behavior
+fixtures",Source/code,partial,collection burden,3
+Source-span owner and behavior fixtures,"Source-span owner and behavior
+fixtures",Source/code,partial,ambiguity if missing,5
+Source-span owner and behavior fixtures,"Source-span owner and behavior
+fixtures",Source/code,partial,overclaim risk,5
+Public subscriber compatibility fields,"Public subscriber compatibility
+fields",Source/code,missing,decision value,4
+Public subscriber compatibility fields,"Public subscriber compatibility
+fields",Source/code,missing,collection burden,4
+Public subscriber compatibility fields,"Public subscriber compatibility
+fields",Source/code,missing,ambiguity if missing,5
+Public subscriber compatibility fields,"Public subscriber compatibility
+fields",Source/code,missing,overclaim risk,5
+Workload stratum and semantic assertion fields,"Workload stratum and semantic
+assertion fields",Claim expansion,missing,decision value,3
+Workload stratum and semantic assertion fields,"Workload stratum and semantic
+assertion fields",Claim expansion,missing,collection burden,5
+Workload stratum and semantic assertion fields,"Workload stratum and semantic
+assertion fields",Claim expansion,missing,ambiguity if missing,5
+Workload stratum and semantic assertion fields,"Workload stratum and semantic
+assertion fields",Claim expansion,missing,overclaim risk,5
+Presentation endpoint calibration fields,"Presentation endpoint
+calibration fields",Claim expansion,missing,decision value,3
+Presentation endpoint calibration fields,"Presentation endpoint
+calibration fields",Claim expansion,missing,collection burden,5
+Presentation endpoint calibration fields,"Presentation endpoint
+calibration fields",Claim expansion,missing,ambiguity if missing,4
+Presentation endpoint calibration fields,"Presentation endpoint
+calibration fields",Claim expansion,missing,overclaim risk,5
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,missing,decision value,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,missing,collection burden,4
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,missing,ambiguity if missing,5
+Dashboard/reviewer policy join,Dashboard/reviewer policy join,External policy,missing,overclaim risk,5

@@ -25632,6 +25632,152 @@ save_plot(
 	height = 8.6
 )
 
+open_question_discriminating_fields <- tribble(
+	~field_bundle, ~lane, ~status, ~separates, ~does_not_separate, ~acceptance_rule, ~if_missing, ~collector, ~prerequisite, ~decision_value_score, ~collection_burden_score, ~ambiguity_if_missing_score, ~overclaim_risk_score,
+	"Generated-key row identity", "Benchmark artifact", "partly present", "throwaway, first-retained, later-retained, missing-key, retry, and retained-q50 disagreements", "runtime, CPU, or source mechanism names", "every generated key has a stable row id, generated/retained flag, key index, failure/retry/missing status, and aggregate membership", "aggregate q50 can hide first-key or missing-key effects", "benchmark JSON plus reporter raw rows", "none", 5, 2, 5, 4,
+	"Input helper and event-shape fields", "Benchmark artifact", "partly present", "held key versus tap/complete-keypress/helper-family effects", "lower-level runtime or CPU state", "each row records helper API, requested delay, observed keydown-to-keyup duration, keyup-to-next-keydown gap, event counts, and browser revision", "held-key, tap, and complete-keypress rows can be accidentally pooled", "Playwright wrapper plus browser event trace", "none", 5, 2, 4, 5,
+	"Persistence/timer relative ordering", "Benchmark artifact", "present locally", "ordering-marker claims around rich-text persistence and timer rewrites", "whether callback work moved between measurement slices", "timer callback, persistence marker, keydown, input, keyup, and retained-window timestamps share one browser timebase", "the report can only say the delay curve changes near 1000ms, not which ordering boundary it crosses", "browser timer/persistence instrumentation", "none", 4, 2, 4, 5,
+	"Joined task/runtime checkpoint state", "Runtime boundary", "missing", "V8/runtime-call, task-queue, microtask, input-priority, or protocol-checkpoint state", "CPU frequency, QoS, cache, product workload, or public API compatibility", "sidecar-on/off rows preserve ordering; retained-key windows join to protocol commands, task categories, scheduler/input-priority fields, process/thread ids, and trace configuration", "runtime mechanism remains empirical and unnamed", "trace-off protocol sidecar, then scheduler/runtime trace", "retained-key sidecar acceptance", 4, 4, 5, 5,
+	"Renderer identity and clock sync", "Runtime boundary", "missing", "whether browser, renderer, helper, and collector rows describe the same retained key window", "any mechanism by itself", "driver/browser clocks are calibrated, renderer pid/thread/frame ids are stable, and every retained key joins to exactly one target window", "counter or trace rows are unjoinable even if they look correlated", "sidecar schema and calibration rows", "none", 5, 3, 5, 5,
+	"CPU/QoS counter windows", "CPU/QoS", "missing", "frequency, core residency, process QoS/tier, runnable latency, power, thermal, and scheduler/cache hypotheses", "Gutenberg source semantics, public subscriber compatibility, or product workload representativeness", "accepted sidecar rows plus root counters separate slow no-CPU/background rows from fast ordinary/utility rows without changing ordering", "system mechanism remains empirical CPU-state sensitivity", "root powermetrics first, root trace fallback if needed", "retained-key sidecar acceptance and root permission", 4, 5, 5, 5,
+	"Readiness/resource/actionability fields", "CI/readiness", "partial", "whether startup or pattern wait savings move setup/resource/actionability work into measurement", "runtime or source mechanisms", "candidate wait arms retain failures, retries, resources, preview/canvas state, actionability waits, first-key tails, run order, and environment metadata", "a lower q50 can be mistaken for a safe CI wait reduction", "real Performance Tests artifact plus resource/actionability sidecar", "CI/comparable topology", 5, 3, 5, 5,
+	"Source-span owner and behavior fixtures", "Source/code", "partial", "source-cost attribution versus behavior regression for selector guards", "runtime or CPU mechanism naming", "behavior fixtures pass before timing is interpreted; targeted owner spans collapse in count/time; aggregate p50 is secondary", "aggregate timing movement can be credited to the wrong source or a behavior change", "source-span microscope plus behavior fixture matrix", "candidate patch or prototype", 5, 3, 5, 5,
+	"Public subscriber compatibility fields", "Source/code", "missing", "whether fanout reduction preserves registry.subscribe, useSelect, withSelect, dynamic dependency, and persistence selector semantics", "browser/runtime or CPU state", "public/plugin subscriber fixtures pass while marker-only fanout collapses in the same prototype lane", "private or internal wins can be misreported as public-compatible data-layer changes", "compatibility matrix plus marker-only source spans", "source prototype", 4, 4, 5, 5,
+	"Workload stratum and semantic assertion fields", "Claim expansion", "missing", "whether fixed-x benchmark behavior transfers to real editing histories, plugin-heavy sessions, IME/composition, patterns, media, and idle return", "exact runtime or CPU mechanism", "each stratum has behavior assertions, event history, source spans, failures, retained rows, and environment metadata", "fixed-character evidence can be overgeneralized to product latency", "record/replay sidecar plus workload schema", "claim expansion decision", 3, 5, 5, 5,
+	"Presentation endpoint calibration fields", "Claim expansion", "missing", "Chromium-internal screenshot/paint/drawframe versus semantic glyph, present timestamp, or camera-visible display timing", "source safety, CPU mechanism, or CI policy", "external endpoint joins to retained keys, reports calibration error and dropped frames, and preserves observer-off ordering", "internal visual endpoint evidence can be overclaimed as physical display latency", "OCR/template/present/camera endpoint ladder", "external endpoint claim", 3, 5, 4, 5,
+	"Dashboard/reviewer policy join", "External policy", "missing", "whether repository q50 movement maps to pass/fail, noisy-metric handling, or reviewer action", "causal mechanism or source behavior", "archived CI artifacts join raw rows, displayed q50, dashboard thresholds, review outcome, and noisy-metric policy", "local q50 can be misreported as CI pass/fail authority", "CI artifact archive plus dashboard/reviewer metadata", "policy access", 4, 4, 5, 5
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Runtime boundary", "CPU/QoS", "Claim expansion", "External policy")),
+		status = factor(status, levels = c("present locally", "partly present", "partial", "missing")),
+		field_label = str_wrap(field_bundle, width = 31),
+		discriminating_priority = decision_value_score + ambiguity_if_missing_score + overclaim_risk_score - collection_burden_score,
+		field_action = case_when(
+			status == "present locally" ~ "already supports scoped claim",
+			collection_burden_score >= 5 & decision_value_score < 4 ~ "claim-expansion only",
+			discriminating_priority >= 10 ~ "must add before claim",
+			ambiguity_if_missing_score >= 5 ~ "required if run",
+			TRUE ~ "record as metadata"
+		),
+		field_action = factor(
+			field_action,
+			levels = c("already supports scoped claim", "record as metadata", "claim-expansion only", "required if run", "must add before claim")
+		)
+	)
+
+open_question_discriminating_fields_long <- open_question_discriminating_fields %>%
+	select(
+		field_bundle,
+		field_label,
+		lane,
+		status,
+		decision_value_score,
+		collection_burden_score,
+		ambiguity_if_missing_score,
+		overclaim_risk_score
+	) %>%
+	pivot_longer(
+		cols = c(
+			decision_value_score,
+			collection_burden_score,
+			ambiguity_if_missing_score,
+			overclaim_risk_score
+		),
+		names_to = "field_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		field_dimension = recode(
+			field_dimension,
+			decision_value_score = "decision value",
+			collection_burden_score = "collection burden",
+			ambiguity_if_missing_score = "ambiguity if missing",
+			overclaim_risk_score = "overclaim risk"
+		),
+		field_dimension = factor(
+			field_dimension,
+			levels = c("decision value", "collection burden", "ambiguity if missing", "overclaim risk")
+		),
+		field_label = fct_reorder(field_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_discriminating_fields_summary <- open_question_discriminating_fields %>%
+	count(lane, field_action, name = "field_bundles") %>%
+	group_by(lane) %>%
+	mutate(lane_field_bundles = sum(field_bundles)) %>%
+	ungroup()
+
+write_csv(
+	open_question_discriminating_fields %>%
+		select(
+			field_bundle,
+			lane,
+			status,
+			field_action,
+			separates,
+			does_not_separate,
+			acceptance_rule,
+			if_missing,
+			collector,
+			prerequisite,
+			decision_value_score,
+			collection_burden_score,
+			ambiguity_if_missing_score,
+			overclaim_risk_score,
+			discriminating_priority
+		),
+	file.path(data_dir, "typing-delay-open-question-discriminating-fields.csv")
+)
+
+write_csv(
+	open_question_discriminating_fields_long,
+	file.path(data_dir, "typing-delay-open-question-discriminating-fields-long.csv")
+)
+
+write_csv(
+	open_question_discriminating_fields_summary,
+	file.path(data_dir, "typing-delay-open-question-discriminating-fields-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_discriminating_fields_long, aes(field_dimension, field_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.55, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Score") +
+		labs(
+			title = "Remaining open questions need discriminating fields, not just more rows",
+			subtitle = "High ambiguity and overclaim risk mark fields that must be present before the corresponding claim is made",
+			x = "Field dimension",
+			y = "Field bundle"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"252-open-question-discriminating-fields.png",
+	width = 13.6,
+	height = 8.6
+)
+
+save_plot(
+	ggplot(
+		open_question_discriminating_fields %>%
+			mutate(field_label = fct_reorder(field_label, discriminating_priority)),
+		aes(discriminating_priority, field_label, fill = field_action)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Field action") +
+		labs(
+			title = "The next artifacts should add fields that remove ambiguity",
+			subtitle = "Priority adds decision value, ambiguity, and overclaim risk, then subtracts collection burden",
+			x = "Discriminating-field priority",
+			y = "Field bundle"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"253-open-question-field-priority.png",
+	width = 13.0,
+	height = 8.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

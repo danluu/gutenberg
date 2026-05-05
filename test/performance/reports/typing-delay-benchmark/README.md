@@ -1192,6 +1192,15 @@ The R script derives:
     overclaim risk.
 -   `data/typing-delay-open-question-theory-triage-summary.csv`: rollup of theory
     disposition and current action by claim lane.
+-   `data/typing-delay-open-question-discriminating-fields.csv`: field-level
+    audit for the remaining open questions, mapping each required field bundle
+    to the theories it can separate, the theories it cannot separate, acceptance
+    rules, and ambiguity if missing.
+-   `data/typing-delay-open-question-discriminating-fields-long.csv`: long-form
+    discriminating-field scores for decision value, collection burden, ambiguity
+    if missing, and overclaim risk.
+-   `data/typing-delay-open-question-discriminating-fields-summary.csv`: rollup
+    of field actions by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10077,6 +10086,34 @@ need retained-key sidecars and counters. CI wait changes need readiness and
 topology fields. Source changes need behavior and compatibility fields. The
 timer-work explanation should stay out of the report unless a future joined trace
 actually proves that work placement.
+
+The discriminating-field audit is the next operational layer. It asks which
+fields would actually separate the still-plausible theories. This is stricter
+than saying "run a sidecar" or "run CI": each field bundle has to name what it
+separates, what it cannot separate, how it is accepted, and what ambiguity
+remains if it is missing.
+
+![Open question discriminating fields](figures/252-open-question-discriminating-fields.png)
+
+![Open question field priority](figures/253-open-question-field-priority.png)
+
+| Field bundle | Separates | If missing |
+| ------------ | --------- | ---------- |
+| Generated-key row identity | throwaway, first-retained, later-retained, missing-key, retry, and retained-q50 disagreements | aggregate q50 can hide first-key or missing-key effects |
+| Input helper and event shape | held key versus tap, complete keypress, and helper-family effects | held-key, tap, and complete-keypress rows can be accidentally pooled |
+| Persistence/timer relative ordering | ordering-marker claims around rich-text persistence and timer rewrites | the report can only say the delay curve changes near `1000ms`, not which ordering boundary it crosses |
+| Renderer identity and clock sync | whether browser, renderer, helper, and collector rows describe the same retained key window | counter or trace rows are unjoinable even if they look correlated |
+| Joined task/runtime checkpoint state | V8/runtime-call, task-queue, microtask, input-priority, or protocol-checkpoint state | runtime mechanism remains empirical and unnamed |
+| CPU/QoS counter windows | frequency, core residency, process QoS/tier, runnable latency, power, thermal, and scheduler/cache hypotheses | system mechanism remains empirical CPU-state sensitivity |
+| Readiness/resource/actionability fields | whether startup or pattern wait savings move setup/resource/actionability work into measurement | a lower q50 can be mistaken for a safe CI wait reduction |
+| Source-span owners, behavior fixtures, and public subscriber compatibility | source-cost attribution versus behavior/API regression | aggregate timing movement can be credited to the wrong source or to an incompatible data-layer change |
+| Workload, presentation, and policy joins | product-latency, physical-display, and pass/fail-policy claim expansion | fixed-character or local q50 evidence can be overgeneralized |
+
+This sharpens the "missing-field" diagnosis. The next useful artifacts are not
+larger sweeps by default. They are narrow runs with generated-key identity,
+input-shape fields, readiness/actionability fields, source-span and behavior
+gates, and sidecar join fields. Without those fields, the next run can still
+produce a number while leaving the same open question open.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
