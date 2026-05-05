@@ -290,6 +290,77 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 	return getRootMap( crdtDoc, CRDT_RECORD_MAP_KEY ).toJSON();
 }
 
+function getGeneratedBlockSerialization( blocks: Block[] ): string {
+	return __unstableSerializeAndClean(
+		getGeneratedBlockSerializationBlocks( blocks )
+	).trim();
+}
+
+function getGeneratedBlockSerializationBlocks( blocks: Block[] ): Block[] {
+	return blocks.map( ( block ) => {
+		const innerBlocks = getGeneratedBlockSerializationBlocks(
+			block.innerBlocks ?? []
+		);
+
+		if (
+			block.isValid !== false ||
+			typeof block.originalContent !== 'string'
+		) {
+			return {
+				...block,
+				innerBlocks,
+			};
+		}
+
+		const generatedBlock: Block & { __unstableBlockSource?: unknown } = {
+			...block,
+			isValid: true,
+			innerBlocks,
+		};
+		delete generatedBlock.__unstableBlockSource;
+		delete generatedBlock.originalContent;
+		delete generatedBlock.validationIssues;
+
+		return generatedBlock;
+	} );
+}
+
+function hasInvalidBlockOriginalContent( blocks: Block[] ): boolean {
+	return blocks.some(
+		( block ) =>
+			( block.isValid === false &&
+				typeof block.originalContent === 'string' ) ||
+			hasInvalidBlockOriginalContent( block.innerBlocks ?? [] )
+	);
+}
+
+function hasPersistedBlockContentChanged(
+	blocks: Block[],
+	persistedContent: string | undefined
+): boolean {
+	const rawPersistedContent = persistedContent?.trim() ?? '';
+	const serializedBlocks = __unstableSerializeAndClean( blocks ).trim();
+
+	if ( serializedBlocks === rawPersistedContent ) {
+		return false;
+	}
+
+	// Invalid parsed blocks preserve originalContent to avoid data loss. When a
+	// save round-trip normalizes equivalent HTML entities, originalContent may
+	// differ from the server value even though the block attributes still
+	// serialize to the server's canonical content. Treat that as unchanged so
+	// the persisted CRDT doc is not invalidated on every save/reload cycle.
+	if ( ! hasInvalidBlockOriginalContent( blocks ) ) {
+		return true;
+	}
+
+	try {
+		return getGeneratedBlockSerialization( blocks ) !== rawPersistedContent;
+	} catch {
+		return true;
+	}
+}
+
 /**
  * Given a local Y.Doc that *may* contain changes from remote peers, compare
  * against the local record and determine if there are changes (edits) we want
@@ -342,8 +413,8 @@ export function getPostChangesFromCRDTDoc(
 					) {
 						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
 
-						return (
-							__unstableSerializeAndClean( blocksJson ).trim() !==
+						return hasPersistedBlockContentChanged(
+							blocksJson,
 							getRawValue( editedRecord.content )
 						);
 					}
