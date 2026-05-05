@@ -130,6 +130,21 @@ function createCursorSelection( offset: number ): WPBlockSelection {
 	};
 }
 
+function getYBlockContent( block: YBlock ): string {
+	const content = ( block.get( 'attributes' ) as YBlockAttributes ).get(
+		'content'
+	) as Y.Text;
+	return content.toString();
+}
+
+function getOptionalYBlockContent( block: YBlock ): string | undefined {
+	const attributes = block.get( 'attributes' ) as
+		| YBlockAttributes
+		| undefined;
+	const content = attributes?.get( 'content' ) as Y.Text | undefined;
+	return content?.toString();
+}
+
 describe( 'crdt-blocks', () => {
 	let doc: Y.Doc;
 	let yblocks: Y.Array< YBlock >;
@@ -360,6 +375,394 @@ describe( 'crdt-blocks', () => {
 				block1.get( 'attributes' ) as YBlockAttributes
 			 ).get( 'content' ) as Y.Text;
 			expect( content1.toString() ).toBe( 'First' );
+		} );
+
+		it( 'does not rewrite block records when moving adjacent top-level blocks', () => {
+			const insertedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content: 'RTC realistic inserted paragraph',
+				},
+				innerBlocks: [],
+				clientId: 'inserted-block',
+			};
+			const movedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا.',
+				},
+				innerBlocks: [],
+				clientId: 'moved-block',
+			};
+			const displacedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Another paragraph exists so the top-level list is not degenerate.',
+				},
+				innerBlocks: [],
+				clientId: 'displaced-block',
+			};
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, movedBlock, displacedBlock ],
+				null
+			);
+
+			const movedYBlock = yblocks.get( 1 );
+			const displacedYBlock = yblocks.get( 2 );
+			const rewrittenClientIds: string[] = [];
+			yblocks.observeDeep( ( events ) => {
+				for ( const event of events ) {
+					if (
+						event.target instanceof Y.Map &&
+						event.keysChanged.has( 'clientId' )
+					) {
+						rewrittenClientIds.push(
+							event.target.get( 'clientId' ) as string
+						);
+					}
+				}
+			} );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, displacedBlock, movedBlock ],
+				null
+			);
+
+			// The merge may detach old Y.Map records to represent a move, but
+			// it must not morph them into adjacent sibling blocks.
+			expect( [ undefined, movedBlock.attributes.content ] ).toContain(
+				getOptionalYBlockContent( movedYBlock )
+			);
+			expect( [
+				undefined,
+				displacedBlock.attributes.content,
+			] ).toContain( getOptionalYBlockContent( displacedYBlock ) );
+			expect( rewrittenClientIds ).toEqual( [] );
+			expect(
+				Array.from( { length: yblocks.length }, ( _value, index ) =>
+					getYBlockContent( yblocks.get( index ) )
+				)
+			).toEqual( [
+				insertedBlock.attributes.content,
+				displacedBlock.attributes.content,
+				movedBlock.attributes.content,
+			] );
+		} );
+
+		it( 'does not encode adjacent pure moves as sibling rich-text rewrites', () => {
+			const insertedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content: 'RTC realistic inserted paragraph',
+				},
+				innerBlocks: [],
+				clientId: 'inserted-block',
+			};
+			const movedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا.',
+				},
+				innerBlocks: [],
+				clientId: 'moved-block',
+			};
+			const displacedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Another paragraph exists so the top-level list is not degenerate.',
+				},
+				innerBlocks: [],
+				clientId: 'displaced-block',
+			};
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, movedBlock, displacedBlock ],
+				null
+			);
+
+			const contentTextOwners = new Map< Y.Text, string >();
+			for ( let index = 0; index < yblocks.length; index++ ) {
+				const yblock = yblocks.get( index );
+				const attributes = yblock.get(
+					'attributes'
+				) as YBlockAttributes;
+				const contentText = attributes.get( 'content' ) as Y.Text;
+				contentTextOwners.set(
+					contentText,
+					yblock.get( 'clientId' ) as string
+				);
+			}
+
+			const richTextRewrites: Array< {
+				content: string;
+				ownerClientId: string;
+			} > = [];
+
+			yblocks.observeDeep( ( events ) => {
+				for ( const event of events ) {
+					if ( event.target instanceof Y.Text ) {
+						richTextRewrites.push( {
+							content: event.target.toString(),
+							ownerClientId:
+								contentTextOwners.get( event.target ) ??
+								'unknown',
+						} );
+					}
+				}
+			} );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, displacedBlock, movedBlock ],
+				null
+			);
+
+			expect( richTextRewrites ).toEqual( [] );
+			expect(
+				Array.from( { length: yblocks.length }, ( _value, index ) =>
+					getYBlockContent( yblocks.get( index ) )
+				)
+			).toEqual( [
+				insertedBlock.attributes.content,
+				displacedBlock.attributes.content,
+				movedBlock.attributes.content,
+			] );
+		} );
+
+		it( 'represents adjacent pure moves as structural array changes', () => {
+			const insertedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content: 'RTC realistic inserted paragraph',
+				},
+				innerBlocks: [],
+				clientId: 'inserted-block',
+			};
+			const movedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا.',
+				},
+				innerBlocks: [],
+				clientId: 'moved-block',
+			};
+			const displacedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Another paragraph exists so the top-level list is not degenerate.',
+				},
+				innerBlocks: [],
+				clientId: 'displaced-block',
+			};
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, movedBlock, displacedBlock ],
+				null
+			);
+
+			const arrayDeltas: unknown[] = [];
+			const nonArrayEventTargets: string[] = [];
+
+			yblocks.observeDeep( ( events ) => {
+				for ( const event of events ) {
+					if ( event.target === yblocks ) {
+						arrayDeltas.push( event.changes.delta );
+						continue;
+					}
+
+					nonArrayEventTargets.push( event.target.constructor.name );
+				}
+			} );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, displacedBlock, movedBlock ],
+				null
+			);
+
+			expect( nonArrayEventTargets ).toEqual( [] );
+			expect( arrayDeltas ).toHaveLength( 1 );
+
+			const delta = arrayDeltas[ 0 ] as Array< {
+				delete?: number;
+				insert?: unknown[];
+				retain?: number;
+			} >;
+			expect( delta[ 0 ] ).toEqual( { retain: 1 } );
+			expect( delta[ 1 ].insert ).toHaveLength( 2 );
+			expect( delta[ 2 ] ).toEqual( { delete: 2 } );
+			expect(
+				delta[ 1 ].insert?.every( ( value ) => value instanceof Y.Map )
+			).toBe( true );
+			expect(
+				Array.from( { length: yblocks.length }, ( _value, index ) =>
+					yblocks.get( index ).get( 'clientId' )
+				)
+			).toEqual( [
+				insertedBlock.clientId,
+				displacedBlock.clientId,
+				movedBlock.clientId,
+			] );
+		} );
+
+		it( 'replicates direct pure move merges as structural array changes', () => {
+			const remoteDoc = new Y.Doc();
+			const insertedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content: 'RTC realistic inserted paragraph',
+				},
+				innerBlocks: [],
+				clientId: 'inserted-block',
+			};
+			const movedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا.',
+				},
+				innerBlocks: [],
+				clientId: 'moved-block',
+			};
+			const displacedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: {
+					content:
+						'Another paragraph exists so the top-level list is not degenerate.',
+				},
+				innerBlocks: [],
+				clientId: 'displaced-block',
+			};
+
+			try {
+				mergeCrdtBlocks(
+					yblocks,
+					[ insertedBlock, movedBlock, displacedBlock ],
+					null
+				);
+				Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+				const remoteBlocks = remoteDoc.getArray< YBlock >();
+				const remoteStateVector = Y.encodeStateVector( remoteDoc );
+				const remoteArrayDeltas: unknown[] = [];
+				const remoteNonArrayEventTargets: string[] = [];
+
+				remoteBlocks.observeDeep( ( events ) => {
+					for ( const event of events ) {
+						if ( event.target === remoteBlocks ) {
+							remoteArrayDeltas.push( event.changes.delta );
+							continue;
+						}
+
+						remoteNonArrayEventTargets.push(
+							event.target.constructor.name
+						);
+					}
+				} );
+
+				mergeCrdtBlocks(
+					yblocks,
+					[ insertedBlock, displacedBlock, movedBlock ],
+					null
+				);
+				Y.applyUpdate(
+					remoteDoc,
+					Y.encodeStateAsUpdate( doc, remoteStateVector )
+				);
+
+				expect( remoteNonArrayEventTargets ).toEqual( [] );
+				expect( remoteArrayDeltas ).toHaveLength( 1 );
+				expect(
+					Array.from(
+						{ length: remoteBlocks.length },
+						( _value, index ) =>
+							getYBlockContent( remoteBlocks.get( index ) )
+					)
+				).toEqual( [
+					insertedBlock.attributes.content,
+					displacedBlock.attributes.content,
+					movedBlock.attributes.content,
+				] );
+			} finally {
+				remoteDoc.destroy();
+			}
+		} );
+
+		it( 'represents non-adjacent pure moves as structural array changes', () => {
+			const introBlock: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Intro paragraph' },
+				innerBlocks: [],
+				clientId: 'intro-block',
+			};
+			const movedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Moved paragraph' },
+				innerBlocks: [],
+				clientId: 'moved-block',
+			};
+			const middleBlock: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Middle paragraph' },
+				innerBlocks: [],
+				clientId: 'middle-block',
+			};
+			const tailBlock: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Tail paragraph' },
+				innerBlocks: [],
+				clientId: 'tail-block',
+			};
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ introBlock, movedBlock, middleBlock, tailBlock ],
+				null
+			);
+
+			const arrayDeltas: unknown[] = [];
+			const nonArrayEventTargets: string[] = [];
+
+			yblocks.observeDeep( ( events ) => {
+				for ( const event of events ) {
+					if ( event.target === yblocks ) {
+						arrayDeltas.push( event.changes.delta );
+						continue;
+					}
+
+					nonArrayEventTargets.push( event.target.constructor.name );
+				}
+			} );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ introBlock, middleBlock, tailBlock, movedBlock ],
+				null
+			);
+
+			expect( nonArrayEventTargets ).toEqual( [] );
+			expect( arrayDeltas ).toHaveLength( 1 );
+			expect(
+				Array.from( { length: yblocks.length }, ( _value, index ) =>
+					yblocks.get( index ).get( 'clientId' )
+				)
+			).toEqual( [
+				introBlock.clientId,
+				middleBlock.clientId,
+				tailBlock.clientId,
+				movedBlock.clientId,
+			] );
 		} );
 
 		it( 'creates Y.Text for rich-text attributes', () => {
