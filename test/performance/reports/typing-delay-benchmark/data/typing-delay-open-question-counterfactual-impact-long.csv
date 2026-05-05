@@ -1,0 +1,97 @@
+question_family,question_label,counterfactual_class,counterfactual_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only local claim,engineering action,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only local claim,wording scope,2
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only local claim,evidence cost,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only local claim,wrong-action risk,2
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only local claim,current blocker,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",trigger-only local claim,same-harness waste,5
+Persistence ordering boundary,Persistence ordering boundary,mechanism wording gate,engineering action,1
+Persistence ordering boundary,Persistence ordering boundary,mechanism wording gate,wording scope,4
+Persistence ordering boundary,Persistence ordering boundary,mechanism wording gate,evidence cost,4
+Persistence ordering boundary,Persistence ordering boundary,mechanism wording gate,wrong-action risk,3
+Persistence ordering boundary,Persistence ordering boundary,mechanism wording gate,current blocker,2
+Persistence ordering boundary,Persistence ordering boundary,mechanism wording gate,same-harness waste,4
+Input mode versus product typing,"Input mode versus product
+typing",claim-scope gate,engineering action,2
+Input mode versus product typing,"Input mode versus product
+typing",claim-scope gate,wording scope,5
+Input mode versus product typing,"Input mode versus product
+typing",claim-scope gate,evidence cost,4
+Input mode versus product typing,"Input mode versus product
+typing",claim-scope gate,wrong-action risk,4
+Input mode versus product typing,"Input mode versus product
+typing",claim-scope gate,current blocker,4
+Input mode versus product typing,"Input mode versus product
+typing",claim-scope gate,same-harness waste,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,mechanism wording gate,engineering action,1
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,mechanism wording gate,wording scope,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,mechanism wording gate,evidence cost,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,mechanism wording gate,wrong-action risk,2
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,mechanism wording gate,current blocker,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,mechanism wording gate,same-harness waste,5
+CPU/QoS mechanism,CPU/QoS mechanism,mechanism wording gate,engineering action,1
+CPU/QoS mechanism,CPU/QoS mechanism,mechanism wording gate,wording scope,4
+CPU/QoS mechanism,CPU/QoS mechanism,mechanism wording gate,evidence cost,5
+CPU/QoS mechanism,CPU/QoS mechanism,mechanism wording gate,wrong-action risk,2
+CPU/QoS mechanism,CPU/QoS mechanism,mechanism wording gate,current blocker,3
+CPU/QoS mechanism,CPU/QoS mechanism,mechanism wording gate,same-harness waste,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/runtime gate,engineering action,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/runtime gate,wording scope,2
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/runtime gate,evidence cost,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/runtime gate,wrong-action risk,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/runtime gate,current blocker,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",CI/runtime gate,same-harness waste,3
+Pattern wait replacement,Pattern wait replacement,CI/runtime gate,engineering action,5
+Pattern wait replacement,Pattern wait replacement,CI/runtime gate,wording scope,2
+Pattern wait replacement,Pattern wait replacement,CI/runtime gate,evidence cost,3
+Pattern wait replacement,Pattern wait replacement,CI/runtime gate,wrong-action risk,5
+Pattern wait replacement,Pattern wait replacement,CI/runtime gate,current blocker,5
+Pattern wait replacement,Pattern wait replacement,CI/runtime gate,same-harness waste,3
+Selector/source guard,Selector/source guard,source/API gate,engineering action,4
+Selector/source guard,Selector/source guard,source/API gate,wording scope,3
+Selector/source guard,Selector/source guard,source/API gate,evidence cost,3
+Selector/source guard,Selector/source guard,source/API gate,wrong-action risk,5
+Selector/source guard,Selector/source guard,source/API gate,current blocker,4
+Selector/source guard,Selector/source guard,source/API gate,same-harness waste,4
+Store subscriber partition,Store subscriber partition,source/API gate,engineering action,4
+Store subscriber partition,Store subscriber partition,source/API gate,wording scope,3
+Store subscriber partition,Store subscriber partition,source/API gate,evidence cost,4
+Store subscriber partition,Store subscriber partition,source/API gate,wrong-action risk,5
+Store subscriber partition,Store subscriber partition,source/API gate,current blocker,5
+Store subscriber partition,Store subscriber partition,source/API gate,same-harness waste,4
+Product workload generalization,"Product workload
+generalization",claim-scope gate,engineering action,2
+Product workload generalization,"Product workload
+generalization",claim-scope gate,wording scope,5
+Product workload generalization,"Product workload
+generalization",claim-scope gate,evidence cost,5
+Product workload generalization,"Product workload
+generalization",claim-scope gate,wrong-action risk,3
+Product workload generalization,"Product workload
+generalization",claim-scope gate,current blocker,5
+Product workload generalization,"Product workload
+generalization",claim-scope gate,same-harness waste,5
+External display endpoint,External display endpoint,claim-scope gate,engineering action,1
+External display endpoint,External display endpoint,claim-scope gate,wording scope,5
+External display endpoint,External display endpoint,claim-scope gate,evidence cost,5
+External display endpoint,External display endpoint,claim-scope gate,wrong-action risk,2
+External display endpoint,External display endpoint,claim-scope gate,current blocker,5
+External display endpoint,External display endpoint,claim-scope gate,same-harness waste,5
+CI pass/fail policy,CI pass/fail policy,policy gate,engineering action,4
+CI pass/fail policy,CI pass/fail policy,policy gate,wording scope,4
+CI pass/fail policy,CI pass/fail policy,policy gate,evidence cost,4
+CI pass/fail policy,CI pass/fail policy,policy gate,wrong-action risk,5
+CI pass/fail policy,CI pass/fail policy,policy gate,current blocker,5
+CI pass/fail policy,CI pass/fail policy,policy gate,same-harness waste,5

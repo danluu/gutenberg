@@ -1227,6 +1227,12 @@ The R script derives:
     external dependency, and the wrong next analysis to avoid.
 -   `data/typing-delay-open-question-convergence-audit-long.csv`: long-form
     convergence scores used for the convergence heatmap.
+-   `data/typing-delay-open-question-counterfactual-impact.csv`: counterfactual
+    decision-impact audit for remaining question families, including current
+    position, pass/fail consequence, decision owner, evidence cost, wrong-action
+    risk, blocker strength, and same-harness waste.
+-   `data/typing-delay-open-question-counterfactual-impact-long.csv`: long-form
+    counterfactual impact scores used for the action/wording heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10246,6 +10252,28 @@ This is the cleanest stopping rule for the repeated open-question passes. More
 samples from the existing held-key harness would mostly raise confidence in rows
 that are already saturated. The rows that can still change action need different
 artifacts, not larger versions of the same measurement.
+
+The counterfactual-impact audit asks the remaining decision question: if the open
+item were answered tomorrow, what would actually change? This separates open
+questions that can move CI/source behavior from open questions that only permit
+broader wording or mechanism naming.
+
+![Open question counterfactual impact](figures/262-open-question-counterfactual-impact.png)
+
+![Open question decision delta](figures/263-open-question-decision-delta.png)
+
+| Counterfactual class | Decision impact |
+| -------------------- | --------------- |
+| Trigger-only local claim | the held-key cliff and metric split need only a small recheck after a metric-definition trigger; more unchanged local samples are waste |
+| CI/runtime gates | startup-wait and pattern-wait rows can change CI runtime, but only through target-topology readiness gates |
+| Source/API gates | selector guards and store partitioning can change source work, but behavior, source-span, and compatibility gates decide safety before p50 |
+| Mechanism wording gates | persistence, runtime, and CPU/QoS rows can improve explanation wording; they should not block the local benchmark conclusion |
+| Claim-scope and policy gates | product workload, display, and pass/fail policy rows decide whether broader claims are allowed, not whether the held-key artifact exists |
+
+This is a stronger version of the stopping rule. The open questions are not all
+open in the same way. The rows worth running next are the ones with high
+action-delta and concrete gates. The high-cost low-action rows should be treated
+as claim-expansion work, not blockers for the local benchmark result.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

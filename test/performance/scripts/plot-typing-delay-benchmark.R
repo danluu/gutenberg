@@ -26602,6 +26602,203 @@ save_plot(
 	height = 7.8
 )
 
+open_question_counterfactual_impact <- tribble(
+	~question_family, ~current_position, ~if_confirmed, ~if_disconfirmed, ~decision_owner, ~next_decision_gate, ~engineering_action_delta, ~wording_scope_delta, ~evidence_cost, ~wrong_action_risk, ~current_blocker_strength, ~wasted_same_harness_risk,
+	"Held-key cliff and metric split", "keep separate held-key and complete-keypress metrics; do not rerun without trigger", "no action change; keep current metric boundary", "reopen the benchmark metric and threshold continuity", "benchmark metric owner", "metric-definition trigger recheck", 1, 2, 1, 2, 1, 5,
+	"Persistence ordering boundary", "state ordering marker, not timer-work-shift mechanism", "widen only to the proven work-placement mechanism", "keep current ordering-only wording", "benchmark wording owner", "joined task/runtime work-placement trace", 1, 4, 4, 3, 2, 4,
+	"Input mode versus product typing", "scope cliff to held-key benchmark input shape", "widen only to passing replay strata", "keep product-typing wording blocked", "product workload owner", "representative replay strata", 2, 5, 4, 4, 4, 4,
+	"Runtime checkpoint mechanism", "keep runtime checkpoint effect empirical and unnamed", "name only the joined runtime field that separates retained classes", "keep empirical wording", "mechanism owner", "passive retained-key runtime sidecar", 1, 4, 5, 2, 3, 5,
+	"CPU/QoS mechanism", "state system-state sensitivity without naming the exact layer", "name only joined counters that separate retained classes", "downgrade to empirical sensitivity", "system mechanism owner", "accepted sidecar plus root counters", 1, 4, 5, 2, 3, 5,
+	"Startup wait and first-key tails", "do not add Typing startup wait; validate wait reduction in target topology", "reduce waits only in passing target lanes and split idle-input if needed", "block wait reduction or split retained and idle metrics", "CI runtime owner", "Performance Tests topology readiness artifact", 5, 2, 3, 5, 5, 3,
+	"Pattern wait replacement", "treat local shorter waits as candidates, not rollout proof", "replace or reduce waits only for passing predicate/fallback lanes", "keep fixed fallback for failing lanes", "pattern benchmark owner", "predicate plus resource-quiet validation", 5, 2, 3, 5, 5, 3,
+	"Selector/source guard", "prototype only behind behavior and source-span gates", "ship or cite only after behavior passes and targeted span collapses", "reject or re-scope the patch before citing timing", "source optimization owner", "behavior fixtures plus source spans", 4, 3, 3, 5, 4, 4,
+	"Store subscriber partition", "do not infer public data-layer safety from timing or private side channels", "change only compatible subscriber classes after public fixtures pass", "keep public root-notification semantics or narrow to private path", "data-layer API owner", "public subscriber compatibility matrix", 4, 3, 4, 5, 5, 4,
+	"Product workload generalization", "keep fixed-`x` as benchmark/source evidence only", "generalize only to passing workload strata", "keep product-wide wording blocked", "product workload owner", "synthetic and recorded replay strata", 2, 5, 5, 3, 5, 5,
+	"External display endpoint", "scope visual claims to Chromium-internal propagation", "widen only to the deepest passing calibrated endpoint", "keep physical display wording blocked", "display measurement owner", "calibrated external endpoint ladder", 1, 5, 5, 2, 5, 5,
+	"CI pass/fail policy", "treat q50 movement as evidence production, not pass/fail policy", "predict pass/fail only under documented dashboard or reviewer policy", "keep q50 as evidence without gate semantics", "CI policy owner", "dashboard or reviewer policy join", 4, 4, 4, 5, 5, 5
+) %>%
+	left_join(
+		open_question_convergence_audit %>%
+			select(question_family, analysis_state, convergence_strength, open_dependency_pressure),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		counterfactual_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		max_decision_delta = pmax(engineering_action_delta, wording_scope_delta),
+		engineer_value_after_cost = engineering_action_delta + wrong_action_risk - evidence_cost,
+		counterfactual_class = case_when(
+			engineering_action_delta >= 5 ~ "CI/runtime gate",
+			engineering_action_delta >= 4 & str_detect(decision_owner, "source|data-layer") ~ "source/API gate",
+			engineering_action_delta >= 4 ~ "policy gate",
+			wording_scope_delta >= 5 ~ "claim-scope gate",
+			wording_scope_delta >= 4 ~ "mechanism wording gate",
+			TRUE ~ "trigger-only local claim"
+		),
+		counterfactual_class = factor(
+			counterfactual_class,
+			levels = c("trigger-only local claim", "mechanism wording gate", "claim-scope gate", "source/API gate", "policy gate", "CI/runtime gate")
+		)
+	)
+
+open_question_counterfactual_impact_long <- open_question_counterfactual_impact %>%
+	select(
+		question_family,
+		question_label,
+		counterfactual_class,
+		engineering_action_delta,
+		wording_scope_delta,
+		evidence_cost,
+		wrong_action_risk,
+		current_blocker_strength,
+		wasted_same_harness_risk
+	) %>%
+	pivot_longer(
+		cols = c(
+			engineering_action_delta,
+			wording_scope_delta,
+			evidence_cost,
+			wrong_action_risk,
+			current_blocker_strength,
+			wasted_same_harness_risk
+		),
+		names_to = "counterfactual_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		counterfactual_dimension = recode(
+			counterfactual_dimension,
+			engineering_action_delta = "engineering action",
+			wording_scope_delta = "wording scope",
+			evidence_cost = "evidence cost",
+			wrong_action_risk = "wrong-action risk",
+			current_blocker_strength = "current blocker",
+			wasted_same_harness_risk = "same-harness waste"
+		),
+		counterfactual_dimension = factor(
+			counterfactual_dimension,
+			levels = c("engineering action", "wording scope", "evidence cost", "wrong-action risk", "current blocker", "same-harness waste")
+		),
+		question_label = fct_reorder(question_label, as.numeric(counterfactual_class), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_counterfactual_impact %>%
+		select(
+			question_family,
+			analysis_state,
+			counterfactual_class,
+			decision_owner,
+			current_position,
+			if_confirmed,
+			if_disconfirmed,
+			next_decision_gate,
+			engineering_action_delta,
+			wording_scope_delta,
+			evidence_cost,
+			wrong_action_risk,
+			current_blocker_strength,
+			wasted_same_harness_risk,
+			max_decision_delta,
+			engineer_value_after_cost,
+			convergence_strength,
+			open_dependency_pressure
+		),
+	file.path(data_dir, "typing-delay-open-question-counterfactual-impact.csv")
+)
+
+write_csv(
+	open_question_counterfactual_impact_long,
+	file.path(data_dir, "typing-delay-open-question-counterfactual-impact-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_counterfactual_impact_long, aes(counterfactual_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.6, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Score") +
+		labs(
+			title = "Counterfactual impact separates action gates from wording gates",
+			subtitle = "Some open questions can change CI or source actions; others only permit broader mechanism, product, display, or policy wording",
+			x = "Counterfactual dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"262-open-question-counterfactual-impact.png",
+	width = 13.6,
+	height = 8.8
+)
+
+open_question_counterfactual_delta_plot <- open_question_counterfactual_impact %>%
+	group_by(evidence_cost, engineering_action_delta) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.11),
+		point_evidence_cost = evidence_cost + overlap_radius * cos(overlap_angle),
+		point_engineering_action_delta = engineering_action_delta + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_evidence_cost = point_evidence_cost + if_else(label_left, -0.06, 0.06),
+		label_engineering_action_delta = point_engineering_action_delta + case_when(
+			overlap_count == 1L ~ 0,
+			overlap_index %% 2L == 1L ~ 0.08,
+			TRUE ~ -0.08
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_counterfactual_delta_plot,
+		aes(point_evidence_cost, point_engineering_action_delta, color = counterfactual_class, size = wrong_action_risk)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_evidence_cost,
+				y = label_engineering_action_delta,
+				label = str_wrap(counterfactual_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Counterfactual class") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "Wrong-action risk") +
+		scale_x_continuous(breaks = 1:5, limits = c(0.7, 5.65)) +
+		scale_y_continuous(breaks = 1:5, limits = c(0.7, 5.35)) +
+		labs(
+			title = "Only a few open questions can move near-term engineering action",
+			subtitle = "High-cost low-action rows should not block local conclusions; high-action rows need their specific gates",
+			x = "Evidence cost",
+			y = "Engineering action delta if resolved"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"263-open-question-decision-delta.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
