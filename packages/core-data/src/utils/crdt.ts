@@ -298,12 +298,14 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
  * @param {CRDTDoc}     ydoc
  * @param {Post}        editedRecord
  * @param {Set<string>} syncedProperties
+ * @param {Post}        persistedRecord
  * @return {Partial<PostChanges>} The changes that should be applied to the local record.
  */
 export function getPostChangesFromCRDTDoc(
 	ydoc: CRDTDoc,
 	editedRecord: Post,
-	syncedProperties: Set< string >
+	syncedProperties: Set< string >,
+	persistedRecord?: Post
 ): PostChanges {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
 
@@ -407,10 +409,23 @@ export function getPostChangesFromCRDTDoc(
 				case 'content':
 				case 'excerpt':
 				case 'title': {
-					return haveValuesChanged(
-						getRawValue( currentValue ),
-						newValue
+					const currentRawValue = getRawValue( currentValue );
+					const persistedRawValue = getRawValue(
+						persistedRecord?.[ key ]
 					);
+
+					if (
+						persistedRecord &&
+						haveValuesChanged(
+							currentRawValue,
+							persistedRawValue
+						) &&
+						! haveValuesChanged( newValue, persistedRawValue )
+					) {
+						return false;
+					}
+
+					return haveValuesChanged( currentRawValue, newValue );
 				}
 
 				// Add support for additional data types here.
