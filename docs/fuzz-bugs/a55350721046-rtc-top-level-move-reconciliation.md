@@ -97,6 +97,14 @@ made the same test pass, and the three focused regressions passed together. That
 
 Pass 40 refreshed that proof after rebasing the PR branch onto `origin/trunk` at `e7f55c1b4d23b3eaebde1288b258b0d1c3bce938`. With only the current regression-test commit applied, current trunk fails all three focused repros. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908` passes the two stale-snapshot Y.Doc repros but still fails the same-array-reference reorder repro. The rebased PR branch passes the same focused set and the full `crdt-blocks` unit suite. This separates the bug into two layers: known fixes already cover stale snapshot authority, while this signature still requires removing the object-identity serialization cache so same-reference editor reorders are observable.
 
+Pass 41 independently repeated the same split against the same current trunk and known-fixes base. The trunk negative control, with only the regression-test commit applied, failed all three focused repros: the two stale-snapshot Y.Doc cases and the same-array-reference reorder case. The known-fixes-base negative control again passed the two stale-snapshot cases and failed only `observes reordered blocks when the editor reuses the same block array reference`. The PR branch passed the same three-test focus set. A fresh headless Playwright rerun was attempted on the fixed branch, but local `wp-env start` still failed before WordPress boot because Docker could not allocate another bridge network:
+
+```text
+failed to create network wp-env-gutenberg-bug-a55350721046-09e684eb_default: Error response from daemon: all predefined address pools have been fully subnetted
+```
+
+That environment failure does not affect the classification: every active `wp-env` bridge network had running containers attached, so the pass did not stop unrelated environments, and the prior fixed-branch headless Playwright run remains the latest feasible natural-user-action browser verification.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
