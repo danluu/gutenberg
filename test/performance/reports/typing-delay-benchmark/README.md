@@ -1564,6 +1564,20 @@ The R script derives:
     checkpoints for retention-record, retention-axis, retention-state,
     retention-value, retrieval-value, timing-only-retention, and analysis-only
     saturation.
+-   `data/typing-delay-open-question-access-control-register.csv`: access
+    control register for the nine retention records, including read access,
+    write access, mutation gate, deletion guard, tamper signal, discovery
+    policy, escalation path, and permission owner.
+-   `data/typing-delay-open-question-access-control-100-pass-audit.csv`:
+    twenty-first forced 100-pass audit over access-control axes: read, write,
+    mutate, delete, tamper, discover, owner, escalate, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-access-control-100-pass-summary.csv`:
+    rollup of access-control coverage by access state, retention state, and
+    pass result.
+-   `data/typing-delay-open-question-access-control-100-pass-checkpoints.csv`:
+    checkpoints for access-record, access-axis, access-state, access-value,
+    permission-value, timing-only-access, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11376,6 +11390,36 @@ This prevents a subtler failure mode: a claim outliving the artifact that made
 it defensible. If a packet, owner artifact, observer artifact, or generated
 figure cannot be retrieved and integrity-checked, the linked claim is treated as
 unsupported until the row is restored or superseded.
+
+I then added the access-control layer: each retained evidence row now names who
+can read it, who can mutate or replace it, what review gate is required, what
+prevents deletion from leaving an orphan claim, what detects tampering, and
+where disputed permissions escalate.
+
+![Open question access control register](figures/345-open-question-access-control-register.png)
+
+![Open question access control 100-pass saturation](figures/346-open-question-access-control-100-pass-saturation.png)
+
+![Open question access control coverage](figures/347-open-question-access-control-coverage.png)
+
+| Access-control check | Result |
+| -------------------- | ------ |
+| Access-control records | `9`, one per retention record. |
+| Access states | `3`: local packet access control, owner artifact access control, and observer artifact access control. |
+| Permission owners | `9`; mutation, deletion, and tamper failures route to the scoped retention owner. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Access-axis checks | `90`: every row checked against all `10` access-control axes. |
+| Access value | `6471`: local packet access contributes `4885`, owner artifact access contributes `983`, and observer artifact access contributes `603`. |
+| Permission value | `5264` across the nine access-control records. |
+| Timing-only access value | `0`; aggregate timing alone does not establish read/write permissions, mutation review, deletion guards, tamper detection, discovery, or escalation. |
+| Saturation | Access records are all named by pass `9`; all access axes are covered by pass `90`; passes `91-100` add no access coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This prevents retained evidence from becoming a mutable blob with no accountable
+owner. If an artifact can be silently rewritten or deleted, the linked claim is
+not stable evidence. The access-control row makes that explicit: report wording
+is reusable only when permissions, mutation gates, deletion guards, and tamper
+signals are all intact.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

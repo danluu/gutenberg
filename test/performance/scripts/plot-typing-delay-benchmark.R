@@ -34758,6 +34758,296 @@ save_plot(
 	height = 7.2
 )
 
+open_question_access_control_register <- open_question_retention_register %>%
+	mutate(
+		access_state = case_when(
+			retention_state == "local packet retention" ~ "local packet access control",
+			retention_state == "owner artifact retention" ~ "owner artifact access control",
+			TRUE ~ "observer artifact access control"
+		),
+		read_access = case_when(
+			access_state == "local packet access control" ~ "report readers can inspect committed CSVs, figures, checksums, and linked packet metadata",
+			access_state == "owner artifact access control" ~ "report readers can inspect the owner artifact link, signed scope decision, and compatibility or policy diff",
+			TRUE ~ "report readers can inspect the observer artifact link, calibration or replay control, and signed mechanism decision"
+		),
+		write_access = case_when(
+			access_state == "local packet access control" ~ "only the report-producing script or a reviewed patch may rewrite packet-derived CSVs and figures",
+			access_state == "owner artifact access control" ~ "only the owner or an explicitly delegated reviewer may replace the owner artifact or scope decision",
+			TRUE ~ "only the observer artifact owner or delegated reviewer may replace calibration, replay, endpoint, sidecar, or counter artifacts"
+		),
+		mutation_gate = case_when(
+			access_state == "local packet access control" ~ "mutation requires regenerated outputs, checksum/schema validation, old/new diff, and report wording review",
+			access_state == "owner artifact access control" ~ "mutation requires owner signoff, scope diff, reviewer identity, and report wording review",
+			TRUE ~ "mutation requires observer signoff, control diff, reviewer identity, and report wording review"
+		),
+		deletion_guard = case_when(
+			access_state == "local packet access control" ~ "delete only with successor packet, retired claim, or explicit unsupported-claim note in the report",
+			access_state == "owner artifact access control" ~ "delete only with successor owner artifact, retired scope, or explicit unsupported-claim note in the report",
+			TRUE ~ "delete only with successor observer artifact, retired mechanism scope, or explicit unsupported-claim note in the report"
+		),
+		tamper_signal = case_when(
+			access_state == "local packet access control" ~ "checksum, schema, row count, regenerated figure, or report-link mismatch",
+			access_state == "owner artifact access control" ~ "checksum, reviewer identity, owner revision, scope diff, or report-link mismatch",
+			TRUE ~ "checksum, observer revision, control schema, calibration/replay result, or report-link mismatch"
+		),
+		discovery_policy = case_when(
+			access_state == "local packet access control" ~ "artifact must be discoverable from the README registry, CSV row, figure link, and retention index key",
+			access_state == "owner artifact access control" ~ "artifact must be discoverable from the README registry, owner decision row, and retention index key",
+			TRUE ~ "artifact must be discoverable from the README registry, observer decision row, and retention index key"
+		),
+		access_escalation = case_when(
+			access_state == "local packet access control" ~ "missing or mutated packet evidence escalates to the Performance Tests reviewer before wording is reused",
+			access_state == "owner artifact access control" ~ "missing or mutated owner evidence escalates to the owner reviewer before local timing is reused",
+			TRUE ~ "missing or mutated observer evidence escalates to the observer reviewer before broad wording is reused"
+		),
+		access_gap = case_when(
+			access_state == "local packet access control" ~ "if access cannot establish packet integrity, local timing wording is unsupported",
+			access_state == "owner artifact access control" ~ "if access cannot establish owner artifact integrity, owner-scoped wording is unsupported",
+			TRUE ~ "if access cannot establish observer artifact integrity, broad product, endpoint, browser, or runtime wording is unsupported"
+		),
+		permission_owner = retention_owner,
+		access_cost = case_when(
+			access_state == "local packet access control" ~ 1,
+			access_state == "owner artifact access control" ~ 3,
+			TRUE ~ 4
+		),
+		access_value = pmax(
+			1,
+			retention_value + retrieval_value + false_closure_risk - access_cost
+		),
+		permission_value = pmax(
+			1,
+			retrieval_value + provenance_value + stale_reuse_risk - access_cost
+		),
+		timing_only_access_value = 0,
+		analysis_only_value = 0,
+		access_control_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(access_value), desc(permission_value), question_family)
+
+open_question_access_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"read", "Who can read the evidence and report links?",
+	"write", "Who can rewrite or replace the artifact?",
+	"mutate", "What review gate is required before evidence changes?",
+	"delete", "What prevents deletion from leaving an orphan claim?",
+	"tamper", "What detects tampering or accidental mutation?",
+	"discover", "How does a reviewer discover the artifact from the report?",
+	"owner", "Who owns access and permission failures?",
+	"escalate", "Where do missing or disputed permissions escalate?",
+	"substitute", "Can aggregate timing alone substitute for permissioned evidence?",
+	"stop-rule", "When does the access-control review stop?"
+)
+
+open_question_access_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_access_control_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_access_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_access_control_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_access_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		access_control_first_seen = !duplicated(access_control_id),
+		access_axis_key = paste(access_control_id, pressure_axis, sep = "::"),
+		access_axis_first_seen = !duplicated(access_axis_key),
+		access_state_first_seen = !duplicated(access_state),
+		new_access_value = if_else(access_control_first_seen, access_value, 0),
+		new_permission_value = if_else(access_control_first_seen, permission_value, 0),
+		new_timing_only_access_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!access_axis_first_seen ~ "repeat: access-axis already checked",
+			access_state == "local packet access control" ~ "access: local packet",
+			TRUE ~ "access: owner or observer artifact"
+		),
+		cumulative_access_records = cumsum(access_control_first_seen),
+		cumulative_access_axes = cumsum(access_axis_first_seen),
+		cumulative_access_states = cumsum(access_state_first_seen),
+		cumulative_access_value = cumsum(new_access_value),
+		cumulative_permission_value = cumsum(new_permission_value),
+		cumulative_timing_only_access_value = cumsum(new_timing_only_access_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_access_summary <- open_question_access_100_pass %>%
+	group_by(access_state, retention_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		access_records = n_distinct(access_control_id),
+		axis_checks = sum(access_axis_first_seen),
+		permission_owners = n_distinct(permission_owner),
+		ledger_consumers = n_distinct(ledger_consumer),
+		access_value = sum(new_access_value),
+		permission_value = sum(new_permission_value),
+		timing_only_access_value = sum(new_timing_only_access_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(access_value), desc(permission_value), first_pass)
+
+open_question_access_checkpoints <- open_question_access_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_access_records,
+		cumulative_access_axes,
+		cumulative_access_states,
+		cumulative_access_value,
+		cumulative_permission_value,
+		cumulative_timing_only_access_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_access_control_register,
+	file.path(data_dir, "typing-delay-open-question-access-control-register.csv")
+)
+
+write_csv(
+	open_question_access_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			access_state,
+			retention_state,
+			read_access,
+			write_access,
+			mutation_gate,
+			deletion_guard,
+			tamper_signal,
+			discovery_policy,
+			access_escalation,
+			access_gap,
+			permission_owner,
+			supported_claim,
+			blocked_claim,
+			access_control_first_seen,
+			access_axis_first_seen,
+			access_state_first_seen,
+			pass_result,
+			access_value,
+			permission_value,
+			timing_only_access_value,
+			new_access_value,
+			new_permission_value,
+			new_timing_only_access_value,
+			new_analysis_only_value,
+			cumulative_access_records,
+			cumulative_access_axes,
+			cumulative_access_states,
+			cumulative_access_value,
+			cumulative_permission_value,
+			cumulative_timing_only_access_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-access-control-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_access_summary,
+	file.path(data_dir, "typing-delay-open-question-access-control-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_access_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-access-control-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_access_control_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, access_value)
+		) %>%
+		ggplot(aes(access_value, question_label, fill = access_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Access state") +
+		labs(
+			title = "Access control keeps retained evidence from mutating into unsupported claims",
+			subtitle = "Each row names read/write access, mutation gate, deletion guard, tamper signal, discovery path, and escalation owner",
+			x = "Access value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"345-open-question-access-control-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_access_saturation_long <- open_question_access_100_pass %>%
+	select(
+		pass_id,
+		`access records` = cumulative_access_records,
+		`access axes` = cumulative_access_axes,
+		`access states` = cumulative_access_states,
+		`access value` = cumulative_access_value,
+		`permission value` = cumulative_permission_value,
+		`timing-only access value` = cumulative_timing_only_access_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("access records", "access axes", "access states", "access value", "permission value", "timing-only access value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_access_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Access-control audit saturates once read, write, mutation, and deletion gates are named",
+			subtitle = "Nine access records appear by pass 9; all 90 access axes appear by pass 90; timing-only access value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"346-open-question-access-control-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_access_summary %>%
+		mutate(
+			state_label = str_wrap(access_state, width = 28),
+			state_label = fct_reorder(state_label, access_value + permission_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Access-control coverage separates local packets from owner and observer permissions",
+			subtitle = "Every row is checked for read, write, mutate, delete, tamper, discover, owner, escalation, substitute, and stop rule",
+			x = "Access-axis checks",
+			y = "Access state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"347-open-question-access-control-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

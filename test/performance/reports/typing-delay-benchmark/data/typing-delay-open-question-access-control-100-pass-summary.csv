@@ -1,0 +1,7 @@
+access_state,retention_state,pass_result,passes,first_pass,access_records,axis_checks,permission_owners,ledger_consumers,access_value,permission_value,timing_only_access_value,analysis_only_value
+local packet access control,local packet retention,access: local packet,40,1,4,40,4,3,4885,4001,0,0
+owner artifact access control,owner artifact retention,access: owner or observer artifact,20,5,2,20,2,2,983,787,0,0
+observer artifact access control,observer artifact retention,access: owner or observer artifact,30,7,3,30,3,3,603,476,0,0
+local packet access control,local packet retention,repeat: access-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact access control,owner artifact retention,repeat: access-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact access control,observer artifact retention,repeat: access-axis already checked,3,97,3,0,3,3,0,0,0,0

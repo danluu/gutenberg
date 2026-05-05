@@ -1,0 +1,10 @@
+pass_id,cumulative_access_records,cumulative_access_axes,cumulative_access_states,cumulative_access_value,cumulative_permission_value,cumulative_timing_only_access_value,cumulative_analysis_only_value
+1,1,1,1,1347,1104,0,0
+5,5,5,2,5437,4444,0,0
+9,9,9,3,6471,5264,0,0
+10,9,10,3,6471,5264,0,0
+20,9,20,3,6471,5264,0,0
+50,9,50,3,6471,5264,0,0
+90,9,90,3,6471,5264,0,0
+91,9,90,3,6471,5264,0,0
+100,9,90,3,6471,5264,0,0
