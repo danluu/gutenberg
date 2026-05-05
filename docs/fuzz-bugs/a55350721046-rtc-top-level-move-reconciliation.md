@@ -74,6 +74,15 @@ another paragraph
 
 That stale snapshot was enough to preserve the remote insert while duplicating the emoji paragraph and dropping the moved `another paragraph` sibling. The issue is not malformed block HTML or a bad Playwright locator; it is stale snapshot authority at the CRDT array boundary.
 
+Pass 37 narrowed the known-fixes-base failure mode. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, with only the regression tests applied, already passes the two stale-order Y.Doc repros. It still fails the same-array-reference reorder test:
+
+```text
+Expected: inserted paragraph, another paragraph, emoji paragraph
+Received: inserted paragraph, emoji paragraph, another paragraph
+```
+
+That isolates the remaining source-manifest failure to the original `serializableBlocksCache`. The cache keys only on the incoming block array object. If the editor reuses that array object after a real top-level move, `mergeCrdtBlocks()` can reuse the old serialized snapshot and never observe the user move. The browser repro's final divergence is consistent with that: one editor applies the move, while the other keeps the stale pre-move order and then the positional merge/duplicate-clientId cleanup drops the intervening sibling.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
@@ -89,6 +98,7 @@ Track the previous local block snapshot per `Y.Array`. Before applying a new loc
 - If the incoming snapshot has the same local order as before, but the CRDT array currently has a different order for those same blocks, treat the incoming snapshot as stale with respect to order and preserve the CRDT/current order.
 - If the incoming snapshot changed local order, keep the existing merge behavior so intentional local moves still apply.
 - If clientIds are missing, duplicated, or do not line up cleanly, fall back to the existing conservative merge path.
+- Recompute the serializable block snapshot every call instead of using object identity as a cache key, so in-place or same-reference block-array reuse cannot hide a real reorder.
 
 This targets the actual failure mode: an unchanged local snapshot should not reorder or rewrite blocks solely because it arrived after a remote insert or move.
 
