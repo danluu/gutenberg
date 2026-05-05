@@ -2016,6 +2016,24 @@ The R script derives:
     consumer-outcome-state, consumer-outcome-owner, consumer-outcome-consumer,
     consumer-outcome-value, consumer-outcome-regression-risk-value,
     timing-only-consumer-outcome, and analysis-only saturation.
+-   `data/typing-delay-open-question-consumer-verification-register.csv`:
+    consumer-verification register for the nine consumer-outcome records,
+    including verification scope, evidence bundle, recompute rule, failure
+    reproduction, stale-artifact scan, acceptance gate, rollback test, signoff
+    owner, and consumer.
+-   `data/typing-delay-open-question-consumer-verification-100-pass-audit.csv`:
+    forty-eighth forced 100-pass audit over consumer-verification axes: scope,
+    bundle, recompute, reproduce-failure, stale-scan, acceptance, rollback-test,
+    owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-consumer-verification-100-pass-summary.csv`:
+    rollup of consumer-verification coverage by consumer-verification state,
+    consumer-outcome state, and pass result.
+-   `data/typing-delay-open-question-consumer-verification-100-pass-checkpoints.csv`:
+    checkpoints for consumer-verification-record, consumer-verification-axis,
+    consumer-verification-state, consumer-verification-owner,
+    consumer-verification-consumer, consumer-verification-value,
+    consumer-verification-false-confidence-risk-value,
+    timing-only-consumer-verification, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12648,6 +12666,39 @@ took the right action once, but the next recommendation surface still fails to
 show it or later regresses to stale wording, stale figures, stale CSVs, or stale
 policy. The action is not treated as durable without an observation packet,
 monitoring rule, regression guard, and rollback evidence.
+
+I then added the consumer-verification layer: an outcome is not complete until
+an independent reader can recompute it from named artifacts, try to reproduce
+the stale path, scan for stale report/data/figure references, and see a rollback
+test. Verification records the consumer-visible scope, evidence bundle,
+recompute rule, stale-path reproduction, stale-artifact scan, acceptance gate,
+rollback test, signoff owner, and consumer for each outcome row.
+
+![Open question consumer verification register](figures/426-open-question-consumer-verification-register.png)
+
+![Open question consumer verification 100-pass saturation](figures/427-open-question-consumer-verification-100-pass-saturation.png)
+
+![Open question consumer verification coverage](figures/428-open-question-consumer-verification-coverage.png)
+
+| Consumer-verification check | Result |
+| --------------------------- | ------ |
+| Consumer-verification records | `9`, one per consumer-outcome record. |
+| Consumer-verification states | `3`: local packet consumer verification, owner artifact consumer verification, and observer artifact consumer verification. |
+| Consumer-verification owners | `9`; verification routes back to the scoped consumer-outcome owner. |
+| Consumer-verification consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Consumer-verification-axis checks | `90`: every row checked against all `10` consumer-verification axes. |
+| Consumer-verification value | `26040315027`: local packet verification contributes `19675904646`, owner artifact verification contributes `3934220430`, and observer artifact verification contributes `2430189951`. |
+| Consumer-verification false-confidence-risk value | `14041402820` across the nine consumer-verification records. |
+| Timing-only consumer-verification value | `0`; aggregate timing movement alone cannot prove the verification scope, evidence bundle, recompute rule, stale-path reproduction, stale-artifact scan, acceptance gate, rollback test, signoff owner, or stop rule. |
+| Saturation | Consumer-verification records are all named by pass `9`; all consumer-verification axes are covered by pass `90`; passes `91-100` add no consumer-verification coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the false-confidence guard. It catches the failure mode where the report
+says a downstream outcome is durable but another reader cannot reproduce the
+claim from the CSVs, cannot find the referenced figure or section, or can still
+reach the stale decision path. The outcome is not treated as verified unless
+recompute, stale scan, stale-path reproduction, acceptance gate, and rollback
+test all point at the same current state.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

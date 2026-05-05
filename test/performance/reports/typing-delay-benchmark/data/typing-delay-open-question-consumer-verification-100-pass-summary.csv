@@ -1,0 +1,7 @@
+consumer_verification_state,consumer_outcome_state,pass_result,passes,first_pass,consumer_verification_records,axis_checks,consumer_verification_owners,consumer_verification_consumers,consumer_verification_value,consumer_verification_false_confidence_risk_value,timing_only_consumer_verification_value,analysis_only_value
+local packet consumer verification,local packet consumer outcome,consumer verification: local packet,40,1,4,40,4,3,19675904646,10609599127,0,0
+owner artifact consumer verification,owner artifact consumer outcome,consumer verification: owner or observer artifact,20,5,2,20,2,2,3934220430,2121401902,0,0
+observer artifact consumer verification,observer artifact consumer outcome,consumer verification: owner or observer artifact,30,7,3,30,3,3,2430189951,1310401791,0,0
+local packet consumer verification,local packet consumer outcome,repeat: consumer-verification-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact consumer verification,owner artifact consumer outcome,repeat: consumer-verification-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact consumer verification,observer artifact consumer outcome,repeat: consumer-verification-axis already checked,3,97,3,0,3,3,0,0,0,0

@@ -42769,6 +42769,313 @@ save_plot(
 	height = 7.2
 )
 
+open_question_consumer_verification_register <- open_question_consumer_outcome_register %>%
+	mutate(
+		consumer_verification_state = case_when(
+			consumer_outcome_state == "local packet consumer outcome" ~ "local packet consumer verification",
+			consumer_outcome_state == "owner artifact consumer outcome" ~ "owner artifact consumer verification",
+			TRUE ~ "observer artifact consumer verification"
+		),
+		consumer_verification_scope = case_when(
+			close_scope == "CI wait decision" ~ "verify the CI wait-policy recommendation, runtime/reliability table, startup-wait recommendation, typing-delay recommendation, input-mode recommendation, and stale-decision boundary from the outcome packet",
+			close_scope == "source prototype decision" ~ "verify the source-guidance recommendation, selector-guard evidence, dispatch/invalidation claim, fanout caveat, owner-review decision, and stale-source boundary from the outcome packet",
+			close_scope == "benchmark method wording" ~ "verify the benchmark-method wording, trace-schema caveat, aggregation caveat, instrumentation caveat, limitation text, and stale-method boundary from the outcome packet",
+			TRUE ~ "verify the broad conclusion, portability caveat, browser/runtime caveat, workload caveat, endpoint caveat, recommendation scope, and stale-conclusion boundary from the outcome packet"
+		),
+		consumer_verification_evidence_bundle = case_when(
+			consumer_verification_state == "local packet consumer verification" ~ "bundle local outcome packet, action packet, receipt packet, propagation packet, disposition row, source CSV, figure, report section, and stale-row scan",
+			consumer_verification_state == "owner artifact consumer verification" ~ "bundle owner outcome packet, reviewer identity, action packet, receipt packet, propagation packet, disposition row, source CSV, figure, report section, and stale-row scan",
+			TRUE ~ "bundle observer outcome packet, reviewer identity, broad-scope wording, action packet, receipt packet, propagation packet, disposition row, source CSV, figure, report section, and stale-row scan"
+		),
+		consumer_verification_recompute_rule = case_when(
+			close_scope == "CI wait decision" ~ "independently recompute the CI q50, q25/q75, runtime, wait-budget, startup-wait, typing-delay, and input-mode claims from the named CSVs before accepting the recommendation",
+			close_scope == "source prototype decision" ~ "independently recompute the selector, dispatch, invalidation, fanout, and source-prototype claims from the named CSVs and patches before accepting the recommendation",
+			close_scope == "benchmark method wording" ~ "independently recompute the trace-slice, aggregation, instrumentation, limitation, and method caveat claims from the named event CSVs before accepting the wording",
+			TRUE ~ "independently recompute the portability, browser/runtime, workload, endpoint, and recommendation-scope claims from the named browser/container/trace CSVs before accepting the broad conclusion"
+		),
+		consumer_verification_failure_reproduction = case_when(
+			consumer_verification_state == "local packet consumer verification" ~ "try to reproduce the local stale decision by using the previous local row, old figure, old CSV, or old recommendation path; verification fails if that path still wins",
+			consumer_verification_state == "owner artifact consumer verification" ~ "try to reproduce the owner stale decision by using the previous owner row, missing reviewer identity, old figure, old CSV, or old recommendation path; verification fails if that path still wins",
+			TRUE ~ "try to reproduce the broad stale conclusion by using the previous broad row, missing reviewer identity, old wording, old figure, old CSV, or old conclusion path; verification fails if that path still wins"
+		),
+		consumer_verification_stale_artifact_scan = case_when(
+			close_scope == "CI wait decision" ~ "scan the CI wait-policy text, startup-wait section, typing-delay section, input-mode section, runtime table, reliability table, figures, CSVs, and recommendation bullets for stale values",
+			close_scope == "source prototype decision" ~ "scan the source-guidance section, selector-guard notes, dispatch/invalidation notes, fanout caveat, owner-review row, figures, CSVs, and recommendation bullets for stale values",
+			close_scope == "benchmark method wording" ~ "scan the method section, trace-schema caveat, aggregation caveat, instrumentation caveat, limitation text, figures, CSVs, and recommendation bullets for stale values",
+			TRUE ~ "scan the broad conclusion, portability caveat, browser/runtime caveat, workload caveat, endpoint caveat, scope wording, figures, CSVs, and recommendation bullets for stale values"
+		),
+		consumer_verification_acceptance_gate = case_when(
+			consumer_verification_state == "local packet consumer verification" ~ "accept only when recompute passes, stale-artifact scan is empty, failure reproduction loses, rollback hook is named, and local consumer surface matches the outcome packet",
+			consumer_verification_state == "owner artifact consumer verification" ~ "accept only when recompute passes, stale-artifact scan is empty, failure reproduction loses, rollback hook is named, reviewer identity is visible, and owner consumer surface matches the outcome packet",
+			TRUE ~ "accept only when recompute passes, stale-artifact scan is empty, failure reproduction loses, rollback hook is named, reviewer identity and broad wording are visible, and observer surface matches the outcome packet"
+		),
+		consumer_verification_rollback_test = case_when(
+			consumer_verification_state == "local packet consumer verification" ~ "inject a stale local packet or stale figure reference and verify the local recommendation blocks or rolls back instead of silently publishing",
+			consumer_verification_state == "owner artifact consumer verification" ~ "inject a stale owner packet, missing reviewer identity, or stale figure reference and verify the owner recommendation blocks or rolls back instead of silently publishing",
+			TRUE ~ "inject a stale observer packet, missing reviewer identity, stale broad wording, or stale figure reference and verify the broad conclusion blocks or rolls back instead of silently publishing"
+		),
+		consumer_verification_signoff_owner = consumer_outcome_owner,
+		consumer_verification_consumer = consumer_outcome_consumer,
+		consumer_verification_cost = case_when(
+			consumer_verification_state == "local packet consumer verification" ~ 5,
+			consumer_verification_state == "owner artifact consumer verification" ~ 7,
+			TRUE ~ 9
+		),
+		consumer_verification_value = pmax(
+			1,
+			consumer_outcome_value + consumer_outcome_regression_risk_value + consumer_action_stale_decision_risk_value - consumer_verification_cost
+		),
+		consumer_verification_false_confidence_risk_value = pmax(
+			1,
+			consumer_outcome_regression_risk_value + consumer_action_stale_decision_risk_value + consumer_receipt_missed_update_risk_value - consumer_verification_cost
+		),
+		timing_only_consumer_verification_value = 0,
+		analysis_only_value = 0,
+		consumer_verification_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(consumer_verification_value), desc(consumer_verification_false_confidence_risk_value), question_family)
+
+open_question_consumer_verification_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"scope", "What consumer-visible outcome surface is independently verified?",
+	"bundle", "What evidence bundle lets another reader verify the outcome?",
+	"recompute", "What rule recomputes the claim from named artifacts?",
+	"reproduce-failure", "What stale-path reproduction would disconfirm the outcome?",
+	"stale-scan", "What scan checks for stale figures, CSVs, report text, or recommendation paths?",
+	"acceptance", "What acceptance gate must pass before the outcome is treated as verified?",
+	"rollback-test", "What rollback test proves stale evidence does not silently publish?",
+	"owner", "Who signs off and owns consumer verification?",
+	"substitute", "Can aggregate timing alone substitute for independent consumer verification?",
+	"stop-rule", "When does consumer-verification review stop?"
+)
+
+open_question_consumer_verification_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_consumer_verification_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_consumer_verification_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_consumer_verification_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_consumer_verification_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		consumer_verification_first_seen = !duplicated(consumer_verification_id),
+		consumer_verification_axis_key = paste(consumer_verification_id, pressure_axis, sep = "::"),
+		consumer_verification_axis_first_seen = !duplicated(consumer_verification_axis_key),
+		consumer_verification_state_first_seen = !duplicated(consumer_verification_state),
+		consumer_verification_owner_first_seen = !duplicated(consumer_verification_signoff_owner),
+		consumer_verification_consumer_first_seen = !duplicated(consumer_verification_consumer),
+		new_consumer_verification_value = if_else(consumer_verification_first_seen, consumer_verification_value, 0),
+		new_consumer_verification_false_confidence_risk_value = if_else(consumer_verification_first_seen, consumer_verification_false_confidence_risk_value, 0),
+		new_timing_only_consumer_verification_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!consumer_verification_axis_first_seen ~ "repeat: consumer-verification-axis already checked",
+			consumer_verification_state == "local packet consumer verification" ~ "consumer verification: local packet",
+			TRUE ~ "consumer verification: owner or observer artifact"
+		),
+		cumulative_consumer_verification_records = cumsum(consumer_verification_first_seen),
+		cumulative_consumer_verification_axes = cumsum(consumer_verification_axis_first_seen),
+		cumulative_consumer_verification_states = cumsum(consumer_verification_state_first_seen),
+		cumulative_consumer_verification_owners = cumsum(consumer_verification_owner_first_seen),
+		cumulative_consumer_verification_consumers = cumsum(consumer_verification_consumer_first_seen),
+		cumulative_consumer_verification_value = cumsum(new_consumer_verification_value),
+		cumulative_consumer_verification_false_confidence_risk_value = cumsum(new_consumer_verification_false_confidence_risk_value),
+		cumulative_timing_only_consumer_verification_value = cumsum(new_timing_only_consumer_verification_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_consumer_verification_summary <- open_question_consumer_verification_100_pass %>%
+	group_by(consumer_verification_state, consumer_outcome_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		consumer_verification_records = n_distinct(consumer_verification_id),
+		axis_checks = sum(consumer_verification_axis_first_seen),
+		consumer_verification_owners = n_distinct(consumer_verification_signoff_owner),
+		consumer_verification_consumers = n_distinct(consumer_verification_consumer),
+		consumer_verification_value = sum(new_consumer_verification_value),
+		consumer_verification_false_confidence_risk_value = sum(new_consumer_verification_false_confidence_risk_value),
+		timing_only_consumer_verification_value = sum(new_timing_only_consumer_verification_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(consumer_verification_value), desc(consumer_verification_false_confidence_risk_value), first_pass)
+
+open_question_consumer_verification_checkpoints <- open_question_consumer_verification_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_consumer_verification_records,
+		cumulative_consumer_verification_axes,
+		cumulative_consumer_verification_states,
+		cumulative_consumer_verification_owners,
+		cumulative_consumer_verification_consumers,
+		cumulative_consumer_verification_value,
+		cumulative_consumer_verification_false_confidence_risk_value,
+		cumulative_timing_only_consumer_verification_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_consumer_verification_register,
+	file.path(data_dir, "typing-delay-open-question-consumer-verification-register.csv")
+)
+
+write_csv(
+	open_question_consumer_verification_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			consumer_verification_state,
+			consumer_outcome_state,
+			consumer_verification_scope,
+			consumer_verification_evidence_bundle,
+			consumer_verification_recompute_rule,
+			consumer_verification_failure_reproduction,
+			consumer_verification_stale_artifact_scan,
+			consumer_verification_acceptance_gate,
+			consumer_verification_rollback_test,
+			consumer_verification_signoff_owner,
+			consumer_verification_consumer,
+			consumer_outcome_expected_effect,
+			consumer_outcome_observation_packet,
+			consumer_outcome_success_criteria,
+			consumer_outcome_failure_signal,
+			consumer_outcome_regression_guard,
+			consumer_outcome_monitoring_rule,
+			supported_claim,
+			blocked_claim,
+			consumer_verification_first_seen,
+			consumer_verification_axis_first_seen,
+			consumer_verification_state_first_seen,
+			consumer_verification_owner_first_seen,
+			consumer_verification_consumer_first_seen,
+			pass_result,
+			consumer_verification_value,
+			consumer_verification_false_confidence_risk_value,
+			timing_only_consumer_verification_value,
+			new_consumer_verification_value,
+			new_consumer_verification_false_confidence_risk_value,
+			new_timing_only_consumer_verification_value,
+			new_analysis_only_value,
+			cumulative_consumer_verification_records,
+			cumulative_consumer_verification_axes,
+			cumulative_consumer_verification_states,
+			cumulative_consumer_verification_owners,
+			cumulative_consumer_verification_consumers,
+			cumulative_consumer_verification_value,
+			cumulative_consumer_verification_false_confidence_risk_value,
+			cumulative_timing_only_consumer_verification_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-consumer-verification-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_consumer_verification_summary,
+	file.path(data_dir, "typing-delay-open-question-consumer-verification-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_consumer_verification_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-consumer-verification-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_consumer_verification_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, consumer_verification_value)
+		) %>%
+		ggplot(aes(consumer_verification_value, question_label, fill = consumer_verification_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Consumer verification") +
+		labs(
+			title = "Consumer verification requires independent recompute and stale-path checks",
+			subtitle = "Each row names scope, evidence bundle, recompute rule, failure reproduction, stale-artifact scan, acceptance gate, rollback test, owner, and consumer",
+			x = "Consumer-verification value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"426-open-question-consumer-verification-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_consumer_verification_saturation_long <- open_question_consumer_verification_100_pass %>%
+	select(
+		pass_id,
+		`consumer-verification records` = cumulative_consumer_verification_records,
+		`consumer-verification axes` = cumulative_consumer_verification_axes,
+		`consumer-verification states` = cumulative_consumer_verification_states,
+		`consumer-verification owners` = cumulative_consumer_verification_owners,
+		`consumer-verification consumers` = cumulative_consumer_verification_consumers,
+		`consumer-verification value` = cumulative_consumer_verification_value,
+		`consumer-verification false-confidence risk value` = cumulative_consumer_verification_false_confidence_risk_value,
+		`timing-only consumer-verification value` = cumulative_timing_only_consumer_verification_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("consumer-verification records", "consumer-verification axes", "consumer-verification states", "consumer-verification owners", "consumer-verification consumers", "consumer-verification value", "consumer-verification false-confidence risk value", "timing-only consumer-verification value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_consumer_verification_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Consumer-verification audit saturates once every independent-check path is covered",
+			subtitle = "Nine verification records appear by pass 9; all 90 axes appear by pass 90; timing-only verification value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"427-open-question-consumer-verification-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_consumer_verification_summary %>%
+		mutate(
+			state_label = str_wrap(consumer_verification_state, width = 28),
+			state_label = fct_reorder(state_label, consumer_verification_value + consumer_verification_false_confidence_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Consumer-verification coverage separates local verification from owner and observer verification",
+			subtitle = "Every row is checked for scope, bundle, recompute, failure reproduction, stale scan, acceptance, rollback test, owner, substitute, and stop rule",
+			x = "Consumer-verification-axis checks",
+			y = "Consumer-verification state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"428-open-question-consumer-verification-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
