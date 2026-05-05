@@ -212,6 +212,8 @@ export const getEntityRecord =
 								name,
 								key
 							),
+						getPersistedRecord: async () =>
+							select.getRawEntityRecord( kind, name, key ),
 						// Handle sync connection status changes.
 						onStatusChange: ( status ) => {
 							dispatch.setSyncConnectionStatus(

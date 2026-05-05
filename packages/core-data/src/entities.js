@@ -312,7 +312,8 @@ export const prePersistPostType = async (
 		const objectId = persistedRecord.id;
 		const serializedDoc = await getSyncManager()?.createPersistedCRDTDoc(
 			objectType,
-			objectId
+			objectId,
+			{ record: edits }
 		);
 
 		if ( serializedDoc ) {
@@ -436,13 +437,15 @@ async function loadPostTypeEntities() {
 			 *
 			 * @param {import('@wordpress/sync').CRDTDoc}    crdtDoc
 			 * @param {import('@wordpress/sync').ObjectData} editedRecord
+			 * @param {import('@wordpress/sync').ObjectData} persistedRecord
 			 * @return {Partial< import('@wordpress/sync').ObjectData >} Changes to record
 			 */
-			getChangesFromCRDTDoc: ( crdtDoc, editedRecord ) =>
+			getChangesFromCRDTDoc: ( crdtDoc, editedRecord, persistedRecord ) =>
 				getPostChangesFromCRDTDoc(
 					crdtDoc,
 					editedRecord,
-					syncedProperties
+					syncedProperties,
+					persistedRecord
 				),
 
 			/**
