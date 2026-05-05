@@ -1,0 +1,7 @@
+reopen_drill_verification_state,closure_reopen_drill_state,pass_result,passes,first_pass,reopen_drill_verification_records,axis_checks,reopen_drill_verification_owners,reopen_drill_verification_consumers,reopen_drill_verification_value,reopen_drill_verification_false_confidence_risk_value,timing_only_reopen_drill_verification_value,analysis_only_value
+local packet reopen-drill verification,local packet reopen drill,reopen-drill verification: local packet,40,1,4,40,4,3,4699470500214,2554956275237,0,0
+owner artifact reopen-drill verification,owner artifact reopen drill,reopen-drill verification: owner or observer artifact,20,5,2,20,2,2,939664685362,510866529396,0,0
+observer artifact reopen-drill verification,observer artifact reopen drill,reopen-drill verification: owner or observer artifact,30,7,3,30,3,3,580436113704,315565102677,0,0
+local packet reopen-drill verification,local packet reopen drill,repeat: reopen-drill-verification-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact reopen-drill verification,owner artifact reopen drill,repeat: reopen-drill-verification-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact reopen-drill verification,observer artifact reopen drill,repeat: reopen-drill-verification-axis already checked,3,97,3,0,3,3,0,0,0,0

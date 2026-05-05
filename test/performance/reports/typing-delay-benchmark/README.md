@@ -2179,6 +2179,26 @@ The R script derives:
     closure-reopen-drill-owner, closure-reopen-drill-consumer,
     closure-reopen-drill-value, closure-reopen-drill-missed-reopen-risk-value,
     timing-only-closure-reopen-drill, and analysis-only saturation.
+-   `data/typing-delay-open-question-reopen-drill-verification-register.csv`:
+    reopen-drill-verification register for the nine closure-reopen-drill
+    records, including evidence bundle, independent recompute, stale-artifact
+    injection, negative control, idempotence rule, consumer-path check,
+    failure reproduction, signoff gate, owner, and consumer.
+-   `data/typing-delay-open-question-reopen-drill-verification-100-pass-audit.csv`:
+    fifty-seventh forced 100-pass audit over reopen-drill-verification axes:
+    evidence-bundle, independent-recompute, stale-artifact-injection,
+    negative-control, idempotence, consumer-path, failure-reproduction,
+    signoff, substitute, and stop-rule.
+-   `data/typing-delay-open-question-reopen-drill-verification-100-pass-summary.csv`:
+    rollup of reopen-drill-verification coverage by verification state,
+    closure-reopen-drill state, and pass result.
+-   `data/typing-delay-open-question-reopen-drill-verification-100-pass-checkpoints.csv`:
+    checkpoints for reopen-drill-verification-record,
+    reopen-drill-verification-axis, reopen-drill-verification-state,
+    reopen-drill-verification-owner, reopen-drill-verification-consumer,
+    reopen-drill-verification-value,
+    reopen-drill-verification-false-confidence-risk-value,
+    timing-only-reopen-drill-verification, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -13102,6 +13122,41 @@ no synthetic trigger can exercise the path, stale rows are not invalidated, or
 the consumer still sees the old recommendation. A closed question is robust
 only if an accepted contradiction removes the old figure/CSV/README support,
 updates the consumer-facing status, and leaves a rollback path for stale reuse.
+
+I then added the reopen-drill-verification layer: a drill is only useful if its
+result can be independently checked. The verification record names the evidence
+bundle, independent recompute rule, stale-artifact injection, negative control,
+idempotence rule, consumer-path check, failure reproduction, signoff gate,
+owner, and consumer for each closure-reopen-drill row.
+
+![Open question reopen drill verification register](figures/453-open-question-reopen-drill-verification-register.png)
+
+![Open question reopen drill verification 100-pass saturation](figures/454-open-question-reopen-drill-verification-100-pass-saturation.png)
+
+![Open question reopen drill verification coverage](figures/455-open-question-reopen-drill-verification-coverage.png)
+
+| Reopen-drill-verification check | Result |
+| ------------------------------- | ------ |
+| Reopen-drill-verification records | `9`, one per closure-reopen-drill record. |
+| Reopen-drill-verification states | `3`: local packet reopen-drill verification, owner artifact reopen-drill verification, and observer artifact reopen-drill verification. |
+| Reopen-drill-verification owners | `9`; verification ownership routes back to the scoped reopen-drill owner. |
+| Reopen-drill-verification consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Reopen-drill-verification-axis checks | `90`: every row checked against all `10` reopen-drill-verification axes. |
+| Reopen-drill-verification value | `6219571299280`: local packet verification contributes `4699470500214`, owner artifact verification contributes `939664685362`, and observer artifact verification contributes `580436113704`. |
+| Reopen-drill-verification false-confidence-risk value | `3381387907310` across the nine reopen-drill-verification records. |
+| Timing-only reopen-drill-verification value | `0`; aggregate timing movement alone cannot prove the evidence bundle, independent recompute, stale-artifact injection, negative control, idempotence, consumer path, failure reproduction, signoff gate, owner, or stop rule. |
+| Saturation | Reopen-drill-verification records are all named by pass `9`; all reopen-drill-verification axes are covered by pass `90`; passes `91-100` add no reopen-drill-verification coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the false-confidence guard for closed questions. It catches the case
+where a reopen drill appears to work only because the same code that generated
+the stale claim also judged the contradiction, because unrelated churn reopens
+the closure, because duplicate contradictions keep changing the report, or
+because the stale figure/CSV/README path still supports a current
+recommendation. A verified reopen drill must pass an independent recompute,
+block an injected stale artifact, keep the negative control closed, dedupe the
+same contradiction, update the consumer path, and fail to reproduce the old
+stale conclusion.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

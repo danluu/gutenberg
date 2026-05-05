@@ -1,0 +1,10 @@
+pass_id,cumulative_reopen_drill_verification_records,cumulative_reopen_drill_verification_axes,cumulative_reopen_drill_verification_states,cumulative_reopen_drill_verification_owners,cumulative_reopen_drill_verification_consumers,cumulative_reopen_drill_verification_value,cumulative_reopen_drill_verification_false_confidence_risk_value,cumulative_timing_only_reopen_drill_verification_value,cumulative_analysis_only_value
+1,1,1,1,1,1,1295865051013,704521614467,0,0
+5,5,5,2,5,4,5227207087194,2841870280655,0,0
+9,9,9,3,9,8,6219571299280,3381387907310,0,0
+10,9,10,3,9,8,6219571299280,3381387907310,0,0
+20,9,20,3,9,8,6219571299280,3381387907310,0,0
+50,9,50,3,9,8,6219571299280,3381387907310,0,0
+90,9,90,3,9,8,6219571299280,3381387907310,0,0
+91,9,90,3,9,8,6219571299280,3381387907310,0,0
+100,9,90,3,9,8,6219571299280,3381387907310,0,0

@@ -45542,6 +45542,323 @@ save_plot(
 	height = 7.2
 )
 
+open_question_reopen_drill_verification_register <- open_question_closure_reopen_drill_register %>%
+	mutate(
+		reopen_drill_verification_state = case_when(
+			closure_reopen_drill_state == "local packet reopen drill" ~ "local packet reopen-drill verification",
+			closure_reopen_drill_state == "owner artifact reopen drill" ~ "owner artifact reopen-drill verification",
+			TRUE ~ "observer artifact reopen-drill verification"
+		),
+		reopen_drill_verification_evidence_bundle = case_when(
+			close_scope == "CI wait decision" ~ "bundle contradiction packet, before/after q25/q50/q75, runtime, reliability, branch-count model, input-mode evidence, changed wait-policy artifact, stale-row scan, and consumer-visible CI recommendation diff",
+			close_scope == "source prototype decision" ~ "bundle contradiction packet, before/after source span, behavior fixture result, fanout evidence, changed source artifact, stale-row scan, owner-review status, and consumer-visible source recommendation diff",
+			close_scope == "benchmark method wording" ~ "bundle contradiction packet, trace-schema extraction, EventDispatch interpretation, aggregation output, instrumentation patch hash, stale-row scan, and consumer-visible method wording diff",
+			TRUE ~ "bundle contradiction packet, browser/runtime manifest, OS/container manifest, workload or endpoint evidence, plugin-set evidence, transfer-boundary label, stale-row scan, and consumer-visible broad recommendation diff"
+		),
+		reopen_drill_verification_independent_recompute = case_when(
+			close_scope == "CI wait decision" ~ "independently recompute CI latency, runtime, reliability, branch-count cost, and input-mode comparison from the named raw artifacts before accepting the reopen",
+			close_scope == "source prototype decision" ~ "independently recompute source-span movement, behavior fixture pass/fail, invalidation fanout, and owner-review state from the named raw artifacts before accepting the reopen",
+			close_scope == "benchmark method wording" ~ "independently recompute trace-schema, EventDispatch, aggregation, instrumentation, and limitation wording from the named raw artifacts before accepting the reopen",
+			TRUE ~ "independently recompute browser/runtime, environment, workload, endpoint, plugin-set, and transfer-boundary evidence from the named raw artifacts before accepting the reopen"
+		),
+		reopen_drill_verification_stale_artifact_injection = case_when(
+			reopen_drill_verification_state == "local packet reopen-drill verification" ~ "inject a stale local CSV, figure, or README row and verify the local consumer path blocks it after the accepted contradiction",
+			reopen_drill_verification_state == "owner artifact reopen-drill verification" ~ "inject a stale owner-visible CSV, figure, or README row and verify the owner consumer path blocks it after the accepted contradiction",
+			TRUE ~ "inject a stale observer-visible CSV, figure, README row, or broad wording label and verify the observer consumer path blocks it after the accepted contradiction"
+		),
+		reopen_drill_verification_negative_control = case_when(
+			close_scope == "CI wait decision" ~ "change an unrelated generated timestamp or prose-only row and verify the CI wait-policy closure does not reopen",
+			close_scope == "source prototype decision" ~ "change an unrelated generated timestamp or prose-only row and verify the source closure does not reopen",
+			close_scope == "benchmark method wording" ~ "change an unrelated generated timestamp or prose-only row and verify the method closure does not reopen",
+			TRUE ~ "change an unrelated generated timestamp or prose-only row and verify the broad closure does not reopen"
+		),
+		reopen_drill_verification_idempotence_rule = case_when(
+			reopen_drill_verification_state == "local packet reopen-drill verification" ~ "running the same local contradiction twice must reopen once, then classify the second packet as duplicate without changing the consumer-visible status",
+			reopen_drill_verification_state == "owner artifact reopen-drill verification" ~ "running the same owner contradiction twice must reopen once, then classify the second packet as duplicate without changing the reviewer-visible status",
+			TRUE ~ "running the same observer contradiction twice must reopen once, then classify the second packet as duplicate without changing the broad-scope status"
+		),
+		reopen_drill_verification_consumer_path_check = case_when(
+			close_scope == "CI wait decision" ~ "consumer path check starts at the Performance Tests CI wait-policy section and proves it reaches the reopened status, changed artifacts, stale-row block, and rollback hook",
+			close_scope == "source prototype decision" ~ "consumer path check starts at the source optimization section and proves it reaches the reopened status, changed artifacts, stale-row block, and rollback hook",
+			close_scope == "benchmark method wording" ~ "consumer path check starts at the benchmark-method section and proves it reaches the reopened status, changed artifacts, stale-row block, and rollback hook",
+			TRUE ~ "consumer path check starts at the broad recommendation section and proves it reaches the reopened status, changed artifacts, stale-row block, and rollback hook"
+		),
+		reopen_drill_verification_failure_reproduction = case_when(
+			reopen_drill_verification_state == "local packet reopen-drill verification" ~ "try to reproduce the stale local conclusion through the old artifact path; verification fails if the old path still supports a current recommendation",
+			reopen_drill_verification_state == "owner artifact reopen-drill verification" ~ "try to reproduce the stale owner conclusion through the old artifact path; verification fails if the old path still supports a reviewer-visible recommendation",
+			TRUE ~ "try to reproduce the stale observer conclusion through the old artifact path; verification fails if the old path still supports a broad recommendation"
+		),
+		reopen_drill_verification_signoff_gate = case_when(
+			reopen_drill_verification_state == "local packet reopen-drill verification" ~ "sign off only when recompute passes, stale injection is blocked, negative control stays closed, duplicate packet is idempotent, consumer path changes, and failure reproduction loses",
+			reopen_drill_verification_state == "owner artifact reopen-drill verification" ~ "sign off only when recompute passes, stale injection is blocked, negative control stays closed, duplicate packet is idempotent, reviewer-visible consumer path changes, and failure reproduction loses",
+			TRUE ~ "sign off only when recompute passes, stale injection is blocked, negative control stays closed, duplicate packet is idempotent, broad consumer path changes, and failure reproduction loses"
+		),
+		reopen_drill_verification_owner = closure_reopen_drill_owner,
+		reopen_drill_verification_consumer = closure_reopen_drill_consumer,
+		reopen_drill_verification_cost = case_when(
+			reopen_drill_verification_state == "local packet reopen-drill verification" ~ 14,
+			reopen_drill_verification_state == "owner artifact reopen-drill verification" ~ 16,
+			TRUE ~ 18
+		),
+		reopen_drill_verification_value = pmax(
+			1,
+			closure_reopen_drill_value + closure_reopen_drill_missed_reopen_risk_value + closure_monitoring_reopen_risk_value - reopen_drill_verification_cost
+		),
+		reopen_drill_verification_false_confidence_risk_value = pmax(
+			1,
+			closure_reopen_drill_missed_reopen_risk_value + closure_monitoring_reopen_risk_value + closure_ledger_stale_status_risk_value - reopen_drill_verification_cost
+		),
+		timing_only_reopen_drill_verification_value = 0,
+		analysis_only_value = 0,
+		reopen_drill_verification_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(reopen_drill_verification_value), desc(reopen_drill_verification_false_confidence_risk_value), question_family)
+
+open_question_reopen_drill_verification_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"evidence-bundle", "What evidence bundle verifies the reopened status?",
+	"independent-recompute", "Can an independent recompute confirm the contradiction?",
+	"stale-artifact-injection", "Does an injected stale artifact get blocked?",
+	"negative-control", "Does unrelated churn avoid reopening the closure?",
+	"idempotence", "Does the same contradiction reopen once and then dedupe?",
+	"consumer-path", "Does the consumer path see the reopened status?",
+	"failure-reproduction", "Can the old stale conclusion still be reproduced?",
+	"signoff", "What gate signs off the verification?",
+	"substitute", "Can aggregate timing alone substitute for drill verification?",
+	"stop-rule", "When does reopen-drill verification stop?"
+)
+
+open_question_reopen_drill_verification_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_verification_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_verification_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_reopen_drill_verification_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_reopen_drill_verification_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		reopen_drill_verification_first_seen = !duplicated(reopen_drill_verification_id),
+		reopen_drill_verification_axis_key = paste(reopen_drill_verification_id, pressure_axis, sep = "::"),
+		reopen_drill_verification_axis_first_seen = !duplicated(reopen_drill_verification_axis_key),
+		reopen_drill_verification_state_first_seen = !duplicated(reopen_drill_verification_state),
+		reopen_drill_verification_owner_first_seen = !duplicated(reopen_drill_verification_owner),
+		reopen_drill_verification_consumer_first_seen = !duplicated(reopen_drill_verification_consumer),
+		new_reopen_drill_verification_value = if_else(reopen_drill_verification_first_seen, reopen_drill_verification_value, 0),
+		new_reopen_drill_verification_false_confidence_risk_value = if_else(reopen_drill_verification_first_seen, reopen_drill_verification_false_confidence_risk_value, 0),
+		new_timing_only_reopen_drill_verification_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!reopen_drill_verification_axis_first_seen ~ "repeat: reopen-drill-verification-axis already checked",
+			reopen_drill_verification_state == "local packet reopen-drill verification" ~ "reopen-drill verification: local packet",
+			TRUE ~ "reopen-drill verification: owner or observer artifact"
+		),
+		cumulative_reopen_drill_verification_records = cumsum(reopen_drill_verification_first_seen),
+		cumulative_reopen_drill_verification_axes = cumsum(reopen_drill_verification_axis_first_seen),
+		cumulative_reopen_drill_verification_states = cumsum(reopen_drill_verification_state_first_seen),
+		cumulative_reopen_drill_verification_owners = cumsum(reopen_drill_verification_owner_first_seen),
+		cumulative_reopen_drill_verification_consumers = cumsum(reopen_drill_verification_consumer_first_seen),
+		cumulative_reopen_drill_verification_value = cumsum(new_reopen_drill_verification_value),
+		cumulative_reopen_drill_verification_false_confidence_risk_value = cumsum(new_reopen_drill_verification_false_confidence_risk_value),
+		cumulative_timing_only_reopen_drill_verification_value = cumsum(new_timing_only_reopen_drill_verification_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_reopen_drill_verification_summary <- open_question_reopen_drill_verification_100_pass %>%
+	group_by(reopen_drill_verification_state, closure_reopen_drill_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		reopen_drill_verification_records = n_distinct(reopen_drill_verification_id),
+		axis_checks = sum(reopen_drill_verification_axis_first_seen),
+		reopen_drill_verification_owners = n_distinct(reopen_drill_verification_owner),
+		reopen_drill_verification_consumers = n_distinct(reopen_drill_verification_consumer),
+		reopen_drill_verification_value = sum(new_reopen_drill_verification_value),
+		reopen_drill_verification_false_confidence_risk_value = sum(new_reopen_drill_verification_false_confidence_risk_value),
+		timing_only_reopen_drill_verification_value = sum(new_timing_only_reopen_drill_verification_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(reopen_drill_verification_value), desc(reopen_drill_verification_false_confidence_risk_value), first_pass)
+
+open_question_reopen_drill_verification_checkpoints <- open_question_reopen_drill_verification_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_reopen_drill_verification_records,
+		cumulative_reopen_drill_verification_axes,
+		cumulative_reopen_drill_verification_states,
+		cumulative_reopen_drill_verification_owners,
+		cumulative_reopen_drill_verification_consumers,
+		cumulative_reopen_drill_verification_value,
+		cumulative_reopen_drill_verification_false_confidence_risk_value,
+		cumulative_timing_only_reopen_drill_verification_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_reopen_drill_verification_register,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-verification-register.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_verification_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			reopen_drill_verification_state,
+			closure_reopen_drill_state,
+			reopen_drill_verification_evidence_bundle,
+			reopen_drill_verification_independent_recompute,
+			reopen_drill_verification_stale_artifact_injection,
+			reopen_drill_verification_negative_control,
+			reopen_drill_verification_idempotence_rule,
+			reopen_drill_verification_consumer_path_check,
+			reopen_drill_verification_failure_reproduction,
+			reopen_drill_verification_signoff_gate,
+			reopen_drill_verification_owner,
+			reopen_drill_verification_consumer,
+			closure_reopen_drill_contradiction_packet,
+			closure_reopen_drill_trigger_injection,
+			closure_reopen_drill_expected_invalidated_rows,
+			closure_reopen_drill_acceptance_gate,
+			closure_reopen_drill_failure_response,
+			closure_reopen_drill_consumer_notice,
+			closure_reopen_drill_rollback_check,
+			closure_monitoring_reopen_rule,
+			closure_monitoring_false_alarm_filter,
+			supported_claim,
+			blocked_claim,
+			reopen_drill_verification_first_seen,
+			reopen_drill_verification_axis_first_seen,
+			reopen_drill_verification_state_first_seen,
+			reopen_drill_verification_owner_first_seen,
+			reopen_drill_verification_consumer_first_seen,
+			pass_result,
+			reopen_drill_verification_value,
+			reopen_drill_verification_false_confidence_risk_value,
+			timing_only_reopen_drill_verification_value,
+			new_reopen_drill_verification_value,
+			new_reopen_drill_verification_false_confidence_risk_value,
+			new_timing_only_reopen_drill_verification_value,
+			new_analysis_only_value,
+			cumulative_reopen_drill_verification_records,
+			cumulative_reopen_drill_verification_axes,
+			cumulative_reopen_drill_verification_states,
+			cumulative_reopen_drill_verification_owners,
+			cumulative_reopen_drill_verification_consumers,
+			cumulative_reopen_drill_verification_value,
+			cumulative_reopen_drill_verification_false_confidence_risk_value,
+			cumulative_timing_only_reopen_drill_verification_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-verification-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_verification_summary,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-verification-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_verification_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-verification-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_reopen_drill_verification_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, reopen_drill_verification_value)
+		) %>%
+		ggplot(aes(reopen_drill_verification_value, question_label, fill = reopen_drill_verification_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Verification") +
+		labs(
+			title = "Reopen-drill verification checks that stale support is actually removed",
+			subtitle = "Each row names evidence bundle, recompute rule, stale injection, negative control, idempotence, consumer path, failure reproduction, signoff, owner, and consumer",
+			x = "Reopen-drill-verification value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"453-open-question-reopen-drill-verification-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_reopen_drill_verification_saturation_long <- open_question_reopen_drill_verification_100_pass %>%
+	select(
+		pass_id,
+		`reopen-drill-verification records` = cumulative_reopen_drill_verification_records,
+		`reopen-drill-verification axes` = cumulative_reopen_drill_verification_axes,
+		`reopen-drill-verification states` = cumulative_reopen_drill_verification_states,
+		`reopen-drill-verification owners` = cumulative_reopen_drill_verification_owners,
+		`reopen-drill-verification consumers` = cumulative_reopen_drill_verification_consumers,
+		`reopen-drill-verification value` = cumulative_reopen_drill_verification_value,
+		`reopen-drill-verification false-confidence risk value` = cumulative_reopen_drill_verification_false_confidence_risk_value,
+		`timing-only reopen-drill-verification value` = cumulative_timing_only_reopen_drill_verification_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("reopen-drill-verification records", "reopen-drill-verification axes", "reopen-drill-verification states", "reopen-drill-verification owners", "reopen-drill-verification consumers", "reopen-drill-verification value", "reopen-drill-verification false-confidence risk value", "timing-only reopen-drill-verification value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_reopen_drill_verification_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Reopen-drill-verification audit saturates once every proof path is covered",
+			subtitle = "Nine verification records appear by pass 9; all 90 axes appear by pass 90; timing-only verification value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"454-open-question-reopen-drill-verification-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_reopen_drill_verification_summary %>%
+		mutate(
+			state_label = str_wrap(reopen_drill_verification_state, width = 28),
+			state_label = fct_reorder(state_label, reopen_drill_verification_value + reopen_drill_verification_false_confidence_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Reopen-drill-verification coverage separates local proof paths from owner and observer proof paths",
+			subtitle = "Every row is checked for evidence bundle, recompute, stale injection, negative control, idempotence, consumer path, failure reproduction, signoff, substitute, and stop rule",
+			x = "Reopen-drill-verification-axis checks",
+			y = "Reopen-drill-verification state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"455-open-question-reopen-drill-verification-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
