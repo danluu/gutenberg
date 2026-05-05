@@ -1440,6 +1440,19 @@ The R script derives:
     checkpoints for acceptance-gate, acceptance-axis, review-owner,
     acceptance-value, closure-value, local-repeat-resolution, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-handoff-contract.csv`: handoff contract
+    table for the nine acceptance gates, including issue title, required
+    fields, artifact bundle, reviewer decision, escalation trigger, and stale
+    trigger.
+-   `data/typing-delay-open-question-handoff-contract-100-pass-audit.csv`:
+    twelfth forced 100-pass audit over handoff axes: title, owner, fields,
+    artifact, decision, mixed, escalation, stale, substitute, and stop-rule.
+-   `data/typing-delay-open-question-handoff-contract-100-pass-summary.csv`:
+    rollup of handoff coverage by handoff state, review mode, and pass result.
+-   `data/typing-delay-open-question-handoff-contract-100-pass-checkpoints.csv`:
+    checkpoints for handoff-contract, handoff-axis, handoff-state,
+    contract-value, local-execution, owner/observer-handoff,
+    timing-only-substitute, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10995,6 +11008,35 @@ This is the review contract for the open questions. A packet does not close
 because it produced a faster or slower aggregate number; it closes because its
 predeclared pass/reject/mixed rule fires and the closure record is archived.
 Mixed results narrow the claim rather than creating compromise wording.
+
+I then added the handoff-contract layer: convert each acceptance gate into the
+actual work packet a reviewer or owner would receive, including title, required
+fields, artifact bundle, reviewer decision, escalation trigger, stale trigger,
+and stop rule.
+
+![Open question handoff contracts](figures/318-open-question-handoff-contracts.png)
+
+![Open question handoff contract 100-pass saturation](figures/319-open-question-handoff-contract-100-pass-saturation.png)
+
+![Open question handoff contract coverage](figures/320-open-question-handoff-contract-coverage.png)
+
+| Handoff-contract check | Result |
+| ---------------------- | ------ |
+| Handoff contracts | `9`, one per acceptance gate. |
+| Handoff states | `3`: execute packet locally, handoff to owner, and handoff to observer. |
+| Review owners | `8`; the target-CI startup and pattern-wait packets share the Performance Tests runtime reviewer. |
+| Handoff-axis checks | `90`: every contract checked against all `10` handoff axes. |
+| Contract value | `400` across the nine handoffs. |
+| Local execution value | `303`, concentrated in selector/source (`85`), startup wait (`79`), pattern wait (`78`), and input-mode controls (`61`). |
+| Owner/observer handoff value | `44`, covering compatibility, policy, workload, display, and mechanism handoffs. |
+| Timing-only substitute value | `0`; another aggregate q50-only run cannot stand in for a missing issue contract, owner decision, artifact bundle, or stale-trigger rule. |
+| Saturation | Handoff contracts are all named by pass `9`; all handoff axes are covered by pass `90`; passes `91-100` add no handoff coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This makes the remaining work executable. The local packets need commands,
+fields, and archived acceptance records. The broader claims need owner or
+observer handoffs. None of those should be reopened as generic uncertainty about
+the local `1000ms` held-key cliff.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

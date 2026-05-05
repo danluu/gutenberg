@@ -1,0 +1,10 @@
+pass_id,cumulative_handoff_contracts,cumulative_handoff_axes,cumulative_handoff_states,cumulative_handoff_contract_value,cumulative_local_execution_value,cumulative_owner_or_observer_handoff_value,cumulative_timing_only_substitute_value,cumulative_analysis_only_value
+1,1,1,1,88,85,0,0,0
+5,5,5,2,351,303,26,0,0
+9,9,9,3,400,303,44,0,0
+10,9,10,3,400,303,44,0,0
+20,9,20,3,400,303,44,0,0
+50,9,50,3,400,303,44,0,0
+90,9,90,3,400,303,44,0,0
+91,9,90,3,400,303,44,0,0
+100,9,90,3,400,303,44,0,0

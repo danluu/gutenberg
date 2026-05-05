@@ -1,0 +1,7 @@
+handoff_state,review_mode,pass_result,passes,first_pass,contracts,axis_checks,review_owners,handoff_contract_value,local_execution_value,owner_or_observer_handoff_value,timing_only_substitute_value,analysis_only_value,max_coordination_cost
+execute packet locally,local packet review,handoff contract: local execution,40,1,4,40,3,316,303,0,0,0,1
+handoff to owner,owner handoff review,handoff contract: owner or observer,20,5,2,20,2,61,0,41,0,0,3
+handoff to observer,external artifact review,handoff contract: owner or observer,30,7,3,30,3,23,0,3,0,0,4
+execute packet locally,local packet review,repeat: handoff-axis already checked,5,91,4,0,3,0,0,0,0,0,1
+handoff to owner,owner handoff review,repeat: handoff-axis already checked,2,95,2,0,2,0,0,0,0,0,3
+handoff to observer,external artifact review,repeat: handoff-axis already checked,3,97,3,0,3,0,0,0,0,0,4

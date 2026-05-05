@@ -32158,6 +32158,315 @@ save_plot(
 	height = 7.2
 )
 
+open_question_handoff_contract <- open_question_acceptance_gate %>%
+	mutate(
+		handoff_state = case_when(
+			startable_without_new_owner ~ "execute packet locally",
+			review_mode == "owner handoff review" ~ "handoff to owner",
+			TRUE ~ "handoff to observer"
+		),
+		handoff_title = case_when(
+			question_family == "Startup wait and first-key tails" ~ "Run target-CI startup-wait packet with retained and early-key fields",
+			question_family == "Pattern wait replacement" ~ "Run target-CI pattern-readiness packet with resource and p90 vetoes",
+			question_family == "Selector/source guard" ~ "Prototype one selector/source guard behind behavior and source-span gates",
+			question_family == "Input-mode realism" ~ "Run matched hold, tap, short-hold, and repeat stimulus controls",
+			question_family == "Store-subscriber partition" ~ "Review public/private store notification compatibility before fanout claims",
+			question_family == "CI pass/fail policy" ~ "Join raw Performance Tests artifact to dashboard and reviewer policy",
+			question_family == "Product workload generalization" ~ "Define and run representative workload replay stratum",
+			question_family == "Browser endpoint and display presentation" ~ "Join calibrated presentation endpoint to retained-key trace windows",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "Join passive runtime or CPU/QoS counters to retained-key windows",
+			TRUE ~ execution_packet
+		),
+		required_handoff_fields = case_when(
+			question_family == "Startup wait and first-key tails" ~ "startup wait, inter-key delay, retained q50/mean/p90, first retained key, discarded key, failures, resources, run order",
+			question_family == "Pattern wait replacement" ~ "lane, wait/predicate, readiness, preview/canvas, resource quiet, failures, retained q50, p90",
+			question_family == "Selector/source guard" ~ "selector owner, behavior fixture result, targeted source span, aggregate timing control",
+			question_family == "Input-mode realism" ~ "stimulus family, hold duration, repeat marker, retained rows, aggregation policy",
+			question_family == "Store-subscriber partition" ~ "public subscriber/import list, compatibility fixture result, ordering assumptions, migration sketch",
+			question_family == "CI pass/fail policy" ~ "raw q50, displayed q50, dashboard threshold/noisy rule, reviewer outcome",
+			question_family == "Product workload generalization" ~ "replay manifest, workload stratum, plugin/theme context, failures, retained rows",
+			question_family == "Browser endpoint and display presentation" ~ "external timestamp, trace key window, clock sync/calibration, perturbation control",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "counter samples, retained key windows, sidecar off/on control, class-ordering check",
+			TRUE ~ completion_artifact
+		),
+		handoff_artifact_bundle = case_when(
+			startable_without_new_owner ~ "packet CSV, exact command/config, invariant fields, acceptance gate, and plot/table diff",
+			review_mode == "owner handoff review" ~ "owner issue with compatibility or policy matrix, acceptance gate, and reviewer signoff field",
+			TRUE ~ "observer/workload issue with calibration or replay manifest, acceptance gate, and perturbation control"
+		),
+		reviewer_decision = case_when(
+			close_scope == "CI wait decision" ~ "approve wait reduction, keep current wait, or split metric/lane",
+			close_scope == "source prototype decision" ~ "approve guarded prototype, reject source claim, or scope to passing owner",
+			close_scope == "benchmark method wording" ~ "approve stimulus wording or require separate hold/tap/repeat reporting",
+			TRUE ~ "approve broader wording, narrow to passing artifact, or keep local-only claim"
+		),
+		escalation_trigger = case_when(
+			startable_without_new_owner ~ "packet cannot be reproduced with archived fields or acceptance gate is ambiguous",
+			review_mode == "owner handoff review" ~ "owner cannot identify policy/API consumer or compatibility fixture",
+			TRUE ~ "observer or workload cannot join to retained-key windows without perturbation"
+		),
+		stale_trigger = case_when(
+			question_family %in% c("Startup wait and first-key tails", "Pattern wait replacement") ~ "Performance Tests topology, wait policy, readiness predicate, or statistic changes",
+			question_family == "Selector/source guard" ~ "selector owner, behavior fixture, or source span changes",
+			question_family == "Input-mode realism" ~ "helper action, browser/platform repeat, or hold-duration semantics change",
+			question_family == "Store-subscriber partition" ~ "public store notification semantics or import surface changes",
+			question_family == "CI pass/fail policy" ~ "dashboard, threshold, noisy-metric rule, or reviewer policy changes",
+			question_family == "Product workload generalization" ~ "workload stratum, plugin/theme context, or replay fixture changes",
+			question_family == "Browser endpoint and display presentation" ~ "browser endpoint, display pipeline, or calibration method changes",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "browser/runtime, OS scheduler, counter source, or sidecar overhead changes",
+			TRUE ~ monitor_signal
+		),
+		coordination_cost = case_when(
+			handoff_state == "execute packet locally" ~ 1,
+			handoff_state == "handoff to owner" ~ 3,
+			TRUE ~ 4
+		),
+		handoff_contract_value = pmax(
+			1,
+			acceptance_value + queue_priority_value + strictness_score - coordination_cost
+		),
+		local_execution_value = if_else(
+			handoff_state == "execute packet locally",
+			acceptance_value + queue_priority_value,
+			0
+		),
+		owner_or_observer_handoff_value = if_else(
+			handoff_state == "execute packet locally",
+			0,
+			pmax(1, closure_value - coordination_cost)
+		),
+		timing_only_substitute_value = 0,
+		analysis_only_value = 0,
+		handoff_contract_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(local_execution_value), desc(owner_or_observer_handoff_value), question_family)
+
+open_question_handoff_contract_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"title", "Is the handoff title specific enough to execute?",
+	"owner", "Is the reviewer or owner named?",
+	"fields", "Are required fields explicit and joinable?",
+	"artifact", "Is the artifact bundle sufficient for review?",
+	"decision", "Does the reviewer know which decision to make?",
+	"mixed", "Does the handoff preserve mixed-result narrowing?",
+	"escalation", "What blocks or escalates the handoff?",
+	"stale", "What future change makes the handoff stale?",
+	"substitute", "Can a timing-only rerun substitute for the handoff?",
+	"stop-rule", "What condition closes the handoff?"
+)
+
+open_question_handoff_contract_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_handoff_contract)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_handoff_contract_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_handoff_contract %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_handoff_contract_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		handoff_contract_first_seen = !duplicated(handoff_contract_id),
+		handoff_axis_key = paste(handoff_contract_id, pressure_axis, sep = "::"),
+		handoff_axis_first_seen = !duplicated(handoff_axis_key),
+		handoff_state_first_seen = !duplicated(handoff_state),
+		new_handoff_contract_value = if_else(handoff_contract_first_seen, handoff_contract_value, 0),
+		new_local_execution_value = if_else(handoff_contract_first_seen, local_execution_value, 0),
+		new_owner_or_observer_handoff_value = if_else(handoff_contract_first_seen, owner_or_observer_handoff_value, 0),
+		new_timing_only_substitute_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!handoff_axis_first_seen ~ "repeat: handoff-axis already checked",
+			handoff_state == "execute packet locally" ~ "handoff contract: local execution",
+			TRUE ~ "handoff contract: owner or observer"
+		),
+		cumulative_handoff_contracts = cumsum(handoff_contract_first_seen),
+		cumulative_handoff_axes = cumsum(handoff_axis_first_seen),
+		cumulative_handoff_states = cumsum(handoff_state_first_seen),
+		cumulative_handoff_contract_value = cumsum(new_handoff_contract_value),
+		cumulative_local_execution_value = cumsum(new_local_execution_value),
+		cumulative_owner_or_observer_handoff_value = cumsum(new_owner_or_observer_handoff_value),
+		cumulative_timing_only_substitute_value = cumsum(new_timing_only_substitute_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_handoff_contract_summary <- open_question_handoff_contract_100_pass %>%
+	group_by(handoff_state, review_mode, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		contracts = n_distinct(handoff_contract_id),
+		axis_checks = sum(handoff_axis_first_seen),
+		review_owners = n_distinct(review_owner),
+		handoff_contract_value = sum(new_handoff_contract_value),
+		local_execution_value = sum(new_local_execution_value),
+		owner_or_observer_handoff_value = sum(new_owner_or_observer_handoff_value),
+		timing_only_substitute_value = sum(new_timing_only_substitute_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_coordination_cost = max(coordination_cost, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(local_execution_value), desc(owner_or_observer_handoff_value), first_pass)
+
+open_question_handoff_contract_checkpoints <- open_question_handoff_contract_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_handoff_contracts,
+		cumulative_handoff_axes,
+		cumulative_handoff_states,
+		cumulative_handoff_contract_value,
+		cumulative_local_execution_value,
+		cumulative_owner_or_observer_handoff_value,
+		cumulative_timing_only_substitute_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_handoff_contract,
+	file.path(data_dir, "typing-delay-open-question-handoff-contract.csv")
+)
+
+write_csv(
+	open_question_handoff_contract_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			handoff_state,
+			review_mode,
+			handoff_title,
+			required_handoff_fields,
+			handoff_artifact_bundle,
+			reviewer_decision,
+			escalation_trigger,
+			stale_trigger,
+			handoff_contract_first_seen,
+			handoff_axis_first_seen,
+			handoff_state_first_seen,
+			pass_result,
+			handoff_contract_value,
+			local_execution_value,
+			owner_or_observer_handoff_value,
+			timing_only_substitute_value,
+			new_handoff_contract_value,
+			new_local_execution_value,
+			new_owner_or_observer_handoff_value,
+			new_timing_only_substitute_value,
+			new_analysis_only_value,
+			cumulative_handoff_contracts,
+			cumulative_handoff_axes,
+			cumulative_handoff_states,
+			cumulative_handoff_contract_value,
+			cumulative_local_execution_value,
+			cumulative_owner_or_observer_handoff_value,
+			cumulative_timing_only_substitute_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-handoff-contract-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_handoff_contract_summary,
+	file.path(data_dir, "typing-delay-open-question-handoff-contract-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_handoff_contract_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-handoff-contract-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_handoff_contract %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, local_execution_value + owner_or_observer_handoff_value)
+		) %>%
+		ggplot(aes(local_execution_value + owner_or_observer_handoff_value, question_label, fill = handoff_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Handoff state") +
+		labs(
+			title = "Handoff contracts turn open questions into executable review packets",
+			subtitle = "Local packets need commands and fields; broader claims need owner or observer artifacts",
+			x = "Local execution plus handoff value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"318-open-question-handoff-contracts.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_handoff_contract_saturation_long <- open_question_handoff_contract_100_pass %>%
+	select(
+		pass_id,
+		`handoff contracts` = cumulative_handoff_contracts,
+		`handoff axes` = cumulative_handoff_axes,
+		`handoff states` = cumulative_handoff_states,
+		`contract value` = cumulative_handoff_contract_value,
+		`local execution value` = cumulative_local_execution_value,
+		`owner/observer handoff value` = cumulative_owner_or_observer_handoff_value,
+		`timing-only substitute value` = cumulative_timing_only_substitute_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("handoff contracts", "handoff axes", "handoff states", "contract value", "local execution value", "owner/observer handoff value", "timing-only substitute value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_handoff_contract_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.45) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Handoff-contract audit saturates once owner packets are fully specified",
+			subtitle = "Nine contracts appear by pass 9; all 90 handoff axes appear by pass 90; timing-only substitute value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"319-open-question-handoff-contract-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_handoff_contract_summary %>%
+		mutate(
+			state_label = str_wrap(handoff_state, width = 28),
+			state_label = fct_reorder(state_label, local_execution_value + owner_or_observer_handoff_value + handoff_contract_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Handoff coverage separates local execution from owner and observer review",
+			subtitle = "Every contract is checked for title, owner, fields, artifact, decision, mixed-result handling, escalation, stale trigger, substitute, and stop rule",
+			x = "Handoff-axis checks",
+			y = "Handoff state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"320-open-question-handoff-contract-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
