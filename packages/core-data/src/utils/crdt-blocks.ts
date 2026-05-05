@@ -411,6 +411,62 @@ function createNewYBlock( block: Block ): YBlock {
 	);
 }
 
+function canReorderBlocksByClientId(
+	yblocks: YBlocks,
+	incomingBlocks: Block[],
+	start: number,
+	length: number
+): boolean {
+	const existingByClientId = new Map< string, YBlock >();
+	const incomingClientIds = new Set< string >();
+	let hasOrderChange = false;
+
+	for ( let i = 0; i < length; i++ ) {
+		const yblock = yblocks.get( start + i );
+		const clientId = yblock.get( 'clientId' );
+
+		if (
+			! clientId ||
+			existingByClientId.has( clientId ) ||
+			typeof clientId !== 'string'
+		) {
+			return false;
+		}
+
+		existingByClientId.set( clientId, yblock );
+	}
+
+	for ( let i = 0; i < length; i++ ) {
+		const incomingBlock = incomingBlocks[ start + i ];
+		const clientId = incomingBlock.clientId;
+
+		if (
+			! clientId ||
+			incomingClientIds.has( clientId ) ||
+			! existingByClientId.has( clientId )
+		) {
+			return false;
+		}
+
+		incomingClientIds.add( clientId );
+
+		if ( yblocks.get( start + i ).get( 'clientId' ) !== clientId ) {
+			hasOrderChange = true;
+		}
+
+		if (
+			! areBlocksEqual(
+				incomingBlock,
+				existingByClientId.get( clientId )!
+			)
+		) {
+			return false;
+		}
+	}
+
+	return hasOrderChange && incomingClientIds.size === existingByClientId.size;
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -491,144 +547,179 @@ export function mergeCrdtBlocks(
 		yblocks.length - incomingBlocksToSync.length
 	);
 
-	// updates
-	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
-		const incomingYBlock = incomingBlocksToSync[ left ];
-		const localYBlock = yblocks.get( left );
+	const handledReorder =
+		numOfUpdatesNeeded > 1 &&
+		numOfInsertionsNeeded === 0 &&
+		numOfDeletionsNeeded === 0 &&
+		canReorderBlocksByClientId(
+			yblocks,
+			incomingBlocksToSync,
+			left,
+			numOfUpdatesNeeded
+		);
 
-		Object.entries( incomingYBlock ).forEach(
-			( [ incomingBlockProperty, incomingBlockPropertyValue ] ) => {
-				switch ( incomingBlockProperty ) {
-					case 'attributes': {
-						const localAttributes = localYBlock.get(
-							incomingBlockProperty
-						);
-						const incomingAttributes = incomingBlockPropertyValue;
+	if ( handledReorder ) {
+		const insertAt = left;
+		const reorderedBlocks = incomingBlocksToSync
+			.slice( left, left + numOfUpdatesNeeded )
+			.map( createNewYBlock );
+		const applyReorder = () => {
+			yblocks.delete( insertAt, numOfUpdatesNeeded );
+			yblocks.insert( insertAt, reorderedBlocks );
+		};
 
-						// When the local block has no attributes, adopt the incoming set.
-						if ( ! localAttributes ) {
-							localYBlock.set(
-								incomingBlockProperty,
-								createNewYAttributeMap(
-									incomingYBlock.name,
-									incomingAttributes
-								)
+		// Keep the structural replacement atomic for observers and remote sync.
+		if ( yblocks.doc ) {
+			yblocks.doc.transact( applyReorder );
+		} else {
+			applyReorder();
+		}
+	} else {
+		// updates
+		for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
+			const incomingYBlock = incomingBlocksToSync[ left ];
+			const localYBlock = yblocks.get( left );
+
+			Object.entries( incomingYBlock ).forEach(
+				( [ incomingBlockProperty, incomingBlockPropertyValue ] ) => {
+					switch ( incomingBlockProperty ) {
+						case 'attributes': {
+							const localAttributes = localYBlock.get(
+								incomingBlockProperty
+							);
+							const incomingAttributes =
+								incomingBlockPropertyValue;
+
+							// When the local block has no attributes, adopt the incoming set.
+							if ( ! localAttributes ) {
+								localYBlock.set(
+									incomingBlockProperty,
+									createNewYAttributeMap(
+										incomingYBlock.name,
+										incomingAttributes
+									)
+								);
+								break;
+							}
+
+							// Otherwise the attributes need to be merged.
+							Object.entries( incomingAttributes ).forEach(
+								( [
+									incomingAttributeName,
+									incomingAttributeValue,
+								] ) => {
+									const currentAttribute =
+										localAttributes?.get(
+											incomingAttributeName
+										);
+
+									const isExpectedType =
+										isExpectedAttributeType(
+											incomingYBlock.name,
+											incomingAttributeName,
+											currentAttribute
+										);
+
+									// Y types (Y.Text, Y.Array, Y.Map) cannot be
+									// compared with fastDeepEqual against plain values.
+									// Delegate to mergeYValue which handles no-op
+									// detection at the edges.
+									const isYType =
+										currentAttribute instanceof
+										Y.AbstractType;
+
+									const isAttributeChanged =
+										! isExpectedType ||
+										isYType ||
+										! fastDeepEqual(
+											currentAttribute,
+											incomingAttributeValue
+										);
+
+									if ( isAttributeChanged ) {
+										updateYBlockAttribute(
+											incomingYBlock.name,
+											incomingYBlock.clientId,
+											incomingAttributeName,
+											incomingAttributeValue,
+											localAttributes,
+											attributeCursor
+										);
+									}
+								}
+							);
+
+							// Delete any attributes that are no longer present.
+							localAttributes.forEach(
+								( _attrValue: unknown, attrName: string ) => {
+									if (
+										! incomingBlockPropertyValue.hasOwnProperty(
+											attrName
+										)
+									) {
+										localAttributes.delete( attrName );
+									}
+								}
+							);
+
+							break;
+						}
+
+						case 'innerBlocks': {
+							// Recursively merge innerBlocks
+							let yInnerBlocks = localYBlock.get(
+								incomingBlockProperty
+							);
+
+							if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
+								yInnerBlocks = new Y.Array< YBlock >();
+								localYBlock.set(
+									incomingBlockProperty,
+									yInnerBlocks
+								);
+							}
+
+							mergeCrdtBlocks(
+								yInnerBlocks,
+								incomingBlockPropertyValue ?? [],
+								attributeCursor
 							);
 							break;
 						}
 
-						// Otherwise the attributes need to be merged.
-						Object.entries( incomingAttributes ).forEach(
-							( [
-								incomingAttributeName,
-								incomingAttributeValue,
-							] ) => {
-								const currentAttribute = localAttributes?.get(
-									incomingAttributeName
+						default:
+							if (
+								! fastDeepEqual(
+									incomingYBlock[ incomingBlockProperty ],
+									localYBlock.get( incomingBlockProperty )
+								)
+							) {
+								localYBlock.set(
+									incomingBlockProperty,
+									incomingBlockPropertyValue
 								);
-
-								const isExpectedType = isExpectedAttributeType(
-									incomingYBlock.name,
-									incomingAttributeName,
-									currentAttribute
-								);
-
-								// Y types (Y.Text, Y.Array, Y.Map) cannot be
-								// compared with fastDeepEqual against plain values.
-								// Delegate to mergeYValue which handles no-op
-								// detection at the edges.
-								const isYType =
-									currentAttribute instanceof Y.AbstractType;
-
-								const isAttributeChanged =
-									! isExpectedType ||
-									isYType ||
-									! fastDeepEqual(
-										currentAttribute,
-										incomingAttributeValue
-									);
-
-								if ( isAttributeChanged ) {
-									updateYBlockAttribute(
-										incomingYBlock.name,
-										incomingYBlock.clientId,
-										incomingAttributeName,
-										incomingAttributeValue,
-										localAttributes,
-										attributeCursor
-									);
-								}
 							}
-						);
-
-						// Delete any attributes that are no longer present.
-						localAttributes.forEach(
-							( _attrValue: unknown, attrName: string ) => {
-								if (
-									! incomingBlockPropertyValue.hasOwnProperty(
-										attrName
-									)
-								) {
-									localAttributes.delete( attrName );
-								}
-							}
-						);
-
-						break;
 					}
-
-					case 'innerBlocks': {
-						// Recursively merge innerBlocks
-						let yInnerBlocks = localYBlock.get(
-							incomingBlockProperty
-						);
-
-						if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
-							yInnerBlocks = new Y.Array< YBlock >();
-							localYBlock.set(
-								incomingBlockProperty,
-								yInnerBlocks
-							);
-						}
-
-						mergeCrdtBlocks(
-							yInnerBlocks,
-							incomingBlockPropertyValue ?? [],
-							attributeCursor
-						);
-						break;
-					}
-
-					default:
-						if (
-							! fastDeepEqual(
-								incomingYBlock[ incomingBlockProperty ],
-								localYBlock.get( incomingBlockProperty )
-							)
-						) {
-							localYBlock.set(
-								incomingBlockProperty,
-								incomingBlockPropertyValue
-							);
-						}
 				}
-			}
-		);
-		localYBlock.forEach( ( _v, k ) => {
-			if ( ! incomingYBlock.hasOwnProperty( k ) ) {
-				localYBlock.delete( k );
-			}
-		} );
-	}
+			);
+			localYBlock.forEach( ( _v, k ) => {
+				if ( ! incomingYBlock.hasOwnProperty( k ) ) {
+					localYBlock.delete( k );
+				}
+			} );
+		}
 
-	// deletes
-	yblocks.delete( left, numOfDeletionsNeeded );
+		// deletes
+		yblocks.delete( left, numOfDeletionsNeeded );
 
-	// inserts
-	for ( let i = 0; i < numOfInsertionsNeeded; i++, left++ ) {
-		const newBlock = [ createNewYBlock( incomingBlocksToSync[ left ] ) ];
+		// inserts
+		for ( let i = 0; i < numOfInsertionsNeeded; i++, left++ ) {
+			const newBlock = [
+				createNewYBlock( incomingBlocksToSync[ left ] ),
+			];
 
-		yblocks.insert( left, newBlock );
+			yblocks.insert( left, newBlock );
+		}
 	}
 
 	// remove duplicate clientids
