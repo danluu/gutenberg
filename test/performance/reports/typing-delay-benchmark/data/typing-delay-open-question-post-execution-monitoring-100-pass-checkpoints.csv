@@ -1,0 +1,10 @@
+pass_id,cumulative_post_execution_monitoring_records,cumulative_post_execution_monitoring_axes,cumulative_post_execution_monitoring_states,cumulative_post_execution_monitoring_owners,cumulative_post_execution_monitoring_consumers,cumulative_post_execution_monitoring_value,cumulative_post_execution_monitoring_escape_risk_value,cumulative_timing_only_post_execution_monitoring_value,cumulative_analysis_only_value
+1,1,1,1,1,1,7568895,3155953,0,0
+5,5,5,2,5,4,30531109,12730356,0,0
+9,9,9,3,9,8,36327388,15147176,0,0
+10,9,10,3,9,8,36327388,15147176,0,0
+20,9,20,3,9,8,36327388,15147176,0,0
+50,9,50,3,9,8,36327388,15147176,0,0
+90,9,90,3,9,8,36327388,15147176,0,0
+91,9,90,3,9,8,36327388,15147176,0,0
+100,9,90,3,9,8,36327388,15147176,0,0

@@ -1,0 +1,7 @@
+post_execution_monitoring_state,decision_execution_state,pass_result,passes,first_pass,post_execution_monitoring_records,axis_checks,post_execution_monitoring_owners,post_execution_monitoring_consumers,post_execution_monitoring_value,post_execution_monitoring_escape_risk_value,timing_only_post_execution_monitoring_value,analysis_only_value
+local packet post-execution monitoring,local packet decision execution,post-execution monitoring: local packet,40,1,4,40,4,3,27448696,11445103,0,0
+owner artifact post-execution monitoring,owner artifact decision execution,post-execution monitoring: owner or observer artifact,20,5,2,20,2,2,5488414,2288466,0,0
+observer artifact post-execution monitoring,observer artifact decision execution,post-execution monitoring: owner or observer artifact,30,7,3,30,3,3,3390278,1413607,0,0
+local packet post-execution monitoring,local packet decision execution,repeat: post-execution-monitoring-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact post-execution monitoring,owner artifact decision execution,repeat: post-execution-monitoring-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact post-execution monitoring,observer artifact decision execution,repeat: post-execution-monitoring-axis already checked,3,97,3,0,3,3,0,0,0,0

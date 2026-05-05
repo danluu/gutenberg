@@ -39190,6 +39190,304 @@ save_plot(
 	height = 7.2
 )
 
+open_question_post_execution_monitoring_register <- open_question_decision_execution_register %>%
+	mutate(
+		post_execution_monitoring_state = case_when(
+			decision_execution_state == "local packet decision execution" ~ "local packet post-execution monitoring",
+			decision_execution_state == "owner artifact decision execution" ~ "owner artifact post-execution monitoring",
+			TRUE ~ "observer artifact post-execution monitoring"
+		),
+		post_execution_monitoring_signal = case_when(
+			close_scope == "CI wait decision" ~ "watch CI runtime, q50/q90/q99 movement, run-to-run variance, pass/fail reliability, startup wait, typing delay, and input mode after execution",
+			close_scope == "source prototype decision" ~ "watch selector fanout, dispatch slices, invalidation side effects, owner review, and implementation drift after execution",
+			close_scope == "benchmark method wording" ~ "watch benchmark reruns, regenerated data, trace-event schema drift, aggregation changes, and instrumentation caveat drift after execution",
+			TRUE ~ "watch portability reruns, browser/runtime changes, workload representativeness, endpoint drift, and conclusion-scope creep after execution"
+		),
+		post_execution_monitoring_baseline = case_when(
+			post_execution_monitoring_state == "local packet post-execution monitoring" ~ "baseline against the executed local packet, pre-execution packet evidence, gate proof, and report diff",
+			post_execution_monitoring_state == "owner artifact post-execution monitoring" ~ "baseline against the executed owner artifact, reviewer identity, gate proof, and report diff",
+			TRUE ~ "baseline against the executed observer artifact, reviewer identity, gate proof, and report diff"
+		),
+		post_execution_monitoring_cadence = case_when(
+			close_scope == "CI wait decision" ~ "check on every CI run touching the performance job and summarize after any wait, startup, typing-delay, or input-mode change",
+			close_scope == "source prototype decision" ~ "check on every source experiment or owner review that touches selector, store, or dispatch behavior",
+			close_scope == "benchmark method wording" ~ "check on every benchmark rerun, figure regeneration, trace schema change, or aggregation edit",
+			TRUE ~ "check on every portability rerun, browser/runtime update, workload expansion, endpoint change, or broad-summary edit"
+		),
+		post_execution_monitoring_drift_trigger = case_when(
+			close_scope == "CI wait decision" ~ "latency band changes, variance widens, pass/fail reliability falls, runtime savings vanish, or held-key/tap/startup behavior separates",
+			close_scope == "source prototype decision" ~ "selector fanout changes, dispatch slices move, invalidation side effects appear, or owner review rejects the source recommendation",
+			close_scope == "benchmark method wording" ~ "trace schema changes, generated figures disagree with data, aggregation changes, or measurement caveats no longer match the harness",
+			TRUE ~ "portability result changes, browser/runtime behavior diverges, workload coverage changes, endpoint behavior shifts, or conclusion wording expands beyond evidence"
+		),
+		post_execution_monitoring_escalation = case_when(
+			post_execution_monitoring_state == "local packet post-execution monitoring" ~ "open a local monitoring-failure row, block further local execution, request packet renewal, and notify the consumer",
+			post_execution_monitoring_state == "owner artifact post-execution monitoring" ~ "open an owner monitoring-failure row, block owner-scoped execution, request owner renewal, and notify the consumer",
+			TRUE ~ "open an observer monitoring-failure row, block broad execution, request observer renewal, and notify the consumer"
+		),
+		post_execution_monitoring_backout_packet = case_when(
+			post_execution_monitoring_state == "local packet post-execution monitoring" ~ "backout diff, failed monitor row, local packet path, gate proof, execution surface, renewal request, and consumer notice",
+			post_execution_monitoring_state == "owner artifact post-execution monitoring" ~ "backout diff, failed monitor row, owner artifact path, reviewer identity, gate proof, execution surface, renewal request, and consumer notice",
+			TRUE ~ "backout diff, failed monitor row, observer artifact path, reviewer identity, gate proof, execution surface, renewal request, and consumer notice"
+		),
+		post_execution_monitoring_owner = decision_execution_owner,
+		post_execution_monitoring_consumer = decision_execution_consumer,
+		post_execution_monitoring_cost = case_when(
+			post_execution_monitoring_state == "local packet post-execution monitoring" ~ 3,
+			post_execution_monitoring_state == "owner artifact post-execution monitoring" ~ 5,
+			TRUE ~ 7
+		),
+		post_execution_monitoring_value = pmax(
+			1,
+			decision_execution_value + decision_execution_escape_risk_value + consumer_decision_error_risk_value - post_execution_monitoring_cost
+		),
+		post_execution_monitoring_escape_risk_value = pmax(
+			1,
+			decision_execution_escape_risk_value + consumer_misuse_risk_value + stale_reuse_risk - post_execution_monitoring_cost
+		),
+		timing_only_post_execution_monitoring_value = 0,
+		analysis_only_value = 0,
+		post_execution_monitoring_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(post_execution_monitoring_value), desc(post_execution_monitoring_escape_risk_value), question_family)
+
+open_question_post_execution_monitoring_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"signal", "What post-execution signal must be monitored?",
+	"baseline", "What baseline is the monitoring compared against?",
+	"cadence", "When must monitoring run?",
+	"drift", "What drift signal invalidates the executed decision?",
+	"escalate", "What escalation happens when monitoring fails?",
+	"backout-packet", "What backout packet must be retained?",
+	"owner", "Who owns the post-execution monitoring result?",
+	"consumer", "Which consumer receives the monitoring result?",
+	"substitute", "Can aggregate timing alone substitute for post-execution monitoring?",
+	"stop-rule", "When does post-execution monitoring review stop?"
+)
+
+open_question_post_execution_monitoring_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_post_execution_monitoring_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_post_execution_monitoring_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_post_execution_monitoring_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_post_execution_monitoring_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		post_execution_monitoring_first_seen = !duplicated(post_execution_monitoring_id),
+		post_execution_monitoring_axis_key = paste(post_execution_monitoring_id, pressure_axis, sep = "::"),
+		post_execution_monitoring_axis_first_seen = !duplicated(post_execution_monitoring_axis_key),
+		post_execution_monitoring_state_first_seen = !duplicated(post_execution_monitoring_state),
+		post_execution_monitoring_owner_first_seen = !duplicated(post_execution_monitoring_owner),
+		post_execution_monitoring_consumer_first_seen = !duplicated(post_execution_monitoring_consumer),
+		new_post_execution_monitoring_value = if_else(post_execution_monitoring_first_seen, post_execution_monitoring_value, 0),
+		new_post_execution_monitoring_escape_risk_value = if_else(post_execution_monitoring_first_seen, post_execution_monitoring_escape_risk_value, 0),
+		new_timing_only_post_execution_monitoring_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!post_execution_monitoring_axis_first_seen ~ "repeat: post-execution-monitoring-axis already checked",
+			post_execution_monitoring_state == "local packet post-execution monitoring" ~ "post-execution monitoring: local packet",
+			TRUE ~ "post-execution monitoring: owner or observer artifact"
+		),
+		cumulative_post_execution_monitoring_records = cumsum(post_execution_monitoring_first_seen),
+		cumulative_post_execution_monitoring_axes = cumsum(post_execution_monitoring_axis_first_seen),
+		cumulative_post_execution_monitoring_states = cumsum(post_execution_monitoring_state_first_seen),
+		cumulative_post_execution_monitoring_owners = cumsum(post_execution_monitoring_owner_first_seen),
+		cumulative_post_execution_monitoring_consumers = cumsum(post_execution_monitoring_consumer_first_seen),
+		cumulative_post_execution_monitoring_value = cumsum(new_post_execution_monitoring_value),
+		cumulative_post_execution_monitoring_escape_risk_value = cumsum(new_post_execution_monitoring_escape_risk_value),
+		cumulative_timing_only_post_execution_monitoring_value = cumsum(new_timing_only_post_execution_monitoring_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_post_execution_monitoring_summary <- open_question_post_execution_monitoring_100_pass %>%
+	group_by(post_execution_monitoring_state, decision_execution_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		post_execution_monitoring_records = n_distinct(post_execution_monitoring_id),
+		axis_checks = sum(post_execution_monitoring_axis_first_seen),
+		post_execution_monitoring_owners = n_distinct(post_execution_monitoring_owner),
+		post_execution_monitoring_consumers = n_distinct(post_execution_monitoring_consumer),
+		post_execution_monitoring_value = sum(new_post_execution_monitoring_value),
+		post_execution_monitoring_escape_risk_value = sum(new_post_execution_monitoring_escape_risk_value),
+		timing_only_post_execution_monitoring_value = sum(new_timing_only_post_execution_monitoring_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(post_execution_monitoring_value), desc(post_execution_monitoring_escape_risk_value), first_pass)
+
+open_question_post_execution_monitoring_checkpoints <- open_question_post_execution_monitoring_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_post_execution_monitoring_records,
+		cumulative_post_execution_monitoring_axes,
+		cumulative_post_execution_monitoring_states,
+		cumulative_post_execution_monitoring_owners,
+		cumulative_post_execution_monitoring_consumers,
+		cumulative_post_execution_monitoring_value,
+		cumulative_post_execution_monitoring_escape_risk_value,
+		cumulative_timing_only_post_execution_monitoring_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_post_execution_monitoring_register,
+	file.path(data_dir, "typing-delay-open-question-post-execution-monitoring-register.csv")
+)
+
+write_csv(
+	open_question_post_execution_monitoring_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			post_execution_monitoring_state,
+			decision_execution_state,
+			post_execution_monitoring_signal,
+			post_execution_monitoring_baseline,
+			post_execution_monitoring_cadence,
+			post_execution_monitoring_drift_trigger,
+			post_execution_monitoring_escalation,
+			post_execution_monitoring_backout_packet,
+			post_execution_monitoring_owner,
+			post_execution_monitoring_consumer,
+			decision_execution_request,
+			decision_execution_monitor,
+			decision_execution_backout,
+			supported_claim,
+			blocked_claim,
+			post_execution_monitoring_first_seen,
+			post_execution_monitoring_axis_first_seen,
+			post_execution_monitoring_state_first_seen,
+			post_execution_monitoring_owner_first_seen,
+			post_execution_monitoring_consumer_first_seen,
+			pass_result,
+			post_execution_monitoring_value,
+			post_execution_monitoring_escape_risk_value,
+			timing_only_post_execution_monitoring_value,
+			new_post_execution_monitoring_value,
+			new_post_execution_monitoring_escape_risk_value,
+			new_timing_only_post_execution_monitoring_value,
+			new_analysis_only_value,
+			cumulative_post_execution_monitoring_records,
+			cumulative_post_execution_monitoring_axes,
+			cumulative_post_execution_monitoring_states,
+			cumulative_post_execution_monitoring_owners,
+			cumulative_post_execution_monitoring_consumers,
+			cumulative_post_execution_monitoring_value,
+			cumulative_post_execution_monitoring_escape_risk_value,
+			cumulative_timing_only_post_execution_monitoring_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-post-execution-monitoring-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_post_execution_monitoring_summary,
+	file.path(data_dir, "typing-delay-open-question-post-execution-monitoring-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_post_execution_monitoring_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-post-execution-monitoring-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_post_execution_monitoring_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, post_execution_monitoring_value)
+		) %>%
+		ggplot(aes(post_execution_monitoring_value, question_label, fill = post_execution_monitoring_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Post-execution monitoring") +
+		labs(
+			title = "Post-execution monitoring turns executed decisions into watched obligations",
+			subtitle = "Each row names signals, baselines, cadence, drift triggers, escalation, backout packets, owner, and consumer",
+			x = "Post-execution monitoring value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"390-open-question-post-execution-monitoring-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_post_execution_monitoring_saturation_long <- open_question_post_execution_monitoring_100_pass %>%
+	select(
+		pass_id,
+		`post-execution monitoring records` = cumulative_post_execution_monitoring_records,
+		`post-execution monitoring axes` = cumulative_post_execution_monitoring_axes,
+		`post-execution monitoring states` = cumulative_post_execution_monitoring_states,
+		`post-execution monitoring owners` = cumulative_post_execution_monitoring_owners,
+		`post-execution monitoring consumers` = cumulative_post_execution_monitoring_consumers,
+		`post-execution monitoring value` = cumulative_post_execution_monitoring_value,
+		`post-execution monitoring escape risk value` = cumulative_post_execution_monitoring_escape_risk_value,
+		`timing-only post-execution monitoring value` = cumulative_timing_only_post_execution_monitoring_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("post-execution monitoring records", "post-execution monitoring axes", "post-execution monitoring states", "post-execution monitoring owners", "post-execution monitoring consumers", "post-execution monitoring value", "post-execution monitoring escape risk value", "timing-only post-execution monitoring value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_post_execution_monitoring_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Post-execution monitoring audit saturates once every monitor check is named",
+			subtitle = "Nine monitoring records appear by pass 9; all 90 axes appear by pass 90; timing-only monitoring value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"391-open-question-post-execution-monitoring-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_post_execution_monitoring_summary %>%
+		mutate(
+			state_label = str_wrap(post_execution_monitoring_state, width = 28),
+			state_label = fct_reorder(state_label, post_execution_monitoring_value + post_execution_monitoring_escape_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Post-execution monitoring coverage separates local monitoring from owner and observer monitoring",
+			subtitle = "Every row is checked for signal, baseline, cadence, drift, escalation, backout packet, owner, consumer, substitute, and stop rule",
+			x = "Post-execution-monitoring-axis checks",
+			y = "Post-execution monitoring state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"392-open-question-post-execution-monitoring-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

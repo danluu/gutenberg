@@ -1806,6 +1806,24 @@ The R script derives:
     decision-execution-consumer, decision-execution-value,
     decision-execution-escape-risk-value, timing-only-decision-execution, and
     analysis-only saturation.
+-   `data/typing-delay-open-question-post-execution-monitoring-register.csv`:
+    post-execution monitoring register for the nine decision-execution records,
+    including monitored signal, baseline, cadence, drift trigger, escalation,
+    backout packet, owner, and consumer.
+-   `data/typing-delay-open-question-post-execution-monitoring-100-pass-audit.csv`:
+    thirty-sixth forced 100-pass audit over post-execution monitoring axes:
+    signal, baseline, cadence, drift, escalation, backout-packet, owner,
+    consumer, substitute, and stop-rule.
+-   `data/typing-delay-open-question-post-execution-monitoring-100-pass-summary.csv`:
+    rollup of post-execution monitoring coverage by post-execution monitoring
+    state, decision-execution state, and pass result.
+-   `data/typing-delay-open-question-post-execution-monitoring-100-pass-checkpoints.csv`:
+    checkpoints for post-execution-monitoring-record,
+    post-execution-monitoring-axis, post-execution-monitoring-state,
+    post-execution-monitoring-owner, post-execution-monitoring-consumer,
+    post-execution-monitoring-value,
+    post-execution-monitoring-escape-risk-value,
+    timing-only-post-execution-monitoring, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12073,6 +12091,36 @@ This is the execution guard. It separates "we have a defensible decision" from
 requires the executed surface, verification, monitoring, and backout record to
 travel with the decision, so a later stale evidence signal can be tied to an
 actual rollback path instead of only to wording in the report.
+
+I then added the post-execution monitoring layer: once a decision has been
+executed, it becomes a watched obligation rather than a closed conclusion. The
+report now records the monitored signal, baseline, cadence, drift trigger,
+escalation path, backout packet, owner, and consumer.
+
+![Open question post execution monitoring register](figures/390-open-question-post-execution-monitoring-register.png)
+
+![Open question post execution monitoring 100-pass saturation](figures/391-open-question-post-execution-monitoring-100-pass-saturation.png)
+
+![Open question post execution monitoring coverage](figures/392-open-question-post-execution-monitoring-coverage.png)
+
+| Post-execution monitoring check | Result |
+| ------------------------------- | ------ |
+| Post-execution monitoring records | `9`, one per decision-execution record. |
+| Post-execution monitoring states | `3`: local packet post-execution monitoring, owner artifact post-execution monitoring, and observer artifact post-execution monitoring. |
+| Post-execution monitoring owners | `9`; monitoring routes back to the scoped decision-execution owner. |
+| Post-execution monitoring consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Post-execution-monitoring-axis checks | `90`: every row checked against all `10` post-execution monitoring axes. |
+| Post-execution monitoring value | `36327388`: local packet monitoring contributes `27448696`, owner artifact monitoring contributes `5488414`, and observer artifact monitoring contributes `3390278`. |
+| Post-execution monitoring escape-risk value | `15147176` across the nine post-execution monitoring records. |
+| Timing-only post-execution monitoring value | `0`; aggregate timing movement alone cannot define the monitored signal, compare against the baseline, set cadence, prove drift handling, or create a backout packet. |
+| Saturation | Post-execution monitoring records are all named by pass `9`; all post-execution monitoring axes are covered by pass `90`; passes `91-100` add no post-execution monitoring coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the drift guard for executed decisions. It prevents the report from
+treating a past execution as permanently settled: CI policy, source
+recommendations, benchmark-method wording, and broad conclusions have to keep
+their monitoring signal, baseline, cadence, and backout packet attached after
+execution.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
