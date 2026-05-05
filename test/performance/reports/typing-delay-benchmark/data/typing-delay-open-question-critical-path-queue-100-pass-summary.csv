@@ -1,0 +1,11 @@
+critical_path_lane,parallel_group,pass_result,passes,first_pass,packets,axis_checks,critical_path_value,queue_priority_value,parallelism_value,local_repeat_shortens_path_value,analysis_only_value,max_schedule_risk
+critical path: CI runtime decision,batch 1: target-CI validation,critical path: startable packet,20,1,2,20,143,71,20,0,0,5
+parallel path: source prototype,batch 2: local controls and prototype,critical path: startable packet,10,3,1,10,78,39,10,0,0,4
+parallel path: benchmark method,batch 2: local controls and prototype,critical path: startable packet,10,4,1,10,57,28,10,0,0,4
+handoff path: API or policy owner,batch 3: owner handoff setup,critical path: handoff packet,20,5,2,20,26,23,20,0,0,3
+handoff path: observer or workload,batch 4: external observer/workload handoffs,critical path: handoff packet,30,7,3,30,3,8,30,0,0,2
+critical path: CI runtime decision,batch 1: target-CI validation,repeat: critical-path axis already checked,3,91,2,0,0,0,0,0,0,5
+parallel path: source prototype,batch 2: local controls and prototype,repeat: critical-path axis already checked,1,93,1,0,0,0,0,0,0,4
+parallel path: benchmark method,batch 2: local controls and prototype,repeat: critical-path axis already checked,1,94,1,0,0,0,0,0,0,4
+handoff path: API or policy owner,batch 3: owner handoff setup,repeat: critical-path axis already checked,2,95,2,0,0,0,0,0,0,3
+handoff path: observer or workload,batch 4: external observer/workload handoffs,repeat: critical-path axis already checked,3,97,3,0,0,0,0,0,0,2

@@ -1,0 +1,10 @@
+pass_id,cumulative_critical_path_packets,cumulative_critical_path_axes,cumulative_critical_path_lanes,cumulative_critical_path_value,cumulative_queue_priority_value,cumulative_parallelism_value,cumulative_local_repeat_shortens_path_value,cumulative_analysis_only_value
+1,1,1,1,72,36,1,0,0
+5,5,5,4,294,151,5,0,0
+9,9,9,5,307,169,9,0,0
+10,9,10,5,307,169,10,0,0
+20,9,20,5,307,169,20,0,0
+50,9,50,5,307,169,50,0,0
+90,9,90,5,307,169,90,0,0
+91,9,90,5,307,169,90,0,0
+100,9,90,5,307,169,90,0,0

@@ -31546,6 +31546,313 @@ save_plot(
 	height = 7.2
 )
 
+open_question_critical_path <- open_question_execution_readiness %>%
+	mutate(
+		critical_path_lane = case_when(
+			execution_mode == "target CI validation" ~ "critical path: CI runtime decision",
+			execution_mode == "local source prototype" ~ "parallel path: source prototype",
+			execution_mode == "local stimulus control" ~ "parallel path: benchmark method",
+			execution_mode == "owner handoff" ~ "handoff path: API or policy owner",
+			TRUE ~ "handoff path: observer or workload"
+		),
+		suggested_order = case_when(
+			question_family == "Startup wait and first-key tails" ~ 1,
+			question_family == "Pattern wait replacement" ~ 1,
+			question_family == "Input-mode realism" ~ 2,
+			question_family == "Selector/source guard" ~ 2,
+			question_family == "Store-subscriber partition" ~ 3,
+			question_family == "CI pass/fail policy" ~ 3,
+			question_family == "Product workload generalization" ~ 4,
+			question_family == "Browser endpoint and display presentation" ~ 4,
+			question_family == "Runtime and CPU/QoS mechanism" ~ 4,
+			TRUE ~ 5
+		),
+		parallel_group = case_when(
+			suggested_order == 1 ~ "batch 1: target-CI validation",
+			suggested_order == 2 ~ "batch 2: local controls and prototype",
+			suggested_order == 3 ~ "batch 3: owner handoff setup",
+			TRUE ~ "batch 4: external observer/workload handoffs"
+		),
+		critical_dependency = case_when(
+			question_family == "Startup wait and first-key tails" ~ "CI-comparable artifact with startup wait varied independently from inter-key delay",
+			question_family == "Pattern wait replacement" ~ "target lane readiness/resource observers and fixed-wait or predicate comparison",
+			question_family == "Input-mode realism" ~ "stimulus labels before aggregation",
+			question_family == "Selector/source guard" ~ "behavior fixture and selected selector owner",
+			question_family == "Store-subscriber partition" ~ "public subscriber/import compatibility owner",
+			question_family == "CI pass/fail policy" ~ "dashboard or reviewer policy owner",
+			question_family == "Product workload generalization" ~ "representative replay stratum owner",
+			question_family == "Browser endpoint and display presentation" ~ "calibrated presentation endpoint owner",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "passive sidecar or counter owner",
+			TRUE ~ start_condition
+		),
+		critical_path_blocker = case_when(
+			startable_without_new_owner ~ "missing target packet fields, not more samples",
+			question_family %in% c("Store-subscriber partition", "CI pass/fail policy") ~ "missing named policy/API owner artifact",
+			TRUE ~ "missing external observer or representative workload artifact"
+		),
+		parallelizable = case_when(
+			execution_mode == "target CI validation" ~ TRUE,
+			execution_mode %in% c("local source prototype", "local stimulus control") ~ TRUE,
+			TRUE ~ TRUE
+		),
+		critical_path_action = case_when(
+			suggested_order == 1 ~ "run first because it can change CI runtime immediately",
+			suggested_order == 2 ~ "run in parallel after target-CI packet is queued",
+			suggested_order == 3 ~ "create handoff issue with exact artifact contract",
+			TRUE ~ "keep as scoped handoff until observer or workload owner exists"
+		),
+		schedule_risk = case_when(
+			suggested_order == 1 ~ 5,
+			suggested_order == 2 ~ 4,
+			suggested_order == 3 ~ 3,
+			TRUE ~ 2
+		),
+		blocker_risk = case_when(
+			startable_without_new_owner ~ 2,
+			execution_mode == "owner handoff" ~ 4,
+			TRUE ~ 5
+		),
+		queue_priority_value = pmax(
+			1,
+			run_now_value + handoff_value + schedule_risk + action_change_value - execution_blocker_cost
+		),
+		critical_path_value = pmax(
+			1,
+			execution_readiness_value + queue_priority_value - blocker_risk - if_else(startable_without_new_owner, 0, 3)
+		),
+		parallelism_value = if_else(parallelizable, 1, 0),
+		local_repeat_shortens_path_value = 0,
+		analysis_only_value = 0,
+		critical_path_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(suggested_order, desc(queue_priority_value), question_family)
+
+open_question_critical_path_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"order", "Which packet should run first?",
+	"dependency", "What dependency blocks the packet?",
+	"parallelism", "Can this run in parallel with another packet?",
+	"owner", "Who owns the next action?",
+	"artifact", "Which artifact closes or hands off the packet?",
+	"veto", "What veto prevents action?",
+	"risk", "What risk grows if this is delayed?",
+	"cost", "Does delay cost CI runtime, engineering time, or claim clarity?",
+	"substitute", "Can another aggregate timing pass shorten the critical path?",
+	"stop-rule", "When is the packet no longer on the critical path?"
+)
+
+open_question_critical_path_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_critical_path)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_critical_path_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_critical_path %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_critical_path_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		critical_path_first_seen = !duplicated(critical_path_id),
+		critical_path_axis_key = paste(critical_path_id, pressure_axis, sep = "::"),
+		critical_path_axis_first_seen = !duplicated(critical_path_axis_key),
+		critical_path_lane_first_seen = !duplicated(critical_path_lane),
+		new_critical_path_value = if_else(critical_path_first_seen, critical_path_value, 0),
+		new_queue_priority_value = if_else(critical_path_first_seen, queue_priority_value, 0),
+		new_parallelism_value = if_else(critical_path_axis_first_seen, parallelism_value, 0),
+		new_local_repeat_shortens_path_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!critical_path_axis_first_seen ~ "repeat: critical-path axis already checked",
+			startable_without_new_owner ~ "critical path: startable packet",
+			TRUE ~ "critical path: handoff packet"
+		),
+		cumulative_critical_path_packets = cumsum(critical_path_first_seen),
+		cumulative_critical_path_axes = cumsum(critical_path_axis_first_seen),
+		cumulative_critical_path_lanes = cumsum(critical_path_lane_first_seen),
+		cumulative_critical_path_value = cumsum(new_critical_path_value),
+		cumulative_queue_priority_value = cumsum(new_queue_priority_value),
+		cumulative_parallelism_value = cumsum(new_parallelism_value),
+		cumulative_local_repeat_shortens_path_value = cumsum(new_local_repeat_shortens_path_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_critical_path_summary <- open_question_critical_path_100_pass %>%
+	group_by(critical_path_lane, parallel_group, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		packets = n_distinct(critical_path_id),
+		axis_checks = sum(critical_path_axis_first_seen),
+		critical_path_value = sum(new_critical_path_value),
+		queue_priority_value = sum(new_queue_priority_value),
+		parallelism_value = sum(new_parallelism_value),
+		local_repeat_shortens_path_value = sum(new_local_repeat_shortens_path_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_schedule_risk = max(schedule_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(queue_priority_value), desc(critical_path_value), first_pass)
+
+open_question_critical_path_checkpoints <- open_question_critical_path_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_critical_path_packets,
+		cumulative_critical_path_axes,
+		cumulative_critical_path_lanes,
+		cumulative_critical_path_value,
+		cumulative_queue_priority_value,
+		cumulative_parallelism_value,
+		cumulative_local_repeat_shortens_path_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_critical_path,
+	file.path(data_dir, "typing-delay-open-question-critical-path-queue.csv")
+)
+
+write_csv(
+	open_question_critical_path_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			critical_path_lane,
+			parallel_group,
+			suggested_order,
+			critical_dependency,
+			critical_path_blocker,
+			critical_path_action,
+			parallelizable,
+			completion_artifact,
+			execution_veto,
+			critical_path_first_seen,
+			critical_path_axis_first_seen,
+			critical_path_lane_first_seen,
+			pass_result,
+			critical_path_value,
+			queue_priority_value,
+			parallelism_value,
+			local_repeat_shortens_path_value,
+			new_critical_path_value,
+			new_queue_priority_value,
+			new_parallelism_value,
+			new_local_repeat_shortens_path_value,
+			new_analysis_only_value,
+			cumulative_critical_path_packets,
+			cumulative_critical_path_axes,
+			cumulative_critical_path_lanes,
+			cumulative_critical_path_value,
+			cumulative_queue_priority_value,
+			cumulative_parallelism_value,
+			cumulative_local_repeat_shortens_path_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-critical-path-queue-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_critical_path_summary,
+	file.path(data_dir, "typing-delay-open-question-critical-path-queue-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_critical_path_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-critical-path-queue-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_critical_path %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, queue_priority_value)
+		) %>%
+		ggplot(aes(queue_priority_value, question_label, fill = critical_path_lane)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Critical path lane") +
+		labs(
+			title = "Critical path starts with target-CI validation, then local controls",
+			subtitle = "Handoff packets should be queued as owner contracts instead of reopened as generic timing uncertainty",
+			x = "Queue priority value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"312-open-question-critical-path-priority.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_critical_path_saturation_long <- open_question_critical_path_100_pass %>%
+	select(
+		pass_id,
+		`critical-path packets` = cumulative_critical_path_packets,
+		`critical-path axes` = cumulative_critical_path_axes,
+		`critical-path lanes` = cumulative_critical_path_lanes,
+		`critical-path value` = cumulative_critical_path_value,
+		`queue priority value` = cumulative_queue_priority_value,
+		`parallelism value` = cumulative_parallelism_value,
+		`local repeat shortens path value` = cumulative_local_repeat_shortens_path_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("critical-path packets", "critical-path axes", "critical-path lanes", "critical-path value", "queue priority value", "parallelism value", "local repeat shortens path value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_critical_path_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.45) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Critical-path audit saturates once packet order and axes are named",
+			subtitle = "Nine packets appear by pass 9; all 90 critical-path axes appear by pass 90; local repeats never shorten the path",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"313-open-question-critical-path-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_critical_path_summary %>%
+		mutate(
+			lane_label = str_wrap(critical_path_lane, width = 28),
+			lane_label = fct_reorder(lane_label, queue_priority_value + critical_path_value)
+		) %>%
+		ggplot(aes(axis_checks, lane_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Critical-path coverage separates startable packets from handoffs",
+			subtitle = "The queue is finite: repeated passes only revisit already-covered packet axes",
+			x = "Critical-path axis checks",
+			y = "Critical path lane"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"314-open-question-critical-path-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1417,6 +1417,17 @@ The R script derives:
     checkpoints for execution-packet, execution-axis, execution-mode,
     execution-value, run-now, handoff, same-harness-substitute, and
     analysis-only-value saturation.
+-   `data/typing-delay-open-question-critical-path-queue.csv`: critical-path queue for
+    the nine execution packets, including suggested order, parallel group,
+    dependency, blocker, action, and repeat-substitution value.
+-   `data/typing-delay-open-question-critical-path-queue-100-pass-audit.csv`: tenth
+    forced 100-pass audit over critical-path axes: order, dependency,
+    parallelism, owner, artifact, veto, risk, cost, substitute, and stop-rule.
+-   `data/typing-delay-open-question-critical-path-queue-100-pass-summary.csv`:
+    rollup of critical-path coverage by lane, parallel group, and pass result.
+-   `data/typing-delay-open-question-critical-path-queue-100-pass-checkpoints.csv`:
+    checkpoints for critical-path packet, axis, lane, value, queue-priority,
+    parallelism, local-repeat-shortening, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10916,6 +10927,35 @@ startable without a new owner: target-CI startup wait, target-CI pattern
 readiness, selector/source prototype, and input-mode controls. The other five
 should be written as handoffs, not kept alive as generic uncertainty about the
 local cliff.
+
+I then added the critical-path layer: if the open questions are packets, which
+packets shorten the path, which ones can run in parallel, and which ones are
+owner handoffs rather than more local measurement.
+
+![Open question critical path priority](figures/312-open-question-critical-path-priority.png)
+
+![Open question critical path 100-pass saturation](figures/313-open-question-critical-path-100-pass-saturation.png)
+
+![Open question critical path coverage](figures/314-open-question-critical-path-coverage.png)
+
+| Critical-path check | Result |
+| ------------------- | ------ |
+| Critical-path packets | `9`, one per execution packet. |
+| Critical-path lanes | `5`: CI runtime decision, source prototype, benchmark method, API/policy handoff, and observer/workload handoff. |
+| Parallel groups | `4`: target-CI validation first, local controls/prototype second, API/policy handoffs third, external observer/workload handoffs fourth. |
+| Critical-path axis checks | `90`: every packet checked against all `10` critical-path axes. |
+| Queue-priority value | `169`, led by selector/source (`39`), startup wait (`36`), pattern wait (`35`), and input-mode controls (`28`). |
+| Critical-path value | `307` across the nine packets. |
+| Local repeat shortens path value | `0`; another aggregate q50-only timing pass does not remove the target-CI, owner, observer, workload, display, or counter dependencies. |
+| Saturation | Critical-path packets are all named by pass `9`; all critical-path axes are covered by pass `90`; passes `91-100` add no path coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+The resulting queue is finite. First run the target-CI startup and pattern-wait
+packets because they can change CI runtime decisions. In parallel, queue the
+input-mode controls and selector/source prototype. The remaining compatibility,
+policy, workload, display, and mechanism rows should become owner or observer
+handoffs with exact artifact contracts, not another request for generic timing
+analysis.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
