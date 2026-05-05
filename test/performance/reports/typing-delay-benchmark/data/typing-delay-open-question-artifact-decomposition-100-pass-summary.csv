@@ -1,0 +1,15 @@
+packet_kind,decomposition_band,pass_result,passes,first_pass,packets,new_packets,new_packet_priority,new_analysis_only_value,max_blocker_score
+target-topology packet,start locally: target topology,actionable packet: can start locally,3,2,3,3,36,0,3
+local source packet,start locally: behavior/source,actionable packet: can start locally,1,1,1,1,16,0,2
+compatibility packet,needs compatibility design,blocked packet: compatibility,1,5,1,1,3,0,4
+policy packet,needs policy owner,blocked packet: policy,1,6,1,1,0,0,5
+workload packet,needs new observer/replay,blocked packet: new observer/replay,1,7,1,1,0,0,5
+external endpoint packet,needs new observer/replay,blocked packet: new observer/replay,1,8,1,1,0,0,5
+observer packet,needs new observer/replay,blocked packet: new observer/replay,1,9,1,1,0,0,5
+local source packet,start locally: behavior/source,repeat: packet already named,11,10,1,0,0,0,2
+target-topology packet,start locally: target topology,repeat: packet already named,30,11,3,0,0,0,3
+compatibility packet,needs compatibility design,repeat: packet already named,10,14,1,0,0,0,4
+policy packet,needs policy owner,repeat: packet already named,10,15,1,0,0,0,5
+workload packet,needs new observer/replay,repeat: packet already named,10,16,1,0,0,0,5
+external endpoint packet,needs new observer/replay,repeat: packet already named,10,17,1,0,0,0,5
+observer packet,needs new observer/replay,repeat: packet already named,10,18,1,0,0,0,5

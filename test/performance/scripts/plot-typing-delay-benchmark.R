@@ -29489,6 +29489,273 @@ save_plot(
 	height = 7.2
 )
 
+open_question_artifact_decomposition <- open_question_action_frontier %>%
+	mutate(
+		smallest_next_packet = case_when(
+			question_family == "Selector/source guard" ~ "one guarded selector owner with behavior fixtures and source-span before/after",
+			question_family == "Pattern wait replacement" ~ "one target-topology readiness run with fixed-wait control and p90/resource vetoes",
+			question_family == "Startup wait and first-key tails" ~ "one target-topology startup grid with retained rows, failures, resources, and key positions",
+			question_family == "Input-mode realism" ~ "matched tap, short-hold, held-key, and repeat controls in the target topology",
+			question_family == "Store-subscriber partition" ~ "public/private compatibility matrix before any timing claim",
+			question_family == "CI pass/fail policy" ~ "archived artifact to dashboard/reviewer policy join",
+			question_family == "Product workload generalization" ~ "replay schema plus at least one recorded or plugin-heavy stratum",
+			question_family == "Browser endpoint and display presentation" ~ "calibrated external presentation endpoint joined to retained key windows",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "passive sidecar counters joined to retained key windows",
+			TRUE ~ minimum_new_artifact
+		),
+		packet_kind = case_when(
+			frontier_class == "behavior/source gate" ~ "local source packet",
+			frontier_class %in% c("target-topology gate", "topology/control gate") ~ "target-topology packet",
+			frontier_class == "compatibility gate" ~ "compatibility packet",
+			frontier_class == "policy join" ~ "policy packet",
+			frontier_class == "workload/replay gate" ~ "workload packet",
+			frontier_class == "external endpoint" ~ "external endpoint packet",
+			frontier_class == "new-observer gate" ~ "observer packet",
+			TRUE ~ "claim-boundary packet"
+		),
+		first_verification_field = case_when(
+			question_family == "Selector/source guard" ~ "behavior result plus targeted source span",
+			question_family == "Pattern wait replacement" ~ "readiness/resource/p90/failure veto tuple",
+			question_family == "Startup wait and first-key tails" ~ "retained q50/mean/p90 plus first-retained and failure/resource fields",
+			question_family == "Input-mode realism" ~ "stimulus-specific retained rows and platform-repeat markers",
+			question_family == "Store-subscriber partition" ~ "compatibility fixture result and affected public import surface",
+			question_family == "CI pass/fail policy" ~ "raw q50/displayed q50/reviewer or dashboard decision join",
+			question_family == "Product workload generalization" ~ "stratum label, replay script, and retained latency rows",
+			question_family == "Browser endpoint and display presentation" ~ "external presentation timestamp joined to trace key window",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "sidecar counter sample joined to the same retained key",
+			TRUE ~ minimum_new_artifact
+		),
+		cannot_be_answered_by = case_when(
+			packet_kind %in% c("local source packet", "target-topology packet") ~ "another aggregate q50-only local timing sweep",
+			packet_kind == "compatibility packet" ~ "private timing side channels or aggregate latency",
+			packet_kind == "policy packet" ~ "repository q50 output without the policy consumer",
+			packet_kind == "workload packet" ~ "the fixed-character large-post stressor alone",
+			packet_kind == "external endpoint packet" ~ "Chromium-internal Paint/DrawFrame/RAF endpoints alone",
+			packet_kind == "observer packet" ~ "Chrome trace slices without independent scheduler or OS counters",
+			TRUE ~ "the existing report wording alone"
+		),
+		analysis_only_value = 0,
+		can_start_without_external_owner = packet_kind %in% c("local source packet", "target-topology packet"),
+		requires_new_measurement = TRUE,
+		blocker_score = case_when(
+			packet_kind == "local source packet" ~ 2,
+			packet_kind == "target-topology packet" ~ 3,
+			packet_kind == "compatibility packet" ~ 4,
+			packet_kind %in% c("policy packet", "workload packet", "external endpoint packet", "observer packet") ~ 5,
+			TRUE ~ 4
+		),
+		decomposition_priority = next_artifact_value - blocker_score + if_else(can_start_without_external_owner, 2, 0),
+		decomposition_band = case_when(
+			packet_kind == "local source packet" ~ "start locally: behavior/source",
+			packet_kind == "target-topology packet" ~ "start locally: target topology",
+			packet_kind == "compatibility packet" ~ "needs compatibility design",
+			packet_kind == "policy packet" ~ "needs policy owner",
+			packet_kind %in% c("workload packet", "external endpoint packet", "observer packet") ~ "needs new observer/replay",
+			TRUE ~ "claim boundary"
+		)
+	) %>%
+	arrange(desc(decomposition_priority), question_family)
+
+open_question_artifact_decomposition_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"atomicity", "Is this the smallest packet that could change a decision?",
+	"field", "What first field proves the packet is the right one?",
+	"veto", "What field vetoes action even if q50 improves?",
+	"owner", "Who must consume the result?",
+	"observer", "Does this need a new observer or target topology?",
+	"startability", "Can work start without an external owner?",
+	"negative-control", "What prevents a misleading aggregate timing win?",
+	"overclaim", "Which claim remains blocked until this packet exists?",
+	"cost", "Would another analysis-only pass replace this packet?",
+	"stop-rule", "When should repeated analysis stop?"
+)
+
+open_question_artifact_decomposition_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_artifact_decomposition)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_artifact_decomposition_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_artifact_decomposition %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_artifact_decomposition_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		packet_first_seen = !duplicated(smallest_next_packet),
+		packet_kind_first_seen = !duplicated(packet_kind),
+		new_packet_priority = if_else(packet_first_seen, pmax(decomposition_priority, 0), 0),
+		new_analysis_only_value = if_else(packet_first_seen, analysis_only_value, 0),
+		pass_result = case_when(
+			!packet_first_seen ~ "repeat: packet already named",
+			can_start_without_external_owner ~ "actionable packet: can start locally",
+			packet_kind == "compatibility packet" ~ "blocked packet: compatibility",
+			packet_kind == "policy packet" ~ "blocked packet: policy",
+			packet_kind %in% c("workload packet", "external endpoint packet", "observer packet") ~ "blocked packet: new observer/replay",
+			TRUE ~ "blocked packet: claim boundary"
+		),
+		cumulative_packets = cumsum(packet_first_seen),
+		cumulative_packet_kinds = cumsum(packet_kind_first_seen),
+		cumulative_packet_priority = cumsum(new_packet_priority),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_artifact_decomposition_summary <- open_question_artifact_decomposition_100_pass %>%
+	group_by(packet_kind, decomposition_band, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		packets = n_distinct(smallest_next_packet),
+		new_packets = sum(packet_first_seen),
+		new_packet_priority = sum(new_packet_priority),
+		new_analysis_only_value = sum(new_analysis_only_value),
+		max_blocker_score = max(blocker_score, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(new_packet_priority), first_pass)
+
+open_question_artifact_decomposition_checkpoints <- open_question_artifact_decomposition_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 25, 50, 75, 100)) %>%
+	select(
+		pass_id,
+		cumulative_packets,
+		cumulative_packet_kinds,
+		cumulative_packet_priority,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_artifact_decomposition,
+	file.path(data_dir, "typing-delay-open-question-artifact-decomposition.csv")
+)
+
+write_csv(
+	open_question_artifact_decomposition_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			packet_kind,
+			decomposition_band,
+			smallest_next_packet,
+			first_verification_field,
+			cannot_be_answered_by,
+			pass_condition,
+			fail_condition,
+			current_do_not_do,
+			stop_rule,
+			packet_first_seen,
+			packet_kind_first_seen,
+			pass_result,
+			decomposition_priority,
+			analysis_only_value,
+			new_packet_priority,
+			new_analysis_only_value,
+			cumulative_packets,
+			cumulative_packet_kinds,
+			cumulative_packet_priority,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-artifact-decomposition-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_artifact_decomposition_summary,
+	file.path(data_dir, "typing-delay-open-question-artifact-decomposition-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_artifact_decomposition_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-artifact-decomposition-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_artifact_decomposition %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28)
+		) %>%
+		ggplot(aes(blocker_score, decomposition_priority, color = packet_kind, label = question_label)) +
+		geom_point(size = 3.2, alpha = 0.9) +
+		geom_text(nudge_y = 0.35, size = 3, check_overlap = TRUE, show.legend = FALSE) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Packet kind") +
+		scale_x_continuous(breaks = 1:5, limits = c(1.5, 5.5)) +
+		labs(
+			title = "Open questions now decompose into missing artifact packets",
+			subtitle = "Higher priority with lower blocker score means the packet can start locally and can still change action",
+			x = "Blocker score",
+			y = "Decomposition priority"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"291-open-question-artifact-decomposition-priority.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_artifact_decomposition_saturation_long <- open_question_artifact_decomposition_100_pass %>%
+	select(
+		pass_id,
+		`artifact packets` = cumulative_packets,
+		`packet kinds` = cumulative_packet_kinds,
+		`packet priority` = cumulative_packet_priority,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("artifact packets", "packet kinds", "packet priority", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_artifact_decomposition_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.75) +
+		scale_color_brewer(type = "qual", palette = "Set1", name = "Cumulative metric") +
+		labs(
+			title = "Artifact decomposition saturates after the first frontier sweep",
+			subtitle = "The 100-pass loop finds packets, not more analysis-only work; analysis-only value remains zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"292-open-question-artifact-decomposition-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_artifact_decomposition_summary %>%
+		mutate(
+			band_label = str_wrap(decomposition_band, width = 25),
+			band_label = fct_reorder(band_label, new_packet_priority)
+		) %>%
+		ggplot(aes(new_packet_priority, band_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set3", name = "Pass result") +
+		labs(
+			title = "Only local source and target-topology packets are ready to start without external joins",
+			subtitle = "The rest require compatibility, policy, observer, display, or replay artifacts before more analysis helps",
+			x = "New packet priority across 100 forced passes",
+			y = "Decomposition band"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"293-open-question-artifact-decomposition-bands.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

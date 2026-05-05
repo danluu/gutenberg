@@ -1328,6 +1328,17 @@ The R script derives:
     of the second 100-pass audit by frontier class and pass result.
 -   `data/typing-delay-open-question-action-frontier-100-pass-checkpoints.csv`:
     checkpoints for frontier-question, artifact-bundle, and action-value saturation.
+-   `data/typing-delay-open-question-artifact-decomposition.csv`: smallest-packet
+    decomposition for the remaining action-frontier questions, including the
+    first verification field and what cannot answer the question.
+-   `data/typing-delay-open-question-artifact-decomposition-100-pass-audit.csv`:
+    third forced 100-pass audit that checks whether the remaining work can be
+    split into smaller analysis-only tasks or requires the named artifact packet.
+-   `data/typing-delay-open-question-artifact-decomposition-100-pass-summary.csv`:
+    rollup of packet kinds, pass results, and positive packet priority.
+-   `data/typing-delay-open-question-artifact-decomposition-100-pass-checkpoints.csv`:
+    checkpoints for packet, packet-kind, packet-priority, and analysis-only-value
+    saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10644,6 +10655,34 @@ decisions, behavior/source evidence for the selector prototype, matched input
 stimulus controls for hold-vs-tap wording, compatibility proof before public data
 layer changes, a policy join before pass/fail claims, and external observer,
 display, or replay artifacts only if the claim expands beyond the benchmark.
+
+I then decomposed each frontier into the smallest artifact packet that could
+change a decision. This catches a different failure mode: saying "run another
+deep analysis" when the missing work is no longer analysis, but a target-topology
+run, source fixture, compatibility matrix, policy join, observer, display
+endpoint, or workload replay packet.
+
+![Open question artifact decomposition priority](figures/291-open-question-artifact-decomposition-priority.png)
+
+![Open question artifact decomposition 100-pass saturation](figures/292-open-question-artifact-decomposition-100-pass-saturation.png)
+
+![Open question artifact decomposition bands](figures/293-open-question-artifact-decomposition-bands.png)
+
+| Decomposition check | Result |
+| ------------------- | ------ |
+| Smallest packets | `9` packets across `7` packet kinds. |
+| Locally startable packets | `4`: selector/source guard plus startup, pattern, and input-mode target-topology packets. |
+| Blocked packet classes | `1` compatibility packet, `1` policy packet, and `3` new-observer/replay packets. |
+| Positive packet priority | Reaches `55` by pass `5`; later packets are important claim blockers but not near-term local action. |
+| Full packet saturation | All `9` packets are named by pass `9`; passes `10-100` add no packet kind. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the current decomposition of "open question" into work. The next local
+steps are not more narrative passes: run the target-topology packets for startup,
+pattern, and input mode, or prototype the selector/source guard behind behavior
+fixtures. The store partition, CI pass/fail, runtime/QoS, display, and workload
+questions remain real, but they require their named compatibility, policy,
+observer, display, or replay packets before another analysis pass can move them.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
