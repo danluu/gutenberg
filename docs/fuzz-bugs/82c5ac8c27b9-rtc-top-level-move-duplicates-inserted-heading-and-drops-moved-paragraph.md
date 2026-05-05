@@ -145,6 +145,24 @@ That gives a second non-Playwright proof that the unfixed algorithm treats a
 stale full snapshot as authoritative top-level order and overwrites a sibling
 by index.
 
+Pass 40 rebased both branches onto current `origin/trunk`:
+
+```text
+e7f55c1b4d23b3eaebde1288b258b0d1c3bce938
+Widget Types: server-side registry, decouple wp-build pages (#77958)
+```
+
+It also added a narrower before/after control on the rebased PR branch. With
+the two repro commits applied but before the fix commit (`HEAD~1`), both focused
+Yjs repros fail: the paragraph variant reverts to stale pre-move order, and the
+heading variant receives `Inserted heading`, `Moved paragraph`, `Sibling
+paragraph`. On the known-fixes base (`3cba2b1e56a98787de08dc6c7df2434759e8f908`)
+with only the repro tests applied, the heading variant receives `Inserted
+heading`, `Moved paragraph`, `Moved paragraph`. On the fixed branch, both
+focused repros pass, the full CRDT block unit file passes, JS lint passes, and
+the natural Playwright repro converges both editors to `Inserted paragraph`,
+`Sibling paragraph`, `Moved paragraph`.
+
 Focused unit repro:
 
 ```bash
