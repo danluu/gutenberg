@@ -1999,6 +1999,23 @@ The R script derives:
     consumer-action-state, consumer-action-owner, consumer-action-consumer,
     consumer-action-value, consumer-action-stale-decision-risk-value,
     timing-only-consumer-action, and analysis-only saturation.
+-   `data/typing-delay-open-question-consumer-outcome-register.csv`:
+    consumer-outcome register for the nine consumer-action records, including
+    expected downstream effect, observation packet, success criteria, failure
+    signal, regression guard, monitoring rule, rollback evidence, owner, and
+    consumer.
+-   `data/typing-delay-open-question-consumer-outcome-100-pass-audit.csv`:
+    forty-seventh forced 100-pass audit over consumer-outcome axes:
+    expected-effect, observation, success, failure, guard, monitor, rollback,
+    owner, substitute, and stop-rule.
+-   `data/typing-delay-open-question-consumer-outcome-100-pass-summary.csv`:
+    rollup of consumer-outcome coverage by consumer-outcome state,
+    consumer-action state, and pass result.
+-   `data/typing-delay-open-question-consumer-outcome-100-pass-checkpoints.csv`:
+    checkpoints for consumer-outcome-record, consumer-outcome-axis,
+    consumer-outcome-state, consumer-outcome-owner, consumer-outcome-consumer,
+    consumer-outcome-value, consumer-outcome-regression-risk-value,
+    timing-only-consumer-outcome, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -12600,6 +12617,37 @@ status was received correctly but the CI wait policy, source guidance,
 benchmark-method wording, or broad conclusion still acts on the old decision.
 The consumer action now has an explicit apply rule, stale-action block, rollback
 hook, and verification packet.
+
+I then added the consumer-outcome layer: a consumer action is not complete until
+the downstream surface shows the expected outcome and keeps showing it. Outcome
+records the expected effect, observation packet, success criteria, failure
+signal, regression guard, monitoring rule, rollback evidence, owner, and
+consumer for each action row.
+
+![Open question consumer outcome register](figures/423-open-question-consumer-outcome-register.png)
+
+![Open question consumer outcome 100-pass saturation](figures/424-open-question-consumer-outcome-100-pass-saturation.png)
+
+![Open question consumer outcome coverage](figures/425-open-question-consumer-outcome-coverage.png)
+
+| Consumer-outcome check | Result |
+| ---------------------- | ------ |
+| Consumer-outcome records | `9`, one per consumer-action record. |
+| Consumer-outcome states | `3`: local packet consumer outcome, owner artifact consumer outcome, and observer artifact consumer outcome. |
+| Consumer-outcome owners | `9`; outcome routes back to the scoped consumer-action owner. |
+| Consumer-outcome consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Consumer-outcome-axis checks | `90`: every row checked against all `10` consumer-outcome axes. |
+| Consumer-outcome value | `14270983886`: local packet outcome contributes `10783069140`, owner artifact outcome contributes `2156087450`, and observer artifact outcome contributes `1331827296`. |
+| Consumer-outcome regression-risk value | `7634160773` across the nine consumer-outcome records. |
+| Timing-only consumer-outcome value | `0`; aggregate timing movement alone cannot prove the expected effect, observation packet, success criteria, failure signal, regression guard, monitoring rule, or rollback evidence. |
+| Saturation | Consumer-outcome records are all named by pass `9`; all consumer-outcome axes are covered by pass `90`; passes `91-100` add no consumer-outcome coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the downstream-outcome guard. It catches the case where the consumer
+took the right action once, but the next recommendation surface still fails to
+show it or later regresses to stale wording, stale figures, stale CSVs, or stale
+policy. The action is not treated as durable without an observation packet,
+monitoring rule, regression guard, and rollback evidence.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

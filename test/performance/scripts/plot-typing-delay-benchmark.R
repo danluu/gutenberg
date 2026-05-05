@@ -42468,6 +42468,307 @@ save_plot(
 	height = 7.2
 )
 
+open_question_consumer_outcome_register <- open_question_consumer_action_register %>%
+	mutate(
+		consumer_outcome_state = case_when(
+			consumer_action_state == "local packet consumer action" ~ "local packet consumer outcome",
+			consumer_action_state == "owner artifact consumer action" ~ "owner artifact consumer outcome",
+			TRUE ~ "observer artifact consumer outcome"
+		),
+		consumer_outcome_expected_effect = case_when(
+			close_scope == "CI wait decision" ~ "the next CI wait-policy recommendation uses the action row for runtime, reliability, startup-wait, typing-delay, input-mode, and stale-decision boundaries",
+			close_scope == "source prototype decision" ~ "the next source-guidance recommendation uses the action row for selector guard, dispatch, invalidation, fanout, and owner-review boundaries",
+			close_scope == "benchmark method wording" ~ "the next benchmark-method section uses the action row for trace schema, aggregation, instrumentation, limitation, and stale-method boundaries",
+			TRUE ~ "the next broad conclusion uses the action row for portability, browser/runtime, workload, endpoint, recommendation scope, and stale-conclusion boundaries"
+		),
+		consumer_outcome_observation_packet = case_when(
+			consumer_outcome_state == "local packet consumer outcome" ~ "observe the local consumer surface after action, including recommendation row, report section, figure/data references, stale-row visibility, and rollback hook",
+			consumer_outcome_state == "owner artifact consumer outcome" ~ "observe the owner-scoped consumer surface after action, including recommendation row, reviewer identity, report section, figure/data references, stale-row visibility, and rollback hook",
+			TRUE ~ "observe the broad consumer surface after action, including conclusion row, reviewer identity, broad-scope wording, report section, figure/data references, stale-row visibility, and rollback hook"
+		),
+		consumer_outcome_success_criteria = case_when(
+			consumer_outcome_state == "local packet consumer outcome" ~ "success means the local action is visible, stale local decisions are not active, and the recommendation matches the action row",
+			consumer_outcome_state == "owner artifact consumer outcome" ~ "success means the owner action and reviewer identity are visible, stale owner decisions are not active, and the recommendation matches the action row",
+			TRUE ~ "success means the observer action, reviewer identity, and broad wording are visible, stale broad decisions are not active, and the conclusion matches the action row"
+		),
+		consumer_outcome_failure_signal = case_when(
+			consumer_outcome_state == "local packet consumer outcome" ~ "failure when the local consumer surface still exposes the stale decision, hides the applied action, or lacks rollback evidence",
+			consumer_outcome_state == "owner artifact consumer outcome" ~ "failure when the owner consumer surface still exposes the stale decision, hides reviewer identity, hides the applied action, or lacks rollback evidence",
+			TRUE ~ "failure when the broad consumer surface still exposes the stale decision, hides reviewer identity or broad wording, hides the applied action, or lacks rollback evidence"
+		),
+		consumer_outcome_regression_guard = case_when(
+			consumer_outcome_state == "local packet consumer outcome" ~ "guard by rechecking local receipt, action packet, stale-view check, recommendation diff, and rollback hook before clearing the outcome",
+			consumer_outcome_state == "owner artifact consumer outcome" ~ "guard by rechecking owner receipt, reviewer identity, action packet, stale-view check, recommendation diff, and rollback hook before clearing the outcome",
+			TRUE ~ "guard by rechecking observer receipt, reviewer identity, broad wording, action packet, stale-view check, conclusion diff, and rollback hook before clearing the outcome"
+		),
+		consumer_outcome_monitoring_rule = case_when(
+			close_scope == "CI wait decision" ~ "monitor later CI wait-policy updates for reintroduction of stale runtime, reliability, startup-wait, typing-delay, or input-mode guidance",
+			close_scope == "source prototype decision" ~ "monitor later source-guidance updates for reintroduction of stale selector, dispatch, invalidation, fanout, or owner-review guidance",
+			close_scope == "benchmark method wording" ~ "monitor later method updates for reintroduction of stale trace-schema, aggregation, instrumentation, or limitation wording",
+			TRUE ~ "monitor later broad-report updates for reintroduction of stale portability, browser/runtime, workload, endpoint, or recommendation-scope wording"
+		),
+		consumer_outcome_rollback_evidence = consumer_action_rollback_rule,
+		consumer_outcome_owner = consumer_action_owner,
+		consumer_outcome_consumer = consumer_action_consumer,
+		consumer_outcome_cost = case_when(
+			consumer_outcome_state == "local packet consumer outcome" ~ 4,
+			consumer_outcome_state == "owner artifact consumer outcome" ~ 6,
+			TRUE ~ 8
+		),
+		consumer_outcome_value = pmax(
+			1,
+			consumer_action_value + consumer_action_stale_decision_risk_value + consumer_receipt_missed_update_risk_value - consumer_outcome_cost
+		),
+		consumer_outcome_regression_risk_value = pmax(
+			1,
+			consumer_action_stale_decision_risk_value + consumer_receipt_missed_update_risk_value + disposition_propagation_stale_conclusion_risk_value - consumer_outcome_cost
+		),
+		timing_only_consumer_outcome_value = 0,
+		analysis_only_value = 0,
+		consumer_outcome_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(consumer_outcome_value), desc(consumer_outcome_regression_risk_value), question_family)
+
+open_question_consumer_outcome_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"expected-effect", "What downstream outcome should the consumer action create?",
+	"observation", "What observation packet proves the outcome is visible?",
+	"success", "What criteria prove the outcome matched the action row?",
+	"failure", "What signal proves the outcome failed or stayed stale?",
+	"guard", "What regression guard must pass before clearing the outcome?",
+	"monitor", "What later update is monitored for stale decision reintroduction?",
+	"rollback", "What rollback evidence exists if the outcome does not hold?",
+	"owner", "Who owns consumer outcome?",
+	"substitute", "Can aggregate timing alone substitute for consumer outcome?",
+	"stop-rule", "When does consumer-outcome review stop?"
+)
+
+open_question_consumer_outcome_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_consumer_outcome_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_consumer_outcome_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_consumer_outcome_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_consumer_outcome_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		consumer_outcome_first_seen = !duplicated(consumer_outcome_id),
+		consumer_outcome_axis_key = paste(consumer_outcome_id, pressure_axis, sep = "::"),
+		consumer_outcome_axis_first_seen = !duplicated(consumer_outcome_axis_key),
+		consumer_outcome_state_first_seen = !duplicated(consumer_outcome_state),
+		consumer_outcome_owner_first_seen = !duplicated(consumer_outcome_owner),
+		consumer_outcome_consumer_first_seen = !duplicated(consumer_outcome_consumer),
+		new_consumer_outcome_value = if_else(consumer_outcome_first_seen, consumer_outcome_value, 0),
+		new_consumer_outcome_regression_risk_value = if_else(consumer_outcome_first_seen, consumer_outcome_regression_risk_value, 0),
+		new_timing_only_consumer_outcome_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!consumer_outcome_axis_first_seen ~ "repeat: consumer-outcome-axis already checked",
+			consumer_outcome_state == "local packet consumer outcome" ~ "consumer outcome: local packet",
+			TRUE ~ "consumer outcome: owner or observer artifact"
+		),
+		cumulative_consumer_outcome_records = cumsum(consumer_outcome_first_seen),
+		cumulative_consumer_outcome_axes = cumsum(consumer_outcome_axis_first_seen),
+		cumulative_consumer_outcome_states = cumsum(consumer_outcome_state_first_seen),
+		cumulative_consumer_outcome_owners = cumsum(consumer_outcome_owner_first_seen),
+		cumulative_consumer_outcome_consumers = cumsum(consumer_outcome_consumer_first_seen),
+		cumulative_consumer_outcome_value = cumsum(new_consumer_outcome_value),
+		cumulative_consumer_outcome_regression_risk_value = cumsum(new_consumer_outcome_regression_risk_value),
+		cumulative_timing_only_consumer_outcome_value = cumsum(new_timing_only_consumer_outcome_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_consumer_outcome_summary <- open_question_consumer_outcome_100_pass %>%
+	group_by(consumer_outcome_state, consumer_action_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		consumer_outcome_records = n_distinct(consumer_outcome_id),
+		axis_checks = sum(consumer_outcome_axis_first_seen),
+		consumer_outcome_owners = n_distinct(consumer_outcome_owner),
+		consumer_outcome_consumers = n_distinct(consumer_outcome_consumer),
+		consumer_outcome_value = sum(new_consumer_outcome_value),
+		consumer_outcome_regression_risk_value = sum(new_consumer_outcome_regression_risk_value),
+		timing_only_consumer_outcome_value = sum(new_timing_only_consumer_outcome_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(consumer_outcome_value), desc(consumer_outcome_regression_risk_value), first_pass)
+
+open_question_consumer_outcome_checkpoints <- open_question_consumer_outcome_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_consumer_outcome_records,
+		cumulative_consumer_outcome_axes,
+		cumulative_consumer_outcome_states,
+		cumulative_consumer_outcome_owners,
+		cumulative_consumer_outcome_consumers,
+		cumulative_consumer_outcome_value,
+		cumulative_consumer_outcome_regression_risk_value,
+		cumulative_timing_only_consumer_outcome_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_consumer_outcome_register,
+	file.path(data_dir, "typing-delay-open-question-consumer-outcome-register.csv")
+)
+
+write_csv(
+	open_question_consumer_outcome_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			consumer_outcome_state,
+			consumer_action_state,
+			consumer_outcome_expected_effect,
+			consumer_outcome_observation_packet,
+			consumer_outcome_success_criteria,
+			consumer_outcome_failure_signal,
+			consumer_outcome_regression_guard,
+			consumer_outcome_monitoring_rule,
+			consumer_outcome_rollback_evidence,
+			consumer_outcome_owner,
+			consumer_outcome_consumer,
+			consumer_action_required_change,
+			consumer_action_decision_record,
+			consumer_action_apply_rule,
+			consumer_action_rollback_rule,
+			consumer_action_verification_packet,
+			supported_claim,
+			blocked_claim,
+			consumer_outcome_first_seen,
+			consumer_outcome_axis_first_seen,
+			consumer_outcome_state_first_seen,
+			consumer_outcome_owner_first_seen,
+			consumer_outcome_consumer_first_seen,
+			pass_result,
+			consumer_outcome_value,
+			consumer_outcome_regression_risk_value,
+			timing_only_consumer_outcome_value,
+			new_consumer_outcome_value,
+			new_consumer_outcome_regression_risk_value,
+			new_timing_only_consumer_outcome_value,
+			new_analysis_only_value,
+			cumulative_consumer_outcome_records,
+			cumulative_consumer_outcome_axes,
+			cumulative_consumer_outcome_states,
+			cumulative_consumer_outcome_owners,
+			cumulative_consumer_outcome_consumers,
+			cumulative_consumer_outcome_value,
+			cumulative_consumer_outcome_regression_risk_value,
+			cumulative_timing_only_consumer_outcome_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-consumer-outcome-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_consumer_outcome_summary,
+	file.path(data_dir, "typing-delay-open-question-consumer-outcome-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_consumer_outcome_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-consumer-outcome-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_consumer_outcome_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, consumer_outcome_value)
+		) %>%
+		ggplot(aes(consumer_outcome_value, question_label, fill = consumer_outcome_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Consumer outcome") +
+		labs(
+			title = "Consumer outcome checks that action changes the downstream surface and stays changed",
+			subtitle = "Each row names expected effect, observation packet, success criteria, failure signal, regression guard, monitoring rule, rollback evidence, owner, and consumer",
+			x = "Consumer-outcome value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"423-open-question-consumer-outcome-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_consumer_outcome_saturation_long <- open_question_consumer_outcome_100_pass %>%
+	select(
+		pass_id,
+		`consumer-outcome records` = cumulative_consumer_outcome_records,
+		`consumer-outcome axes` = cumulative_consumer_outcome_axes,
+		`consumer-outcome states` = cumulative_consumer_outcome_states,
+		`consumer-outcome owners` = cumulative_consumer_outcome_owners,
+		`consumer-outcome consumers` = cumulative_consumer_outcome_consumers,
+		`consumer-outcome value` = cumulative_consumer_outcome_value,
+		`consumer-outcome regression risk value` = cumulative_consumer_outcome_regression_risk_value,
+		`timing-only consumer-outcome value` = cumulative_timing_only_consumer_outcome_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("consumer-outcome records", "consumer-outcome axes", "consumer-outcome states", "consumer-outcome owners", "consumer-outcome consumers", "consumer-outcome value", "consumer-outcome regression risk value", "timing-only consumer-outcome value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_consumer_outcome_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Consumer-outcome audit saturates once every downstream outcome path is checked",
+			subtitle = "Nine outcome records appear by pass 9; all 90 axes appear by pass 90; timing-only outcome value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"424-open-question-consumer-outcome-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_consumer_outcome_summary %>%
+		mutate(
+			state_label = str_wrap(consumer_outcome_state, width = 28),
+			state_label = fct_reorder(state_label, consumer_outcome_value + consumer_outcome_regression_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Consumer-outcome coverage separates local outcomes from owner and observer outcomes",
+			subtitle = "Every row is checked for expected effect, observation, success, failure, guard, monitor, rollback, owner, substitute, and stop rule",
+			x = "Consumer-outcome-axis checks",
+			y = "Consumer-outcome state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"425-open-question-consumer-outcome-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

@@ -1,0 +1,7 @@
+consumer_outcome_state,consumer_action_state,pass_result,passes,first_pass,consumer_outcome_records,axis_checks,consumer_outcome_owners,consumer_outcome_consumers,consumer_outcome_value,consumer_outcome_regression_risk_value,timing_only_consumer_outcome_value,analysis_only_value
+local packet consumer outcome,local packet consumer action,consumer outcome: local packet,40,1,4,40,4,3,10783069140,5768325745,0,0
+owner artifact consumer outcome,owner artifact consumer action,consumer outcome: owner or observer artifact,20,5,2,20,2,2,2156087450,1153383562,0,0
+observer artifact consumer outcome,observer artifact consumer action,consumer outcome: owner or observer artifact,30,7,3,30,3,3,1331827296,712451466,0,0
+local packet consumer outcome,local packet consumer action,repeat: consumer-outcome-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact consumer outcome,owner artifact consumer action,repeat: consumer-outcome-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact consumer outcome,observer artifact consumer action,repeat: consumer-outcome-axis already checked,3,97,3,0,3,3,0,0,0,0

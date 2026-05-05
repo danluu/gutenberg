@@ -1,0 +1,10 @@
+pass_id,cumulative_consumer_outcome_records,cumulative_consumer_outcome_axes,cumulative_consumer_outcome_states,cumulative_consumer_outcome_owners,cumulative_consumer_outcome_consumers,cumulative_consumer_outcome_value,cumulative_consumer_outcome_regression_risk_value,cumulative_timing_only_consumer_outcome_value,cumulative_analysis_only_value
+1,1,1,1,1,1,2973399329,1590598714,0,0
+5,5,5,2,5,4,11993975804,6416091606,0,0
+9,9,9,3,9,8,14270983886,7634160773,0,0
+10,9,10,3,9,8,14270983886,7634160773,0,0
+20,9,20,3,9,8,14270983886,7634160773,0,0
+50,9,50,3,9,8,14270983886,7634160773,0,0
+90,9,90,3,9,8,14270983886,7634160773,0,0
+91,9,90,3,9,8,14270983886,7634160773,0,0
+100,9,90,3,9,8,14270983886,7634160773,0,0
