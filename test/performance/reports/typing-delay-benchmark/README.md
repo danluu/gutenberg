@@ -1263,6 +1263,12 @@ The R script derives:
     mixed-result action, owner, artifact lane, and readiness/futility scores.
 -   `data/typing-delay-open-question-minimum-decisive-artifact-long.csv`:
     long-form minimum-artifact scores used for the decisive-artifact heatmap.
+-   `data/typing-delay-open-question-residual-uncertainty-budget.csv`: residual
+    uncertainty budget for remaining question families, including local versus
+    external reducibility, claim-boundary score, decision urgency, evidence cost,
+    wrong-action risk, stop confidence, recommended spend, and spend to avoid.
+-   `data/typing-delay-open-question-residual-uncertainty-budget-long.csv`:
+    long-form uncertainty-budget scores used for the residual-budget heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10428,6 +10434,29 @@ missing field. The ready gates are startup wait, pattern wait, and selector
 source spans. Runtime, CPU/QoS, display, and product workload are high-futility
 but low-readiness rows, so repeating the current benchmark would be a polished
 way to avoid collecting the only evidence that could change the answer.
+
+The residual-uncertainty budget asks where another unit of effort should go if a
+question is still considered open. It separates uncertainty that is reducible in
+this repository from uncertainty that needs external observers, replay,
+calibrated endpoints, or policy joins.
+
+![Open question residual uncertainty budget](figures/274-open-question-residual-uncertainty-budget.png)
+
+![Open question uncertainty spend](figures/275-open-question-uncertainty-spend.png)
+
+| Budget class | Where effort should go |
+| ------------ | ---------------------- |
+| Do not spend | held-key cliff and persistence ordering should stop under unchanged metric/wording conditions |
+| Spend locally now | startup wait, pattern wait, and selector/source guard are the local spend rows because their uncertainty is locally reducible |
+| Block action | store subscriber partition and CI policy should block action until compatibility or policy joins exist |
+| External observer budget | runtime mechanism naming needs a passive retained-key sidecar before more interpretation |
+| Claim-expansion budget | CPU/QoS, product workload, external display, and input-mode product wording need counters, replay, calibrated endpoints, or a broader claim before more local rows are useful |
+
+This budget makes the current stopping rule sharper. Local effort is justified
+only where local reducibility is high. External reducibility is not an invitation
+to rerun the current harness; it is a pointer to the missing observer or
+claim-expansion artifact. Low local and low external urgency means no spend until
+the metric, wording, or product claim changes.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

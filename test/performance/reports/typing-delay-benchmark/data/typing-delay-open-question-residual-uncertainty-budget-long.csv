@@ -1,0 +1,113 @@
+question_family,question_label,budget_class,budget_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",do not spend,local reducible,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",do not spend,external reducible,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",do not spend,claim boundary,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",do not spend,decision urgency,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",do not spend,evidence cost,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",do not spend,wrong-action risk,2
+Held-key cliff and metric split,"Held-key cliff and metric
+split",do not spend,stop confidence,5
+Persistence ordering boundary,Persistence ordering boundary,do not spend,local reducible,1
+Persistence ordering boundary,Persistence ordering boundary,do not spend,external reducible,4
+Persistence ordering boundary,Persistence ordering boundary,do not spend,claim boundary,4
+Persistence ordering boundary,Persistence ordering boundary,do not spend,decision urgency,1
+Persistence ordering boundary,Persistence ordering boundary,do not spend,evidence cost,4
+Persistence ordering boundary,Persistence ordering boundary,do not spend,wrong-action risk,3
+Persistence ordering boundary,Persistence ordering boundary,do not spend,stop confidence,5
+Input mode versus product typing,"Input mode versus product
+typing",claim-expansion budget,local reducible,1
+Input mode versus product typing,"Input mode versus product
+typing",claim-expansion budget,external reducible,5
+Input mode versus product typing,"Input mode versus product
+typing",claim-expansion budget,claim boundary,5
+Input mode versus product typing,"Input mode versus product
+typing",claim-expansion budget,decision urgency,2
+Input mode versus product typing,"Input mode versus product
+typing",claim-expansion budget,evidence cost,4
+Input mode versus product typing,"Input mode versus product
+typing",claim-expansion budget,wrong-action risk,4
+Input mode versus product typing,"Input mode versus product
+typing",claim-expansion budget,stop confidence,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,external observer budget,local reducible,1
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,external observer budget,external reducible,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,external observer budget,claim boundary,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,external observer budget,decision urgency,2
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,external observer budget,evidence cost,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,external observer budget,wrong-action risk,2
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,external observer budget,stop confidence,4
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion budget,local reducible,1
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion budget,external reducible,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion budget,claim boundary,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion budget,decision urgency,2
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion budget,evidence cost,5
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion budget,wrong-action risk,2
+CPU/QoS mechanism,CPU/QoS mechanism,claim-expansion budget,stop confidence,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",spend locally now,local reducible,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",spend locally now,external reducible,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",spend locally now,claim boundary,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",spend locally now,decision urgency,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",spend locally now,evidence cost,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",spend locally now,wrong-action risk,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",spend locally now,stop confidence,3
+Pattern wait replacement,Pattern wait replacement,spend locally now,local reducible,4
+Pattern wait replacement,Pattern wait replacement,spend locally now,external reducible,3
+Pattern wait replacement,Pattern wait replacement,spend locally now,claim boundary,3
+Pattern wait replacement,Pattern wait replacement,spend locally now,decision urgency,5
+Pattern wait replacement,Pattern wait replacement,spend locally now,evidence cost,3
+Pattern wait replacement,Pattern wait replacement,spend locally now,wrong-action risk,5
+Pattern wait replacement,Pattern wait replacement,spend locally now,stop confidence,3
+Selector/source guard,Selector/source guard,spend locally now,local reducible,5
+Selector/source guard,Selector/source guard,spend locally now,external reducible,2
+Selector/source guard,Selector/source guard,spend locally now,claim boundary,2
+Selector/source guard,Selector/source guard,spend locally now,decision urgency,4
+Selector/source guard,Selector/source guard,spend locally now,evidence cost,3
+Selector/source guard,Selector/source guard,spend locally now,wrong-action risk,5
+Selector/source guard,Selector/source guard,spend locally now,stop confidence,3
+Store subscriber partition,Store subscriber partition,block action,local reducible,2
+Store subscriber partition,Store subscriber partition,block action,external reducible,4
+Store subscriber partition,Store subscriber partition,block action,claim boundary,4
+Store subscriber partition,Store subscriber partition,block action,decision urgency,4
+Store subscriber partition,Store subscriber partition,block action,evidence cost,4
+Store subscriber partition,Store subscriber partition,block action,wrong-action risk,5
+Store subscriber partition,Store subscriber partition,block action,stop confidence,2
+Product workload generalization,"Product workload
+generalization",claim-expansion budget,local reducible,1
+Product workload generalization,"Product workload
+generalization",claim-expansion budget,external reducible,5
+Product workload generalization,"Product workload
+generalization",claim-expansion budget,claim boundary,5
+Product workload generalization,"Product workload
+generalization",claim-expansion budget,decision urgency,2
+Product workload generalization,"Product workload
+generalization",claim-expansion budget,evidence cost,5
+Product workload generalization,"Product workload
+generalization",claim-expansion budget,wrong-action risk,3
+Product workload generalization,"Product workload
+generalization",claim-expansion budget,stop confidence,4
+External display endpoint,External display endpoint,claim-expansion budget,local reducible,1
+External display endpoint,External display endpoint,claim-expansion budget,external reducible,5
+External display endpoint,External display endpoint,claim-expansion budget,claim boundary,5
+External display endpoint,External display endpoint,claim-expansion budget,decision urgency,1
+External display endpoint,External display endpoint,claim-expansion budget,evidence cost,5
+External display endpoint,External display endpoint,claim-expansion budget,wrong-action risk,2
+External display endpoint,External display endpoint,claim-expansion budget,stop confidence,4
+CI pass/fail policy,CI pass/fail policy,block action,local reducible,1
+CI pass/fail policy,CI pass/fail policy,block action,external reducible,5
+CI pass/fail policy,CI pass/fail policy,block action,claim boundary,4
+CI pass/fail policy,CI pass/fail policy,block action,decision urgency,4
+CI pass/fail policy,CI pass/fail policy,block action,evidence cost,4
+CI pass/fail policy,CI pass/fail policy,block action,wrong-action risk,5
+CI pass/fail policy,CI pass/fail policy,block action,stop confidence,2

@@ -27793,6 +27793,204 @@ save_plot(
 	height = 7.8
 )
 
+open_question_residual_uncertainty_budget <- tribble(
+	~question_family, ~uncertainty_left, ~current_decision, ~reducible_by, ~recommended_spend, ~what_not_to_spend, ~uncertainty_owner, ~local_reducible_score, ~external_reducible_score, ~claim_boundary_score, ~decision_urgency_score, ~evidence_cost_score, ~wrong_action_risk, ~stop_confidence,
+	"Held-key cliff and metric split", "Metric-definition drift could change the result, but the current metric is closed.", "Keep metric split; rerun only on metric trigger.", "Exact-spec drift recheck.", "zero until helper/browser/statistic changes", "unchanged dense sweeps", "benchmark metric owner", 1, 1, 1, 1, 1, 2, 5,
+	"Persistence ordering boundary", "Work-placement mechanism remains unproved; ordering wording is enough for the current claim.", "Use ordering-marker wording only.", "Joined work-placement trace if mechanism wording is required.", "small wording-only guard; no mechanism spend unless wording expands", "timer-alignment repeats sold as mechanism proof", "benchmark wording owner", 1, 4, 4, 1, 4, 3, 5,
+	"Input mode versus product typing", "Product typing generalization is open; held-key semantics are closed.", "Keep helper families separate; block product-wide wording.", "Representative replay strata.", "only spend if the claim changes to product typing", "more fixed-`x` held-key rows", "product workload owner", 1, 5, 5, 2, 4, 4, 4,
+	"Runtime checkpoint mechanism", "Runtime layer is empirical and unnamed.", "Do not name the runtime mechanism.", "Passive retained-key runtime sidecar.", "sidecar dry run only if mechanism naming is worth it", "more active DevTools checkpoint probes", "mechanism owner", 1, 5, 4, 2, 5, 2, 4,
+	"CPU/QoS mechanism", "System-state sensitivity is plausible but the exact layer is unnamed.", "Do not name CPU/QoS/cache/scheduler causality.", "Accepted sidecar plus joined counters.", "sidecar and counters only after passive join works", "aggregate latency rows called hardware counters", "system mechanism owner", 1, 5, 5, 2, 5, 2, 4,
+	"Startup wait and first-key tails", "Wait reduction safety depends on target topology and early-key/tail fields.", "Run target-topology gate before changing waits.", "Performance Tests topology artifact.", "spend on retained rows plus failure/resource/key-position fields", "local retained-q50-only tuning", "CI runtime owner", 4, 3, 3, 5, 3, 5, 3,
+	"Pattern wait replacement", "Wait replacement safety depends on endpoint composition and per-spec readiness.", "Run per-spec readiness and resource-composition gate.", "Predicate plus resource-quiet validation.", "spend on Site/Post/container lanes and endpoint composition", "combined q50-only wait removal", "pattern benchmark owner", 4, 3, 3, 5, 3, 5, 3,
+	"Selector/source guard", "Source target is credible but behavior and targeted attribution are still open.", "Prototype behind behavior/source-span gates.", "Behavior fixtures plus targeted source spans.", "spend on one narrow guarded prototype", "aggregate p50 source claims", "source optimization owner", 5, 2, 2, 4, 3, 5, 3,
+	"Store subscriber partition", "Public compatibility is the blocker, not timing.", "Block public partitioning until compatibility passes.", "Public compatibility matrix.", "spend on compatibility fixtures before any timing claim", "private side-channel wins as API proof", "data-layer API owner", 2, 4, 4, 4, 4, 5, 2,
+	"Product workload generalization", "Representative workload coverage is missing.", "Keep product-wide claims blocked.", "Synthetic and recorded workload replay strata.", "spend only if product claim is in scope", "more fixed-`x` samples", "product workload owner", 1, 5, 5, 2, 5, 3, 4,
+	"External display endpoint", "Physical display timing is unmeasured.", "Keep visual wording at internal/browser endpoint.", "Calibrated endpoint ladder.", "spend only for display-latency claim expansion", "internal milestones called physical display", "display measurement owner", 1, 5, 5, 1, 5, 2, 4,
+	"CI pass/fail policy", "Pass/fail semantics require external policy mapping.", "Report q50 evidence without gate semantics.", "Archived CI artifact to dashboard/reviewer policy join.", "spend on policy join if predicting pass/fail matters", "local q50 called pass/fail rule", "CI policy owner", 1, 5, 4, 4, 4, 5, 2
+) %>%
+	left_join(
+		open_question_minimum_decisive_artifact %>%
+			select(question_family, artifact_lane, decisiveness_gap),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		budget_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		spend_pressure = decision_urgency_score + wrong_action_risk + pmax(local_reducible_score, external_reducible_score) - stop_confidence,
+		budget_class = case_when(
+			stop_confidence >= 5 & decision_urgency_score <= 1 ~ "do not spend",
+			local_reducible_score >= 4 & decision_urgency_score >= 4 ~ "spend locally now",
+			wrong_action_risk >= 5 & local_reducible_score <= 2 ~ "block action",
+			external_reducible_score >= 5 & claim_boundary_score >= 5 ~ "claim-expansion budget",
+			external_reducible_score >= 5 ~ "external observer budget",
+			TRUE ~ "scoped wording budget"
+		),
+		budget_class = factor(
+			budget_class,
+			levels = c("do not spend", "scoped wording budget", "spend locally now", "block action", "external observer budget", "claim-expansion budget")
+		)
+	)
+
+open_question_residual_uncertainty_budget_long <- open_question_residual_uncertainty_budget %>%
+	select(
+		question_family,
+		question_label,
+		budget_class,
+		local_reducible_score,
+		external_reducible_score,
+		claim_boundary_score,
+		decision_urgency_score,
+		evidence_cost_score,
+		wrong_action_risk,
+		stop_confidence
+	) %>%
+	pivot_longer(
+		cols = c(
+			local_reducible_score,
+			external_reducible_score,
+			claim_boundary_score,
+			decision_urgency_score,
+			evidence_cost_score,
+			wrong_action_risk,
+			stop_confidence
+		),
+		names_to = "budget_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		budget_dimension = recode(
+			budget_dimension,
+			local_reducible_score = "local reducible",
+			external_reducible_score = "external reducible",
+			claim_boundary_score = "claim boundary",
+			decision_urgency_score = "decision urgency",
+			evidence_cost_score = "evidence cost",
+			wrong_action_risk = "wrong-action risk",
+			stop_confidence = "stop confidence"
+		),
+		budget_dimension = factor(
+			budget_dimension,
+			levels = c("local reducible", "external reducible", "claim boundary", "decision urgency", "evidence cost", "wrong-action risk", "stop confidence")
+		),
+		question_label = fct_reorder(question_label, as.numeric(budget_class), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_residual_uncertainty_budget %>%
+		select(
+			question_family,
+			budget_class,
+			artifact_lane,
+			uncertainty_owner,
+			uncertainty_left,
+			current_decision,
+			reducible_by,
+			recommended_spend,
+			what_not_to_spend,
+			local_reducible_score,
+			external_reducible_score,
+			claim_boundary_score,
+			decision_urgency_score,
+			evidence_cost_score,
+			wrong_action_risk,
+			stop_confidence,
+			spend_pressure,
+			decisiveness_gap
+		),
+	file.path(data_dir, "typing-delay-open-question-residual-uncertainty-budget.csv")
+)
+
+write_csv(
+	open_question_residual_uncertainty_budget_long,
+	file.path(data_dir, "typing-delay-open-question-residual-uncertainty-budget-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_residual_uncertainty_budget_long, aes(budget_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.55, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlGnBu", direction = 1, name = "Score") +
+		labs(
+			title = "Residual uncertainty budget separates local gates from claim-boundary work",
+			subtitle = "Local reducibility is high only for CI/source gates; external reducibility marks observer, replay, display, or policy joins",
+			x = "Budget dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"274-open-question-residual-uncertainty-budget.png",
+	width = 14.0,
+	height = 8.8
+)
+
+open_question_uncertainty_spend_plot <- open_question_residual_uncertainty_budget %>%
+	group_by(local_reducible_score, external_reducible_score) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.24),
+		point_local_reducible_score = local_reducible_score + overlap_radius * cos(overlap_angle),
+		point_external_reducible_score = external_reducible_score + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_local_reducible_score = point_local_reducible_score + if_else(label_left, -0.12, 0.12),
+		label_external_reducible_score = point_external_reducible_score + case_when(
+			overlap_count == 1L ~ 0,
+			TRUE ~ (overlap_index - (overlap_count + 1) / 2) * 0.17
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_uncertainty_spend_plot,
+		aes(point_local_reducible_score, point_external_reducible_score, color = budget_class, size = decision_urgency_score)
+	) +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_local_reducible_score,
+				y = label_external_reducible_score,
+				label = str_wrap(budget_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Budget class") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "Decision urgency") +
+		scale_x_continuous(breaks = 1:5, limits = c(0.45, 5.55)) +
+		scale_y_continuous(breaks = 1:5, limits = c(0.55, 5.75)) +
+		labs(
+			title = "Spend local effort only where uncertainty is locally reducible",
+			subtitle = "Upper-left rows need external observers or claim expansion; lower-left rows should stop unless the metric or wording changes",
+			x = "Locally reducible uncertainty",
+			y = "Externally reducible uncertainty"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"275-open-question-uncertainty-spend.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
