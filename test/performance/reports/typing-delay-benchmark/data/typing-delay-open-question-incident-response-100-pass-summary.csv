@@ -1,0 +1,7 @@
+incident_state,audit_log_state,pass_result,passes,first_pass,incident_records,axis_checks,incident_owners,ledger_consumers,incident_response_value,recovery_value,timing_only_incident_value,analysis_only_value
+local packet incident response,local packet audit log,incident: local packet,40,1,4,40,4,3,14279,9341,0,0
+owner artifact incident response,owner artifact audit log,incident: owner or observer artifact,20,5,2,20,2,2,2866,1869,0,0
+observer artifact incident response,observer artifact audit log,incident: owner or observer artifact,30,7,3,30,3,3,1777,1147,0,0
+local packet incident response,local packet audit log,repeat: incident-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact incident response,owner artifact audit log,repeat: incident-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact incident response,observer artifact audit log,repeat: incident-axis already checked,3,97,3,0,3,3,0,0,0,0

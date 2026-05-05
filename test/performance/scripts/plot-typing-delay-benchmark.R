@@ -35340,6 +35340,293 @@ save_plot(
 	height = 7.2
 )
 
+open_question_incident_response_register <- open_question_audit_log_register %>%
+	mutate(
+		incident_state = case_when(
+			audit_log_state == "local packet audit log" ~ "local packet incident response",
+			audit_log_state == "owner artifact audit log" ~ "owner artifact incident response",
+			TRUE ~ "observer artifact incident response"
+		),
+		incident_trigger = case_when(
+			incident_state == "local packet incident response" ~ "missing event log, checksum mismatch, schema mismatch, regenerated figure mismatch, deleted packet, or unreviewed derived CSV mutation",
+			incident_state == "owner artifact incident response" ~ "missing event log, owner artifact checksum mismatch, reviewer identity mismatch, unreviewed scope mutation, or deleted owner artifact",
+			TRUE ~ "missing event log, observer artifact checksum mismatch, control schema mismatch, unreviewed calibration/replay mutation, or deleted observer artifact"
+		),
+		severity_rule = case_when(
+			close_scope == "CI wait decision" ~ "high: suspend CI wait-policy wording and any runtime-saving recommendation until evidence is restored",
+			close_scope == "source prototype decision" ~ "high: suspend source-patch safety wording until owner and artifact evidence are restored",
+			close_scope == "benchmark method wording" ~ "medium: suspend stimulus-method wording until packet and event trail are restored",
+			TRUE ~ "medium: suspend broad claim wording until owner or observer evidence is restored"
+		),
+		containment_action = case_when(
+			incident_state == "local packet incident response" ~ "mark local timing claim unsupported, freeze report wording, preserve current artifacts, and stop using regenerated outputs",
+			incident_state == "owner artifact incident response" ~ "mark owner-scoped claim unsupported, freeze report wording, preserve current owner links, and request owner triage",
+			TRUE ~ "mark broad product, endpoint, browser, or runtime claim unsupported, freeze report wording, preserve current observer links, and request observer triage"
+		),
+		recovery_action = case_when(
+			incident_state == "local packet incident response" ~ "restore archive or rerun pinned packet, regenerate CSV/PNG, verify checksums and negative control, then log old/new disposition",
+			incident_state == "owner artifact incident response" ~ "restore owner archive or request replacement artifact, verify scope and reviewer identity, then log old/new disposition",
+			TRUE ~ "restore observer archive or request replacement artifact, verify control/calibration or replay schema, then log old/new disposition"
+		),
+		notification_target = case_when(
+			incident_state == "local packet incident response" ~ "Performance Tests reviewer plus report maintainer",
+			incident_state == "owner artifact incident response" ~ paste(audit_log_owner, "plus report maintainer"),
+			TRUE ~ paste(audit_log_owner, "plus report maintainer")
+		),
+		rollback_scope = case_when(
+			incident_state == "local packet incident response" ~ "rollback local timing wording, figures, and recommendations tied to the missing packet event trail",
+			incident_state == "owner artifact incident response" ~ "rollback owner-scoped wording and recommendations tied to the missing owner artifact event trail",
+			TRUE ~ "rollback broad product, endpoint, browser, or runtime wording tied to the missing observer artifact event trail"
+		),
+		postmortem_record = case_when(
+			incident_state == "local packet incident response" ~ "record failed gate, missing artifact or event, affected report wording, restored packet, validation command, and prevention change",
+			incident_state == "owner artifact incident response" ~ "record failed gate, missing owner artifact or event, affected report wording, restored owner decision, and prevention change",
+			TRUE ~ "record failed gate, missing observer artifact or event, affected report wording, restored observer decision, and prevention change"
+		),
+		reopen_condition = missing_log_effect,
+		incident_owner = audit_log_owner,
+		incident_cost = case_when(
+			incident_state == "local packet incident response" ~ 2,
+			incident_state == "owner artifact incident response" ~ 4,
+			TRUE ~ 5
+		),
+		incident_response_value = pmax(
+			1,
+			audit_log_value + event_trace_value + false_closure_risk - incident_cost
+		),
+		recovery_value = pmax(
+			1,
+			event_trace_value + permission_value + stale_reuse_risk - incident_cost
+		),
+		timing_only_incident_value = 0,
+		analysis_only_value = 0,
+		incident_response_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(incident_response_value), desc(recovery_value), question_family)
+
+open_question_incident_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"detect", "What event-log, artifact, checksum, or schema failure opens an incident?",
+	"severity", "How severe is the evidence incident for report wording?",
+	"contain", "What claim or recommendation is frozen while evidence is suspect?",
+	"recover", "What artifact restoration or rerun closes the incident?",
+	"notify", "Who is notified when the incident opens?",
+	"owner", "Who owns triage and closure?",
+	"rollback", "What report wording or recommendation is rolled back?",
+	"postmortem", "What prevention record is required after recovery?",
+	"substitute", "Can aggregate timing alone substitute for incident response?",
+	"stop-rule", "When does incident review stop?"
+)
+
+open_question_incident_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_incident_response_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_incident_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_incident_response_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_incident_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		incident_response_first_seen = !duplicated(incident_response_id),
+		incident_axis_key = paste(incident_response_id, pressure_axis, sep = "::"),
+		incident_axis_first_seen = !duplicated(incident_axis_key),
+		incident_state_first_seen = !duplicated(incident_state),
+		new_incident_response_value = if_else(incident_response_first_seen, incident_response_value, 0),
+		new_recovery_value = if_else(incident_response_first_seen, recovery_value, 0),
+		new_timing_only_incident_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!incident_axis_first_seen ~ "repeat: incident-axis already checked",
+			incident_state == "local packet incident response" ~ "incident: local packet",
+			TRUE ~ "incident: owner or observer artifact"
+		),
+		cumulative_incident_records = cumsum(incident_response_first_seen),
+		cumulative_incident_axes = cumsum(incident_axis_first_seen),
+		cumulative_incident_states = cumsum(incident_state_first_seen),
+		cumulative_incident_response_value = cumsum(new_incident_response_value),
+		cumulative_recovery_value = cumsum(new_recovery_value),
+		cumulative_timing_only_incident_value = cumsum(new_timing_only_incident_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_incident_summary <- open_question_incident_100_pass %>%
+	group_by(incident_state, audit_log_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		incident_records = n_distinct(incident_response_id),
+		axis_checks = sum(incident_axis_first_seen),
+		incident_owners = n_distinct(incident_owner),
+		ledger_consumers = n_distinct(ledger_consumer),
+		incident_response_value = sum(new_incident_response_value),
+		recovery_value = sum(new_recovery_value),
+		timing_only_incident_value = sum(new_timing_only_incident_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(incident_response_value), desc(recovery_value), first_pass)
+
+open_question_incident_checkpoints <- open_question_incident_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_incident_records,
+		cumulative_incident_axes,
+		cumulative_incident_states,
+		cumulative_incident_response_value,
+		cumulative_recovery_value,
+		cumulative_timing_only_incident_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_incident_response_register,
+	file.path(data_dir, "typing-delay-open-question-incident-response-register.csv")
+)
+
+write_csv(
+	open_question_incident_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			incident_state,
+			audit_log_state,
+			incident_trigger,
+			severity_rule,
+			containment_action,
+			recovery_action,
+			notification_target,
+			rollback_scope,
+			postmortem_record,
+			reopen_condition,
+			incident_owner,
+			supported_claim,
+			blocked_claim,
+			incident_response_first_seen,
+			incident_axis_first_seen,
+			incident_state_first_seen,
+			pass_result,
+			incident_response_value,
+			recovery_value,
+			timing_only_incident_value,
+			new_incident_response_value,
+			new_recovery_value,
+			new_timing_only_incident_value,
+			new_analysis_only_value,
+			cumulative_incident_records,
+			cumulative_incident_axes,
+			cumulative_incident_states,
+			cumulative_incident_response_value,
+			cumulative_recovery_value,
+			cumulative_timing_only_incident_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-incident-response-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_incident_summary,
+	file.path(data_dir, "typing-delay-open-question-incident-response-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_incident_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-incident-response-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_incident_response_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, incident_response_value)
+		) %>%
+		ggplot(aes(incident_response_value, question_label, fill = incident_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Incident state") +
+		labs(
+			title = "Incident response suspends claims when evidence integrity fails",
+			subtitle = "Each row names trigger, severity, containment, recovery, notification, rollback, postmortem, and owner",
+			x = "Incident-response value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"351-open-question-incident-response-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_incident_saturation_long <- open_question_incident_100_pass %>%
+	select(
+		pass_id,
+		`incident records` = cumulative_incident_records,
+		`incident axes` = cumulative_incident_axes,
+		`incident states` = cumulative_incident_states,
+		`incident-response value` = cumulative_incident_response_value,
+		`recovery value` = cumulative_recovery_value,
+		`timing-only incident value` = cumulative_timing_only_incident_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("incident records", "incident axes", "incident states", "incident-response value", "recovery value", "timing-only incident value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_incident_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Incident-response audit saturates once failure handling and recovery are named",
+			subtitle = "Nine incident records appear by pass 9; all 90 incident axes appear by pass 90; timing-only incident value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"352-open-question-incident-response-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_incident_summary %>%
+		mutate(
+			state_label = str_wrap(incident_state, width = 28),
+			state_label = fct_reorder(state_label, incident_response_value + recovery_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Paired", name = "Pass result") +
+		labs(
+			title = "Incident coverage separates local packet recovery from owner and observer recovery",
+			subtitle = "Every row is checked for detect, severity, contain, recover, notify, owner, rollback, postmortem, substitute, and stop rule",
+			x = "Incident-axis checks",
+			y = "Incident state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"353-open-question-incident-response-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

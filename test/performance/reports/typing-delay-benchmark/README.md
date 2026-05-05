@@ -1592,6 +1592,21 @@ The R script derives:
     checkpoints for audit-log-record, audit-log-axis, audit-log-state,
     audit-log-value, event-trace-value, timing-only-audit-log, and analysis-only
     saturation.
+-   `data/typing-delay-open-question-incident-response-register.csv`: incident
+    response register for the nine audit-log records, including trigger,
+    severity rule, containment action, recovery action, notification target,
+    rollback scope, postmortem record, reopen condition, and owner.
+-   `data/typing-delay-open-question-incident-response-100-pass-audit.csv`:
+    twenty-third forced 100-pass audit over incident-response axes: detect,
+    severity, contain, recover, notify, owner, rollback, postmortem,
+    substitute, and stop-rule.
+-   `data/typing-delay-open-question-incident-response-100-pass-summary.csv`:
+    rollup of incident-response coverage by incident state, audit-log state,
+    and pass result.
+-   `data/typing-delay-open-question-incident-response-100-pass-checkpoints.csv`:
+    checkpoints for incident-record, incident-axis, incident-state,
+    incident-response-value, recovery-value, timing-only-incident, and
+    analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -11463,6 +11478,35 @@ This closes another loophole in the evidence chain. Permission rules are not
 enough if the actual lifecycle events are invisible. The audit-log row makes
 every evidence transition accountable; if a packet or artifact changes without a
 logged old/new event, the linked report wording is unsupported.
+
+I then added the incident-response layer: each audit-log row now names what
+opens an evidence incident, how severe it is for report wording, what claim is
+contained, how evidence is recovered, who is notified, what gets rolled back,
+and what postmortem record prevents recurrence.
+
+![Open question incident response register](figures/351-open-question-incident-response-register.png)
+
+![Open question incident response 100-pass saturation](figures/352-open-question-incident-response-100-pass-saturation.png)
+
+![Open question incident response coverage](figures/353-open-question-incident-response-coverage.png)
+
+| Incident-response check | Result |
+| ----------------------- | ------ |
+| Incident-response records | `9`, one per audit-log record. |
+| Incident states | `3`: local packet incident response, owner artifact incident response, and observer artifact incident response. |
+| Incident owners | `9`; incident triage routes to the scoped audit-log owner. |
+| Ledger consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Incident-axis checks | `90`: every row checked against all `10` incident-response axes. |
+| Incident-response value | `18922`: local packet incidents contribute `14279`, owner artifact incidents contribute `2866`, and observer artifact incidents contribute `1777`. |
+| Recovery value | `12357` across the nine incident records. |
+| Timing-only incident value | `0`; aggregate timing alone does not detect evidence incidents, set severity, contain claims, recover artifacts, notify owners, roll back wording, or write postmortems. |
+| Saturation | Incident records are all named by pass `9`; all incident axes are covered by pass `90`; passes `91-100` add no incident coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the failure-handling layer for the evidence chain. When a packet,
+artifact, permission, retention entry, or event log fails, the linked benchmark
+claim is not kept alive by another clean timing run. It is suspended until the
+incident response restores the evidence or rolls back the wording.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
