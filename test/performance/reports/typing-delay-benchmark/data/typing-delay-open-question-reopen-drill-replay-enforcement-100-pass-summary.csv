@@ -1,0 +1,7 @@
+reopen_drill_replay_enforcement_state,reopen_drill_retention_replay_state,pass_result,passes,first_pass,reopen_drill_replay_enforcement_records,axis_checks,reopen_drill_replay_enforcement_owners,reopen_drill_replay_enforcement_consumers,reopen_drill_replay_enforcement_value,reopen_drill_stale_replay_claim_risk_value,timing_only_reopen_drill_replay_enforcement_value,analysis_only_value
+local packet reopen-drill replay enforcement,local packet reopen-drill retention replay,reopen-drill replay enforcement: local packet,40,1,4,40,4,3,29240434631286,15897608718231,0,0
+owner artifact reopen-drill replay enforcement,owner artifact reopen-drill retention replay,reopen-drill replay enforcement: owner or observer artifact,20,5,2,20,2,2,5846659491848,3178745667836,0,0
+observer artifact reopen-drill replay enforcement,observer artifact reopen-drill retention replay,reopen-drill replay enforcement: owner or observer artifact,30,7,3,30,3,3,3611514156108,1963528916622,0,0
+local packet reopen-drill replay enforcement,local packet reopen-drill retention replay,repeat: reopen-drill-replay-enforcement-axis already checked,5,91,4,0,4,3,0,0,0,0
+owner artifact reopen-drill replay enforcement,owner artifact reopen-drill retention replay,repeat: reopen-drill-replay-enforcement-axis already checked,2,95,2,0,2,2,0,0,0,0
+observer artifact reopen-drill replay enforcement,observer artifact reopen-drill retention replay,repeat: reopen-drill-replay-enforcement-axis already checked,3,97,3,0,3,3,0,0,0,0

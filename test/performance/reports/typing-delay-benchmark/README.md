@@ -2242,6 +2242,29 @@ The R script derives:
     reopen-drill-retention-replay-value,
     reopen-drill-unreplayable-evidence-risk-value,
     timing-only-reopen-drill-retention-replay, and analysis-only saturation.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-register.csv`:
+    reopen-drill-replay-enforcement register for the nine
+    reopen-drill-retention-replay records, including status gate,
+    consumer precheck, cached-surface invalidation, exception policy,
+    failure response, rollback enforcement, publication gate, audit log,
+    owner, and consumer.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-100-pass-audit.csv`:
+    sixtieth forced 100-pass audit over reopen-drill-replay-enforcement axes:
+    status-gate, consumer-precheck, cache-invalidation, exception-policy,
+    failure-response, rollback, publication-gate, audit-log, substitute, and
+    stop-rule.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-100-pass-summary.csv`:
+    rollup of reopen-drill-replay-enforcement coverage by enforcement state,
+    reopen-drill-retention-replay state, and pass result.
+-   `data/typing-delay-open-question-reopen-drill-replay-enforcement-100-pass-checkpoints.csv`:
+    checkpoints for reopen-drill-replay-enforcement-record,
+    reopen-drill-replay-enforcement-axis,
+    reopen-drill-replay-enforcement-state,
+    reopen-drill-replay-enforcement-owner,
+    reopen-drill-replay-enforcement-consumer,
+    reopen-drill-replay-enforcement-value,
+    reopen-drill-stale-replay-claim-risk-value,
+    timing-only-reopen-drill-replay-enforcement, and analysis-only saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -13268,6 +13291,39 @@ orphans an old claim, or a missing artifact fails open. A retained packet stays
 usable only if replay publishes a current, expired, superseded, or failed-closed
 result with the packet id, hash status, consumer path, stale-row status, and
 rollback pointer.
+
+I then added the reopen-drill-replay-enforcement layer: replay status must gate
+active claims. The enforcement record names the status gate, consumer precheck,
+cached-surface invalidation, exception policy, failure response, rollback
+enforcement, publication gate, audit log, owner, and consumer for each retention
+replay row.
+
+![Open question reopen drill replay enforcement register](figures/462-open-question-reopen-drill-replay-enforcement-register.png)
+
+![Open question reopen drill replay enforcement 100-pass saturation](figures/463-open-question-reopen-drill-replay-enforcement-100-pass-saturation.png)
+
+![Open question reopen drill replay enforcement coverage](figures/464-open-question-reopen-drill-replay-enforcement-coverage.png)
+
+| Reopen-drill-replay-enforcement check | Result |
+| ------------------------------------- | ------ |
+| Reopen-drill-replay-enforcement records | `9`, one per reopen-drill-retention-replay record. |
+| Reopen-drill-replay-enforcement states | `3`: local packet reopen-drill replay enforcement, owner artifact reopen-drill replay enforcement, and observer artifact reopen-drill replay enforcement. |
+| Reopen-drill-replay-enforcement owners | `9`; enforcement ownership routes back to the scoped retention-replay owner. |
+| Reopen-drill-replay-enforcement consumers | `8`; the target-CI startup and pattern-wait questions both feed the Performance Tests CI wait policy. |
+| Reopen-drill-replay-enforcement-axis checks | `90`: every row checked against all `10` reopen-drill-replay-enforcement axes. |
+| Reopen-drill-replay-enforcement value | `38698608279242`: local packet enforcement contributes `29240434631286`, owner artifact enforcement contributes `5846659491848`, and observer artifact enforcement contributes `3611514156108`. |
+| Reopen-drill-stale-replay-claim-risk value | `21039883302689` across the nine reopen-drill-replay-enforcement records. |
+| Timing-only reopen-drill-replay-enforcement value | `0`; aggregate timing movement alone cannot prove the status gate, consumer precheck, cached-surface invalidation, exception policy, failure response, rollback enforcement, publication gate, audit log, owner, or stop rule. |
+| Saturation | Reopen-drill-replay-enforcement records are all named by pass `9`; all reopen-drill-replay-enforcement axes are covered by pass `90`; passes `91-100` add no reopen-drill-replay-enforcement coverage. |
+| Analysis-only value | `0` through pass `100`. |
+
+This is the stale-replay-claim guard. It catches the case where replay has
+already marked retained evidence expired, failed-closed, missing, or unclassified,
+but a cached recommendation, figure, CSV, README row, or artifact-index entry
+still cites the packet as current support. A recommendation can publish only
+after replay status, stale-row status, cache invalidation, exception status,
+rollback proof, and audit-log entry agree; otherwise the claim is removed or
+published only as an explicit, expiring exception.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

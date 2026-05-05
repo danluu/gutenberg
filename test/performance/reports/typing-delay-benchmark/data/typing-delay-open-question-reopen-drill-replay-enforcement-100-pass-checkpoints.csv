@@ -1,0 +1,10 @@
+pass_id,cumulative_reopen_drill_replay_enforcement_records,cumulative_reopen_drill_replay_enforcement_axes,cumulative_reopen_drill_replay_enforcement_states,cumulative_reopen_drill_replay_enforcement_owners,cumulative_reopen_drill_replay_enforcement_consumers,cumulative_reopen_drill_replay_enforcement_value,cumulative_reopen_drill_stale_replay_claim_risk_value,cumulative_timing_only_reopen_drill_replay_enforcement_value,cumulative_analysis_only_value
+1,1,1,1,1,1,8062963117541,4383718449078,0,0
+5,5,5,2,5,4,32524048641209,17682862985809,0,0
+9,9,9,3,9,8,38698608279242,21039883302689,0,0
+10,9,10,3,9,8,38698608279242,21039883302689,0,0
+20,9,20,3,9,8,38698608279242,21039883302689,0,0
+50,9,50,3,9,8,38698608279242,21039883302689,0,0
+90,9,90,3,9,8,38698608279242,21039883302689,0,0
+91,9,90,3,9,8,38698608279242,21039883302689,0,0
+100,9,90,3,9,8,38698608279242,21039883302689,0,0

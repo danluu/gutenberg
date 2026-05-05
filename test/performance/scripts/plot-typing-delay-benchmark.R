@@ -46503,6 +46503,321 @@ save_plot(
 	height = 7.2
 )
 
+open_question_reopen_drill_replay_enforcement_register <- open_question_reopen_drill_retention_replay_register %>%
+	mutate(
+		reopen_drill_replay_enforcement_state = case_when(
+			reopen_drill_retention_replay_state == "local packet reopen-drill retention replay" ~ "local packet reopen-drill replay enforcement",
+			reopen_drill_retention_replay_state == "owner artifact reopen-drill retention replay" ~ "owner artifact reopen-drill replay enforcement",
+			TRUE ~ "observer artifact reopen-drill replay enforcement"
+		),
+		reopen_drill_replay_enforcement_status_gate = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "local consumers may cite only retained packets whose latest replay status is current or superseded-with-valid-successor; expired, failed-closed, missing, or unclassified replay blocks the local claim",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "owner consumers may cite only retained packets whose latest replay status is current or superseded-with-valid-successor; expired, failed-closed, missing, or unclassified replay blocks the owner-visible claim",
+			TRUE ~ "observer consumers may cite only retained packets whose latest replay status is current or superseded-with-valid-successor; expired, failed-closed, missing, or unclassified replay blocks the broad claim"
+		),
+		reopen_drill_replay_enforcement_consumer_precheck = case_when(
+			close_scope == "CI wait decision" ~ "before publishing a CI wait-policy recommendation, check replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link for every retained packet the recommendation cites",
+			close_scope == "source prototype decision" ~ "before publishing a source optimization recommendation, check replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link for every retained packet the recommendation cites",
+			close_scope == "benchmark method wording" ~ "before publishing benchmark-method wording, check replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link for every retained packet the wording cites",
+			TRUE ~ "before publishing a broad recommendation, check replay status, packet id, hash status, stale-row status, rollback pointer, and consumer-path link for every retained packet the recommendation cites"
+		),
+		reopen_drill_replay_enforcement_cached_surface_invalidation = case_when(
+			close_scope == "CI wait decision" ~ "invalidate cached CI wait-policy README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries when replay is expired, failed-closed, missing, or superseded",
+			close_scope == "source prototype decision" ~ "invalidate cached source README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries when replay is expired, failed-closed, missing, or superseded",
+			close_scope == "benchmark method wording" ~ "invalidate cached method README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries when replay is expired, failed-closed, missing, or superseded",
+			TRUE ~ "invalidate cached broad README rows, figures, summary CSVs, recommendation snippets, and artifact-index entries when replay is expired, failed-closed, missing, or superseded"
+		),
+		reopen_drill_replay_enforcement_exception_policy = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "local exception requires current exact-scope fallback, explicit failed-replay notice, owner signoff, consumer notice, expiry date, and rollback pointer; it cannot support broader claims",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "owner exception requires current exact-scope fallback, explicit failed-replay notice, owner and reviewer signoff, consumer notice, expiry date, and rollback pointer; it cannot support broader claims",
+			TRUE ~ "observer exception requires current exact-scope fallback, explicit failed-replay notice, observer owner, reviewer, and broad-scope signoff, consumer notice, expiry date, and rollback pointer"
+		),
+		reopen_drill_replay_enforcement_failure_response = case_when(
+			close_scope == "CI wait decision" ~ "on blocked replay status, remove CI wait-policy support, restore open-question warning, publish failed-closed replay status, and route a rerun or supersession packet to the retained-evidence owner",
+			close_scope == "source prototype decision" ~ "on blocked replay status, remove source optimization support, restore open-question warning, publish failed-closed replay status, and route a rerun or supersession packet to the retained-evidence owner",
+			close_scope == "benchmark method wording" ~ "on blocked replay status, remove benchmark-method support, restore open-question warning, publish failed-closed replay status, and route a rerun or supersession packet to the retained-evidence owner",
+			TRUE ~ "on blocked replay status, remove broad recommendation support, restore open-question warning, publish failed-closed replay status, and route a rerun or supersession packet to the retained-evidence owner"
+		),
+		reopen_drill_replay_enforcement_rollback_enforcement = case_when(
+			close_scope == "CI wait decision" ~ "rollback enforcement proves prior CI wait-policy figures, CSVs, README rows, and recommendation text no longer appear as current support after replay blocks the retained packet",
+			close_scope == "source prototype decision" ~ "rollback enforcement proves prior source figures, CSVs, README rows, and recommendation text no longer appear as current support after replay blocks the retained packet",
+			close_scope == "benchmark method wording" ~ "rollback enforcement proves prior method figures, CSVs, README rows, and recommendation text no longer appear as current support after replay blocks the retained packet",
+			TRUE ~ "rollback enforcement proves prior broad figures, CSVs, README rows, and recommendation text no longer appear as current support after replay blocks the retained packet"
+		),
+		reopen_drill_replay_enforcement_publication_gate = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "publish local recommendations only after replay status, stale-row status, cache invalidation, exception status, rollback proof, and audit-log entry agree",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "publish owner recommendations only after replay status, reviewer-visible status, stale-row status, cache invalidation, exception status, rollback proof, and audit-log entry agree",
+			TRUE ~ "publish observer recommendations only after replay status, broad wording status, reviewer-visible status, stale-row status, cache invalidation, exception status, rollback proof, and audit-log entry agree"
+		),
+		reopen_drill_replay_enforcement_audit_log = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "log local replay-enforcement decisions with packet id, replay status, gate result, invalidated surfaces, exception record, rollback proof, owner, consumer, and timestamp",
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ "log owner replay-enforcement decisions with packet id, replay status, gate result, invalidated surfaces, exception record, reviewer-visible status, rollback proof, owner, consumer, and timestamp",
+			TRUE ~ "log observer replay-enforcement decisions with packet id, replay status, gate result, invalidated surfaces, exception record, broad wording status, reviewer-visible status, rollback proof, owner, consumer, and timestamp"
+		),
+		reopen_drill_replay_enforcement_owner = reopen_drill_retention_replay_owner,
+		reopen_drill_replay_enforcement_consumer = reopen_drill_retention_replay_consumer,
+		reopen_drill_replay_enforcement_cost = case_when(
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ 17,
+			reopen_drill_replay_enforcement_state == "owner artifact reopen-drill replay enforcement" ~ 19,
+			TRUE ~ 21
+		),
+		reopen_drill_replay_enforcement_value = pmax(
+			1,
+			reopen_drill_retention_replay_value + reopen_drill_unreplayable_evidence_risk_value + reopen_drill_evidence_loss_risk_value - reopen_drill_replay_enforcement_cost
+		),
+		reopen_drill_stale_replay_claim_risk_value = pmax(
+			1,
+			reopen_drill_unreplayable_evidence_risk_value + reopen_drill_evidence_loss_risk_value + reopen_drill_verification_false_confidence_risk_value - reopen_drill_replay_enforcement_cost
+		),
+		timing_only_reopen_drill_replay_enforcement_value = 0,
+		analysis_only_value = 0,
+		reopen_drill_replay_enforcement_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-"))
+	) %>%
+	arrange(desc(reopen_drill_replay_enforcement_value), desc(reopen_drill_stale_replay_claim_risk_value), question_family)
+
+open_question_reopen_drill_replay_enforcement_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"status-gate", "Which replay statuses can support current claims?",
+	"consumer-precheck", "What precheck runs before a consumer cites retained evidence?",
+	"cache-invalidation", "Which cached surfaces are invalidated by blocked replay status?",
+	"exception-policy", "What limited exception can cite a blocked replay packet?",
+	"failure-response", "What happens when replay status blocks the claim?",
+	"rollback", "How is stale current support removed?",
+	"publication-gate", "What gate must pass before recommendations publish?",
+	"audit-log", "What enforcement decision is logged?",
+	"substitute", "Can aggregate timing alone substitute for replay enforcement?",
+	"stop-rule", "When does replay-enforcement review stop?"
+)
+
+open_question_reopen_drill_replay_enforcement_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		question_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_replay_enforcement_register)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_reopen_drill_replay_enforcement_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_reopen_drill_replay_enforcement_register %>%
+			mutate(question_index = row_number()),
+		by = "question_index"
+	) %>%
+	left_join(
+		open_question_reopen_drill_replay_enforcement_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		reopen_drill_replay_enforcement_first_seen = !duplicated(reopen_drill_replay_enforcement_id),
+		reopen_drill_replay_enforcement_axis_key = paste(reopen_drill_replay_enforcement_id, pressure_axis, sep = "::"),
+		reopen_drill_replay_enforcement_axis_first_seen = !duplicated(reopen_drill_replay_enforcement_axis_key),
+		reopen_drill_replay_enforcement_state_first_seen = !duplicated(reopen_drill_replay_enforcement_state),
+		reopen_drill_replay_enforcement_owner_first_seen = !duplicated(reopen_drill_replay_enforcement_owner),
+		reopen_drill_replay_enforcement_consumer_first_seen = !duplicated(reopen_drill_replay_enforcement_consumer),
+		new_reopen_drill_replay_enforcement_value = if_else(reopen_drill_replay_enforcement_first_seen, reopen_drill_replay_enforcement_value, 0),
+		new_reopen_drill_stale_replay_claim_risk_value = if_else(reopen_drill_replay_enforcement_first_seen, reopen_drill_stale_replay_claim_risk_value, 0),
+		new_timing_only_reopen_drill_replay_enforcement_value = 0,
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!reopen_drill_replay_enforcement_axis_first_seen ~ "repeat: reopen-drill-replay-enforcement-axis already checked",
+			reopen_drill_replay_enforcement_state == "local packet reopen-drill replay enforcement" ~ "reopen-drill replay enforcement: local packet",
+			TRUE ~ "reopen-drill replay enforcement: owner or observer artifact"
+		),
+		cumulative_reopen_drill_replay_enforcement_records = cumsum(reopen_drill_replay_enforcement_first_seen),
+		cumulative_reopen_drill_replay_enforcement_axes = cumsum(reopen_drill_replay_enforcement_axis_first_seen),
+		cumulative_reopen_drill_replay_enforcement_states = cumsum(reopen_drill_replay_enforcement_state_first_seen),
+		cumulative_reopen_drill_replay_enforcement_owners = cumsum(reopen_drill_replay_enforcement_owner_first_seen),
+		cumulative_reopen_drill_replay_enforcement_consumers = cumsum(reopen_drill_replay_enforcement_consumer_first_seen),
+		cumulative_reopen_drill_replay_enforcement_value = cumsum(new_reopen_drill_replay_enforcement_value),
+		cumulative_reopen_drill_stale_replay_claim_risk_value = cumsum(new_reopen_drill_stale_replay_claim_risk_value),
+		cumulative_timing_only_reopen_drill_replay_enforcement_value = cumsum(new_timing_only_reopen_drill_replay_enforcement_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_reopen_drill_replay_enforcement_summary <- open_question_reopen_drill_replay_enforcement_100_pass %>%
+	group_by(reopen_drill_replay_enforcement_state, reopen_drill_retention_replay_state, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		reopen_drill_replay_enforcement_records = n_distinct(reopen_drill_replay_enforcement_id),
+		axis_checks = sum(reopen_drill_replay_enforcement_axis_first_seen),
+		reopen_drill_replay_enforcement_owners = n_distinct(reopen_drill_replay_enforcement_owner),
+		reopen_drill_replay_enforcement_consumers = n_distinct(reopen_drill_replay_enforcement_consumer),
+		reopen_drill_replay_enforcement_value = sum(new_reopen_drill_replay_enforcement_value),
+		reopen_drill_stale_replay_claim_risk_value = sum(new_reopen_drill_stale_replay_claim_risk_value),
+		timing_only_reopen_drill_replay_enforcement_value = sum(new_timing_only_reopen_drill_replay_enforcement_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		.groups = "drop"
+	) %>%
+	arrange(desc(reopen_drill_replay_enforcement_value), desc(reopen_drill_stale_replay_claim_risk_value), first_pass)
+
+open_question_reopen_drill_replay_enforcement_checkpoints <- open_question_reopen_drill_replay_enforcement_100_pass %>%
+	filter(pass_id %in% c(1, 5, 9, 10, 20, 50, 90, 91, 100)) %>%
+	select(
+		pass_id,
+		cumulative_reopen_drill_replay_enforcement_records,
+		cumulative_reopen_drill_replay_enforcement_axes,
+		cumulative_reopen_drill_replay_enforcement_states,
+		cumulative_reopen_drill_replay_enforcement_owners,
+		cumulative_reopen_drill_replay_enforcement_consumers,
+		cumulative_reopen_drill_replay_enforcement_value,
+		cumulative_reopen_drill_stale_replay_claim_risk_value,
+		cumulative_timing_only_reopen_drill_replay_enforcement_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_register,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-register.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			reopen_drill_replay_enforcement_state,
+			reopen_drill_retention_replay_state,
+			reopen_drill_replay_enforcement_status_gate,
+			reopen_drill_replay_enforcement_consumer_precheck,
+			reopen_drill_replay_enforcement_cached_surface_invalidation,
+			reopen_drill_replay_enforcement_exception_policy,
+			reopen_drill_replay_enforcement_failure_response,
+			reopen_drill_replay_enforcement_rollback_enforcement,
+			reopen_drill_replay_enforcement_publication_gate,
+			reopen_drill_replay_enforcement_audit_log,
+			reopen_drill_replay_enforcement_owner,
+			reopen_drill_replay_enforcement_consumer,
+			reopen_drill_retention_replay_result_publication,
+			reopen_drill_retention_replay_expiry_classification,
+			reopen_drill_retention_replay_consumer_link_check,
+			reopen_drill_retention_replay_missing_artifact_failure,
+			reopen_drill_evidence_retention_orphan_guard,
+			reopen_drill_evidence_retention_supersession_rule,
+			reopen_drill_verification_signoff_gate,
+			supported_claim,
+			blocked_claim,
+			reopen_drill_replay_enforcement_first_seen,
+			reopen_drill_replay_enforcement_axis_first_seen,
+			reopen_drill_replay_enforcement_state_first_seen,
+			reopen_drill_replay_enforcement_owner_first_seen,
+			reopen_drill_replay_enforcement_consumer_first_seen,
+			pass_result,
+			reopen_drill_replay_enforcement_value,
+			reopen_drill_stale_replay_claim_risk_value,
+			timing_only_reopen_drill_replay_enforcement_value,
+			new_reopen_drill_replay_enforcement_value,
+			new_reopen_drill_stale_replay_claim_risk_value,
+			new_timing_only_reopen_drill_replay_enforcement_value,
+			new_analysis_only_value,
+			cumulative_reopen_drill_replay_enforcement_records,
+			cumulative_reopen_drill_replay_enforcement_axes,
+			cumulative_reopen_drill_replay_enforcement_states,
+			cumulative_reopen_drill_replay_enforcement_owners,
+			cumulative_reopen_drill_replay_enforcement_consumers,
+			cumulative_reopen_drill_replay_enforcement_value,
+			cumulative_reopen_drill_stale_replay_claim_risk_value,
+			cumulative_timing_only_reopen_drill_replay_enforcement_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_summary,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_reopen_drill_replay_enforcement_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-reopen-drill-replay-enforcement-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_reopen_drill_replay_enforcement_register %>%
+		mutate(
+			question_label = str_wrap(question_family, width = 28),
+			question_label = fct_reorder(question_label, reopen_drill_replay_enforcement_value)
+		) %>%
+		ggplot(aes(reopen_drill_replay_enforcement_value, question_label, fill = reopen_drill_replay_enforcement_state)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set1", name = "Replay enforcement") +
+		labs(
+			title = "Reopen-drill replay enforcement keeps blocked replay results from supporting current claims",
+			subtitle = "Each row names status gate, consumer precheck, cache invalidation, exception policy, failure response, rollback enforcement, publication gate, audit log, owner, and consumer",
+			x = "Reopen-drill-replay-enforcement value",
+			y = "Open question"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"462-open-question-reopen-drill-replay-enforcement-register.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_reopen_drill_replay_enforcement_saturation_long <- open_question_reopen_drill_replay_enforcement_100_pass %>%
+	select(
+		pass_id,
+		`reopen-drill-replay-enforcement records` = cumulative_reopen_drill_replay_enforcement_records,
+		`reopen-drill-replay-enforcement axes` = cumulative_reopen_drill_replay_enforcement_axes,
+		`reopen-drill-replay-enforcement states` = cumulative_reopen_drill_replay_enforcement_states,
+		`reopen-drill-replay-enforcement owners` = cumulative_reopen_drill_replay_enforcement_owners,
+		`reopen-drill-replay-enforcement consumers` = cumulative_reopen_drill_replay_enforcement_consumers,
+		`reopen-drill-replay-enforcement value` = cumulative_reopen_drill_replay_enforcement_value,
+		`reopen-drill-stale-replay-claim risk value` = cumulative_reopen_drill_stale_replay_claim_risk_value,
+		`timing-only reopen-drill-replay-enforcement value` = cumulative_timing_only_reopen_drill_replay_enforcement_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("reopen-drill-replay-enforcement records", "reopen-drill-replay-enforcement axes", "reopen-drill-replay-enforcement states", "reopen-drill-replay-enforcement owners", "reopen-drill-replay-enforcement consumers", "reopen-drill-replay-enforcement value", "reopen-drill-stale-replay-claim risk value", "timing-only reopen-drill-replay-enforcement value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_reopen_drill_replay_enforcement_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.5) +
+		scale_color_brewer(type = "qual", palette = "Paired", name = "Cumulative metric") +
+		labs(
+			title = "Reopen-drill-replay-enforcement audit saturates once every stale replay claim gate is covered",
+			subtitle = "Nine enforcement records appear by pass 9; all 90 axes appear by pass 90; timing-only enforcement value stays zero",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"463-open-question-reopen-drill-replay-enforcement-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_reopen_drill_replay_enforcement_summary %>%
+		mutate(
+			state_label = str_wrap(reopen_drill_replay_enforcement_state, width = 28),
+			state_label = fct_reorder(state_label, reopen_drill_replay_enforcement_value + reopen_drill_stale_replay_claim_risk_value)
+		) %>%
+		ggplot(aes(axis_checks, state_label, fill = pass_result)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Dark2", name = "Pass result") +
+		labs(
+			title = "Reopen-drill-replay-enforcement coverage separates local gates from owner and observer gates",
+			subtitle = "Every row is checked for status gate, consumer precheck, cache invalidation, exception, failure response, rollback, publication gate, audit log, substitute, and stop rule",
+			x = "Reopen-drill-replay-enforcement-axis checks",
+			y = "Reopen-drill-replay-enforcement state"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"464-open-question-reopen-drill-replay-enforcement-coverage.png",
+	width = 12.0,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
