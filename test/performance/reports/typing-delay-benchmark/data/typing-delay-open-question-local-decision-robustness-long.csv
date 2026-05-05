@@ -1,0 +1,21 @@
+question_family,question_label,local_decision_class,robustness_dimension,score
+Startup wait and first-key tails,"Startup wait and first-key
+tails",local recommendation stable,decision robustness,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",local recommendation stable,remaining blocker,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",local recommendation stable,local reducible,4
+Startup wait and first-key tails,"Startup wait and first-key
+tails",local recommendation stable,external reducible,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",local recommendation stable,wrong-action risk,5
+Pattern wait replacement,Pattern wait replacement,candidate needs topology gate,decision robustness,3
+Pattern wait replacement,Pattern wait replacement,candidate needs topology gate,remaining blocker,4
+Pattern wait replacement,Pattern wait replacement,candidate needs topology gate,local reducible,4
+Pattern wait replacement,Pattern wait replacement,candidate needs topology gate,external reducible,3
+Pattern wait replacement,Pattern wait replacement,candidate needs topology gate,wrong-action risk,5
+Selector/source guard,Selector/source guard,prototype behind gates,decision robustness,3
+Selector/source guard,Selector/source guard,prototype behind gates,remaining blocker,5
+Selector/source guard,Selector/source guard,prototype behind gates,local reducible,5
+Selector/source guard,Selector/source guard,prototype behind gates,external reducible,2
+Selector/source guard,Selector/source guard,prototype behind gates,wrong-action risk,5

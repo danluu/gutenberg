@@ -27991,6 +27991,371 @@ save_plot(
 	height = 7.8
 )
 
+open_question_bootstrap_median_ci <- function(values, iterations = 2000) {
+	values <- values[is.finite(values)]
+	if (length(values) == 0) {
+		return(tibble(boot_q50_p10_ms = NA_real_, boot_q50_p50_ms = NA_real_, boot_q50_p90_ms = NA_real_))
+	}
+	if (length(values) == 1) {
+		boot <- rep(values, iterations)
+	} else {
+		boot <- replicate(iterations, median(sample(values, length(values), replace = TRUE)))
+	}
+	tibble(
+		boot_q50_p10_ms = as.numeric(quantile(boot, 0.10, na.rm = TRUE)),
+		boot_q50_p50_ms = as.numeric(quantile(boot, 0.50, na.rm = TRUE)),
+		boot_q50_p90_ms = as.numeric(quantile(boot, 0.90, na.rm = TRUE))
+	)
+}
+
+open_question_bootstrap_median_diff_ci <- function(values, baseline_values, iterations = 2000) {
+	values <- values[is.finite(values)]
+	baseline_values <- baseline_values[is.finite(baseline_values)]
+	if (length(values) == 0 || length(baseline_values) == 0) {
+		return(tibble(diff_q50_p10_ms = NA_real_, diff_q50_p50_ms = NA_real_, diff_q50_p90_ms = NA_real_))
+	}
+	if (length(values) == 1 && length(baseline_values) == 1) {
+		boot <- rep(values - baseline_values, iterations)
+	} else {
+		boot <- replicate(
+			iterations,
+			median(sample(values, length(values), replace = TRUE)) -
+				median(sample(baseline_values, length(baseline_values), replace = TRUE))
+		)
+	}
+	tibble(
+		diff_q50_p10_ms = as.numeric(quantile(boot, 0.10, na.rm = TRUE)),
+		diff_q50_p50_ms = as.numeric(quantile(boot, 0.50, na.rm = TRUE)),
+		diff_q50_p90_ms = as.numeric(quantile(boot, 0.90, na.rm = TRUE))
+	)
+}
+
+open_question_startup_wait_bootstrap_path <- file.path(data_dir, "typing-delay-ci-comparable-start-wait-curve-samples.csv")
+open_question_pattern_wait_runs_path <- file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-runs.csv")
+open_question_pattern_boundary_path <- file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv")
+open_question_selector_gate_path <- file.path(data_dir, "typing-delay-selector-guard-behavior-gate-readiness.csv")
+open_question_local_robustness_rows <- list()
+
+if (file.exists(open_question_startup_wait_bootstrap_path)) {
+	open_question_startup_samples <- read_csv(open_question_startup_wait_bootstrap_path, show_col_types = FALSE) %>%
+		filter(!is_throwaway, is.finite(latency_ms))
+	open_question_startup_baseline <- open_question_startup_samples %>%
+		filter(settle_after_editor_setup_ms == 1000) %>%
+		pull(latency_ms)
+
+	set.seed(51383)
+	open_question_startup_wait_bootstrap <- open_question_startup_samples %>%
+		group_by(startup_wait_ms = settle_after_editor_setup_ms) %>%
+		group_modify(~ {
+			bind_cols(
+				tibble(
+					retained_samples = nrow(.x),
+					retained_latency_q50_ms = median(.x$latency_ms, na.rm = TRUE),
+					retained_latency_mean_ms = mean(.x$latency_ms, na.rm = TRUE),
+					retained_latency_p90_ms = as.numeric(quantile(.x$latency_ms, 0.90, na.rm = TRUE)),
+					retained_latency_sd_ms = sd(.x$latency_ms, na.rm = TRUE),
+					retained_latency_cv = sd(.x$latency_ms, na.rm = TRUE) / mean(.x$latency_ms, na.rm = TRUE),
+					q50_delta_vs_1000ms = median(.x$latency_ms, na.rm = TRUE) - median(open_question_startup_baseline, na.rm = TRUE)
+				),
+				open_question_bootstrap_median_ci(.x$latency_ms),
+				open_question_bootstrap_median_diff_ci(.x$latency_ms, open_question_startup_baseline)
+			)
+		}) %>%
+		ungroup() %>%
+		mutate(
+			wait_label = case_when(
+				startup_wait_ms == 0 ~ "0",
+				startup_wait_ms < 1000 ~ paste0(startup_wait_ms, "ms"),
+				startup_wait_ms %% 1000 == 0 ~ paste0(startup_wait_ms / 1000, "s"),
+				TRUE ~ paste0(startup_wait_ms, "ms")
+			),
+			wait_label = factor(wait_label, levels = wait_label[order(startup_wait_ms)]),
+			decision_band = case_when(
+				startup_wait_ms == 1000 ~ "1s reference",
+				diff_q50_p90_ms <= 5 ~ "not worse than 1s",
+				diff_q50_p10_ms > 5 ~ "worse than 1s",
+				TRUE ~ "overlaps 1s"
+			),
+			decision_band = factor(decision_band, levels = c("not worse than 1s", "overlaps 1s", "worse than 1s", "1s reference"))
+		)
+
+	write_csv(
+		open_question_startup_wait_bootstrap,
+		file.path(data_dir, "typing-delay-open-question-startup-wait-bootstrap.csv")
+	)
+
+	save_plot(
+		ggplot(open_question_startup_wait_bootstrap, aes(wait_label, q50_delta_vs_1000ms, color = decision_band)) +
+			geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35, linetype = "dashed") +
+			geom_errorbar(aes(ymin = diff_q50_p10_ms, ymax = diff_q50_p90_ms), width = 0.18, linewidth = 0.55) +
+			geom_point(size = 2.8, alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Set1", name = "Bootstrap band") +
+			labs(
+				title = "Startup-wait local gate: retained q50 does not improve at 1s",
+				subtitle = "Bootstrapped median deltas use retained CI-comparable samples; this does not decide first-key, failure, or external CI policy questions",
+				x = "Extra startup wait after editor setup",
+				y = "Retained q50 delta versus 1000ms wait (ms)"
+			) +
+			theme_minimal(base_size = 12) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"276-open-question-startup-wait-bootstrap.png",
+		width = 12.8,
+		height = 7.4
+	)
+
+	open_question_startup_zero <- open_question_startup_wait_bootstrap %>% filter(startup_wait_ms == 0)
+	if (nrow(open_question_startup_zero) > 0) {
+		open_question_local_robustness_rows <- append(
+			open_question_local_robustness_rows,
+			list(
+				tibble(
+					question_family = "Startup wait and first-key tails",
+					local_artifact = "CI-comparable startup-wait retained-key bootstrap",
+					decisive_local_result = sprintf(
+						"0ms retained q50 %.1fms; delta vs 1s %.1fms, bootstrap p10..p90 %.1f..%.1fms",
+						open_question_startup_zero$retained_latency_q50_ms,
+						open_question_startup_zero$q50_delta_vs_1000ms,
+						open_question_startup_zero$diff_q50_p10_ms,
+						open_question_startup_zero$diff_q50_p90_ms
+					),
+					current_decision = "Do not add a Typing startup wait for retained q50; split first-key and failure questions.",
+					remaining_blocker = "Real Performance Tests topology, first-key/tail treatment, resource/failure fields, and external policy.",
+					local_decision_class = "local recommendation stable",
+					decision_robustness_score = 4,
+					remaining_blocker_score = 3
+				)
+			)
+		)
+	}
+}
+
+if (file.exists(open_question_pattern_wait_runs_path) && file.exists(open_question_pattern_boundary_path)) {
+	open_question_pattern_runs <- read_csv(open_question_pattern_wait_runs_path, show_col_types = FALSE) %>%
+		filter(is.finite(p50_ms))
+	open_question_pattern_baseline <- open_question_pattern_runs %>%
+		filter(measurement_idle_wait_ms == 1000) %>%
+		pull(p50_ms)
+
+	set.seed(51384)
+	open_question_pattern_wait_bootstrap <- open_question_pattern_runs %>%
+		group_by(wait_ms = measurement_idle_wait_ms) %>%
+		group_modify(~ {
+			bind_cols(
+				tibble(
+					runs = nrow(.x),
+					median_run_p50_ms = median(.x$p50_ms, na.rm = TRUE),
+					mean_run_p50_ms = mean(.x$p50_ms, na.rm = TRUE),
+					run_p90_ms = as.numeric(quantile(.x$p50_ms, 0.90, na.rm = TRUE)),
+					run_to_run_q50_sd_ms = sd(.x$p50_ms, na.rm = TRUE),
+					q50_delta_vs_1000ms = median(.x$p50_ms, na.rm = TRUE) - median(open_question_pattern_baseline, na.rm = TRUE)
+				),
+				open_question_bootstrap_median_ci(.x$p50_ms),
+				open_question_bootstrap_median_diff_ci(.x$p50_ms, open_question_pattern_baseline)
+			)
+		}) %>%
+		ungroup() %>%
+		left_join(
+			read_csv(open_question_pattern_boundary_path, show_col_types = FALSE) %>%
+				select(
+					wait_ms = waitMs,
+					readiness_boundary_hit_rate,
+					wait_resource_plateau_rate,
+					no_active_requests_at_start_rate,
+					low_measurement_resources_rate
+				),
+			by = "wait_ms"
+		) %>%
+		mutate(
+			wait_label = case_when(
+				wait_ms == 0 ~ "0",
+				wait_ms < 1000 ~ paste0(wait_ms, "ms"),
+				wait_ms %% 1000 == 0 ~ paste0(wait_ms / 1000, "s"),
+				TRUE ~ paste0(wait_ms, "ms")
+			),
+			wait_label = factor(wait_label, levels = wait_label[order(wait_ms)]),
+			readiness_class = case_when(
+				wait_ms == 1000 ~ "1s reference",
+				readiness_boundary_hit_rate >= 1 & wait_resource_plateau_rate >= 1 ~ "readiness/resource pass",
+				TRUE ~ "q50-only unsafe"
+			),
+			readiness_class = factor(readiness_class, levels = c("readiness/resource pass", "q50-only unsafe", "1s reference"))
+		)
+
+	write_csv(
+		open_question_pattern_wait_bootstrap,
+		file.path(data_dir, "typing-delay-open-question-pattern-wait-bootstrap.csv")
+	)
+
+	save_plot(
+		ggplot(open_question_pattern_wait_bootstrap, aes(wait_label, q50_delta_vs_1000ms, color = readiness_class)) +
+			geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35, linetype = "dashed") +
+			geom_errorbar(aes(ymin = diff_q50_p10_ms, ymax = diff_q50_p90_ms), width = 0.18, linewidth = 0.55) +
+			geom_point(size = 3, alpha = 0.9) +
+			scale_color_brewer(type = "qual", palette = "Dark2", name = "Readiness class") +
+			labs(
+				title = "Pattern-wait local gate: q50 wins are vetoed unless readiness also passes",
+				subtitle = "Bootstrapped run-median deltas show the local timing signal; readiness/resource rates decide whether the shorter wait preserves the metric",
+				x = "Pattern measurement wait",
+				y = "Run median q50 delta versus 1000ms wait (ms)"
+			) +
+			theme_minimal(base_size = 12) +
+			theme(legend.position = "bottom", legend.box = "vertical"),
+		"277-open-question-pattern-wait-bootstrap.png",
+		width = 12.8,
+		height = 7.4
+	)
+
+	open_question_pattern_best_ready <- open_question_pattern_wait_bootstrap %>%
+		filter(wait_ms < 1000, readiness_class == "readiness/resource pass") %>%
+		arrange(median_run_p50_ms, wait_ms) %>%
+		slice(1)
+	if (nrow(open_question_pattern_best_ready) > 0) {
+		open_question_local_robustness_rows <- append(
+			open_question_local_robustness_rows,
+			list(
+				tibble(
+					question_family = "Pattern wait replacement",
+					local_artifact = "Site Editor fixed-wait run bootstrap plus readiness/resource boundary",
+					decisive_local_result = sprintf(
+						"%s is the best local ready fixed-sleep row: run q50 %.1fms; delta vs 1s %.1fms, bootstrap p10..p90 %.1f..%.1fms",
+						as.character(open_question_pattern_best_ready$wait_label),
+						open_question_pattern_best_ready$median_run_p50_ms,
+						open_question_pattern_best_ready$q50_delta_vs_1000ms,
+						open_question_pattern_best_ready$diff_q50_p10_ms,
+						open_question_pattern_best_ready$diff_q50_p90_ms
+					),
+					current_decision = "Treat shorter pattern waits as candidates only when readiness/resource gates pass.",
+					remaining_blocker = "Per-spec CI/mac/container lanes, preview/canvas behavior, endpoint composition, timeout/fallback logs.",
+					local_decision_class = "candidate needs topology gate",
+					decision_robustness_score = 3,
+					remaining_blocker_score = 4
+				)
+			)
+		)
+	}
+}
+
+if (file.exists(open_question_selector_gate_path)) {
+	open_question_selector_gate <- read_csv(open_question_selector_gate_path, show_col_types = FALSE)
+	open_question_selector_best <- open_question_selector_gate %>%
+		arrange(desc(covered_gates), desc(mean_proof_score), desc(current_scope_ms)) %>%
+		slice(1)
+	open_question_selector_blocked <- open_question_selector_gate %>%
+		filter(candidate != open_question_selector_best$candidate) %>%
+		summarize(
+			blocked_candidates = paste(candidate, collapse = "; "),
+			max_uncovered_gate_risk = max(max_risk_score, na.rm = TRUE),
+			.groups = "drop"
+		)
+	open_question_local_robustness_rows <- append(
+		open_question_local_robustness_rows,
+		list(
+			tibble(
+				question_family = "Selector/source guard",
+				local_artifact = "Selector guard behavior-gate readiness table",
+				decisive_local_result = sprintf(
+					"%s has %d/%d covered gates at %.1fms scope; other candidates remain blocked with max risk %.0f",
+					open_question_selector_best$candidate,
+					open_question_selector_best$covered_gates,
+					open_question_selector_best$total_gates,
+					open_question_selector_best$current_scope_ms,
+					open_question_selector_blocked$max_uncovered_gate_risk
+				),
+				current_decision = "Prototype only the covered source guard; do not use aggregate p50 to justify broader guards.",
+				remaining_blocker = paste0(
+					"Blocked candidates: ",
+					open_question_selector_blocked$blocked_candidates,
+					"; require behavior fixtures and targeted source spans before timing claims."
+				),
+				local_decision_class = "prototype behind gates",
+				decision_robustness_score = 3,
+				remaining_blocker_score = 5
+			)
+		)
+	)
+}
+
+if (length(open_question_local_robustness_rows) > 0) {
+	open_question_local_decision_robustness <- bind_rows(open_question_local_robustness_rows) %>%
+		left_join(
+			open_question_residual_uncertainty_budget %>%
+				select(question_family, local_reducible_score, external_reducible_score, wrong_action_risk, spend_pressure, budget_class),
+			by = "question_family"
+		) %>%
+		mutate(
+			local_decision_class = factor(
+				local_decision_class,
+				levels = c("local recommendation stable", "candidate needs topology gate", "prototype behind gates")
+			),
+			question_label = str_wrap(question_family, width = 28)
+		)
+
+	open_question_local_decision_robustness_long <- open_question_local_decision_robustness %>%
+		select(
+			question_family,
+			question_label,
+			local_decision_class,
+			decision_robustness_score,
+			remaining_blocker_score,
+			local_reducible_score,
+			external_reducible_score,
+			wrong_action_risk
+		) %>%
+		pivot_longer(
+			cols = c(
+				decision_robustness_score,
+				remaining_blocker_score,
+				local_reducible_score,
+				external_reducible_score,
+				wrong_action_risk
+			),
+			names_to = "robustness_dimension",
+			values_to = "score"
+		) %>%
+		mutate(
+			robustness_dimension = recode(
+				robustness_dimension,
+				decision_robustness_score = "decision robustness",
+				remaining_blocker_score = "remaining blocker",
+				local_reducible_score = "local reducible",
+				external_reducible_score = "external reducible",
+				wrong_action_risk = "wrong-action risk"
+			),
+			robustness_dimension = factor(
+				robustness_dimension,
+				levels = c("decision robustness", "remaining blocker", "local reducible", "external reducible", "wrong-action risk")
+			),
+			question_label = fct_reorder(question_label, as.numeric(local_decision_class), .desc = TRUE)
+		)
+
+	write_csv(
+		open_question_local_decision_robustness,
+		file.path(data_dir, "typing-delay-open-question-local-decision-robustness.csv")
+	)
+	write_csv(
+		open_question_local_decision_robustness_long,
+		file.path(data_dir, "typing-delay-open-question-local-decision-robustness-long.csv")
+	)
+
+	save_plot(
+		ggplot(open_question_local_decision_robustness_long, aes(robustness_dimension, question_label, fill = score)) +
+			geom_tile(color = "white", linewidth = 0.42) +
+			geom_text(aes(label = score), size = 2.9, color = "grey15") +
+			scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Score") +
+			labs(
+				title = "Local open-question gates are robust for decisions, not for broader claims",
+				subtitle = "Startup wait, pattern wait, and selector guard have local answers, but each still blocks a different expanded claim",
+				x = "Robustness dimension",
+				y = "Open question"
+			) +
+			theme_minimal(base_size = 12) +
+			theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+		"278-open-question-local-decision-robustness.png",
+		width = 12.4,
+		height = 5.8
+	)
+}
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")

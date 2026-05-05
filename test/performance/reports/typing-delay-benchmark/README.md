@@ -1269,6 +1269,17 @@ The R script derives:
     wrong-action risk, stop confidence, recommended spend, and spend to avoid.
 -   `data/typing-delay-open-question-residual-uncertainty-budget-long.csv`:
     long-form uncertainty-budget scores used for the residual-budget heatmap.
+-   `data/typing-delay-open-question-startup-wait-bootstrap.csv`: bootstrap
+    check for the local startup-wait gate, comparing retained CI-comparable
+    Typing q50 at each extra startup wait against the `1000ms` reference wait.
+-   `data/typing-delay-open-question-pattern-wait-bootstrap.csv`: bootstrap
+    check for the local pattern-wait gate, joining run-median q50 movement to
+    readiness and resource-boundary rates.
+-   `data/typing-delay-open-question-local-decision-robustness.csv`: focused
+    decision-robustness table for the locally reducible open-question rows:
+    startup wait, pattern wait, and selector/source guard.
+-   `data/typing-delay-open-question-local-decision-robustness-long.csv`:
+    long-form local-gate robustness scores used for the robustness heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10457,6 +10468,31 @@ only where local reducibility is high. External reducibility is not an invitatio
 to rerun the current harness; it is a pointer to the missing observer or
 claim-expansion artifact. Low local and low external urgency means no spend until
 the metric, wording, or product claim changes.
+
+I then rechecked the three "spend locally now" rows against the existing raw
+artifacts instead of treating the budget as self-justifying. For startup wait and
+pattern wait, I bootstrapped the retained/run-median q50 deltas against the
+`1000ms` reference. For selector/source guard, I used the behavior-gate readiness
+table, because the open question is semantic/source safety rather than another
+aggregate latency sample.
+
+![Open question startup-wait bootstrap](figures/276-open-question-startup-wait-bootstrap.png)
+
+![Open question pattern-wait bootstrap](figures/277-open-question-pattern-wait-bootstrap.png)
+
+![Open question local decision robustness](figures/278-open-question-local-decision-robustness.png)
+
+| Local gate | Result | Decision |
+| ---------- | ------ | -------- |
+| Startup wait | `0ms` extra wait has retained q50 `16.5ms`, only `+0.2ms` versus the `1000ms` reference; bootstrap p10..p90 for the delta is `-0.3..+0.6ms`. | Do not add a Typing startup wait for retained q50. Keep first-key, failure, resource, and target-topology questions split. |
+| Pattern wait | The best local fixed-sleep row that also passes the readiness/resource boundary is `500ms`: run q50 `720.0ms`, `-10.3ms` versus `1000ms`, bootstrap p10..p90 `-21.4..+3.9ms`. The `0ms` and `100ms` rows are faster only in the wrong sense: they fail the readiness/resource gate and are much slower in run q50. | Treat shorter pattern waits as candidates only when readiness/resource gates pass; validate per spec and target topology before rollout. |
+| Selector/source guard | The pattern-override selected-only split is the only covered local guard, with `7/7` gates covered at about `3.6ms` source scope. Other candidates remain behavior/source blocked. | Prototype only the covered guard. Do not cite aggregate p50 as source-safety evidence for broader guards. |
+
+This turns the residual budget into a narrower action list. The startup-wait
+answer is locally robust for the retained Typing statistic but does not answer
+idle first-input or CI policy. The pattern-wait answer is not "use the shortest
+wait"; it is "q50 is subordinate to readiness/resource preservation." The
+selector answer is not a timing sweep; it is a behavior-gated source patch.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,
