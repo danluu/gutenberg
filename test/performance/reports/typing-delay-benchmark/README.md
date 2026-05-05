@@ -1352,6 +1352,18 @@ The R script derives:
 -   `data/typing-delay-open-question-packet-execution-100-pass-checkpoints.csv`:
     checkpoints for execution-unit, raw-field-bundle, local-value,
     blocked-value, and analysis-only-value saturation.
+-   `data/typing-delay-open-question-packet-outcome-matrix.csv`: pass/mixed/fail
+    interpretation matrix for the nine packet contracts, including allowed
+    actions, retirement conditions, and reopen triggers.
+-   `data/typing-delay-open-question-packet-outcome-100-pass-audit.csv`: fifth
+    forced 100-pass audit over packet outcome rules, checking pass, mixed, fail,
+    false-pass, false-fail, scope, rollback, archive, reopen, and stop-rule
+    lenses.
+-   `data/typing-delay-open-question-packet-outcome-100-pass-summary.csv`:
+    rollup of packet outcome rules by outcome case and pass result.
+-   `data/typing-delay-open-question-packet-outcome-100-pass-checkpoints.csv`:
+    checkpoints for outcome-rule, packet, outcome-case, retirement-value, and
+    analysis-only-value saturation.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10722,6 +10734,29 @@ packets are ready for implementation or measurement work once their harness
 wiring is done. The five blocked packets are not made better by another timing
 or prose pass: they need an external policy consumer, compatibility design,
 passive observer, calibrated display endpoint, or replay workload artifact.
+
+I then tied the execution contracts to predeclared outcomes. For each packet,
+the matrix states what a pass, mixed, or fail result means, which action is
+allowed, when the open question can be retired, and what would reopen it.
+
+![Open question packet outcome decision value](figures/297-open-question-packet-outcome-decision-value.png)
+
+![Open question packet outcome 100-pass saturation](figures/298-open-question-packet-outcome-100-pass-saturation.png)
+
+![Open question packet outcome by kind](figures/299-open-question-packet-outcome-by-kind.png)
+
+| Outcome-rule check | Result |
+| ------------------ | ------ |
+| Outcome rules | `27`: pass, mixed, and fail for each of the `9` packet contracts. |
+| Saturation | All packets and outcome cases are covered by pass `27`; passes `28-100` add no outcome rule. |
+| Retirement value | Total predeclared retirement/decision value is `150`: local pass `57`, fail/reject outcomes `46`, external pass `38`, and mixed/narrow outcomes `9`. |
+| Mixed-result rule | Mixed evidence is always a narrowing rule, never a weak pass. |
+| Analysis-only value | `0` through pass `100`. |
+
+This closes the interpretation loophole for the packet layer. Once a packet is
+run, its result should move to one of three bins: act/retire on a scoped pass,
+narrow on mixed evidence, or reject/retire the candidate path on failure. More
+analysis without one of those packet results cannot change the outcome rule.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

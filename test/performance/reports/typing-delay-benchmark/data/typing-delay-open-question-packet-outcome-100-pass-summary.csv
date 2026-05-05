@@ -1,0 +1,8 @@
+outcome_case,pass_result,passes,first_pass,outcome_rules,packets,retirement_value,analysis_only_value,max_overclaim_risk
+pass,retire or act: local pass,4,1,4,4,57,0,3
+fail,retire or reject: fail outcome,9,3,9,9,46,0,2
+pass,claim expansion: external pass,5,13,5,5,38,0,4
+mixed,narrow: mixed outcome,9,2,9,9,9,0,5
+pass,repeat: outcome rule already named,25,28,9,9,0,0,4
+mixed,repeat: outcome rule already named,24,29,9,9,0,0,5
+fail,repeat: outcome rule already named,24,30,9,9,0,0,2

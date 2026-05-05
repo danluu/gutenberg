@@ -1,0 +1,11 @@
+pass_id,cumulative_outcome_rules,cumulative_packets,cumulative_outcome_cases,cumulative_retirement_value,cumulative_analysis_only_value
+1,1,1,1,18,0
+3,3,1,3,28,0
+9,9,3,3,72,0
+10,10,4,3,83,0
+20,20,7,3,124,0
+27,27,9,3,150,0
+28,27,9,3,150,0
+50,27,9,3,150,0
+75,27,9,3,150,0
+100,27,9,3,150,0

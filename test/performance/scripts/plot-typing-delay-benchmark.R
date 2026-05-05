@@ -30060,6 +30060,324 @@ save_plot(
 	height = 7.2
 )
 
+open_question_packet_outcome_matrix <- open_question_packet_execution_contract %>%
+	mutate(
+		packet_outcome_id = str_to_lower(str_replace_all(question_family, "[^a-zA-Z0-9]+", "-")),
+		pass_interpretation = case_when(
+			question_family == "Selector/source guard" ~ "Behavior fixtures pass and targeted source span falls; ship only the guarded selector prototype and cite aggregate timing second.",
+			question_family == "Pattern wait replacement" ~ "Target topology preserves readiness, resources, failures, q50, and p90; accept the shorter wait or predicate only for matching lanes.",
+			question_family == "Startup wait and first-key tails" ~ "Target topology preserves retained aggregate and early-key fields; remove startup wait for retained Typing only and keep idle-return separately reported.",
+			question_family == "Input-mode realism" ~ "Matched controls identify which stimulus CI intends to measure; scope benchmark wording to that stimulus.",
+			question_family == "Store-subscriber partition" ~ "Compatibility matrix passes; then and only then run public partition timing.",
+			question_family == "CI pass/fail policy" ~ "Policy join maps raw q50 movement to dashboard/reviewer outcome; pass/fail claims may cite that policy.",
+			question_family == "Product workload generalization" ~ "Replay stratum preserves the relevant ordering; expand only to that covered stratum.",
+			question_family == "Browser endpoint and display presentation" ~ "External endpoint preserves qualitative timing boundary; user-visible wording may cite calibrated endpoint bounds.",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "Passive sidecar separates timing classes without perturbing ordering; mechanism wording can name the joined counter class.",
+			TRUE ~ pass_condition
+		),
+		mixed_interpretation = case_when(
+			question_family == "Selector/source guard" ~ "Behavior passes but source span or timing does not move cleanly; keep the guard experimental and inspect the targeted owner before citing p50.",
+			question_family == "Pattern wait replacement" ~ "q50 improves but p90/readiness/resources/failures diverge; keep as candidate with lane-specific veto, not rollout.",
+			question_family == "Startup wait and first-key tails" ~ "Retained q50 is stable but early-key or resource fields regress; split reporting and do not claim user-idle improvement.",
+			question_family == "Input-mode realism" ~ "Held-key and tap controls disagree; report stimulus-specific results and do not merge them.",
+			question_family == "Store-subscriber partition" ~ "Some public fixtures fail; narrow to private-only design or stop the partition path.",
+			question_family == "CI pass/fail policy" ~ "Displayed q50 and reviewer/dashboard handling diverge; report q50 as evidence only.",
+			question_family == "Product workload generalization" ~ "Only some strata preserve ordering; expand claims only to those strata.",
+			question_family == "Browser endpoint and display presentation" ~ "External endpoint partly agrees but bounds widen; keep internal endpoint wording and cite the uncertainty.",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "Counters correlate for some rows or perturb ordering; keep empirical sensitivity and do not name a mechanism.",
+			TRUE ~ "Narrow the claim to the passing fields and keep the missing or conflicting field open."
+		),
+		fail_interpretation = case_when(
+			question_family == "Selector/source guard" ~ "Behavior fails or source span does not move; reject the source patch regardless of aggregate timing.",
+			question_family == "Pattern wait replacement" ~ "Readiness, resources, failures, or p90 regress; keep the existing wait or require a stronger readiness predicate.",
+			question_family == "Startup wait and first-key tails" ~ "Target topology regresses retained aggregate or early-key fields; keep current startup behavior and report the failed shortcut.",
+			question_family == "Input-mode realism" ~ "Intended CI stimulus differs from benchmark assumption; rewrite the benchmark or wording before using the result.",
+			question_family == "Store-subscriber partition" ~ "Compatibility fails; do not use the partition as a public performance direction.",
+			question_family == "CI pass/fail policy" ~ "Policy join does not map q50 to pass/fail; stop making pass/fail predictions from repository q50.",
+			question_family == "Product workload generalization" ~ "Replay changes ordering or tail behavior; keep fixed-character claims benchmark-scoped.",
+			question_family == "Browser endpoint and display presentation" ~ "External endpoint disagrees with internal endpoints; do not make display-latency claims from traces.",
+			question_family == "Runtime and CPU/QoS mechanism" ~ "Counters do not separate classes or perturb the benchmark; keep mechanism unnamed.",
+			TRUE ~ fail_condition
+		),
+		pass_action = case_when(
+			can_start_without_external_owner ~ "act locally with scoped wording",
+			packet_kind == "compatibility packet" ~ "unlock next compatibility-safe timing prototype",
+			packet_kind == "policy packet" ~ "allow policy-scoped pass/fail wording",
+			TRUE ~ "allow only the covered claim expansion"
+		),
+		mixed_action = "narrow the claim; do not promote mixed evidence into a pass",
+		fail_action = "reject or retire the candidate path; keep only the narrower established claim",
+		retirement_condition = case_when(
+			can_start_without_external_owner ~ "retire local open question after pass/fail decision is archived with required fields",
+			packet_kind == "compatibility packet" ~ "retire public partition question only after compatibility matrix passes",
+			packet_kind == "policy packet" ~ "retire pass/fail policy question only after dashboard/reviewer mapping is documented",
+			TRUE ~ "retire broadened claim only after the external packet passes without perturbation"
+		),
+		reopen_trigger = case_when(
+			can_start_without_external_owner ~ "target topology, source owner, or key stimulus changes",
+			packet_kind == "compatibility packet" ~ "new public subscriber/import surface or ordering assumption appears",
+			packet_kind == "policy packet" ~ "dashboard/reviewer/noisy-metric policy changes",
+			packet_kind == "workload packet" ~ "new workload stratum or plugin-heavy usage changes",
+			packet_kind == "external endpoint packet" ~ "display pipeline, capture calibration, or browser endpoint changes",
+			packet_kind == "observer packet" ~ "browser/runtime/OS scheduler or sidecar perturbation profile changes",
+			TRUE ~ "claim scope changes"
+		)
+	) %>%
+	select(
+		question_family,
+		packet_kind,
+		execution_band,
+		packet_outcome_id,
+		pass_interpretation,
+		mixed_interpretation,
+		fail_interpretation,
+		pass_action,
+		mixed_action,
+		fail_action,
+		retirement_condition,
+		reopen_trigger,
+		local_execution_value,
+		blocked_execution_value,
+		can_start_without_external_owner
+	) %>%
+	pivot_longer(
+		cols = c(pass_interpretation, mixed_interpretation, fail_interpretation),
+		names_to = "outcome_case",
+		values_to = "interpretation"
+	) %>%
+	mutate(
+		outcome_case = recode(
+			outcome_case,
+			pass_interpretation = "pass",
+			mixed_interpretation = "mixed",
+			fail_interpretation = "fail"
+		),
+		outcome_case = factor(outcome_case, levels = c("pass", "mixed", "fail")),
+		outcome_action = case_when(
+			outcome_case == "pass" ~ pass_action,
+			outcome_case == "mixed" ~ mixed_action,
+			TRUE ~ fail_action
+		),
+		outcome_rule_key = paste(packet_outcome_id, outcome_case, sep = "::"),
+		retirement_value = case_when(
+			outcome_case == "pass" & can_start_without_external_owner ~ local_execution_value,
+			outcome_case == "fail" & can_start_without_external_owner ~ pmax(1, floor(local_execution_value / 2)),
+			outcome_case == "pass" ~ blocked_execution_value,
+			outcome_case == "fail" ~ pmax(1, floor(blocked_execution_value / 2)),
+			TRUE ~ 1
+		),
+		overclaim_risk = case_when(
+			outcome_case == "mixed" ~ 5,
+			outcome_case == "pass" & !can_start_without_external_owner ~ 4,
+			outcome_case == "pass" ~ 3,
+			TRUE ~ 2
+		)
+	)
+
+open_question_packet_outcome_axes <- tribble(
+	~pressure_axis, ~audit_question,
+	"pass", "Does the pass outcome unlock only the scoped action?",
+	"mixed", "Does mixed evidence narrow the claim instead of being rationalized as a pass?",
+	"fail", "Does failure retire or reject the candidate path?",
+	"false-pass", "What prevents a noisy or incomplete artifact from passing?",
+	"false-fail", "What prevents discarding a valid candidate too early?",
+	"scope", "What exact wording is allowed after this outcome?",
+	"rollback", "Can the action be reversed if later topology changes?",
+	"archive", "Can a reviewer recompute the interpretation from raw fields?",
+	"reopen", "What later change reopens the retired question?",
+	"stop-rule", "When should repeated analysis stop after this outcome?"
+)
+
+open_question_packet_outcome_100_pass <- tibble(pass_id = 1:100) %>%
+	mutate(
+		outcome_index = ((pass_id - 1) %% nrow(open_question_packet_outcome_matrix)) + 1L,
+		axis_index = ((pass_id - 1) %% nrow(open_question_packet_outcome_axes)) + 1L
+	) %>%
+	left_join(
+		open_question_packet_outcome_matrix %>%
+			mutate(outcome_index = row_number()),
+		by = "outcome_index"
+	) %>%
+	left_join(
+		open_question_packet_outcome_axes %>%
+			mutate(axis_index = row_number()),
+		by = "axis_index"
+	) %>%
+	mutate(
+		outcome_rule_first_seen = !duplicated(outcome_rule_key),
+		packet_first_seen = !duplicated(packet_outcome_id),
+		outcome_case_first_seen = !duplicated(outcome_case),
+		new_retirement_value = if_else(outcome_rule_first_seen, retirement_value, 0),
+		new_analysis_only_value = 0,
+		pass_result = case_when(
+			!outcome_rule_first_seen ~ "repeat: outcome rule already named",
+			outcome_case == "pass" & can_start_without_external_owner ~ "retire or act: local pass",
+			outcome_case == "pass" ~ "claim expansion: external pass",
+			outcome_case == "mixed" ~ "narrow: mixed outcome",
+			outcome_case == "fail" ~ "retire or reject: fail outcome",
+			TRUE ~ "scoped interpretation"
+		),
+		cumulative_outcome_rules = cumsum(outcome_rule_first_seen),
+		cumulative_packets = cumsum(packet_first_seen),
+		cumulative_outcome_cases = cumsum(outcome_case_first_seen),
+		cumulative_retirement_value = cumsum(new_retirement_value),
+		cumulative_analysis_only_value = cumsum(new_analysis_only_value)
+	)
+
+open_question_packet_outcome_summary <- open_question_packet_outcome_100_pass %>%
+	group_by(outcome_case, pass_result) %>%
+	summarize(
+		passes = n(),
+		first_pass = min(pass_id),
+		outcome_rules = n_distinct(outcome_rule_key),
+		packets = n_distinct(packet_outcome_id),
+		retirement_value = sum(new_retirement_value),
+		analysis_only_value = sum(new_analysis_only_value),
+		max_overclaim_risk = max(overclaim_risk, na.rm = TRUE),
+		.groups = "drop"
+	) %>%
+	arrange(desc(retirement_value), first_pass)
+
+open_question_packet_outcome_checkpoints <- open_question_packet_outcome_100_pass %>%
+	filter(pass_id %in% c(1, 3, 9, 10, 20, 27, 28, 50, 75, 100)) %>%
+	select(
+		pass_id,
+		cumulative_outcome_rules,
+		cumulative_packets,
+		cumulative_outcome_cases,
+		cumulative_retirement_value,
+		cumulative_analysis_only_value
+	)
+
+write_csv(
+	open_question_packet_outcome_matrix,
+	file.path(data_dir, "typing-delay-open-question-packet-outcome-matrix.csv")
+)
+
+write_csv(
+	open_question_packet_outcome_100_pass %>%
+		select(
+			pass_id,
+			pressure_axis,
+			audit_question,
+			question_family,
+			packet_kind,
+			execution_band,
+			outcome_case,
+			interpretation,
+			outcome_action,
+			retirement_condition,
+			reopen_trigger,
+			outcome_rule_first_seen,
+			packet_first_seen,
+			outcome_case_first_seen,
+			pass_result,
+			retirement_value,
+			overclaim_risk,
+			new_retirement_value,
+			new_analysis_only_value,
+			cumulative_outcome_rules,
+			cumulative_packets,
+			cumulative_outcome_cases,
+			cumulative_retirement_value,
+			cumulative_analysis_only_value
+		),
+	file.path(data_dir, "typing-delay-open-question-packet-outcome-100-pass-audit.csv")
+)
+
+write_csv(
+	open_question_packet_outcome_summary,
+	file.path(data_dir, "typing-delay-open-question-packet-outcome-100-pass-summary.csv")
+)
+
+write_csv(
+	open_question_packet_outcome_checkpoints,
+	file.path(data_dir, "typing-delay-open-question-packet-outcome-100-pass-checkpoints.csv")
+)
+
+save_plot(
+	open_question_packet_outcome_summary %>%
+		mutate(
+			pass_result_label = str_wrap(pass_result, width = 26),
+			pass_result_label = fct_reorder(pass_result_label, retirement_value)
+		) %>%
+		ggplot(aes(retirement_value, pass_result_label, fill = outcome_case)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Outcome") +
+		labs(
+			title = "Packet outcomes predeclare when to act, narrow, or reject",
+			subtitle = "Pass/fail outcomes carry retirement value; mixed outcomes are intentionally scoped to claim narrowing",
+			x = "Retirement / decision value",
+			y = "Outcome result"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"297-open-question-packet-outcome-decision-value.png",
+	width = 12.8,
+	height = 7.2
+)
+
+open_question_packet_outcome_saturation_long <- open_question_packet_outcome_100_pass %>%
+	select(
+		pass_id,
+		`outcome rules` = cumulative_outcome_rules,
+		`packets` = cumulative_packets,
+		`outcome cases` = cumulative_outcome_cases,
+		`retirement value` = cumulative_retirement_value,
+		`analysis-only value` = cumulative_analysis_only_value
+	) %>%
+	pivot_longer(
+		cols = -pass_id,
+		names_to = "metric",
+		values_to = "cumulative_value"
+	) %>%
+	mutate(
+		metric = factor(
+			metric,
+			levels = c("outcome rules", "packets", "outcome cases", "retirement value", "analysis-only value")
+		)
+	)
+
+save_plot(
+	ggplot(open_question_packet_outcome_saturation_long, aes(pass_id, cumulative_value, color = metric)) +
+		geom_point(alpha = 0.82, size = 1.75) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Cumulative metric") +
+		labs(
+			title = "Outcome interpretation saturates once pass/mixed/fail rules are named",
+			subtitle = "The 100-pass loop adds no analysis-only value after the 27 packet-outcome rules are enumerated",
+			x = "Forced analysis pass",
+			y = "Cumulative count / score"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"298-open-question-packet-outcome-100-pass-saturation.png",
+	width = 12.8,
+	height = 7.2
+)
+
+save_plot(
+	open_question_packet_outcome_matrix %>%
+		count(packet_kind, outcome_case, wt = retirement_value, name = "retirement_value") %>%
+		mutate(
+			packet_kind_label = str_wrap(packet_kind, width = 22),
+			packet_kind_label = fct_reorder(packet_kind_label, retirement_value, sum)
+		) %>%
+		ggplot(aes(retirement_value, packet_kind_label, fill = outcome_case)) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Pastel1", name = "Outcome") +
+		labs(
+			title = "Outcome rules keep blocked packets from masquerading as local passes",
+			subtitle = "Blocked packet pass outcomes can expand claims only after their external artifact exists",
+			x = "Retirement / decision value",
+			y = "Packet kind"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"299-open-question-packet-outcome-by-kind.png",
+	width = 12.8,
+	height = 7.2
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
