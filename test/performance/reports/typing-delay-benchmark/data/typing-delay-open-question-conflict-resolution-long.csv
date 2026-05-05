@@ -1,0 +1,64 @@
+conflict,conflict_label,lane,dimension,score
+Local q50 vs CI topology,Local q50 vs CI topology,CI/readiness,severity,5
+Local q50 vs CI topology,Local q50 vs CI topology,CI/readiness,likelihood,4
+Local q50 vs CI topology,Local q50 vs CI topology,CI/readiness,resolution burden,3
+q50 improvement vs failures/resources,"q50 improvement vs
+failures/resources",CI/readiness,severity,5
+q50 improvement vs failures/resources,"q50 improvement vs
+failures/resources",CI/readiness,likelihood,4
+q50 improvement vs failures/resources,"q50 improvement vs
+failures/resources",CI/readiness,resolution burden,3
+Retained q50 vs first-input latency,"Retained q50 vs first-input
+latency",CI/readiness,severity,4
+Retained q50 vs first-input latency,"Retained q50 vs first-input
+latency",CI/readiness,likelihood,4
+Retained q50 vs first-input latency,"Retained q50 vs first-input
+latency",CI/readiness,resolution burden,2
+Behavior fixtures vs aggregate p50,"Behavior fixtures vs aggregate
+p50",Source/code,severity,5
+Behavior fixtures vs aggregate p50,"Behavior fixtures vs aggregate
+p50",Source/code,likelihood,3
+Behavior fixtures vs aggregate p50,"Behavior fixtures vs aggregate
+p50",Source/code,resolution burden,3
+Source spans vs aggregate p50,Source spans vs aggregate p50,Source/code,severity,4
+Source spans vs aggregate p50,Source spans vs aggregate p50,Source/code,likelihood,3
+Source spans vs aggregate p50,Source spans vs aggregate p50,Source/code,resolution burden,3
+Public subscriber compatibility vs fanout win,"Public subscriber compatibility
+vs fanout win",Source/code,severity,5
+Public subscriber compatibility vs fanout win,"Public subscriber compatibility
+vs fanout win",Source/code,likelihood,3
+Public subscriber compatibility vs fanout win,"Public subscriber compatibility
+vs fanout win",Source/code,resolution burden,4
+Sidecar joinability vs mechanism naming,"Sidecar joinability vs
+mechanism naming",Sidecar/mechanism,severity,5
+Sidecar joinability vs mechanism naming,"Sidecar joinability vs
+mechanism naming",Sidecar/mechanism,likelihood,4
+Sidecar joinability vs mechanism naming,"Sidecar joinability vs
+mechanism naming",Sidecar/mechanism,resolution burden,5
+CPU counters vs aggregate latency classes,"CPU counters vs aggregate
+latency classes",CPU/QoS,severity,4
+CPU counters vs aggregate latency classes,"CPU counters vs aggregate
+latency classes",CPU/QoS,likelihood,3
+CPU counters vs aggregate latency classes,"CPU counters vs aggregate
+latency classes",CPU/QoS,resolution burden,5
+Replay strata vs fixed-x source result,"Replay strata vs fixed-x source
+result",Claim expansion,severity,4
+Replay strata vs fixed-x source result,"Replay strata vs fixed-x source
+result",Claim expansion,likelihood,3
+Replay strata vs fixed-x source result,"Replay strata vs fixed-x source
+result",Claim expansion,resolution burden,4
+External endpoint vs Chromium-internal visual endpoint,"External endpoint vs
+Chromium-internal visual
+endpoint",Claim expansion,severity,4
+External endpoint vs Chromium-internal visual endpoint,"External endpoint vs
+Chromium-internal visual
+endpoint",Claim expansion,likelihood,3
+External endpoint vs Chromium-internal visual endpoint,"External endpoint vs
+Chromium-internal visual
+endpoint",Claim expansion,resolution burden,5
+Dashboard/reviewer policy vs repository q50 display,"Dashboard/reviewer policy vs
+repository q50 display",External policy,severity,4
+Dashboard/reviewer policy vs repository q50 display,"Dashboard/reviewer policy vs
+repository q50 display",External policy,likelihood,3
+Dashboard/reviewer policy vs repository q50 display,"Dashboard/reviewer policy vs
+repository q50 display",External policy,resolution burden,4

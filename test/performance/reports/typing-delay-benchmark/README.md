@@ -1126,6 +1126,13 @@ The R script derives:
     for each remaining decision.
 -   `data/typing-delay-open-question-action-risk-summary.csv`: rollup of
     action-risk regions by claim lane.
+-   `data/typing-delay-open-question-conflict-resolution.csv`: conflict-resolution
+    ledger for cases where two artifacts point to different claims or actions.
+-   `data/typing-delay-open-question-conflict-resolution-long.csv`: long-form
+    severity, likelihood, and resolution-burden scores used for the conflict
+    heatmap.
+-   `data/typing-delay-open-question-conflict-resolution-summary.csv`: rollup of
+    conflict-resolution actions by claim lane.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -9806,6 +9813,33 @@ This is the near-term decision rule. The only open-question row where waiting is
 itself a large cost is wait removal, and even there the answer is validation, not
 blind removal. Everywhere else, acting on incomplete evidence is more expensive
 than preserving narrow wording until the required artifact exists.
+
+The conflict-resolution audit handles the remaining failure mode: two artifacts
+can both be true while supporting different claims. The rule is not to average
+them. The artifact closest to the claim wins, and the losing artifact becomes a
+scope limiter or control.
+
+![Open question conflict resolution](figures/236-open-question-conflict-resolution.png)
+
+![Open question conflict priority](figures/237-open-question-conflict-priority.png)
+
+| Conflict | Resolution rule |
+| -------- | --------------- |
+| Local q50 disagrees with CI topology | CI policy follows the target-topology artifact; local rows remain local controls |
+| q50 improves while failures/resources worsen | correctness and readiness fields veto wait-removal claims |
+| retained q50 disagrees with first-input latency | split retained typing and idle-input metrics |
+| behavior fixtures disagree with aggregate p50 | behavior fixtures reject or re-scope source patches before timing is cited |
+| source spans disagree with aggregate p50 | source-span evidence gates causal/source claims; aggregate-only movement stays unexplained |
+| public subscriber compatibility disagrees with fanout wins | public API compatibility vetoes data-layer fanout changes |
+| sidecar joinability disagrees with mechanism naming | mechanism names require passive joined sidecar evidence |
+| CPU counters disagree with aggregate latency classes | system names require counters that separate classes without perturbation |
+| replay or external endpoints disagree with fixed-`x` / internal endpoints | product/display wording narrows to the deepest passing stratum or endpoint |
+| dashboard policy disagrees with repository q50 display | policy wins for pass/fail claims; repository q50 remains evidence production |
+
+This closes another loophole in the open-question story. A disagreement is not a
+reason to reopen the local benchmark result by default. It is a reason to choose
+the artifact that actually measures the claim being made and narrow the wording
+to the passing artifact.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

@@ -1,0 +1,10 @@
+lane,conflict_action,conflicts,lane_conflicts
+CI/readiness,split metric or topology,1,3
+CI/readiness,veto unsafe action,2,3
+Source/code,narrow wording,1,3
+Source/code,veto unsafe action,1,3
+Source/code,block broad claim,1,3
+Sidecar/mechanism,block broad claim,1,1
+CPU/QoS,narrow wording,1,1
+Claim expansion,narrow wording,2,2
+External policy,narrow wording,1,1

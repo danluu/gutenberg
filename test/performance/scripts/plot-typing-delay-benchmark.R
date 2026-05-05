@@ -24392,6 +24392,145 @@ save_plot(
 	height = 8.0
 )
 
+open_question_conflict_resolution <- tribble(
+	~conflict, ~lane, ~conflict_class, ~severity, ~likelihood, ~resolution_burden, ~winning_evidence, ~losing_evidence, ~resolution_rule, ~narrowed_claim, ~invalid_resolution,
+	"Local q50 vs CI topology", "CI/readiness", "topology", 5, 4, 3, "real Performance Tests artifacts with raw retained rows, failures, resources, first-key tails, and environment metadata", "local macOS q50 ordering by itself", "CI policy follows the target-topology artifact; local rows remain local controls.", "local benchmark-artifact wording plus target-lane CI actionability only", "averaging local and CI rows into one universal q50",
+	"q50 improvement vs failures/resources", "CI/readiness", "correctness/readiness", 5, 4, 3, "failure counts, actionability retries, preview/canvas status, resource timing, and retained counts", "aggregate q50 alone", "Correctness/readiness fields veto a wait-removal claim even when q50 improves.", "candidate wait reduction only after non-q50 fields pass", "treating faster q50 as safe wait removal",
+	"Retained q50 vs first-input latency", "CI/readiness", "metric scope", 4, 4, 2, "separate first-key and first-retained-key distributions", "retained q50 alone", "First-input results define a separate idle-input metric; retained q50 keeps its current scope.", "two metrics: retained typing and idle/input-after-wait", "hiding first-input tails inside retained q50",
+	"Behavior fixtures vs aggregate p50", "Source/code", "semantic safety", 5, 3, 3, "behavior and compatibility fixtures", "aggregate p50 or listener-count reduction", "Behavior failures reject or re-scope source patches before timing is cited.", "only source owners whose behavior fixtures passed", "calling a p50 win semantic safety",
+	"Source spans vs aggregate p50", "Source/code", "causal attribution", 4, 3, 3, "marker/source-span collapse for the targeted owner", "aggregate p50 movement without owner collapse", "Source-span evidence gates causal/source claims; aggregate-only movement stays unexplained.", "timing movement without source-causality wording", "crediting a patch without owner-span collapse",
+	"Public subscriber compatibility vs fanout win", "Source/code", "API compatibility", 5, 3, 4, "public subscribe and persistence-selector compatibility fixtures", "marker listener-count or fanout collapse", "Public API compatibility vetoes data-layer fanout changes.", "private side-channel or compatible selector class only", "breaking subscriber semantics for a marker-only win",
+	"Sidecar joinability vs mechanism naming", "Sidecar/mechanism", "observer validity", 5, 4, 5, "sidecar join coverage, clock sync, renderer identity, and observer-on/off ordering controls", "aggregate latency classes", "Mechanism names require passive joined sidecar evidence.", "empirical runtime/checkpoint sensitivity only", "naming V8/scheduler state from aggregate rows",
+	"CPU counters vs aggregate latency classes", "CPU/QoS", "mechanism naming", 4, 3, 5, "root counters joined to retained keys and preserving ordering", "fast/slow latency classes alone", "System names require counters that separate classes without perturbation.", "empirical CPU/QoS sensitivity only", "calling a latency class frequency/QoS/cache",
+	"Replay strata vs fixed-x source result", "Claim expansion", "workload scope", 4, 3, 4, "per-stratum replay assertions, source spans, and endpoints", "fixed-x insertion result alone", "Replay results define product scope; fixed-x remains a benchmark/source control.", "only product strata that reproduce the effect", "claiming representative product latency from fixed-x",
+	"External endpoint vs Chromium-internal visual endpoint", "Claim expansion", "presentation scope", 4, 3, 5, "calibrated external OCR/present/camera endpoint joined to retained keys", "internal screenshot/paint/DrawFrame endpoint alone", "External endpoints define hardware/display wording; internal endpoints retain Chromium-internal scope.", "deepest endpoint with matching ordering", "calling internal endpoint timing hardware display latency",
+	"Dashboard/reviewer policy vs repository q50 display", "External policy", "policy", 4, 3, 4, "documented dashboard or reviewer threshold/noisy-metric policy joined to archived artifacts", "repository q50 display/upload path alone", "Policy wins for pass/fail claims; repo q50 remains evidence production.", "q50 movement without pass/fail prediction", "treating printed q50 as numeric gate"
+) %>%
+	mutate(
+		lane = factor(lane, levels = c("Benchmark artifact", "CI/readiness", "Source/code", "Sidecar/mechanism", "CPU/QoS", "Claim expansion", "External policy")),
+		conflict_class = factor(
+			conflict_class,
+			levels = c(
+				"topology",
+				"correctness/readiness",
+				"metric scope",
+				"semantic safety",
+				"causal attribution",
+				"API compatibility",
+				"observer validity",
+				"mechanism naming",
+				"workload scope",
+				"presentation scope",
+				"policy"
+			)
+		),
+		conflict_label = str_wrap(conflict, width = 31),
+		conflict_priority = severity * likelihood + resolution_burden,
+		conflict_action = case_when(
+			severity >= 5 & resolution_burden >= 4 ~ "block broad claim",
+			severity >= 5 ~ "veto unsafe action",
+			likelihood >= 4 ~ "split metric or topology",
+			TRUE ~ "narrow wording"
+		),
+		conflict_action = factor(
+			conflict_action,
+			levels = c("narrow wording", "split metric or topology", "veto unsafe action", "block broad claim")
+		)
+	)
+
+open_question_conflict_resolution_long <- open_question_conflict_resolution %>%
+	select(conflict, conflict_label, lane, severity, likelihood, resolution_burden) %>%
+	pivot_longer(
+		cols = c(severity, likelihood, resolution_burden),
+		names_to = "dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		dimension = recode(
+			dimension,
+			severity = "severity",
+			likelihood = "likelihood",
+			resolution_burden = "resolution burden"
+		),
+		dimension = factor(dimension, levels = c("severity", "likelihood", "resolution burden")),
+		conflict_label = fct_reorder(conflict_label, as.numeric(lane), .desc = TRUE)
+	)
+
+open_question_conflict_resolution_summary <- open_question_conflict_resolution %>%
+	count(lane, conflict_action, name = "conflicts") %>%
+	group_by(lane) %>%
+	mutate(lane_conflicts = sum(conflicts)) %>%
+	ungroup()
+
+write_csv(
+	open_question_conflict_resolution %>%
+		select(
+			conflict,
+			lane,
+			conflict_class,
+			severity,
+			likelihood,
+			resolution_burden,
+			conflict_priority,
+			conflict_action,
+			winning_evidence,
+			losing_evidence,
+			resolution_rule,
+			narrowed_claim,
+			invalid_resolution
+		),
+	file.path(data_dir, "typing-delay-open-question-conflict-resolution.csv")
+)
+
+write_csv(
+	open_question_conflict_resolution_long,
+	file.path(data_dir, "typing-delay-open-question-conflict-resolution-long.csv")
+)
+
+write_csv(
+	open_question_conflict_resolution_summary,
+	file.path(data_dir, "typing-delay-open-question-conflict-resolution-summary.csv")
+)
+
+save_plot(
+	ggplot(open_question_conflict_resolution_long, aes(dimension, conflict_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.8, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "YlOrRd", direction = 1, name = "Score") +
+		labs(
+			title = "Conflicting artifacts should narrow claims instead of being averaged",
+			subtitle = "Correctness, topology, compatibility, and observer-validity evidence outrank aggregate q50 for broad claims",
+			x = "Conflict dimension",
+			y = "Potential conflict"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom"),
+	"236-open-question-conflict-resolution.png",
+	width = 13.2,
+	height = 8.2
+)
+
+save_plot(
+	ggplot(
+		open_question_conflict_resolution %>%
+			mutate(conflict_label = fct_reorder(conflict_label, conflict_priority)),
+		aes(conflict_priority, conflict_label, fill = conflict_action)
+	) +
+		geom_col(width = 0.72) +
+		scale_fill_brewer(type = "qual", palette = "Set2", name = "Resolution") +
+		labs(
+			title = "Highest-priority conflicts are vetoes, not tradeoffs",
+			subtitle = "Broad claims should wait when correctness, compatibility, or observer validity disagrees with q50",
+			x = "Conflict priority",
+			y = "Potential conflict"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"237-open-question-conflict-priority.png",
+	width = 12.8,
+	height = 8.0
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
