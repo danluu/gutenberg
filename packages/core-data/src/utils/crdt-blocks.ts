@@ -78,6 +78,7 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 export type MergeCursorPosition = WPBlockSelection | null;
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+const previousBlocksByYArray = new WeakMap< YBlocks, Block[] >();
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -155,6 +156,346 @@ function makeBlocksSerializable( blocks: Block[] ): Block[] {
 			innerBlocks: makeBlocksSerializable( innerBlocks ),
 		};
 	} );
+}
+
+function getBlockClientId( block: Block ): string | undefined {
+	return typeof block.clientId === 'string' && block.clientId
+		? block.clientId
+		: undefined;
+}
+
+function getClientIdsIfEveryBlockHasUniqueId(
+	blocks: Block[]
+): string[] | null {
+	const clientIds: string[] = [];
+	const seenClientIds = new Set< string >();
+
+	for ( const block of blocks ) {
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId || seenClientIds.has( clientId ) ) {
+			return null;
+		}
+
+		clientIds.push( clientId );
+		seenClientIds.add( clientId );
+	}
+
+	return clientIds;
+}
+
+function getBlocksByClientIdIfEveryBlockHasUniqueId(
+	blocks: Block[]
+): Map< string, Block > | null {
+	const clientIds = getClientIdsIfEveryBlockHasUniqueId( blocks );
+
+	if ( ! clientIds ) {
+		return null;
+	}
+
+	return new Map(
+		clientIds.map( ( clientId, index ) => [ clientId, blocks[ index ] ] )
+	);
+}
+
+function findBlockIndexByClientId( blocks: Block[], clientId: string ): number {
+	return blocks.findIndex(
+		( block ) => getBlockClientId( block ) === clientId
+	);
+}
+
+function areClientIdsInSameOrder(
+	firstClientIds: string[],
+	secondClientIds: string[]
+): boolean {
+	return firstClientIds.every(
+		( clientId, index ) => secondClientIds[ index ] === clientId
+	);
+}
+
+function getRemoteBlockInsertIndex(
+	currentBlocks: Block[],
+	currentIndex: number,
+	blocksToSync: Block[],
+	blockClientIdsToSync: Set< string >
+): number {
+	for ( let index = currentIndex - 1; index >= 0; index-- ) {
+		const previousClientId = getBlockClientId( currentBlocks[ index ] );
+
+		if (
+			previousClientId &&
+			blockClientIdsToSync.has( previousClientId )
+		) {
+			const previousIndex = findBlockIndexByClientId(
+				blocksToSync,
+				previousClientId
+			);
+
+			return previousIndex === -1
+				? blocksToSync.length
+				: previousIndex + 1;
+		}
+	}
+
+	for (
+		let index = currentIndex + 1;
+		index < currentBlocks.length;
+		index++
+	) {
+		const nextClientId = getBlockClientId( currentBlocks[ index ] );
+
+		if ( nextClientId && blockClientIdsToSync.has( nextClientId ) ) {
+			const nextIndex = findBlockIndexByClientId(
+				blocksToSync,
+				nextClientId
+			);
+
+			return nextIndex === -1 ? blocksToSync.length : nextIndex;
+		}
+	}
+
+	return blocksToSync.length;
+}
+
+function hasReorderedPreviousClientIds(
+	localClientIds: string[],
+	previousClientIds: string[]
+): boolean {
+	const previousClientIdSet = new Set( previousClientIds );
+	const localClientIdSet = new Set( localClientIds );
+	const localPreviousClientIds = localClientIds.filter( ( clientId ) =>
+		previousClientIdSet.has( clientId )
+	);
+	const previousLocalClientIds = previousClientIds.filter( ( clientId ) =>
+		localClientIdSet.has( clientId )
+	);
+
+	return ! areClientIdsInSameOrder(
+		localPreviousClientIds,
+		previousLocalClientIds
+	);
+}
+
+function reconcileStaleLocalBlockAttributes(
+	localAttributes: BlockAttributes,
+	previousAttributes: BlockAttributes,
+	currentAttributes: BlockAttributes
+): BlockAttributes {
+	let reconciledAttributes: BlockAttributes | undefined;
+	const attributeNames = new Set( [
+		...Object.keys( localAttributes ),
+		...Object.keys( previousAttributes ),
+		...Object.keys( currentAttributes ),
+	] );
+
+	attributeNames.forEach( ( attributeName ) => {
+		const hasLocalAttribute = Object.hasOwn(
+			localAttributes,
+			attributeName
+		);
+		const hadPreviousAttribute = Object.hasOwn(
+			previousAttributes,
+			attributeName
+		);
+		const localAttribute = localAttributes[ attributeName ];
+		const previousAttribute = previousAttributes[ attributeName ];
+		const localAttributeIsUnchanged =
+			hasLocalAttribute === hadPreviousAttribute &&
+			( ! hasLocalAttribute ||
+				fastDeepEqual( localAttribute, previousAttribute ) );
+
+		if ( ! localAttributeIsUnchanged ) {
+			return;
+		}
+
+		if ( ! reconciledAttributes ) {
+			reconciledAttributes = { ...localAttributes };
+		}
+
+		const hasCurrentAttribute = Object.hasOwn(
+			currentAttributes,
+			attributeName
+		);
+		const currentAttribute = currentAttributes[ attributeName ];
+
+		if ( hasCurrentAttribute ) {
+			reconciledAttributes[ attributeName ] = currentAttribute;
+		} else {
+			delete reconciledAttributes[ attributeName ];
+		}
+	} );
+
+	return reconciledAttributes ?? localAttributes;
+}
+
+function reconcileStaleLocalBlock(
+	localBlock: Block,
+	previousBlock: Block,
+	currentBlock: Block
+): Block {
+	if ( fastDeepEqual( localBlock, previousBlock ) ) {
+		return currentBlock;
+	}
+
+	let reconciledBlock: Block | undefined;
+	const getReconciledBlock = () => {
+		reconciledBlock ??= { ...localBlock };
+		return reconciledBlock;
+	};
+
+	if (
+		localBlock.name === previousBlock.name &&
+		localBlock.name === currentBlock.name
+	) {
+		const reconciledAttributes = reconcileStaleLocalBlockAttributes(
+			localBlock.attributes,
+			previousBlock.attributes,
+			currentBlock.attributes
+		);
+
+		if ( reconciledAttributes !== localBlock.attributes ) {
+			getReconciledBlock().attributes = reconciledAttributes;
+		}
+	}
+
+	const reconciledInnerBlocks = reconcileStaleLocalBlockValues(
+		localBlock.innerBlocks ?? [],
+		previousBlock.innerBlocks ?? [],
+		currentBlock.innerBlocks ?? []
+	);
+
+	if ( reconciledInnerBlocks !== localBlock.innerBlocks ) {
+		getReconciledBlock().innerBlocks = reconciledInnerBlocks;
+	}
+
+	return reconciledBlock ?? localBlock;
+}
+
+function reconcileStaleLocalBlockValues(
+	localBlocks: Block[],
+	previousBlocks: Block[],
+	currentBlocks: Block[]
+): Block[] {
+	const previousBlocksByClientId =
+		getBlocksByClientIdIfEveryBlockHasUniqueId( previousBlocks );
+	const currentBlocksByClientId =
+		getBlocksByClientIdIfEveryBlockHasUniqueId( currentBlocks );
+
+	if ( ! previousBlocksByClientId || ! currentBlocksByClientId ) {
+		return localBlocks;
+	}
+
+	let reconciledBlocks: Block[] | undefined;
+
+	localBlocks.forEach( ( localBlock, index ) => {
+		const clientId = getBlockClientId( localBlock );
+
+		if ( ! clientId ) {
+			return;
+		}
+
+		const previousBlock = previousBlocksByClientId.get( clientId );
+		const currentBlock = currentBlocksByClientId.get( clientId );
+
+		if ( ! previousBlock || ! currentBlock ) {
+			return;
+		}
+
+		const reconciledBlock = reconcileStaleLocalBlock(
+			localBlock,
+			previousBlock,
+			currentBlock
+		);
+
+		if ( reconciledBlock === localBlock ) {
+			return;
+		}
+
+		if ( ! reconciledBlocks ) {
+			reconciledBlocks = [ ...localBlocks ];
+		}
+
+		reconciledBlocks[ index ] = reconciledBlock;
+	} );
+
+	return reconciledBlocks ?? localBlocks;
+}
+
+function reconcileStaleLocalBlocks(
+	yblocks: YBlocks,
+	localBlocksToSync: Block[]
+): Block[] {
+	const previousBlocks = previousBlocksByYArray.get( yblocks );
+
+	if ( ! previousBlocks ) {
+		return localBlocksToSync;
+	}
+
+	const localClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( localBlocksToSync );
+	const previousClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( previousBlocks );
+	const currentBlocks = yblocks.toJSON() as Block[];
+	const currentClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( currentBlocks );
+
+	if ( ! localClientIds || ! previousClientIds || ! currentClientIds ) {
+		return localBlocksToSync;
+	}
+
+	const reconciledLocalBlocks = reconcileStaleLocalBlockValues(
+		localBlocksToSync,
+		previousBlocks,
+		currentBlocks
+	);
+	const localClientIdSet = new Set( localClientIds );
+	const previousClientIdSet = new Set( previousClientIds );
+	const currentClientIdSet = new Set( currentClientIds );
+	const hasLocalReorder = hasReorderedPreviousClientIds(
+		localClientIds,
+		previousClientIds
+	);
+	const remotelyDeletedClientIds = new Set(
+		previousClientIds.filter(
+			( clientId ) =>
+				localClientIdSet.has( clientId ) &&
+				! currentClientIdSet.has( clientId )
+		)
+	);
+	const blocksToSync = reconciledLocalBlocks.filter( ( block ) => {
+		const clientId = getBlockClientId( block );
+		return ! clientId || ! remotelyDeletedClientIds.has( clientId );
+	} );
+	const blockClientIdsToSync = new Set(
+		blocksToSync.map( ( block ) => getBlockClientId( block ) as string )
+	);
+
+	currentBlocks.forEach( ( currentBlock, currentIndex ) => {
+		const clientId = getBlockClientId( currentBlock );
+
+		if (
+			! clientId ||
+			localClientIdSet.has( clientId ) ||
+			blockClientIdsToSync.has( clientId )
+		) {
+			return;
+		}
+
+		if ( previousClientIdSet.has( clientId ) && ! hasLocalReorder ) {
+			return;
+		}
+
+		const insertIndex = getRemoteBlockInsertIndex(
+			currentBlocks,
+			currentIndex,
+			blocksToSync,
+			blockClientIdsToSync
+		);
+		blocksToSync.splice( insertIndex, 0, currentBlock );
+		blockClientIdsToSync.add( clientId );
+	} );
+
+	return blocksToSync;
 }
 
 /**
@@ -434,8 +775,32 @@ export function mergeCrdtBlocks(
 		);
 	}
 
-	const incomingBlocksToSync =
+	const localBlocksToSync =
 		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const previousBlocks = previousBlocksByYArray.get( yblocks );
+	const blocksToSync = reconcileStaleLocalBlocks(
+		yblocks,
+		localBlocksToSync
+	);
+
+	mergeCrdtBlocksIntoYBlocks(
+		yblocks,
+		blocksToSync,
+		attributeCursor,
+		previousBlocks
+	);
+	previousBlocksByYArray.set( yblocks, localBlocksToSync );
+}
+
+function mergeCrdtBlocksIntoYBlocks(
+	yblocks: YBlocks,
+	incomingBlocksToSync: Block[],
+	attributeCursor: MergeCursorPosition,
+	previousBlocks?: Block[]
+): void {
+	const previousBlocksByClientId = previousBlocks
+		? getBlocksByClientIdIfEveryBlockHasUniqueId( previousBlocks )
+		: null;
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -495,6 +860,13 @@ export function mergeCrdtBlocks(
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
 		const incomingYBlock = incomingBlocksToSync[ left ];
 		const localYBlock = yblocks.get( left );
+		const incomingClientId = getBlockClientId( incomingYBlock );
+		const localClientId = localYBlock.get( 'clientId' );
+		const isSameLogicalBlock =
+			!! incomingClientId && incomingClientId === localClientId;
+		const previousBlock = isSameLogicalBlock
+			? previousBlocksByClientId?.get( incomingClientId )
+			: undefined;
 
 		Object.entries( incomingYBlock ).forEach(
 			( [ incomingBlockProperty, incomingBlockPropertyValue ] ) => {
@@ -518,6 +890,7 @@ export function mergeCrdtBlocks(
 						}
 
 						// Otherwise the attributes need to be merged.
+						const previousAttributes = previousBlock?.attributes;
 						Object.entries( incomingAttributes ).forEach(
 							( [
 								incomingAttributeName,
@@ -526,12 +899,31 @@ export function mergeCrdtBlocks(
 								const currentAttribute = localAttributes?.get(
 									incomingAttributeName
 								);
+								const previousAttributeValue =
+									previousAttributes?.[
+										incomingAttributeName
+									];
 
 								const isExpectedType = isExpectedAttributeType(
 									incomingYBlock.name,
 									incomingAttributeName,
 									currentAttribute
 								);
+
+								if (
+									previousAttributes &&
+									Object.hasOwn(
+										previousAttributes,
+										incomingAttributeName
+									) &&
+									fastDeepEqual(
+										previousAttributeValue,
+										incomingAttributeValue
+									) &&
+									isExpectedType
+								) {
+									return;
+								}
 
 								// Y types (Y.Text, Y.Array, Y.Map) cannot be
 								// compared with fastDeepEqual against plain values.
@@ -565,9 +957,15 @@ export function mergeCrdtBlocks(
 						localAttributes.forEach(
 							( _attrValue: unknown, attrName: string ) => {
 								if (
-									! incomingBlockPropertyValue.hasOwnProperty(
+									! Object.hasOwn(
+										incomingBlockPropertyValue,
 										attrName
-									)
+									) &&
+									( ! previousAttributes ||
+										Object.hasOwn(
+											previousAttributes,
+											attrName
+										) )
 								) {
 									localAttributes.delete( attrName );
 								}
@@ -591,15 +989,28 @@ export function mergeCrdtBlocks(
 							);
 						}
 
-						mergeCrdtBlocks(
+						mergeCrdtBlocksIntoYBlocks(
 							yInnerBlocks,
 							incomingBlockPropertyValue ?? [],
-							attributeCursor
+							attributeCursor,
+							previousBlock?.innerBlocks
 						);
 						break;
 					}
 
 					default:
+						if (
+							previousBlock &&
+							fastDeepEqual(
+								incomingYBlock[ incomingBlockProperty ],
+								( previousBlock as Record< string, unknown > )[
+									incomingBlockProperty
+								]
+							)
+						) {
+							break;
+						}
+
 						if (
 							! fastDeepEqual(
 								incomingYBlock[ incomingBlockProperty ],
@@ -615,7 +1026,10 @@ export function mergeCrdtBlocks(
 			}
 		);
 		localYBlock.forEach( ( _v, k ) => {
-			if ( ! incomingYBlock.hasOwnProperty( k ) ) {
+			if (
+				! Object.hasOwn( incomingYBlock, k ) &&
+				( ! previousBlock || Object.hasOwn( previousBlock, k ) )
+			) {
 				localYBlock.delete( k );
 			}
 		} );
