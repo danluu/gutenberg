@@ -1,0 +1,97 @@
+question_family,question_label,review_class,review_dimension,score
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe scoped conclusion,maintainer risk,1
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe scoped conclusion,measurement risk,2
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe scoped conclusion,benchmark risk,2
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe scoped conclusion,current rebuttal,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe scoped conclusion,action safety,5
+Held-key cliff and metric split,"Held-key cliff and metric
+split",safe scoped conclusion,overwording risk,2
+Persistence ordering boundary,Persistence ordering boundary,wording objection,maintainer risk,1
+Persistence ordering boundary,Persistence ordering boundary,wording objection,measurement risk,4
+Persistence ordering boundary,Persistence ordering boundary,wording objection,benchmark risk,3
+Persistence ordering boundary,Persistence ordering boundary,wording objection,current rebuttal,4
+Persistence ordering boundary,Persistence ordering boundary,wording objection,action safety,4
+Persistence ordering boundary,Persistence ordering boundary,wording objection,overwording risk,5
+Input mode versus product typing,"Input mode versus product
+typing",safe scoped conclusion,maintainer risk,2
+Input mode versus product typing,"Input mode versus product
+typing",safe scoped conclusion,measurement risk,3
+Input mode versus product typing,"Input mode versus product
+typing",safe scoped conclusion,benchmark risk,5
+Input mode versus product typing,"Input mode versus product
+typing",safe scoped conclusion,current rebuttal,4
+Input mode versus product typing,"Input mode versus product
+typing",safe scoped conclusion,action safety,5
+Input mode versus product typing,"Input mode versus product
+typing",safe scoped conclusion,overwording risk,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,measurement-identity objection,maintainer risk,1
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,measurement-identity objection,measurement risk,5
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,measurement-identity objection,benchmark risk,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,measurement-identity objection,current rebuttal,3
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,measurement-identity objection,action safety,4
+Runtime checkpoint mechanism,Runtime checkpoint mechanism,measurement-identity objection,overwording risk,4
+CPU/QoS mechanism,CPU/QoS mechanism,measurement-identity objection,maintainer risk,1
+CPU/QoS mechanism,CPU/QoS mechanism,measurement-identity objection,measurement risk,5
+CPU/QoS mechanism,CPU/QoS mechanism,measurement-identity objection,benchmark risk,3
+CPU/QoS mechanism,CPU/QoS mechanism,measurement-identity objection,current rebuttal,2
+CPU/QoS mechanism,CPU/QoS mechanism,measurement-identity objection,action safety,4
+CPU/QoS mechanism,CPU/QoS mechanism,measurement-identity objection,overwording risk,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",external-validity objection,maintainer risk,2
+Startup wait and first-key tails,"Startup wait and first-key
+tails",external-validity objection,measurement risk,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",external-validity objection,benchmark risk,5
+Startup wait and first-key tails,"Startup wait and first-key
+tails",external-validity objection,current rebuttal,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",external-validity objection,action safety,3
+Startup wait and first-key tails,"Startup wait and first-key
+tails",external-validity objection,overwording risk,4
+Pattern wait replacement,Pattern wait replacement,external-validity objection,maintainer risk,2
+Pattern wait replacement,Pattern wait replacement,external-validity objection,measurement risk,3
+Pattern wait replacement,Pattern wait replacement,external-validity objection,benchmark risk,5
+Pattern wait replacement,Pattern wait replacement,external-validity objection,current rebuttal,3
+Pattern wait replacement,Pattern wait replacement,external-validity objection,action safety,3
+Pattern wait replacement,Pattern wait replacement,external-validity objection,overwording risk,4
+Selector/source guard,Selector/source guard,code/API safety objection,maintainer risk,5
+Selector/source guard,Selector/source guard,code/API safety objection,measurement risk,3
+Selector/source guard,Selector/source guard,code/API safety objection,benchmark risk,3
+Selector/source guard,Selector/source guard,code/API safety objection,current rebuttal,3
+Selector/source guard,Selector/source guard,code/API safety objection,action safety,2
+Selector/source guard,Selector/source guard,code/API safety objection,overwording risk,4
+Store subscriber partition,Store subscriber partition,code/API safety objection,maintainer risk,5
+Store subscriber partition,Store subscriber partition,code/API safety objection,measurement risk,4
+Store subscriber partition,Store subscriber partition,code/API safety objection,benchmark risk,3
+Store subscriber partition,Store subscriber partition,code/API safety objection,current rebuttal,2
+Store subscriber partition,Store subscriber partition,code/API safety objection,action safety,1
+Store subscriber partition,Store subscriber partition,code/API safety objection,overwording risk,5
+Product workload generalization,"Product workload
+generalization",external-validity objection,maintainer risk,2
+Product workload generalization,"Product workload
+generalization",external-validity objection,measurement risk,3
+Product workload generalization,"Product workload
+generalization",external-validity objection,benchmark risk,5
+Product workload generalization,"Product workload
+generalization",external-validity objection,current rebuttal,1
+Product workload generalization,"Product workload
+generalization",external-validity objection,action safety,3
+Product workload generalization,"Product workload
+generalization",external-validity objection,overwording risk,5
+External display endpoint,External display endpoint,external-validity objection,maintainer risk,1
+External display endpoint,External display endpoint,external-validity objection,measurement risk,5
+External display endpoint,External display endpoint,external-validity objection,benchmark risk,5
+External display endpoint,External display endpoint,external-validity objection,current rebuttal,1
+External display endpoint,External display endpoint,external-validity objection,action safety,3
+External display endpoint,External display endpoint,external-validity objection,overwording risk,5
+CI pass/fail policy,CI pass/fail policy,measurement-identity objection,maintainer risk,2
+CI pass/fail policy,CI pass/fail policy,measurement-identity objection,measurement risk,5
+CI pass/fail policy,CI pass/fail policy,measurement-identity objection,benchmark risk,4
+CI pass/fail policy,CI pass/fail policy,measurement-identity objection,current rebuttal,2
+CI pass/fail policy,CI pass/fail policy,measurement-identity objection,action safety,2
+CI pass/fail policy,CI pass/fail policy,measurement-identity objection,overwording risk,5

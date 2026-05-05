@@ -1239,6 +1239,12 @@ The R script derives:
     consequence, existing signal, minimum next check, and blind-spot scores.
 -   `data/typing-delay-open-question-escape-hatches-long.csv`: long-form
     escape-hatch scores used for the contradiction/impact and blind-spot plots.
+-   `data/typing-delay-open-question-adversarial-review.csv`: skeptical
+    code/measurement/benchmark review audit for remaining question families,
+    including the strongest objection, current answer status, minimum rebuttal,
+    risk scores, rebuttal strength, and action safety.
+-   `data/typing-delay-open-question-adversarial-review-long.csv`: long-form
+    adversarial-review scores used for the review-dimension heatmap.
 -   `data/typing-delay-human-plugin-workload-contract-audit.csv`: decision
     contract for representative workload replay, including human/plugin-heavy
     histories and strata missing from the fixed-character stressor.
@@ -10306,6 +10312,33 @@ decision impact are also the rows where the existing harness has the biggest
 blind spot. So another same-harness sweep can make the current artifact cleaner,
 but it cannot answer the questions most likely to change CI rollout, product
 wording, external display wording, or mechanism names.
+
+The adversarial-review audit reframes the same open questions as three kinds of
+skeptical review: code/API safety, measurement identity, and benchmark external
+validity. This is a useful final pass because a high-risk row is not necessarily
+unsafe if the current recommendation is to block, defer, or keep the claim
+scoped. The problem is only when a high-risk row is used to justify a source
+change, wait removal, mechanism name, or product claim before its rebuttal exists.
+
+![Open question adversarial review](figures/266-open-question-adversarial-review.png)
+
+![Open question review pressure](figures/267-open-question-review-pressure.png)
+
+| Skeptical objection | Current answer |
+| ------------------- | -------------- |
+| Metric-definition drift | the held-key cliff is well rebutted under the current metric; rerun only after helper, browser, trace-placement, throwaway, or statistic changes |
+| Mechanism overwording | persistence, runtime, and CPU/QoS rows remain acceptable only as scoped wording; they need joined observers before naming work placement or system mechanisms |
+| Target-topology mismatch | startup and pattern wait changes need real Performance Tests topology rows with failures, resources, retained counts, key position, endpoint composition, and per-spec veto gates |
+| Code/API safety | selector and store-partition rows need behavior fixtures, source-span collapse, and public compatibility before timing can justify a patch |
+| External validity | input-mode, product-workload, display, and policy rows require representative replay, calibrated endpoints, or policy joins before broader claims |
+
+The review-pressure plot makes the action rule explicit. Rows below the diagonal
+have stronger skeptical risk than current rebuttal strength; those rows are not
+evidence to act, they are evidence to block, defer, or narrow wording. The rows
+above or near the diagonal are the scoped local conclusions. This is the clearest
+way to avoid another rationalization loop: for each open question, the current
+safe action is defined by the weakest review axis, not by the most favorable
+latency statistic.
 
 This is the practical answer to "what is still open?" The main causal story for
 the `1000ms` key-held cliff no longer depends on unresolved React rendering,

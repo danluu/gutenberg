@@ -26993,6 +26993,203 @@ save_plot(
 	height = 7.8
 )
 
+open_question_adversarial_review <- tribble(
+	~question_family, ~maintainer_objection, ~measurement_objection, ~benchmark_objection, ~strongest_objection, ~answer_status, ~minimum_rebuttal, ~maintainer_risk, ~measurement_risk, ~benchmark_risk, ~current_rebuttal_strength, ~action_safety, ~rhetoric_overreach_risk,
+	"Held-key cliff and metric split", "Do not churn the benchmark unless the metric definition actually changed.", "The only serious objection is whether the helper, browser, trace placement, throwaway rule, or statistic changed.", "The artifact is not product typing, but it is a valid held-key metric fact.", "Metric-definition drift.", "answered locally; recheck only on trigger", "Exact-spec rerun after a metric-definition trigger.", 1, 2, 2, 5, 5, 2,
+	"Persistence ordering boundary", "Do not claim code moved work unless the trace proves it.", "Ordering evidence does not by itself prove counterfactual work placement.", "The ordering boundary explains the benchmark transition but not a product mechanism.", "Mechanism overwording.", "bounded wording; mechanism not named", "Joined callback, task, and next-key work-placement trace.", 1, 4, 3, 4, 4, 5,
+	"Input mode versus product typing", "Keep held-key and tap helpers separate in code and reporting.", "Pooling helper families invalidates the metric.", "Fixed-character held-key stress is not a human typing workload.", "External validity.", "answered for held-key; product wording blocked", "Representative replay strata before product wording.", 2, 3, 5, 4, 5, 5,
+	"Runtime checkpoint mechanism", "Do not turn DevTools/protocol side effects into a source recommendation.", "Current rows are perturbed checkpoints, not passive mechanism identifiers.", "The effect is local to the harness until a passive observer joins retained keys.", "Observer perturbation.", "empirical boundary; mechanism unnamed", "Passive retained-key sidecar with observer-off baseline.", 1, 5, 3, 3, 4, 4,
+	"CPU/QoS mechanism", "Do not cite CPU counters that are not joined to the measured keys.", "Aggregate latency movement cannot distinguish frequency, residency, cache, scheduler, QoS, or timer wakeups.", "Local CPU controls may not transfer to CI or user hardware.", "Unjoined system counters.", "system sensitivity plausible; exact layer unnamed", "Accepted sidecar plus joined powermetrics, trace, or browser-counter windows.", 1, 5, 3, 2, 4, 5,
+	"Startup wait and first-key tails", "Do not add or remove waits from q50 alone.", "The retained q50 hides first-key and failure modes.", "The local topology may not match the actual Performance Tests job.", "Target-topology mismatch.", "near-term gate; not q50-settled", "Real Performance Tests topology artifact with failures, resources, retained rows, and key position.", 2, 3, 5, 3, 3, 4,
+	"Pattern wait replacement", "Do not move measured setup work outside the timer while calling it the same metric.", "Endpoint composition and preview/canvas work decide whether the metric changed.", "Site/Post/container/CI lanes may differ even if local q50 improves.", "Workload movement.", "near-term gate; rollout not proved", "Predicate plus resource-quiet validation with per-spec veto gates.", 2, 3, 5, 3, 3, 4,
+	"Selector/source guard", "Behavior safety comes before aggregate p50.", "Timing movement without targeted source-span collapse is not attribution.", "Fixed-`x` source wins may not cover other editor states.", "Behavior and source attribution.", "source target credible; patch gated", "Behavior fixtures plus targeted before/after source spans.", 5, 3, 3, 3, 2, 4,
+	"Store subscriber partition", "Public data-layer semantics cannot be inferred from a private side-channel win.", "Listener-count reduction is not an API-compatibility proof.", "Third-party subscribers and dynamic dependencies are underrepresented.", "Public compatibility.", "investigation only; safety blocked", "Public subscriber, persistence, dependency, cross-store, and async compatibility matrix.", 5, 4, 3, 2, 1, 5,
+	"Product workload generalization", "Do not make product recommendations from one synthetic character stream.", "The current metric lacks workload strata and assertions.", "Real typing includes pauses, selection, deletion, undo, insertion, and plugin-heavy states.", "Representative workload coverage.", "claim expansion blocked", "Synthetic and recorded replay strata with assertions and source spans.", 2, 3, 5, 1, 3, 5,
+	"External display endpoint", "Do not label internal browser milestones as physical display latency.", "Paint, DrawFrame, screenshot, OCR, and camera endpoints are different clocks unless calibrated.", "Display hardware and compositor paths may reorder conclusions.", "Endpoint calibration.", "claim expansion blocked", "Calibrated endpoint ladder joined to retained keys.", 1, 5, 5, 1, 3, 5,
+	"CI pass/fail policy", "Do not claim pass/fail behavior without the policy consumer.", "Printed q50 is not necessarily the decision statistic.", "Reviewer or dashboard rules can differ from local artifact production.", "External policy join.", "policy join required", "Archived CI artifact to dashboard, threshold, noisy-metric, and reviewer-decision join.", 2, 5, 4, 2, 2, 5
+) %>%
+	left_join(
+		open_question_escape_hatches %>%
+			select(question_family, escape_class, escape_priority),
+		by = "question_family"
+	) %>%
+	mutate(
+		question_label = str_wrap(question_family, width = 30),
+		review_label = recode(
+			question_family,
+			"Held-key cliff and metric split" = "held-key cliff",
+			"Persistence ordering boundary" = "persistence",
+			"Input mode versus product typing" = "input mode",
+			"Runtime checkpoint mechanism" = "runtime",
+			"CPU/QoS mechanism" = "CPU/QoS",
+			"Startup wait and first-key tails" = "startup wait",
+			"Pattern wait replacement" = "pattern wait",
+			"Selector/source guard" = "selector",
+			"Store subscriber partition" = "store partition",
+			"Product workload generalization" = "product workload",
+			"External display endpoint" = "display",
+			"CI pass/fail policy" = "CI policy"
+		),
+		strongest_risk_score = pmax(maintainer_risk, measurement_risk, benchmark_risk, rhetoric_overreach_risk),
+		review_pressure = strongest_risk_score + (6 - current_rebuttal_strength) + rhetoric_overreach_risk,
+		review_class = case_when(
+			action_safety >= 5 & current_rebuttal_strength >= 4 ~ "safe scoped conclusion",
+			maintainer_risk >= 5 ~ "code/API safety objection",
+			benchmark_risk >= 5 ~ "external-validity objection",
+			measurement_risk >= 5 ~ "measurement-identity objection",
+			rhetoric_overreach_risk >= 5 ~ "wording objection",
+			TRUE ~ "targeted gate"
+		),
+		review_class = factor(
+			review_class,
+			levels = c("safe scoped conclusion", "targeted gate", "code/API safety objection", "measurement-identity objection", "external-validity objection", "wording objection")
+		)
+	)
+
+open_question_adversarial_review_long <- open_question_adversarial_review %>%
+	select(
+		question_family,
+		question_label,
+		review_class,
+		maintainer_risk,
+		measurement_risk,
+		benchmark_risk,
+		current_rebuttal_strength,
+		action_safety,
+		rhetoric_overreach_risk
+	) %>%
+	pivot_longer(
+		cols = c(
+			maintainer_risk,
+			measurement_risk,
+			benchmark_risk,
+			current_rebuttal_strength,
+			action_safety,
+			rhetoric_overreach_risk
+		),
+		names_to = "review_dimension",
+		values_to = "score"
+	) %>%
+	mutate(
+		review_dimension = recode(
+			review_dimension,
+			maintainer_risk = "maintainer risk",
+			measurement_risk = "measurement risk",
+			benchmark_risk = "benchmark risk",
+			current_rebuttal_strength = "current rebuttal",
+			action_safety = "action safety",
+			rhetoric_overreach_risk = "overwording risk"
+		),
+		review_dimension = factor(
+			review_dimension,
+			levels = c("maintainer risk", "measurement risk", "benchmark risk", "current rebuttal", "action safety", "overwording risk")
+		),
+		question_label = fct_reorder(question_label, as.numeric(review_class), .desc = TRUE)
+	)
+
+write_csv(
+	open_question_adversarial_review %>%
+		select(
+			question_family,
+			review_class,
+			escape_class,
+			current_claim = answer_status,
+			maintainer_objection,
+			measurement_objection,
+			benchmark_objection,
+			strongest_objection,
+			minimum_rebuttal,
+			maintainer_risk,
+			measurement_risk,
+			benchmark_risk,
+			current_rebuttal_strength,
+			action_safety,
+			rhetoric_overreach_risk,
+			strongest_risk_score,
+			review_pressure,
+			escape_priority
+		),
+	file.path(data_dir, "typing-delay-open-question-adversarial-review.csv")
+)
+
+write_csv(
+	open_question_adversarial_review_long,
+	file.path(data_dir, "typing-delay-open-question-adversarial-review-long.csv")
+)
+
+save_plot(
+	ggplot(open_question_adversarial_review_long, aes(review_dimension, question_label, fill = score)) +
+		geom_tile(color = "white", linewidth = 0.42) +
+		geom_text(aes(label = score), size = 2.6, color = "grey15") +
+		scale_fill_distiller(type = "seq", palette = "PuBuGn", direction = 1, name = "Score") +
+		labs(
+			title = "Adversarial review separates code, measurement, and benchmark objections",
+			subtitle = "Strong local conclusions have high rebuttal strength; rollout and claim-expansion rows fail under different skeptical questions",
+			x = "Review dimension",
+			y = "Question family"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", axis.text.x = element_text(angle = 20, hjust = 1)),
+	"266-open-question-adversarial-review.png",
+	width = 13.8,
+	height = 8.8
+)
+
+open_question_adversarial_pressure_plot <- open_question_adversarial_review %>%
+	group_by(strongest_risk_score, current_rebuttal_strength) %>%
+	arrange(question_family, .by_group = TRUE) %>%
+	mutate(
+		overlap_count = n(),
+		overlap_index = row_number(),
+		overlap_angle = if_else(overlap_count == 1L, 0, 2 * pi * (overlap_index - 1) / overlap_count),
+		overlap_radius = if_else(overlap_count == 1L, 0, 0.16),
+		point_strongest_risk_score = strongest_risk_score + overlap_radius * cos(overlap_angle),
+		point_current_rebuttal_strength = current_rebuttal_strength + overlap_radius * sin(overlap_angle),
+		label_left = overlap_count > 1L & overlap_index %% 2L == 1L,
+		label_strongest_risk_score = point_strongest_risk_score + if_else(label_left, -0.08, 0.08),
+		label_current_rebuttal_strength = point_current_rebuttal_strength + case_when(
+			overlap_count == 1L ~ 0,
+			TRUE ~ (overlap_index - (overlap_count + 1) / 2) * 0.12
+		),
+		label_hjust = if_else(label_left, 1, 0)
+	) %>%
+	ungroup()
+
+save_plot(
+	ggplot(
+		open_question_adversarial_pressure_plot,
+		aes(point_strongest_risk_score, point_current_rebuttal_strength, color = review_class, size = action_safety)
+	) +
+		geom_abline(intercept = 0, slope = 1, color = "grey65", linewidth = 0.35, linetype = "dashed") +
+		geom_point(alpha = 0.9) +
+		geom_text(
+			aes(
+				x = label_strongest_risk_score,
+				y = label_current_rebuttal_strength,
+				label = str_wrap(review_label, width = 12),
+				hjust = label_hjust
+			),
+			size = 2.45,
+			vjust = 0.45,
+			show.legend = FALSE
+		) +
+		scale_color_brewer(type = "qual", palette = "Dark2", name = "Review class") +
+		scale_size_continuous(range = c(2.6, 7.2), breaks = 1:5, name = "Current action safety") +
+		scale_x_continuous(breaks = 1:5, limits = c(0.8, 5.45)) +
+		scale_y_continuous(breaks = 1:5, limits = c(0.8, 5.45)) +
+		labs(
+			title = "Rows below the diagonal need narrower claims or stronger rebuttals",
+			subtitle = "Risk above rebuttal is acceptable only when the current action is to block, defer, or keep wording scoped",
+			x = "Strongest skeptical risk",
+			y = "Current rebuttal strength"
+		) +
+		theme_minimal(base_size = 12) +
+		theme(legend.position = "bottom", legend.box = "vertical"),
+	"267-open-question-review-pressure.png",
+	width = 12.8,
+	height = 7.8
+)
+
 pattern_wait_decision_inputs <- c(
 	file.path(data_dir, "typing-delay-pattern-readiness-boundary-summary.csv"),
 	file.path(data_dir, "typing-delay-site-pattern-short-wait-exact-summary.csv")
