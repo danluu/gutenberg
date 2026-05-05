@@ -66,6 +66,24 @@ case and the same-array-reference reorder case with the stale order
 repro passed before the rebase; the rebase only added the unrelated server-side
 compaction change beneath the three repro/fix commits.
 
+Pass 42 independently reran the low-level negative controls and a browser
+negative control. Applying only the non-Playwright regression-test commit to
+current trunk `02bfdaa5ca9` still fails the stale top-level move case and the
+same-array-reference reorder case. Applying that same test commit to the
+known-fixes base `3cba2b1e56a` still fails the reused mutable array reorder
+case, which confirms that the known-fixes base does not fully fix this bug.
+A fresh headless HTTP Playwright rerun against the already-running known-fixes
+environment at `http://localhost:9601` failed after the same natural user
+actions with primary state `[Inserted, Another, Emoji]` and secondary state
+`[Inserted, Emoji, Emoji]`. A fresh post-rebase fixed-branch browser rerun was
+attempted on `WP_ENV_PORT=9907`, but Docker could not create a new wp-env
+network because the predefined address pools were exhausted by unrelated
+running wp-env environments. The fixed branch still passes the focused
+low-level cases, the full `crdt-blocks.ts` unit suite, and touched-file JS
+lint; its built artifacts contain `previousBlocksByYArray`, so a browser
+rerun on that worktree would exercise the fixed code once a clean wp-env can be
+allocated.
+
 The narrowest pass-39 proof is lower than Playwright: applying only the
 regression-test commit to the known-fixes base shows that the base already
 survives the pure stale-snapshot interleaving when each editor emits a fresh
@@ -73,6 +91,13 @@ block array, but still fails when the editor reuses the same mutable block array
 reference across a reorder. That isolates the remaining defect to the cached
 serializable block snapshot, not to action locators, readiness waits, or the
 browser harness.
+
+Pass 42 sharpened that proof by rerunning the same test-only commit on both
+current trunk and the known-fixes base. Trunk fails both the stale interleaving
+and the reused-array reorder; the known-fixes base passes the stale
+interleaving but fails the reused-array reorder. That A/B result isolates the
+remaining known-fixes defect to the `serializableBlocksCache` keying by the
+mutable incoming block array reference.
 
 ## Root cause
 
