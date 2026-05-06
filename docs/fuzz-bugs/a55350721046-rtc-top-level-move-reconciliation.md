@@ -226,6 +226,40 @@ The test mutates one `Block[]` in place from `[ inserted, emoji, another ]` to `
 
 Pass 51 also rechecked the archived source artifact. The failure log and trace show successful natural UI actions followed by a settled convergence failure: the primary editor had `inserted paragraph`, `another paragraph`, `emoji paragraph`, while the collaborator had `inserted paragraph`, `emoji paragraph`, `emoji paragraph`. The trace `page.evaluate` calls only read normalized block state and serialized content for convergence checks; they do not mutate editor data. A fresh browser rerun on `WP_ENV_PORT=9905` was attempted, but `wp-env start` failed before WordPress boot because Docker's bridge address pools were fully subnetted. Existing bridge networks had running containers attached, so pass 51 did not stop unrelated environments. The pass-51 video therefore stitches a new root-cause evidence card onto the previously verified annotated headless browser repro.
 
+Pass 52 added a second, narrower same-array proof that does not depend on block movement at all. The new focused unit regression reuses the same `Block[]` reference, changes a paragraph's `content` attribute, and calls `mergeCrdtBlocks()` again. On the test-only commit:
+
+```text
+939fc6fca8c Add RTC stale top-level move merge regressions
+```
+
+the focused test fails with:
+
+```text
+Expected: Edited through reused array
+Received: Initial content
+EXIT_CODE=1
+```
+
+That proves the pre-fix `serializableBlocksCache` can hide any same-reference editor change, not only the particular top-level reorder from the source bug. Repeating the focused set on known-fixes base `3cba2b1e56a98787de08dc6c7df2434759e8f908` plus the same test commit produced this split:
+
+```text
+PASS preserves a remotely inserted block and the moved sibling after a stale top-level move
+PASS preserves an inserted heading and the moved sibling after checkpoint-style stale snapshots
+FAIL observes reordered blocks when the editor reuses the same block array reference
+FAIL observes attribute edits when the editor reuses the same block array reference
+EXIT_CODE=1
+```
+
+The rebased PR branch now has this commit order:
+
+```text
+939fc6fca8c Add RTC stale top-level move merge regressions
+99c1002b998 Add RTC top-level move Playwright repro
+a6e6efc42e5 Preserve RTC block order across stale snapshots
+```
+
+The fixed branch passes both same-array focused tests, the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`77` tests), targeted JS lint, and `git diff --check`. A fresh Playwright rerun was attempted again on `WP_ENV_PORT=9905`, but Docker still failed before WordPress boot with `all predefined address pools have been fully subnetted`; the active wp-env bridge networks had running containers attached, so pass 52 again avoided stopping unrelated environments. Pass 52 created a new stitched video with the attribute-cache proof card followed by the archived annotated headless UI repro.
+
 ## Fix Direction
 
 Track the previous local block snapshot per `Y.Array`. Before applying a new local snapshot, compare its top-level clientId order with the previous local order:
