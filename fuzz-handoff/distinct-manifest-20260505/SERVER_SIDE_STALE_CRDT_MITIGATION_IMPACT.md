@@ -286,6 +286,11 @@ More detailed code-path constraints:
   enforcement therefore belongs at the Core Data/REST protocol boundary, or
   each half-participating CPT/template/quick-edit path must explicitly opt out
   and invalidate the token when protected fields change.
+- Core Data batching is not a transaction across subrequests. If guarded
+  bundle saves can travel through the REST batch transport, each subrequest
+  still needs the same conflict semantics, canonical token response, and
+  idempotency behavior. Otherwise guarded RTC saves should opt out of batching
+  so a bundle conflict is not hidden inside a partially successful batch.
 
 The broader mitigation therefore needs a new server-side invariant, not just a
 larger version of the current `_crdt_document` check. The invariant is: "this
@@ -347,6 +352,105 @@ The practical migration path is therefore: prototype with preflight/shadow
 telemetry, add token-aware client retry, introduce a dedicated guarded RTC save
 path or core commit primitive, then treat every unguarded writer as a token
 invalidator until it participates in the protocol.
+
+### Storage and transaction design
+
+The base estimate assumes more than "there is a token somewhere." It assumes a
+storage primitive that can prove and update bundle freshness at the same
+boundary as protected-field mutation.
+
+A plausible primitive is a dedicated bundle-version row keyed by site and
+entity, not ordinary post meta:
+
+| Field | Purpose |
+| --- | --- |
+| `site_uuid` or blog/site id | Separates multisite and migrated installs; should not be derived only from URL. |
+| `entity_type`, `post_type`, `post_id` | Identifies the guarded post-type entity. |
+| `document_generation`, `room_generation` | Links bundle freshness to the provenance generation when provenance is in scope. |
+| `bundle_generation` | Monotonic opaque CAS value. It should never be reused, even if protected values return to old hashes. |
+| `protected_hashes` | Diagnostic hashes of normalized title/content/excerpt/CRDT, not the authoritative CAS token. |
+| `projection_policy_version` | Invalidates tokens when block registry, projection, sanitizer, or feature-flag policy changes. |
+| `last_mutation_id` / idempotency ledger pointer | Lets duplicate network retries return the same canonical response without committing twice. |
+| `updated_by`, `updated_at`, source | Telemetry and recovery audit, not freshness. |
+
+For multisite, the table must either be per-site using the site `$wpdb->prefix`
+or include `blog_id`/site identity in the primary key. Posts and postmeta are
+per-site tables; a network-global version table keyed only by `post_id` would
+collide across blogs. The primary key should make no-row initialization atomic,
+for example `(site_id, entity_type, post_type, post_id)`.
+
+No-row initialization is a real race. Treating a missing version row as token
+`0` lets two first guarded saves both pass. The server should create the
+version row with an atomic insert/upsert before commit validation, then use
+either a locking read on that row or a single conditional update on an indexed
+row and check affected rows.
+
+The guarded commit can be implemented with pessimistic row locking or an
+optimistic compare-and-update, but the correctness condition is the same: no
+protected field changes unless the submitted base token still owns the version
+row, and the token advance plus protected-field writes are committed together.
+
+| Pattern | Required property | Main risk |
+| --- | --- | --- |
+| `SELECT ... FOR UPDATE` on a bundle-version row, then protected writes, then token advance | All guarded writers take the same row lock before mutating protected fields. | Long projection/CRDT decode inside the lock can create contention; decode should happen before locking when possible, then revalidate under lock. |
+| Optimistic `UPDATE version_row SET token = next WHERE token = base` plus protected writes | The successful CAS and protected writes are in the same transaction, or the token advance is not visible without the protected writes. | Advancing the token before later post/meta failure can strand clients on a token for a state that never committed. |
+| Custom endpoint writes protected fields directly | Endpoint controls lock order, write set, token advance, and response. | Must replicate or deliberately bypass enough REST controller behavior, permissions, sanitization, hooks, revisions, and side effects. |
+| Normal REST controller with filters observing the token | Can log and reject some requests. | Does not own the final commit boundary, so it is not the base-estimate mitigation. |
+
+Idempotency should use a bounded attempts table, not only one
+`last_save_attempt_id` on the version row. A later valid save can advance the
+bundle before an HTTP retry of an older accepted attempt arrives. Store
+attempts keyed by site/entity/save-attempt id with payload hash, base token,
+write set, outcome, result token, and canonical response hash or body pointer.
+
+The version row should also store server-computed hashes of canonical
+`post_title`, `post_content`, `post_excerpt`, and `_crdt_document`. These hashes
+are not the CAS token, but they let legacy invalidation hooks tell whether a
+non-guarded write actually changed protected fields instead of bumping the
+token for every status, taxonomy, or unrelated meta update.
+
+Transaction isolation and deployment topology are part of the guarantee:
+
+- The version row, `wp_posts` row, and `_crdt_document` storage must be in
+  transactional tables on the same transactional boundary. If a HyperDB,
+  sharding, or multi-database deployment can place them on different
+  connections, the implementation is no longer a true bundle CAS.
+- Every writer webhead must either enforce the bundle protocol or invalidate
+  the token before strict mode is enabled. A mixed rolling deploy where one
+  server issues tokens and an older server writes protected fields without
+  advancing them can make a later guarded save incorrectly pass.
+- Edit-context reads and conflict-repair reads should use the primary, or a
+  read path with proven read-your-writes semantics for the bundle row,
+  `wp_posts`, and `_crdt_document`. A lagging replica can manufacture
+  row `52`/`141`-style symptoms: stale title/content with advanced CRDT, false
+  conflicts, or retry loops after a successful guarded commit.
+- Lock ordering should be fixed, for example bundle-version row first, then
+  post row, then meta rows, to avoid deadlocks under concurrent saves.
+- A non-locking `SELECT version` followed by a later `UPDATE` is not CAS. Use a
+  locking read or a single-statement conditional update on an indexed row. If
+  the table is not transactional and row-locking, strict enforcement should
+  stay shadow-only.
+- Projection/CRDT decode should not hold the DB lock unless unavoidable. Decode
+  and classify first, enter the guarded section, re-check token/provenance, and
+  commit quickly.
+- Object-cache invalidation should happen only after commit, and read-path
+  token assembly should not serve cached fields from a previous generation.
+- If the guarded endpoint writes `wp_posts` or `wp_postmeta` directly instead
+  of through ordinary APIs, it must perform the inverse cache policy of
+  high-frequency sync storage: invalidate post and post-meta caches after
+  commit, including the equivalent of `clean_post_cache()`.
+- Crash recovery should be explicit. After a PHP fatal, database disconnect, or
+  timeout, the system should be able to tell whether the mutation committed,
+  replay the idempotent response, or mark the bundle token invalid. Ambiguous
+  partial commits should be counted as invariant violations.
+
+Lazy migration is safer than trying to rewrite every post up front. On first
+edit-context read for an RTC-enabled post with no bundle-version row, the
+server should mint a generation from the current raw protected fields and
+return that token. A first token-bearing save should fail closed if the version
+row disappeared or was concurrently initialized from different protected
+values. Legacy writes before initialization should initialize from the post's
+current DB state, not from stale REST preload or client state.
 
 ### Concrete mitigation shape
 
@@ -573,7 +677,7 @@ of increasingly strong server protocols:
 | Variant | Bug-resolution impact | Durable-containment impact | Main rows | Main limitation |
 | --- | ---: | ---: | --- | --- |
 | Current `_crdt_document` guard | 3 rows / 3 weighted touched | 3 rows / 3 weighted | `99`, `61`, `90` | Protects only CRDT meta freshness; stale title/content can still save. |
-| Bundle CAS only | About 7-8 rows / 13-14 weighted touched | Same | `8`, `52`, `63`, `99`, `141`, `155`, `156`, `243` | Catches stale bases, but not same-token wrong serialization or CRDT no-op churn. If implemented only as pre-insert/meta filters rather than atomic commit-time CAS, the defensible set drops toward 5 rows / 11 weighted because split rows `52`, `63`, and `141` can still partially commit. |
+| Bundle CAS plus atomic protected-field commit | About 7-8 rows / 13-14 weighted touched | Same | `8`, `52`, `63`, `99`, `141`, `155`, `156`, `243` | Catches stale bases and split post/meta commits, but not same-token wrong serialization or CRDT no-op churn. If implemented only as pre-insert/meta filters rather than atomic commit-time CAS, the defensible set drops toward 5 rows / 11 weighted because split rows `52`, `63`, and `141` can still partially commit. |
 | Bundle CAS plus read/write-set discipline | Same row count, higher confidence | Same | Same rows, especially `8`, `155`, `156`, `243` | Prevents broad payload clobbers, but still trusts submitted content. |
 | Bundle CAS plus projection validation | About 33 rows / 51 weighted touched | About 33 rows / 51 weighted | Adds `15`, `18`, `19`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Mostly containment; live editor or CRDT state may already be wrong. |
 | Full assumed bundle protocol | 37 rows / 58 weighted touched; 8 full, 29 partial | 43 rows / 89 weighted touched | Adds CRDT no-op rows `23`, `90`, `227`, canonicalization row `45`, and containment-only rows `2`, `5`, `17`, `27`, `56`, `57` | Still not a live CRDT merge arbiter. |
@@ -679,6 +783,55 @@ Before enforcement, the server should also compute projectability:
 This gate should be logged per save attempt. Row credit for projection or
 materialization should require `projectable_static_blocks`, not merely a
 non-empty CRDT.
+
+Projection is registry- and pipeline-relative. The persisted CRDT block tree
+does not carry every fact needed to serialize every block: full block metadata,
+attribute sources, defaults, deprecated save functions, supports, local
+attribute rules, editor settings, and client pre-save transforms can all affect
+the final persisted content. The projection policy therefore needs a fingerprint
+of the derivation pipeline: block registry, serializer, block supports,
+theme/editor settings, deprecated migrations, client pre-save transforms that
+affect persisted fields, server pre-persist normalization, and sanitizer policy.
+A registry miss, deprecated migration mismatch, or schema gap should produce
+`unknown`, not `mismatch`.
+
+The comparison point must also be fixed. Project candidate content, run the
+same save-time normalization and sanitization that the REST controller would
+apply for the saving actor, then compare and commit the sanitized projection.
+Validating pre-sanitized projection but committing post-sanitized content can
+create false mismatches; committing pre-sanitized projection can bypass KSES or
+capability-dependent filtering.
+
+Materialization has an attribution problem in collaborative editing. The CRDT
+state may contain edits authored by users other than the user pressing save.
+Either materialization persists the whole projected payload under the saving
+actor's capabilities, requires all contributing actors in the accepted CRDT
+interval to be authorized for the affected fields, or refuses materialization
+when authorship/capability cannot be proven. The chosen policy affects whether
+materialization can be enabled beyond controlled fixtures.
+
+Bindings can add read and write dependencies. Bound attributes may depend on
+post data, post meta, term data, pattern override context, permissions, and
+registered binding sources; some binding sources can also write through setters
+or `canUserEditValue` checks. Projection should treat binding sources as an
+additional read set or mark the subtree opaque. Materialization must not invoke
+binding setters unless those secondary writes have their own declared write
+set, freshness token, capability check, and atomic commit.
+
+If the server materializes `post_content` from CRDT `blocks`, it must not leave
+a stale authoritative CRDT `content` cache behind. Either update the accepted
+CRDT's canonical serialized content consistently with `blocks`, or declare
+CRDT `content` non-authoritative and ensure readers ignore it. If the server
+canonicalizes the Yjs document itself, it becomes a CRDT writer and needs a
+stable server origin, causal-clock compatibility, and a merge rule for
+server-authored repair updates. Otherwise a repair can introduce duplicate
+operations or future conflict amplification.
+
+Hash taxonomy should stay explicit. Do not reuse one hash for CAS, projection,
+telemetry, and idempotency. Keep separate raw REST payload hash, sanitized
+persisted-field hash, CRDT document version/hash, semantic block-tree hash that
+excludes volatile identity, and projection-policy hash. Collapsing these makes
+both false positives and incident diagnosis worse.
 
 Projection also has important false negatives:
 
@@ -1115,6 +1268,36 @@ client can hold a still-valid bundle token while carrying the wrong
 collaboration generation, or can re-consume old room updates after the server
 has decided the document identity changed.
 
+Legacy provenance migration needs an adoption path. Existing persisted
+`_crdt_document` values will not carry post-bound provenance. On first
+provenance-aware edit-context read, "missing provenance" should not be treated
+the same as "mismatched provenance" unless the server can prove the document is
+foreign. A safe path is to mint the server provenance record from current raw
+protected fields, mark the existing CRDT as legacy-adopted for that post
+generation, require the next guarded save to stamp or verifiably embed
+provenance, and quarantine rather than silently discard when title/content/CRDT
+projection is incoherent. Otherwise rollout can create false row-`89`-style
+resets for valid pre-provenance posts.
+
+Multisite and site-clone identity must be explicit. `site_uuid` should identify
+a single blog/site, not only a network, domain, or post-id namespace. Room
+names, bundle-version rows, object-cache keys, REST preload keys, and
+provenance records must include the same site discriminator and remain correct
+across `switch_to_blog()`. A database clone to staging is a special case:
+either intentionally preserve the site UUID as a same-site restore, or rotate
+`site_uuid`, `document_generation`, `room_generation`, bundle tokens, and room
+history together. Preserving production `site_uuid` while using a shared sync
+backend can make a staging clone eligible to consume production room state.
+
+Schema-version migration should invalidate tokens by capability, not just by
+stored document shape. A provenance schema bump, CRDT schema bump, room-name
+schema bump, or projection-policy version bump must invalidate outstanding
+bundle tokens and require clients to advertise support before strict writes are
+accepted. Mixed-version clients that cannot read/write embedded provenance
+should be treated as legacy external writers: allow only in compatibility mode,
+advance or invalidate the bundle generation on protected-field mutation, and
+force provenance-aware clients to refetch before their next guarded save.
+
 The provenance reject must happen before, or atomically with, protected
 post-field mutation. A provenance check that runs only during `_crdt_document`
 meta update is not sufficient for row `89`: a foreign whole-record REST payload
@@ -1348,6 +1531,8 @@ Minimum server tests:
   canonical response without advancing the token or rewriting CRDT save markers;
 - reuse of a `save_attempt_id` with a different payload, base token, provenance,
   or write set is rejected;
+- first guarded save on a post without an existing version row uses atomic
+  insert/upsert and cannot let two concurrent initializers both commit;
 - scalar bundle tokens reject mixed-base protected fields, or per-field
   generations prove the submitted title/content/excerpt/CRDT values came from
   compatible bases;
@@ -1377,6 +1562,9 @@ Minimum server tests:
 - CPT/template/quick-edit/generic Core Data save paths are either guarded by
   the same protocol or explicitly invalidate the token when protected fields
   change.
+- REST batch transport either preserves per-save bundle conflict semantics or
+  is bypassed for guarded RTC saves;
+- direct guarded writes invalidate post and post-meta caches after commit.
 
 Minimum client tests:
 
@@ -1465,6 +1653,13 @@ without protected-field mutation, token regressions, and legacy writes that do
 not invalidate before the next guarded RTC save as
 `bundle_token_invariant_violation`.
 
+For clustered deployments, add deployment-health outcomes:
+`bundle_schema_unavailable`, `old_server_unguarded_write`,
+`replica_lag_token_mismatch`, and `primary_read_required`. Rolling-deploy tests
+should include one webhead enforcing, one only invalidating, and one old/unaware
+server. Strict mode should not start until all write-serving webheads have
+compatible code and conflict-repair reads are pinned to a coherent read path.
+
 Telemetry should include cost signals: token read latency, commit-check
 latency, lock wait time, projection-validation time, CRDT decode time, retry
 delay, and response payload size. Report these separately for accepted saves,
@@ -1479,6 +1674,38 @@ usually end in one-shot repair, bounded repeated conflicts that surface a real
 editor conflict instead of a save loop, CRDT no-op responses that clear dirty
 state without dropping causal updates, and zero negative-control false
 positives through shadow and canary traffic.
+
+Rollback should be mechanism-scoped, not a single global switch. Keep separate
+flags for token emission, client token submission, bundle-CAS enforcement,
+projection enforcement, CRDT no-op settlement, provenance enforcement, and
+guarded-endpoint routing. Roll back enforcement before token emission, so
+upgraded clients keep receiving tokens and telemetry remains comparable while
+hard rejects become shadow decisions. Projection and provenance enforcement
+should roll back independently from bundle CAS because their false-positive
+risks are different.
+
+Initial enforcement should stay in the lowest-ambiguity segment: `post` and
+`page`, existing draft/published posts, no active revision restore or
+auto-draft promotion, no incompatible metabox/custom REST overrides,
+projectable content below decode/projection limits, all active collaborators
+advertising the same protocol version, and matching provenance generation.
+Hold back CPTs, templates, synced patterns, multisite, large documents,
+unprojectable content, and mixed-version sessions until they have separate
+baselines and negative controls.
+
+Automatic safety stops should be defined before canary. Mechanism-scoped
+disable conditions include any protected-field mutation after enforced
+rejection, any unexplained `bundle_token_invariant_violation`, conflict storms
+above the save-failure budget, p95 save latency or lock wait beyond budget,
+stale-bundle repair success below threshold, any projection false positive
+against benign opaque-content controls, or sustained increases in dirty-state
+duration, save-loop detections, or unload-with-unsaved-changes prompts.
+
+Every enforced rejection should return a stable diagnostic code and redacted
+diagnostic id that joins server logs, client logs, and support reports. The
+diagnostic record should include mechanism, write set, token match state,
+projection class, retry count, and whether any protected field mutated, without
+logging raw post content or CRDT payloads.
 
 ### Implementation risks that affect the estimate
 
