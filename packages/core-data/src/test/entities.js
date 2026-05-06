@@ -2,7 +2,11 @@
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
-import { registerBlockType, unregisterBlockType } from '@wordpress/blocks';
+import {
+	parse,
+	registerBlockType,
+	unregisterBlockType,
+} from '@wordpress/blocks';
 
 jest.mock( '@wordpress/api-fetch' );
 jest.mock( '../sync', () => ( {
@@ -334,6 +338,50 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'derives stale saved content from CRDT blocks instead of serialized CRDT content', async () => {
+		const mergedContent = pageContent( [
+			'Alpha',
+			'stale local content',
+			'current content',
+		] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: pageContent( [ 'Alpha', 'current content' ] ) },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( mergedContent ),
+				content: 'mangled serialized CRDT content',
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: pageContent( [ 'Alpha' ] ) },
+			},
+			{ content: pageContent( [ 'Alpha', 'stale local content' ] ) },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( result.content ).toBe( mergedContent );
+		expect( result.content ).not.toContain( 'mangled' );
+		expect( result.meta ).toEqual( {
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+	} );
+
 	it( 'merges non-conflicting stale serialized content edits with the latest saved content', async () => {
 		const latestRecord = {
 			id: 123,
@@ -403,6 +451,44 @@ describe( 'prePersistPostType', () => {
 				content: { raw: latestContent },
 			},
 			{ content: pageContent( [ 'stale local content', 'Beta' ] ) },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( result.content ).toContain( 'stale local content' );
+		expect( result.content ).toContain( 'current content' );
+		expect( result.meta ).toEqual( {
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+	} );
+
+	it( 'merges sibling serialized blocks appended from a shared stale base', async () => {
+		const latestRecord = {
+			id: 123,
+			content: { raw: pageContent( [ 'Alpha', 'current content' ] ) },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: latestRecord.content.raw,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: pageContent( [ 'Alpha' ] ) },
+			},
+			{ content: pageContent( [ 'Alpha', 'stale local content' ] ) },
 			'page',
 			false,
 			'/wp/v2/pages'
