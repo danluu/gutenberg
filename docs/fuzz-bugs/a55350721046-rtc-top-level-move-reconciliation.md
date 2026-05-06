@@ -183,6 +183,16 @@ This pass verifies that the existing branch, branch ordering, natural-user repro
 
 Pass 47 repeated the verification against the same fetched `origin/trunk` (`02bfdaa5ca9`). A fresh trunk worktree with only regression commit `d71d0bc87fe` failed all three focused low-level repros. A fresh known-fixes-base worktree with the same test commit passed the two stale-snapshot Y.Doc repros and failed only the same-reference block-array reorder repro. The fixed PR branch passed the focused repros, the full `crdt-blocks` unit file (`76` tests), targeted JS lint, and `git diff --check`. The requested `wp-env-test` start initially failed because Docker's automatic address pool was exhausted; pass 47 avoided stopping unrelated active stacks by pre-creating this task's Compose default network with an explicit private subnet, then reran the natural-user Playwright repro headlessly on `http://localhost:9905`. It passed in 21.1s, and both editors converged to `inserted paragraph`, `another paragraph`, `multibyte paragraph`. This is a fresh pass-47 verification that the existing explanation branch, PR branch, video standard, and fix still satisfy the requested standard.
 
+Pass 48 added an independent trace-level negative check of the source artifact. The Playwright `test.trace` records natural UI operations for the failing run: `Click getByText("Seed 950301 multibyte heading")`, `Click getByRole("menuitem", { name: "Delete" })`, `Click getByRole("menuitem", { name: "Add before" })`, `Type "RTC ec47 realistic inserted paragraph 1"`, and `Click getByRole("button", { name: "Move down" })`. The `page.evaluate` calls in the trace only read normalized editor state and serialized content for convergence checks. That rules out a generated-spec mutation, malformed direct block injection, or inverted assertion as the cause of the source failure.
+
+Pass 48 also reran the controls after fetching `origin/trunk`, still at:
+
+```text
+02bfdaa5ca9 RTC: Fix divergence when two offline users reconnect (#77980)
+```
+
+Current trunk plus only regression commit `d71d0bc87fe` failed all three focused non-Playwright repros. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, plus the same regression commit, passed the two stale Y.Doc cases and failed only `observes reordered blocks when the editor reuses the same block array reference`. The fixed PR branch passed the focused repros, the full `crdt-blocks` unit file (`76` tests), targeted JS lint, `git diff --check`, and a fresh one-attempt headless Playwright run on `http://localhost:9905` after pre-creating the exhausted Docker Compose network. The pass-48 Playwright JSON shows both editors converged to `inserted paragraph`, `another paragraph`, `multibyte paragraph`.
+
 The vulnerable positional merge was introduced with `packages/core-data/src/utils/crdt-blocks.ts` in:
 
 ```text
