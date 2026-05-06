@@ -201,6 +201,18 @@ The vulnerable positional merge was introduced with `packages/core-data/src/util
 
 `git blame` still points the object-identity serialization cache, left/right diff, positional update loop, delete/insert tail, and duplicate-clientId cleanup to that initial CRDT block merge implementation, with later RTC text and array improvements layered on top. Local `gh` was unavailable in pass 44, so PR metadata was taken from local commit titles. The relevant follow-up commits were `54af1ce40068` (`RTC: Ensure that changes are only applied to text and cursors for their associated RichText instances`) and `128a3c29b7f1` (`Real-time collaboration: Expand mergeCrdtBlocks() automated testing (#75923)`). Those later commits expanded CRDT text/array handling and test coverage, but did not remove the object-identity cache or make top-level order reconciliation identity-aware.
 
+Pass 49 repeated the verification after fetching `origin/trunk`, which still resolved to:
+
+```text
+02bfdaa5ca9 RTC: Fix divergence when two offline users reconnect (#77980)
+```
+
+Current trunk plus only regression commit `d71d0bc87fe` still fails all three focused low-level repros. The known-fixes base at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, plus the same regression commit, still passes the two stale-snapshot Y.Doc repros and fails only `observes reordered blocks when the editor reuses the same block array reference`.
+
+Pass 49 adds a narrower cache proof: on that same known-fixes-base worktree, the pre-existing `handles block reordering` test passes when the reorder is delivered through a fresh `Block[]`, while `observes reordered blocks when the editor reuses the same block array reference` fails with the same expected order. That isolates the remaining bug to object-identity caching, not to the base positional reorder algorithm.
+
+The fixed PR branch passes the focused repros, the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`76` tests), targeted JS lint, and `git diff --check`. A fresh one-attempt headless Playwright rerun on `WP_ENV_PORT=9905`, after pre-creating the exhausted Docker Compose network with subnet `10.253.210.0/24`, passed in 21.4s. The emitted pass-49 Playwright JSON shows both editors converged to `inserted paragraph`, `another paragraph`, `multibyte paragraph`.
+
 ## Fix Direction
 
 Track the previous local block snapshot per `Y.Array`. Before applying a new local snapshot, compare its top-level clientId order with the previous local order:
