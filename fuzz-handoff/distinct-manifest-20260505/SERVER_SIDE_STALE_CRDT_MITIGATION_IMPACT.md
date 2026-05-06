@@ -358,6 +358,19 @@ telemetry, add token-aware client retry, introduce a dedicated guarded RTC save
 path or core commit primitive, then treat every unguarded writer as a token
 invalidator until it participates in the protocol.
 
+Several WordPress integration boundaries cap credit even when the token design
+looks sound:
+
+| Boundary | Required rule for full credit | Credit impact if missing |
+| --- | --- | --- |
+| `_crdt_document` postmeta storage | There must be exactly one authoritative value, either in dedicated unique storage or through proof that add/update/delete/update-by-mid/import/direct-SQL paths guard or invalidate the same value. | Direct CRDT-meta rows such as `99` drop to partial or shadow-only because duplicate postmeta rows or alternate mutation paths can bypass the invariant. |
+| Autosave and revision ids | Resolve autosave/revision writes to the canonical parent bundle before token decisions. Parent protected fields or `_crdt_document` writes from autosave/restore either participate in the guarded parent commit or invalidate the parent token. | Autosave/revision behavior cannot be counted as fixed by the post/page bundle protocol. |
+| Post locks and heartbeat state | Treat `_edit_lock`, lock takeover, and session/post-lock state as advisory UI/session facts, not CAS tokens or proof of clean RTC state. | Post-lock/session rows remain outside measured credit unless a separate client/session repair exists. |
+| Hook-suppressed and direct writes | Lower-level protected-field writes must be intercepted, or deployment evidence must prove that suppressed hooks, bulk importers, direct `$wpdb` writes, and `wp_insert_post()` paths with hooks disabled are absent. | Legacy paths become unguarded writers; stale-save rows cannot receive strict full credit across a real deployment. |
+| Registered REST additional fields | Inventory `register_rest_field()` update callbacks per controller/post type. Any callback that can touch protected fields must join the declared write set and atomic commit or force invalidation. | A 409 can still leave protected side effects or secondary mutations, so row credit is partial at best. |
+| Cooperative locks | Object-cache, transient, or plugin-level locks need DB fencing by the bundle token. An expired old lock holder must not be able to commit later. | Serialization-only implementations should not receive full credit for race rows. |
+| Site-editor entities | `wp_template`, `wp_template_part`, `wp_navigation`, and `wp_global_styles` need entity-specific token namespaces and multi-entity save semantics. | Do not fold site-editor/template fixes into the normal `post`/`page` row estimate without a vector-token site-save protocol. |
+
 ### Storage and transaction design
 
 The base estimate assumes more than "there is a token somewhere." It assumes a
@@ -911,6 +924,19 @@ enforcement, and server-repair delivery semantics before strict provenance,
 no-op, or materialization credit applies. Compacted room updates need their own
 audit metadata; otherwise author/order/save-marker attribution can be lost
 before the server tries to prove that a change is no-op-only.
+
+The CRDT/projection proof frontier is narrower than "the server can decode a
+document":
+
+| Frontier | Required proof | Why it matters for credit |
+| --- | --- | --- |
+| Transport cursor vs CRDT frontier | Name the decoded state vector/update frontier used for the save. A polling room cursor or room-history order is only a delivery watermark. | A delivery cursor cannot prove the causal base for no-op, projection, or materialization. |
+| Delete-only updates | Persist the delete-set effect into canonical CRDT state, or reject/refetch. Do not discard a delete-only update just because current projection is unchanged. | Deletes can prevent future late updates from resurrecting content; rendered equality is not no-op proof. |
+| Schema/deprecation migration | Include a block-registry, deprecation, and migration-policy hash, plus materialization decisions for migrated blocks. | The same CRDT block tree can project differently after plugin/core registry changes. |
+| Materialization epoch | If the server writes materialized `post_content`, the committed DB fields, `_crdt_document`, CRDT `blocks`/`content` representation, response payload, and sidecars need one materialization epoch. | Otherwise the next hydration/save can treat the DB content as the outlier and overwrite or re-dirty it. |
+| Room repair publication | Server-origin repairs need a room cursor/generation fence: persist the committed bundle first, then publish exactly that repair update for that generation. | Clients should ignore repair updates for old generations and refetch if DB generation and room repair diverge. |
+| Save serialization vs render output | Compare against saved `post_content`, not front-end rendered markup or block-support/theme output. | Render filters, theme JSON, and block supports are not evidence that a saved-content materialization is correct. |
+| Raw-source preservation | Freeform, invalid, and unregistered blocks need raw-source round-trip proof; missing raw source should classify as `unknown`. | Projection must not materialize away user-preserved invalid or unknown markup. |
 
 Under this design, rows are credited to the mitigation only when the bad state
 passes through the guarded save path. Rows whose visible failure occurs before
@@ -1487,6 +1513,18 @@ full, else partial, else containment-only, else excluded. It is not additive
 across mechanism tables. For example, row `45` is in the partial count only
 under the stronger no-op-plus-canonicalization assumption; under CRDT no-op
 alone it should be removed from the bug-resolution numerator.
+
+Additional strict-proof caps from the deeper row review:
+
+| Boundary risk | Affected rows | Credit effect |
+| --- | --- | --- |
+| Row `99` may be a response/read-path incoherence rather than a proven DB mutation. | `99` | Keep full only with raw DB evidence that `_crdt_document` was cleared/overwritten while title/content stayed valid. Without that, use 7 full / 30 partial / 6 weak containment, weighted 15 / 43 / 31; total bug-resolution touched stays 37 / 58. |
+| Row `63` can be over-credited as atomic post/meta split. A request with `content: ""` and populated CRDT would be faithfully committed by atomicity unless projection rejects it or raw traces prove a split failure. | `63` | Remove from CAS/atomic-only sensitivity when split proof is absent; credit through explicit-empty-content projection instead. |
+| Multi-branch rows can have protected-content branches and unrelated title/slug/entity branches. | `60`, `62`, `136`, `241`, partly `242` | Count only content/markup containment under projection. Title repair needs title projection or per-field freshness; slug/non-content corruption remains out of scope. |
+| Generic static-block projection does not cover dynamic, filtered, or block-specific serialization failures. | `19`; containment candidates `2`, `5` if credited through Search-block persistence | Require exact block-subtree projectability under server policy, or downgrade to `projection_unknown`/containment-only. |
+| Transient bad saves are not terminal row fixes. | `67`, `69`, possibly `138` | Count as transient containment unless the rejected save is the terminal durable bad state or the cause of the later visible failure. |
+| CRDT no-op rows actually require two mechanisms. | `23`, `90`, `227` | Split `server_crdt_noop_containment` from `client_dirty_settlement`. Full credit requires both; server no-op alone is partial. |
+| Projection rows with already-corrupt accepted CRDT should not get projection credit merely because saved HTML is bad. | `15`, `32`, `37`, `54`, `69`, `94`, `216`, `228` | Require exact accepted/submitted-CRDT proof; otherwise downgrade to live-CRDT/client-corruption containment. |
 
 ### Expected impact: bug-resolution score
 
@@ -2180,6 +2218,37 @@ row-clustered or bootstrap confidence intervals; STATUS-weighted intervals
 should resample rows, not individual save attempts, because attempts from the
 same row/session are correlated.
 
+The statistical plan should be pre-registered before impact measurement:
+
+- Per-row and per-family run counts, stopping rules, and minimum detectable
+  effect should be set before observing enforced outcomes. Do not stop after
+  the first clean enforced run; early stops for cost or instability are
+  censored, not resolved.
+- Baseline, pass-through, shadow, and enforced runs should be randomized or
+  interleaved by fixture seed so code drift, warmed caches, room-history state,
+  and environment timing are not mistaken for mitigation impact.
+- Broad sweeps over many rows, mechanisms, strata, and variants need an
+  explicit multiple-comparison or false-discovery policy. Exploratory
+  discoveries should be reported separately from pre-registered claims.
+- A replay package should validate in at least two clean environments: the
+  original pinned capture environment and a fresh reconstruction. Record
+  `baseline_replay_rate`, `oracle_replay_rate`, and `enforced_replay_rate`.
+- Estimated and measured namespaces must stay separate. Estimated rows start at
+  zero measured credit; promotion requires a complete evidence packet,
+  replayable fixture, pre-registered eligibility, and adjudicated terminal
+  oracle.
+
+Classifier errors should be labeled by consequence:
+
+| Error class | Meaning | Credit impact |
+| --- | --- | --- |
+| Mechanism false positive | The classifier says the row is eligible, but the mechanism precondition is absent. | Blocks mechanism-specific credit. |
+| Enforcement false positive | The server rejects or materializes a valid save. | Blocks rollout expansion. |
+| Containment false positive | The server acted, but no bad durable write would have occurred. | Blocks containment credit. |
+| Resolution false positive | Final oracle is marked clean despite lost intent, dirty state, divergent peer, or failed reload. | Blocks full credit. |
+| Mechanism false negative | A mechanism-eligible bad write was not classified or enforced. | Counts as implementation miss. |
+| Attribution false negative | The row is resolved, but the necessary mechanism is not identified. | Blocks mechanism-specific totals until ablation resolves attribution. |
+
 Pass-through should have two levels:
 
 | Mode | Purpose |
@@ -2798,6 +2867,34 @@ Add rollout-blocking privacy metrics: `full_token_logged`,
 `tenant_erasure_diagnostic_rows_deleted`. Any nonzero raw-content, raw-CRDT,
 full-token, or plain-hash logging event should block rollout expansion until
 the sink is fixed and affected diagnostic records are purged or rotated.
+
+Authorization and operational containment must not be confused with row
+resolution. Users without `edit_post` access should receive the normal auth or
+not-found shape before stale-token, provenance, projection, idempotency, or
+diagnostic classification is exposed. Unauthorized responses should not differ
+by hidden state through status code, diagnostic id presence, response size,
+retry headers, or material timing. Useful metrics include
+`auth_failed_before_guard_classification`,
+`unauthorized_diagnostic_suppressed`, `unauthorized_token_probe`,
+`unauthorized_attempt_replay`, `error_shape_auth_conflict_mismatch`, and
+`error_timing_auth_conflict_mismatch`.
+
+Authorized abuse is also a rollout concern. A valid collaborator can flood a
+room with stale-token saves, oversized but valid CRDTs, lock contention, or
+idempotency mismatches. Per-room fairness should ensure one actor's conflict,
+decode, lock, or idempotency budget exhaustion does not prevent other
+collaborators from saving. Track `room_conflict_flood_actor_limited`,
+`room_lock_fairness_throttle`, and `other_actor_save_blocked_by_abuse`.
+
+Rows should not receive full or partial mitigation credit if the bad write was
+avoided only because of `429`, lock backpressure, decode budget, storage quota,
+support/operator repair, or privacy/diagnostic incident handling. Those
+outcomes are operational containment or measurement-inconclusive intervals,
+not proof that bundle CAS, projection, no-op settlement, or provenance fixed
+the row. During diagnostic key rotation, measured credit also requires
+`diagnostic_key_epoch` and `policy_epoch` to join across server, client, and
+support records; key rotation must not alter bundle CAS tokens or idempotency
+semantics.
 
 ### Implementation risks that affect the estimate
 
