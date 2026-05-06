@@ -727,6 +727,43 @@ No-op policy affects row credit:
 | Same rendered title/content/block projection no-op | Unsafe and should not be credited; byte-different Yjs state can carry real causal information while rendering the same post. |
 | CRDT no-op plus separate safe HTML/entity canonicalization | Could make `45` stronger, but that is an additional canonicalization fix outside CRDT no-op settlement alone. |
 
+No-op and projection evidence should be stratified by how much of the CRDT the
+server actually understands:
+
+| Evidence stratum | What it can prove | Row-credit implication |
+| --- | --- | --- |
+| JSON wrapper equality or ignored wrapper fields | The envelope changed but embedded Yjs bytes may be identical. | Safe only for wrapper churn; too weak for save-marker rows with changed document bytes. |
+| Embedded Y.Doc byte equality | The stored causal document did not change. | Can settle wrapper-only loops; does not prove semantic equality across byte-different documents. |
+| State-vector/update-diff inspection | The server can identify which clients/clocks changed. | Necessary but not sufficient for save-marker-only no-op; changed clocks can still carry real edits or deletes. |
+| Decoded known save-marker locations only | The diff is limited to fields the protocol declares non-semantic. | Sufficient for CRDT no-op rows only if unknown keys/types force `unknown`, not no-op. |
+| Decoded block/title/excerpt projection | The accepted CRDT projects to protected fields under a versioned policy. | Needed for projection/materialization credit, but still does not prove live intent if the CRDT is already wrong. |
+
+Unknown CRDT structures, unknown Yjs type names, schema-version mismatches,
+resource limits, or state-vector gaps should downgrade to `unknown`, not
+`accepted_crdt_noop`. A no-op classifier that treats "renders the same" or
+"only known fields appear different in the current decoder" as proof can lose
+future merge information and should not receive row credit.
+
+This matters for the current implementation shape. The persisted wrapper
+version is derived from the full base64 document update, while the PHP guard
+parses wrapper fields but does not decode a Yjs state vector, delete set, or
+record-map diff. `markEntityAsSaved()` stores `savedAt` and `savedBy` inside
+the same persisted Y.Doc state map as ordinary editor data. Therefore "ignore
+updates by the saving client after base" is unsafe: the same client clock range
+can contain real content edits and save-marker writes. A full no-op proof
+requires either moving save markers outside persisted CRDT state, or decoding
+the incoming-vs-current Yjs differential update and proving it touches only
+declared non-semantic keys and no content-bearing structs or delete sets.
+
+Merge-vs-reject also needs an explicit causal policy. If the bundle token is
+stale but the incoming Y.Doc carries new updates, the server should not merge
+and accept merely because Yjs can merge them deterministically. Merge credit
+requires proving same document generation, declared write-set compatibility,
+capability validity, projection safety after merge, and no hidden delete-set
+effect. Without those proofs, the correct server outcome is reject/refetch.
+Yjs convergence is not the same thing as preserving the intended WordPress
+entity state.
+
 Under this design, rows are credited to the mitigation only when the bad state
 passes through the guarded save path. Rows whose visible failure occurs before
 save, or whose realistic repro emits no useful post update request, stay
@@ -756,6 +793,71 @@ and token from one completed state, not a mixture of post row, meta, cache, or
 response state. An idempotent replay returns the same prior linearized outcome,
 and a legacy/lifecycle/provenance invalidation linearizes before any later
 guarded read or write can rely on the old token.
+
+The server-side state being guarded is not just `_crdt_document`. For a single
+entity generation, the protected bundle should be modeled as:
+
+```text
+B = (
+  site/entity id,
+  document_generation,
+  room_generation,
+  bundle_token,
+  protected-field stored values or hashes,
+  accepted CRDT hash/state vector,
+  projection_policy_version,
+  lifecycle state
+)
+```
+
+Useful lifecycle states are `uninitialized`, `active`, `invalidated`,
+`legacy_adoption_pending`, `provenance_quarantined`, `degraded_shadow_only`,
+and `tombstoned`. The distinction between `active` and `invalidated` matters:
+advancing a token means the server atomically committed a known protected-field
+bundle and can attest to its hashes; invalidating a token means old client
+bases are unusable, but no new guarded generation exists until the server
+rebuilds or adopts one from current storage. External writes, lifecycle
+transitions, mixed-version writes, and rollback paths should not receive full
+credit if they collapse those two states.
+
+Allowed transitions are deliberately narrow:
+
+| Transition | Linearization point | Required postcondition |
+| --- | --- | --- |
+| `initialize_or_adopt_legacy` | Creation of the bundle row/generation. | Exactly one initial bundle exists; concurrent initializers converge on one token. |
+| `guarded_accept_real_update` | Atomic protected-field commit plus token advance. | All declared protected fields, `_crdt_document`, hashes, and token advance together. |
+| `reject_stale_bundle` | Token comparison before protected mutation. | Protected fields and token remain unchanged; response names current generation. |
+| `reject_projection_mismatch` | Projection decision before protected mutation. | Protected fields, `_crdt_document`, token, and materialized response fields remain unchanged. |
+| `accept_crdt_noop` | No-op decision and acknowledgement. | Stored CRDT is preserved or canonicalized by policy; client receives a clean-settlement response. |
+| `legacy_external_invalidation` | Detection of an unguarded protected-field write. | Token advances or is invalidated before any later guarded save can rely on the old base. |
+| `provenance_rotation` | New document/room generation is minted. | Old bundle tokens, room cursors, and idempotency attempts cannot cross into the new generation. |
+| `lifecycle_tombstone_or_delete` | Trash/delete/cleanup state change. | Bundle/provenance/attempt/room state is retired or marked unreadable before reuse. |
+
+Forbidden transitions are the ones most likely to turn the mitigation into a
+false sense of safety: protected fields mutate without token advance; token
+advances without the committed protected values it names; a rejected save
+creates a revision or side effect that looks like accepted content; a response
+returns token and fields from different generations; a post generation reuses a
+prior token after clone/import/delete; or a provenance rotation leaves old room
+updates consumable by new clients.
+
+Every guarded save attempt should also reach exactly one terminal outcome:
+`accepted_real_update`, `accepted_crdt_noop`, `reject_stale_bundle`,
+`reject_projection_mismatch`, `reject_provenance_mismatch`,
+`legacy_invalidated`, `degraded_shadow_only`, or `invalid_duplicate`. Rejected,
+degraded, and invalid-duplicate outcomes must not mutate protected fields or
+advance the bundle token. Conflict repair retries are new attempts with new
+base evidence, not reinterpretations of the prior rejected attempt.
+
+Projection checks, no-op classification, provenance validation, and
+materialization eligibility should be side-effect-free until the guarded commit
+point. Any action that rewrites serialized content, CRDT state, caches, room
+metadata, protected hashes, or response-visible canonical fields is a commit
+stage mutation and must be part of the same atomic transition as the token.
+After a rejected guarded write, the rejection response and the next
+edit-context read should expose the same pre-reject protected generation; a
+rejection path that also refreshes caches or canonicalizes content without a
+committed transition should not receive row credit.
 
 | Row class | Required proof | MVP boundary |
 | --- | --- | --- |
@@ -836,6 +938,42 @@ contains both a provably impossible payload and a split persistence failure.
 When both are present, use the earliest server-enforceable phase that would
 change the final oracle, then record the later mechanism as corroborating
 evidence rather than an additional row of impact.
+
+### Counterfactual row-credit decision tree
+
+For each row, the measured question should be counterfactual: would this
+specific mitigation have changed the terminal oracle for the original failure?
+The decision tree is:
+
+1. Did the baseline failure reproduce, or does a reduced fixture preserve the
+   same protected-field evidence?
+2. Did a protected-field save request reach the guarded path before the first
+   durable bad write?
+3. Was the submitted bad state stale, split, impossible, no-op-only, or
+   foreign under a mechanism this mitigation actually implements?
+4. Could the server decide before any protected mutation or irreversible side
+   effect?
+5. Did the response cause bounded client repair/no-op settlement without
+   dropping the user's local intent?
+6. Did final DB state, cold reload, active peers, room history, and dirty/save
+   state match the row oracle?
+
+The first "no" determines the bucket:
+
+| First failed question | Classification |
+| --- | --- |
+| Baseline does not reproduce and no faithful reduction exists. | Measurement inconclusive; keep estimate language. |
+| No protected-field save reaches the guard. | Unimpacted by server-side save validation. |
+| The bad state is live/editor-side before request construction. | Partial or containment-only, depending on whether a later bad save is blocked. |
+| The bad request is not stale/split/impossible/no-op/foreign under implemented mechanisms. | Unimpacted by this mitigation, even if another server mechanism might help. |
+| Decision happens after protected mutation or side effects. | Partial at best; atomicity proof is missing. |
+| Client repair drops local intent or leaves dirty/save state stuck. | Server-contained partial, not full. |
+| Cold reload or peer/room state diverges. | Partial, because the current tab result is not durable row resolution. |
+
+This tree is stricter than "would the server have returned a 409?" A 409 can
+be a useful containment event while still failing the row if the client loses
+the edit, retries stale content through an unguarded path, or leaves the next
+opener in the same corrupted room history.
 
 ### Deeper mechanism split
 
@@ -1226,11 +1364,11 @@ the central bucket:
 | Sensitivity adjustment | Fully fixed | Partially mitigated | Touched/contained | Notes |
 | --- | ---: | ---: | ---: | --- |
 | Base estimate | 8 rows / 16 weighted | 29 rows / 42 weighted | 37 rows / 58 weighted | Assumes decoded no-op proof, guarded bad-save path for conditional rows, and canonicalization for row `45`. |
-| Safe MVP: CAS/atomic commit only, no projection/no-op/canonicalization | 5 rows / 11 weighted | 0-3 rows / 0-3 weighted | 5-8 rows / 11-14 weighted | Credits `8`, `99`, `155`, `156`, and `243`; adds `52`, `63`, and `141` only if atomic post/meta commit is proven. |
+| Safe MVP: CAS/atomic commit only, no projection/no-op/canonicalization | 5 rows / 11 weighted | 0-3 rows / 0-3 weighted | 5-8 rows / 11-14 weighted | Conditional credits are `8`, `99`, `155`, `156`, and `243`; `99` needs raw DB proof, `155` is archived-trace dependent, and `243` may need per-field/title freshness if a stale title rides with a fresh token. Adds `52`, `63`, and `141` only if atomic post/meta commit is proven. |
 | No CRDT no-op or canonicalization credit | 5 rows / 11 weighted | 28 rows / 40 weighted | 33 rows / 51 weighted | Counts bundle CAS, atomic commit, and projection only; removes `23`, `45`, `90`, and `227`. |
-| Exact bad-request projection proof required | 8 rows / 16 weighted | 22 rows / 32 weighted | 30 rows / 48 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `37`, `54`, `69`, `94`, `216`, and `228` conditional. |
+| Exact bad-request projection proof required | 8 rows / 16 weighted | 20 rows / 28 weighted | 28 rows / 44 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `29`, `37`, `54`, `69`, `94`, `196`, `216`, and `228` conditional. |
 | No-op proof required | 6 rows / 12 weighted | 31 rows / 46 weighted | 37 rows / 58 weighted | Moves `23` and `90` from full to partial until decoded Yjs diffs prove save-marker-only churn; row `227` remains full because it has stronger dirty-settlement evidence. |
-| Guarded-save evidence required | 5 rows / 11 weighted | 28 rows / 42 weighted | 33 rows / 53 weighted | Also treats row `99` as partial unless DB meta clobber is confirmed, removes row `45` without canonicalization, and removes or downgrades `52`, `69`, and `141` unless traces prove an accepted guarded bad save. |
+| Guarded-save plus no-op evidence required | 5 rows / 11 weighted | 28 rows / 42 weighted | 33 rows / 53 weighted | Combines guarded-save proof with no-op proof: moves `99`, `23`, and `90` from full to partial unless DB/no-op evidence is proven, removes row `45` without canonicalization, and removes or downgrades `52`, `69`, and `141` unless traces prove an accepted guarded bad save. |
 | Containment upper bound with strict proof | 5 rows / 11 weighted | 28 rows / 42 weighted | 36 rows / 79 weighted | Keeps containment rows `2`, `5`, and `17`, but treats `27`, `56`, and `57` as unmeasured upper-bound rows until request/DB traces prove later durable bad saves. |
 
 This stricter table does not replace the base estimate; it describes what to
@@ -1914,6 +2052,39 @@ cursor/sequence, applied update ids, and per-peer CRDT document hash after
 repair. Rows with clean DB but divergent room state remain server-contained or
 partial.
 
+Timing perturbation needs its own control. Run an instrumented pass-through
+mode that performs the same token reads, locking, projection decode, logging,
+and response shaping, but accepts the legacy write. If pass-through also
+removes or materially changes the failure, classify the row as
+timing-sensitive/inconclusive rather than fixed. This is especially important
+for race/reload-sensitive stale-save rows `8`, `52`, `63`, `141`, `155`,
+`156`, and `243`, and projection rows such as `19`, `37`, `69`, `94`, `216`,
+and `228`.
+
+Full CAS candidates should get a stale-base replay matrix: old fields plus old
+token, old fields plus fresh token, fresh fields plus old token, and fresh
+fields plus fresh token. Count `8`, `155`, `156`, and `243` as bundle-CAS full
+only when the old token is necessary for the bad write and rejection plus
+repair resolves the row. If old fields plus a fresh token still reproduces,
+the row is projection/materialization/per-field-freshness dependent. If fresh
+fields plus an old token still leaves dirty or divergent state after rejection,
+the missing mechanism is client repair, not server CAS.
+
+Projection/read-write-set rows should also run an omitted-field causality
+control. Replay the failing request with the contradicted protected field
+omitted while keeping unprotected fields, timing, actor, and token state
+constant. If the failure still occurs, the row is not caused by protected-field
+commit and should be unimpacted or read-path/client-side rather than
+projection-contained. Apply this especially to `19`, `37`, `54`, `69`, `94`,
+`136`, `216`, `228`, `241`, and `242`.
+
+When the full protocol resolves a row, run mechanism ablations and record
+`minimal_passing_mechanism`. Disable one layer at a time: CAS, atomic commit,
+projection, materialization, CRDT no-op, canonicalization, provenance, and
+client repair. A row should not be promoted to measured full if it only passes
+with all mechanisms enabled and no ablation identifies which invariant was
+necessary.
+
 The ledger should also record proof debt so estimates do not harden into
 claims before the evidence exists:
 
@@ -2108,6 +2279,19 @@ Telemetry dimensions should include `save_attempt_id`, `logical_save_id`,
 `guarded_path_present`. Count server containment and client repair separately:
 a 409 proves rejection, not user-visible repair.
 
+Every token, response, attempt-ledger row, and telemetry event should include a
+`rollout_policy_epoch`: feature flags, enforcement mode, cohort id, protocol
+version, and enabled mechanisms. A row replay that spans a canary flip,
+rollback, or mechanism-specific disable cannot prove which policy contained or
+resolved the failure unless `policy_epoch_at_read`, `policy_epoch_at_decision`,
+and `policy_epoch_at_commit` are recorded.
+
+During enforcement, keep computing counterfactual shadow decisions for disabled
+or lower-priority mechanisms. For example, an accepted save should log what
+CAS, projection, no-op, provenance, and bypass classifiers would have decided
+independently. This prevents crediting the entire bundle protocol whenever any
+enabled layer happens to coincide with a fixed row.
+
 For token-granularity rollout, also record whether the request used scalar or
 per-field generations, which protected fields were in the declared read set,
 which were in the write set, whether a conflict was overlapping or
@@ -2230,6 +2414,27 @@ stale-bundle repair success below threshold, any projection false positive
 against benign opaque-content controls, or sustained increases in dirty-state
 duration, save-loop detections, or unload-with-unsaved-changes prompts.
 
+Readiness budgets should be pre-registered before canary starts: maximum
+projection false-positive count, maximum protected-field mutation after reject,
+minimum one-shot repair success rate, maximum bypass rate for opted-in RTC
+saves, maximum event-loss rate, maximum p95 save latency/lock wait, and maximum
+dirty-state duration regression. Qualitative "high" or "low" thresholds are
+not enough to turn row estimates into measured impact.
+
+Rollback needs in-flight semantics. Attempts that start under strict
+enforcement but finish after rollback should either complete under their
+original policy epoch or fail with retry/refetch; they should not silently fall
+through to weaker shadow policy mid-attempt. Degraded state should also be
+sticky for a logical save, and preferably for the room/post generation until
+refetch, so an enforced rejection followed by a shadow retry is not counted as
+a clean resolution.
+
+Trace completeness should be a canary gate. Define a minimum join rate across
+server attempt, REST response, client repair, peer convergence, and cold-reload
+events. Rows with missing phase events, unjoined `logical_save_id`, client clock
+skew beyond tolerance, or absent final peer/cold-reload oracle should be
+`measurement_inconclusive`.
+
 Every enforced rejection should return a stable diagnostic code and redacted
 diagnostic id that joins server logs, client logs, and support reports. The
 diagnostic record should include mechanism, write set, token match state,
@@ -2342,6 +2547,51 @@ pre-insert validation callback:
   validation or must remain in legacy-invalidation mode; otherwise the server
   can produce false conflicts or bless post-save mutations the client never
   read.
+- Re-entrant post writes need explicit handling. `save_post`,
+  `wp_after_insert_post`, REST additional-field callbacks, and plugin callbacks
+  can call `wp_update_post()` or `update_post_meta()` again while a guarded save
+  is still in progress. The bundle protocol should reject/retry re-entrant
+  protected-field writes, treat them as same-transaction participants, or defer
+  them until after commit. Otherwise a hook-triggered second write can deadlock,
+  bypass the token check, or invalidate the token for the save still assembling
+  its response.
+- Capability checks must be repeated at commit time and on conflict repair. A
+  user can pass REST preflight, then lose `edit_post`, `unfiltered_html`,
+  post-type-specific caps, status-transition caps, or meta-field capability
+  before commit or retry. Materialization and projection must use current
+  object, field, status, and meta capabilities, not an authorization result
+  cached from the original request.
+- Custom REST controllers for post-like entities are a separate integration
+  risk. A CPT can be REST-visible but use a custom controller, custom schema,
+  nonstandard content fields, custom meta auth/sanitize callbacks, or no normal
+  autosave/revision behavior. Strict enforcement should be opt-in per
+  post-type/controller pair unless the controller proves it uses the same
+  protected-field semantics, token response shape, capability checks, and cache
+  invalidation policy.
+- REST batch needs envelope-level failure semantics. A guarded subrequest that
+  returns 409 inside a batch must not be converted into application-level
+  success by the batch envelope, and later subrequests in the same batch must
+  not apply unprotected side effects derived from the failed protected save. If
+  this cannot be guaranteed, guarded RTC saves should be excluded from batch
+  transport.
+- Metabox compatibility should be part of rollout segmentation. If metaboxes
+  are present but marked RTC-compatible, measure whether their AJAX save path
+  can touch `post_title`, `post_content`, `post_excerpt`, or `_crdt_document`.
+  If it can, it must participate in the guarded protocol or be classified as a
+  legacy invalidation. If metabox compatibility disables collaboration, token
+  emission for that editor session should also be disabled or marked
+  shadow-only.
+- Guarded commits should detect cache invalidation suspension/deferment around
+  protected writes. If WordPress or a plugin has suspended invalidation, the
+  server should avoid serving token-bearing responses from stale cache and
+  record a `cache_invalidation_suspended` outcome that blocks strict
+  enforcement for that request path.
+- Multisite switching must be scoped through the whole guarded call stack. A
+  save started under one blog must not read bundle rows, object-cache keys,
+  sync-room state, or idempotency records after a hook has switched blogs.
+  Store and assert the expected site/blog id at read, validation, commit, cache
+  invalidation, and response assembly; mismatch should abort or downgrade to
+  legacy invalidation.
 
 ### Practical conclusion for the broader mitigation
 
