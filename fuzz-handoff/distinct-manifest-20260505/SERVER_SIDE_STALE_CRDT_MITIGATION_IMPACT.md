@@ -371,6 +371,18 @@ looks sound:
 | Cooperative locks | Object-cache, transient, or plugin-level locks need DB fencing by the bundle token. An expired old lock holder must not be able to commit later. | Serialization-only implementations should not receive full credit for race rows. |
 | Site-editor entities | `wp_template`, `wp_template_part`, `wp_navigation`, and `wp_global_styles` need entity-specific token namespaces and multi-entity save semantics. | Do not fold site-editor/template fixes into the normal `post`/`page` row estimate without a vector-token site-save protocol. |
 
+Deployment identity and observer ordering add another set of strict-mode
+requirements:
+
+| Requirement | Why it matters |
+| --- | --- |
+| Use `blog_id` plus an immutable per-blog `site_uuid`, not request host, mapped domain, `home_url()`, `site_url()`, path, or network id, for bundle/provenance/cache keys. | Domain mapping and URL aliases can change independently of content identity; URL-derived room or cache keys need migration/rotation before strict credit. |
+| Keep the authoritative token and lock in transactional storage; object cache, transients, `wp_cache_add()`, and `wp_cache_incr()` may only mirror committed generations. | Cache semantics vary across deployments and are not portable CAS primitives. Cache misses or mismatches should fail closed to primary DB reads. |
+| The guarded endpoint must own the `$wpdb` transaction boundary. | Hooks or plugins that commit, roll back, toggle autocommit, or use savepoints on the same connection can invalidate the CAS proof. |
+| If `_crdt_document` stays in ordinary postmeta, prevent phantom duplicate meta rows. | Locking a bundle row is insufficient if concurrent `add_post_meta()` or direct inserts create a second authoritative-looking CRDT document. |
+| Run KSES, meta auth, and capability checks against the final target state. | Status, author, post type, or meta changes in the same request can change filtering and permissions for protected fields. |
+| Ensure irreversible observers see only committed bundle generations. | `transition_post_status`, `save_post`, REST additional fields, indexing, webhooks, and notifications can otherwise publish protected fields before the guarded bundle is complete. |
+
 ### Storage and transaction design
 
 The base estimate assumes more than "there is a token somewhere." It assumes a
@@ -782,6 +794,19 @@ If the client cannot enforce monotonic observation, many server-contained rows
 remain partial: the server blocked one bad write, but the client can still
 apply or retry stale protected fields from an older response.
 
+Additional client/API contract details cap row credit:
+
+| Gap | Affected rows | Credit effect |
+| --- | --- | --- |
+| Structured 409 bodies must survive `apiFetch`, REST middleware, batch wrappers, and Core Data error handling with current token/refetch target, write set, attempt id, conflict kind, and retryability intact. | `8`, `52`, `63`, `99`, `141`, `155`, `156`, `243`, plus projection rows | If the retry layer only sees a generic `WP_Error`, server rejection is containment only. |
+| Token-capable requests must fail closed on malformed protocol objects: unknown version, missing `save_attempt_id`, stripped private fields, or malformed `editor_content_bundle`. | All CAS/projection rows | Silent fallback to ordinary REST save removes CAS/projection credit for that request. |
+| Expired idempotency attempts need a terminal `attempt_expired_refetch_required` response. | Accepted/retry rows, especially `23`, `90`, `227` | Re-executing an expired retry as a fresh save can double-commit or re-dirty the entity. |
+| `accepted_crdt_noop` with an unchanged bundle token still needs a monotonic `settlement_id` or echoed accepted attempt id. | `23`, `90`, `227` | The client needs to distinguish a fresh no-op acknowledgement from an old replay before clearing dirty state. |
+| Success/no-op responses should echo a `client_edit_seq` or local-intent fingerprint and clear only accepted fields that have no newer local edit. | Full rows and no-op rows | A late success that clears newer unsaved edits downgrades row-resolved credit. |
+| A 409 repair path needs an in-flight same-entity/logical-save fence. | Stale-save and projection rows | Competing rebase retries from the same logical save must not both commit against successive fresh tokens. |
+| Token-bearing responses should be private/no-store or otherwise vary by auth, context, and bundle generation. | `52`, `99`, `141`, all retry rows | Browser, proxy, preload, or resolver cache hits must not reintroduce old tokens. |
+| Bundle token and observation order need one authoritative client store outside editable entity fields. | All CAS rows, especially `52`, `141`, `243` | If `core/editor`, `core-data`, resolver cache, autosave state, or undo/redo can restore older protected fields independently, split credit into server containment plus client-cache repair. |
+
 The read path needs the same coherence discipline as the write path. A save
 response or edit-context REST response can stitch together `wp_posts` fields,
 post meta, object-cache state, REST preloads, and Core Data resolver caches. If
@@ -938,6 +963,17 @@ document":
 | Save serialization vs render output | Compare against saved `post_content`, not front-end rendered markup or block-support/theme output. | Render filters, theme JSON, and block supports are not evidence that a saved-content materialization is correct. |
 | Raw-source preservation | Freeform, invalid, and unregistered blocks need raw-source round-trip proof; missing raw source should classify as `unknown`. | Projection must not materialize away user-preserved invalid or unknown markup. |
 
+Compaction and schema evolution further reduce what the server can prove:
+
+| Case | Required handling |
+| --- | --- |
+| Room-history compaction or Yjs GC has replaced per-update history with a full-state update. | Persist proof sidecars before compaction/GC, or downgrade compacted updates to whole-document projection checks; do not claim per-update intent or path-level authorship. |
+| Server repair/materialization emits Yjs updates. | Use a durable per-document server writer identity or explicit migration generation. A fresh `Y.Doc` per request creates changing client clocks and weakens state-vector proofs. |
+| State vectors cross clone/import/migration/materialization boundaries. | Treat vectors as generation-scoped client clocks, not portable post identity. Store predecessor/successor vectors and require an explicit bridge proof before accepting old tokens. |
+| Persisted CRDT contains unsupported nested shared types or subdocuments. | Recursively validate Yjs constructors under the persisted document root before projection; JSON projection alone is not a structural proof. |
+| Block schema changes alter `source`, `default`, `role`, query shape, or deprecations. | Invalidate old projection proofs unless raw block provenance or block-specific migration proof shows the omitted/defaulted/sourced values were preserved. |
+| Serialization cleanup policy changes. | Include default-block, freeform, cleanup, registry, and serializer policy versions in projected-content tokens. |
+
 Under this design, rows are credited to the mitigation only when the bad state
 passes through the guarded save path. Rows whose visible failure occurs before
 save, or whose realistic repro emits no useful post update request, stay
@@ -1037,7 +1073,7 @@ committed transition should not receive row credit.
 | --- | --- | --- |
 | Stale title/content/full-record saves (`8`, `155`, `156`, `243`) | Submitted protected fields were derived from an older bundle generation, the current generation changed before commit, no protected field mutated on reject, and client repair either saved cleanly or preserved the local draft. | Bundle CAS plus atomic commit plus client repair. Projection/materialization is not required unless the trace is mixed-base with a fresh token. |
 | Direct CRDT-meta clobber (`99`) | Raw DB evidence proves `_crdt_document` was cleared or overwritten while title/content stayed valid; the guarded path prevents the meta mutation across REST, meta add/update/delete, and response assembly; client refetch/retry or refresh settles cleanly. | Full only if DB mutation is proven. If evidence is only an incoherent save response, count as partial/read-path containment, not full. |
-| Split post/meta persistence (`52`, `63`, `141`) | A conflict or failure cannot leave `wp_posts` fields changed while `_crdt_document` or token state rejects/fails. Raw DB traces distinguish split persistence from read-path incoherence. | Atomic protected-field commit. Preflight-only guards do not count. |
+| Split post/meta persistence (`52`, `141`, and `63` only with raw split proof) | A conflict or failure cannot leave `wp_posts` fields changed while `_crdt_document` or token state rejects/fails. Raw DB traces distinguish split persistence from read-path incoherence or explicit empty-content writes. | Atomic protected-field commit. Preflight-only guards do not count. |
 | Empty/corrupt serialized content partial rows | Accepted/submitted CRDT is from the same guarded generation, projectability is `projectable_static_blocks`, projection result is `mismatch`, and reject/materialization leaves protected DB fields clean. | Projection validation in shadow first; enforcement only for projectable content. |
 | CRDT save-marker no-op rows (`23`, `90`, `227`) | Decoded CRDT diff proves only known save-marker/wrapper churn, server returns no-op/canonical response, and client clears dirty state without dropping causal state. | CRDT no-op settlement plus client dirty-state acknowledgement. |
 | HTML/entity canonicalization row (`45`) | Churn is from deterministic entity/HTML/block-attribute canonicalization, not CRDT causal state, and canonical acknowledgement clears dirty state. | Separate canonicalization mechanism; not part of CRDT no-op alone. |
@@ -1058,10 +1094,12 @@ Under that MVP, credit should be limited to the stale-save/direct-CRDT subset
 whose traces actually traverse the guarded path. Projection/content-loss rows,
 provenance row `89`, containment-only rows, CRDT no-op rows, and row `45`
 remain out of enforced impact until their separate mechanisms are enabled and
-their proof obligations are measured. Rows `52`, `63`, and `141` are not
-CAS-only MVP credit; they require the atomic protected-field commit proof.
-Without that proof, they remain unmeasured or partial read-path/split
-persistence candidates.
+their proof obligations are measured. Rows `52` and `141` are not CAS-only MVP
+credit; they require the atomic protected-field commit proof. Row `63` also
+requires that proof if it is being credited as split persistence, otherwise it
+belongs to projection/explicit-empty-content evidence. Without those proofs,
+these rows remain unmeasured or partial read-path/split-persistence
+candidates.
 
 The evidence ladder should remain separated:
 
@@ -1157,7 +1195,7 @@ The mechanisms should be evaluated independently:
 | Mechanism | What it proves | Rows it can credibly move | What remains if absent |
 | --- | --- | --- | --- |
 | Bundle CAS | The client's declared protected-field read base is still current at commit time. | Direct stale save rows such as `8`, `155`, `156`, `243`, plus direct CRDT-meta row `99`. | Same-token stale local payloads and internally coherent but wrong bundles still pass. CAS alone also does not prevent split post/meta writes. |
-| Atomic protected-field commit | `post_title`, `post_content`, `post_excerpt`, and `_crdt_document` are committed or rejected as one unit. | Split post/meta persistence rows such as `52`, `63`, and `141`. | A conflict discovered during meta update can leave already-written `wp_posts` fields behind. |
+| Atomic protected-field commit | `post_title`, `post_content`, `post_excerpt`, and `_crdt_document` are committed or rejected as one unit. | Split post/meta persistence rows such as `52` and `141`; row `63` only if raw traces prove split persistence. | A conflict discovered during meta update can leave already-written `wp_posts` fields behind. |
 | Read-set/write-set contract | The server validates the fields the client read, but mutates only fields the client intentionally writes. | Prevents broad REST record payloads from overwriting current title/content by accident. | A status, taxonomy, or meta-only save can still smuggle stale protected fields. |
 | Projection/cross-field validation | The submitted serialized content is not provably impossible given the submitted CRDT document. | Empty, flattened, stale, or malformed persisted content rows such as `15`, `18`, `19`, `37`, `61`, `196`, `241`, and `242`. | Bad content can be saved with a fresh token if the client already generated a wrong payload. |
 | CRDT no-op settlement | Repeated saves that only change known non-semantic persistence metadata settle without re-dirtying the entity. | Save-loop rows `23`, `90`, and `227`. | The server may avoid data loss while the client still spins in `Saving`; row `45` needs separate HTML/entity canonicalization. |
@@ -1177,7 +1215,7 @@ of increasingly strong server protocols:
 | Variant | Bug-resolution impact | Durable-containment impact | Main rows | Main limitation |
 | --- | ---: | ---: | --- | --- |
 | Current `_crdt_document` guard | 3 rows / 3 weighted touched | 3 rows / 3 weighted | `99`, `61`, `90` | Protects only CRDT meta freshness; stale title/content can still save. |
-| Bundle CAS plus atomic protected-field commit | About 7-8 rows / 13-14 weighted touched | Same | `8`, `52`, `63`, `99`, `141`, `155`, `156`, `243` | Catches stale bases and split post/meta commits, but not same-token wrong serialization or CRDT no-op churn. If implemented only as pre-insert/meta filters rather than atomic commit-time CAS, the defensible set drops toward 5 rows / 11 weighted because split rows `52`, `63`, and `141` can still partially commit. |
+| Bundle CAS plus atomic protected-field commit | About 7 rows / 13 weighted touched; 8 / 14 only with row-`63` split proof | Same | `8`, `52`, `99`, `141`, `155`, `156`, `243`; conditional `63` | Catches stale bases and split post/meta commits, but not same-token wrong serialization or CRDT no-op churn. If implemented only as pre-insert/meta filters rather than atomic commit-time CAS, the defensible set drops toward 5 rows / 11 weighted because split rows `52` and `141` can still partially commit. Row `63` needs projection unless raw traces prove split persistence. |
 | Bundle CAS plus read/write-set discipline | Same row count, higher confidence | Same | Same rows, especially `8`, `155`, `156`, `243` | Prevents broad payload clobbers, but still trusts submitted content. |
 | Bundle CAS plus projection validation | About 33 rows / 51 weighted touched | About 33 rows / 51 weighted | Adds `15`, `18`, `19`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Mostly containment; live editor or CRDT state may already be wrong. |
 | Full assumed bundle protocol | 37 rows / 58 weighted touched; 8 full, 29 partial | 43 rows / 89 weighted touched | Adds CRDT no-op rows `23`, `90`, `227`, canonicalization row `45`, and containment-only rows `2`, `5`, `17`, `27`, `56`, `57` | Still not a live CRDT merge arbiter. |
@@ -1481,7 +1519,7 @@ The credited row groups depend on different mechanisms:
 | Row group | Rows | Required mechanism | Why weaker variants are insufficient |
 | --- | --- | --- | --- |
 | Stale title/content/full-record saves | `8`, `155`, `156`, `243` | Commit-time bundle CAS, read/write-set discipline, and client repair; per-field base tracking or CRDT projection for mixed-base title/body cases. | `_crdt_document` CAS alone accepts current/newer CRDT meta paired with stale title/content. |
-| Split or ambiguous post/meta persistence | `52`, `63`, `141` | Atomic protected-field commit plus conflict repair. | Preflight can pass and meta conflict can arrive after `wp_posts` fields changed. |
+| Split or ambiguous post/meta persistence | `52`, `141`; `63` if raw split proof exists | Atomic protected-field commit plus conflict repair. | Preflight can pass and meta conflict can arrive after `wp_posts` fields changed. Row `63` otherwise belongs to explicit empty-content projection. |
 | Direct CRDT-meta clobber | `99` | `_crdt_document` guard or bundle CAS covering CRDT meta. | Does not require full projection, but bypass paths can still clobber meta. |
 | Empty/corrupt serialized content | `15`, `18`, `19`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Projection validation for containment; server materialization only for the subset whose submitted CRDT remains trustworthy. | Bundle CAS cannot reject a fresh-token empty or malformed payload unless it is also stale. |
 | CRDT save-loop settlement | `23`, `90`, `227` | Proven save-marker-only no-op settlement plus client dirty-state handling. | Rendered-content equality is unsafe, and wrapper-only equality is too weak for `savedAt`/`savedBy` churn. |
@@ -1555,13 +1593,15 @@ Scoring definitions:
 
 | Estimate band | Fully fixed | Partially mitigated | Touched/contained | Interpretation |
 | --- | ---: | ---: | ---: | --- |
-| Strict bug-resolution | 6 rows / 14 weighted | 12 rows / 18 weighted | 18 rows / 32 weighted | Counts only rows with higher mitigation-mechanism evidence: direct stale-save, CRDT-churn, or empty/corrupt persistence evidence. This is not the same as the handoff's `Confidence` column. |
+| Strict proof-required bug-resolution | 4 rows / 10 weighted | 14 rows / 22 weighted | 18 rows / 32 weighted | Counts only rows with higher mitigation-mechanism evidence and decoded no-op proof requirements. This is not the same as the handoff's `Confidence` column. |
 | Base estimate | 8 rows / 16 weighted | 29 rows / 42 weighted | 37 rows / 58 weighted | The central estimate used in this section after the conservative row re-audit. |
 | Optimistic durable-containment | 8 rows / 16 weighted | 29 rows / 42 weighted | 43 rows / 89 weighted | Adds containment-only rows where the server might block durable bad state but not resolve the visible bug. |
 
-Strict full rows: `8`, `23`, `90`, `156`, `227`, `243`. Strict partial rows:
-`15`, `18`, `37`, `54`, `60`, `61`, `64`, `67`, `196`, `211`, `241`,
-`242`.
+Strict proof-required full rows: `8`, `156`, `227`, `243`. Strict partial
+rows: `15`, `18`, `23`, `37`, `54`, `60`, `61`, `64`, `67`, `90`, `196`,
+`211`, `241`, `242`. If row `67` lacks proof that the rejected save is the
+terminal durable bad state or causal predecessor of it, the strict band should
+drop to 17 rows / 31 weighted touched.
 
 A more evidence-hardened sensitivity band treats undecoded CRDT no-op rows and
 ambiguous read-after-write/split rows as conditional rather than credited in
@@ -1570,9 +1610,9 @@ the central bucket:
 | Sensitivity adjustment | Fully fixed | Partially mitigated | Touched/contained | Notes |
 | --- | ---: | ---: | ---: | --- |
 | Base estimate | 8 rows / 16 weighted | 29 rows / 42 weighted | 37 rows / 58 weighted | Assumes decoded no-op proof, guarded bad-save path for conditional rows, and canonicalization for row `45`. |
-| Safe MVP: CAS/atomic commit only, no projection/no-op/canonicalization | 5 rows / 11 weighted | 0-3 rows / 0-3 weighted | 5-8 rows / 11-14 weighted | Conditional credits are `8`, `99`, `155`, `156`, and `243`; `99` needs raw DB proof, `155` is archived-trace dependent, and `243` may need per-field/title freshness if a stale title rides with a fresh token. Adds `52`, `63`, and `141` only if atomic post/meta commit is proven. |
+| Safe MVP: CAS/atomic commit only, no projection/no-op/canonicalization | 5 rows / 11 weighted | 0-2 rows / 0-2 weighted | 5-7 rows / 11-13 weighted | Conditional credits are `8`, `99`, `155`, `156`, and `243`; `99` needs raw DB proof, `155` is archived-trace dependent, and `243` may need per-field/title freshness if a stale title rides with a fresh token. Adds `52` and `141` only if atomic post/meta split is proven; row `63` needs raw split proof or belongs to projection instead. |
 | No CRDT no-op or canonicalization credit | 5 rows / 11 weighted | 28 rows / 40 weighted | 33 rows / 51 weighted | Counts bundle CAS, atomic commit, and projection only; removes `23`, `45`, `90`, and `227`. |
-| Exact bad-request projection proof required | 8 rows / 16 weighted | 20 rows / 28 weighted | 28 rows / 44 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `29`, `37`, `54`, `69`, `94`, `196`, `216`, and `228` conditional. |
+| Exact bad-request projection proof required | 8 rows / 16 weighted | 20 rows / 28 weighted | 28 rows / 44 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `29`, `37`, `54`, `69`, `94`, `138`, `196`, `216`, and `228` conditional. |
 | No-op proof required | 6 rows / 12 weighted | 31 rows / 46 weighted | 37 rows / 58 weighted | Moves `23` and `90` from full to partial until decoded Yjs diffs prove save-marker-only churn; row `227` remains full because it has stronger dirty-settlement evidence. |
 | Guarded-save plus no-op evidence required | 5 rows / 11 weighted | 28 rows / 42 weighted | 33 rows / 53 weighted | Combines guarded-save proof with no-op proof: moves `99`, `23`, and `90` from full to partial unless DB/no-op evidence is proven, removes row `45` without canonicalization, and removes or downgrades `52`, `69`, and `141` unless traces prove an accepted guarded bad save. |
 | Cumulative containment upper bound with strict proof | 5 rows / 11 weighted | 28 rows / 42 weighted | 36 rows / 79 weighted | Inherits the guarded-save plus no-op evidence assumptions above; then keeps containment rows `2`, `5`, and `17`, but treats `27`, `56`, and `57` as unmeasured upper-bound rows until request/DB traces prove later durable bad saves. |
@@ -1597,7 +1637,7 @@ Phase-based row audit:
 | --- | --- | --- | --- |
 | Stale/mixed-base protected save request | `8`, `155`, `156`, `243` | Full candidates | The bad request can be rejected before durable mutation, and the editor should still have enough local/user intent to retry against the current bundle. |
 | Direct CRDT-meta clobber | `99` | Full candidate, medium confidence | The protected `_crdt_document` write is the server-visible defect, but isolated probes did not reproduce it and bypass paths remain possible. |
-| Split or ambiguous post/meta commit | `52`, `63`, `141` | Partial | Atomic commit can prevent durable split state, but the traces also contain read-after-save, title split, or live-editor divergence symptoms. |
+| Split or ambiguous post/meta commit | `52`, `141`, and `63` only with raw split proof | Partial | Atomic commit can prevent durable split state, but the traces also contain read-after-save, title split, explicit empty-content, or live-editor divergence symptoms. |
 | Impossible or corrupt serialized content request | `15`, `18`, `19`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Partial | Projection can reject a provably bad durable payload, but the CRDT/editor state that generated it may already be collapsed or malformed. |
 | Save settlement/no-op | `23`, `90`, `227` | Full candidates | The visible state is stable and the bug is repeated persistence/dirty-state churn, so server no-op acknowledgement plus client settlement can remove the user-visible loop. |
 | Entity/HTML canonicalization churn | `45` | Partial | Needs a canonicalization mechanism outside CRDT no-op; otherwise it remains a dirty-state/persistence-loop near miss. |
@@ -1618,7 +1658,7 @@ If the implementation ships only part of the design, the impact drops quickly.
 | Implemented layer | Rows improved | Weighted | What it actually catches |
 | --- | ---: | ---: | --- |
 | Current narrow `_crdt_document` stale guard only | 3 | 3 | One direct CRDT-meta clobber row plus two weak/partial CRDT-adjacent rows from the first analysis. |
-| Bundle versioning with atomic protected-field commit only | about 7-8 | about 13-14 | Named base-conflict candidates are `8`, `52`, `63`, `141`, `155`, `156`, and `243`; include row `99` only if the bundle token also covers direct CRDT-meta clobber. If this is only preflight versioning without atomic protected-field commit, split rows `52`, `63`, and `141` drop out and the sensitivity falls toward 5 rows / 11 weighted. |
+| Bundle versioning with atomic protected-field commit only | about 7, or 8 with row-`63` split proof | about 13, or 14 with row-`63` split proof | Named base-conflict candidates are `8`, `52`, `141`, `155`, `156`, and `243`; include row `99` only if the bundle token also covers direct CRDT-meta clobber. Row `63` belongs here only if raw traces prove post/meta split rather than an explicit empty-content request. If this is only preflight versioning without atomic protected-field commit, split rows `52` and `141` drop out and the sensitivity falls toward 5 rows / 11 weighted. |
 | Bundle versioning plus projection validation | 33 | 51 | All bug-resolution rows except the CRDT no-op/canonicalization rows. This adds many empty, malformed, stale, or content-vs-CRDT inconsistent save payloads, but mostly as partial fixes because live editor state can already be broken. |
 | Safe CRDT save-marker no-op settlement | 3 | 5 | Rows `23`, `90`, and `227`, where stable visible content keeps dirtying the entity through known non-semantic CRDT persistence churn. |
 | HTML/entity canonicalization | 1 | 2 | Row `45`, which is an entity-normalization save-loop family and should not be credited to CRDT no-op alone. |
@@ -1647,7 +1687,7 @@ Degraded deployment modes should be reported separately from the base estimate:
 | --- | --- |
 | Token emission without enforcement | No mitigation credit; useful only for shadow classification. |
 | Enforcement without coherent read/mutation token responses | Full rows become at best partial, because clients cannot reliably repair after a conflict. |
-| CAS without atomic protected-field commit | Drop split rows `52`, `63`, and `141`; sensitivity falls toward 5 rows / 11 weighted before projection/no-op layers. |
+| CAS without atomic protected-field commit | Drop split rows `52` and `141`; row `63` drops here only if it had raw split proof, otherwise it was projection-dependent already. Sensitivity falls toward 5 rows / 11 weighted before projection/no-op layers. |
 | CAS without projection/projectability | Projection-content partial rows drop out; only stale-base, direct CRDT-meta, and no-op/canonicalization rows remain. |
 | Projection without projectability/unknown handling | Do not enforce; false positives can be worse than the bug being mitigated. |
 | Client repair disabled or mixed-version participants active | Server containment may remain, but bug-resolution full rows should be counted as partial or unmeasured. |
@@ -2138,7 +2178,7 @@ safely enforceable.
 | Candidate class | Required trace evidence | Test shape |
 | --- | --- | --- |
 | Bundle CAS | A write carries old title/content or a stale bundle token while the server has newer protected fields; the server returns 409 and no protected DB field changes. | REST integration test with two concurrent saves, then focused e2e replay for rows `8`, `155`, `156`, and `243`. |
-| Atomic protected-field commit | A conflict discovered while writing meta or related side effects cannot leave changed post fields behind. | Forced post-field/meta split tests covering rows `52`, `63`, and `141`. |
+| Atomic protected-field commit | A conflict discovered while writing meta or related side effects cannot leave changed post fields behind. | Forced post-field/meta split tests covering rows `52` and `141`, plus row `63` only if raw traces prove split persistence. |
 | Projection validation | Submitted content is empty, flattened, or malformed while the accepted/submitted CRDT projection or validated-base projection proves non-empty ordinary blocks; the server rejects the write and does not rewrite content. | REST projection-validation tests plus e2e replay for rows `15`, `18`, `19`, `37`, `196`, `241`, and `242`. |
 | Server materialization | The accepted CRDT serializes to canonical `post_content`; submitted stale or empty content is ignored or repaired according to policy. | Materialization tests for rows `29` and `196`, plus negative tests for malformed/freeform/unregistered/deprecated blocks. |
 | CRDT no-op save loops | Consecutive saves have stable visible title/content and only known non-semantic CRDT save metadata changes; the response stops dirtying the record. | Unit tests around CRDT serialization/no-op response handling plus e2e or integration replays for rows `23`, `90`, and `227`. |
@@ -2249,6 +2289,44 @@ Classifier errors should be labeled by consequence:
 | Mechanism false negative | A mechanism-eligible bad write was not classified or enforced. | Counts as implementation miss. |
 | Attribution false negative | The row is resolved, but the necessary mechanism is not identified. | Blocks mechanism-specific totals until ablation resolves attribution. |
 
+Measurement power and oracle independence should be explicit:
+
+- Define the minimum detectable improvement for row resolution, server
+  containment, client repair, and false-positive rate before enforcement runs.
+  Power should be computed on row/session clusters, not save attempts. If the
+  feasible run count cannot distinguish a real improvement from baseline flake,
+  label the family `underpowered_measurement`.
+- If results are reviewed while runs are still executing, use a fixed
+  sequential-testing rule with alpha spending or Bayesian stopping, futility
+  bounds, and a maximum run count. Unscheduled stops are exploratory.
+- Minimized fixtures should record which race, reload, cache, and live-CRDT
+  phases were removed. They can prove invariants, but row-resolution credit
+  requires the least-minimized faithful replay to pass the same terminal oracle.
+- Success oracles must be independent of the mechanism under test: CAS by raw
+  DB/token state, projection by independent block/visible-state oracles, and
+  client repair by cold reload plus peer state, not only dirty flags or the
+  same classifier.
+- Baseline validity expires after code, fixture, environment, plugin/theme, or
+  configured time-window drift. Enforced results need a recent baseline and
+  pass-through from the same drift window.
+
+Every measurement release should include a flow table:
+
+```text
+manifest rows
+-> runnable rows
+-> faithful fixtures
+-> guarded-path eligible
+-> mechanism eligible
+-> enforced observed
+-> server contained
+-> client repaired
+-> row resolved
+```
+
+Every exclusion needs a count and reason. Rows should not move between
+denominator categories after enforced outcomes are known.
+
 Pass-through should have two levels:
 
 | Mode | Purpose |
@@ -2263,8 +2341,9 @@ not dropped. For row-resolution scoring, censored runs default to
 irrelevant to that row class.
 
 Fixture coverage should include positive fixtures for bundle-CAS rows `8`,
-`155`, `156`, and `243`; direct CRDT-meta row `99`; atomic split rows `52`,
-`63`, and `141`; projection rows `15`, `18`, `19`, `29`, `32`, `37`, `40`,
+`155`, `156`, and `243`; direct CRDT-meta row `99`; atomic split rows `52`
+and `141`, plus `63` only if raw traces prove split persistence; projection
+rows `15`, `18`, `19`, `29`, `32`, `37`, `40`,
 `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`,
 `211`, `212`, `216`, `228`, `241`, and `242`; CRDT no-op rows `23`, `90`, and
 `227`; row `45` only when canonicalization is in scope; and containment-only
@@ -2895,6 +2974,18 @@ the row. During diagnostic key rotation, measured credit also requires
 `diagnostic_key_epoch` and `policy_epoch` to join across server, client, and
 support records; key rotation must not alter bundle CAS tokens or idempotency
 semantics.
+
+Backup, restore, migration, and support tooling need their own credit caps:
+
+| Operational state | Required behavior for measured credit |
+| --- | --- |
+| Evidence retention or erasure | Classify attempt rows, response pointers, audits, support actions, rollback records, migration manifests, and diagnostic aggregates by TTL, legal hold, backup behavior, and erasure mechanism. If row-level evidence expires before it is signed into aggregate counters, mark affected rows `measurement_inconclusive_evidence_expired`. |
+| Backup or point-in-time restore | Restore `wp_posts`, `wp_postmeta`, bundle-version rows, attempt ledger, provenance/room-generation rows, audit records, and diagnostic indexes consistently. If protocol tables restore independently, set `restore_epoch_active`, rotate affected generations, force refetch, and exclude that epoch from measured row credit. |
+| Feature or code rollback | Distinguish flag rollback, code rollback, data repair, and content restore. Older code must not ignore or overwrite newer protocol metadata. Rows observed while `rollback_reconciliation_pending` are containment-only or inconclusive. |
+| Operational audit trail | Keep append-only audit records for policy changes, enforcement disables, key rotations, generation invalidations, restores, migrations, quarantines, support repairs, and bulk tooling actions. `audit_log_gap`, `audit_write_failed`, or unaudited repair blocks rollout expansion and caps affected rows at operator-contained. |
+| Support repair tooling | Default to read-only diagnostics; write tools require dry run, bounded selectors, explicit confirmation, and audit entry. Direct protected-field edits, payload replay, or manual idempotency clearing remove mitigation credit for affected rows. |
+| Tenant migration/import/export | Separate `content_copy` mode, which strips runtime state and mints new generations, from `identity_preserving_restore`, which must move the whole tenant atomically. Ambiguous migration keeps strict enforcement shadow-only. |
+| Privacy erasure after restore | Scrub restored diagnostics or use per-tenant/key-version cryptographic erasure so old backups cannot re-identify deleted tenants. Metrics such as `erasure_replay_pending`, `backup_restored_deleted_diagnostics`, and `tenant_key_destroyed` should gate rollout. |
 
 ### Implementation risks that affect the estimate
 
