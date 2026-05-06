@@ -1195,6 +1195,25 @@ therefore define a policy by content class before enforcement:
 | Filters and block hooks | Client save filters and PHP render filters are different surfaces. | Enforce only on declared save serialization, not render output or hook-expanded frontend content. |
 | Raw code-editor content | User may intentionally save markup the block editor would parse differently. | Opt out of projection or require a content-only token invalidation path. |
 
+Cross-entity dependencies need a separate boundary. The editor-content bundle
+protects the host post's title/content/excerpt/CRDT; it does not automatically
+protect entities referenced by that content.
+
+| Dependency | What the host-post mitigation can prove | Required separate mechanism |
+| --- | --- | --- |
+| Synced pattern / reusable block reference | The host post saved the same reference block markup it read. | Bundle/provenance guard for the referenced `wp_block` entity before claiming rendered-content correctness. |
+| Template part, template, or navigation entity | The host post did not stale-write its own protected fields. | Separate guarded protocol for `wp_template`, `wp_template_part`, `wp_navigation`, or related entity saves. |
+| Global styles / theme JSON / user preferences | Projection policy used a declared settings fingerprint. | Token or policy invalidation when style/settings inputs affect saved serialization. |
+| Block bindings and pattern overrides | Bound subtree was treated as opaque or its read dependencies were declared. | Freshness and capability checks for binding source entities and any write-through setters. |
+| Media or attachment-derived markup | Host post saved the expected attachment id/attrs. | Attachment metadata freshness if projection depends on current media state. |
+| Plugin-maintained secondary meta | Host protected fields stayed coherent. | Plugin meta must either be outside scope, declared as part of the write set, or protected by its own token. |
+
+Do not count a row as fixed because the host post bundle is coherent when the
+visible failure depends on a referenced entity that can be stale, corrupt, or
+updated independently. At most, the host-post mitigation gets containment
+credit for refusing a bad host save; rendered or editor-visible correctness
+requires the dependency closure to be guarded or explicitly marked opaque.
+
 Projection must name its source explicitly. The only defensible source for
 cross-field validation is the accepted CRDT for the same logical save: after
 provenance, base-token, write-set, malformed-document, and projectability checks
@@ -1212,9 +1231,10 @@ DB/REST snapshot. A snapshot showing empty or malformed `post_content` while
 projection validator would have fired. Count projection impact only when the
 trace shows an accepted guarded save with explicit `content` in the write set,
 a submitted or accepted CRDT that decodes as projectable for that same save,
-and a pre-commit mismatch. Rows `19`, `37`, `54`, `69`, `94`, `216`, and `228`
-should stay conditional under this stricter gate if their evidence is only
-final divergence rather than exact bad-request projection proof.
+and a pre-commit mismatch. Rows `19`, `29`, `37`, `54`, `69`, `94`, `196`,
+`216`, and `228` should stay conditional under this stricter gate if their
+evidence is only final divergence or later CRDT state rather than exact
+bad-request projection proof.
 
 If the submitted `_crdt_document` is stale or untrusted, as in row `61`,
 projection containment counts only when a validated-base or current-generation
@@ -2431,6 +2451,40 @@ next guarded save. Do not silently preserve an old `_crdt_document` as
 authoritative after a legacy write changes `post_title`, `post_content`, or
 `excerpt`.
 
+Compatibility mode determines maximum row credit:
+
+| Compatibility mode | Required behavior | Maximum row credit |
+| --- | --- | --- |
+| Old client plus old server | Baseline behavior. | No mitigation credit. |
+| New client plus old server | Client falls back without assuming token protection. | No server-mitigation credit; any improvement is client-only. |
+| Any client plus new shadow server | Accept writes and log would-reject/would-no-op decisions. | Shadow classifier only; no fixed or partial numerator credit. |
+| Old or generic REST client plus new server | Allow for compatibility, but advance or invalidate token on protected-field mutation. | No credit for fixing that write; at most containment for later guarded RTC saves. |
+| Full token-aware client plus strict server plus all collaborators capable | Enforce token, write set, idempotency, response, and repair protocol end to end. | Eligible for row-specific full/partial credit if proof obligations pass. |
+| Mixed old/new collaborators | Disable strict room enforcement or use a proven mixed-client compatibility path. | Mixed/inconclusive by default; at most containment unless old clients cannot write protected fields or reliably invalidate before new-client saves. |
+| Strict server behind mixed old/new webheads | Keep strict mode disabled until all write-serving webheads enforce or invalidate. | No row credit for periods with unguarded write-serving servers. |
+
+The capability check should be granular, not a binary "new client" flag. Gate
+row credit on the capabilities the row's mechanism needs: token read support,
+token preservation through mutation responses and `_fields`, base-token/write
+set submission, 409 conflict repair, idempotent retry, monotonic response
+ordering, CRDT no-op settlement, projection/provenance support, REST batch
+semantics, and private-response-field preservation. The capability vector must
+be present at read, save, response, and retry. A base token minted under an old,
+shadow, fallback, or different policy epoch should not be accepted for strict
+row credit unless the client refetched under the same policy epoch used at
+commit.
+
+Hidden tabs, offline editors, queued REST saves, retry queues, service-worker
+requests, and background mobile clients should count as potentially active
+collaborators until they reconnect, advertise support, or are quarantined.
+Full row credit requires proving that late old-client protected writes are
+rejected, invalidating, or unable to overwrite a repaired strict-mode bundle.
+Missing token from a declared token-capable RTC client may fail closed and
+count for CAS rows after repair; missing token from generic REST, WP-CLI,
+XML-RPC, mobile clients, plugins, or old Gutenberg should fail open with token
+invalidation for compatibility and should not receive full stale-save row
+credit.
+
 Autosaves and revision restores need explicit policy. Per-user autosave
 revisions should not advance the canonical parent bundle token unless they
 actually update the parent post, such as auto-draft promotion. Revision restore
@@ -2607,6 +2661,18 @@ server attempt, REST response, client repair, peer convergence, and cold-reload
 events. Rows with missing phase events, unjoined `logical_save_id`, client clock
 skew beyond tolerance, or absent final peer/cold-reload oracle should be
 `measurement_inconclusive`.
+
+False-reject and bad-materialization incident response should be defined before
+enforcement. The attempt ledger should let operators identify affected posts,
+mechanism, policy epoch, submitted/committed protected hashes, response ids,
+and whether a server-materialized field differed from the user-submitted
+sanitized value. A mechanism rollback stops future enforcement; it does not
+repair posts already touched. Recovery should be mechanism-specific:
+projection false positives disable projection and replay/refetch affected
+attempts where possible; bad materialization should quarantine affected posts,
+preserve local drafts, and compare previous protected hashes against current
+DB/CRDT before attempting automatic repair; provenance false positives should
+avoid deleting local CRDT state until a canonical room refetch succeeds.
 
 Every enforced rejection should return a stable diagnostic code and redacted
 diagnostic id that joins server logs, client logs, and support reports. The
