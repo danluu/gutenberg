@@ -8954,3 +8954,85 @@ Pass 155 created and verified a fresh annotated stitched-screen video:
 ffmpeg decode completed with no errors, and the extracted 8s frame shows the
 source/fresh known-fixes split, the natural action log, the below-Playwright
 record-morph proof, and the fixed-branch unit/lint/Playwright verification.
+
+## Pass 157 Verification
+
+Pass 157 re-read the pass-156 summary, the source JSONL row, the generated
+spec, source run log, source failure artifacts, the current CRDT merge code,
+and both existing branches. The bug still classifies as a product defect in
+CRDT block reconciliation. The source and fresh known-fixes browser failures
+both finish ordinary editor actions and then diverge after the final move:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+The pass-157 independent contribution is a narrower low-level proof that the
+known-fixes base mutates existing same-clientId Y.Map records into their sibling
+contents during a pure adjacent move. This is stronger than a browser-only
+non-convergence observation: the old `moved-block` record is expected to remain
+the moved paragraph or be detached, but on the pre-fix path it contains the
+displaced paragraph instead:
+
+```text
+Expected value: "Another paragraph exists so the top-level list is not degenerate."
+Received array: [undefined, "Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا."]
+```
+
+The same clean known-fixes test-only run also reconfirmed the event-shape root
+cause. A strict pure move emitted nested record/text edits instead of one
+structural array event:
+
+```text
+Expected: []
+Received: ["YMap", "YText", "YMap", "YText"]
+```
+
+Known-fixes negative controls were rerun from pass-157 scratch artifacts:
+
+```bash
+git -C /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505 worktree add --detach /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-157/work/knownfix-testonly-clean 3cba2b1e56a98787de08dc6c7df2434759e8f908
+git -C /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-157/work/knownfix-testonly-clean cherry-pick --no-commit a7f79df448e0ecb9c6b9a1f7048031cf532af5d0
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --testNamePattern="represents adjacent pure moves as structural array changes|replicates direct pure move merges as structural array changes|applies adjacent pure block moves to remote peers as structural post block changes|replays the generated structural edit sequence as a structural remote move|does not rewrite block records when moving adjacent top-level blocks|does not morph post-entrypoint block records during the generated structural edit sequence" --runInBand --no-cache
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_EC47_ATTEMPTS=1 RTC_EC47_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-157/artifacts/knownfix-ec47-attempts-pass157 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts --project=chromium --workers=1
+```
+
+Results: the known-fixes test-only command failed as expected with `6 failed,
+79 skipped`; the known-fixes natural-user Playwright command failed in `44.3s`
+with the same split editor state.
+
+The fixed PR branch remained based on current `origin/trunk`
+`777af47425fbb6608b8f1453976abd1458c3d81d` and kept the requested commit
+order:
+
+```text
+a7f79df448e Add CRDT repros for RTC adjacent move identity rewrite
+83bc38f49ec Add RTC top-level move Playwright repro
+f72df45f8e3 Avoid rewriting CRDT block records for pure moves
+```
+
+Fresh pass-157 fixed-branch verification:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-157/artifacts/fixed-playwright-pass157 RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+Results: the two CRDT unit suites passed `81/81`; targeted JS lint exited `0`;
+`git diff --check` produced no output; and the natural-user Playwright repro
+passed headlessly against `http://localhost:9902` in `21.0s` test time
+(`22.5s` overall).
+
+Pass 157 also created and verified a fresh annotated stitched-screen video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-157/video/5ee0be2f9b7d/rtc-top-level-move-reconciliation-pass157-annotated.mp4
+```
+
+`ffprobe` reports H.264 video, `1920x1080`, `24.0s`, and `720` frames. A full
+ffmpeg decode completed with no errors, and the extracted 8s frame shows both
+fresh known-fixes editor screens, the natural action log, the expected/observed
+orders, the record-morph root-cause proof, and the fixed-branch verification.
