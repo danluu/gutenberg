@@ -33,10 +33,18 @@ New video generated for this report:
 artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-stale-save-repro.mp4
 ```
 
+Clearer split videos generated after review:
+
+```text
+artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-stale-save-bug-clear-annotated.mp4
+artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-delayed-polling-control-clear-annotated.mp4
+```
+
 Generator:
 
 ```text
 artifacts/current-trunk-rtc-repro-video/make-current-trunk-rtc-repro-video.mjs
+artifacts/current-trunk-rtc-repro-video/make-clear-current-trunk-rtc-videos.mjs
 ```
 
 Video validation:
@@ -45,12 +53,16 @@ Video validation:
 duration: 32s
 resolution: 1920x1154
 frames: 8 annotated frames
+clear bug video: 20s, 1920x1300, 5 frames
+clear control video: 24s, 1920x1300, 6 frames
 ```
 
 The video contains two segments:
 
 - `immediate-save-bug`: demonstrates the stale overwrite.
 - `delayed-polling-control`: demonstrates the colleague's safe path where polling catches up before B saves.
+
+The clear split videos separate those paths. The bug video ends on a REST/WP-CLI server-state frame rather than the editor DOM, because the browser UI can visually resync after the stale save while the persisted post content has already lost A.
 
 The annotations include current trunk SHA, RTC enablement, collaborator UI readiness, `/wp-sync` room evidence, loaded built assets, save request/response marker checks, and final direct WP-CLI server checks.
 
