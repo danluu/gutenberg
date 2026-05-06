@@ -174,7 +174,9 @@ The third layer has important constraints:
   bundle version, not from CRDT projection.
 - Validation must avoid false positives for legitimate empty posts, code
   editor flows, invalid/freeform blocks, synced/reusable blocks, autosaves, and
-  partial-save flows.
+  partial-save flows. Empty `post_content` with a non-empty `_crdt_document` is
+  not automatically invalid; the server should reject only contradictions it
+  can prove from the decoded CRDT projection and submitted bundle base.
 - CRDT no-op handling cannot simply ignore byte differences. It must ignore
   only volatile save metadata, or use a safe semantic equality rule that does
   not discard causal CRDT state.
@@ -183,6 +185,39 @@ This broader mitigation still does not make the server an authoritative live
 CRDT merge participant. It does not fix block move/delete/insert reconciliation
 before save, table/Y.Array merge bugs, `/wp-sync` transport/storage failures,
 or revision/post-lock/session bugs.
+
+### Current implementation gap this would close
+
+The current narrow stale-CRDT work is a useful starting point but is not this
+broader mitigation. In the current branch:
+
+- `lib/compat/wordpress-7.0/collaboration.php` validates only the
+  `_crdt_document` meta value. The server computes a version from the serialized
+  CRDT `document` field, accepts writes whose `baseVersion` matches the current
+  document, and rejects stale CRDT meta writes with
+  `rest_crdt_document_stale`.
+- The same file hooks both REST pre-insert and post-meta add/update paths, but
+  it does not create an atomic transaction across `wp_posts.post_title`,
+  `wp_posts.post_content`, `wp_posts.post_excerpt`, and post meta.
+- `packages/core-data/src/actions.js` already has client handling for
+  `rest_crdt_document_stale`: refetch, apply the persisted CRDT document,
+  recompute edits, and retry. A broader bundle guard would need the same
+  conflict-repair behavior for a new whole-bundle conflict code.
+- `packages/core-data/src/entities.js` already tries to reduce stale saves by
+  fetching the latest record, applying the latest persisted CRDT, and merging
+  stale serialized block content before save. That logic is best-effort and
+  explicitly does not block saving if the freshness check fails.
+- `packages/sync/src/utils.ts` serializes CRDT docs with a random `updateId`
+  plus a semantic `version` derived from the document payload. A no-op save-loop
+  fix needs to preserve or ignore only volatile wrapper metadata such as
+  `updateId`; it must not throw away real Yjs causal state. Some save markers
+  are written inside the Y.Doc itself, so the no-op rule cannot be a simple
+  JSON-wrapper comparison.
+
+The broader mitigation therefore needs a new server-side invariant, not just a
+larger version of the current `_crdt_document` check. The invariant is: "this
+save was derived from the same editor-content-bundle state that is still
+current at commit time, and the submitted bundle is internally coherent."
 
 ### Expected impact: bug-resolution score
 
@@ -194,36 +229,74 @@ divergent, or stuck until a client/live-merge bug is fixed.
 
 | Outcome | Distinct rows | Fraction | STATUS-weighted | Weighted fraction |
 | --- | ---: | ---: | ---: | ---: |
-| Fully fixed | 9 / 279 | 3.23% | 18 / 452 | 3.98% |
-| Partially mitigated | 30 / 279 | 10.75% | 42 / 452 | 9.29% |
-| Unimpacted | 240 / 279 | 86.02% | 392 / 452 | 86.73% |
+| Fully fixed | 9 / 279 | 3.23% | 17 / 452 | 3.76% |
+| Partially mitigated | 28 / 279 | 10.04% | 41 / 452 | 9.07% |
+| Unimpacted | 242 / 279 | 86.74% | 394 / 452 | 87.17% |
+
+### Mechanism sensitivity
+
+The 9/28/242 estimate assumes all three layers in the assumed design exist.
+If the implementation ships only part of the design, the impact drops quickly.
+
+| Implemented layer | Rows improved | Weighted | What it actually catches |
+| --- | ---: | ---: | --- |
+| Current narrow `_crdt_document` stale guard only | 3 | 3 | Direct stale CRDT-meta writes; this is the first-section result. |
+| Atomic bundle versioning only | about 9-14 | about 15-20 | Lost updates where the bad save is based on an older title/content/CRDT bundle. It does not detect a self-consistent but wrong bundle. |
+| Bundle versioning plus projection validation | about 34-39 | about 55-60 | Adds many empty, malformed, stale, or content-vs-CRDT inconsistent save payloads, but mostly as partial fixes because live editor state can already be broken. |
+| Bundle versioning plus safe CRDT no-op persistence | about 13-18 | about 22-30 | Adds the CRDT save-loop rows if semantically identical documents stop dirtying the entity. |
+| Full assumed mitigation | 37 bug-resolution rows | 58 | The 9 full plus 28 partial rows in the table above. |
+| Full assumed mitigation plus containment-only rows | 45 touched rows | 93 | Adds weak cases where durable bad writes can be rejected, but the visible bug is still live CRDT or reload instability. |
+
+Two downgrade rules matter:
+
+- Without client refetch/reconcile/retry after a bundle conflict, many "full"
+  stale-save rows become partial operationally: the server prevents the bad
+  write, but the user may still see a failed save.
+- Without server-side projection or cross-field checks, stale `post_content`
+  paired with a current/newer `_crdt_document` can still pass a pure version
+  check if the client generated both fields from the same stale local view.
 
 #### Full candidates
 
 | Row set | Rows | Weighted | Why these can become full fixes |
 | --- | ---: | ---: | --- |
-| Stale title/content/full-record writes | 4 | 10 | Rows 8, 155, 156, and 243 explicitly show stale title/content accepted while `_crdt_document` had advanced. Bundle versioning or title/content-vs-CRDT consistency should reject these writes and force a refetch/retry. |
-| CRDT save-loop churn | 4 | 7 | Rows 23, 45, 90, and 227 repeatedly save stable visible title/content while only CRDT save metadata changes. Safe CRDT canonical/no-op handling should let these saves settle. |
+| Stale title/content/full-record writes | 5 | 11 | Rows 8, 52, 155, 156, and 243 show stale title/content, stale reads after an apparently correct save response, or double-PUT clobbering while `_crdt_document` had advanced. Bundle versioning, atomic bundle persistence, or title/content-vs-CRDT consistency should reject these writes and force a refetch/retry. |
+| CRDT save-loop churn | 3 | 5 | Rows 23, 90, and 227 repeatedly save stable visible title/content while only CRDT save metadata changes. Safe CRDT canonical/no-op handling should let these saves settle. |
 | Direct CRDT-meta clobber | 1 | 1 | Row 99 remains the cleanest direct metadata clobber case. |
 
 Full candidate row IDs:
 
-- `8`, `23`, `45`, `90`, `99`, `155`, `156`, `227`, `243`.
+- `8`, `23`, `52`, `90`, `99`, `155`, `156`, `227`, `243`.
+
+Full-fix preconditions by mechanism:
+
+| Rows | Required server behavior | Required client behavior | Main downgrade risk |
+| --- | --- | --- | --- |
+| `8`, `52`, `155`, `156`, `243` | Reject stale title/content/full-bundle writes even when `_crdt_document` is current or newer, and prevent a later partial post/meta commit from splitting the bundle. | Refetch the current bundle, reapply the local CRDT/editor changes, recompute title/content/meta, and retry. | If the bad payload is internally consistent and carries a current bundle token, only stronger projection or document-identity checks can catch it. |
+| `23`, `90`, `227` | Treat same-document CRDT persistence as a no-op despite volatile wrapper metadata. | Stop marking the record dirty after a no-op CRDT persistence response. | If byte-different CRDT documents contain meaningful causal state, no-op handling is unsafe and these rows fall back to partial or unimpacted. |
+| `99` | Prevent `_crdt_document` from being cleared or clobbered while title/content survive. | Retry or refresh after the conflict response. | If the clear comes through a path that bypasses REST/meta guards, this is only partial. |
 
 #### Partial candidates
 
 | Row set | Rows | Weighted | Why these remain partial |
 | --- | ---: | ---: | --- |
-| Stale/inconsistent bundle cases with weaker evidence | 5 | 5 | Rows 52, 63, 89, 141, and 207 likely benefit from rejecting bad persistence, but the evidence also points at stale client state, fresh-post contamination, CRDT divergence without content repair, or no useful save request in a realistic repro. |
+| Stale/inconsistent bundle cases with weaker evidence | 2 | 2 | Rows 63 and 141 likely benefit from rejecting bad persistence, but the evidence also points at stale client state, title split behavior, reload/read-after-save divergence, or CRDT divergence without content repair. |
 | Empty/corrupt content or serialized markup | 24 | 34 | Rows 15, 18, 29, 32, 37, 40, 43, 54, 60, 61, 62, 64, 67, 69, 94, 136, 138, 196, 211, 212, 216, 228, 241, and 242 can likely be protected from durable bad writes, but the live editor state that generated the bad payload may still be collapsed or corrupted. |
-| Stuck-save with mixed evidence | 1 | 3 | Row 187 may improve under CRDT no-op handling, but the trace also has unresolved requests and broader save-storm behavior. |
+| Stuck-save/canonicalization with mixed evidence | 2 | 5 | Rows 45 and 187 may improve under CRDT no-op handling, but row 45 also looks like entity/HTML normalization churn and row 187 has unresolved requests and broader save-storm behavior. |
 
 Partial candidate row IDs:
 
-- `15`, `18`, `29`, `32`, `37`, `40`, `43`, `52`, `54`, `60`,
-  `61`, `62`, `63`, `64`, `67`, `69`, `89`, `94`, `136`, `138`,
-  `141`, `187`, `196`, `207`, `211`, `212`, `216`, `228`, `241`,
-  `242`.
+- `15`, `18`, `29`, `32`, `37`, `40`, `43`, `45`, `54`, `60`,
+  `61`, `62`, `63`, `64`, `67`, `69`, `94`, `136`, `138`, `141`,
+  `187`, `196`, `211`, `212`, `216`, `228`, `241`, `242`.
+
+Partial rows fall into three different failure shapes:
+
+| Rows | What the server can contain | What remains unfixed |
+| --- | --- | --- |
+| `63`, `141` | Stale persisted title/content/CRDT combinations can be rejected when they conflict with the current bundle version or projection. | The traces also show reload/read-after-save divergence and stale client/editor state, so save rejection alone may not get collaborators back to a clean state. |
+| `15`, `18`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Empty content, malformed block comments, flattened content, or stale serialized markup can be refused when the submitted CRDT/server base proves the payload is impossible. | The editor or CRDT state that generated the bad serialized content can still be collapsed, malformed, or divergent. |
+| `45`, `187` | Same-document CRDT churn may be reduced. | Row 45 also requires deterministic HTML/entity/block-attribute canonicalization across parse, serialize, CRDT projection, and REST persistence. Row 187 also has unresolved request/save-storm behavior, so no-op handling may only reduce symptoms. |
 
 ### Durable-persistence containment score
 
@@ -240,17 +313,40 @@ violation the mitigation can reliably resolve.
 
 | Durable containment outcome | Distinct rows | Fraction | STATUS-weighted | Weighted fraction |
 | --- | ---: | ---: | ---: | ---: |
-| Bug likely resolved | 9 / 279 | 3.23% | 18 / 452 | 3.98% |
-| Bad durable save contained only | 38 / 279 | 13.62% | 77 / 452 | 17.04% |
-| Still unaddressed | 232 / 279 | 83.15% | 357 / 452 | 78.98% |
+| Bug likely resolved | 9 / 279 | 3.23% | 17 / 452 | 3.76% |
+| Bad durable save contained, not fully resolved | 36 / 279 | 12.90% | 76 / 452 | 16.81% |
+| Still unaddressed | 234 / 279 | 83.87% | 359 / 452 | 79.42% |
 
-Total rows touched under this containment score: 47 / 279 rows, or 16.85%.
-Weighted total touched: 95 / 452 STATUS rows, or 21.02%.
+Total rows touched under this containment score: 45 / 279 rows, or 16.13%.
+Weighted total touched: 93 / 452 STATUS rows, or 20.58%.
+
+The containment-only rows are excluded from the bug-resolution table because
+their saved-state symptoms are downstream of earlier live-state corruption.
+They are an upper-bound sensitivity set, not rows the server would certainly
+contain:
+
+| Rows | Weighted | Why containment-only |
+| --- | ---: | --- |
+| `2`, `5`, `17`, `19`, `27` | 32 | These are checkpoint/save/reload corruption families where the server may refuse a later bad durable write, but the block tree has already diverged or corrupted before persistence. |
+| `56`, `57`, `100` | 3 | These are weaker save/reload cases where stale or missing body state may be contained, but the evidence does not prove a server-invariant violation sufficient for bug resolution. |
+
+If the live CRDT state itself has already lost, duplicated, or malformed the
+content, bundle validation may faithfully accept the wrong state.
+
+Complete accounting bridge:
+
+| Bucket | Rows | Weighted |
+| --- | ---: | ---: |
+| Full bug resolution | 9 | 17 |
+| Partial bug-resolution mitigation | 28 | 41 |
+| Additional containment-only sensitivity rows | 8 | 35 |
+| Excluded near-miss buckets listed below | 234 | 359 |
+| Total manifest | 279 | 452 |
 
 ### Important excluded near misses
 
-Some persistence-adjacent rows are not counted because the proposed server
-bundle guard does not address their root cause.
+The remaining rows are not counted because the proposed server bundle guard
+does not address their root cause.
 
 | Excluded bucket | Rows | Weighted | Why excluded |
 | --- | ---: | ---: | --- |
@@ -259,26 +355,65 @@ bundle guard does not address their root cause.
 | Table/Y.Array merge | 14 | 15 | The bad state comes from nested CRDT array merge behavior before server persistence. |
 | Revision/post-lock/code-editor/session | 8 | 8 | Different editor/session flows, not normal collaborative post save consistency. |
 | Live CRDT merge/stale-local/reconciliation | 168 | 250 | Lost deletes, duplicated blocks, wrong moves, stale local snapshots, block identity smears, and nonconvergence happen before the server can validate a save. |
+| Fresh-post foreign document contamination | 1 | 1 | Row 89 can submit title/content/CRDT that are internally consistent for the wrong collaborative document. Containing it requires document identity, room scoping, or post-bound CRDT provenance in addition to bundle versioning. |
+| No useful post save request | 1 | 1 | Row 207's realistic repro leaves REST state unchanged without emitting a post save request, so a REST pre-insert guard cannot resolve that user-visible failure. |
+| Other unaddressed residual | 2 | 2 | Remaining rows outside the touched sets and major near-miss buckets. |
 
 Row 240 is a useful example of the exclusion rule. It persists a checkpoint
 correctly, but leaves live editors on stale state. Whole-bundle server
 persistence does not address that visible bug.
 
-Row 89 is the opposite kind of borderline. It is counted as partial above
-because bad durable persistence can be contained, but it is probably not fully
-fixed without an additional server-side document identity or room-scoping
-guard. Its failure is a fresh post being overwritten by foreign but internally
-consistent title/content/CRDT state from another collaborative document.
+The dominant excluded category is not "saves the server failed to reject"; it
+is "the live shared document is already wrong." For those rows, a successful
+server rejection changes the persistence outcome but not the causal bug. The
+server would need to become a live CRDT arbiter, or the client merge code would
+need to stop producing the wrong block tree, before those rows move into the
+fixed category.
+
+### Implementation risks that affect the estimate
+
+The estimate above assumes a stronger implementation than a conventional REST
+pre-insert validation callback:
+
+- The bundle version has to be checked at commit time, or a race can pass
+  validation and then be invalidated by another request before post fields and
+  meta are written.
+- Post fields and post meta need a shared version. A version stored only in
+  `_crdt_document` cannot protect title/content writes that omit or preserve
+  CRDT meta.
+- A guard implemented only as `rest_pre_insert_*` plus meta filters is not
+  enough for atomicity. In the normal REST post flow, post fields can be written
+  before meta is updated; discovering the conflict at meta-update time can leave
+  a split bundle unless the write path can roll back or commit atomically.
+- `post_modified`/`post_modified_gmt` are weak bundle versions: they have coarse
+  granularity and are affected by unrelated post updates, server filters,
+  autosaves, and plugin writes.
+- The server needs to decide what to do with partial saves. Saving only title,
+  only content, autosaves, revisions, and code-editor flows cannot all be
+  treated as normal collaborative bundle commits.
+- PHP currently parses/checksums the serialized CRDT JSON wrapper; it does not
+  decode the Yjs document enough to validate title/content projection. Adding
+  projection validation is therefore a new server capability.
+- Projection validation needs a narrow, auditable rule set. A false positive
+  that rejects legitimate empty content or invalid/freeform block repair would
+  be worse than leaving that row partial.
+- A no-op CRDT write should ideally preserve the current stored meta value or
+  return a response that does not make the client dirty again. Merely accepting
+  a same-document write with a new `updateId` may continue the save loop.
+- REST-only protection must define bypass policy for classic editor, WP-CLI,
+  XML-RPC, direct `wp_update_post()`, plugin meta writes, autosaves, and
+  revision restore. Otherwise those paths can change part of the bundle without
+  bumping or checking the bundle version.
 
 ### Practical conclusion for the broader mitigation
 
 The broader mitigation is much higher leverage than `_crdt_document` CAS alone,
 but it is still primarily a persistence containment layer.
 
-Under the bug-resolution score, it could plausibly fully fix about 3-4% of
-manifest rows and partially mitigate another 9-11%. Under the durable
-containment score, it could touch about one sixth of distinct rows and about
-one fifth of weighted failures.
+Under the bug-resolution score, it could plausibly fully fix about 3% of
+manifest rows and partially mitigate another 10%. Under the durable containment
+score, it could touch about one sixth of distinct rows and about one fifth of
+weighted failures.
 
 The remaining majority is still client/live-system work: live CRDT
 reconciliation, table/Y.Array merge behavior, title reload/autosave state,
