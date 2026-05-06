@@ -310,6 +310,22 @@ server-owned monotonic bundle version, a commit-time predicate in the same
 database operation or transaction that writes the protected fields, and defined
 rollback/error behavior for every post/meta side effect.
 
+Implementation options have different mitigation value:
+
+| Architecture | What it can do | What it cannot do | Impact implication |
+| --- | --- | --- | --- |
+| Plugin preflight using REST/meta filters | Reject some obviously stale or malformed requests before normal REST writes, and reject stale `_crdt_document` meta writes. | Guarantee commit-time freshness or atomicity across post fields and meta. | Useful shadow/prototype path, but too weak for the base estimate. |
+| Plugin-level cooperative lock | Serialize Gutenberg RTC clients that use the normal REST path. | Cover non-participating writers, direct `wp_update_post()`, WP-CLI, XML-RPC, Classic Editor, or plugin writes; recover from process death without careful lock expiry. | Reduces races among cooperating clients, but still needs token invalidation for external writes. |
+| Bundle version stored as post meta | Maintain an opaque version in familiar storage. | Atomically update `wp_posts` fields and the version meta together through normal REST flow. | Can expose/read a token, but is not sufficient for commit-time CAS by itself. |
+| Dedicated bundle-version table/row | Provide a monotonic version and a row that can be locked or CAS-updated. | Automatically make the existing REST controller write post fields and meta transactionally. | Good primitive for a dedicated endpoint or core change; weak if only observed by filters. |
+| Dedicated RTC bundle endpoint | Own the whole guarded write, including post fields, `_crdt_document`, token advance, and rollback. | Automatically protect legacy and non-RTC write paths unless they also invalidate the token. | Plausible Gutenberg-first implementation if normal REST saves are routed through it for RTC clients. |
+| Core REST/controller/database change | Put the CAS predicate and protected-field commit inside the normal post update path. | Avoid defining policy for legacy partial writes, autosaves, revisions, and plugin side effects. | Closest to the base estimate's assumptions. |
+
+The practical migration path is therefore: prototype with preflight/shadow
+telemetry, add token-aware client retry, introduce a dedicated guarded RTC save
+path or core commit primitive, then treat every unguarded writer as a token
+invalidator until it participates in the protocol.
+
 ### Concrete mitigation shape
 
 The impact estimates below assume an implementation closer to a guarded commit
@@ -446,6 +462,18 @@ block registry behavior, deprecated-block handling, invalid/freeform behavior,
 and filter policy that match the editor closely enough not to corrupt valid
 content. A mismatch between server materialization and editor serialization can
 create a new data-loss path.
+
+The credited row groups depend on different mechanisms:
+
+| Row group | Rows | Required mechanism | Why weaker variants are insufficient |
+| --- | --- | --- | --- |
+| Stale title/content/full-record saves | `8`, `155`, `156`, `243` | Commit-time bundle CAS, read/write-set discipline, and client repair; per-field base tracking or CRDT projection for mixed-base title/body cases. | `_crdt_document` CAS alone accepts current/newer CRDT meta paired with stale title/content. |
+| Split or ambiguous post/meta persistence | `52`, `63`, `141` | Atomic protected-field commit plus conflict repair. | Preflight can pass and meta conflict can arrive after `wp_posts` fields changed. |
+| Direct CRDT-meta clobber | `99` | `_crdt_document` guard or bundle CAS covering CRDT meta. | Does not require full projection, but bypass paths can still clobber meta. |
+| Empty/corrupt serialized content | `15`, `18`, `19`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Projection validation for containment; server materialization only for the subset whose submitted CRDT remains trustworthy. | Bundle CAS cannot reject a fresh-token empty or malformed payload unless it is also stale. |
+| CRDT save-loop settlement | `23`, `90`, `227`; weakly `45` | Proven save-marker-only no-op settlement plus client dirty-state handling. | Rendered-content equality is unsafe, and wrapper-only equality is too weak for `savedAt`/`savedBy` churn. |
+| Containment-only live corruption | `2`, `5`, `17`, `27`, `56`, `57` | Same projection/commit machinery, but only as durable-write containment. | The visible/live CRDT bug happens before persistence, so rejecting a save does not repair the editor. |
+| Foreign fresh-post contamination | `89` | Post-bound CRDT provenance. | A fresh post can have no stale bundle base; title/content/CRDT may be internally coherent for the wrong document. |
 
 ### Expected impact: bug-resolution score
 
