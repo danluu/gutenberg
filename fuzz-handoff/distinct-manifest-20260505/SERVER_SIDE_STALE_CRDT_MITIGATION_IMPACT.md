@@ -402,6 +402,10 @@ Idempotency should use a bounded attempts table, not only one
 bundle before an HTTP retry of an older accepted attempt arrives. Store
 attempts keyed by site/entity/save-attempt id with payload hash, base token,
 write set, outcome, result token, and canonical response hash or body pointer.
+This table needs retention limits: expire old successful attempts after the
+client retry window, retain failed/conflict attempts only long enough for
+diagnostics, and cap per-post/per-user attempt counts so a stuck client cannot
+grow unbounded storage.
 
 The version row should also store server-computed hashes of canonical
 `post_title`, `post_content`, `post_excerpt`, and `_crdt_document`. These hashes
@@ -451,6 +455,16 @@ return that token. A first token-bearing save should fail closed if the version
 row disappeared or was concurrently initialized from different protected
 values. Legacy writes before initialization should initialize from the post's
 current DB state, not from stale REST preload or client state.
+
+Permission and cheap validation should happen before expensive projection or
+lock acquisition. The endpoint should check object-level `edit_post`
+capability before returning token mismatch details, current hashes, or raw
+protected fields. REST schema, payload-size limits, and malformed wrapper
+checks should run before acquiring the bundle-version row lock; otherwise a
+large or malformed CRDT can become a lock-holding save-path DoS. Payload
+normalization and sanitization must run before payload hashing, projection
+checks, and committed-value hashing so hashes describe what would actually be
+stored.
 
 ### Concrete mitigation shape
 
@@ -591,6 +605,30 @@ The server response has to be authoritative enough for the client to settle:
 | `accepted_real_update` | Include canonical raw protected fields, accepted `_crdt_document`, new token, and whether token advanced. | Replace local saved markers with server canonical state and clear dirty state only after this response. |
 | `accepted_crdt_noop` | Include stable stored CRDT or no-op acknowledgement, unchanged or explicitly advanced token policy, and dirty-settlement marker. | Mark the entity clean without overwriting meaningful causal CRDT state. |
 | `legacy_invalidated` | Include new/invalidated token and the fields whose external mutation forced invalidation. | Refetch before the next guarded RTC save. |
+
+Client conflict handling needs a data-preservation contract, not only a retry
+loop. A correct server rejection must not discard the user's unsaved local
+intent. The client should classify a conflict into three outcomes:
+
+| Client outcome | When it is allowed | Required state after handling |
+| --- | --- | --- |
+| Automatic repair and retry | Current CRDT applies cleanly, local intent can be rematerialized, capabilities still allow the write, and retry budget remains. | One new guarded attempt with a fresh token; rejected payload is not applied locally. |
+| User-visible conflict with local draft preserved | Rebase is ambiguous, projection is unknown, capability changed, second 409 occurs, or provenance mismatch requires discard/rejoin. | `isSavingPost()` clears, dirty state remains, unload protection stays active, and local changes are recoverable. |
+| No-op settlement | Server proves only non-semantic save metadata changed and returns a clean-settlement response. | Dirty state and save markers clear without changing meaningful CRDT state. |
+
+This affects row scoring. A server-side 409 by itself is not a full fix: the
+client must either retry to a clean saved state or preserve the local draft and
+surface an explicit conflict. Applying the rejected payload to the sync doc,
+clearing dirty state before a canonical success response, or leaving
+`isSavingPost()` stuck turns a would-be full mitigation into partial
+containment.
+
+Multiple same-user tabs need the same contract. A token accepted in one tab
+should make other tabs refetch or expect a 409 before their next guarded save;
+local cross-tab broadcast is useful for reducing conflicts, but correctness
+must still come from the server token. Offline or resumed tabs should treat
+their old token as a conflict candidate and preserve local edits rather than
+silently overwriting current protected fields.
 
 The read path needs the same coherence discipline as the write path. A save
 response or edit-context REST response can stitch together `wp_posts` fields,
@@ -1533,6 +1571,10 @@ Minimum server tests:
   or write set is rejected;
 - first guarded save on a post without an existing version row uses atomic
   insert/upsert and cannot let two concurrent initializers both commit;
+- unauthorized users cannot distinguish stale-token, provenance, or projection
+  mismatch details for posts they cannot edit;
+- malformed or oversized CRDT/projection payloads are rejected before acquiring
+  the bundle-version lock;
 - scalar bundle tokens reject mixed-base protected fields, or per-field
   generations prove the submitted title/content/excerpt/CRDT values came from
   compatible bases;
@@ -1574,6 +1616,13 @@ Minimum client tests:
   conflict repair uses a new guarded attempt tied to the repaired base token;
 - successful saves retain the returned bundle token in client state after the
   mutation response is stored as the raw record;
+- rejected saves preserve the user's local edits and leave unload protection
+  active unless an automatic repair retry reaches canonical success;
+- ambiguous rebase, provenance mismatch, capability change, or repeated 409
+  exits the save loop with a user-visible conflict instead of clearing dirty
+  state or spinning;
+- stale same-user tabs and resumed/offline tabs either receive a 409 and
+  preserve local edits or refetch before guarded save;
 - bundle retry reruns editor-layer content materialization and
   `editor.preSavePost`, or proves those transformations have moved into the
   retrying layer;
