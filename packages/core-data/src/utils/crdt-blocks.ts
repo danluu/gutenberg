@@ -411,6 +411,167 @@ function createNewYBlock( block: Block ): YBlock {
 	);
 }
 
+function getUniqueClientIdsFromBlocks( blocks: Block[] ): string[] | null {
+	const clientIds: string[] = [];
+	const seenClientIds = new Set< string >();
+
+	for ( const block of blocks ) {
+		if (
+			typeof block.clientId !== 'string' ||
+			block.clientId.length === 0 ||
+			seenClientIds.has( block.clientId )
+		) {
+			return null;
+		}
+
+		seenClientIds.add( block.clientId );
+		clientIds.push( block.clientId );
+	}
+
+	return clientIds;
+}
+
+function getUniqueClientIdsFromYBlocks( yblocks: YBlocks ): string[] | null {
+	const clientIds: string[] = [];
+	const seenClientIds = new Set< string >();
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const clientId = yblocks.get( index ).get( 'clientId' );
+
+		if (
+			typeof clientId !== 'string' ||
+			clientId.length === 0 ||
+			seenClientIds.has( clientId )
+		) {
+			return null;
+		}
+
+		seenClientIds.add( clientId );
+		clientIds.push( clientId );
+	}
+
+	return clientIds;
+}
+
+function hasSameClientIdSet(
+	firstClientIds: string[],
+	secondClientIds: string[]
+): boolean {
+	if ( firstClientIds.length !== secondClientIds.length ) {
+		return false;
+	}
+
+	const secondClientIdSet = new Set( secondClientIds );
+
+	return firstClientIds.every( ( clientId ) =>
+		secondClientIdSet.has( clientId )
+	);
+}
+
+type ClientIdReorderRange = {
+	end: number;
+	start: number;
+};
+
+function getClientIdReorderRange(
+	yblocks: YBlocks,
+	incomingBlocks: Block[]
+): ClientIdReorderRange | null {
+	if ( yblocks.length !== incomingBlocks.length || yblocks.length < 2 ) {
+		return null;
+	}
+
+	const currentClientIds = getUniqueClientIdsFromYBlocks( yblocks );
+	const incomingClientIds = getUniqueClientIdsFromBlocks( incomingBlocks );
+
+	if ( ! currentClientIds || ! incomingClientIds ) {
+		return null;
+	}
+
+	if ( ! hasSameClientIdSet( currentClientIds, incomingClientIds ) ) {
+		return null;
+	}
+
+	let start = 0;
+	while (
+		start < currentClientIds.length &&
+		currentClientIds[ start ] === incomingClientIds[ start ]
+	) {
+		start++;
+	}
+
+	if ( start === currentClientIds.length ) {
+		return null;
+	}
+
+	let end = currentClientIds.length;
+	while (
+		end > start &&
+		currentClientIds[ end - 1 ] === incomingClientIds[ end - 1 ]
+	) {
+		end--;
+	}
+
+	return { end, start };
+}
+
+function replaceYBlockRange(
+	yblocks: YBlocks,
+	start: number,
+	deleteCount: number,
+	blocks: Block[]
+): void {
+	if ( deleteCount > 0 ) {
+		yblocks.delete( start, deleteCount );
+	}
+
+	if ( blocks.length > 0 ) {
+		yblocks.insert( start, blocks.map( createNewYBlock ) );
+	}
+}
+
+function getCurrentBlocksByClientId( yblocks: YBlocks ): Map< string, Block > {
+	const blocksByClientId = new Map< string, Block >();
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+		const clientId = yblock.get( 'clientId' );
+
+		if ( typeof clientId === 'string' && clientId.length > 0 ) {
+			blocksByClientId.set( clientId, yblock.toJSON() as Block );
+		}
+	}
+
+	return blocksByClientId;
+}
+
+function getBlockForReorderDiff(
+	currentBlock: Block,
+	incomingBlock: Block,
+	attributeCursor: MergeCursorPosition
+): Block {
+	if (
+		! attributeCursor ||
+		attributeCursor.clientId !== incomingBlock.clientId ||
+		! Object.hasOwn(
+			incomingBlock.attributes,
+			attributeCursor.attributeKey
+		)
+	) {
+		return currentBlock;
+	}
+
+	return {
+		...currentBlock,
+		name: incomingBlock.name,
+		attributes: {
+			...currentBlock.attributes,
+			[ attributeCursor.attributeKey ]:
+				incomingBlock.attributes[ attributeCursor.attributeKey ],
+		},
+	};
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -436,6 +597,53 @@ export function mergeCrdtBlocks(
 
 	const incomingBlocksToSync =
 		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const blocksForDiff = [ ...incomingBlocksToSync ];
+
+	const clientIdReorderRange = getClientIdReorderRange(
+		yblocks,
+		incomingBlocksToSync
+	);
+	if ( clientIdReorderRange ) {
+		const currentBlocksByClientId = getCurrentBlocksByClientId( yblocks );
+		const reorderedBlocks = incomingBlocksToSync
+			.slice( clientIdReorderRange.start, clientIdReorderRange.end )
+			.map(
+				( block ) =>
+					( typeof block.clientId === 'string'
+						? currentBlocksByClientId.get( block.clientId )
+						: undefined ) ?? block
+			);
+		/*
+		 * The positional update path below rewrites existing Y.Map instances when
+		 * the same blocks appear in a new order. That loses block identity and can
+		 * turn a top-level move into sibling content replacement. Yjs arrays do not
+		 * support moving integrated items, so rebuild only the reordered middle range
+		 * and preserve any stable prefix/suffix blocks. The moved range is rebuilt
+		 * from the current CRDT block state instead of the incoming editor snapshot:
+		 * the snapshot that reports a move can lag behind peer edits already merged
+		 * into this Y.Doc. Treat this pass as structural-only for the moved range,
+		 * except for the selected rich-text attribute that the caller can identify
+		 * as an incoming local edit.
+		 */
+		replaceYBlockRange(
+			yblocks,
+			clientIdReorderRange.start,
+			clientIdReorderRange.end - clientIdReorderRange.start,
+			reorderedBlocks
+		);
+
+		for (
+			let index = clientIdReorderRange.start;
+			index < clientIdReorderRange.end;
+			index++
+		) {
+			blocksForDiff[ index ] = getBlockForReorderDiff(
+				yblocks.get( index ).toJSON() as Block,
+				incomingBlocksToSync[ index ],
+				attributeCursor
+			);
+		}
+	}
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -451,7 +659,7 @@ export function mergeCrdtBlocks(
 	// @credit Kevin Jahns (dmonad)
 	// @link https://github.com/WordPress/gutenberg/pull/68483
 	const numOfCommonEntries = Math.min(
-		incomingBlocksToSync.length ?? 0,
+		blocksForDiff.length ?? 0,
 		yblocks.length
 	);
 
@@ -462,7 +670,7 @@ export function mergeCrdtBlocks(
 	for (
 		;
 		left < numOfCommonEntries &&
-		areBlocksEqual( incomingBlocksToSync[ left ], yblocks.get( left ) );
+		areBlocksEqual( blocksForDiff[ left ], yblocks.get( left ) );
 		left++
 	) {
 		/* nop */
@@ -473,7 +681,7 @@ export function mergeCrdtBlocks(
 		;
 		right < numOfCommonEntries - left &&
 		areBlocksEqual(
-			incomingBlocksToSync[ incomingBlocksToSync.length - right - 1 ],
+			blocksForDiff[ blocksForDiff.length - right - 1 ],
 			yblocks.get( yblocks.length - right - 1 )
 		);
 		right++
@@ -484,7 +692,7 @@ export function mergeCrdtBlocks(
 	const numOfUpdatesNeeded = numOfCommonEntries - left - right;
 	const numOfInsertionsNeeded = Math.max(
 		0,
-		incomingBlocksToSync.length - yblocks.length
+		blocksForDiff.length - yblocks.length
 	);
 	const numOfDeletionsNeeded = Math.max(
 		0,
@@ -493,7 +701,7 @@ export function mergeCrdtBlocks(
 
 	// updates
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
-		const incomingYBlock = incomingBlocksToSync[ left ];
+		const incomingYBlock = blocksForDiff[ left ];
 		const localYBlock = yblocks.get( left );
 
 		Object.entries( incomingYBlock ).forEach(
@@ -626,7 +834,7 @@ export function mergeCrdtBlocks(
 
 	// inserts
 	for ( let i = 0; i < numOfInsertionsNeeded; i++, left++ ) {
-		const newBlock = [ createNewYBlock( incomingBlocksToSync[ left ] ) ];
+		const newBlock = [ createNewYBlock( blocksForDiff[ left ] ) ];
 
 		yblocks.insert( left, newBlock );
 	}
