@@ -8465,3 +8465,101 @@ known-fixes failure:
 ffmpeg decode completed with no errors, and the 8s extracted frame shows both
 editor screens plus the natural action log, expected order, observed
 known-fixes order, and pass-150 result.
+
+## Pass 151 Verification
+
+Pass 151 re-read the source row, generated spec, archived log, source
+screenshots, and error context. The source failure is still a loaded-editor
+semantic split after ordinary editor actions, not a timeout of the whole run,
+malformed block input, bad locator, inverted assertion, or expected behavior:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+The PR branch remains exactly three commits over current `origin/trunk`:
+
+```text
+origin/trunk = 777af47425fbb6608b8f1453976abd1458c3d81d
+PR branch HEAD = f72df45f8e3 Avoid rewriting CRDT block records for pure moves
+merge-base = 777af47425fbb6608b8f1453976abd1458c3d81d
+rev-list --left-right --count origin/trunk...HEAD = 0 3
+```
+
+Commit order is still:
+
+```text
+a7f79df448e Add CRDT repros for RTC adjacent move identity rewrite
+83bc38f49ec Add RTC top-level move Playwright repro
+f72df45f8e3 Avoid rewriting CRDT block records for pure moves
+```
+
+Fresh fixed-branch pass-151 verification:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-151/artifacts-fixed RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+Results: the two CRDT suites passed `81/81`; targeted JS lint exited `0`;
+`git diff --check` exited `0`; and the natural-user Playwright repro passed
+headlessly against the live `5ee0be2f9b7d` site on `http://localhost:9902` in
+`21.0s` test time (`22.7s` overall).
+
+Pass 151 added a fresh known-fixes low-level negative control in:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-151/work/knownfix-testonly-clean
+```
+
+That scratch worktree is based on
+`3cba2b1e56a98787de08dc6c7df2434759e8f908` and had only the first repro commit
+`a7f79df448e0ecb9c6b9a1f7048031cf532af5d0` applied with `--no-commit`.
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --testNamePattern="does not morph post-entrypoint block records|does not rewrite block records when moving adjacent top-level blocks" --runInBand --no-cache
+```
+
+Result: expected failure on the known-fixes base. Both tests failed before the
+fix with the same record-morph proof:
+
+```text
+Expected value: "Another paragraph exists so the top-level list is not degenerate."
+Received array: [undefined, "Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا."]
+```
+
+Pass 151 also attempted to rerun the natural-user browser repro against the
+known-fixes site on `http://localhost:9903` with WebSocket ports `20400` and
+`20460`. Both attempts failed too early waiting for the Collaborators list
+button, so those browser retries are recorded as environment/readiness noise
+and are not used as product-bug evidence. The source run and the fresh
+known-fixes low-level negative control still prove the base is unfixed.
+
+Pass 151 refreshed origin analysis with `git grep`, `git blame`, `git log`,
+`git show`, and GitHub PR metadata. The introducing commit remains
+`84019935998c16f877e976ad85e84748355d7282`, PR
+[#72262](https://github.com/WordPress/gutenberg/pull/72262), merged
+`2025-10-14T17:38:19Z`. PR
+[#75923](https://github.com/WordPress/gutenberg/pull/75923), merged as
+`128a3c29b7f1db4f35faf9e326dd1e5e7ac11104` on `2026-02-25T22:17:47Z`,
+expanded `mergeCrdtBlocks()` tests but did not cover pure-move Y.Map identity
+or event shape. PR
+[#77164](https://github.com/WordPress/gutenberg/pull/77164), merged as
+`a6bfd3e55432981c7c2cb09190ee77954530b1a5` on `2026-04-10T23:25:05Z`,
+reused the left/right sweep for array attributes without fixing top-level
+block pure moves.
+
+Pass 151 made a new annotated stitched-screen video from the archived source
+screenshots plus the fresh pass-151 low-level result:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-151/video/5ee0be2f9b7d/rtc-top-level-move-reconciliation-pass151-source-record-morph-annotated.mp4
+```
+
+`ffprobe` reports H.264 video, `1920x1080`, `20.0s`, and `600` frames. A full
+ffmpeg decode completed with no errors, and the extracted 8s frame shows both
+source editor screens, the action log, expected order, observed duplicate
+order, and pass-151 fixed/known-fixes verification.
