@@ -483,6 +483,30 @@ normalization and sanitization must run before payload hashing, projection
 checks, and committed-value hashing so hashes describe what would actually be
 stored.
 
+Security boundary:
+
+- Bundle tokens, provenance tuples, room generations, and `save_attempt_id`
+  values are freshness/correlation data, not authorization credentials. Every
+  mutation still needs nonce/session auth, object-level `edit_post` checks on
+  the actual post id, and field/status capability checks at commit time.
+- Idempotency records should be scoped by site, post, authenticated
+  user/session class, and attempt id. Replays must re-run authorization before
+  returning a stored canonical response; a user who lost access should get an
+  auth failure, not a replayed title/content/CRDT body.
+- Private protocol fields should be request-body or header fields, not query
+  args, because URLs are logged and leaked more widely. Conflict diagnostics
+  should not reveal post ids, room ids, token state, or whether the hidden
+  reason was stale-token, provenance, or projection failure to users who cannot
+  edit the post.
+- A transactional endpoint that writes post fields or `_crdt_document` directly
+  must explicitly preserve registered post/meta authorization and sanitization
+  rules. Direct SQL must not bypass the `_crdt_document` meta auth callback or
+  normal post-content filtering.
+- Rate-limit failed attempts as well as accepted saves: malformed payloads,
+  stale-token conflicts, idempotency replays, projection failures, and lock
+  waits should be counted by user/post/IP and capped before they can grow the
+  attempts table or hold locks.
+
 ### Concrete mitigation shape
 
 The impact estimates below assume an implementation closer to a guarded commit
@@ -871,6 +895,24 @@ interval to be authorized for the affected fields, or refuses materialization
 when authorship/capability cannot be proven. The chosen policy affects whether
 materialization can be enabled beyond controlled fixtures.
 
+An "all contributors authorized" policy is not enforceable unless the persisted
+CRDT carries tamper-resistant contributor identity for the accepted update
+interval. Yjs client ids are not security identities. Without signed or
+server-stamped operation authorship, materialization can safely use only the
+saving actor's capabilities or refuse higher-risk materialization.
+
+KSES attribution is a special case. If a high-privilege user inserts HTML that
+requires `unfiltered_html` and a lower-privilege user later saves, saving-actor
+KSES may strip it. If the server instead uses highest-contributor privilege,
+the lower-privilege saver can persist HTML they could not save alone. The
+mitigation therefore needs an explicit KSES attribution rule; per-fragment KSES
+should be treated as unavailable unless authenticated range authorship exists.
+
+Materialized content should be distinguishable in revisions and audit logs from
+ordinary user-submitted serialized content. Record that the field was
+server-materialized, which actor triggered it, which projection policy was
+used, and whether contributor attribution was unavailable.
+
 Bindings can add read and write dependencies. Bound attributes may depend on
 post data, post meta, term data, pattern override context, permissions, and
 registered binding sources; some binding sources can also write through setters
@@ -1082,6 +1124,7 @@ Operational degraded behavior should also be specified:
 | Projection decoder unavailable or over limit | Keep CAS enforcement, classify projection as `unknown`, and skip projection enforcement. | `degraded_projection_unavailable` |
 | Mixed-version collaborators | Keep token emission, disable strict enforcement for the session unless compatibility is proven. | `degraded_mixed_client_session` |
 | Object-cache/preload incoherence detected | Serve uncached edit-context reads or force refetch before save. | `degraded_cache_incoherence` |
+| Capability/KSES/authorship policy unavailable | Disable materialization; keep only CAS/projection telemetry that is safe under normal REST permissions. | `degraded_materialization_security_policy_unavailable` |
 
 A degraded accept should not be counted as mitigation success. Telemetry should
 record `degraded_reason`, `degraded_decision`, `protected_fields_written`,
@@ -1321,6 +1364,31 @@ state map and mirror it in the JSON wrapper. The wrapper value must be copied
 from the Y.Doc state, not supplied independently from the current post object;
 otherwise a buggy save path could wrap a foreign Y.Doc with the current post's
 identity and bypass the check.
+
+Provenance needs an explicit threat model. `document_generation` and
+`room_generation` are client-visible isolation labels, not authorization
+credentials. Possession of a room generation or embedded provenance tuple must
+never authorize `/wp-sync` or REST writes; normal `edit_post` capability,
+nonce/session checks, and post-status access checks still gate every read and
+write. Unsigned labels catch accidental foreign-document contamination, not
+deliberate forgery by an authorized client.
+
+If unforgeability is required, provenance needs a server-stamped proof separate
+from the plain identity tuple, such as a key-versioned HMAC over site/blog id,
+entity type, post type, post id, document generation, room generation, schema
+version, and purpose. The server record remains authoritative: a valid proof
+for an old, tombstoned, deleted, or rotated generation must still be rejected.
+A signed tuple prevents blind forgery, but not copy/replay of a valid proof
+unless it is also bound to the accepted document base, canonical Y.Doc hash, or
+a server-applied update chain.
+
+Embedded provenance needs canonical decoding rules. The Y.Doc should contain
+exactly one provenance record in a reserved namespace that normal block/user
+data cannot shadow, duplicate, or override. Wrapper provenance must be derived
+from that embedded record. Missing, duplicate, undecodable, schema-unknown, or
+wrapper/embedded-mismatched provenance should quarantine or reject before
+projection/no-op handling; it should not fall back to trusting the JSON
+wrapper.
 
 Server enforcement should reject `_crdt_document` writes whose provenance does
 not match the server record, with no mutation to `post_title`, `post_content`,
@@ -1622,6 +1690,10 @@ Minimum server tests:
   insert/upsert and cannot let two concurrent initializers both commit;
 - unauthorized users cannot distinguish stale-token, provenance, or projection
   mismatch details for posts they cannot edit;
+- idempotency replays rerun authorization and do not return stored canonical
+  responses after access is revoked;
+- `save_attempt_id` collisions are scoped by site, post, user/session class,
+  and attempt id; unauthorized requests cannot reserve or poison attempt ids;
 - malformed or oversized CRDT/projection payloads are rejected before acquiring
   the bundle-version lock;
 - scalar bundle tokens reject mixed-base protected fields, or per-field
@@ -1650,6 +1722,8 @@ Minimum server tests:
   limit hits produce distinct outcomes rather than generic mismatches.
 - authenticated mutation responses return the next bundle token and canonical
   protected-field state, not only edit-context GET responses;
+- private protocol fields are not accepted only through query args, and access
+  logs cannot reconstruct tokens/provenance/attempt ids from URLs;
 - `_fields`, sparse-field, and non-edit-context REST responses do not erase
   cached bundle tokens for token-aware clients, and public contexts do not leak
   private token/provenance diagnostics;
