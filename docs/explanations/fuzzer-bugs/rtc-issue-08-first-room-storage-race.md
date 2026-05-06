@@ -294,3 +294,63 @@ removal.
 
 The PR branch intentionally does not include this explanation, the browser-only
 diagnostic mu-plugin, or an e2e repro harness.
+
+## Audit of the Current Technical Summary
+
+Five independent review passes audited the concise explanation of the current
+fix versus the older secondary repair approach. The answer was directionally
+right, but several statements needed tighter wording.
+
+### Confirmed behavior
+
+The current implementation is a narrow first-access canonicalization fix. It
+resolves the exact-slug canonical storage post before sync or awareness data is
+written. If the current request just created a suffixed duplicate, it deletes
+that just-created post before returning a storage ID.
+
+The current code does not scan, merge, move meta from, or delete historical
+duplicate storage posts. That is the important technical difference from the
+older secondary repair implementation, which still did request-path duplicate
+repair by moving `postmeta` rows and deleting duplicate posts.
+
+That means the core conclusion stands: the current fix is safer than reverting
+to the older merge/delete behavior, because the older behavior could strand
+clients behind cursors by moving old `meta_id` rows behind already-issued
+cursors.
+
+### Corrections and caveats
+
+The fix should be described as preventing this request from writing new data
+into a newly-created duplicate, not as fully repairing split rooms.
+
+Historical duplicate data is not deleted by the current fix, but it is still
+logically stranded. Normal fresh readers follow the canonical exact-slug post
+and will not read updates left on old suffixed duplicate posts. In this context,
+"preserved" means physically preserved in the database, not recovered for
+collaboration.
+
+The claim that the code deletes only an empty duplicate is true for the normal
+storage flow because writes happen after `get_storage_post_id()` returns. It is
+not a hard database invariant. `wp_insert_post()` hooks, out-of-band writes, or
+weak read-after-write behavior could theoretically attach data before deletion.
+There is no unique constraint or transactional fence.
+
+The current fix also does not guarantee exactly one durable storage row per
+room. It avoids using newly-created suffixed rows for acknowledged writes, but
+duplicate rows can still exist under old races, failures, or weak consistency.
+
+### Sharper statement
+
+The current fix is best described as request-local prevention:
+
+-   choose the exact-slug canonical storage post before writing collaboration
+    data;
+-   discard only this request's fresh duplicate if canonical storage already
+    exists;
+-   leave historical duplicates untouched for a future bounded repair.
+
+The older "rip out everything after the secondary fix" approach would only be
+safe if it also removed the historical merge/delete behavior. If it means going
+back to the implementation that scanned suffixed posts, moved `postmeta`, and
+deleted duplicates in the request path, then it reintroduces the cursor-backfill
+hazard.
