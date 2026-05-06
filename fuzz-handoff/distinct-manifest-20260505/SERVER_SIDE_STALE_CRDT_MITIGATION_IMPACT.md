@@ -87,6 +87,11 @@ The handoff is dominated by bug families outside persisted CRDT freshness.
 The following buckets assign every manifest row once and sum to the manifest
 totals of 279 rows and 452 weighted STATUS rows.
 
+This is the narrow-mitigation taxonomy used for the original stale
+`_crdt_document` guard. The broader second analysis below re-audits several
+borderline rows into a slightly different excluded-bucket taxonomy, but keeps
+the same manifest denominator and reconciled totals.
+
 | Bucket | Rows | STATUS-weighted | Expected impact |
 | --- | ---: | ---: | --- |
 | Full fix candidate | 1 | 1 | Fixed if the mitigation blocks stale/empty `_crdt_document` clobbers, not only incoming stale request payloads. |
@@ -755,6 +760,7 @@ guarded read or write can rely on the old token.
 | Row class | Required proof | MVP boundary |
 | --- | --- | --- |
 | Stale title/content/full-record saves (`8`, `155`, `156`, `243`) | Submitted protected fields were derived from an older bundle generation, the current generation changed before commit, no protected field mutated on reject, and client repair either saved cleanly or preserved the local draft. | Bundle CAS plus atomic commit plus client repair. Projection/materialization is not required unless the trace is mixed-base with a fresh token. |
+| Direct CRDT-meta clobber (`99`) | Raw DB evidence proves `_crdt_document` was cleared or overwritten while title/content stayed valid; the guarded path prevents the meta mutation across REST, meta add/update/delete, and response assembly; client refetch/retry or refresh settles cleanly. | Full only if DB mutation is proven. If evidence is only an incoherent save response, count as partial/read-path containment, not full. |
 | Split post/meta persistence (`52`, `63`, `141`) | A conflict or failure cannot leave `wp_posts` fields changed while `_crdt_document` or token state rejects/fails. Raw DB traces distinguish split persistence from read-path incoherence. | Atomic protected-field commit. Preflight-only guards do not count. |
 | Empty/corrupt serialized content partial rows | Accepted/submitted CRDT is from the same guarded generation, projectability is `projectable_static_blocks`, projection result is `mismatch`, and reject/materialization leaves protected DB fields clean. | Projection validation in shadow first; enforcement only for projectable content. |
 | CRDT save-marker no-op rows (`23`, `90`, `227`) | Decoded CRDT diff proves only known save-marker/wrapper churn, server returns no-op/canonical response, and client clears dirty state without dropping causal state. | CRDT no-op settlement plus client dirty-state acknowledgement. |
@@ -776,7 +782,10 @@ Under that MVP, credit should be limited to the stale-save/direct-CRDT subset
 whose traces actually traverse the guarded path. Projection/content-loss rows,
 provenance row `89`, containment-only rows, CRDT no-op rows, and row `45`
 remain out of enforced impact until their separate mechanisms are enabled and
-their proof obligations are measured.
+their proof obligations are measured. Rows `52`, `63`, and `141` are not
+CAS-only MVP credit; they require the atomic protected-field commit proof.
+Without that proof, they remain unmeasured or partial read-path/split
+persistence candidates.
 
 The evidence ladder should remain separated:
 
@@ -792,6 +801,41 @@ The report should therefore publish four measured counts when implementation
 data exists: `mechanism_applicable`, `server_contained`, `client_repaired`, and
 `row_resolved`. The headline fixed fraction should use `row_resolved`; durable
 containment reporting should use `server_contained`.
+
+### Intervention phase taxonomy
+
+The broader server mitigation has a narrow causal window. It can act only after
+a client constructs a protected-field save request and before that request
+durably mutates the canonical post bundle. Many manifest rows fall outside
+that window even when they eventually show bad saved content, because the
+wrong block tree, title state, or sync document was already wrong before the
+server saw a save.
+
+For row scoring, classify each failure by the earliest phase where the state
+became wrong:
+
+| Phase | What first goes wrong | Server mitigation effect | Credit rule |
+| --- | --- | --- | --- |
+| Live CRDT/editor convergence | Peers already disagree, blocks are lost/duplicated, or title/editor state is stale before a save request is built. | Can only refuse later durable persistence if the bad request is provably inconsistent. | Partial or containment-only; never full unless the live CRDT bug is separately fixed. |
+| Save request construction | Client builds stale, empty, flattened, or mixed-base protected fields while the live/editor state still contains enough good state to repair. | Bundle CAS, per-field generations, projection validation, or materialization can catch the bad request. | Full only if client repair/rematerialization returns the editor to clean state; otherwise partial. |
+| Server commit | A request that should reject instead partially commits post fields, meta, or token state. | Atomic protected-field commit can prevent split durable state. | Partial unless final peer/editor state also converges. |
+| Post-save read/settlement | DB is correct, but mutation response, edit-context read, cache, dirty flags, or no-op handling leaves the editor stale or saving. | Coherent token responses and no-op acknowledgement can settle the client. | Full for save-loop rows only when dirty state and peer/reload oracles pass. |
+| Wrong document/room | The client hydrates or joins a foreign CRDT document for the post. | Provenance can reject bootstrap/save/room reuse, but only if it runs before the foreign document is applied. | Row `89` only; REST-save provenance alone is partial. |
+| No protected save reaches server | The failing scenario emits no useful post update request. | No direct effect. | Unimpacted. |
+
+This phase classification explains why the same server mechanism can be full
+for one row and partial for a visually similar row. An empty `post_content`
+save is a high-value projection candidate if the accepted CRDT still projects
+to the user's blocks; it is only containment if the CRDT already collapsed; it
+is unimpacted if no protected-field save is emitted or if the affected field is
+outside the editor-content bundle.
+
+The phase boundary also prevents double counting. A row credited through
+projection should not be credited again through atomic commit unless the trace
+contains both a provably impossible payload and a split persistence failure.
+When both are present, use the earliest server-enforceable phase that would
+change the final oracle, then record the later mechanism as corroborating
+evidence rather than an additional row of impact.
 
 ### Deeper mechanism split
 
@@ -905,6 +949,22 @@ willing to accept. For ordinary block content, decoded `blocks` plus an
 editor-compatible serializer should be authoritative over a cached serialized
 CRDT `content` string; if decoded `blocks` and decoded `content` disagree,
 classify that as `crdt_internal_projection_mismatch`, not as automatic repair.
+
+Projection row credit also requires request-level evidence, not just a final
+DB/REST snapshot. A snapshot showing empty or malformed `post_content` while
+`_crdt_document` remains populated proves divergence, but it does not prove a
+projection validator would have fired. Count projection impact only when the
+trace shows an accepted guarded save with explicit `content` in the write set,
+a submitted or accepted CRDT that decodes as projectable for that same save,
+and a pre-commit mismatch. Rows `19`, `37`, `54`, `69`, `94`, `216`, and `228`
+should stay conditional under this stricter gate if their evidence is only
+final divergence rather than exact bad-request projection proof.
+
+If the submitted `_crdt_document` is stale or untrusted, as in row `61`,
+projection containment counts only when a validated-base or current-generation
+CRDT projection proves the submitted `content` impossible. Otherwise the row
+drops out of projection credit: materializing or validating against the stale
+submitted CRDT can preserve the stale body.
 
 Projection should be tri-state, not boolean:
 
@@ -1166,7 +1226,9 @@ the central bucket:
 | Sensitivity adjustment | Fully fixed | Partially mitigated | Touched/contained | Notes |
 | --- | ---: | ---: | ---: | --- |
 | Base estimate | 8 rows / 16 weighted | 29 rows / 42 weighted | 37 rows / 58 weighted | Assumes decoded no-op proof, guarded bad-save path for conditional rows, and canonicalization for row `45`. |
+| Safe MVP: CAS/atomic commit only, no projection/no-op/canonicalization | 5 rows / 11 weighted | 0-3 rows / 0-3 weighted | 5-8 rows / 11-14 weighted | Credits `8`, `99`, `155`, `156`, and `243`; adds `52`, `63`, and `141` only if atomic post/meta commit is proven. |
 | No CRDT no-op or canonicalization credit | 5 rows / 11 weighted | 28 rows / 40 weighted | 33 rows / 51 weighted | Counts bundle CAS, atomic commit, and projection only; removes `23`, `45`, `90`, and `227`. |
+| Exact bad-request projection proof required | 8 rows / 16 weighted | 22 rows / 32 weighted | 30 rows / 48 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `37`, `54`, `69`, `94`, `216`, and `228` conditional. |
 | No-op proof required | 6 rows / 12 weighted | 31 rows / 46 weighted | 37 rows / 58 weighted | Moves `23` and `90` from full to partial until decoded Yjs diffs prove save-marker-only churn; row `227` remains full because it has stronger dirty-settlement evidence. |
 | Guarded-save evidence required | 5 rows / 11 weighted | 28 rows / 42 weighted | 33 rows / 53 weighted | Also treats row `99` as partial unless DB meta clobber is confirmed, removes row `45` without canonicalization, and removes or downgrades `52`, `69`, and `141` unless traces prove an accepted guarded bad save. |
 | Containment upper bound with strict proof | 5 rows / 11 weighted | 28 rows / 42 weighted | 36 rows / 79 weighted | Keeps containment rows `2`, `5`, and `17`, but treats `27`, `56`, and `57` as unmeasured upper-bound rows until request/DB traces prove later durable bad saves. |
@@ -1184,6 +1246,25 @@ partial because the manifest only proves reload plus second-save stuck-saving
 behavior, not same-content CRDT-only churn. Row `100` leaves the containment
 upper bound because its evidence is synthetic/fault-dependent merge corruption
 and the closest realistic reduction converged cleanly.
+
+Phase-based row audit:
+
+| Earliest server-relevant phase | Rows | Counted as | Why |
+| --- | --- | --- | --- |
+| Stale/mixed-base protected save request | `8`, `155`, `156`, `243` | Full candidates | The bad request can be rejected before durable mutation, and the editor should still have enough local/user intent to retry against the current bundle. |
+| Direct CRDT-meta clobber | `99` | Full candidate, medium confidence | The protected `_crdt_document` write is the server-visible defect, but isolated probes did not reproduce it and bypass paths remain possible. |
+| Split or ambiguous post/meta commit | `52`, `63`, `141` | Partial | Atomic commit can prevent durable split state, but the traces also contain read-after-save, title split, or live-editor divergence symptoms. |
+| Impossible or corrupt serialized content request | `15`, `18`, `19`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Partial | Projection can reject a provably bad durable payload, but the CRDT/editor state that generated it may already be collapsed or malformed. |
+| Save settlement/no-op | `23`, `90`, `227` | Full candidates | The visible state is stable and the bug is repeated persistence/dirty-state churn, so server no-op acknowledgement plus client settlement can remove the user-visible loop. |
+| Entity/HTML canonicalization churn | `45` | Partial | Needs a canonicalization mechanism outside CRDT no-op; otherwise it remains a dirty-state/persistence-loop near miss. |
+| Live corruption before durable write | `2`, `5`, `17`, `27`, `56`, `57` | Containment-only | The server may block later damage, but the first wrong state is already live/editor-side. |
+| Foreign document/room bootstrap | `89` | Separate provenance sensitivity | Bundle CAS cannot distinguish an internally coherent wrong document from a fresh valid document. |
+| No useful protected save | `207` | Unimpacted | The server-side mitigation has no request to reject. |
+
+Rows in the large live-CRDT/reconciliation excluded bucket are dominated by the
+first phase, not by missing server validation. For them, the server can at most
+avoid making a later bad state durable; it cannot reconstruct the intended
+block tree or undo a bad CRDT merge without a different live-sync arbiter.
 
 ### Mechanism sensitivity
 
@@ -1528,6 +1609,39 @@ identity or by adding a validated request field. Current room parsing assumes
 `postType/post:<numeric-id>`, so embedding generation in the room string would
 need a route/schema/parser change.
 
+The current implementation makes full provenance more than a metadata-only
+change. The HTTP polling provider builds room names from `objectType` and
+`objectId` only (`packages/sync/src/providers/http-polling/http-polling-provider.ts`),
+while the server permission parser requires the object id to remain numeric
+(`lib/compat/wordpress-7.0/class-wp-http-polling-sync-server.php`). A generated
+room suffix would fail that parser unless the route schema changes, so a full
+row-`89` fix needs either versioned room syntax or a separate validated
+`room_generation` request field that also participates in the storage key.
+
+Full row-`89` credit also requires destroy-and-rejoin behavior, not
+merge-and-retry. Today the sync manager applies a persisted CRDT document into
+the target Y.Doc before comparing invalidated fields
+(`packages/sync/src/manager.ts`). A provenance mismatch is wrong-document
+state; the client must destroy or unload the current sync entity, discard old
+room cursors/history, refetch canonical protected fields, and join the current
+`room_generation`. If it keeps the contaminated Y.Doc and tries to merge a
+corrected persisted document, provenance should remain partial/containment
+only.
+
+Multisite isolation must cover sync caches as well as DB rows. The sync
+post-meta storage caches storage post IDs by `md5(room)` in a static array and
+looks up storage posts by room hash
+(`lib/compat/wordpress-7.0/class-wp-sync-post-meta-storage.php`). A provenance
+design should key storage lookups and in-memory caches by site/blog identity
+plus `room_generation` and room, especially across `switch_to_blog()` or shared
+sync backends.
+
+Third-party sync providers are another downgrade boundary. `@wordpress/sync`
+allows external Yjs providers to participate. Full row-`89` credit requires
+every active provider to advertise and enforce the same room-generation and
+provenance gate; otherwise REST saves can be guarded while another provider
+continues exchanging updates using only object type/id.
+
 Bootstrap/read policy is part of provenance. The server must validate or
 initialize provenance before the client applies a persisted `_crdt_document` or
 joins a sync room. On edit-context read, a missing or mismatched provenance
@@ -1770,6 +1884,36 @@ validate the guard, but it should not promote the original row if the reduction
 changes the mechanism from reload/live-CRDT corruption into a synthetic
 stale-token conflict.
 
+Each row fixture should also keep a phase ledger:
+`open_hydration -> live_sync_before_save -> pre_save_snapshot -> request_sent
+-> server_decision -> mutation_response -> repair_retry -> post_response_sync
+-> cold_reload`. At each phase, record visible hash, CRDT hash/version,
+protected-field hashes, dirty/save state, peer count, room generation, and
+transport cursor. A row is server-contained when the bad durable write is
+blocked at `server_decision`; it is row-resolved only when the later phases
+converge cleanly.
+
+Intent preservation needs its own oracle. Final clean state is not enough if
+the user's intended edit was dropped during refetch/retry. Fixtures should
+record a redacted `local_intent_hash`, `checkpoint_marker`, or equivalent
+before the guarded save. Row-resolved credit requires final DB, active peers,
+and cold reload to match the intended clean oracle, not merely "no dirty state"
+or "server accepted a retry."
+
+After a contained rejection, track subsequent writes until terminal state. A
+later autosave, retry, legacy write, metabox save, or unguarded REST request
+can reintroduce the bad payload after the guarded path acted correctly. Useful
+fields are `post_reject_write_count`, `post_reject_write_sources`,
+`first_bad_write_after_reject`, and `terminal_state_after_all_writes`.
+
+DB-clean is not enough for RTC row resolution. Full credit should require a
+fresh client/read path independent of the original editor session: cold REST
+edit-context read, fresh sync-room join, and reload with caches/preloads cleared
+or version-verified. Capture room generation, transport mode, update
+cursor/sequence, applied update ids, and per-peer CRDT document hash after
+repair. Rows with clean DB but divergent room state remain server-contained or
+partial.
+
 The ledger should also record proof debt so estimates do not harden into
 claims before the evidence exists:
 
@@ -1981,6 +2125,13 @@ Strict enforcement should stay disabled for a session unless every active RTC
 participant advertises bundle-token and conflict-repair support, or the server
 has a proven compatibility path for mixed clients.
 
+For collaborative editing, the cohort unit should be the room/post generation,
+not only the user session. A treated collaborator can change the shared CRDT,
+DB token, retry behavior, or room history observed by an untreated
+collaborator. Row-resolution claims should require all active participants in
+the fixture or canary room to be in the same enforcement cohort; mixed-cohort
+runs should be reported as mixed/inconclusive instead of fixed or unfixed.
+
 Add a low-volume invariant audit independent of request handling. Sample
 RTC-enabled posts and verify that the stored bundle token, protected-field
 hashes, and `_crdt_document` metadata agree with the last recorded protected
@@ -2146,6 +2297,51 @@ pre-insert validation callback:
   XML-RPC, direct `wp_update_post()`, plugin meta writes, autosaves, and
   revision restore. Otherwise those paths can change part of the bundle without
   bumping or checking the bundle version.
+- WordPress field filtering must be inside the protected-field boundary. The
+  bundle hash and projection decision should be based on the exact values that
+  will be stored after slashing/unslashing, `sanitize_post_field()`,
+  `wp_insert_post_data`, `content_save_pre`, KSES, and registered meta sanitize
+  callbacks. If a filter can still rewrite `post_title`, `post_content`,
+  `post_excerpt`, or `_crdt_document` after the bundle check, that filter is an
+  unguarded protected-field writer and must either run before validation or
+  force token invalidation.
+- Mixed protected/unprotected REST requests need an explicit policy. If one
+  request changes `content` plus status, slug, terms, featured media, or
+  template fields, a bundle conflict should either reject the whole request or
+  commit only a clearly declared unprotected write set. It must not reject
+  protected fields while still applying derived side effects under a response
+  the client treats as a failed save.
+- Revision rows and autosave rows must not accidentally become canonical bundle
+  entities. Bundle/provenance keys should resolve autosave and revision IDs to
+  their parent post unless the endpoint is intentionally operating on the
+  revision object. Accepted guarded parent saves should create revisions only
+  after the protected bundle commits, and rejected/no-op attempts should not
+  create revisions that imply content changed.
+- A guarded endpoint must handle WordPress's non-exception error model.
+  `$wpdb` writes, `wp_update_post()`, meta updates, revision creation, cache
+  operations, and hook callbacks can fail by returning `false`, `0`, or
+  `WP_Error`. The guarded commit path needs explicit error checks plus rollback
+  or token invalidation for each step; assuming exceptions will abort the
+  transaction is not safe in normal WordPress code.
+- Persistent object-cache behavior should be validated per cache group. Post
+  objects, post meta, REST preload data, and Core Data resolver state can be
+  refilled from stale values between DB commit and cache invalidation. Mutation
+  responses should re-read canonical protected fields after commit from a
+  coherent source, not reuse the pre-save `WP_Post` object or prepared REST
+  object.
+- Stored-value hashing should be based on committed database values, not only
+  normalized request values. Character set handling, slash normalization,
+  serialization of meta, KSES, and database round trips can change bytes. If
+  the token row stores hashes, update them from post-commit canonical values so
+  legacy invalidation and invariant audits compare against what WordPress
+  actually persisted.
+- Filters that intentionally mutate protected fields should be classified
+  during rollout. Some sites use `wp_insert_post_data`, save hooks, or meta
+  callbacks to append content, normalize titles, or rewrite excerpts. In strict
+  mode, those sites either need the filter to participate before bundle
+  validation or must remain in legacy-invalidation mode; otherwise the server
+  can produce false conflicts or bless post-save mutations the client never
+  read.
 
 ### Practical conclusion for the broader mitigation
 
