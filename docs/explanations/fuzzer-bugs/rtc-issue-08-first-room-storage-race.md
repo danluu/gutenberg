@@ -93,13 +93,142 @@ The issue is independent of previously fixed cursor and compaction races. Those 
 
 ## Fix Plan
 
-The storage layer must treat the exact room-hash slug as the only canonical storage lineage:
+The storage layer must treat the exact room-hash slug as the only canonical
+storage lineage, but the fix must not require duplicate storage posts to
+disappear synchronously. The audit consensus was that immediate duplicate
+deletion turns stale writers into a data-loss race: a request can cache a
+suffixed duplicate post ID, repair can observe that duplicate as empty, and the
+stale request can then write a newly acknowledged update to storage that repair
+has already deleted or made unreachable.
 
--   After inserting a storage post, resolve the canonical exact-slug post before returning or caching a post ID.
--   If the inserted post is the only candidate and no exact slug exists, promote that post to the exact room-hash slug before using it.
--   If a suffixed duplicate is observed while resolving the race, merge its metadata into the exact-slug post.
--   Do not delete a suffixed storage post if moving its postmeta rows fails.
+The revised success condition is therefore:
+
+-   exactly one readable canonical storage post uses the exact `md5( room )`
+    slug;
+-   duplicate storage posts may remain as repair queues or quarantine targets;
+-   no acknowledged sync update is lost;
+-   duplicate update rows copied into canonical storage receive fresh canonical
+    `meta_id` values greater than any active canonical cursor that missed them;
+-   repair is bounded and retry-safe;
+-   duplicate awareness state cannot override canonical awareness state.
+
+### Make tests prove the implementation under test
+
+The first priority is to make the tests honest:
+
+-   Add `ReflectionClass( 'WP_Sync_Post_Meta_Storage' )->getFileName()` checks
+    in PHPUnit and the e2e helper route.
+-   Fail with the loaded file path if CI exercises Core's
+    `WP_Sync_Post_Meta_Storage` instead of Gutenberg's compat class.
+-   Do not treat `class_exists()` as sufficient proof that the PR code is under
+    test.
+-   Fix the e2e TypeScript type issue by typing `requestUtils` as
+    `RequestUtils`.
+
+### Remove the data-loss edge
+
+The synchronous repair path must not hard-delete duplicate storage posts:
+
+-   Remove `wp_delete_post( $duplicate_id, true )` from hot-path repair.
+-   Leave duplicate posts findable by future repair passes.
+-   Change tests away from requiring `lineages.length === 1` immediately.
+-   Treat leftover duplicates as cleanup debt, not as correctness failure.
+
+This turns stale-writer interleavings from data loss into bounded repair work.
+If a stale request writes to a duplicate after one repair pass, a later repair
+pass can still find and copy that acknowledged update.
+
+### Make repair bounded and idempotent
+
+Repair should use small autocommit batches instead of raw transactions on the
+shared `$wpdb` connection:
+
+-   Remove raw `START TRANSACTION`, `COMMIT`, and `ROLLBACK`.
+-   Acquire at most a zero-wait repair lock for repair work; if unavailable,
+    skip repair and let the user request proceed.
+-   Select at most one duplicate post and a fixed number of sync update rows per
+    request, ordered by source `meta_id`.
+-   Append copied sync rows to canonical storage so they receive fresh canonical
+    `meta_id` values.
+-   Delete only source rows proven copied.
+-   Leave rows outside the batch high-water mark for future repair.
+-   Record deterministic repair identity, preferably a private sidecar marker
+    keyed by duplicate post ID and source `meta_id`, so retry after partial
+    failure does not create endless canonical duplicates.
+
+Repair should run after first-access duplicate detection or real sync update
+writes. It should not run full repair from awareness-only writes or read-only
+polling.
+
+### Preserve cursor delivery
+
+The cursor invariant is the heart of the bug:
+
+-   If an active reader has canonical cursor `C`, old duplicate rows with source
+    `meta_id < C` are invisible to that reader before repair.
+-   After repair, copied rows must have canonical `meta_id > C`.
+-   `get_updates_after_cursor( room, C )` must return those copied rows.
+-   The response `end_cursor` must cover the copied canonical rows.
+
+Both PHPUnit and e2e diagnostics should assert this exact storage state. A
+visible editor-content assertion is useful, but not enough by itself.
+
+### Handle awareness conservatively
+
+Duplicate awareness rows should not be moved wholesale:
+
+-   Exclude `AWARENESS_META_KEY` from duplicate update repair.
+-   Canonical awareness wins.
+-   Ignore or later discard duplicate awareness state.
+-   Add a test where stale duplicate awareness has a higher postmeta `meta_id`
+    than canonical awareness and still cannot override canonical state.
+
+Awareness is ephemeral and clients republish it. Dropping stale duplicate
+awareness is safer than inventing freshness semantics based on postmeta order.
+
+### Prevent new first-access splits narrowly
+
+The storage creation path still needs to canonicalize the room slug:
+
+-   After inserting a storage post, resolve the exact-slug canonical post before
+    returning or caching a post ID.
+-   If the inserted post is the only candidate and no exact slug exists, promote
+    that post to the exact room-hash slug before using it.
 -   Cache only the resolved canonical post ID.
--   Cover the first-access race in PHPUnit.
+-   Add a narrow creation/canonicalization lock around lookup, insert, and
+    recheck.
+-   Do not lock every poll or writer in this PR.
 
-The PR branch intentionally does not include this explanation, the browser-only diagnostic mu-plugin, or an e2e repro harness.
+Broad writer locking can be considered later if duplicate deletion or stronger
+cleanup semantics require it, but it is not needed for the no-delete repair
+design.
+
+### Test coverage
+
+Expected regression coverage:
+
+-   PHPUnit provenance test proving the Gutenberg compat class is loaded.
+-   TypeScript compile coverage for the e2e `RequestUtils` type.
+-   First-access split test proving new writes resolve to canonical storage.
+-   Cursor backfill test proving copied canonical rows have
+    `meta_id > active_cursor`.
+-   Stale-writer test where repair drains a duplicate, a stale writer appends to
+    that duplicate afterward, and a later repair recovers the update.
+-   Partial failure/retry test where append succeeds, source-row deletion fails,
+    and retry converges without losing updates.
+-   Awareness stale-state test.
+-   Bounded-repair test over multiple passes.
+-   E2E diagnostics for room, canonical post ID, duplicate IDs, source meta IDs,
+    copied meta IDs, active cursor, and response cursor.
+
+### Deferred cleanup
+
+Duplicate storage post deletion should be a separate cleanup step:
+
+-   Add tombstone or retired-state metadata only if needed for diagnostics or
+    future garbage collection.
+-   Delete duplicate posts only after a grace period and a final bounded recheck.
+-   Do not make duplicate cleanup part of the correctness fix.
+
+The PR branch intentionally does not include this explanation, the browser-only
+diagnostic mu-plugin, or an e2e repro harness.
