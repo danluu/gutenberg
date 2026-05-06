@@ -215,6 +215,17 @@ The fixed PR branch passes the focused repros, the full `packages/core-data/src/
 
 Pass 50 verified that the existing branches, video standard, and fix still satisfy the requested bar without changing the PR branch commit order. After fetching `origin/trunk` at `02bfdaa5ca9`, a fresh trunk worktree with only regression commit `d71d0bc87fe` failed the two stale-snapshot repros and the same-array-reference reorder repro while the ordinary `handles block reordering` control passed. A fresh known-fixes-base worktree at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, with that same regression commit, passed the two stale-snapshot repros and the ordinary fresh-array reorder control, but still failed only `observes reordered blocks when the editor reuses the same block array reference`. The fixed PR branch passed the four focused repros, the full `crdt-blocks` unit file (`76` tests), targeted JS lint, `git diff --check`, and a fresh headless Playwright run on `http://localhost:9905`. The pass-50 Playwright JSON shows both editors converged to `inserted paragraph`, `another paragraph`, `multibyte paragraph`.
 
+Pass 51 added a narrow independent proof for the remaining same-array failure mode. On the test-only commit `d71d0bc87fe`, the focused unit test `observes reordered blocks when the editor reuses the same block array reference` fails without any browser, network transport, or CRDT peer:
+
+```text
+Expected: Inserted paragraph, Another paragraph, Emoji and multibyte
+Received: Inserted paragraph, Emoji and multibyte, Another paragraph
+```
+
+The test mutates one `Block[]` in place from `[ inserted, emoji, another ]` to `[ inserted, another, emoji ]` and calls `mergeCrdtBlocks()` again. The pre-fix implementation still reads the earlier serialized value from `serializableBlocksCache`, proving that the move can be lost solely at the local merge boundary. Repeating the same focused set on known-fixes base `3cba2b1e56a98787de08dc6c7df2434759e8f908` plus `d71d0bc87fe` passed the two stale-snapshot Y.Doc repros and failed only the same-array-reference reorder test. The fixed PR branch passed the same focused test, the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`76` tests), targeted JS lint, and `git diff --check`.
+
+Pass 51 also rechecked the archived source artifact. The failure log and trace show successful natural UI actions followed by a settled convergence failure: the primary editor had `inserted paragraph`, `another paragraph`, `emoji paragraph`, while the collaborator had `inserted paragraph`, `emoji paragraph`, `emoji paragraph`. The trace `page.evaluate` calls only read normalized block state and serialized content for convergence checks; they do not mutate editor data. A fresh browser rerun on `WP_ENV_PORT=9905` was attempted, but `wp-env start` failed before WordPress boot because Docker's bridge address pools were fully subnetted. Existing bridge networks had running containers attached, so pass 51 did not stop unrelated environments. The pass-51 video therefore stitches a new root-cause evidence card onto the previously verified annotated headless browser repro.
+
 ## Fix Direction
 
 Track the previous local block snapshot per `Y.Array`. Before applying a new local snapshot, compare its top-level clientId order with the previous local order:
