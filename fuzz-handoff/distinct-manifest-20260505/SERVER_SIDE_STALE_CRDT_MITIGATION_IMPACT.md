@@ -804,6 +804,36 @@ acknowledgement that lets the client mark the entity clean. The client must
 not infer semantic no-op from rendered HTML equality alone; byte-different Yjs
 state may carry clocks, delete sets, tombstones, or future merge information.
 
+Yjs-local metadata is not server proof. Gutenberg's sync comments and polling
+provider treat `transaction.origin` as a local filtering and echo-suppression
+concept: local editor changes, undo-ignored save responses, polling-provider
+updates, and remote updates can all have origins that are meaningful only
+inside the receiving process. A server-side no-op, materialization, or repair
+decision therefore needs server-stamped envelope/sidecar facts, not an
+inference that a decoded Yjs update is "server-origin" or "save-origin".
+
+Undo/redo and awareness are also separate proof surfaces. The undo manager
+tracks local editor-origin operations, while save responses use an
+undo-ignored origin. A row should not receive no-op or materialization credit
+unless an undo/redo replay after 409, no-op, or server-repaired save proves
+that the rejected payload, pre-repair CRDT state, or stale protected-field
+write cannot be resurrected. Similarly, `savedAt`/`savedBy` awareness can
+drive UI notifications, but it should not prove durable authorship,
+committed-save success, or CRDT semantic equality; no-op settlement needs an
+explicit REST acknowledgement.
+
+Selection and rich-text behavior limit projection credit. Gutenberg stores
+relative and absolute selection positions because relative positions can
+survive text edits in ways that do not preserve the user's visible anchor.
+Server materialization that rewrites `Y.Text` or rebuilds blocks can preserve
+serialized content while invalidating cursor and selection repair state. Any
+materialized response should force awareness/selection recomputation or mark
+session repair incomplete. Rich-text projection also has to model the
+cursor-sensitive merge path from full strings to deltas and the schema path
+used to find nested rich-text fields. If the server cannot identify the same
+unique `Y.Text` target for tables, query-shaped attributes, or plugin-defined
+paths, projection/no-op classification should downgrade to `unknown`.
+
 No-op policy affects row credit:
 
 | Policy | Impact on rows `23`, `90`, `227`, `45` |
@@ -2215,6 +2245,49 @@ validate the guard, but it should not promote the original row if the reduction
 changes the mechanism from reload/live-CRDT corruption into a synthetic
 stale-token conflict.
 
+Each row should also produce a content-addressed evidence packet, not only
+telemetry. Minimum packet contents: fixture source, sanitized DB seed or
+migration, CRDT/update fixtures or hashes, browser script, server config,
+feature flags, plugin/theme list, Docker/image digests, random seeds, fault
+schedule, expected oracle files, artifact hash manifest, and one command that
+runs baseline, observe-only pass-through, protocol-shape pass-through, shadow,
+and enforced modes. A row without a replayable packet remains estimated or
+manually adjudicated; it should not be promoted to measured credit.
+
+Fixture provenance should be explicit:
+
+| Fixture source | Row-credit implication |
+| --- | --- |
+| Captured from original trace | Eligible for measured impact if artifacts are intact and the guarded path is observed. |
+| Reduced from original trace | Eligible only if reduction preserves write source, timing class, protected-field write set, token state, and terminal oracle. |
+| Synthesized to isolate a mechanism | Useful for invariant testing, but not enough to promote the original row. |
+| Mutated negative control | Useful for false-positive testing, not row-resolution credit. |
+
+The evidence packet should include a `fixture_provenance_chain` from manifest
+row to raw trace/artifact ids to reduction steps to final fixture. Any
+synthetic step that introduces the guarded-path condition caps credit at
+invariant coverage, not row resolution.
+
+Holdouts and analysis-version locks keep the measurement honest. Keep row
+families out of tuning while projection rules, retry behavior, no-op policy, or
+materialization thresholds are adjusted. Holdouts should include stale-save,
+projection/content-loss, no-op/save-loop, live-CRDT exclusion, and benign
+valid-write families. Freeze the adjudication rubric, denominator rules,
+fixture provenance rules, confidence-interval method, and promotion thresholds
+under an `analysis_plan_version` before enforcement outcomes are reviewed. If
+the rubric changes after inspecting results, create a new analysis version and
+rerun affected rows instead of rewriting the old measured fraction.
+
+Negative controls need drift tracking. A control that stops reproducing its
+excluded behavior, starts passing through a guarded mechanism, or changes
+classifier output after unrelated code changes no longer proves low
+false-positive risk. Track `negative_control_baseline_valid`,
+`negative_control_classifier_changed`, `negative_control_newly_intercepted`,
+and `negative_control_lost_oracle`. Missing artifacts, mismatched hashes,
+changed redaction policy, or non-replayable dependencies should produce
+`measurement_inconclusive_artifact_integrity`, not silent exclusion or
+promotion.
+
 Each row fixture should also keep a phase ledger:
 `open_hydration -> live_sync_before_save -> pre_save_snapshot -> request_sent
 -> server_decision -> mutation_response -> repair_retry -> post_response_sync
@@ -2493,7 +2566,8 @@ are disabled; after restore, RTC clients need to refetch and rebase the current
 CRDT document onto restored post fields.
 
 Telemetry should avoid raw content and CRDT payloads. Record field names,
-payload sizes, hashes, token presence/match/conflict rates, shadow reject
+payload sizes, tenant-scoped keyed fingerprints, token
+presence/match/conflict rates, shadow reject
 reasons, enforced reject reasons, retry success/failure, endpoint/write source,
 post type/status, RTC-enabled state, legacy invalidations, autosave/revision
 participation, CRDT no-op outcomes, and split-bundle attempts.
@@ -2679,6 +2753,51 @@ diagnostic id that joins server logs, client logs, and support reports. The
 diagnostic record should include mechanism, write set, token match state,
 projection class, retry count, and whether any protected field mutated, without
 logging raw post content or CRDT payloads.
+
+Diagnostic privacy and support access are rollout blockers, not polish. Use
+tenant-scoped keyed fingerprints for title/content/excerpt/CRDT diagnostics;
+do not use plain SHA-style hashes of low-entropy titles, excerpts, URLs, block
+attributes, or short content because they are guessable offline and can
+correlate posts across sites. Use separate keys for diagnostics, aggregate
+telemetry, and invariant audits, and record the key version. For very small
+fields, prefer length buckets, block counts, and mismatch classes over any
+content-derived fingerprint.
+
+Bundle tokens, attempt ids, provenance proofs, nonce values, room keys, raw
+CRDT payloads, and full content fingerprints should not appear in centralized
+logs. Operational events should carry `token_fingerprint`,
+`attempt_fingerprint`, and `diagnostic_id`; full values, if ever needed for
+local debugging, should be gated behind explicit non-production debug mode.
+Multi-tenant dashboards should group by coarse cohort, post type, mechanism,
+version, and policy epoch, not by stable cross-tenant content identifiers.
+
+Support diagnostics need an authorization and consent model. A support lookup
+should require access to the affected site/post or an audited break-glass path,
+and should expose only redacted mechanism facts: decision stage, policy epoch,
+write-set class, retry count, degraded mode, protected-field mutation flag, and
+recommended recovery action. It should not show raw field values, raw CRDT,
+full hashes, full tokens, room ids, or other collaborators' user identifiers.
+
+Retention and erasure policy should be part of the feature design. Successful
+save telemetry can be sampled and short-lived. Enforced rejects, invariant
+violations, false rejects, and materialization incidents can live longer, but
+only as redacted, key-versioned records. Privacy delete or site erasure
+workflows must delete or anonymize diagnostic rows, attempt rows, and
+token/provenance telemetry that can still be tied to the tenant.
+
+Rate limits should use authenticated user, site, post, session, endpoint, and
+mechanism buckets, not content fingerprints as primary keys. Content-derived
+grouping can be used only after redaction/keying and only for aggregate abuse
+detection; otherwise repeated attempts against the same title or block content
+can become a content-presence oracle.
+
+Add rollout-blocking privacy metrics: `full_token_logged`,
+`raw_content_logged`, `raw_crdt_logged`, `plain_hash_logged`,
+`diagnostic_lookup_denied`, `diagnostic_break_glass_used`,
+`diagnostic_record_redacted`, `telemetry_key_rotated`, and
+`tenant_erasure_diagnostic_rows_deleted`. Any nonzero raw-content, raw-CRDT,
+full-token, or plain-hash logging event should block rollout expansion until
+the sink is fixed and affected diagnostic records are purged or rotated.
 
 ### Implementation risks that affect the estimate
 
