@@ -172,11 +172,24 @@ The third layer has important constraints:
   of `_crdt_document` to compare it with `post_title`/`post_content`. If title
   is not represented in the CRDT document, title validation must come from the
   bundle version, not from CRDT projection.
+- Projection validation must compare fields inside the same submitted
+  editor-content bundle after the bundle base token has been validated. It
+  should not compare incoming `post_content` against the current persisted CRDT
+  projection as a standalone rule, because legitimate edits can intentionally
+  differ from the current projection.
 - Validation must avoid false positives for legitimate empty posts, code
   editor flows, invalid/freeform blocks, synced/reusable blocks, autosaves, and
   partial-save flows. Empty `post_content` with a non-empty `_crdt_document` is
   not automatically invalid; the server should reject only contradictions it
   can prove from the decoded CRDT projection and submitted bundle base.
+- Safe projection rejects are narrow: submitted title/excerpt disagreeing with
+  the submitted CRDT projection, submitted empty/omitted content when the same
+  submitted CRDT deterministically projects to non-empty ordinary blocks, or
+  malformed/flattened block markup that cannot be the serialization of the
+  submitted CRDT's valid ordinary block tree. Byte-for-byte HTML differences,
+  parser normalization, default blocks, freeform/invalid block repair,
+  deprecated block migrations, filters, and unregistered blocks are not enough
+  by themselves.
 - CRDT no-op handling cannot simply ignore byte differences. It must ignore
   only volatile save metadata, or use a safe semantic equality rule that does
   not discard causal CRDT state.
@@ -283,6 +296,20 @@ divergent, or stuck until a client/live-merge bug is fixed.
 | Partially mitigated | 28 / 279 | 10.04% | 41 / 452 | 9.07% |
 | Unimpacted | 242 / 279 | 86.74% | 394 / 452 | 87.17% |
 
+This is the base estimate, not a server-only estimate. It assumes both the
+server-side invariants above and client behavior that turns 409/no-op responses
+into a clean editor state.
+
+| Estimate band | Fully fixed | Partially mitigated | Touched/contained | Interpretation |
+| --- | ---: | ---: | ---: | --- |
+| Strict bug-resolution | 6 rows / 14 weighted | 12 rows / 18 weighted | 18 rows / 32 weighted | Counts only the higher-confidence rows with direct stale-save, CRDT-churn, or empty/corrupt persistence evidence. |
+| Base estimate | 9 rows / 17 weighted | 28 rows / 41 weighted | 37 rows / 58 weighted | The central estimate used in this section. |
+| Optimistic durable-containment | 9 rows / 17 weighted | 28 rows / 41 weighted | 45 rows / 93 weighted | Adds containment-only rows where the server might block durable bad state but not resolve the visible bug. |
+
+Strict full rows: `8`, `23`, `90`, `156`, `227`, `243`. Strict partial rows:
+`15`, `18`, `37`, `54`, `60`, `61`, `64`, `67`, `196`, `211`, `241`,
+`242`.
+
 ### Mechanism sensitivity
 
 The 9/28/242 estimate assumes all three layers in the assumed design exist.
@@ -313,6 +340,16 @@ Server-only protection is not enough for many credited rows:
 | `8`, `52`, `63`, `141`, `155`, `156`, `243` | Reject stale or internally inconsistent bundle writes. | Refetch, apply persisted CRDT, rematerialize title/content/meta, and retry or surface a clear conflict. Without this, full rows become "bad write blocked but save failed." |
 | `23`, `45`, `90`, `187`, `227` | Preserve or return a stable no-op CRDT representation when only non-semantic save metadata changed. | Stop marking the entity dirty after the no-op response. Without this, the server may accept harmless writes while the editor keeps spinning. |
 | `15`, `18`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Reject provably empty, stale, flattened, or malformed durable content. | Repair the live editor state that generated the bad payload; otherwise the user may still see a collapsed or corrupt editor. |
+
+Layer-specific downgrades:
+
+| Missing layer | Rows downgraded | Expected downgrade |
+| --- | --- | --- |
+| Client conflict repair | `8`, `52`, `99`, `155`, `156`, `243` | Full becomes partial: the bad write is blocked, but the user-visible save may fail. |
+| Projection/cross-field validation | `15`, `18`, `29`, `32`, `37`, `40`, `43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`, `211`, `212`, `216`, `228`, `241`, `242` | Partial rows mostly become unimpacted because a pure version check cannot prove content is impossible. |
+| Safe CRDT no-op settlement | `23`, `90`, `227`; also `45`, `187` | Full no-op rows become partial or unimpacted; weak partial save-loop rows mostly become unimpacted. |
+| Atomic post-fields-plus-meta commit | `8`, `52`, `63`, `141`, `155`, `156`, `243` | Split bundles can still persist, so the server may only reduce some races. |
+| Bypass policy for legacy/full-record/non-REST writes | `8`, `52`, `155`, `156`, `243`, plus unknown plugin paths | Stale protected fields can still be written outside the guarded RTC path. |
 
 #### Full candidates
 
@@ -437,13 +474,13 @@ does not address their root cause.
 | Excluded bucket | Rows | Weighted | Why excluded |
 | --- | ---: | ---: | --- |
 | Title reload/autosave/session title state | 24 | 45 | Blocks and CRDT often already match, while title rehydration or local autosave state diverges. Server save validation does not fix reload/session title state. |
-| `/wp-sync` transport/OOM/storage | 16 | 37 | These are update delivery, room-history, route, or memory failures, not editor-content-bundle save consistency. |
+| `/wp-sync` transport/delivery/OOM/storage | 17 | 38 | These are update delivery, room-history, route, or memory failures, not editor-content-bundle save consistency. |
 | Table/Y.Array merge | 14 | 15 | The bad state comes from nested CRDT array merge behavior before server persistence. |
 | Revision/post-lock/code-editor/session | 8 | 8 | Different editor/session flows, not normal collaborative post save consistency. |
 | Live CRDT merge/stale-local/reconciliation | 168 | 250 | Lost deletes, duplicated blocks, wrong moves, stale local snapshots, block identity smears, and nonconvergence happen before the server can validate a save. |
 | Fresh-post foreign document contamination | 1 | 1 | Row 89 can submit title/content/CRDT that are internally consistent for the wrong collaborative document. Containing it requires document identity, room scoping, or post-bound CRDT provenance in addition to bundle versioning. |
 | No useful post save request | 1 | 1 | Row 207's realistic repro leaves REST state unchanged without emitting a post save request, so a REST pre-insert guard cannot resolve that user-visible failure. |
-| Other unaddressed residual | 2 | 2 | Remaining rows outside the touched sets and major near-miss buckets. |
+| Other unaddressed residual | 1 | 1 | Remaining row outside the touched sets and major near-miss buckets. |
 
 Complete row-ID accounting:
 
@@ -457,15 +494,16 @@ Complete row-ID accounting:
 - Title reload/autosave/session title state: `4`, `9`, `53`, `77`, `81`,
   `112`, `113`, `176`, `185`, `193`, `194`, `208`, `210`, `232`, `235`,
   `236`, `245`, `249`, `250`, `251`, `252`, `253`, `265`, `273`.
-- `/wp-sync` transport/OOM/storage: `1`, `80`, `108`, `171`, `191`, `197`,
-  `198`, `200`, `202`, `220`, `221`, `222`, `267`, `268`, `269`, `279`.
+- `/wp-sync` transport/delivery/OOM/storage: `1`, `80`, `108`, `171`, `191`,
+  `197`, `198`, `200`, `202`, `219`, `220`, `221`, `222`, `267`, `268`,
+  `269`, `279`.
 - Table/Y.Array merge: `47`, `50`, `59`, `98`, `109`, `110`, `111`, `162`,
   `182`, `201`, `204`, `247`, `263`, `277`.
 - Revision/post-lock/code-editor/session: `48`, `175`, `203`, `205`, `209`,
   `233`, `238`, `239`.
 - Fresh-post foreign document contamination: `89`.
 - No useful post save request: `207`.
-- Other unaddressed residual: `199`, `219`.
+- Other unaddressed residual: `199`.
 - Live CRDT merge/stale-local/reconciliation: `3`, `6`, `7`, `10`, `11`,
   `12`, `13`, `14`, `16`, `20`, `21`, `22`, `24`, `25`, `26`, `28`, `30`,
   `31`, `33`, `34`, `35`, `36`, `38`, `39`, `41`, `42`, `44`, `46`, `49`,
@@ -494,6 +532,87 @@ server rejection changes the persistence outcome but not the causal bug. The
 server would need to become a live CRDT arbiter, or the client merge code would
 need to stop producing the wrong block tree, before those rows move into the
 fixed category.
+
+### Confirmation and test plan
+
+The mitigation should be evaluated with instrumentation before treating the
+fractions above as measured impact. For each candidate row, confirmation runs
+should capture request body, response body/status, bundle token before the
+write, bundle token after the write, raw `post_title`, raw `post_content`, raw
+`post_excerpt`, and raw `_crdt_document`.
+
+Useful per-save trace fields: timestamp, actor/tab, trigger reason, retry
+number, REST error code, title/content hashes and block counts, submitted base
+token, server current token, CRDT wrapper `updateId`, decoded document version,
+`savedAt`, `savedBy`, pre/post DB field hashes, visible block-tree hash,
+edited-entity dirty flags, `isSavingPost()`, immediate response body, post-save
+REST GET, and final visible/persisted state on both peers.
+
+| Candidate class | Required trace evidence | Test shape |
+| --- | --- | --- |
+| Stale title/content/full-record writes | A write carries old title/content or a stale bundle token while the server has newer protected fields; the server returns 409 and no protected DB field changes. | REST integration test with two concurrent saves, then focused e2e replay for rows `8`, `52`, `155`, `156`, and `243`. |
+| Empty/corrupt content containment | Submitted content is empty, flattened, or malformed while the decoded CRDT projection or current bundle proves non-empty ordinary blocks; the server rejects the write. | REST projection-validation tests plus e2e replay for rows `15`, `18`, `37`, `196`, `241`, and `242`. |
+| CRDT no-op save loops | Consecutive saves have stable visible title/content and only known non-semantic CRDT save metadata changes; the response stops dirtying the record. | Unit tests around CRDT serialization/no-op response handling plus e2e or integration replays for rows `23`, `90`, and `227`. |
+| Client conflict repair | After a 409, the client refetches, applies persisted CRDT, recomputes intended fields, retries once with the new bundle token, and does not apply the rejected response into the live sync doc. | `core-data` action tests extending the existing stale-CRDT retry test, plus manual-save e2e with a forced conflict. |
+| Exclusions | No protected-field request reaches the guarded path, or the submitted bundle is internally coherent but belongs to the wrong document, or the live editor diverges before save. | Negative tests for rows `89`, `207`, and `240`, ensuring the report does not claim save validation fixes them. |
+
+Minimum server tests:
+
+- stale bundle token rejects before any post fields or `_crdt_document` meta are
+  written;
+- conflict detected at meta-update time cannot leave already-written
+  `post_title`/`post_content` behind;
+- status/taxonomy-only saves do not require a bundle token and do not overwrite
+  protected fields;
+- legacy full-record payloads with stale protected fields are rejected or have
+  unlisted protected fields ignored by the RTC save path;
+- autosaves and revision restores either use their own policy or explicitly
+  invalidate/bump the canonical bundle token.
+
+Minimum client tests:
+
+- `rest_editor_content_bundle_stale` follows the same one-shot refetch, merge,
+  recompute, retry pattern as `rest_crdt_document_stale`;
+- a second 409 does not spin indefinitely;
+- a no-op CRDT persistence response leaves the edited entity clean;
+- rejected stale responses are not applied into the local CRDT/sync manager.
+
+### Rollout and telemetry
+
+This mitigation should roll out as a capability-gated protocol, not a hard
+global requirement on every post write. A practical rollout sequence is:
+
+1. **Shadow mode.** Compute and return bundle tokens, accept token-bearing
+   writes, and log would-reject decisions for missing, stale, or malformed
+   tokens without rejecting them.
+2. **Token-aware client support.** Ship client retry handling for
+   `rest_editor_content_bundle_stale` before strict enforcement, so conflicts
+   become refetch/rebase/retry flows instead of user-visible save failures.
+3. **Strict RTC editor enforcement.** Enforce only for opted-in collaborative
+   editor saves whose clients advertise bundle-token support.
+4. **Expand cautiously.** Gradually include additional REST clients and write
+   paths after telemetry shows low missing-token rates and high retry success.
+
+Old clients, Classic Editor, WP-CLI, XML-RPC, direct `wp_update_post()`, direct
+meta writers, and plugins must remain compatible. Initially, treat those writes
+as legacy external mutations: allow the write, advance or invalidate the bundle
+version, and force token-aware RTC clients to refetch/reconcile before their
+next guarded save. Do not silently preserve an old `_crdt_document` as
+authoritative after a legacy write changes `post_title`, `post_content`, or
+`excerpt`.
+
+Autosaves and revision restores need explicit policy. Per-user autosave
+revisions should not advance the canonical parent bundle token unless they
+actually update the parent post, such as auto-draft promotion. Revision restore
+should advance or invalidate the bundle token because `_crdt_document` revisions
+are disabled; after restore, RTC clients need to refetch and rebase the current
+CRDT document onto restored post fields.
+
+Telemetry should avoid raw content and CRDT payloads. Record field names,
+payload sizes, hashes, token presence/match/conflict rates, shadow reject
+reasons, enforced reject reasons, retry success/failure, endpoint/write source,
+post type/status, RTC-enabled state, legacy invalidations, autosave/revision
+participation, CRDT no-op outcomes, and split-bundle attempts.
 
 ### Implementation risks that affect the estimate
 
