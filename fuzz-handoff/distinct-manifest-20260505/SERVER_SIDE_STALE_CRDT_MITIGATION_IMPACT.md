@@ -424,6 +424,18 @@ Transaction isolation and deployment topology are part of the guarantee:
   transactional tables on the same transactional boundary. If a HyperDB,
   sharding, or multi-database deployment can place them on different
   connections, the implementation is no longer a true bundle CAS.
+- MySQL guarantees should be verified at runtime, not assumed. Strict
+  enforcement requires `wp_posts`, `wp_postmeta`, and bundle/attempt tables to
+  use transactional engines with row-level locking. If any participating table
+  is MyISAM or otherwise non-transactional, strict mode should stay shadow-only
+  or route protected writes through storage that can actually provide
+  atomicity.
+- The token check, protected-field commit, token advance, and attempt-ledger
+  transition must run on one `$wpdb` connection and one explicit transaction
+  boundary. `SELECT ... FOR UPDATE` is meaningful only inside that transaction
+  on an indexed row. Autocommit, implicit commits from DDL/`LOCK TABLES`,
+  reconnects, or protected-field writes through a second connection break the
+  CAS proof and should fail closed or be treated as legacy invalidation.
 - Every writer webhead must either enforce the bundle protocol or invalidate
   the token before strict mode is enabled. A mixed rolling deploy where one
   server issues tokens and an older server writes protected fields without
@@ -435,6 +447,11 @@ Transaction isolation and deployment topology are part of the guarantee:
   conflicts, or retry loops after a successful guarded commit.
 - Lock ordering should be fixed, for example bundle-version row first, then
   post row, then meta rows, to avoid deadlocks under concurrent saves.
+- Deadlocks and lock wait timeouts are expected under concurrent saves. The
+  endpoint should distinguish `deadlock_retryable`, `lock_timeout_retryable`,
+  and `commit_unknown` from stale-token conflicts. A retry after deadlock must
+  rerun token/provenance checks and projection under the new current state, not
+  reuse a pre-deadlock decision.
 - A non-locking `SELECT version` followed by a later `UPDATE` is not CAS. Use a
   locking read or a single-statement conditional update on an indexed row. If
   the table is not transactional and row-locking, strict enforcement should
@@ -452,6 +469,46 @@ Transaction isolation and deployment topology are part of the guarantee:
   timeout, the system should be able to tell whether the mutation committed,
   replay the idempotent response, or mark the bundle token invalid. Ambiguous
   partial commits should be counted as invariant violations.
+
+Crash consistency needs an attempt-state machine, not just an idempotency key.
+Each guarded attempt should transition through states such as `prepared`,
+`decision_recorded`, `commit_started`, `committed_response_available`,
+`rejected_response_available`, `aborted_retryable`, and `ambiguous_needs_audit`.
+The attempt row and bundle row must be updated in an order that lets recovery
+answer one question after a fatal or network timeout: did protected storage
+commit under this attempt or not?
+
+| Recovery observation | Safe recovery action |
+| --- | --- |
+| Attempt prepared, no protected hashes/token changed. | Return retryable/unknown or allow the client to retry with the same attempt id. |
+| Commit marker absent but protected hashes/token changed. | Mark invariant violation, invalidate bundle generation, and force refetch before further guarded saves. |
+| Commit marker present and response hash/body available. | Replay the canonical response after re-running authorization. |
+| Commit marker present but response body missing. | Reconstruct response from committed canonical DB fields and token, or return a refetch-required success with the committed token. |
+| Reject marker present and protected fields unchanged. | Replay the reject response or current conflict response. |
+| Token advanced but committed hashes do not match DB. | Treat as corrupt bundle state; invalidate and audit rather than accepting later saves against that token. |
+
+The recovery sweeper should be idempotent and conservative. It may convert
+ambiguous attempts into `invalidated_requires_refetch`, but it should never
+silently bless a token whose protected fields cannot be reconstructed from the
+committed DB state. Crash-recovery outcomes should be excluded from measured
+full fixes unless the fixture proves final DB, response, and client repair
+state after recovery.
+
+A duplicate request for the same `save_attempt_id` while the first request is
+still `prepared` or `commit_started` must wait, return retryable
+`attempt_in_progress`, or recover the first outcome. It must not run a second
+guarded commit. A crash after DB commit but before cache invalidation, hook
+emission, or response assembly also needs a durable post-commit outbox or
+recovery marker; until it drains, token-bearing reads should bypass or verify
+caches and clients should be told to refetch if the canonical response cannot
+be reconstructed.
+
+Generation monotonicity must survive failover and restore. Bundle tokens should
+come from durable DB state, not clocks or webhead memory. If replica promotion,
+point-in-time restore, or disaster recovery can lose committed token/attempt
+rows while clients still hold returned tokens, strict mode should rotate a
+site/entity epoch and invalidate outstanding tokens before accepting guarded
+saves.
 
 Lazy migration is safer than trying to rewrite every post up front. On first
 edit-context read for an RTC-enabled post with no bundle-version row, the
@@ -682,6 +739,36 @@ must still come from the server token. Offline or resumed tabs should treat
 their old token as a conflict candidate and preserve local edits rather than
 silently overwriting current protected fields.
 
+Clients also need monotonic observation rules. Within a document generation, a
+client should never replace a newer observed bundle token or protected-field
+snapshot with an older one from a delayed REST preload, sparse `_fields`
+response, background resolver, or out-of-order mutation response. Mutation
+responses should carry a logical save sequence or attempt id, and Core Data
+should ignore a stale success response if a later attempt for the same entity
+has already observed a newer token or terminal conflict.
+
+If bundle tokens are opaque and not client-comparable, the response still needs
+a server-issued comparable observation order, such as `bundle_generation_index`
+or a signed monotonic sequence scoped to the document generation. Otherwise the
+client can submit opaque tokens for CAS, but cannot protect its own store from
+late stale responses.
+
+This matters for server-side credit because a correct 409 can be undone by a
+late stale success response in the client store. Row-resolved credit should
+require response-order tests:
+
+| Ordering case | Required client behavior |
+| --- | --- |
+| Old successful save response arrives after a newer token-bearing success. | Keep the newer token and canonical protected fields. |
+| Old success arrives after a 409/refetch path has begun. | Do not clear dirty state or overwrite the refetched base with the old payload. |
+| Sparse or non-edit-context response omits bundle state. | Do not erase the last known token for an RTC-capable edit session. |
+| REST preload from page load resolves after live edit-context fetch. | Ignore it if its generation is older or unverifiable. |
+| Same attempt id response is replayed. | Accept only if payload hash and canonical response hash match the stored attempt. |
+
+If the client cannot enforce monotonic observation, many server-contained rows
+remain partial: the server blocked one bad write, but the client can still
+apply or retry stale protected fields from an older response.
+
 The read path needs the same coherence discipline as the write path. A save
 response or edit-context REST response can stitch together `wp_posts` fields,
 post meta, object-cache state, REST preloads, and Core Data resolver caches. If
@@ -755,6 +842,22 @@ requires either moving save markers outside persisted CRDT state, or decoding
 the incoming-vs-current Yjs differential update and proving it touches only
 declared non-semantic keys and no content-bearing structs or delete sets.
 
+Yjs update encoding should be treated as a protocol field. The committed
+bundle should record the Yjs major version, update encoding version, CRDT
+schema version, projection policy version, `state_vector`, `delete_set_hash`,
+`canonical_update_hash`, `document_generation`, and `room_generation` as
+server-derived sidecars committed atomically with the canonical CRDT document.
+Client-supplied vectors or hashes can help diagnostics, but cannot be
+authoritative proof. If an update encoding, schema, or sidecar is absent or
+mismatched, no-op, merge, and materialization should downgrade to `unknown` or
+legacy containment.
+
+Delete-set validation needs an explicit proof step. A small update or a
+projection-neutral update can still delete block content, rich-text ranges,
+attributes, or unknown Yjs types. The server should classify deletes before
+granting no-op or merge credit; if it cannot prove deletes touch only declared
+non-content metadata, the outcome should be reject/refetch or `unknown`.
+
 Merge-vs-reject also needs an explicit causal policy. If the bundle token is
 stale but the incoming Y.Doc carries new updates, the server should not merge
 and accept merely because Yjs can merge them deterministically. Merge credit
@@ -763,6 +866,21 @@ capability validity, projection safety after merge, and no hidden delete-set
 effect. Without those proofs, the correct server outcome is reject/refetch.
 Yjs convergence is not the same thing as preserving the intended WordPress
 entity state.
+
+If the server canonicalizes or repairs a Yjs document, it becomes a CRDT
+writer. It then needs a reserved server origin, durable per-document writer
+state, and commit-publish ordering: persist the repaired document and sidecars
+first, then publish exactly that committed update to active rooms with the
+matching room generation. If publication fails after commit, clients should
+refetch/rejoin; if publication happens before commit, peers can apply an update
+that the database later aborts.
+
+Provider compatibility is part of the proof. Third-party sync providers must
+advertise update encoding, CRDT schema, compaction behavior, room-generation
+enforcement, and server-repair delivery semantics before strict provenance,
+no-op, or materialization credit applies. Compacted room updates need their own
+audit metadata; otherwise author/order/save-marker attribution can be lost
+before the server tries to prove that a change is no-op-only.
 
 Under this design, rows are credited to the mitigation only when the bad state
 passes through the guarded save path. Rows whose visible failure occurs before
@@ -1369,7 +1487,7 @@ the central bucket:
 | Exact bad-request projection proof required | 8 rows / 16 weighted | 20 rows / 28 weighted | 28 rows / 44 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `29`, `37`, `54`, `69`, `94`, `196`, `216`, and `228` conditional. |
 | No-op proof required | 6 rows / 12 weighted | 31 rows / 46 weighted | 37 rows / 58 weighted | Moves `23` and `90` from full to partial until decoded Yjs diffs prove save-marker-only churn; row `227` remains full because it has stronger dirty-settlement evidence. |
 | Guarded-save plus no-op evidence required | 5 rows / 11 weighted | 28 rows / 42 weighted | 33 rows / 53 weighted | Combines guarded-save proof with no-op proof: moves `99`, `23`, and `90` from full to partial unless DB/no-op evidence is proven, removes row `45` without canonicalization, and removes or downgrades `52`, `69`, and `141` unless traces prove an accepted guarded bad save. |
-| Containment upper bound with strict proof | 5 rows / 11 weighted | 28 rows / 42 weighted | 36 rows / 79 weighted | Keeps containment rows `2`, `5`, and `17`, but treats `27`, `56`, and `57` as unmeasured upper-bound rows until request/DB traces prove later durable bad saves. |
+| Cumulative containment upper bound with strict proof | 5 rows / 11 weighted | 28 rows / 42 weighted | 36 rows / 79 weighted | Inherits the guarded-save plus no-op evidence assumptions above; then keeps containment rows `2`, `5`, and `17`, but treats `27`, `56`, and `57` as unmeasured upper-bound rows until request/DB traces prove later durable bad saves. |
 
 This stricter table does not replace the base estimate; it describes what to
 report if the measurement pipeline cannot prove the assumptions in the ledger.
@@ -1969,6 +2087,61 @@ run through the same instrumented classification pipeline:
    manifest, plus an eligible-runnable fraction over rows whose baseline
    fixture reproduced. Do not fold unrunnable or non-reproducing rows into the
    measured numerator.
+
+Report two denominators for every measured run:
+
+| Denominator | Meaning | Use |
+| --- | --- | --- |
+| Frozen manifest denominator | All 279 rows / 452 weighted failures. | Product planning and comparison with this report. |
+| Eligible-opportunity denominator | Rows whose reproduced trace reached the implemented guarded mechanism before terminal damage. | Engineering effectiveness of the mitigation itself. |
+
+The headline impact should stay on the frozen denominator. The
+eligible-opportunity denominator answers a different question: when the server
+had a real chance to act, did it contain or resolve the row? Both are needed.
+A high eligible success rate with a low frozen-manifest fraction means the
+mitigation works but most bugs are outside its causal window. A low eligible
+success rate means the implementation is not yet proving the invariants even
+for rows it should cover.
+
+For each mechanism, publish:
+
+```text
+eligible = baseline_reproduced
+           && guarded_path_observed
+           && mechanism_applicable
+           && decision_before_terminal_damage
+
+resolved_rate = row_resolved / eligible
+contained_rate = server_contained / eligible
+manifest_fixed_rate = row_resolved / 279
+manifest_weighted_fixed_rate = row_resolved_weighted / 452
+```
+
+Rows that are ineligible because the live editor diverged before request
+construction should not be described as "server mitigation failures"; they are
+outside scope. Rows that are eligible but not contained are implementation or
+design misses and should drive the next server-side iteration.
+
+Measured deltas should be paired by row and fixture seed. For stochastic rows,
+baseline, observe-only pass-through, protocol-shape pass-through, and enforced
+runs should share the same transport mode, participant count, write schedule,
+fault/delay plan, and random seed where possible. Report paired deltas with
+row-clustered or bootstrap confidence intervals; STATUS-weighted intervals
+should resample rows, not individual save attempts, because attempts from the
+same row/session are correlated.
+
+Pass-through should have two levels:
+
+| Mode | Purpose |
+| --- | --- |
+| `observe_only_pass_through` | Adds tracing only and preserves legacy request handling and response shape. If this changes the failure, the row is timing/instrumentation-sensitive. |
+| `protocol_shape_pass_through` | Performs token reads, decode, locking, response metadata, and client-visible protocol shape, but does not enforce. If only this changes the failure, the improvement is response/read-shape behavior rather than server containment. |
+
+Timeouts, stuck saving, missing terminal events, unload prompts, and incomplete
+peer/cold-reload oracles should be counted under a predefined censored outcome,
+not dropped. For row-resolution scoring, censored runs default to
+`measurement_inconclusive` or failure unless the missing phase is explicitly
+irrelevant to that row class.
 
 Fixture coverage should include positive fixtures for bundle-CAS rows `8`,
 `155`, `156`, and `243`; direct CRDT-meta row `99`; atomic split rows `52`,
@@ -2592,6 +2765,34 @@ pre-insert validation callback:
   Store and assert the expected site/blog id at read, validation, commit, cache
   invalidation, and response assembly; mismatch should abort or downgrade to
   legacy invalidation.
+- Async writers such as WP-Cron jobs, Action Scheduler, importers, SEO plugins,
+  translation plugins, and content filters can mutate posts outside the editor
+  request. Treat async protected-field mutations as legacy external writes that
+  invalidate or advance the bundle token under the correct site/blog context,
+  and record `async_legacy_invalidation_source` so rollout can distinguish
+  editor conflicts from background rewrites.
+- REST autosave endpoints need their own namespace rule. Autosave revision IDs
+  must not be treated as canonical parent post bundle entities, and autosave
+  responses should not replace the cached parent post token in Core Data. Only
+  flows that actually update or promote the parent post should invalidate or
+  advance the parent bundle token.
+- Revision restore is not only a REST path. Admin UI restore,
+  `wp_restore_post_revision()`, WP-CLI, and plugins can restore
+  title/content/excerpt without revisioned `_crdt_document`. All restore paths
+  need the same invalidation/rotation policy, and restored revisions must not
+  resurrect old bundle or provenance generations.
+- Import/export should strip runtime coordination state by default. WXR export,
+  site export, template export, and migration tools should not serialize live
+  bundle tokens, idempotency attempts, lock leases, room generations, or
+  diagnostic rows. Imported content should mint new bundle/provenance
+  generations unless the operation is an explicit same-site identity-preserving
+  migration.
+- Persistent object caches need versioned cache keys for protocol state. Cache
+  groups for bundle rows, post objects, post meta, REST preloads, sync storage,
+  and room history should include site/blog id and generation where applicable.
+  A global persistent cache shared across multisite or staging clones can
+  otherwise serve a valid-looking token for the wrong site, post generation, or
+  room generation.
 
 ### Practical conclusion for the broader mitigation
 
