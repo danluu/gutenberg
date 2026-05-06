@@ -190,6 +190,17 @@ type BehaviorFaultTrace = {
 	userIndex: number;
 };
 
+type BehaviorHistoryEvent = {
+	at: string;
+	details?: Record< string, unknown >;
+	error?: string;
+	label?: string;
+	phase: string;
+	status: 'invoke' | 'ok' | 'fail';
+	step?: number;
+	userIndex?: number;
+};
+
 type BehaviorCoverage = {
 	actionProfile: string;
 	actions: BehaviorActionTrace[];
@@ -203,6 +214,7 @@ type BehaviorCoverage = {
 	error?: string;
 	extraCollaborators: number;
 	faults: BehaviorFaultTrace[];
+	historyEvents: BehaviorHistoryEvent[];
 	initialContentProfile: string;
 	laneLabel: string;
 	lifecycleEvents: Array< {
@@ -228,6 +240,7 @@ type BehaviorCoverage = {
 	stepCount: number;
 	transport: 'http' | 'ws';
 	userCount: number;
+	postId?: number;
 };
 
 type CdpSession = {
@@ -402,6 +415,7 @@ function createBehaviorCoverage( seed: number ): BehaviorCoverage {
 		disableSyncFaults: DISABLE_SYNC_FAULTS,
 		extraCollaborators: EXTRA_COLLABORATOR_COUNT,
 		faults: [],
+		historyEvents: [],
 		initialContentProfile: getInitialContentProfile( seed ),
 		laneLabel: process.env.GUTENBERG_RTC_LANE_LABEL ?? 'unknown',
 		lifecycleEvents: [],
@@ -418,6 +432,22 @@ function createBehaviorCoverage( seed: number ): BehaviorCoverage {
 		transport: getTransport(),
 		userCount: 0,
 	};
+}
+
+function recordHistory(
+	coverage: BehaviorCoverage,
+	event: Omit< BehaviorHistoryEvent, 'at' >
+) {
+	coverage.historyEvents.push( {
+		at: new Date().toISOString(),
+		...event,
+	} );
+}
+
+function errorToString( error: unknown ): string {
+	return error instanceof Error
+		? error.stack ?? error.message
+		: String( error );
 }
 
 function getBlockStats( blocks: Array< any > ) {
@@ -2405,11 +2435,21 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			let lastState: { blocks?: Array< any > } | null = null;
 
 			try {
+				recordHistory( behavior, {
+					phase: 'seed',
+					status: 'invoke',
+				} );
 				const post = await requestUtils.createPost( {
 					title: `RTC seed ${ seed } initial title`,
 					status: 'draft',
 					date_gmt: new Date().toISOString(),
 					content: getInitialContent( seed ),
+				} );
+				behavior.postId = post.id;
+				recordHistory( behavior, {
+					details: { postId: post.id },
+					phase: 'create-post',
+					status: 'ok',
 				} );
 
 				await collaborationUtils.openPost( post.id );
@@ -2478,6 +2518,11 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				for ( let step = 0; step < STEP_COUNT; step++ ) {
 					if ( step === lateJoinStep ) {
 						const previousPageCount = pages.length;
+						recordHistory( behavior, {
+							phase: 'late-join',
+							status: 'invoke',
+							step,
+						} );
 						for ( const user of additionalCollaborators ) {
 							await collaborationUtils.joinUser( post.id, user );
 						}
@@ -2493,6 +2538,12 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 							step,
 							type: 'late-join',
 							userCount: pages.length,
+						} );
+						recordHistory( behavior, {
+							details: { userCount: pages.length },
+							phase: 'late-join',
+							status: 'ok',
+							step,
 						} );
 						cdpSessions.push(
 							...( await startCdpCoverage(
@@ -2510,6 +2561,13 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 							delayMs,
 							step,
 							type: 'delay',
+							userIndex: actor.userIndex,
+						} );
+						recordHistory( behavior, {
+							details: { delayMs },
+							phase: 'fault',
+							status: 'invoke',
+							step,
 							userIndex: actor.userIndex,
 						} );
 						await collaborationUtils.delayNextSyncRequest(
@@ -2531,6 +2589,13 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 							type: 'fail',
 							userIndex: actor.userIndex,
 						} );
+						recordHistory( behavior, {
+							details: { status },
+							phase: 'fault',
+							status: 'invoke',
+							step,
+							userIndex: actor.userIndex,
+						} );
 						await collaborationUtils.failNextSyncRequest(
 							actor.page,
 							status
@@ -2543,21 +2608,64 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						step,
 						userIndex: actor.userIndex,
 					} );
+					recordHistory( behavior, {
+						label: action.label,
+						phase: 'action',
+						status: 'invoke',
+						step,
+						userIndex: actor.userIndex,
+					} );
 
-					await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
-						await action.run(
-							actor.page,
-							seed,
+					try {
+						await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
+							await action.run(
+								actor.page,
+								seed,
+								step,
+								actor.userIndex,
+								rng,
+								pages
+							);
+						} );
+						recordHistory( behavior, {
+							label: action.label,
+							phase: 'action',
+							status: 'ok',
 							step,
-							actor.userIndex,
-							rng,
-							pages
-						);
-					} );
+							userIndex: actor.userIndex,
+						} );
+					} catch ( error ) {
+						recordHistory( behavior, {
+							error: errorToString( error ),
+							label: action.label,
+							phase: 'action',
+							status: 'fail',
+							step,
+							userIndex: actor.userIndex,
+						} );
+						throw error;
+					}
 
-					const state = await collaborationUtils.waitForConvergence( {
-						timeout: CONVERGENCE_TIMEOUT_MS,
-					} );
+					let state;
+					try {
+						state = await collaborationUtils.waitForConvergence( {
+							timeout: CONVERGENCE_TIMEOUT_MS,
+						} );
+						recordHistory( behavior, {
+							details: { blockCount: state.blocks.length },
+							phase: 'convergence',
+							status: 'ok',
+							step,
+						} );
+					} catch ( error ) {
+						recordHistory( behavior, {
+							error: errorToString( error ),
+							phase: 'convergence',
+							status: 'fail',
+							step,
+						} );
+						throw error;
+					}
 					lastState = state;
 					expect( state.blocks.length ).toBeGreaterThan( 0 );
 
@@ -2577,16 +2685,42 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 							step,
 							userIndex: saver.userIndex,
 						} );
-
-						const checkpoint = await saveCheckpointAndVerify( {
-							collaborationUtils,
-							marker,
-							postId: post.id,
-							requestUtils,
-							saver,
+						recordHistory( behavior, {
+							details: { marker },
+							phase: 'save-checkpoint',
+							status: 'invoke',
 							step,
-							viewer,
+							userIndex: saver.userIndex,
 						} );
+
+						let checkpoint;
+						try {
+							checkpoint = await saveCheckpointAndVerify( {
+								collaborationUtils,
+								marker,
+								postId: post.id,
+								requestUtils,
+								saver,
+								step,
+								viewer,
+							} );
+							recordHistory( behavior, {
+								details: { marker },
+								phase: 'save-checkpoint',
+								status: 'ok',
+								step,
+								userIndex: saver.userIndex,
+							} );
+						} catch ( error ) {
+							recordHistory( behavior, {
+								error: errorToString( error ),
+								phase: 'save-checkpoint',
+								status: 'fail',
+								step,
+								userIndex: saver.userIndex,
+							} );
+							throw error;
+						}
 
 						saveCheckpoints.push( checkpoint );
 					}
@@ -2597,15 +2731,41 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						lifecycleReloadSteps.has( step )
 					) {
 						const reloader = pick( rng, pages );
-						await reloadAndWait(
-							reloader.page,
-							collaborationUtils
-						);
-						reloadedState =
-							await collaborationUtils.waitForConvergence( {
-								includeCrdtDocument: true,
-								timeout: CONVERGENCE_TIMEOUT_MS,
+						recordHistory( behavior, {
+							phase: 'reload',
+							status: 'invoke',
+							step,
+							userIndex: reloader.userIndex,
+						} );
+						try {
+							await reloadAndWait(
+								reloader.page,
+								collaborationUtils
+							);
+							reloadedState =
+								await collaborationUtils.waitForConvergence( {
+									includeCrdtDocument: true,
+									timeout: CONVERGENCE_TIMEOUT_MS,
+								} );
+							recordHistory( behavior, {
+								details: {
+									blockCount: reloadedState.blocks.length,
+								},
+								phase: 'reload',
+								status: 'ok',
+								step,
+								userIndex: reloader.userIndex,
 							} );
+						} catch ( error ) {
+							recordHistory( behavior, {
+								error: errorToString( error ),
+								phase: 'reload',
+								status: 'fail',
+								step,
+								userIndex: reloader.userIndex,
+							} );
+							throw error;
+						}
 						lastState = reloadedState;
 						behavior.reloads.push( {
 							step,
@@ -2626,12 +2786,25 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					).toBeGreaterThan( 0 );
 				}
 
-				const finalState = await collaborationUtils.waitForConvergence(
-					{
+				let finalState;
+				try {
+					finalState = await collaborationUtils.waitForConvergence( {
 						includeCrdtDocument: true,
 						timeout: CONVERGENCE_TIMEOUT_MS,
-					}
-				);
+					} );
+					recordHistory( behavior, {
+						details: { blockCount: finalState.blocks.length },
+						phase: 'final-convergence',
+						status: 'ok',
+					} );
+				} catch ( error ) {
+					recordHistory( behavior, {
+						error: errorToString( error ),
+						phase: 'final-convergence',
+						status: 'fail',
+					} );
+					throw error;
+				}
 				lastState = finalState;
 				behavior.blockStats = getBlockStats( finalState.blocks );
 
@@ -2642,19 +2815,49 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				behavior.revisionRestore.eligible =
 					ENABLE_REVISION_RESTORE_PROBE &&
 					saveCheckpoints.length >= 2;
-				await restoreRevisionViaBrowserAndVerify( {
-					checkpoints: saveCheckpoints,
-					collaborationUtils,
-					postId: post.id,
-					requestUtils,
-					restorer: pick( rng, pages ),
+				recordHistory( behavior, {
+					details: {
+						checkpointCount: saveCheckpoints.length,
+						eligible: behavior.revisionRestore.eligible,
+					},
+					phase: 'revision-restore',
+					status: 'invoke',
 				} );
+				try {
+					await restoreRevisionViaBrowserAndVerify( {
+						checkpoints: saveCheckpoints,
+						collaborationUtils,
+						postId: post.id,
+						requestUtils,
+						restorer: pick( rng, pages ),
+					} );
+					recordHistory( behavior, {
+						details: {
+							eligible: behavior.revisionRestore.eligible,
+						},
+						phase: 'revision-restore',
+						status: 'ok',
+					} );
+				} catch ( error ) {
+					recordHistory( behavior, {
+						error: errorToString( error ),
+						phase: 'revision-restore',
+						status: 'fail',
+					} );
+					throw error;
+				}
 				behavior.status = 'passed';
+				recordHistory( behavior, {
+					phase: 'seed',
+					status: 'ok',
+				} );
 			} catch ( error ) {
-				behavior.error =
-					error instanceof Error
-						? error.stack ?? error.message
-						: String( error );
+				behavior.error = errorToString( error );
+				recordHistory( behavior, {
+					error: behavior.error,
+					phase: 'seed',
+					status: 'fail',
+				} );
 				throw error;
 			} finally {
 				behavior.userCount = Math.max(

@@ -42,10 +42,10 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 			'  RTC_FUZZ_TRIAGE_MAX_PARALLEL=2',
 			'  RTC_FUZZ_TRIAGE_REPRO_HOURS=3',
 			'  RTC_FUZZ_TRIAGE_CODEX_TIMEOUT_MS=<derived from repro hours>',
-		'  RTC_FUZZ_TRIAGE_STATE_DIR=<run-output-dir>/.triage-watcher',
-		'  RTC_FUZZ_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/analysis-tier',
-		'  RTC_FUZZ_DEEP_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/deep-analysis-tier',
-	].join( '\n' ) + '\n'
+			'  RTC_FUZZ_TRIAGE_STATE_DIR=<run-output-dir>/.triage-watcher',
+			'  RTC_FUZZ_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/analysis-tier',
+			'  RTC_FUZZ_DEEP_ANALYSIS_STATE_DIR=<run-output-dir>/.triage-watcher/deep-analysis-tier',
+		].join( '\n' ) + '\n'
 	);
 	process.exit( 0 );
 }
@@ -281,15 +281,104 @@ function getFailureText( record ) {
 function getFailureSignature( record ) {
 	const text = stripAnsi( getFailureText( record ) );
 	const normalized = normalizeFailureText( text );
+	const facts = getFailureFacts( record, text );
 	const hash = crypto
 		.createHash( 'sha1' )
+		.update( JSON.stringify( facts ) )
+		.update( '\n' )
 		.update( normalized )
 		.digest( 'hex' )
 		.slice( 0, 12 );
 
 	return {
+		facts,
 		hash,
 		normalized,
+	};
+}
+
+function getPrimaryCoverageRecord( record ) {
+	const direct = record.behavioralCoverage?.find(
+		( candidate ) => ! candidate.parseError
+	);
+	if ( direct ) {
+		return direct;
+	}
+
+	for ( const attempt of record.attempts ?? [] ) {
+		const coverage = attempt.behavioralCoverage?.find(
+			( candidate ) => ! candidate.parseError
+		);
+		if ( coverage ) {
+			return coverage;
+		}
+	}
+
+	return null;
+}
+
+function classifyFailureText( text ) {
+	if ( /rest_meta_database_error/.test( text ) ) {
+		return 'rest-meta-database-error';
+	}
+	if ( /Collaborative state did not converge/i.test( text ) ) {
+		return 'collaboration-non-convergence';
+	}
+	if (
+		/Saving failed|editor never left saving|save.*timed out/i.test( text )
+	) {
+		return 'save-stuck-or-failed';
+	}
+	if ( /persisted title|title marker/i.test( text ) ) {
+		return 'persisted-title-mismatch';
+	}
+	if ( /persisted content|content marker/i.test( text ) ) {
+		return 'persisted-content-mismatch';
+	}
+	if (
+		/Target page, context or browser has been closed|browser has been closed/i.test(
+			text
+		)
+	) {
+		return 'browser-closed';
+	}
+	if ( /TimeoutError:/i.test( text ) ) {
+		return 'timeout';
+	}
+	if ( /Error: expect\(/i.test( text ) ) {
+		return 'assertion';
+	}
+	return 'unknown';
+}
+
+function getFailureFacts( record, text ) {
+	const coverage = getPrimaryCoverageRecord( record );
+	const actions = coverage?.actions ?? [];
+	const historyEvents = coverage?.historyEvents ?? [];
+	const lastHistoryEvent = historyEvents.at( -1 );
+	const lastAction = actions.at( -1 );
+
+	return {
+		failureClass: classifyFailureText( text ),
+		transport: coverage?.transport ?? 'unknown',
+		actionProfile: coverage?.actionProfile ?? 'unknown',
+		initialContentProfile: coverage?.initialContentProfile ?? 'unknown',
+		coverageStatus: coverage?.status ?? 'unknown',
+		lastAction: lastAction?.label ?? null,
+		lastHistoryPhase: lastHistoryEvent?.phase ?? null,
+		lastHistoryStatus: lastHistoryEvent?.status ?? null,
+		reloadCount: coverage?.reloads?.length ?? 0,
+		saveCheckpointCount: coverage?.saveCheckpointSteps?.length ?? 0,
+		faultTypes: [
+			...new Set(
+				( coverage?.faults ?? [] ).map(
+					( fault ) => `${ fault.type }:${ fault.status ?? 'delay' }`
+				)
+			),
+		].sort(),
+		revisionEligible: coverage?.revisionRestore?.eligible === true,
+		blockTypes: coverage?.blockStats?.types ?? [],
+		userCount: coverage?.userCount ?? 0,
 	};
 }
 
@@ -360,6 +449,10 @@ async function updateDiscoveredSignatures( state, groups ) {
 		if ( existing ) {
 			existing.lastSeenAt = new Date().toISOString();
 			existing.count = group.candidates.length;
+			existing.facts =
+				existing.facts ??
+				group.candidates[ 0 ]?.signature.facts ??
+				null;
 			existing.examples = mergeExamples( existing.examples, examples );
 			continue;
 		}
@@ -368,6 +461,7 @@ async function updateDiscoveredSignatures( state, groups ) {
 		state.signatures[ group.hash ] = {
 			hash: group.hash,
 			status: 'queued',
+			facts: group.candidates[ 0 ]?.signature.facts ?? null,
 			normalized: group.normalized,
 			count: group.candidates.length,
 			firstSeenAt: new Date().toISOString(),
@@ -461,8 +555,7 @@ async function applyAnalysisGates(
 				distinctBugType: gate.distinctBugType,
 				isDuplicateOf: gate.isDuplicateOf,
 				candidateStatus: gate.candidateStatus,
-				recommendedTriageAction:
-					gate.recommendedTriageAction,
+				recommendedTriageAction: gate.recommendedTriageAction,
 				summary: gate.summary,
 				resultPath: gate.resultPath,
 			};
@@ -487,8 +580,7 @@ function getAnalysisGate( analysisDecision, deepAnalysisDecision ) {
 			distinctBugType: deepAnalysisDecision.distinctBugType,
 			isDuplicateOf: deepAnalysisDecision.duplicateOf,
 			candidateStatus: deepAnalysisDecision.candidateStatus,
-			recommendedTriageAction:
-				deepAnalysisDecision.candidateStatus,
+			recommendedTriageAction: deepAnalysisDecision.candidateStatus,
 			summary: deepAnalysisDecision.summary,
 			resultPath: deepAnalysisDecision.resultPath,
 		};
@@ -502,8 +594,7 @@ function getAnalysisGate( analysisDecision, deepAnalysisDecision ) {
 			distinctBugType: analysisDecision.distinctBugType,
 			isDuplicateOf: analysisDecision.isDuplicateOf,
 			candidateStatus: null,
-			recommendedTriageAction:
-				analysisDecision.recommendedTriageAction,
+			recommendedTriageAction: analysisDecision.recommendedTriageAction,
 			summary: analysisDecision.summary,
 			resultPath: analysisDecision.resultPath,
 		};
@@ -532,9 +623,7 @@ async function readAnalysisDecisions() {
 
 		let result = null;
 		try {
-			result = JSON.parse(
-				await fs.readFile( job.resultPath, 'utf8' )
-			);
+			result = JSON.parse( await fs.readFile( job.resultPath, 'utf8' ) );
 		} catch {
 			continue;
 		}
@@ -571,9 +660,7 @@ async function readDeepAnalysisDecisions() {
 
 		let result = null;
 		try {
-			result = JSON.parse(
-				await fs.readFile( job.resultPath, 'utf8' )
-			);
+			result = JSON.parse( await fs.readFile( job.resultPath, 'utf8' ) );
 		} catch {
 			continue;
 		}
@@ -652,23 +739,19 @@ function getAnalysisLaunchPriority( analysisDecision, deepAnalysisDecision ) {
 		return 3;
 	}
 
-	if (
-		deepAnalysisDecision?.candidateStatus === 'confirmed_likely_real'
-	) {
+	if ( deepAnalysisDecision?.candidateStatus === 'confirmed_likely_real' ) {
 		return 0;
 	}
 
 	if (
-		deepAnalysisDecision?.candidateStatus ===
-		'needs_realistic_repro_search'
+		deepAnalysisDecision?.candidateStatus === 'needs_realistic_repro_search'
 	) {
 		return 0;
 	}
 
 	if (
 		analysisDecision?.shouldDeepTriage === true &&
-		analysisDecision?.recommendedTriageAction ===
-			'prioritize_deep_triage'
+		analysisDecision?.recommendedTriageAction === 'prioritize_deep_triage'
 	) {
 		return 0;
 	}
@@ -922,7 +1005,7 @@ function buildCodexPrompt( signature ) {
 		'7. If after the bounded search the issue is not real or cannot be reproduced realistically, document why and recommend keep_fuzzing, suppress_as_infra, or manual_triage as appropriate.',
 		'8. Do not revert user changes. If you edit repository files, keep changes narrowly scoped and list them in changedFiles.',
 		'9. Keep filesystem searches narrow. Do not run broad `find`/`rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search only the triage job directory, the current fuzz run directory, the listed example artifact directories, and specific source files discovered with `git ls-files` or direct paths.',
-		'10. Do not search historical fuzz generations unless an exact related signature path is already listed in this prompt. If you need duplicate context, read this run\'s watcher/analysis state files instead of walking the artifact tree.',
+		"10. Do not search historical fuzz generations unless an exact related signature path is already listed in this prompt. If you need duplicate context, read this run's watcher/analysis state files instead of walking the artifact tree.",
 		'11. The active fuzz environment is the wp-env test environment on port 8950. Check it with: WP_ENV_PORT=8950 WP_BASE_URL=http://localhost:8950 npm run wp-env-test -- status. Do not use npm run wp-env status for this run; that checks a different development environment and may be stopped.',
 		'12. Do not stop, start, clean, or reset the shared fuzz environment while fuzz lanes are running. If a reproduction needs a separate environment, create a separate worktree or terminal with a different port and document it.',
 		'13. Never run a Playwright repro command against the shared port 8950 environment unless the command sets GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1, GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1, WP_ENV_PORT=8950, WP_BASE_URL=http://localhost:8950, and WP_ARTIFACTS_PATH under the triage job directory. The default Playwright global setup deletes all posts and can invalidate active fuzz lanes.',
@@ -973,12 +1056,16 @@ async function writeStatusMarkdown( statusPath, signature ) {
 		lines.push(
 			'Deep triage launch was gated by the high-parallel analysis tier.',
 			'',
-			`Analysis tier: ${ signature.analysisGate.sourceTier ?? 'analysis-tier' }`,
+			`Analysis tier: ${
+				signature.analysisGate.sourceTier ?? 'analysis-tier'
+			}`,
 			`Analysis classification: ${ signature.analysisGate.classification }`,
 			`Analysis confidence: ${ signature.analysisGate.confidence }`,
 			`Distinct bug type: ${ signature.analysisGate.distinctBugType }`,
 			`Duplicate of: ${ signature.analysisGate.isDuplicateOf ?? 'none' }`,
-			`Candidate status: ${ signature.analysisGate.candidateStatus ?? 'none' }`,
+			`Candidate status: ${
+				signature.analysisGate.candidateStatus ?? 'none'
+			}`,
 			`Recommended triage action: ${ signature.analysisGate.recommendedTriageAction }`,
 			`Analysis result: ${ signature.analysisGate.resultPath }`,
 			'',

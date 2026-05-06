@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const REPO_ROOT = path.resolve(
@@ -12,6 +12,7 @@ const REPO_ROOT = path.resolve(
 const SPEC_PATH =
 	'test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts';
 const BEHAVIORAL_COVERAGE_FILENAME = 'rtc-behavioral-coverage.ndjson';
+const REPLAY_MANIFEST_FILENAME = 'replay.json';
 const SCHEMA_PATH = path.join(
 	REPO_ROOT,
 	'bin/rtc-browser-failure-analysis.schema.json'
@@ -124,6 +125,8 @@ const state = {
 let runnerLogPath;
 let summaryLogPath;
 let statePath;
+let eventsPath;
+let repoCommit = null;
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -221,6 +224,20 @@ async function updateState( patch = {} ) {
 
 async function appendSummary( record ) {
 	await fs.appendFile( summaryLogPath, JSON.stringify( record ) + '\n' );
+}
+
+async function appendEvent( record ) {
+	if ( ! eventsPath ) {
+		return;
+	}
+	await fs.appendFile(
+		eventsPath,
+		JSON.stringify( {
+			at: new Date().toISOString(),
+			laneLabel: LANE_LABEL,
+			...record,
+		} ) + '\n'
+	);
 }
 
 async function log( message ) {
@@ -353,6 +370,33 @@ async function runCodexCommand( {
 		stdoutPath,
 		stderrPath,
 	};
+}
+
+function runQuietCommand( command, args, cwd = REPO_ROOT ) {
+	return new Promise( ( resolve ) => {
+		execFile(
+			command,
+			args,
+			{ cwd, encoding: 'utf8', maxBuffer: 1024 * 1024 },
+			( error, stdout, stderr ) => {
+				resolve( {
+					ok: ! error,
+					code: error?.code ?? 0,
+					stdout,
+					stderr,
+				} );
+			}
+		);
+	} );
+}
+
+async function getRepoCommit() {
+	if ( repoCommit !== null ) {
+		return repoCommit;
+	}
+	const result = await runQuietCommand( 'git', [ 'rev-parse', 'HEAD' ] );
+	repoCommit = result.ok ? result.stdout.trim() : 'unknown';
+	return repoCommit;
 }
 
 async function ensureWpEnvRunning() {
@@ -553,10 +597,18 @@ async function runEnvironmentHealthCheck( label ) {
 
 async function stopForInfraFailure( { seed = null, stage, result } ) {
 	const failureSnippet = extractFailureSnippet( result.output );
-	await appendSummary( {
+	const record = {
 		kind: 'infra',
 		discoveredAt: new Date().toISOString(),
 		...( seed === null ? {} : { seed } ),
+		stage,
+		failureSnippet,
+		logPath: result.logPath,
+	};
+	await appendSummary( record );
+	await appendEvent( {
+		kind: 'infra-failure',
+		seed,
 		stage,
 		failureSnippet,
 		logPath: result.logPath,
@@ -644,6 +696,200 @@ async function readNdjsonFile( filePath ) {
 		} );
 }
 
+function summarizeBehavioralCoverage( records ) {
+	const summary = {
+		recordCount: records.length,
+		statuses: {},
+		transports: {},
+		profiles: {},
+		userCounts: {},
+		uniqueActions: [],
+		actionCount: 0,
+		actionPairCount: 0,
+		faultCount: 0,
+		lifecycleEventCount: 0,
+		reloadCount: 0,
+		saveCheckpointCount: 0,
+		revisionEligibleCount: 0,
+		cdpRecordCount: 0,
+		cdpHashes: [],
+		lastError: null,
+	};
+	const actions = new Set();
+	const cdpHashes = new Set();
+
+	for ( const record of records ) {
+		if ( record.parseError ) {
+			summary.lastError = `coverage parse error: ${ record.parseError }`;
+			continue;
+		}
+
+		const status = record.status ?? 'unknown';
+		const transport = record.transport ?? 'unknown';
+		const profile = record.actionProfile ?? 'unknown';
+		const userCount = String( record.userCount ?? 0 );
+		summary.statuses[ status ] = ( summary.statuses[ status ] ?? 0 ) + 1;
+		summary.transports[ transport ] =
+			( summary.transports[ transport ] ?? 0 ) + 1;
+		summary.profiles[ profile ] = ( summary.profiles[ profile ] ?? 0 ) + 1;
+		summary.userCounts[ userCount ] =
+			( summary.userCounts[ userCount ] ?? 0 ) + 1;
+
+		for ( const action of record.actions ?? [] ) {
+			actions.add( action.label );
+		}
+		summary.actionCount += record.actions?.length ?? 0;
+		summary.actionPairCount += Math.max(
+			0,
+			( record.actions?.length ?? 0 ) - 1
+		);
+		summary.faultCount += record.faults?.length ?? 0;
+		summary.lifecycleEventCount += record.lifecycleEvents?.length ?? 0;
+		summary.reloadCount += record.reloads?.length ?? 0;
+		summary.saveCheckpointCount += record.saveCheckpointSteps?.length ?? 0;
+		if ( record.revisionRestore?.eligible === true ) {
+			summary.revisionEligibleCount += 1;
+		}
+		if ( record.cdpCoverage?.hash ) {
+			summary.cdpRecordCount += 1;
+			cdpHashes.add( record.cdpCoverage.hash );
+		}
+		if ( record.error ) {
+			summary.lastError = record.error;
+		}
+	}
+
+	summary.uniqueActions = [ ...actions ].sort();
+	summary.cdpHashes = [ ...cdpHashes ].sort();
+	return summary;
+}
+
+function pickReplayEnv( env ) {
+	const names = [
+		'WP_BASE_URL',
+		'RTC_FUZZ_BASE_URL',
+		'WP_ENV_PORT',
+		'GUTENBERG_RTC_BROWSER_ACTION_PROFILE',
+		'GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE',
+		'GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS',
+		'GUTENBERG_RTC_BROWSER_DISABLE_RELOAD',
+		'GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE',
+		'GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE',
+		'GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP',
+		'GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE',
+		'GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS',
+		'GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS',
+		'GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS',
+		'GUTENBERG_RTC_TEST_WS_PROVIDER',
+		'GUTENBERG_RTC_TEST_WS_PORT',
+		'GUTENBERG_RTC_TEST_WS_URL',
+		'GUTENBERG_RTC_TEST_WS_SKIP_RESET',
+		'GUTENBERG_RTC_LANE_LABEL',
+	];
+	return Object.fromEntries(
+		names
+			.filter( ( name ) => env[ name ] !== undefined )
+			.map( ( name ) => [ name, env[ name ] ] )
+	);
+}
+
+async function writeReplayManifest( {
+	attemptDir,
+	artifactsDir,
+	behavioralCoverage,
+	behavioralCoveragePath,
+	commandResult = null,
+	convergenceTimeoutMs,
+	env,
+	label,
+	replayPath,
+	seed,
+	status,
+} ) {
+	const firstCoverage = behavioralCoverage?.find(
+		( record ) => ! record.parseError
+	);
+	const transport =
+		firstCoverage?.transport ??
+		( env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1' ? 'ws' : 'http' );
+	const manifest = {
+		schemaVersion: 1,
+		kind: 'rtc-browser-fuzz-replay',
+		createdAt: new Date().toISOString(),
+		status,
+		repoRoot: REPO_ROOT,
+		repoCommit: await getRepoCommit(),
+		specPath: path.join( REPO_ROOT, SPEC_PATH ),
+		laneLabel: LANE_LABEL,
+		outputDir: OUTPUT_DIR,
+		attemptDir,
+		artifactsDir,
+		seed,
+		label,
+		command: {
+			program: 'npm',
+			args: [ 'run', 'test:e2e', '--', SPEC_PATH, '--project=chromium' ],
+			cwd: REPO_ROOT,
+		},
+		env: pickReplayEnv( env ),
+		parameters: {
+			stepCount: STEP_COUNT,
+			seedStride: SEED_STRIDE,
+			convergenceTimeoutMs,
+			discoveryTimeoutMs: DISCOVERY_TIMEOUT_MS,
+			bootTimeoutMs: BOOT_TIMEOUT_MS,
+			runTimeoutMs: RUN_TIMEOUT_MS,
+			baseUrl: BASE_URL,
+			actionProfile:
+				ACTION_PROFILE || firstCoverage?.actionProfile || 'full',
+			collaboratorMode:
+				COLLABORATOR_MODE ||
+				firstCoverage?.collaboratorMode ||
+				'default',
+			transport,
+		},
+		behavioralCoveragePath,
+		behavioralCoverageSummary: summarizeBehavioralCoverage(
+			behavioralCoverage ?? []
+		),
+		behavioralCoverage: firstCoverage
+			? {
+					actionProfile: firstCoverage.actionProfile,
+					actions: firstCoverage.actions ?? [],
+					blockStats: firstCoverage.blockStats ?? null,
+					faults: firstCoverage.faults ?? [],
+					historyEvents: firstCoverage.historyEvents ?? [],
+					initialContentProfile: firstCoverage.initialContentProfile,
+					lifecycleEvents: firstCoverage.lifecycleEvents ?? [],
+					postId: firstCoverage.postId ?? null,
+					reloads: firstCoverage.reloads ?? [],
+					revisionRestore: firstCoverage.revisionRestore ?? null,
+					saveCheckpointSteps:
+						firstCoverage.saveCheckpointSteps ?? [],
+					status: firstCoverage.status,
+					transport: firstCoverage.transport,
+					userCount: firstCoverage.userCount,
+			  }
+			: null,
+		result: commandResult
+			? {
+					code: commandResult.code,
+					signal: commandResult.signal,
+					ok: commandResult.ok,
+					timedOut: commandResult.timedOut,
+					durationMs: commandResult.durationMs,
+					logPath: commandResult.logPath,
+			  }
+			: null,
+	};
+	await fs.mkdir( path.dirname( replayPath ), { recursive: true } );
+	await fs.writeFile(
+		replayPath,
+		JSON.stringify( manifest, null, 2 ) + '\n'
+	);
+	return manifest;
+}
+
 function mapAnalysisKind( analysis, localClassification ) {
 	if ( ! analysis ) {
 		return localClassification === 'harness' ||
@@ -683,18 +929,70 @@ function buildAttemptEnv( seed, convergenceTimeoutMs, artifactsDir ) {
 async function runSeedAttempt( seed, label, convergenceTimeoutMs ) {
 	const attemptDir = path.join( OUTPUT_DIR, `seed-${ seed }`, label );
 	const artifactsDir = path.join( attemptDir, 'artifacts' );
-	const commandResult = await runCombinedCommand( {
-		command: 'npm',
-		args: [ 'run', 'test:e2e', '--', SPEC_PATH, '--project=chromium' ],
-		env: buildAttemptEnv( seed, convergenceTimeoutMs, artifactsDir ),
-		logPath: path.join( attemptDir, 'command.log' ),
-		timeoutMs: RUN_TIMEOUT_MS,
-	} );
+	const replayPath = path.join( attemptDir, REPLAY_MANIFEST_FILENAME );
+	const env = buildAttemptEnv( seed, convergenceTimeoutMs, artifactsDir );
 	const behavioralCoveragePath = path.join(
 		artifactsDir,
 		BEHAVIORAL_COVERAGE_FILENAME
 	);
+	await writeReplayManifest( {
+		attemptDir,
+		artifactsDir,
+		behavioralCoverage: [],
+		behavioralCoveragePath,
+		convergenceTimeoutMs,
+		env,
+		label,
+		replayPath,
+		seed,
+		status: 'started',
+	} );
+	await appendEvent( {
+		kind: 'seed-attempt-start',
+		seed,
+		label,
+		attemptDir,
+		artifactsDir,
+		replayPath,
+	} );
+	const commandResult = await runCombinedCommand( {
+		command: 'npm',
+		args: [ 'run', 'test:e2e', '--', SPEC_PATH, '--project=chromium' ],
+		env,
+		logPath: path.join( attemptDir, 'command.log' ),
+		timeoutMs: RUN_TIMEOUT_MS,
+	} );
 	const behavioralCoverage = await readNdjsonFile( behavioralCoveragePath );
+	const behavioralCoverageSummary =
+		summarizeBehavioralCoverage( behavioralCoverage );
+	await writeReplayManifest( {
+		attemptDir,
+		artifactsDir,
+		behavioralCoverage,
+		behavioralCoveragePath,
+		commandResult,
+		convergenceTimeoutMs,
+		env,
+		label,
+		replayPath,
+		seed,
+		status: commandResult.ok ? 'passed' : 'failed',
+	} );
+	await appendEvent( {
+		kind: 'seed-attempt-complete',
+		seed,
+		label,
+		ok: commandResult.ok,
+		code: commandResult.code,
+		signal: commandResult.signal,
+		timedOut: commandResult.timedOut,
+		durationMs: commandResult.durationMs,
+		logPath: commandResult.logPath,
+		artifactsDir,
+		behavioralCoveragePath,
+		behavioralCoverageSummary,
+		replayPath,
+	} );
 
 	return {
 		seed,
@@ -706,9 +1004,11 @@ async function runSeedAttempt( seed, label, convergenceTimeoutMs ) {
 		durationMs: commandResult.durationMs,
 		artifactsDir,
 		behavioralCoverage,
+		behavioralCoverageSummary,
 		behavioralCoveragePath,
 		logPath: commandResult.logPath,
 		output: commandResult.output,
+		replayPath,
 	};
 }
 
@@ -893,11 +1193,24 @@ async function main() {
 	runnerLogPath = path.join( OUTPUT_DIR, 'runner.log' );
 	summaryLogPath = path.join( OUTPUT_DIR, 'summary.ndjson' );
 	statePath = path.join( OUTPUT_DIR, 'state.json' );
+	eventsPath = path.join( OUTPUT_DIR, 'events.ndjson' );
 	await updateState();
 
 	await log(
 		`RTC browser fuzz runner started with lane=${ LANE_LABEL }, outputDir=${ OUTPUT_DIR }, startSeed=${ START_SEED }, seedStride=${ SEED_STRIDE }, durationHours=${ DURATION_HOURS }.`
 	);
+	await appendEvent( {
+		kind: 'runner-start',
+		outputDir: OUTPUT_DIR,
+		startSeed: START_SEED,
+		seedStride: SEED_STRIDE,
+		stepCount: STEP_COUNT,
+		durationHours: DURATION_HOURS,
+		baseUrl: BASE_URL,
+		actionProfile: ACTION_PROFILE || 'full',
+		collaboratorMode: COLLABORATOR_MODE || 'default',
+		repoCommit: await getRepoCommit(),
+	} );
 
 	await ensureFileExists( path.join( REPO_ROOT, 'package.json' ) );
 	await ensureWpEnvRunning();
@@ -974,6 +1287,7 @@ async function main() {
 		}
 
 		await log( `Running browser fuzz seed ${ seed }.` );
+		await appendEvent( { kind: 'seed-start', seed } );
 		const attempts = [
 			await runSeedAttempt( seed, 'primary', CONVERGENCE_TIMEOUT_MS ),
 		];
@@ -983,6 +1297,11 @@ async function main() {
 		} );
 
 		if ( attempts[ 0 ].ok ) {
+			await appendEvent( {
+				kind: 'seed-complete',
+				seed,
+				result: 'passed',
+			} );
 			seed += SEED_STRIDE;
 			await updateState( {
 				successes: state.successes + 1,
@@ -1057,6 +1376,26 @@ async function main() {
 				: null,
 		};
 		await appendSummary( summaryRecord );
+		await appendEvent( {
+			kind: 'seed-classified',
+			seed,
+			result: kind,
+			reproducibility,
+			localClassification,
+			failureSnippet,
+			codexResultPath: codexAnalysis.resultPath,
+			attempts: attempts.map( ( attempt ) => ( {
+				label: attempt.label,
+				ok: attempt.ok,
+				code: attempt.code,
+				durationMs: attempt.durationMs,
+				logPath: attempt.logPath,
+				artifactsDir: attempt.artifactsDir,
+				behavioralCoveragePath: attempt.behavioralCoveragePath,
+				behavioralCoverageSummary: attempt.behavioralCoverageSummary,
+				replayPath: attempt.replayPath,
+			} ) ),
+		} );
 
 		if ( kind === 'real-bug' ) {
 			await updateState( {
@@ -1114,6 +1453,11 @@ async function main() {
 	await log(
 		`RTC browser fuzz runner exiting. stopReason=${ state.stopReason }.`
 	);
+	await appendEvent( {
+		kind: 'runner-stop',
+		stopReason: state.stopReason,
+		nextSeed: seed,
+	} );
 }
 
 main().catch( async ( error ) => {
@@ -1131,6 +1475,12 @@ main().catch( async ( error ) => {
 			await log( `Runner failed: ${ error.stack ?? error.message }` );
 		} catch {}
 	}
+	try {
+		await appendEvent( {
+			kind: 'runner-error',
+			error: error.stack ?? error.message,
+		} );
+	} catch {}
 
 	process.exitCode = 1;
 } );

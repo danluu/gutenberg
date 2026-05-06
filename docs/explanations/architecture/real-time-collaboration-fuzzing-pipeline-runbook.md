@@ -8,10 +8,10 @@ chat history.
 
 The pipeline has four durable parts:
 
-- A fixed fuzz base branch that contains trunk plus only intended RTC fixes.
-- A supervised browser fuzz campaign with HTTP, HTTP-persistence, and WebSocket groups.
-- A multi-level triage system that separates cheap Codex-only analysis from expensive browser repro work.
-- A periodic monitor that watches resources, queues, stale lanes, duplicate gating, and job recovery.
+-   A fixed fuzz base branch that contains trunk plus only intended RTC fixes.
+-   A supervised browser fuzz campaign with HTTP, HTTP-persistence, and WebSocket groups.
+-   A multi-level triage system that separates cheap Codex-only analysis from expensive browser repro work.
+-   A periodic monitor that watches resources, queues, stale lanes, duplicate gating, and job recovery.
 
 ## Base Branch
 
@@ -58,12 +58,12 @@ git push danluu HEAD:try/fuzz
 
 Keep a short base note in the run root, for example `base-update.md`, with:
 
-- branch and remote ref
-- head commit
-- trunk base commit
-- included PRs
-- explicitly excluded commits
-- verification commands and results
+-   branch and remote ref
+-   head commit
+-   trunk base commit
+-   included PRs
+-   explicitly excluded commits
+-   verification commands and results
 
 ## Required Local Services
 
@@ -102,12 +102,12 @@ node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --apply --json --min-age-hours=24
 
 Safety properties:
 
-- only resources with Docker Compose labels whose working dir/config is under `~/.wp-env`, or whose compose project has a matching directory under `~/.wp-env`, are considered
-- running containers are never stopped or removed
-- a compose project is protected if any container in that project is running
-- only stopped containers older than the age threshold are removed
-- only unused wp-env compose networks older than the age threshold are removed
-- Docker volumes and `~/.wp-env` directories are reported but not deleted
+-   only resources with Docker Compose labels whose working dir/config is under `~/.wp-env`, or whose compose project has a matching directory under `~/.wp-env`, are considered
+-   running containers are never stopped or removed
+-   a compose project is protected if any container in that project is running
+-   only stopped containers older than the age threshold are removed
+-   only unused wp-env compose networks older than the age threshold are removed
+-   Docker volumes and `~/.wp-env` directories are reported but not deleted
 
 Useful manual dry run:
 
@@ -117,9 +117,9 @@ node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --json --min-age-hours=24
 
 Watchdog controls:
 
-- `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV=0`: disable cleanup
-- `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_INTERVAL_MS=1800000`: cleanup interval
-- `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS=24`: minimum resource age
+-   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV=0`: disable cleanup
+-   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_INTERVAL_MS=1800000`: cleanup interval
+-   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS=24`: minimum resource age
 
 ## Group Config
 
@@ -221,13 +221,13 @@ tmux new-session -d -s rtc-fuzz-watchdog \
 
 The supervisor writes:
 
-- `supervisor-state.json`
-- `supervisor.log`
-- `events.ndjson`
-- `<group>-wp-env-status.log`
-- `<group>-wp-env-start.log`
-- `<group>-ws-relay.log` for WS groups
-- one generation directory per launched group, for example `ws-gen-20-...`
+-   `supervisor-state.json`
+-   `supervisor.log`
+-   `events.ndjson`
+-   `<group>-wp-env-status.log`
+-   `<group>-wp-env-start.log`
+-   `<group>-ws-relay.log` for WS groups
+-   one generation directory per launched group, for example `ws-gen-20-...`
 
 The supervisor is resumable. Reusing the same output dir and groups path causes
 it to read `supervisor-state.json`, preserve active run dirs, and continue from
@@ -241,24 +241,35 @@ detached lane process per lane. Each lane runs
 
 Important runner defaults and controls:
 
-- `RTC_FUZZ_INLINE_CODEX=0`: keep fuzzing lanes moving; triage is handled by watchers.
-- `RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1`: parallel lanes do not delete one another's posts.
-- `RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS=1`: probe HTTP health between seeds.
-- `RTC_FUZZ_STEP_COUNT=12`: current default action depth.
-- `RTC_FUZZ_ACTION_PROFILE` or `GUTENBERG_RTC_BROWSER_ACTION_PROFILE`: use `full`, `persistence`, `structure`, or `session-lifecycle`.
-- `GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE=1`: collect Chrome coverage for novelty-guided runs.
+-   `RTC_FUZZ_INLINE_CODEX=0`: keep fuzzing lanes moving; triage is handled by watchers.
+-   `RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1`: parallel lanes do not delete one another's posts.
+-   `RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS=1`: probe HTTP health between seeds.
+-   `RTC_FUZZ_STEP_COUNT=12`: current default action depth.
+-   `RTC_FUZZ_ACTION_PROFILE` or `GUTENBERG_RTC_BROWSER_ACTION_PROFILE`: use `full`, `persistence`, `structure`, or `session-lifecycle`.
+-   `GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE=1`: collect Chrome coverage for novelty-guided runs.
 
 Each lane writes:
 
-- `lane-N/state.json`
-- `lane-N/runner.log`
-- `lane-N/summary.ndjson`
-- `lane-N/seed-<seed>/...`
-- `lane-N/seed-<seed>/rtc-behavioral-coverage.ndjson` when behavioral coverage is enabled
+-   `lane-N/state.json`
+-   `lane-N/runner.log`
+-   `lane-N/summary.ndjson`
+-   `lane-N/events.ndjson`
+-   `lane-N/seed-<seed>/...`
+-   `lane-N/seed-<seed>/<attempt>/replay.json`
+-   `lane-N/seed-<seed>/<attempt>/artifacts/rtc-behavioral-coverage.ndjson` when behavioral coverage is enabled
 
 `summary.ndjson` is the queue source for triage. It contains successful attempts,
 infra failures, uncertain failures, real-bug records, and Codex classifications
 when inline Codex is enabled.
+
+`events.ndjson` is the durable event stream for the lane. It records runner
+start/stop, seed start, attempt start/finish, infra failures, and classification
+events. Prefer it over reverse-engineering progress from `runner.log`.
+
+`replay.json` is the per-attempt handoff manifest. It captures the repo commit,
+spec path, seed, action profile, transport, selected environment variables,
+timeouts, artifact paths, behavioral coverage summary, and the recorded action
+history when the test reached the browser.
 
 ## Multi-Level Triage
 
@@ -286,20 +297,20 @@ node bin/rtc-browser-fuzz-triage-watcher.mjs "$RUN_DIR" --gate-only
 
 The watcher writes:
 
-- `$RUN_DIR/.triage-watcher/state.json`
-- `$RUN_DIR/.triage-watcher/signatures/<hash>/failure.json`
-- `$RUN_DIR/.triage-watcher/signatures/<hash>/prompt.txt`
-- `$RUN_DIR/.triage-watcher/signatures/<hash>/STATUS.md`
-- `$RUN_DIR/.triage-watcher/signatures/<hash>/result.json`
+-   `$RUN_DIR/.triage-watcher/state.json`
+-   `$RUN_DIR/.triage-watcher/signatures/<hash>/failure.json`
+-   `$RUN_DIR/.triage-watcher/signatures/<hash>/prompt.txt`
+-   `$RUN_DIR/.triage-watcher/signatures/<hash>/STATUS.md`
+-   `$RUN_DIR/.triage-watcher/signatures/<hash>/result.json`
 
 Browser triage requirements are strict:
 
-- classify real, not real, infra, or uncertain
-- compare examples for duplicates and distinct root causes
-- attempt useful repro levels: unit, REST/API, manual browser, and Playwright
-- Playwright repros must use real user/editor actions and real sync behavior
-- do not use fault injection, artificial route blocking, direct store mutation, or artificial sleeps as the cause of a browser repro
-- if a realistic repro cannot be found within the time budget, mark that explicitly instead of pretending the issue is confirmed
+-   classify real, not real, infra, or uncertain
+-   compare examples for duplicates and distinct root causes
+-   attempt useful repro levels: unit, REST/API, manual browser, and Playwright
+-   Playwright repros must use real user/editor actions and real sync behavior
+-   do not use fault injection, artificial route blocking, direct store mutation, or artificial sleeps as the cause of a browser repro
+-   if a realistic repro cannot be found within the time budget, mark that explicitly instead of pretending the issue is confirmed
 
 ### Level 1: High-Parallel Codex-Only Analysis
 
@@ -315,25 +326,25 @@ node bin/rtc-browser-fuzz-analysis-tier.mjs "$RUN_DIR"
 
 Outputs are under:
 
-- `$RUN_DIR/.triage-watcher/analysis-tier/state.json`
-- `$RUN_DIR/.triage-watcher/analysis-tier/signatures/<hash>/result.json`
-- `$RUN_DIR/.triage-watcher/analysis-tier/signatures/<hash>/analysis.md`
-- `$RUN_DIR/.triage-watcher/analysis-tier/signatures/<hash>/handoff.md`
+-   `$RUN_DIR/.triage-watcher/analysis-tier/state.json`
+-   `$RUN_DIR/.triage-watcher/analysis-tier/signatures/<hash>/result.json`
+-   `$RUN_DIR/.triage-watcher/analysis-tier/signatures/<hash>/analysis.md`
+-   `$RUN_DIR/.triage-watcher/analysis-tier/signatures/<hash>/handoff.md`
 
 The first-level schema classifies signatures as:
 
-- `likely_real`
-- `likely_infra`
-- `likely_not_real`
-- `uncertain`
+-   `likely_real`
+-   `likely_infra`
+-   `likely_not_real`
+-   `uncertain`
 
 It also emits `shouldDeepTriage` and one of:
 
-- `prioritize_deep_triage`
-- `normal_deep_triage`
-- `suppress_as_infra`
-- `merge_with_duplicate`
-- `keep_collecting`
+-   `prioritize_deep_triage`
+-   `normal_deep_triage`
+-   `suppress_as_infra`
+-   `merge_with_duplicate`
+-   `keep_collecting`
 
 The triage watcher gates duplicate/noise decisions from this tier as
 `analysis-gated`, so browser triage capacity is reserved for likely-real
@@ -355,18 +366,18 @@ node bin/rtc-browser-fuzz-deep-analysis-tier.mjs "$RUN_DIR"
 
 Outputs are under:
 
-- `$RUN_DIR/.triage-watcher/deep-analysis-tier/state.json`
-- `$RUN_DIR/.triage-watcher/deep-analysis-tier/signatures/<hash>/result.json`
-- `$RUN_DIR/.triage-watcher/deep-analysis-tier/signatures/<hash>/deep-analysis.md`
-- `$RUN_DIR/.triage-watcher/deep-analysis-tier/signatures/<hash>/repro-handoff.md`
+-   `$RUN_DIR/.triage-watcher/deep-analysis-tier/state.json`
+-   `$RUN_DIR/.triage-watcher/deep-analysis-tier/signatures/<hash>/result.json`
+-   `$RUN_DIR/.triage-watcher/deep-analysis-tier/signatures/<hash>/deep-analysis.md`
+-   `$RUN_DIR/.triage-watcher/deep-analysis-tier/signatures/<hash>/repro-handoff.md`
 
 Candidate statuses:
 
-- `confirmed_likely_real`
-- `likely_duplicate`
-- `likely_false_positive`
-- `needs_more_evidence`
-- `needs_realistic_repro_search`
+-   `confirmed_likely_real`
+-   `likely_duplicate`
+-   `likely_false_positive`
+-   `needs_more_evidence`
+-   `needs_realistic_repro_search`
 
 Deep-analysis duplicate and false-positive decisions are folded back by the
 triage watcher. Confirmed likely-real and realistic-repro-search decisions stay
@@ -403,16 +414,16 @@ expensive because each can spawn Playwright, Chrome, and shared `wp-env` load.
 The periodic monitor should append every pass to `monitor-status.md` in the run
 root. Each pass should include:
 
-- watchdog status and age
-- HTTP, WS, and relay reachability
-- lane state and stale lane ages
-- triage counts by status
-- analysis-tier counts by status
-- deep-analysis-tier counts by status
-- queued signatures split by no-analysis, analysis-running, analysis-failed, and analysis-completed
-- resource snapshot
-- actions taken
-- current policy
+-   watchdog status and age
+-   HTTP, WS, and relay reachability
+-   lane state and stale lane ages
+-   triage counts by status
+-   analysis-tier counts by status
+-   deep-analysis-tier counts by status
+-   queued signatures split by no-analysis, analysis-running, analysis-failed, and analysis-completed
+-   resource snapshot
+-   actions taken
+-   current policy
 
 Minimum resource checks:
 
@@ -445,48 +456,48 @@ Adjust work according to the bottleneck.
 
 Prefer adding Codex-only analysis when:
 
-- CPU and memory have headroom
-- many signatures have no first-level analysis
-- browser/Playwright pressure is already high
-- it is unclear whether extra work should be browser-heavy
+-   CPU and memory have headroom
+-   many signatures have no first-level analysis
+-   browser/Playwright pressure is already high
+-   it is unclear whether extra work should be browser-heavy
 
 Prefer adding second-level analysis when:
 
-- first-level analysis is caught up
-- likely-real or uncertain candidates are accumulating
-- browser repro queue is deeper than browser capacity
-- candidate distinctness is unclear
+-   first-level analysis is caught up
+-   likely-real or uncertain candidates are accumulating
+-   browser repro queue is deeper than browser capacity
+-   candidate distinctness is unclear
 
 Prefer adding browser-heavy triage when:
 
-- first-level or second-level analysis marked candidates `prioritize_deep_triage`
-- CPU idle and memory are healthy
-- Chrome/Playwright process counts are not already high
-- there is a concrete realistic repro strategy to try
+-   first-level or second-level analysis marked candidates `prioritize_deep_triage`
+-   CPU idle and memory are healthy
+-   Chrome/Playwright process counts are not already high
+-   there is a concrete realistic repro strategy to try
 
 Prefer adding raw fuzz lanes only when:
 
-- existing lanes are healthy
-- triage and analysis queues are not growing faster than they drain
-- the current failure distribution is not dominated by one known issue
-- there is a new action profile or transport surface worth exploring
+-   existing lanes are healthy
+-   triage and analysis queues are not growing faster than they drain
+-   the current failure distribution is not dominated by one known issue
+-   there is a new action profile or transport surface worth exploring
 
 Hold steady when:
 
-- CPU idle is below roughly 10%
-- unused RAM is below roughly 3 GB
-- Chrome/Playwright process count is high
-- `wp-env` is unstable
-- queue growth is from analysis/repro backlog rather than lack of raw findings
+-   CPU idle is below roughly 10%
+-   unused RAM is below roughly 3 GB
+-   Chrome/Playwright process count is high
+-   `wp-env` is unstable
+-   queue growth is from analysis/repro backlog rather than lack of raw findings
 
 If one issue dominates:
 
-- confirm it is one distinct bug family, not several bugs with the same symptom
-- add temporary gating or suppression only if it is an infra/noise signature
-- if it is real and already understood, keep one canonical repro and gate
-  duplicates so the run can find other classes
-- if a temporary product workaround is needed to keep fuzzing, keep it local,
-  document it, and do not merge it into the base unless it is an intended fix
+-   confirm it is one distinct bug family, not several bugs with the same symptom
+-   add temporary gating or suppression only if it is an infra/noise signature
+-   if it is real and already understood, keep one canonical repro and gate
+    duplicates so the run can find other classes
+-   if a temporary product workaround is needed to keep fuzzing, keep it local,
+    document it, and do not merge it into the base unless it is an intended fix
 
 ## Novelty-Guided Expansion
 
@@ -511,6 +522,16 @@ node bin/rtc-browser-fuzz-novelty-monitor.mjs
 The implemented novelty profiles are `structure` and `session-lifecycle`. They
 are meant to broaden surface area, not to replace the full or persistence
 profiles.
+
+The novelty monitor tracks offsets per coverage file and skips triage/recheck
+directories by default. This keeps deep-triage reruns from inflating exploration
+coverage. Set `RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE=1` only when you
+explicitly want recheck/repro coverage to affect novelty scoring.
+
+The novelty status file includes health warnings when enabled profiles do not
+produce ingested coverage or when a profile requests CDP coverage but no CDP
+hashes are observed. Treat those warnings as instrumentation failures before
+making scheduling decisions from novelty counts.
 
 ## Stop, Resume, And Handoff
 
@@ -539,14 +560,14 @@ To resume:
 
 For another machine, hand off:
 
-- the base branch ref and head commit
-- `base-update.md`
-- `supervisor-groups.json`
-- `monitor-status.md`
-- current `supervisor-state.json`
-- all `.triage-watcher/**/result.json`, `analysis.md`, `deep-analysis.md`, `handoff.md`, and `repro-handoff.md`
-- one canonical seed/artifact directory per likely-real distinct bug family
-- a manifest mapping distinct bug type to canonical repro candidate and commands
+-   the base branch ref and head commit
+-   `base-update.md`
+-   `supervisor-groups.json`
+-   `monitor-status.md`
+-   current `supervisor-state.json`
+-   all `.triage-watcher/**/result.json`, `analysis.md`, `deep-analysis.md`, `handoff.md`, and `repro-handoff.md`
+-   one canonical seed/artifact directory per likely-real distinct bug family
+-   a manifest mapping distinct bug type to canonical repro candidate and commands
 
 ## Status Commands
 
@@ -583,10 +604,10 @@ NODE
 
 ## Safety Rules
 
-- Do not clean or restart shared `wp-env`s while lanes or browser triage are running.
-- Do not disable revision restore unless a documented known bug requires it.
-- Do not revert unrelated worktree changes while updating the fuzz base or scripts.
-- Do not let analysis-only tiers run Playwright, Chrome, Docker, `wp-env`, or tests.
-- Do not file a bug from a candidate that only has a fault-injected or state-mutating repro.
-- Do not delete run dirs, lane dirs, or `.triage-watcher` while a run may be resumed.
-- Keep every monitor action durable in `monitor-status.md`.
+-   Do not clean or restart shared `wp-env`s while lanes or browser triage are running.
+-   Do not disable revision restore unless a documented known bug requires it.
+-   Do not revert unrelated worktree changes while updating the fuzz base or scripts.
+-   Do not let analysis-only tiers run Playwright, Chrome, Docker, `wp-env`, or tests.
+-   Do not file a bug from a candidate that only has a fault-injected or state-mutating repro.
+-   Do not delete run dirs, lane dirs, or `.triage-watcher` while a run may be resumed.
+-   Keep every monitor action durable in `monitor-status.md`.

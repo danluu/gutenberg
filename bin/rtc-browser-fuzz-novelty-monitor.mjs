@@ -45,6 +45,8 @@ const OBSERVED_RUN_DIRS = parsePathList(
 	process.env.RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS
 ).concat( OUTPUT_DIR );
 const FORCE_START = process.env.RTC_FUZZ_NOVELTY_FORCE_START === '1';
+const INCLUDE_RECHECK_COVERAGE =
+	process.env.RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE === '1';
 
 const PROFILE_GROUPS = [
 	{
@@ -81,10 +83,18 @@ let state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	enabledGroups: [ 'novelty-ws-structure' ],
 	featureCounts: {},
 	coverageHashes: {},
+	fileOffsets: {},
+	recordCountsByProfile: {},
+	recordCountsByTransport: {},
 	recordsSeen: 0,
+	healthWarnings: [],
 	lastUpdatedAt: null,
 	changes: [],
 };
+state.fileOffsets ??= {};
+state.recordCountsByProfile ??= {};
+state.recordCountsByTransport ??= {};
+state.healthWarnings ??= [];
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -182,12 +192,22 @@ async function findCoverageFiles( roots ) {
 			if ( entry.isDirectory() ) {
 				if (
 					[
+						'.triage-watcher',
 						'node_modules',
 						'.git',
 						'vendor',
 						'test-results',
 						'playwright-report',
+						'blob-report',
+						'codex-analysis',
 					].includes( entry.name )
+				) {
+					continue;
+				}
+				if (
+					! INCLUDE_RECHECK_COVERAGE &&
+					( entry.name.startsWith( 'analysis-' ) ||
+						entry.name.startsWith( 'recheck-' ) )
 				) {
 					continue;
 				}
@@ -207,10 +227,22 @@ async function findCoverageFiles( roots ) {
 
 async function readCoverageRecords( files ) {
 	const records = [];
+	const nextOffsets = {};
+	const stats = {
+		filesRead: 0,
+		linesSeen: 0,
+		linesProcessed: 0,
+		parseErrors: 0,
+	};
 
 	for ( const filePath of files ) {
 		const text = await fs.readFile( filePath, 'utf8' ).catch( () => '' );
-		for ( const line of text.split( '\n' ) ) {
+		const lines = text.split( '\n' );
+		const previousOffset = state.fileOffsets?.[ filePath ]?.lineCount ?? 0;
+		const nextOffset = Math.min( previousOffset, lines.length );
+		stats.filesRead += 1;
+		stats.linesSeen += lines.filter( ( line ) => line.trim() ).length;
+		for ( const line of lines.slice( nextOffset ) ) {
 			if ( ! line.trim() ) {
 				continue;
 			}
@@ -219,11 +251,23 @@ async function readCoverageRecords( files ) {
 					...JSON.parse( line ),
 					coverageFile: filePath,
 				} );
+				stats.linesProcessed += 1;
 			} catch {}
 		}
+		stats.parseErrors += Math.max(
+			0,
+			lines.slice( nextOffset ).filter( ( line ) => line.trim() ).length -
+				records.filter( ( record ) => record.coverageFile === filePath )
+					.length
+		);
+		nextOffsets[ filePath ] = {
+			lineCount: lines.length,
+			lastSeenAt: new Date().toISOString(),
+		};
 	}
 
-	return records;
+	state.fileOffsets = nextOffsets;
+	return { records, stats };
 }
 
 function featureKeysForRecord( record ) {
@@ -273,15 +317,23 @@ function summarizeNovelty( records ) {
 	let newFeatureKeys = 0;
 	let newCoverageHashes = 0;
 	const byProfile = {};
+	const byTransport = {};
 
-	for ( const record of records.slice( state.recordsSeen ) ) {
+	for ( const record of records ) {
 		const profile = record.actionProfile ?? 'unknown';
+		const transport = record.transport ?? 'unknown';
 		byProfile[ profile ] ??= {
 			records: 0,
 			newFeatures: 0,
 			failures: 0,
+			cdpRecords: 0,
 		};
 		byProfile[ profile ].records += 1;
+		byTransport[ transport ] = ( byTransport[ transport ] ?? 0 ) + 1;
+		state.recordCountsByProfile[ profile ] =
+			( state.recordCountsByProfile[ profile ] ?? 0 ) + 1;
+		state.recordCountsByTransport[ transport ] =
+			( state.recordCountsByTransport[ transport ] ?? 0 ) + 1;
 		if ( record.status === 'failed' ) {
 			byProfile[ profile ].failures += 1;
 		}
@@ -300,15 +352,17 @@ function summarizeNovelty( records ) {
 			newCoverageHashes += 1;
 		}
 		if ( coverageHash ) {
+			byProfile[ profile ].cdpRecords += 1;
 			state.coverageHashes[ coverageHash ] =
 				( state.coverageHashes[ coverageHash ] ?? 0 ) + 1;
 		}
 	}
 
-	const processed = Math.max( 0, records.length - state.recordsSeen );
-	state.recordsSeen = records.length;
+	const processed = records.length;
+	state.recordsSeen = ( state.recordsSeen ?? 0 ) + processed;
 	return {
 		byProfile,
+		byTransport,
 		newCoverageHashes,
 		newFeatureKeys,
 		processed,
@@ -357,14 +411,15 @@ async function applyPolicy( novelty, resources ) {
 	const enabled = new Set( state.enabledGroups );
 	const lifecycleEnabled = enabled.has( 'novelty-ws-lifecycle' );
 	const structureRecords =
+		state.recordCountsByProfile?.structure ??
 		novelty.byProfile.structure?.records ??
-		Object.values( state.featureCounts ).filter( Boolean ).length;
+		0;
 
 	if (
 		! lifecycleEnabled &&
 		resources.hasHeadroom &&
 		state.recordsSeen > 0 &&
-		( structureRecords >= 10 || novelty.newFeatureKeys === 0 )
+		structureRecords >= 10
 	) {
 		enabled.add( 'novelty-ws-lifecycle' );
 		state.changes.push( {
@@ -438,8 +493,70 @@ function shellQuote( value ) {
 	return `'${ String( value ).replaceAll( "'", `'\\''` ) }'`;
 }
 
-async function writeStatus( novelty, resources, coverageFiles ) {
+function evaluateHealth( groups, coverageFiles ) {
+	const warnings = [];
+	const enabledProfiles = new Set(
+		( groups ?? [] )
+			.map(
+				( group ) =>
+					group.env?.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ??
+					group.actionProfile
+			)
+			.filter( Boolean )
+	);
+	const cdpProfiles = new Set(
+		( groups ?? [] )
+			.filter(
+				( group ) =>
+					group.env?.GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE ===
+					'1'
+			)
+			.map(
+				( group ) =>
+					group.env?.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ??
+					group.actionProfile
+			)
+			.filter( Boolean )
+	);
+	const outputDirCoverageFiles = coverageFiles.filter( ( filePath ) =>
+		filePath.startsWith( OUTPUT_DIR + path.sep )
+	);
+
+	if ( outputDirCoverageFiles.length === 0 ) {
+		warnings.push(
+			`no behavioral coverage files found under novelty output dir ${ OUTPUT_DIR }`
+		);
+	}
+
+	for ( const profile of enabledProfiles ) {
+		const seen = state.recordCountsByProfile?.[ profile ] ?? 0;
+		if ( state.recordsSeen > 0 && seen === 0 ) {
+			warnings.push(
+				`enabled profile "${ profile }" has produced 0 ingested behavioral records`
+			);
+		}
+	}
+
+	for ( const profile of cdpProfiles ) {
+		const seen = state.recordCountsByProfile?.[ profile ] ?? 0;
+		const cdpTotal = Object.values( state.coverageHashes ?? {} ).reduce(
+			( total, count ) => total + count,
+			0
+		);
+		if ( seen >= 10 && cdpTotal === 0 ) {
+			warnings.push(
+				`profile "${ profile }" requested CDP coverage but no CDP hashes have been ingested`
+			);
+		}
+	}
+
+	state.healthWarnings = warnings;
+	return warnings;
+}
+
+async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
 	const groups = await readJsonFile( GROUPS_PATH );
+	const healthWarnings = state.healthWarnings ?? [];
 	const lines = [
 		'# RTC Novelty Monitor',
 		'',
@@ -463,8 +580,21 @@ async function writeStatus( novelty, resources, coverageFiles ) {
 		`- coverage files: ${ coverageFiles.length }`,
 		`- total records seen: ${ state.recordsSeen }`,
 		`- records processed this pass: ${ novelty.processed }`,
+		`- files read this pass: ${ coverageStats.filesRead }`,
+		`- coverage lines seen this pass: ${ coverageStats.linesSeen }`,
 		`- new behavioral feature keys this pass: ${ novelty.newFeatureKeys }`,
 		`- new CDP coverage hashes this pass: ${ novelty.newCoverageHashes }`,
+		`- all-time records by profile: ${ JSON.stringify(
+			state.recordCountsByProfile ?? {}
+		) }`,
+		`- all-time records by transport: ${ JSON.stringify(
+			state.recordCountsByTransport ?? {}
+		) }`,
+		'',
+		'## Health',
+		...( healthWarnings.length
+			? healthWarnings.map( ( warning ) => `- warning: ${ warning }` )
+			: [ '- ok' ] ),
 		'',
 		'## Enabled Groups',
 		...( groups ?? [] ).map(
@@ -488,16 +618,17 @@ async function writeStatus( novelty, resources, coverageFiles ) {
 
 async function runPass() {
 	const coverageFiles = await findCoverageFiles( OBSERVED_RUN_DIRS );
-	const records = await readCoverageRecords( coverageFiles );
+	const { records, stats } = await readCoverageRecords( coverageFiles );
 	const novelty = summarizeNovelty( records );
 	const resources = sampleResources();
 	await applyPolicy( novelty, resources );
+	evaluateHealth( await readJsonFile( GROUPS_PATH ), coverageFiles );
 	await ensureSupervisor( resources );
 	state.lastUpdatedAt = new Date().toISOString();
 	await writeJsonFileAtomic( STATE_PATH, state );
-	await writeStatus( novelty, resources, coverageFiles );
+	await writeStatus( novelty, resources, coverageFiles, stats );
 	await log(
-		`pass: records=${ records.length } processed=${ novelty.processed } newFeatures=${ novelty.newFeatureKeys } newCdp=${ novelty.newCoverageHashes } headroom=${ resources.hasHeadroom }`
+		`pass: processed=${ novelty.processed } files=${ coverageFiles.length } newFeatures=${ novelty.newFeatureKeys } newCdp=${ novelty.newCoverageHashes } warnings=${ state.healthWarnings.length } headroom=${ resources.hasHeadroom }`
 	);
 }
 
