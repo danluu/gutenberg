@@ -974,6 +974,29 @@ Compaction and schema evolution further reduce what the server can prove:
 | Block schema changes alter `source`, `default`, `role`, query shape, or deprecations. | Invalidate old projection proofs unless raw block provenance or block-specific migration proof shows the omitted/defaulted/sourced values were preserved. |
 | Serialization cleanup policy changes. | Include default-block, freeform, cleanup, registry, and serializer policy versions in projected-content tokens. |
 
+Authorized clients are still untrusted CRDT authors. `edit_post` permission
+authorizes a proposed WordPress write; it should not authorize arbitrary Yjs
+structure. Before CAS/no-op/materialization logic, the endpoint should decode
+the submitted document in an isolated, pinned server Yjs runtime, validate an
+allowlist of root maps, reserved namespaces, block fields, attribute shapes,
+client-clock/resource bounds, and unsupported shared types, then re-encode and
+compute server-side projection/hash sidecars. Client-supplied projection
+hashes, state vectors, wrapper metadata, or canonical bytes can help
+diagnostics, but must not be authoritative.
+
+Semantic intent is stricter than structural equality. A CRDT that serializes
+to the same `post_content` can still contain stale delete/reinsert, move,
+block-identity churn, or rich-text reflow that changes future merge behavior.
+No-op/projection credit should require byte-identical embedded Yjs state or a
+server-decoded diff limited to explicitly non-semantic namespaces; equal block
+serialization alone is not safe no-op proof.
+
+Tombstone and proof-sidecar retention should last at least until all tokens,
+attempts, autosaves, and active room cursors for that generation have expired.
+If compaction or GC discards old structs before outstanding attempts expire,
+the server may no longer be able to prove that a structurally equal payload did
+not discard future merge information.
+
 Under this design, rows are credited to the mitigation only when the bad state
 passes through the guarded save path. Rows whose visible failure occurs before
 save, or whose realistic repro emits no useful post update request, stay
@@ -1068,6 +1091,29 @@ After a rejected guarded write, the rejection response and the next
 edit-context read should expose the same pre-reject protected generation; a
 rejection path that also refreshes caches or canonicalizes content without a
 committed transition should not receive row credit.
+
+The state machine should be model-checked before the estimates become more
+than implementation-test claims. A finite model should include at least a
+guarded client, stale/offline client, legacy writer, recovery sweeper,
+cache/read path, lifecycle/provenance rotator, and optional server repair
+publisher. Model variables should include bundle state, protected hashes,
+attempt-ledger state, client-observed token/order, dirty/local intent, room
+generation, and cache generation. Every observed attempt should map to one
+modeled transition with `prev_bundle_state`, `decision`, `commit_effect`,
+`attempt_terminal_state`, and `client_observation_order`; unmapped traces stay
+estimated or shadow-only.
+
+Critical model properties:
+
+| Property | Credit cap if unproved |
+| --- | --- |
+| Concurrent guarded save vs legacy invalidation has a total order: if the legacy write commits first, old-base guarded accept is impossible; if guarded commit wins, the later legacy write invalidates after that token. | Stale-save and split rows stay partial/containment. |
+| Conflict responses are fresh enough: if another accepted write happens after the stale-token decision but before response assembly, the 409 response either names a still-current generation or forces refetch. | CAS/projection repair rows cannot be full. |
+| Crash cutpoints after every durable or externally visible step recover safely: attempt prepare, decision record, post write, meta write, token update, terminal attempt update, hook side effect, outbox enqueue, cache invalidation, and response flush. | Atomicity rows `52`, `141`, split-proof `63`, and direct CRDT row `99` remain unmeasured. |
+| Quiescent capable clients terminate in a bounded number of attempts as accepted, no-op settled, or user-visible conflict with draft preserved. | Server safety is containment only; full stale-save and no-op rows need liveness. |
+| Attempt expiry, tombstone cleanup, delete/recreate, and provenance rotation cannot replay into a new generation. | Lifecycle/provenance-sensitive claims stay conditional. |
+| Server repair publication is exactly-once or at-least-refetch: clients either apply the committed repair for the current generation or refetch/rejoin. | Materialization and repair/no-op credit stay conditional. |
+| The proof uses the weakest deployed DB isolation level, not an idealized stronger one. | CAS/atomic rows are partial or unmeasured on weaker deployments. |
 
 | Row class | Required proof | MVP boundary |
 | --- | --- | --- |
@@ -1307,6 +1353,25 @@ visible failure depends on a referenced entity that can be stale, corrupt, or
 updated independently. At most, the host-post mitigation gets containment
 credit for refusing a bad host save; rendered or editor-visible correctness
 requires the dependency closure to be guarded or explicitly marked opaque.
+
+Site-editor save-all flows need vector tokens, not a scalar host-post token. A
+single user action can dirty and save `wp_template`, `wp_template_part`,
+`wp_navigation`, `wp_global_styles`, reusable blocks, and post/page entities.
+Credit for those flows requires a vector containing each dirty entity's base
+generation, write set, policy epoch, and dependency reads. REST batch
+transport also needs dependency semantics: if an earlier template/global-style
+/navigation subrequest fails, dependent later subrequests must not run or must
+be marked invalidated, and the client must not mark the whole save-all
+operation clean.
+
+Theme-scoped entities need theme-aware identity. Template and global-style
+freshness should be keyed by `blog_id`, theme stylesheet/template, entity type,
+slug/id, and generation. Theme switch, style-variation change, template import,
+or navigation reassignment should rotate or invalidate relevant vectors.
+Reusable block writes also need fan-out invalidation or dependency-vector
+observation so open host posts know that the referenced `wp_block` generation
+changed. Without this, keep the measured impact scoped to normal `post`/`page`
+editor-content rows.
 
 Projection must name its source explicitly. The only defensible source for
 cross-field validation is the accepted CRDT for the same logical save: after
@@ -1612,7 +1677,7 @@ the central bucket:
 | Base estimate | 8 rows / 16 weighted | 29 rows / 42 weighted | 37 rows / 58 weighted | Assumes decoded no-op proof, guarded bad-save path for conditional rows, and canonicalization for row `45`. |
 | Safe MVP: CAS/atomic commit only, no projection/no-op/canonicalization | 5 rows / 11 weighted | 0-2 rows / 0-2 weighted | 5-7 rows / 11-13 weighted | Conditional credits are `8`, `99`, `155`, `156`, and `243`; `99` needs raw DB proof, `155` is archived-trace dependent, and `243` may need per-field/title freshness if a stale title rides with a fresh token. Adds `52` and `141` only if atomic post/meta split is proven; row `63` needs raw split proof or belongs to projection instead. |
 | No CRDT no-op or canonicalization credit | 5 rows / 11 weighted | 28 rows / 40 weighted | 33 rows / 51 weighted | Counts bundle CAS, atomic commit, and projection only; removes `23`, `45`, `90`, and `227`. |
-| Exact bad-request projection proof required | 8 rows / 16 weighted | 20 rows / 28 weighted | 28 rows / 44 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `29`, `37`, `54`, `69`, `94`, `138`, `196`, `216`, and `228` conditional. |
+| Exact bad-request projection proof required | 8 rows / 16 weighted | 19 rows / 27 weighted | 27 rows / 43 weighted | Keeps projection rows only when the exact accepted request had explicit `content`, a projectable submitted/accepted CRDT, and a pre-commit mismatch; makes rows `19`, `29`, `37`, `54`, `69`, `94`, `138`, `196`, `216`, and `228` conditional. |
 | No-op proof required | 6 rows / 12 weighted | 31 rows / 46 weighted | 37 rows / 58 weighted | Moves `23` and `90` from full to partial until decoded Yjs diffs prove save-marker-only churn; row `227` remains full because it has stronger dirty-settlement evidence. |
 | Guarded-save plus no-op evidence required | 5 rows / 11 weighted | 28 rows / 42 weighted | 33 rows / 53 weighted | Combines guarded-save proof with no-op proof: moves `99`, `23`, and `90` from full to partial unless DB/no-op evidence is proven, removes row `45` without canonicalization, and removes or downgrades `52`, `69`, and `141` unless traces prove an accepted guarded bad save. |
 | Cumulative containment upper bound with strict proof | 5 rows / 11 weighted | 28 rows / 42 weighted | 36 rows / 79 weighted | Inherits the guarded-save plus no-op evidence assumptions above; then keeps containment rows `2`, `5`, and `17`, but treats `27`, `56`, and `57` as unmeasured upper-bound rows until request/DB traces prove later durable bad saves. |
@@ -2309,6 +2374,19 @@ Measurement power and oracle independence should be explicit:
 - Baseline validity expires after code, fixture, environment, plugin/theme, or
   configured time-window drift. Enforced results need a recent baseline and
   pass-through from the same drift window.
+- Zero observed false positives is not "no false-positive risk." For every
+  negative-control class, report the upper confidence bound for the false
+  positive rate and mark small samples as
+  `underpowered_false_positive_claim`.
+- Distinguish `row_id_claim`, `row_family_claim`, and `mechanism_claim`. A
+  single fixture can be `row_specific_measured`, but family-level inference
+  needs multiple independent row IDs or generated variants, and mechanism-level
+  claims need multiple row families with heterogeneity reported.
+- Use causal mutation tests against the mitigation itself: disable token
+  comparison, atomic commit, projection, no-op settlement, client repair, and
+  legacy invalidation one at a time. A row that still passes after disabling
+  the supposed mechanism is an attribution failure, not proof of that
+  mechanism.
 
 Every measurement release should include a flow table:
 
@@ -2813,8 +2891,10 @@ positives through shadow and canary traffic.
 The MVP claim should be scoped to one sentence: guarded RTC saves for
 `post`/`page` protected fields are stale-base safe. It should not claim the
 full 8/29/242 base estimate unless CRDT no-op settlement, projection
-projectability, materialization policy, provenance, and row `45`
-canonicalization are also enabled and measured.
+projectability, and row `45` canonicalization are also enabled and measured.
+Materialization and provenance are optional stronger variants: materialization
+can promote only narrow rows such as `29`/`196`, and provenance changes the
+combined estimate only for row `89`.
 
 MVP go criteria:
 
@@ -2965,6 +3045,21 @@ decode, lock, or idempotency budget exhaustion does not prevent other
 collaborators from saving. Track `room_conflict_flood_actor_limited`,
 `room_lock_fairness_throttle`, and `other_actor_save_blocked_by_abuse`.
 
+Treat authorized collaborators as adversarial in rollout tests. Add fixtures
+where one valid collaborator hoards old tokens, replays old attempts,
+alternates stale/current saves, or generates harmless CRDT churn to force
+others through repeated 409/refetch cycles. Expected handling is bounded
+conflict, local draft preservation, and actor-scoped throttling or quarantine.
+If a run succeeds only because the actor is quarantined, throttled, or support
+intervenes, classify it as abuse containment, not manifest bug mitigation.
+
+Rejected attempts should be cheap. Measure defender cost per reject: DB lock
+time, decode/projection work, attempt-table bytes, diagnostic bytes, client
+refetches, peer broadcasts, and support-visible events. Gates such as
+`reject_cost_ratio`, `peer_refetches_per_reject`,
+`diagnostic_bytes_per_reject`, and `attempt_storage_per_reject` should block
+rollout expansion when stale-token probing is expensive.
+
 Rows should not receive full or partial mitigation credit if the bad write was
 avoided only because of `429`, lock backpressure, decode budget, storage quota,
 support/operator repair, or privacy/diagnostic incident handling. Those
@@ -2974,6 +3069,12 @@ the row. During diagnostic key rotation, measured credit also requires
 `diagnostic_key_epoch` and `policy_epoch` to join across server, client, and
 support records; key rotation must not alter bundle CAS tokens or idempotency
 semantics.
+
+Add an explicit `abuse_containment` reporting bucket beside full, partial,
+containment-only, and inconclusive. Use it for outcomes caused by actor
+quarantine, replay-budget exhaustion, conflict-amplification limits, support
+intervention, audit lockdown, or compliance evidence loss. This prevents
+operational safety controls from inflating the bug-mitigation fraction.
 
 Backup, restore, migration, and support tooling need their own credit caps:
 
