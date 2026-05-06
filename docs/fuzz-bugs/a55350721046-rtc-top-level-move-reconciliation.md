@@ -213,6 +213,8 @@ Pass 49 adds a narrower cache proof: on that same known-fixes-base worktree, the
 
 The fixed PR branch passes the focused repros, the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`76` tests), targeted JS lint, and `git diff --check`. A fresh one-attempt headless Playwright rerun on `WP_ENV_PORT=9905`, after pre-creating the exhausted Docker Compose network with subnet `10.253.210.0/24`, passed in 21.4s. The emitted pass-49 Playwright JSON shows both editors converged to `inserted paragraph`, `another paragraph`, `multibyte paragraph`.
 
+Pass 50 verified that the existing branches, video standard, and fix still satisfy the requested bar without changing the PR branch commit order. After fetching `origin/trunk` at `02bfdaa5ca9`, a fresh trunk worktree with only regression commit `d71d0bc87fe` failed the two stale-snapshot repros and the same-array-reference reorder repro while the ordinary `handles block reordering` control passed. A fresh known-fixes-base worktree at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, with that same regression commit, passed the two stale-snapshot repros and the ordinary fresh-array reorder control, but still failed only `observes reordered blocks when the editor reuses the same block array reference`. The fixed PR branch passed the four focused repros, the full `crdt-blocks` unit file (`76` tests), targeted JS lint, `git diff --check`, and a fresh headless Playwright run on `http://localhost:9905`. The pass-50 Playwright JSON shows both editors converged to `inserted paragraph`, `another paragraph`, `multibyte paragraph`.
+
 ## Fix Direction
 
 Track the previous local block snapshot per `Y.Array`. Before applying a new local snapshot, compare its top-level clientId order with the previous local order:
