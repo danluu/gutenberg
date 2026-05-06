@@ -230,5 +230,67 @@ Duplicate storage post deletion should be a separate cleanup step:
 -   Delete duplicate posts only after a grace period and a final bounded recheck.
 -   Do not make duplicate cleanup part of the correctness fix.
 
+## Audit of PR Head 8cc08a6a0ad
+
+Five independent review passes re-audited PR head `8cc08a6a0ad` after a
+WordPress.com deployment concern was raised: MySQL advisory locks and raw
+transactions may not behave as correctness primitives under HyperDB or database
+proxy topologies. The concern is not only performance or connection pinning. In
+those deployments, two requests can be routed to different database servers or
+connections and both believe they acquired the same named lock.
+
+The audit consensus was: do not ship that head as-is.
+
+### Findings
+
+-   `GET_LOCK()` is not a valid distributed correctness boundary for this code.
+    The current repair path acquires a named lock in
+    `merge_duplicate_storage_post_meta()`, then starts a raw transaction and
+    copies/deletes postmeta rows. Under HyperDB/proxy routing, the lock,
+    transaction, and DML may not be bound to the same authoritative connection.
+-   The lock serializes only repair workers, not normal writers. A request can
+    cache a stale duplicate post ID, insert a new sync update into that
+    duplicate, and race with another request that already checked the duplicate
+    as empty and is about to delete it.
+-   Synchronous duplicate `wp_delete_post()` is the destructive edge. If a stale
+    writer inserts before the delete, the acknowledged update can be deleted. If
+    it inserts after the delete, WordPress postmeta has no foreign key, so the
+    write can succeed against an orphaned `post_id` that future room scans never
+    find.
+-   The repair is not idempotent in durable state. Copying only
+    `meta_key/meta_value` means a failed delete, split lock, or concurrent
+    repair can append the same logical duplicate update to canonical storage
+    more than once with fresh cursors.
+-   Repair currently runs from the normal update and awareness write paths,
+    turning rare historical cleanup into extra queries on routine collaboration
+    polling.
+-   The tests prove the happy-path cursor backfill, but not failed advisory
+    locks, split locks, stale writers, partial transactions, replica lag,
+    duplicate counts, or HyperDB routing. Some assertions also still require
+    immediate single-lineage cleanup, which encodes the unsafe delete behavior.
+-   The e2e helper must prove the actual compat class under test, not just
+    `class_exists( 'WP_Sync_Post_Meta_Storage' )`, and the e2e TypeScript helper
+    must not call a generic `requestUtils.rest< T >()` through an `any` value.
+
+### Recommendation
+
+The current secondary repair/backfill approach should be removed from the PR
+branch before merge unless it is redesigned. A smaller PR should keep the
+first-access room split fix only:
+
+-   resolve the exact room-hash canonical storage post immediately after
+    `wp_insert_post()`;
+-   cache only the canonical storage post ID;
+-   avoid acknowledging writes to suffixed storage;
+-   avoid `GET_LOCK()`, raw transactions, source-row deletion, and duplicate
+    post deletion in the synchronous request path;
+-   make CI prove it is exercising the patched compat class.
+
+Historical duplicate repair can come back later as a separate design: bounded,
+idempotent, and non-destructive; or as an explicit master-pinned migration,
+WP-CLI command, or cron cleanup with metrics and a grace period. The success
+condition should be no lost acknowledged updates, not immediate duplicate post
+removal.
+
 The PR branch intentionally does not include this explanation, the browser-only
 diagnostic mu-plugin, or an e2e repro harness.
