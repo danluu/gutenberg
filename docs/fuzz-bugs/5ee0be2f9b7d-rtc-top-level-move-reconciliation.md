@@ -8858,3 +8858,99 @@ ffmpeg decode completed with no errors, and the extracted 8s frame shows both
 source editor screens, the natural action log, expected order, observed
 duplicate order, pass-154 known-fixes failures, and pass-154 fixed-branch
 verification.
+
+## Pass 155 Verification
+
+Pass 155 independently re-read the pass-154 summary, source JSONL row, archived
+generated spec, source run log, error-context snapshot, screenshots, trace
+inventory, explanation branch, PR branch, and relevant CRDT code. The bug still
+classifies as a product defect in block CRDT reconciliation. The source run and
+fresh known-fixes rerun both complete normal editor actions and fail after the
+final convergence wait with:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+Pass 155 adds a fresh verification that the existing three-commit PR branch and
+video/fix still satisfy the requested standard on current `origin/trunk`
+`777af47425fbb6608b8f1453976abd1458c3d81d`:
+
+```text
+PR branch HEAD = f72df45f8e3 Avoid rewriting CRDT block records for pure moves
+merge-base = 777af47425fbb6608b8f1453976abd1458c3d81d
+rev-list --left-right --count origin/trunk...HEAD = 0 3
+```
+
+Commit order remains:
+
+```text
+a7f79df448e Add CRDT repros for RTC adjacent move identity rewrite
+83bc38f49ec Add RTC top-level move Playwright repro
+f72df45f8e3 Avoid rewriting CRDT block records for pure moves
+```
+
+Known-fixes low-level negative control was rerun from a clean scratch worktree
+based on `3cba2b1e56a98787de08dc6c7df2434759e8f908` with only the first repro
+commit applied. The targeted unit command exited `1` as expected. The direct
+helper still morphs the moved Y.Map into the displaced sibling, and the
+post-entrypoint remote-event proof still emits nested record edits for a pure
+move:
+
+```text
+Expected value: "Another paragraph exists so the top-level list is not degenerate."
+Received array: [undefined, "Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا."]
+
+Expected: []
+Received: ["YMap", "YMap", "YText", "YText"]
+```
+
+Known-fixes natural-user Playwright negative control was rerun headlessly
+against the live known-fixes site on `http://localhost:9903`:
+
+```bash
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_EC47_ATTEMPTS=1 RTC_EC47_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-155/artifacts/knownfix-ec47-attempts PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts --project=chromium --workers=1
+```
+
+Result: exit code `1` after `43.6s`, with the same split state: primary
+`inserted, displaced sibling, moved paragraph`; collaborator `inserted, moved
+paragraph, moved paragraph`.
+
+Fresh fixed-branch verification:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-155/artifacts/fixed-playwright RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+Results: the two CRDT unit suites passed `81/81`; targeted JS lint exited `0`;
+`git diff --check` produced no output; and the natural-user Playwright repro
+passed headlessly against `http://localhost:9902` in `21.2s` test time
+(`23.5s` overall).
+
+Pass 155 also refreshed origin metadata. The introducing merge remains
+`84019935998c16f877e976ad85e84748355d7282`, PR
+[#72262](https://github.com/WordPress/gutenberg/pull/72262), merged
+`2025-10-14T17:38:19Z`. The relevant `origin/trunk` hunk still has the
+left/right sweep followed directly by the positional update loop and no
+`canReorderBlocksByClientId` or `handledReorder` path. PR
+[#75923](https://github.com/WordPress/gutenberg/pull/75923), merged as
+`128a3c29b7f1db4f35faf9e326dd1e5e7ac11104`, added `mergeCrdtBlocks()` tests but
+not pure-move Y.Map identity or remote event-shape checks. PR
+[#77164](https://github.com/WordPress/gutenberg/pull/77164), merged as
+`a6bfd3e55432981c7c2cb09190ee77954530b1a5`, reused the same left/right sweep
+for array attributes and did not alter top-level block move reconciliation.
+
+Pass 155 created and verified a fresh annotated stitched-screen video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-155/video/5ee0be2f9b7d/rtc-top-level-move-reconciliation-pass155-verification-annotated.mp4
+```
+
+`ffprobe` reports H.264 video, `1920x1080`, `24.0s`, and `720` frames. A full
+ffmpeg decode completed with no errors, and the extracted 8s frame shows the
+source/fresh known-fixes split, the natural action log, the below-Playwright
+record-morph proof, and the fixed-branch unit/lint/Playwright verification.
