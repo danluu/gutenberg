@@ -456,6 +456,23 @@ row disappeared or was concurrently initialized from different protected
 values. Legacy writes before initialization should initialize from the post's
 current DB state, not from stale REST preload or client state.
 
+The lifecycle policy should be explicit:
+
+| Lifecycle event | Version/provenance policy |
+| --- | --- |
+| Trash | Invalidate the active bundle token and force RTC clients to leave or refetch before any further guarded save. Preserve rows for recovery/diagnostics, but do not let active collaborators save protected fields back onto a trashed post with old tokens. |
+| Untrash/restore from trash | Mint or invalidate the bundle generation, revalidate protected hashes against DB state, and force clients to refetch. If restore also restores revisions/meta, follow the revision-restore policy. |
+| Permanent delete | Delete or tombstone bundle-version rows, idempotency attempts, provenance records, and room-history keys so a recreated/imported entity cannot inherit stale collaboration state. Late retries after delete must not recreate the version row or resurrect protected fields. |
+| Auto-draft cleanup | Remove orphaned bundle/provenance/attempt rows with the auto-draft, or mark them expired before the post id can be reused by import tooling. |
+| Duplicate/clone/import | Mint new provenance and bundle token unless this is an explicit same-site identity-preserving migration. |
+| Post type change or cross-site move | Treat as a new entity generation; invalidate old tokens and room keys. |
+
+Cleanup should be idempotent and retryable. It is acceptable for tombstones to
+outlive the post for diagnostics, but strict reads must not treat a tombstoned
+or deleted generation as current. Periodic cleanup jobs should report orphaned
+version rows, orphaned attempts, room-history entries with no live post, and
+late retry attempts against deleted generations.
+
 Permission and cheap validation should happen before expensive projection or
 lock acquisition. The endpoint should check object-level `edit_post`
 capability before returning token mismatch details, current hashes, or raw
@@ -511,6 +528,12 @@ protocol than to another validation filter:
    canonical protected-field state. If the token is exposed only on edit-context
    GETs, Core Data can store a mutation response that has already lost the
    fresh token immediately after a successful save.
+   REST `_fields` and `context` filtering must not silently drop protocol state
+   needed by token-aware clients. Authenticated RTC reads and mutation responses
+   should either force-include the private bundle response object, or clients
+   must request it explicitly and avoid replacing a cached token with a
+   filtered response that omitted it. Public/read contexts should not expose
+   bundle hashes, provenance details, or token mismatch diagnostics.
 5. **Projection checks.** The server rejects only contradictions it can prove:
    for example, a submitted `post_content` that is explicitly empty while the
    submitted CRDT projection deterministically contains non-empty ordinary
@@ -1037,6 +1060,32 @@ an HTML/entity-canonicalization residual but stays excluded because the current
 mitigation is scoped to the editor-content bundle and the handoff evidence does
 not show the same guarded CRDT save-marker settlement path. If canonicalization
 becomes an explicit third mechanism, both rows should be re-audited together.
+
+Degraded deployment modes should be reported separately from the base estimate:
+
+| Degraded mode | Expected impact accounting |
+| --- | --- |
+| Token emission without enforcement | No mitigation credit; useful only for shadow classification. |
+| Enforcement without coherent read/mutation token responses | Full rows become at best partial, because clients cannot reliably repair after a conflict. |
+| CAS without atomic protected-field commit | Drop split rows `52`, `63`, and `141`; sensitivity falls toward 5 rows / 11 weighted before projection/no-op layers. |
+| CAS without projection/projectability | Projection-content partial rows drop out; only stale-base, direct CRDT-meta, and no-op/canonicalization rows remain. |
+| Projection without projectability/unknown handling | Do not enforce; false positives can be worse than the bug being mitigated. |
+| Client repair disabled or mixed-version participants active | Server containment may remain, but bug-resolution full rows should be counted as partial or unmeasured. |
+| Lifecycle cleanup or legacy invalidation broken | Strict enforcement should be disabled because stale tokens can survive delete/clone/import/legacy writes. |
+
+Operational degraded behavior should also be specified:
+
+| Condition | Degraded behavior | Metric |
+| --- | --- | --- |
+| Bundle token store unavailable | Disable enforcement for RTC saves, emit shadow decision, and force post-save refetch. | `degraded_token_store_unavailable` |
+| Commit-time lock unavailable or timed out | Return a retryable guarded-save error; do not silently accept protected fields. | `degraded_lock_timeout` |
+| Projection decoder unavailable or over limit | Keep CAS enforcement, classify projection as `unknown`, and skip projection enforcement. | `degraded_projection_unavailable` |
+| Mixed-version collaborators | Keep token emission, disable strict enforcement for the session unless compatibility is proven. | `degraded_mixed_client_session` |
+| Object-cache/preload incoherence detected | Serve uncached edit-context reads or force refetch before save. | `degraded_cache_incoherence` |
+
+A degraded accept should not be counted as mitigation success. Telemetry should
+record `degraded_reason`, `degraded_decision`, `protected_fields_written`,
+`client_refetch_forced`, and `save_completed_after_degrade`.
 
 Two downgrade rules matter:
 
@@ -1601,12 +1650,18 @@ Minimum server tests:
   limit hits produce distinct outcomes rather than generic mismatches.
 - authenticated mutation responses return the next bundle token and canonical
   protected-field state, not only edit-context GET responses;
+- `_fields`, sparse-field, and non-edit-context REST responses do not erase
+  cached bundle tokens for token-aware clients, and public contexts do not leak
+  private token/provenance diagnostics;
 - CPT/template/quick-edit/generic Core Data save paths are either guarded by
   the same protocol or explicitly invalidate the token when protected fields
   change.
 - REST batch transport either preserves per-save bundle conflict semantics or
   is bypassed for guarded RTC saves;
 - direct guarded writes invalidate post and post-meta caches after commit.
+- trash, untrash, permanent delete, auto-draft cleanup, duplicate/import, and
+  cross-site move paths clean up or rotate bundle/provenance/attempt state as
+  specified.
 
 Minimum client tests:
 
@@ -1708,6 +1763,21 @@ For clustered deployments, add deployment-health outcomes:
 should include one webhead enforcing, one only invalidating, and one old/unaware
 server. Strict mode should not start until all write-serving webheads have
 compatible code and conflict-repair reads are pinned to a coherent read path.
+
+Lifecycle telemetry should include `bundle_row_orphaned`,
+`attempt_row_orphaned`, `room_history_orphaned`, `token_filtered_from_response`,
+`token_lost_after_sparse_response`, `tombstoned_generation_read`, and
+`legacy_adoption_required`. These are not expected bug fixes, but they catch
+conditions that would make the measured mitigation unsafe to enforce.
+
+Track bundle-token lifecycle transitions as first-class metrics:
+`token_initialized`, `token_advanced_guarded_save`,
+`token_invalidated_legacy_write`, `token_rotated_provenance_change`,
+`token_reused_idempotent_replay`, `token_rejected_stale`,
+`token_missing_expected`, and `token_retired_cleanup`. For each transition,
+record write source, protected fields changed, and whether active RTC sessions
+were present. Stale-token reuse after invalidation is distinct from a normal
+409 because it means the server had already declared the generation obsolete.
 
 Telemetry should include cost signals: token read latency, commit-check
 latency, lock wait time, projection-validation time, CRDT decode time, retry
