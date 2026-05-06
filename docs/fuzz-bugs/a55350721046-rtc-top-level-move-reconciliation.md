@@ -284,6 +284,42 @@ The fixed PR branch `a6e6efc42e5` passed the full `packages/core-data/src/utils/
 /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-53/video/a55350721046-pass53-annotated-evidence.mp4
 ```
 
+Pass 54 independently re-audited the archived source trace instead of relying only on the earlier summaries. The trace shows natural UI actions in order:
+
+```text
+primary: click Seed heading -> Options -> Delete
+collaborator: click Emoji paragraph -> Options -> Add before -> type inserted paragraph
+primary: click Emoji paragraph -> Move down
+then waitForConvergence polls getBlocks()/serialize(blocks) until it times out
+```
+
+The trace `page.evaluate` calls read normalized block state, serialized content, and the current post id; they do not inject blocks, mutate editor state, or directly edit the CRDT document. The final page snapshot still shows a real post-editor state with the inserted paragraph followed by two copies of the multibyte paragraph, matching the logged convergence mismatch.
+
+Pass 54 also repeated fresh low-level controls with regression commit `939fc6fca8c`:
+
+```text
+origin/trunk 02bfdaa5ca9 + tests:
+FAIL stale top-level move repros
+FAIL same-array reorder and attribute repros
+EXIT_CODE=1
+
+known-fixes base 3cba2b1e56a98787de08dc6c7df2434759e8f908 + tests:
+PASS stale top-level move repros
+FAIL same-array reorder and attribute repros
+EXIT_CODE=1
+
+fixed PR branch a6e6efc42e5:
+packages/core-data/src/utils/test/crdt-blocks.ts: 77 passed
+targeted JS lint: exit 0
+git diff --check origin/trunk..HEAD: exit 0
+```
+
+This pass verifies that the existing PR branch, explanation branch, and video standard still satisfy the requested bar. A fresh Playwright browser rerun was attempted on `WP_ENV_PORT=9905`, but Docker failed before WordPress boot with `all predefined address pools have been fully subnetted`; active bridge networks had running containers attached, so pass 54 again avoided stopping unrelated environments. Pass 54 created a new annotated stitched evidence video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-54/video/a55350721046-pass54-annotated-evidence.mp4
+```
+
 ## Fix Direction
 
 Track the previous local block snapshot per `Y.Array`. Before applying a new local snapshot, compare its top-level clientId order with the previous local order:
