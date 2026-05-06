@@ -362,6 +362,682 @@ describe( 'crdt-blocks', () => {
 			expect( content1.toString() ).toBe( 'First' );
 		} );
 
+		it( 'does not encode top-level block moves as sibling content rewrites', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Moved paragraph' },
+					innerBlocks: [],
+					clientId: 'moved-paragraph',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Sibling paragraph' },
+					innerBlocks: [],
+					clientId: 'sibling-paragraph',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			const originalFirstBlock = yblocks.get( 0 );
+			const originalSecondBlock = yblocks.get( 1 );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ initialBlocks[ 1 ], initialBlocks[ 0 ] ],
+				null
+			);
+
+			expect( yblocks.get( 0 ) ).not.toBe( originalFirstBlock );
+			expect( yblocks.get( 1 ) ).not.toBe( originalSecondBlock );
+			expect( yblocks.toJSON() ).toMatchObject( [
+				{
+					clientId: 'sibling-paragraph',
+					attributes: { content: 'Sibling paragraph' },
+				},
+				{
+					clientId: 'moved-paragraph',
+					attributes: { content: 'Moved paragraph' },
+				},
+			] );
+		} );
+
+		it( 'encodes top-level block moves as array operations instead of rich-text rewrites', () => {
+			type ObservedYEvent = {
+				changes: {
+					delta?: Array< { delete?: number; insert?: unknown[] } >;
+				};
+				target: unknown;
+			};
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Moved paragraph' },
+					innerBlocks: [],
+					clientId: 'moved-paragraph',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Sibling paragraph' },
+					innerBlocks: [],
+					clientId: 'sibling-paragraph',
+				},
+			];
+			const observedEvents: ObservedYEvent[] = [];
+			const observeTransaction = ( events: ObservedYEvent[] ) => {
+				observedEvents.push(
+					...events.map( ( event ) => ( {
+						changes: {
+							delta: event.changes.delta,
+						},
+						target: event.target,
+					} ) )
+				);
+			};
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			yblocks.observeDeep( observeTransaction );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ initialBlocks[ 1 ], initialBlocks[ 0 ] ],
+				null
+			);
+			yblocks.unobserveDeep( observeTransaction );
+
+			expect(
+				observedEvents.some(
+					( event ) =>
+						event.target === yblocks &&
+						event.changes.delta?.some(
+							( delta ) => delta.delete || delta.insert
+						)
+				)
+			).toBe( true );
+			expect(
+				observedEvents.some(
+					( event ) => event.target instanceof Y.Text
+				)
+			).toBe( false );
+		} );
+
+		it( 'preserves unchanged top-level edges when block moves rebuild the reordered middle', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Stable prefix' },
+					innerBlocks: [],
+					clientId: 'stable-prefix',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Moved paragraph' },
+					innerBlocks: [],
+					clientId: 'moved-paragraph',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Sibling paragraph' },
+					innerBlocks: [],
+					clientId: 'sibling-paragraph',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Stable suffix' },
+					innerBlocks: [],
+					clientId: 'stable-suffix',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			const stablePrefixBlock = yblocks.get( 0 );
+			const stableSuffixBlock = yblocks.get( 3 );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					initialBlocks[ 0 ],
+					initialBlocks[ 2 ],
+					initialBlocks[ 1 ],
+					initialBlocks[ 3 ],
+				],
+				null
+			);
+
+			expect( yblocks.get( 0 ) ).toBe( stablePrefixBlock );
+			expect( yblocks.get( 3 ) ).toBe( stableSuffixBlock );
+			expect( yblocks.toJSON() ).toMatchObject( [
+				{
+					clientId: 'stable-prefix',
+					attributes: { content: 'Stable prefix' },
+				},
+				{
+					clientId: 'sibling-paragraph',
+					attributes: { content: 'Sibling paragraph' },
+				},
+				{
+					clientId: 'moved-paragraph',
+					attributes: { content: 'Moved paragraph' },
+				},
+				{
+					clientId: 'stable-suffix',
+					attributes: { content: 'Stable suffix' },
+				},
+			] );
+		} );
+
+		it( 'merges stable edge content changes when block moves rebuild the reordered middle', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Stable prefix' },
+					innerBlocks: [],
+					clientId: 'stable-prefix',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Moved paragraph' },
+					innerBlocks: [],
+					clientId: 'moved-paragraph',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Sibling paragraph' },
+					innerBlocks: [],
+					clientId: 'sibling-paragraph',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Stable suffix' },
+					innerBlocks: [],
+					clientId: 'stable-suffix',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			const stablePrefixBlock = yblocks.get( 0 );
+			const stableSuffixBlock = yblocks.get( 3 );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					{
+						...initialBlocks[ 0 ],
+						attributes: { content: 'Updated stable prefix' },
+					},
+					initialBlocks[ 2 ],
+					initialBlocks[ 1 ],
+					{
+						...initialBlocks[ 3 ],
+						attributes: { content: 'Updated stable suffix' },
+					},
+				],
+				null
+			);
+
+			expect( yblocks.get( 0 ) ).toBe( stablePrefixBlock );
+			expect( yblocks.get( 3 ) ).toBe( stableSuffixBlock );
+			expect( yblocks.toJSON() ).toMatchObject( [
+				{
+					clientId: 'stable-prefix',
+					attributes: { content: 'Updated stable prefix' },
+				},
+				{
+					clientId: 'sibling-paragraph',
+					attributes: { content: 'Sibling paragraph' },
+				},
+				{
+					clientId: 'moved-paragraph',
+					attributes: { content: 'Moved paragraph' },
+				},
+				{
+					clientId: 'stable-suffix',
+					attributes: { content: 'Updated stable suffix' },
+				},
+			] );
+		} );
+
+		it( 'keeps peers converged when a top-level move follows remote insertions and deletions', () => {
+			const primaryDoc = new Y.Doc();
+			const secondaryDoc = new Y.Doc();
+			const primaryBlocks = primaryDoc.getArray< YBlock >( 'blocks' );
+			const secondaryBlocks = secondaryDoc.getArray< YBlock >( 'blocks' );
+
+			const syncDocs = () => {
+				Y.applyUpdateV2(
+					secondaryDoc,
+					Y.encodeStateAsUpdateV2( primaryDoc )
+				);
+				Y.applyUpdateV2(
+					primaryDoc,
+					Y.encodeStateAsUpdateV2( secondaryDoc )
+				);
+			};
+			const paragraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+			const getContents = ( blocks: YBlocks ) =>
+				blocks
+					.toJSON()
+					.map(
+						( block: Block ) => block.attributes.content?.toString()
+					);
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'heading', 'Deleted heading' ),
+					paragraph( 'paragraph', 'Moved paragraph' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'paragraph', 'Moved paragraph' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				secondaryBlocks,
+				[
+					paragraph( 'inserted', 'Inserted paragraph' ),
+					paragraph( 'paragraph', 'Moved paragraph' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'inserted', 'Inserted paragraph' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+					paragraph( 'paragraph', 'Moved paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			expect( getContents( primaryBlocks ) ).toEqual( [
+				'Inserted paragraph',
+				'Sibling paragraph',
+				'Moved paragraph',
+			] );
+			expect( getContents( secondaryBlocks ) ).toEqual( [
+				'Inserted paragraph',
+				'Sibling paragraph',
+				'Moved paragraph',
+			] );
+
+			primaryDoc.destroy();
+			secondaryDoc.destroy();
+		} );
+
+		it( 'preserves applied remote rich-text edits when a stale local snapshot reports a top-level move', () => {
+			const primaryDoc = new Y.Doc();
+			const secondaryDoc = new Y.Doc();
+			const primaryBlocks = primaryDoc.getArray< YBlock >( 'blocks' );
+			const secondaryBlocks = secondaryDoc.getArray< YBlock >( 'blocks' );
+
+			const syncDocs = () => {
+				Y.applyUpdateV2(
+					secondaryDoc,
+					Y.encodeStateAsUpdateV2( primaryDoc )
+				);
+				Y.applyUpdateV2(
+					primaryDoc,
+					Y.encodeStateAsUpdateV2( secondaryDoc )
+				);
+			};
+			const paragraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+			const getContents = ( blocks: YBlocks ) =>
+				blocks
+					.toJSON()
+					.map(
+						( block: Block ) => block.attributes.content?.toString()
+					);
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'moved', 'Moved paragraph' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				secondaryBlocks,
+				[
+					paragraph( 'moved', 'Moved paragraph' ),
+					paragraph(
+						'sibling',
+						'Sibling paragraph with remote edit'
+					),
+				],
+				null
+			);
+			syncDocs();
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'sibling', 'Sibling paragraph' ),
+					paragraph( 'moved', 'Moved paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			expect( getContents( primaryBlocks ) ).toEqual( [
+				'Sibling paragraph with remote edit',
+				'Moved paragraph',
+			] );
+			expect( getContents( secondaryBlocks ) ).toEqual( [
+				'Sibling paragraph with remote edit',
+				'Moved paragraph',
+			] );
+
+			primaryDoc.destroy();
+			secondaryDoc.destroy();
+		} );
+
+		it( 'preserves applied remote rich-text edits on the moved block when a stale local snapshot reports a top-level move', () => {
+			const primaryDoc = new Y.Doc();
+			const secondaryDoc = new Y.Doc();
+			const primaryBlocks = primaryDoc.getArray< YBlock >( 'blocks' );
+			const secondaryBlocks = secondaryDoc.getArray< YBlock >( 'blocks' );
+
+			const syncDocs = () => {
+				Y.applyUpdateV2(
+					secondaryDoc,
+					Y.encodeStateAsUpdateV2( primaryDoc )
+				);
+				Y.applyUpdateV2(
+					primaryDoc,
+					Y.encodeStateAsUpdateV2( secondaryDoc )
+				);
+			};
+			const paragraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+			const getContents = ( blocks: YBlocks ) =>
+				blocks
+					.toJSON()
+					.map(
+						( block: Block ) => block.attributes.content?.toString()
+					);
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'moved', 'Moved paragraph' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				secondaryBlocks,
+				[
+					paragraph( 'moved', 'Moved paragraph with remote edit' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'sibling', 'Sibling paragraph' ),
+					paragraph( 'moved', 'Moved paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			expect( getContents( primaryBlocks ) ).toEqual( [
+				'Sibling paragraph',
+				'Moved paragraph with remote edit',
+			] );
+			expect( getContents( secondaryBlocks ) ).toEqual( [
+				'Sibling paragraph',
+				'Moved paragraph with remote edit',
+			] );
+
+			primaryDoc.destroy();
+			secondaryDoc.destroy();
+		} );
+
+		it( 'keeps a selected local rich-text edit while preserving remote edits during a top-level move', () => {
+			const primaryDoc = new Y.Doc();
+			const secondaryDoc = new Y.Doc();
+			const primaryBlocks = primaryDoc.getArray< YBlock >( 'blocks' );
+			const secondaryBlocks = secondaryDoc.getArray< YBlock >( 'blocks' );
+
+			const syncDocs = () => {
+				Y.applyUpdateV2(
+					secondaryDoc,
+					Y.encodeStateAsUpdateV2( primaryDoc )
+				);
+				Y.applyUpdateV2(
+					primaryDoc,
+					Y.encodeStateAsUpdateV2( secondaryDoc )
+				);
+			};
+			const paragraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+			const getContents = ( blocks: YBlocks ) =>
+				blocks
+					.toJSON()
+					.map(
+						( block: Block ) => block.attributes.content?.toString()
+					);
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'moved', 'Moved paragraph' ),
+					paragraph( 'sibling', 'Sibling paragraph' ),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				secondaryBlocks,
+				[
+					paragraph( 'moved', 'Moved paragraph' ),
+					paragraph(
+						'sibling',
+						'Sibling paragraph with remote edit'
+					),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					paragraph( 'sibling', 'Sibling paragraph' ),
+					paragraph(
+						'moved',
+						'Moved paragraph with selected local edit'
+					),
+				],
+				{
+					attributeKey: 'content',
+					clientId: 'moved',
+					offset: asRichTextOffset( 0 ),
+				}
+			);
+			syncDocs();
+
+			expect( getContents( primaryBlocks ) ).toEqual( [
+				'Sibling paragraph with remote edit',
+				'Moved paragraph with selected local edit',
+			] );
+			expect( getContents( secondaryBlocks ) ).toEqual( [
+				'Sibling paragraph with remote edit',
+				'Moved paragraph with selected local edit',
+			] );
+
+			primaryDoc.destroy();
+			secondaryDoc.destroy();
+		} );
+
+		it( 'preserves applied remote primitive attribute edits when a stale local snapshot reports a top-level move', () => {
+			const primaryDoc = new Y.Doc();
+			const secondaryDoc = new Y.Doc();
+			const primaryBlocks = primaryDoc.getArray< YBlock >( 'blocks' );
+			const secondaryBlocks = secondaryDoc.getArray< YBlock >( 'blocks' );
+
+			const syncDocs = () => {
+				Y.applyUpdateV2(
+					secondaryDoc,
+					Y.encodeStateAsUpdateV2( primaryDoc )
+				);
+				Y.applyUpdateV2(
+					primaryDoc,
+					Y.encodeStateAsUpdateV2( secondaryDoc )
+				);
+			};
+			const image = ( clientId: string, url: string ): Block => ( {
+				name: 'core/image',
+				attributes: { url },
+				innerBlocks: [],
+				clientId,
+			} );
+			const getUrls = ( blocks: YBlocks ) =>
+				blocks.toJSON().map( ( block: Block ) => block.attributes.url );
+
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					image( 'moved', 'https://example.com/moved.jpg' ),
+					image( 'sibling', 'https://example.com/sibling.jpg' ),
+				],
+				null
+			);
+			syncDocs();
+
+			mergeCrdtBlocks(
+				secondaryBlocks,
+				[
+					image( 'moved', 'https://example.com/moved.jpg' ),
+					image(
+						'sibling',
+						'https://example.com/sibling-remote.jpg'
+					),
+				],
+				null
+			);
+			syncDocs();
+			mergeCrdtBlocks(
+				primaryBlocks,
+				[
+					image( 'sibling', 'https://example.com/sibling.jpg' ),
+					image( 'moved', 'https://example.com/moved.jpg' ),
+				],
+				null
+			);
+			syncDocs();
+
+			expect( getUrls( primaryBlocks ) ).toEqual( [
+				'https://example.com/sibling-remote.jpg',
+				'https://example.com/moved.jpg',
+			] );
+			expect( getUrls( secondaryBlocks ) ).toEqual( [
+				'https://example.com/sibling-remote.jpg',
+				'https://example.com/moved.jpg',
+			] );
+
+			primaryDoc.destroy();
+			secondaryDoc.destroy();
+		} );
+
+		it( 'preserves incoming content edits on a block moved in the same update', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Moved paragraph' },
+					innerBlocks: [],
+					clientId: 'moved-paragraph',
+				},
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Sibling paragraph' },
+					innerBlocks: [],
+					clientId: 'sibling-paragraph',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					initialBlocks[ 1 ],
+					{
+						...initialBlocks[ 0 ],
+						attributes: { content: 'Moved paragraph edited' },
+					},
+				],
+				{
+					attributeKey: 'content',
+					clientId: 'moved-paragraph',
+					offset: asRichTextOffset( 'Moved paragraph edited'.length ),
+				}
+			);
+
+			expect( yblocks.toJSON() ).toMatchObject( [
+				{
+					clientId: 'sibling-paragraph',
+					attributes: { content: 'Sibling paragraph' },
+				},
+				{
+					clientId: 'moved-paragraph',
+					attributes: { content: 'Moved paragraph edited' },
+				},
+			] );
+		} );
+
 		it( 'creates Y.Text for rich-text attributes', () => {
 			const blocks: Block[] = [
 				{
