@@ -260,6 +260,30 @@ a6e6efc42e5 Preserve RTC block order across stale snapshots
 
 The fixed branch passes both same-array focused tests, the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`77` tests), targeted JS lint, and `git diff --check`. A fresh Playwright rerun was attempted again on `WP_ENV_PORT=9905`, but Docker still failed before WordPress boot with `all predefined address pools have been fully subnetted`; the active wp-env bridge networks had running containers attached, so pass 52 again avoided stopping unrelated environments. Pass 52 created a new stitched video with the attribute-cache proof card followed by the archived annotated headless UI repro.
 
+Pass 53 added a counterexample to the tempting minimal fix. On current `origin/trunk`:
+
+```text
+02bfdaa5ca9 RTC: Fix divergence when two offline users reconnect (#77980)
+```
+
+the test-only commit `939fc6fca8c` fails four focused non-Playwright repros: the two stale top-level snapshot cases and both same-array-reference cases. A temporary minimal patch that only removed `serializableBlocksCache` made the same-array reorder and same-array attribute tests pass, but the stale top-level move cases still failed:
+
+```text
+FAIL preserves a remotely inserted block and the moved sibling after a stale top-level move
+FAIL preserves an inserted heading and the moved sibling after checkpoint-style stale snapshots
+PASS observes reordered blocks when the editor reuses the same block array reference
+PASS observes attribute edits when the editor reuses the same block array reference
+EXIT_CODE=1
+```
+
+That pass-53 negative experiment justifies the broader PR-branch fix on trunk: fresh serialization fixes same-reference editor mutations, but identity-aware stale-snapshot reconciliation is still needed for the top-level move failures. The known-fixes base check remains narrower: `3cba2b1e56a98787de08dc6c7df2434759e8f908` plus the same test commit still passes the stale-snapshot repros and fails only the same-array-reference reorder/attribute tests, so the source-manifest refresh remains unfixed by the known-fixes base.
+
+The fixed PR branch `a6e6efc42e5` passed the full `packages/core-data/src/utils/test/crdt-blocks.ts` file (`77` tests), targeted JS lint, and `git diff --check`. A fresh Playwright run was attempted on `WP_ENV_PORT=9905`, but Docker again failed to create this task's wp-env network because all predefined address pools were fully subnetted. The active bridge networks had running containers attached, so pass 53 did not stop unrelated environments. Pass 53 created a new stitched video from the archived browser screenshots and the minimal-fix/test-only/fixed-branch evidence:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-53/video/a55350721046-pass53-annotated-evidence.mp4
+```
+
 ## Fix Direction
 
 Track the previous local block snapshot per `Y.Array`. Before applying a new local snapshot, compare its top-level clientId order with the previous local order:
