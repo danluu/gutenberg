@@ -129,3 +129,126 @@ For planning purposes:
 The next higher-leverage areas are live CRDT reconciliation, projection of live
 collaborative state into `post_content`/`post_title` save payloads, title
 reload/autosave state, and `/wp-sync` room-history storage limits.
+
+## Second analysis: broader whole-entity server-side mitigation
+
+The narrow mitigation above protects only `_crdt_document`. A broader
+server-side mitigation would protect the saved post entity as a consistency
+unit. This section estimates the impact of that broader class of mitigation.
+
+For this second analysis, the assumed mitigation is:
+
+- every save carries a server-issued base version for the whole post entity,
+  covering at least `post_title`, `post_content`, `excerpt`, and
+  `_crdt_document`;
+- the server atomically rejects a save when any protected field changed since
+  the submitted base version;
+- `post_title`, `post_content`, `excerpt`, and `_crdt_document` are persisted
+  as a single consistency bundle, not as independently fresh fields from
+  different logical document states;
+- the server validates cross-field consistency and rejects impossible payloads,
+  for example `post_content: ""` while the submitted CRDT document projects to
+  non-empty blocks, or stale title/content paired with a newer CRDT projection;
+- semantically identical CRDT documents are canonicalized or treated as no-op
+  writes so volatile save metadata cannot keep the entity dirty forever.
+
+This still does not make the server an authoritative live CRDT merge engine.
+It would not fix block move/delete/insert reconciliation bugs that happen
+before save, table/Y.Array merge bugs, `/wp-sync` transport and storage bugs,
+or revision/post-lock/session bugs.
+
+### Expected impact
+
+This broader mitigation would touch far more of the handoff than the narrow
+`_crdt_document` CAS, but still far from a majority. There are two useful ways
+to score it:
+
+- **Bug-resolution score:** count a row as full when the server rejection plus
+  client conflict handling should make the user-visible save failure or save
+  loop disappear.
+- **Durable-persistence containment score:** count rows where the server would
+  prevent bad state from being durably written, even if the editor remains
+  visibly corrupted or stuck until a client-side bug is fixed.
+
+The bug-resolution estimate is:
+
+| Outcome | Distinct rows | Fraction | STATUS-weighted | Weighted fraction |
+| --- | ---: | ---: | ---: | ---: |
+| Fully fixed | 9 / 279 | 3.23% | 18 / 452 | 3.98% |
+| Partially mitigated | 30 / 279 | 10.75% | 42 / 452 | 9.29% |
+| Unimpacted | 240 / 279 | 86.02% | 392 / 452 | 86.73% |
+
+The durable-persistence containment estimate is broader:
+
+| Outcome | Distinct rows | Fraction | STATUS-weighted | Weighted fraction |
+| --- | ---: | ---: | ---: | ---: |
+| Fully fixed | 1 / 279 | 0.36% | 1 / 452 | 0.22% |
+| Partially mitigated or contained | about 46 / 279 | about 16.49% | about 94 / 452 | about 20.80% |
+| Unimpacted | about 232 / 279 | about 83.15% | about 357 / 452 | about 78.98% |
+
+The difference is mostly classification, not disagreement about mechanism. A
+server can often reject a stale or inconsistent save, preventing durable data
+loss. Whether that is a "full fix" depends on whether the client can refetch,
+reconcile, and retry to a clean user-visible state.
+
+### Layered impact
+
+| Mitigation layer | Rows touched | Weighted count | Expected effect |
+| --- | ---: | ---: | --- |
+| Narrow `_crdt_document` CAS from the first analysis | 3 | 3 | Fixes or partially mitigates only direct stale CRDT-meta persistence. |
+| Whole-record optimistic concurrency | about 9 | about 15 | Rejects stale title/content/full-record saves when the client is saving from an old base or pairing old fields with a newer CRDT projection. |
+| Cross-field consistency validation | about 24-32 | about 34-69 | Rejects empty, stale, or malformed `post_content` when the submitted CRDT or server base proves the payload is inconsistent. The lower number counts likely bug-resolution rows; the higher number counts durable-persistence containment. |
+| CRDT canonical/no-op save handling | about 4-5 | about 7-10 | Reduces or fixes save-loop and dirty-state failures caused by semantically identical but byte-different CRDT metadata. The wider range depends on whether row 187 is treated as CRDT churn or as a broader save-storm failure. |
+| Server-owned CRDT materialization | not counted separately | not counted separately | Could convert some partials into full fixes, but only if the server can authoritatively materialize title/content from a valid CRDT state. |
+
+### Candidate rows by impact class
+
+The rows most likely to move from unimpacted to fixed or partially mitigated
+are the persistence/save-path rows, not the live merge rows.
+
+| Row set | Rows | Weighted | Why the broader mitigation helps |
+| --- | ---: | ---: | --- |
+| Likely full fixes from stale title/content/full-record rejection | 4 | 10 | Rows 8, 155, 156, and 243 explicitly show stale title/content accepted while `_crdt_document` had advanced. Whole-record concurrency or title/content-vs-CRDT projection validation should reject these saves and force a refetch/retry. |
+| Likely full fixes from CRDT canonical/no-op save handling | 4 | 7 | Rows 23, 45, 90, and 227 are save-loop/churn cases where visible title/content are stable and only CRDT metadata keeps changing. Canonical semantic no-op handling should let these saves settle. |
+| Existing direct CRDT-meta clobber | 1 | 1 | Row 99 remains the cleanest full fix candidate. |
+| Stale/inconsistent whole-record cases with weaker evidence | 5 | 5 | Rows 52, 63, 89, 141, and 207 are likely partials. The server can prevent some bad persistence, but evidence suggests remaining client-side stale save, fresh-post contamination, or no-request behavior. |
+| Empty/corrupt content or serialized markup, likely bug-resolution subset | 24 | 34 | Rows 15, 18, 29, 32, 37, 40, 43, 54, 60, 61, 62, 64, 67, 69, 94, 136, 138, 196, 211, 212, 216, 228, 241, and 242 can likely be protected from durable bad writes, but live editor corruption may remain. |
+| Additional content/serialization containment rows | about 8 | about 35 | A stricter bug-resolution score leaves these out; a data-loss-containment score includes additional malformed or partial persistence cases where the server can reject bad durable state but not repair the originating client state. |
+| Stuck-save case with mixed evidence | 1 | 3 | Row 187 may improve under CRDT canonical/no-op handling, but the trace also includes unresolved requests and save-storm behavior beyond a simple stale write. |
+
+Rows 207 and 240 are the weakest cases in this broader model. Row 207 is
+included only in the partial range because the fuzz trace has stale explicit
+save evidence; its realistic repro emits no useful post save request, so the
+server has nothing to reject in that reproduction. Row 240 persists a checkpoint
+correctly but leaves live editors on stale state, so whole-record persistence
+does not address the visible bug and it is not counted above.
+
+### Why the broader mitigation still leaves most rows unfixed
+
+The largest bucket remains live CRDT merge and stale-local reconciliation:
+168 rows, 250 weighted STATUS failures. These include lost deletes, duplicated
+blocks, wrong move targets, block identity smears, stale local snapshots, and
+nonconvergence. A whole-record server save guard may prevent some corrupted
+states from becoming durable, but it cannot decide which live block tree is
+correct without becoming the authoritative CRDT merge participant.
+
+The other large unaffected buckets also remain outside this server-side save
+guard:
+
+- title reload/autosave divergence: 24 rows, 45 weighted;
+- `/wp-sync` OOM/transport/storage: 16 rows, 37 weighted;
+- table/Y.Array merge: 14 rows, 15 weighted;
+- revision/post-lock/code-editor/session: 8 rows, 8 weighted.
+
+### Practical conclusion for the broader mitigation
+
+A whole-entity server-side persistence guard is a much higher-leverage
+mitigation than `_crdt_document` CAS alone. Under a bug-resolution score, it
+could plausibly fully fix about 3-4% of rows and partially mitigate another
+9-11%. Under a data-loss-containment score, it could touch about one sixth of
+distinct handoff rows and about one fifth of weighted failures, mostly by
+preventing stale or internally inconsistent saves from becoming durable.
+
+It should be treated as a data-loss containment layer, not as a complete RTC
+correctness fix. The dominant remaining work would still be client/live CRDT
+reconciliation and transport/storage fixes.
