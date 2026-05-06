@@ -456,12 +456,33 @@ most empty/corrupt-content rows to full because many already have collapsed
 live editors, malformed CRDT/block state, reload divergence, or missing
 convergence before the save reaches the server.
 
+The strongest materialization design can prove only this invariant: at commit
+time, for the declared protected-field write set, every committed protected
+field is either unchanged or equals the server's deterministic projection of
+the accepted CRDT document under the server's declared projection policy.
+Projection validation is weaker: it can reject only when a submitted protected
+field is provably outside the accepted projection set of the submitted CRDT
+document. Neither variant proves that the CRDT is correct, current relative to
+live editor state, equivalent to every editor-side JavaScript serialization, or
+equal to frontend rendered output.
+
 This variant also raises the implementation bar substantially. The server would
 need deterministic Yjs decoding, post entity extraction, block serialization,
 block registry behavior, deprecated-block handling, invalid/freeform behavior,
 and filter policy that match the editor closely enough not to corrupt valid
 content. A mismatch between server materialization and editor serialization can
 create a new data-loss path.
+
+Safe materialization is limited to declared content-bundle fields: `post_title`
+from decoded title state, `post_excerpt` from decoded excerpt state,
+`post_content` from decoded ordinary block state using an editor-compatible
+serializer, and `_crdt_document` as the accepted CRDT itself. The server should
+not materialize rendered dynamic block HTML, expanded synced-pattern contents,
+transient `blocks` editor state, status, slug, dates, author, featured media,
+taxonomies, or arbitrary meta as part of this mitigation. Freeform, invalid,
+deprecated, unregistered, dynamic, and filtered blocks should be treated as
+opaque unless the server has a matching registry/filter policy and an explicit
+safe projection rule.
 
 The credited row groups depend on different mechanisms:
 
@@ -474,6 +495,30 @@ The credited row groups depend on different mechanisms:
 | CRDT save-loop settlement | `23`, `90`, `227`; weakly `45` | Proven save-marker-only no-op settlement plus client dirty-state handling. | Rendered-content equality is unsafe, and wrapper-only equality is too weak for `savedAt`/`savedBy` churn. |
 | Containment-only live corruption | `2`, `5`, `17`, `27`, `56`, `57` | Same projection/commit machinery, but only as durable-write containment. | The visible/live CRDT bug happens before persistence, so rejecting a save does not repair the editor. |
 | Foreign fresh-post contamination | `89` | Post-bound CRDT provenance. | A fresh post can have no stale bundle base; title/content/CRDT may be internally coherent for the wrong document. |
+
+### Assumptions ledger
+
+These assumptions are part of the base estimate. If they fail, downgrade the
+affected rows before using the percentages as an implementation forecast.
+
+| Assumption | Rows affected | Downgrade if false |
+| --- | --- | --- |
+| The server-owned token is checked at commit time, and protected post fields plus `_crdt_document` commit or reject as one unit. | `8`, `52`, `63`, `141`, `155`, `156`, `243`, `99` | Split post/meta rows become containment-only or unimpacted, and stale-save full rows become server-rejection-only partials. |
+| Submitted protected fields are known to be derived from the same bundle token, or the protocol carries per-field base generations. | `8`, `155`, `156`, `243` | Fresh-token mixed-base title/body payloads can pass CAS; rows need projection, per-field tracking, or drop to partial/unimpacted. |
+| Non-RTC, legacy, plugin, WP-CLI, Classic Editor, XML-RPC, autosave, and revision-restore writes bump or invalidate the bundle token. | All stale-save rows, plus unknown plugin paths | Guarded RTC clients can later overwrite external changes with apparently valid tokens. |
+| Title and excerpt are either represented in CRDT projection or covered by bundle/per-field generations. | `8`, `52`, `63`, `155`, `156`, `243` | Projection cannot prove stale title/excerpt; only token-based evidence remains. |
+| Projection validation is conservative for freeform, invalid, deprecated, unregistered, dynamic, filtered, and code-editor content. | Empty/corrupt-content partial rows | False positives make enforcement unsafe; these rows fall back to shadow-mode evidence or containment only. |
+| Server materialization is used only when the submitted CRDT is trustworthy and projectable under the declared policy. | `29`, `196`, weaker candidates `15`, `18`, `32`, `37`, `54`, `69`, `94`, `138` | Materialization can faithfully persist already-wrong CRDT state, so it should not be credited as a full fix. |
+| CRDT no-op settlement proves save-marker-only or wrapper-only churn and has client dirty-state acknowledgement. | `23`, `90`, `227` | Save-loop rows drop to partial or unimpacted. |
+| Row `45` is credited only if the mitigation also includes safe HTML/entity/block canonicalization, not CRDT no-op alone. | `45` | Remove 1 partial row / 2 weighted from the base estimate if canonicalization is out of scope. |
+| Client 409/no-op handling refetches, rebases, retries once, clears dirty state, and does not apply rejected payloads locally. | All full rows | Server-only rejection is durable containment, not full bug resolution. |
+| Rows `52`, `56`, `57`, `69`, `141`, `155`, and `243` keep their current classification only when trace evidence confirms the guarded bad-save path. | `52`, `56`, `57`, `69`, `141`, `155`, `243` | Otherwise downgrade them to containment-only, partial, or unimpacted depending on whether the row is actually read-after-write, reload, title split, or live-CRDT divergence. |
+
+The base estimate is intentionally cumulative: a row is first counted in
+full, else partial, else containment-only, else excluded. It is not additive
+across mechanism tables. For example, row `45` is in the partial count only
+under the stronger no-op-plus-canonicalization assumption; under CRDT no-op
+alone it should be removed from the bug-resolution numerator.
 
 ### Expected impact: bug-resolution score
 
@@ -748,6 +793,54 @@ on a fresh post. That would be a third mitigation layered on top of bundle
 versioning, not evidence that editor-content-bundle CAS fixes fresh-post
 contamination.
 
+#### Separate provenance guard
+
+Post-bound CRDT provenance is a separate server invariant: a persisted CRDT
+document and live sync room must belong to the site, post, and collaboration
+generation currently being edited. It answers "is this the right document for
+this post generation?", while bundle CAS answers "was this save derived from
+the current protected-field state?"
+
+A plausible design would store a server-owned provenance record for RTC-enabled
+post entities, such as a stable `site_uuid`, `postType/<post_type>:<post_id>`,
+random `document_generation`, optional `room_generation`, and schema version.
+The serialized `_crdt_document` should carry that identity inside the Y.Doc
+state map and mirror it in the JSON wrapper. The wrapper value must be copied
+from the Y.Doc state, not supplied independently from the current post object;
+otherwise a buggy save path could wrap a foreign Y.Doc with the current post's
+identity and bypass the check.
+
+Server enforcement should reject `_crdt_document` writes whose provenance does
+not match the server record, with no mutation to `post_title`, `post_content`,
+`excerpt`, or `_crdt_document`. A stronger version also gates `/wp-sync` room
+updates by `room_generation`, either by including the generation in room
+identity or by adding a validated request field. Current room parsing assumes
+`postType/post:<numeric-id>`, so embedding generation in the room string would
+need a route/schema/parser change.
+
+The impact is intentionally narrow:
+
+| Design | Bug-resolution impact | Durable-containment impact | Rows |
+| --- | ---: | ---: | --- |
+| REST save provenance only | 0 full, 1 partial | 1 row / 1 weighted | `89` |
+| Provenance plus sync-room generation gating and client reload repair | 1 full / 1 weighted | 1 row / 1 weighted | `89` |
+
+No other manifest rows should be credited to provenance. Same-post stale
+title/content rows such as `8`, `155`, `156`, and `243` need bundle CAS or
+per-field freshness. Empty/corrupt-content rows need projection validation.
+Live merge, table/Y.Array, autosave/title reload, and reconciliation rows would
+normally carry matching post provenance. Row `237` mentions stale-foreign
+contamination during isolated repro attempts, but the underlying failure is a
+same-post RTC convergence/delete issue, so provenance may improve triage
+stability without moving the row in the impact table.
+
+If combined with the full editor-content-bundle protocol, provenance would
+promote the broader estimate from 8 full rows / 16 weighted to 9 full rows /
+17 weighted, leaving the 29 partial rows unchanged. It should run before
+bundle CAS: a provenance mismatch is not a normal stale-base conflict to merge;
+the client should discard the foreign local document, refetch the canonical
+post/provenance, and rejoin the correct room.
+
 The dominant excluded category is not "saves the server failed to reject"; it
 is "the live shared document is already wrong." For those rows, a successful
 server rejection changes the persistence outcome but not the causal bug. The
@@ -790,6 +883,78 @@ is a multi-request outcome tied to the same logical save, not a server outcome.
 | Client conflict repair | After a 409, the client refetches, applies persisted CRDT, recomputes intended fields, retries once with the new bundle token, and does not apply the rejected response into the live sync doc. | `core-data` action tests extending the existing stale-CRDT retry test, plus manual-save e2e with a forced conflict. |
 | Post-bound CRDT provenance | A fresh-post foreign CRDT is rejected even when title/content/CRDT are internally coherent. | Provenance tests for row `89`, with explicit clone/template/import exceptions. |
 | Exclusions | No protected-field request reaches the guarded path, or the live editor diverges before save. | Negative tests for rows `207` and `240`, ensuring the report does not claim save validation fixes them. |
+
+#### Measurement design
+
+The estimate should become a measured impact number only after candidate rows
+run through the same instrumented classification pipeline:
+
+1. **Freeze the denominator.** Keep the 279-row / 452-weight manifest as the
+   planning denominator. Mark a row as measured only when its baseline failure
+   reproduces under instrumentation, or when a reduced fixture preserves the
+   same protected-field evidence.
+2. **Build fixtures by mechanism.** For each full, partial, and
+   containment-only candidate, keep a materialized e2e replay and, where
+   possible, a reduced REST/server fixture. Each fixture declares protected
+   fields, write set, base token, expected current token, expected server
+   decision, final DB oracle, peer-visible oracle, and dirty/save-settlement
+   oracle.
+3. **Run three modes.** Baseline proves the original failure. Shadow mode emits
+   would-reject or would-no-op decisions without changing behavior. Enforced
+   mode proves whether rejection, canonicalization, no-op settlement, and
+   client repair change the final outcome.
+4. **Classify observed outcomes.** Full requires the user-visible failure to
+   disappear and final peer/editor/DB state to be clean. Partial means a bad
+   durable write is blocked but the editor remains corrupt, divergent,
+   failed-to-save, or dirty. Containment-only means the server avoids damage in
+   some runs while the causal live/editor bug remains.
+5. **Report measured and unmeasured separately.** Publish measured full,
+   partial, containment-only, and unimpacted fractions over the frozen
+   manifest, plus an eligible-runnable fraction over rows whose baseline
+   fixture reproduced. Do not fold unrunnable or non-reproducing rows into the
+   measured numerator.
+
+Fixture coverage should include positive fixtures for bundle-CAS rows `8`,
+`155`, `156`, and `243`; direct CRDT-meta row `99`; atomic split rows `52`,
+`63`, and `141`; projection rows `15`, `18`, `19`, `29`, `32`, `37`, `40`,
+`43`, `54`, `60`, `61`, `62`, `64`, `67`, `69`, `94`, `136`, `138`, `196`,
+`211`, `212`, `216`, `228`, `241`, and `242`; CRDT no-op rows `23`, `90`, and
+`227`; row `45` only when canonicalization is in scope; and containment-only
+rows `2`, `5`, `17`, `27`, `56`, and `57`.
+
+Negative controls should include row `207`, row `240`, row `89` unless
+post-bound provenance is in scope, representative title reload/session rows,
+`/wp-sync` transport rows, table/Y.Array rows, revision/post-lock/code-editor
+rows, and live-CRDT reconciliation rows. Benign valid-write controls should
+include legitimate empty posts, invalid/freeform blocks, deprecated and
+unregistered blocks, code-editor saves, autosaves, revision restores,
+status/taxonomy-only saves, legacy full-record writes, and direct non-RTC
+writes that should invalidate rather than reject the token.
+
+Shadow classifiers should be first-class outputs:
+`would_reject_stale_bundle`, `would_reject_split_bundle_commit`,
+`would_reject_projection_mismatch`, `would_canonicalize_crdt_noop`,
+`would_accept_real_update`, `would_bypass_unguarded_path`,
+`not_applicable_live_diverged_before_save`,
+`not_applicable_no_protected_write`, and
+`not_applicable_no_save_request`.
+
+Race injection should cover delays after token preflight before post-row write,
+between `wp_update_post()` and `_crdt_document` meta persistence, concurrent
+token-advancing saves during either delay, failures in meta/term/side-effect
+writes after protected fields begin committing, delayed or reordered
+`/wp-sync` and post-save REST responses, repeated same-content saves with only
+CRDT save-marker/wrapper churn, and both HTTP polling and WebSocket modes where
+the original row has coverage.
+
+Success criteria for a full measured fix: baseline failure reproduces; server
+decision matches the expected mechanism; no protected DB field is partially
+committed on conflict; final `post_title`, `post_content`, `post_excerpt`, and
+`_crdt_document` match the clean bundle; both peers converge to the expected
+visible block tree/title; `isSavingPost()` and dirty flags clear; and retry
+count is bounded. Partial means the server blocks or canonicalizes the bad
+durable write but any peer remains visibly corrupt, divergent, dirty, or
+failed-to-save.
 
 Minimum server tests:
 
