@@ -734,6 +734,65 @@ be rejected in strict RTC mode or have unlisted protected fields ignored by the
 new RTC save path; otherwise the server can still persist stale fields merely
 because the client sent a broad record object.
 
+### Proof obligations and MVP boundaries
+
+The mechanism tables below should be read as proof obligations, not only as
+design options. A row should move from estimated credit to measured credit only
+when the implementation can demonstrate the invariant for that row class.
+
+The target invariant is per-entity linearizability for protected-bundle
+operations. Every guarded read, guarded write, no-op settlement, legacy
+invalidation, lifecycle transition, and provenance rotation should have one
+linearization point in the bundle-token history. A successful guarded write
+linearizes at the token transition and exposes exactly the protected fields
+committed with that token. A rejected guarded write has no protected-field side
+effects and does not advance the token. A guarded read returns protected fields
+and token from one completed state, not a mixture of post row, meta, cache, or
+response state. An idempotent replay returns the same prior linearized outcome,
+and a legacy/lifecycle/provenance invalidation linearizes before any later
+guarded read or write can rely on the old token.
+
+| Row class | Required proof | MVP boundary |
+| --- | --- | --- |
+| Stale title/content/full-record saves (`8`, `155`, `156`, `243`) | Submitted protected fields were derived from an older bundle generation, the current generation changed before commit, no protected field mutated on reject, and client repair either saved cleanly or preserved the local draft. | Bundle CAS plus atomic commit plus client repair. Projection/materialization is not required unless the trace is mixed-base with a fresh token. |
+| Split post/meta persistence (`52`, `63`, `141`) | A conflict or failure cannot leave `wp_posts` fields changed while `_crdt_document` or token state rejects/fails. Raw DB traces distinguish split persistence from read-path incoherence. | Atomic protected-field commit. Preflight-only guards do not count. |
+| Empty/corrupt serialized content partial rows | Accepted/submitted CRDT is from the same guarded generation, projectability is `projectable_static_blocks`, projection result is `mismatch`, and reject/materialization leaves protected DB fields clean. | Projection validation in shadow first; enforcement only for projectable content. |
+| CRDT save-marker no-op rows (`23`, `90`, `227`) | Decoded CRDT diff proves only known save-marker/wrapper churn, server returns no-op/canonical response, and client clears dirty state without dropping causal state. | CRDT no-op settlement plus client dirty-state acknowledgement. |
+| HTML/entity canonicalization row (`45`) | Churn is from deterministic entity/HTML/block-attribute canonicalization, not CRDT causal state, and canonical acknowledgement clears dirty state. | Separate canonicalization mechanism; not part of CRDT no-op alone. |
+| Containment-only rows (`2`, `5`, `17`, `27`, `56`, `57`) | A guarded bad durable save occurs after the live/editor corruption, and server rejection prevents DB damage. | Count only as containment; never full unless the live CRDT bug is separately fixed. |
+| Provenance row (`89`) | Wrong-document state is rejected before hydration/save, room generation is gated, and client discards/refetches/rejoins the canonical room. | Separate provenance mitigation; REST-save provenance alone is partial. |
+
+Minimum viable enforcement is therefore not "all rows in the base estimate."
+A safe MVP is:
+
+1. shadow tokens and decision ledgers everywhere;
+2. enforce commit-time CAS only for opted-in RTC `post`/`page` saves with
+   coherent read/mutation token responses and client conflict repair;
+3. keep projection, materialization, provenance, lifecycle edge cases,
+   mixed-version sessions, custom post types, autosave promotion, and revision
+   restore in shadow until their proof obligations pass.
+
+Under that MVP, credit should be limited to the stale-save/direct-CRDT subset
+whose traces actually traverse the guarded path. Projection/content-loss rows,
+provenance row `89`, containment-only rows, CRDT no-op rows, and row `45`
+remain out of enforced impact until their separate mechanisms are enabled and
+their proof obligations are measured.
+
+The evidence ladder should remain separated:
+
+| Measurement level | Necessary for | Not sufficient for |
+| --- | --- | --- |
+| Shadow would-reject/no-op | Showing the row is potentially in scope. | Containment or fix. |
+| Enforced 409/no-op | Showing the server acted. | Full credit if protected fields partially changed or the client stayed dirty. |
+| No protected DB mutation on reject | Durable containment. | Full credit if the editor remains corrupt, divergent, failed-to-save, or dirty. |
+| Successful client retry/no-op settlement | Operational repair. | Full credit if post-reload or peer state still diverges. |
+| Final DB/read/peer/dirty-state convergence | Row-level resolution. | Nothing for that row class, once the baseline failure also reproduced. |
+
+The report should therefore publish four measured counts when implementation
+data exists: `mechanism_applicable`, `server_contained`, `client_repaired`, and
+`row_resolved`. The headline fixed fraction should use `row_resolved`; durable
+containment reporting should use `server_contained`.
+
 ### Deeper mechanism split
 
 The row estimates below use the full bundle protocol, not just a bundle CAS.
@@ -868,6 +927,60 @@ Before enforcement, the server should also compute projectability:
 This gate should be logged per save attempt. Row credit for projection or
 materialization should require `projectable_static_blocks`, not merely a
 non-empty CRDT.
+
+Formally, projection should be a partial relation, not a string comparison:
+
+```text
+Project(
+  policy_version,
+  accepted_crdt,
+  actor,
+  write_set,
+  entity_context
+) -> match_set | unknown | error
+```
+
+For each protected field in the declared write set, the server must prove one
+of three outcomes: the normalized submitted value is a member of the projected
+match set; the field is outside the projectable domain and the result is
+`unknown`; or the submitted value is outside the match set and rejection is
+sound. Materialization has the stronger precondition that the projected match
+set is a singleton after save-time normalization and sanitization. If multiple
+serialized values are valid, the server may reject impossible values, but it
+should not choose one canonical value as a materialized replacement.
+
+Projection enforcement should use a one-sided soundness rule: no valid user
+save in the covered domain is rejected or rewritten. It does not need to prove
+that every bad serialized payload is caught. `unknown`, opaque, over-limit,
+policy-mismatch, and multi-serialization cases are expected false negatives
+and should fall back to bundle CAS. This is the right MVP safety criterion;
+completeness can be expanded later.
+
+Projection and materialization also need machine-checkable postconditions:
+
+| Outcome | Required postcondition |
+| --- | --- |
+| `reject_projection_mismatch` | No protected field, `_crdt_document`, bundle token, or materialized response field changes. |
+| `accept_projection_validated` | Committed protected fields equal the submitted sanitized values, not the server projection, unless materialization is explicitly enabled. |
+| `accept_materialized` | Committed protected fields equal the sanitized singleton projection, and the response identifies which submitted fields were ignored. |
+| `projection_unknown` | Behavior is identical to bundle CAS without projection enforcement. |
+
+The projection MVP should therefore be validation-only, not materialization.
+Its covered domain should be an explicit allowlist: existing `post`/`page`,
+normal editor save, full protected write set or declared content write,
+projectable static registered blocks, no bindings, no dynamic blocks, no
+freeform/invalid/original-source preservation, no deprecated migration, no
+plugin save filters outside the policy fingerprint, and payloads below
+decode/projection limits. Server materialization should remain out of MVP
+except for fixture-gated experiments such as row `29`, and possibly archived
+row `196`, where the submitted CRDT is decoded and proven projectable for the
+exact bad save.
+
+Projection must be monotonic with respect to the bundle guard: adding
+projection cannot make a save pass if bundle CAS, provenance, permission,
+write-set, or sanitizer checks would have rejected it. Disabling projection
+must reduce behavior to the guarded bundle protocol, not to legacy unguarded
+REST writes.
 
 Projection is registry- and pipeline-relative. The persisted CRDT block tree
 does not carry every fact needed to serialize every block: full block metadata,
@@ -1356,6 +1469,23 @@ generation currently being edited. It answers "is this the right document for
 this post generation?", while bundle CAS answers "was this save derived from
 the current protected-field state?"
 
+Minimum viable provenance is a consistency invariant, not a security
+guarantee. For each RTC-enabled entity, the server has exactly one current
+provenance record. Every persisted `_crdt_document`, edit-context bootstrap,
+room join/update, and guarded save must either match that current record or
+enter an explicit legacy-adoption/quarantine path. A provenance match is
+necessary but not sufficient: it does not replace bundle-token freshness,
+write-set validation, projection checks, permission checks, or no-op safety.
+
+`document_generation` and `room_generation` should have distinct semantics.
+`document_generation` identifies the persisted CRDT lineage for the post
+entity. `room_generation` identifies the live sync/update-history instance.
+Rotating `document_generation` should imply a new `room_generation`. Rotating
+only `room_generation` may preserve the persisted document, but must force
+clients to leave/rejoin and invalidate room cursors/history tokens. Bundle
+tokens should be scoped to the document/room generation they were issued with,
+so an otherwise current-looking token cannot cross a provenance rotation.
+
 A plausible design would store a server-owned provenance record for RTC-enabled
 post entities, such as a stable `site_uuid`, `postType/<post_type>:<post_id>`,
 random `document_generation`, optional `room_generation`, and schema version.
@@ -1640,6 +1770,34 @@ validate the guard, but it should not promote the original row if the reduction
 changes the mechanism from reload/live-CRDT corruption into a synthetic
 stale-token conflict.
 
+The ledger should also record proof debt so estimates do not harden into
+claims before the evidence exists:
+
+- `rows_estimated_not_measured`;
+- `rows_measured_with_all_obligations_proved`;
+- `rows_downgraded_missing_guard_reached`;
+- `rows_downgraded_missing_bad_payload_present`;
+- `rows_downgraded_missing_no_partial_commit`;
+- `rows_downgraded_missing_client_repair`;
+- `rows_inconclusive_low_baseline_repro`;
+- `rows_inconclusive_observability_gap`.
+
+Invariant dashboards should report numerator, denominator, and last-regression
+examples for the following properties:
+
+| Dashboard | Primary invariant | Required slices |
+| --- | --- | --- |
+| Atomicity | Rejects leave all protected fields unchanged; accepts advance all protected fields and token together. | mechanism, write source, post lifecycle |
+| Token coherence | Edit-context reads, mutation responses, caches, and DB token row describe the same generation. | cache path, REST context, `_fields`, webhead |
+| Repair convergence | 409/no-op outcomes lead to bounded retry, clean dirty state, and matching post-reload state. | transport, retry index, client version |
+| Projection safety | Projection rejects occur only for proved `mismatch`, never for `unknown` or opaque content. | block projectability class, policy version |
+| Bypass discipline | Unguarded writes invalidate or rotate token before the next guarded save. | legacy source, protected fields changed |
+| Proof debt | Candidate rows blocked by missing evidence rather than confirmed failure. | row bucket, mechanism, fixture type |
+
+An invariant dashboard with an unknown denominator is not release-grade
+telemetry. It can guide canaries, but should not support moving rows from
+estimated to measured credit.
+
 Shadow mode should be evaluated as a classifier before enforcement. For each
 candidate row and negative-control family, publish a confusion matrix by
 mechanism: stale bundle, split commit, projection mismatch, CRDT no-op, bypass,
@@ -1867,6 +2025,33 @@ usually end in one-shot repair, bounded repeated conflicts that surface a real
 editor conflict instead of a save loop, CRDT no-op responses that clear dirty
 state without dropping causal updates, and zero negative-control false
 positives through shadow and canary traffic.
+
+The MVP claim should be scoped to one sentence: guarded RTC saves for
+`post`/`page` protected fields are stale-base safe. It should not claim the
+full 8/29/242 base estimate unless CRDT no-op settlement, projection
+projectability, materialization policy, provenance, and row `45`
+canonicalization are also enabled and measured.
+
+MVP go criteria:
+
+- token emitted and preserved on edit-context reads and mutation responses;
+- shadow stale-bundle decisions match fixture oracles for the CAS row set;
+- enforced CAS proves `decision_before_mutation` and `no_partial_commit`;
+- client repair succeeds for stale-bundle 409s in fixtures and canaries;
+- legacy protected-field writes reliably invalidate the token;
+- rollback from enforced CAS to shadow mode is exercised on open editors;
+- proof-debt dashboards show no full-credit row depending on unobserved
+  atomicity or client repair.
+
+MVP no-go criteria:
+
+- any protected-field mutation after enforced stale-bundle rejection;
+- any successful mutation response missing the next usable bundle token;
+- any client clears dirty state from a rejected save without confirmed repair;
+- any cache or preload path returns token and protected fields from different
+  generations;
+- any MVP fixture needs projection, provenance, or materialization to pass but
+  is being counted as CAS-fixed.
 
 Rollback should be mechanism-scoped, not a single global switch. Keep separate
 flags for token emission, client token submission, bundle-CAS enforcement,
