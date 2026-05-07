@@ -234,7 +234,7 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).not.toHaveBeenCalled();
 	} );
 
-	it( 'persistCRDTDoc fetches edited record and saves full entity record', async () => {
+	it( 'persistCRDTDoc fetches edited record and saves only entity meta', async () => {
 		const POST_RECORD = { id: 1, title: 'Test Post', meta: {} };
 		const EDITED_RECORD = { id: 1, title: 'Edited Post', meta: {} };
 		const POST_RESPONSE = {
@@ -283,12 +283,12 @@ describe( 'getEntityRecord', () => {
 			resolveSelectWithSync.getEditedEntityRecord
 		).toHaveBeenCalledWith( 'postType', 'post', 1 );
 
-		// Should have called saveEntityRecord (not saveEditedEntityRecord).
+		// Should have called saveEntityRecord (not saveEditedEntityRecord)
+		// without resaving the full edited body.
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			EDITED_RECORD,
-			{ __unstableSkipSyncUpdate: true }
+			{ id: 1, meta: {} }
 		);
 	} );
 
@@ -335,12 +335,11 @@ describe( 'getEntityRecord', () => {
 		handlers.persistCRDTDoc();
 		await resolveSelectWithSync.getEditedEntityRecord();
 
-		// Should save the record even with no edits (the whole point of the fix).
+		// Should save the meta even with no edits (the whole point of the fix).
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			POST_RECORD,
-			{ __unstableSkipSyncUpdate: true }
+			{ id: 1, meta: {} }
 		);
 	} );
 

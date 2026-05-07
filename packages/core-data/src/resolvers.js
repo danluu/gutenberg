@@ -250,12 +250,13 @@ export const getEntityRecord =
 									// Trigger a save to persist the CRDT document. The entity's
 									// pre-persist hooks will create the persisted CRDT document
 									// and apply it to the record's meta.
-									dispatch.saveEntityRecord(
-										kind,
-										name,
-										editedRecord,
-										{ __unstableSkipSyncUpdate: true }
-									);
+									const entityIdKey =
+										entityConfig.key || DEFAULT_ENTITY_KEY;
+									dispatch.saveEntityRecord( kind, name, {
+										[ entityIdKey ]:
+											editedRecord[ entityIdKey ] ?? key,
+										meta,
+									} );
 								} );
 						},
 						addUndoMeta: ( ydoc, meta ) => {
