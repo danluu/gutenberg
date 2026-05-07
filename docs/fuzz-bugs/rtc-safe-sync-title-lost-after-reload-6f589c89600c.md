@@ -9186,3 +9186,101 @@ The targeted package build produced the affected `sync`, `data`, and
 `core-data` bundles, then failed later in route-building because this dependency
 tree cannot resolve `@wordpress/content-types/package.json`. That failure is
 outside the touched packages and was not used as product evidence.
+
+## Pass 167 practical-impact update
+
+Pass 167 reclassified the real-user likelihood as **low** for normal Gutenberg
+use, not because the defect is synthetic, but because the triggering workflow is
+narrow. The required user workflow is:
+
+1. Real-time collaboration is enabled for the post editor. In the Gutenberg
+   plugin this is early-access functionality and is enabled by the plugin
+   activation/migration path unless disabled; the default provider is HTTP
+   polling.
+2. The same WordPress user opens the same post in two browser sessions or tabs.
+3. One session edits the post title and leaves that title unsaved.
+4. The other same-user session edits ordinary paragraph content and reloads.
+5. The first session then makes another ordinary body edit and saves.
+
+The common parts are editing a post title, editing paragraph content, reloading
+an editor tab, and saving a draft. The uncommon parts are having two same-user
+editor sessions on the same post at once and reloading one of them after a
+cross-session title update but before the later save. No malformed block input,
+direct store mutation, artificial fault injection, multiple WordPress users, or
+network-delay injection is required. The fuzz-only parts are the exact strings,
+the deterministic waits for sync cycles, and the compact ordering that makes the
+race reproducible on demand.
+
+Blast radius is meaningful but bounded. The immediate failure is an editor-state
+rollback: the canonical REST post title can be saved as the customer title while
+the active editor store and persisted `_crdt_document` replay the initial title.
+That creates a real risk that a later save or publish from the rolled-back
+editor overwrites the intended title. The same raw/CRDT split can leave
+`_crdt_document` content behind the canonical REST content. This is not a
+duplicate-content bug, save loop, performance issue, or OOM risk. Recovery is
+possible if the user notices before another save, because the raw REST title was
+observed saved correctly in the source trace; recovery becomes worse after a
+subsequent save from the rolled-back editor.
+
+Strongest evidence for the low-but-real classification:
+
+- The source run failed after four adjacent same-file controls passed, without
+  timeout or locator/action errors.
+- The archived trace decodes to a final REST raw title of
+  `RTC same-user save-after-reload customer title` but a persisted CRDT title of
+  `RTC same-user save-after-reload initial`.
+- The natural-user Playwright repro uses normal editor actions only.
+- The lowest sync-manager repro fails without Playwright before the fix and
+  passes after the fix.
+
+Strongest evidence against a higher likelihood:
+
+- It needs duplicate same-user sessions on one post, not a single normal editor
+  session.
+- It needs a reload at a specific point in the collaboration/save sequence.
+- The real-time collaboration surface is still labeled early access and may be
+  disabled by site policy or incompatible editor features.
+
+The shortest additional experiment that would most improve confidence is a
+small frequency probe over the natural-user Playwright scenario: run the same
+two-tab workflow without deterministic sync-cycle waits, with randomized human
+pauses around the reload/save boundary, and record how often the active title
+rolls back. That would separate "possible under a precise interleaving" from
+"likely during ordinary duplicate-tab editing".
+
+Pass 167 also rebased the branches onto current `origin/trunk`
+`19c460ff7c85289ad7bcc92911fdae9bc650b0c3`:
+
+```text
+54672a414e0 Add RTC title reload unit repros
+e1de784ce1e Add same-user title save-after-reload browser repro
+dbf9ad0eee8 Preserve RTC title across reload saves
+```
+
+Fresh pass-167 focused sync-manager verification:
+
+```text
+test-only pre-fix commit: FAIL
+  Expected: "Customer title"
+  Received: "Initial title"
+  Expected getChangesFromCRDTDoc(..., editedRecord, persistedRecord)
+  Received getChangesFromCRDTDoc(..., editedRecord)
+
+rebased fixed PR head: PASS
+  Test Suites: 1 passed, 1 total
+  Tests: 26 skipped, 3 passed, 29 total
+```
+
+Pass 167 attempted to start `wp-env` on `WP_ENV_PORT=9906` for a fresh browser
+rerun. `wp-env status` reported the environment was not initialized, and
+`wp-env start --config .wp-env.test.json` produced no output beyond the command
+banner for about 37 seconds, so it was interrupted rather than left running.
+The existing annotated headless video remains the pass-118 stitched video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-118/6f589c89600c-pass118-stitched.mp4
+width=1920
+height=1080
+nb_frames=840
+duration=28.000000
+```
