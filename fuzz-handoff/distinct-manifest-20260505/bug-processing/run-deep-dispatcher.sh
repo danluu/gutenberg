@@ -264,6 +264,23 @@ cleanup_transient_startup_failures() {
 	done
 }
 
+cleanup_stale_claims() {
+	dir="$1"
+	pass="$(basename "$dir" | sed 's/pass-//')"
+	for claimed in "$dir"/*.claimed; do
+		[ -f "$claimed" ] || continue
+		sig="$(basename "$claimed" .claimed)"
+		[ -f "$dir/$sig.summary.md" ] && continue
+		[ -e "$dir/$sig.done" ] && continue
+		[ -e "$dir/$sig.failed" ] && continue
+		tmux list-windows -t "$SESSION" -F '#{window_name}' 2>/dev/null | grep -qx "deep-p${pass}-${sig}" && continue
+		pid="$(cat "$dir/$sig.wrapper.pid" 2>/dev/null || true)"
+		[ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && continue
+		rm -f "$dir/$sig.claimed" "$dir/$sig.wrapper.pid" "$dir/$sig.paused"
+		log "pass=$pass clearing stale claim for deep-$sig"
+	done
+}
+
 pass_complete() {
 	pass="$1"
 	dir="$(pass_dir "$pass")"
@@ -324,6 +341,7 @@ while :; do
 	mkdir -p "$dir"
 	cleanup_dead_summary_workers "$dir"
 	cleanup_transient_startup_failures "$dir"
+	cleanup_stale_claims "$dir"
 
 	if [ ! -e "$dir/initialized" ]; then
 		if [ "$current_pass" -eq 2 ]; then
