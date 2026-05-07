@@ -1,0 +1,309 @@
+{
+	"videoPath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/current-trunk-rtc-live-bad-autosave-visible-close-reopen-e2e.mp4",
+	"postId": 992,
+	"markerA": "A-SAVED-THEN-LOST-1778111752840-68946-1",
+	"markerB": "B-STAYS-SAVED-1778111752840-68946-1",
+	"markerC": "C-AUTOSAVED-WHILE-STALE-1778111752840-68946-1",
+	"aSave": {
+		"requestHasA": true,
+		"requestHasB": false,
+		"responseHasA": true,
+		"responseHasB": false
+	},
+	"bSave": {
+		"requestHasA": false,
+		"requestHasB": true,
+		"responseHasA": false,
+		"responseHasB": true
+	},
+	"afterBSaveStatus": {
+		"rest": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"wpCli": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"db": {
+			"hasA": false,
+			"hasB": true,
+			"length": 160
+		}
+	},
+	"bStateBeforeAutosave": {
+		"hasA": false,
+		"hasB": true,
+		"hasC": true
+	},
+	"badAutosaves": [
+		{
+			"id": 1003,
+			"parent": 992,
+			"slug": "992-autosave-v1",
+			"modified": "2026-05-06T23:56:08",
+			"hasA": false,
+			"hasB": true,
+			"hasC": true,
+			"contentLength": 253
+		}
+	],
+	"badAutosaveMatches": [
+		{
+			"id": 1003,
+			"parent": 992,
+			"slug": "992-autosave-v1",
+			"modified": "2026-05-06T23:56:08",
+			"hasA": false,
+			"hasB": true,
+			"hasC": true,
+			"contentLength": 253
+		}
+	],
+	"autosaveTrace": [
+		{
+			"label": "B",
+			"responseStatus": 200,
+			"hasA": false,
+			"hasB": false,
+			"hasC": false,
+			"contentLength": 119
+		},
+		{
+			"label": "B",
+			"responseStatus": 200,
+			"hasA": false,
+			"hasB": true,
+			"hasC": false,
+			"contentLength": 212
+		},
+		{
+			"label": "B",
+			"responseStatus": 200,
+			"hasA": false,
+			"hasB": true,
+			"hasC": true,
+			"contentLength": 253
+		}
+	],
+	"afterBadAutosaveStatus": {
+		"rest": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"wpCli": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"db": {
+			"hasA": false,
+			"hasB": true,
+			"length": 160
+		}
+	},
+	"canonicalAfterBadAutosave3": {
+		"hasA": false,
+		"hasB": true,
+		"hasC": false,
+		"length": 154
+	},
+	"originalBeforeCloseState": {
+		"aHasA": true,
+		"aHasB": false,
+		"bHasA": false,
+		"bHasB": true
+	},
+	"originalBeforeCloseHasC": {
+		"aHasC": false,
+		"bHasC": true
+	},
+	"syncCounts": {
+		"A": 3,
+		"B": 5
+	},
+	"laterPostSaveRequests": 0,
+	"freshNotice": {
+		"text": "Warning noticeThere is an autosave of this post that is more recent than the version below.View the autosave",
+		"href": "http://localhost:8891/wp-admin/revision.php?revision=1003"
+	},
+	"reopenedState": {
+		"aHasA": false,
+		"aHasB": true,
+		"bHasA": false,
+		"bHasB": true
+	},
+	"reopenedHasC": {
+		"aHasC": false,
+		"bHasC": false
+	},
+	"freshReopenStatus": {
+		"rest": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"wpCli": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"db": {
+			"hasA": false,
+			"hasB": true,
+			"length": 160
+		}
+	},
+	"clickResult": {
+		"href": "http://localhost:8891/wp-admin/revision.php?revision=1003",
+		"urlAfterClick": "http://localhost:8891/wp-admin/revision.php?revision=1003"
+	},
+	"autosavePageHasA": false,
+	"autosavePageHasB": true,
+	"autosavePageHasC": true,
+	"autosavePageExcerpt": "Skip to main content Skip to toolbar Dashboard Dashboard Home Updates Posts Posts All Posts Add Post Categories Tags Media Media Library Add Media File Pages Pages All Pages Add Page Comments Appearance Appearance Themes Editor Fonts Plugins Plugins Installed Plugins Add Plugin Users Users All Users Add User Profile Tools Tools Available Tools Import Export Site Health Export Personal Data Erase Personal Data Theme File Editor Plugin File Editor Settings Settings General Connectors Writing Readi",
+	"afterClickStatus": {
+		"rest": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"wpCli": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"db": {
+			"hasA": false,
+			"hasB": true,
+			"length": 160
+		}
+	},
+	"editorBAfterClick": {
+		"hasA": false,
+		"hasB": true
+	},
+	"finalReloadState": {
+		"aHasA": false,
+		"aHasB": true,
+		"bHasA": false,
+		"bHasB": true
+	},
+	"finalReloadHasC": {
+		"aHasC": false,
+		"bHasC": false
+	},
+	"finalReloadStatus": {
+		"rest": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"wpCli": {
+			"hasA": false,
+			"hasB": true,
+			"length": 154
+		},
+		"db": {
+			"hasA": false,
+			"hasB": true,
+			"length": 160
+		}
+	},
+	"freshMainPostSaveRequests": 0,
+	"freshAutosaveRequests": 0,
+	"generatedAt": "2026-05-06T23:56:32.491Z",
+	"scriptPath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/make-live-bad-autosave-visible-close-reopen-video.mjs",
+	"framesDir": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/frames-live-bad-autosave-visible-close-reopen-e2e",
+	"evidencePath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/current-trunk-rtc-live-bad-autosave-visible-close-reopen-e2e.evidence.json",
+	"screenshotValidation": {
+		"checkedFrameCount": 10,
+		"expectedFrameCount": 10,
+		"expectedFrameWidth": 1920,
+		"expectedFrameHeight": 1300,
+		"allFramesHaveExpectedSize": true,
+		"spotChecks": [
+			{
+				"file": "frame-001.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 174789
+			},
+			{
+				"file": "frame-002.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 194054
+			},
+			{
+				"file": "frame-003.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 175954
+			},
+			{
+				"file": "frame-004.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 227236
+			},
+			{
+				"file": "frame-005.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 203572
+			},
+			{
+				"file": "frame-006.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 187206
+			},
+			{
+				"file": "frame-007.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 162198
+			},
+			{
+				"file": "frame-008.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 213109
+			},
+			{
+				"file": "frame-009.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 248887
+			},
+			{
+				"file": "frame-010.png",
+				"width": 1920,
+				"height": 1300,
+				"sizeBytes": 193657
+			}
+		]
+	},
+	"ffprobe": {
+		"programs": [],
+		"stream_groups": [],
+		"streams": [
+			{
+				"codec_name": "h264",
+				"width": 1920,
+				"height": 1300,
+				"avg_frame_rate": "30/1",
+				"nb_frames": "2100"
+			}
+		],
+		"format": {
+			"duration": "70.000000",
+			"size": "1883708",
+			"bit_rate": "215280"
+		}
+	}
+}

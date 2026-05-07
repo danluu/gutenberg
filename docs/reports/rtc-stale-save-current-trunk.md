@@ -40,11 +40,20 @@ artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-stale-save-bug-clear-a
 artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-delayed-polling-control-clear-annotated.mp4
 ```
 
+Autosave close/reopen proof:
+
+```text
+artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/current-trunk-rtc-live-bad-autosave-visible-close-reopen-e2e.mp4
+artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/current-trunk-rtc-live-bad-autosave-visible-close-reopen-e2e-with-network-note.mp4
+artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/current-trunk-rtc-live-bad-autosave-visible-close-reopen-e2e.evidence.json
+```
+
 Generator:
 
 ```text
 artifacts/current-trunk-rtc-repro-video/make-current-trunk-rtc-repro-video.mjs
 artifacts/current-trunk-rtc-repro-video/make-clear-current-trunk-rtc-videos.mjs
+artifacts/current-trunk-rtc-autosave-live-e2e-20260506/main/make-live-bad-autosave-visible-close-reopen-video.mjs
 ```
 
 Video validation:
@@ -55,6 +64,8 @@ resolution: 1920x1154
 frames: 8 annotated frames
 clear bug video: 20s, 1920x1300, 5 frames
 clear control video: 24s, 1920x1300, 6 frames
+autosave close/reopen video: 70s, 1920x1300, 10 frames
+autosave close/reopen video with network note: 77s, 1920x1300, 2310 encoded frames
 ```
 
 The video contains two segments:
@@ -65,6 +76,8 @@ The video contains two segments:
 The clear split videos separate those paths. The bug video ends on a REST/WP-CLI server-state frame rather than the editor DOM, because the browser UI can visually resync after the stale save while the persisted post content has already lost A.
 
 The annotations include current trunk SHA, RTC enablement, collaborator UI readiness, `/wp-sync` room evidence, loaded built assets, save request/response marker checks, and final direct WP-CLI server checks.
+
+The autosave close/reopen proof uses the same live editor workflow and visibly shows both original editor windows before close, then closes both original browser contexts, reopens two fresh editor windows, clicks the real `View the autosave` notice, and returns to the editor. The forced condition is a delayed `/wp-sync` response for deterministic ordering; the user actions are normal editor actions. The evidence file records that the bad autosave has `A=false, B=true, C=true`, while the canonical post content after reopen remains `A=false, B=true, C=false`, with no later main post saves and no fresh autosaves after reopen.
 
 ## Video run evidence
 
