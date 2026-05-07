@@ -9347,3 +9347,60 @@ environment was not initialized, and `wp-env start --config .wp-env.test.json`
 produced no output beyond the npm/wp-env banner for about 60 seconds before the
 start process was terminated. The archived source trace and pass-118 headless
 stitched video remain the browser evidence.
+
+## Pass 169 current known-fixes check
+
+Pass 169 rechecked the bug against the backlink-aware May 7 known-fixes base:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507
+f256024286dd80a4c0e2579f658c109256abf648
+```
+
+That base includes the merged and proposed #77716 backlink-aware RTC fix set,
+including stale persisted CRDT/base-version work, but it still lacks the raw
+persisted-record context needed for this exact title rollback. In that base:
+
+- `packages/sync/src/manager.ts` still calls
+  `getChangesFromCRDTDoc( tempDoc, record )` when diffing a persisted CRDT doc.
+- `createPersistedCRDTDoc` serializes the current manager Y.Doc plus
+  `baseVersion`; it does not first overlay the exact save payload.
+- `packages/core-data/src/utils/crdt.ts` still treats a CRDT `title` value that
+  differs from the edited raw title as a change, with no check for "this value
+  is exactly the persisted raw base value".
+
+The smallest current-base repro was a test-only application of the PR's
+core-data CRDT assertion. It failed for the product reason:
+
+```text
+FAIL packages/core-data/src/utils/test/crdt.ts
+expect(received).not.toHaveProperty(path)
+Expected path: not "title"
+Received value: "Persisted Title"
+```
+
+The same focused checks on the fixed PR branch passed in a clean temporary
+worktree:
+
+```text
+PASS packages/sync/src/test/manager.ts
+Tests: 26 skipped, 3 passed, 29 total
+
+PASS packages/core-data/src/utils/test/crdt.ts
+Tests: 45 skipped, 1 passed, 46 total
+```
+
+Pass 169 keeps real-user likelihood at **low**. The workflow is natural once a
+site is using RTC, but the prerequisite set is narrow: one WordPress user needs
+the same post open in two editor sessions, one session edits the title, the
+other receives that title and reloads after a body edit, then the first session
+saves from a state whose raw REST title and persisted `_crdt_document` title can
+diverge. No second WordPress user, network-delay injection, custom block, direct
+state mutation, malformed block tree, or artificial REST fault is required.
+
+The blast radius is bounded but real: the active editor title can roll back to
+the initial title, and a later save from the rolled-back session can persist
+that rollback. There is no evidence of duplicate content, save loops,
+performance risk, or OOM risk. Recovery is straightforward if noticed before a
+later save, because the source trace showed the canonical REST title had been
+saved correctly; recovery becomes harder after a subsequent stale-title save.
