@@ -4,6 +4,7 @@ set -u
 SESSION="${RTC_COVERAGE_SESSION:-rtc-handoff-coverage}"
 MAX_PARALLEL="${RTC_COVERAGE_MAX_PARALLEL:-8}"
 CHECK_SECS="${RTC_COVERAGE_CHECK_SECS:-45}"
+MAX_REQUEUES="${RTC_COVERAGE_MAX_REQUEUES:-3}"
 
 root="/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing"
 queue="$root/coverage-queue.tsv"
@@ -45,6 +46,31 @@ cleanup_stale_claims() {
 	done
 }
 
+cleanup_no_summary_failures() {
+	for failed in "$state_dir"/*.failed; do
+		[ -f "$failed" ] || continue
+		sig="$(basename "$failed" .failed)"
+		[ -f "$state_dir/$sig.summary.md" ] && continue
+		window_exists "coverage-$sig" && continue
+		pid="$(cat "$state_dir/$sig.wrapper.pid" 2>/dev/null || true)"
+		[ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && continue
+		log_file="$log_dir/coverage-$sig.log"
+		exit_code="$(cat "$state_dir/$sig.exit" 2>/dev/null || true)"
+		if [ "$exit_code" = "101" ] || { [ -f "$log_file" ] && grep -Eq 'stream disconnected|codex_core::tools::router|write_stdin failed|panic|exited -1|Failed to load cloud requirements' "$log_file"; }; then
+			requeues_file="$state_dir/$sig.requeues"
+			requeues="$(cat "$requeues_file" 2>/dev/null || echo 0)"
+			requeues=$(( requeues + 1 ))
+			echo "$requeues" > "$requeues_file"
+			if [ "$requeues" -le "$MAX_REQUEUES" ]; then
+				rm -f "$state_dir/$sig.failed" "$state_dir/$sig.exit" "$state_dir/$sig.claimed" "$state_dir/$sig.wrapper.pid" "$state_dir/$sig.paused"
+				log "requeueing coverage-$sig after no-summary codex/tool failure requeues=$requeues"
+			else
+				log "leaving coverage-$sig failed after no-summary codex/tool failure requeues=$requeues max=$MAX_REQUEUES"
+			fi
+		fi
+	done
+}
+
 launch_candidate() {
 	index="$1"
 	sig="$2"
@@ -82,6 +108,7 @@ while :; do
 		sleep "$CHECK_SECS"
 		continue
 	fi
+	cleanup_no_summary_failures
 	cleanup_stale_claims
 	active="$(active_windows)"
 	log "active=$active done=$(find "$state_dir" -maxdepth 1 -name '*.done' 2>/dev/null | wc -l | tr -d ' ') failed=$(find "$state_dir" -maxdepth 1 -name '*.failed' 2>/dev/null | wc -l | tr -d ' ')"
