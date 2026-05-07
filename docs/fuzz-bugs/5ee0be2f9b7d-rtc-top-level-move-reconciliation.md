@@ -9036,3 +9036,71 @@ Pass 157 also created and verified a fresh annotated stitched-screen video:
 ffmpeg decode completed with no errors, and the extracted 8s frame shows both
 fresh known-fixes editor screens, the natural action log, the expected/observed
 orders, the record-morph root-cause proof, and the fixed-branch verification.
+
+## Pass 159 Verification
+
+Pass 159 independently re-read the pass-158 summary, the source JSONL row, the
+generated natural-user spec, the archived source log, the error-context
+snapshot, fresh known-fixes screenshots, trace inventory, branch state, and the
+current CRDT reconciliation code. The classification remains a product defect in
+CRDT block reconciliation. The source and fresh known-fixes browser runs both
+complete normal editor actions and fail only at the final convergence check:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+The pass-159 added proof is a nested non-Playwright route through the real post
+CRDT entrypoint, `applyPostChangesToCRDTDoc()`. On the known-fixes base with
+only the repro commit applied, a pure child-block move inside a group also emits
+nested record edits instead of one structural child-array change:
+
+```text
+Expected: []
+Received: ["YMap", "YMap", "YText", "YText"]
+```
+
+The same clean test-only run reconfirmed the broader pure-permutation failure
+and the generated-sequence record morph: the captured moved Y.Map is rewritten
+to the adjacent sibling content instead of remaining the moved paragraph or
+being structurally detached.
+
+Fresh pass-159 known-fixes checks:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts -- --testNamePattern="applies nested pure block moves to remote peers as structural child block changes|represents all pure block permutations as structural remote changes|does not morph post-entrypoint block records during the generated structural edit sequence" --runInBand --no-cache
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-159/artifacts/knownfix-playwright-artifacts-pass159 RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_EC47_ATTEMPTS=1 RTC_EC47_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-159/artifacts/knownfix-ec47-attempts-pass159 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts --project=chromium --workers=1
+```
+
+Results: the test-only command failed as expected with the nested child-move,
+pure-permutation, and record-morph proofs; the known-fixes browser rerun failed
+in `43.2s` with the same semantic split as the source row.
+
+Fresh pass-159 fixed-branch verification:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-159/artifacts/fixed-playwright-artifacts-pass159 RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+Results: the two CRDT unit suites passed `81/81`; targeted JS lint exited `0`;
+`git diff --check` exited `0`; and the natural-user Playwright repro passed
+headlessly against `http://localhost:9902` in `21.2s` test time (`22.6s`
+overall). The PR branch still has the requested three-commit stack over current
+`origin/trunk`: non-Playwright repros, natural-user Playwright repro, then the
+strict pure-move fix.
+
+Pass 159 created and verified a fresh annotated stitched-screen video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-159/video/5ee0be2f9b7d/rtc-top-level-move-reconciliation-pass159-annotated.mp4
+```
+
+`ffprobe` reports H.264 video, `1920x1080`, `24.0s`, and `720` frames. A full
+ffmpeg decode completed with no errors, and the extracted 8s frame shows both
+fresh known-fixes editor screens, the natural action log, the expected/observed
+orders, the nested child-move root-cause proof, and the fixed-branch
+verification.
