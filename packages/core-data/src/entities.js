@@ -386,8 +386,14 @@ async function loadPostTypeEntities() {
 				( isTemplate
 					? capitalCase( record.slug ?? '' )
 					: String( record.id ) ),
-			__unstablePrePersist: ( persistedRecord, edits ) =>
-				prePersistPostType( persistedRecord, edits, name, isTemplate ),
+			__unstablePrePersist: ( persistedRecord, edits, options ) =>
+				prePersistPostType(
+					persistedRecord,
+					edits,
+					name,
+					isTemplate,
+					options
+				),
 			__unstable_rest_base: postType.rest_base,
 			supportsPagination: true,
 			getRevisionsUrl: ( parentId, revisionId ) =>

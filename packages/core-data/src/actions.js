@@ -773,7 +773,8 @@ export const saveEntityRecord =
 							...edits,
 							...( await entityConfig.__unstablePrePersist(
 								persistedRecord,
-								edits
+								edits,
+								options
 							) ),
 						};
 					}
