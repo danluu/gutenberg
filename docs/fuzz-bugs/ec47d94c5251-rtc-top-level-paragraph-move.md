@@ -1995,3 +1995,70 @@ The shortest remaining experiment to improve practical-impact confidence is
 still an instrumented repeated Playwright run of the natural sequence with
 small randomized delays. That would estimate hit rate under realistic editor
 timing; the current evidence proves reachability and impact but not frequency.
+
+## Pass 169 current known-fixes recheck
+
+Pass 169 re-read the May 7 known-fixes manifest and used the current
+backlink-aware integration base directly:
+
+```text
+f256024286dd80a4c0e2579f658c109256abf648
+Integrate RTC known-fix stack
+```
+
+This matters because the May 7 base includes several overlapping open RTC PRs
+and an integration commit, not just the older May 5 known-fixes checkout.
+
+The current base already contains stale-snapshot reconciliation helpers, but
+it still keeps `serializableBlocksCache` keyed by the incoming block array
+object. A temporary detached worktree of `f2560242...` with only a focused
+pass-169 negative-control test file failed both cache-sensitive checks:
+
+```text
+FAIL packages/core-data/src/utils/test/ec47-pass169-knownfix-current.test.ts
+
+observes reordered blocks when the editor reuses the same block array reference
+Expected: [ "Inserted paragraph", "Another paragraph", "Emoji and multibyte" ]
+Received: [ "Inserted paragraph", "Emoji and multibyte", "Another paragraph" ]
+
+preserves the moved sibling when a same-array move follows a remote insert echo
+Expected: [ "Inserted paragraph", "Another paragraph", "Emoji and multibyte" ]
+Received: [ "Inserted paragraph", "Emoji and multibyte", "Another paragraph" ]
+```
+
+That is the narrowest current proof that the bug survives the May 7
+known-fixes base: the integrated stack can reconcile some stale full snapshots,
+but the object-identity serialization cache can still hide a real top-level
+move when the editor reuses the same block array reference.
+
+Fresh pass-169 fixed-branch verification:
+
+- `origin/trunk` remains `86d1b6741a5` (`Add RTC cursor-scope regression tests
+  (#77662)`).
+- The PR branch still has the requested commit order: non-Playwright repros,
+  natural-user Playwright repro, then fix.
+- The focused three-test CRDT command passes on the PR branch.
+- The full `packages/core-data/src/utils/test/crdt-blocks.ts` suite passes
+  (`78 passed`).
+- JS lint for the touched source, unit-test, and Playwright spec files passes.
+- `git diff --check HEAD~3..HEAD` passes.
+- `git ls-remote --heads danluu` confirms the explanation and PR branches are
+  pushed.
+- The existing pass-75 annotated H.264 video remains readable (`1600x900`,
+  duration `39.0s`) and its saved attempt JSON shows both editors converged to
+  inserted paragraph, sibling paragraph, then emoji paragraph on the fixed
+  branch.
+
+A fresh Playwright rerun was attempted on the requested `WP_ENV_PORT=9907`.
+`npm run wp-env status` reported the environment was not initialized. A
+subsequent `npm run wp-env start` stayed silent for more than two minutes while
+other `wp-env` Docker compose teardown processes were also present, and was
+terminated so no orphaned command was left running. The browser-level evidence
+therefore remains the archived source failure plus previously generated
+headless fixed-run video/artifacts.
+
+Practical-impact classification remains `low`. The stronger pass-169 evidence
+supports reachability on the current known-fixes base, but it does not raise
+frequency: real users still need active RTC collaboration in the post editor,
+two editors touching the same nearby top-level block list, and a stale or
+cache-hidden full snapshot around delete, insert-before, and move-down.
