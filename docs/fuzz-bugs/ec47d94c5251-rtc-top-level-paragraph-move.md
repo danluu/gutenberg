@@ -1853,3 +1853,86 @@ created a new annotated H.264 copy with the pass-165 branch/test status banner:
 ```text
 ec47d94c5251-pass165-revalidated-annotated.mp4
 ```
+
+## Pass 167 practical impact recheck
+
+Pass 167 rebased both branches onto current `origin/trunk`:
+
+```text
+19c460ff7c8f19f09ded768b39a854dbb276d6bc
+Editor: Paginate revisions slider by 100 per page (#77200)
+```
+
+The upstream change is unrelated to RTC block merging. The PR branch still has
+the requested three-commit order:
+
+```text
+b1e6cf6b3bd Add RTC stale top-level move merge regressions
+b3717057f3c Add RTC top-level move Playwright repro
+0c1fd6f6e25 Preserve RTC block order across stale snapshots
+```
+
+Real-user likelihood is `low`. The workflow uses ordinary editor behavior, but
+the required overlap is narrow:
+
+1. The editor surface is the post editor with RTC enabled over HTTP polling.
+2. The content can be ordinary top-level `core/paragraph` blocks.
+3. Two active collaborators must edit the same post at the same time.
+4. One collaborator deletes or otherwise changes a nearby top-level block.
+5. The other collaborator inserts before the paragraph that will later be
+   moved.
+6. The first collaborator then moves that paragraph down while a stale full
+   block snapshot or same-array reorder echo is still possible.
+
+The common prerequisites are normal paragraphs, toolbar delete, toolbar insert
+before, toolbar move down, and collaborative editing. The rarer prerequisites
+are two editors touching the same short top-level region in quick succession
+and one client emitting a stale or cache-hidden full block order. Fuzzing
+supplied the exact interleaving and short three-block setup; the actions
+themselves are not artificial.
+
+The blast radius is content corruption in one editor state: a moved paragraph
+can be duplicated and a sibling paragraph can disappear. This is worse than a
+UI-only disagreement because a save from the corrupted editor can persist the
+bad serialized content. There is no save loop or performance/OOM risk. Recovery
+is manual undo if still available, another collaborator's intact editor state,
+or post revisions after a bad save.
+
+Strong evidence for `low`: the archived failure and DOM snapshot show real
+duplicated/lost paragraph content after visible toolbar actions; the low-level
+repros use real `Y.Doc` instances and fail on current trunk; the known-fixes
+base still fails the cache-sensitive repros; and the fix passes the focused and
+full CRDT suites. Strong evidence against a higher likelihood: RTC is not the
+default single-user editing path, two editors must concurrently edit the same
+top-level region, and the bad order depends on a stale snapshot or reused block
+array identity, not merely on any block move.
+
+The shortest next experiment to improve confidence is an instrumented
+headless Playwright run that repeats the natural sequence 100-200 times with
+small randomized delays between delete, insert-before, and move-down, logging
+which client emits each full block order. That would convert the likelihood
+from structural reasoning plus one observed browser failure into an empirical
+hit-rate estimate.
+
+Fresh pass-167 verification:
+
+- current `origin/trunk` plus only the non-Playwright repro commit fails all
+  three focused CRDT repros with stale order `inserted, emoji, another`;
+- known-fixes head `3cba2b1e56a98787de08dc6c7df2434759e8f908` plus only the
+  same repro commit passes the plain stale-snapshot repro but still fails both
+  same-array/cache repros;
+- fixed PR branch passes the three focused CRDT repros;
+- fixed PR branch passes full `packages/core-data/src/utils/test/crdt-blocks.ts`
+  (`78 passed`);
+- JS lint for touched files passes;
+- `git diff --check HEAD~3..HEAD` passes;
+- `npm run build` passes;
+- rebuilt `build/scripts/core-data/index.js` contains `previousBlocksByYArray`
+  and `reconcileStaleLocalBlocks` and no `serializableBlocksCache`.
+
+Fresh browser rerun on the requested `WP_ENV_PORT=9907` was not feasible in
+this local environment. `npm run wp-env status` reported the environment was
+not initialized; `npm run wp-env start` produced no progress for 40 seconds and
+was interrupted; `docker info` hung after printing the client header and was
+killed. The existing source trace/screenshots and pass-79/pass-165 annotated
+videos remain the browser-level evidence.
