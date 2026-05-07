@@ -366,3 +366,118 @@ repro or fix. A fresh pass-166 headless stitched video was generated at:
 ```text
 /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-166/video/4af28404874c-pass166-annotated.mp4
 ```
+
+## Pass 167 Verification
+
+Pass 167 rechecked the branch stack against current `origin/trunk`
+`19c460ff7c8` and rebased both branches. The PR branch remains the requested
+three-commit sequence:
+
+1. `024a3238452 Add RTC deferred update race repro`
+2. `c0b0c9bf28e Add RTC stress Playwright repro`
+3. `b18fe432b17 Flush RTC updates before remote reconciliation`
+
+The explanation branch was also rebased and keeps this Markdown explanation
+under `docs/fuzz-bugs/`.
+
+Pass 167 independently verified the GitHub PR metadata for the origin analysis:
+
+- #75029, `Improve sync performance metrics`, merged as
+  `62054e939e02f730302c71be4f5fdc5d37ccfe58` on 2026-02-10. Its body
+  explicitly says the change yields to the event loop before updating the CRDT
+  document to avoid interrupting interaction events.
+- #75975, `RTC: Fix stale CRDT document persisted on save`, merged as
+  `8051e14451cf85c5e6713bf2098149f30229e47b` on 2026-03-02. Its body
+  explicitly identifies deferred Y.Doc updates via `setTimeout(0)` and fixes
+  only the save serialization path.
+- #76055, `RTC: Add E2E "stress test" with complex interactions`, merged as
+  `503f4f243c20a0d95f2104147fc2a7815d5ff79c` on 2026-03-24. It added the
+  large-post and list-item stress workflows that exposed this failure mode.
+
+The source trace was parsed again in pass 167. It shows the normal browser
+actions that the test intended:
+
+```text
+insertText "Admin was here"
+insertText "Editor was here"
+click "Item Beta"
+click toolbar "Move down"
+click "Item Epsilon"
+click toolbar "Move up"
+```
+
+The HTTP polling evidence is still healthy: 59 successful `wp-sync` update
+responses in the large-post trace and 28 in the list-item trace. The only
+non-200 `wp-sync` entry is one cancelled large-post polling request during page
+transition. No trace evidence points to an OOM, PHP fatal, HTTP 500, readiness
+wait, or locator failure.
+
+The pass-167 known-fixes check applied only the commit-1 deterministic
+`SyncManager` repro to known-fixes base
+`3cba2b1e56a98787de08dc6c7df2434759e8f908`. It still failed with the stale
+local field being projected back:
+
+```diff
+  {
+    body: "Remote Body",
++   title: "Initial Title",
+  }
+```
+
+The rebased fixed branch passed:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
+```
+
+Results: PASS, 27/27 `SyncManager` tests; PASS, 2 targeted list-move negative
+controls with the rest skipped by the name filter.
+
+The pass-167 local browser attempt remained blocked before Playwright:
+
+```bash
+WP_ENV_PORT=9901 WP_BASE_URL=http://localhost:9901 \
+RTC_MANIFEST_WS_START_PORT=20408 RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run wp-env status
+
+WP_ENV_PORT=9901 WP_BASE_URL=http://localhost:9901 \
+RTC_MANIFEST_WS_START_PORT=20408 RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run wp-env start
+```
+
+`wp-env status` reported `Environment not initialized`; `wp-env start` hung in
+`docker compose ... down --remove-orphans` for the pass-167 worktree until the
+start attempt was terminated. That is a host Docker blocker before browser
+startup, not a counterexample to the source Playwright trace or committed
+natural-user Playwright repro.
+
+Current build/lint state after the rebase:
+
+```bash
+npm run build
+npm run clean:package-types && npm run build
+npm run lint:js -- \
+  packages/sync/src/manager.ts \
+  packages/sync/src/test/manager.ts \
+  packages/core-data/src/utils/test/crdt-blocks.ts \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts
+```
+
+The clean build still fails on unrelated TypeScript contract errors in packages
+outside this patch, including `global-styles-ui`, `media-editor`, `editor`,
+`lazy-editor`, `boot`, and an existing `core-data/src/utils/crdt-selection.ts`
+`@ts-expect-error` line. Scoped lint fails before reaching the changed files
+because the symlinked dependency tree cannot resolve `eslint-plugin-jsdoc`.
+
+Pass 167 generated a fresh annotated headless video at:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-167/video/4af28404874c-pass167-annotated.mp4
+```
+
+`ffprobe` reports a 1280x720 video, 1050 frames, 35 seconds.
