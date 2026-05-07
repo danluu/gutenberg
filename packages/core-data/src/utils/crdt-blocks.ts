@@ -72,7 +72,7 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 const ARRAY_ELEMENT_ID_KEY = '__unstableSyncId';
 const ARRAY_ELEMENT_ID_SYMBOL = Symbol( 'wpSyncArrayElementId' );
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
-const previousBlocksByYArray = new WeakMap< YBlocks, Block[] >();
+const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -791,12 +791,17 @@ export function mergeCrdtBlocks(
 			makeBlocksSerializable( incomingBlocks )
 		);
 	}
-	const localBlocksToSync =
-		serializableBlocksCache.get( incomingBlocks ) ?? [];
-	const incomingBlocksToSync = reconcileStaleLocalBlocks(
+	const blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const previousBlocks = previousLocalBlocksCache.get( yblocks );
+
+	mergeCrdtBlocksIntoYBlocks(
 		yblocks,
-		localBlocksToSync
+		blocksToSync,
+		cursorPosition,
+		previousBlocks
 	);
+	previousLocalBlocksCache.set( yblocks, blocksToSync );
+}
 
 function mergeCrdtBlocksIntoYBlocks(
 	yblocks: YBlocks,
@@ -970,6 +975,7 @@ function mergeCrdtBlocksIntoYBlocks(
 								currentAttributes?.get( attributeName );
 							const previousAttributeValue =
 								previousAttributes?.[ attributeName ];
+
 							const isExpectedType = isExpectedAttributeType(
 								block.name,
 								attributeName,
@@ -1246,6 +1252,115 @@ function mergeYArrayByElementIds(
 	return true;
 }
 
+function arePlainValuesEqual( a: unknown, b: unknown ): boolean {
+	return fastDeepEqual( a, b );
+}
+
+function isExpectedYValueTypeForSchema(
+	schema: BlockAttributeSchema | undefined,
+	newVal: unknown,
+	currentVal: unknown
+): boolean {
+	if ( schema?.type === 'rich-text' ) {
+		return currentVal instanceof Y.Text;
+	}
+
+	if ( schema?.type === 'array' && schema.query && Array.isArray( newVal ) ) {
+		return currentVal instanceof Y.Array;
+	}
+
+	if ( schema?.type === 'object' && schema.query && isRecord( newVal ) ) {
+		return currentVal instanceof Y.Map;
+	}
+
+	return true;
+}
+
+function isYArrayEqualToPlainArray(
+	yArray: Y.Array< unknown >,
+	value: unknown[]
+): boolean {
+	return (
+		yArray.length === value.length &&
+		value.every( ( element, index ) =>
+			areArrayElementsEqual( element, yArray.get( index ) )
+		)
+	);
+}
+
+function findYArrayElementIndex(
+	yArray: Y.Array< unknown >,
+	previousElement: unknown,
+	preferredIndex: number,
+	previousLength: number
+): number {
+	for ( let i = 0; i < yArray.length; i++ ) {
+		if ( areArrayElementsEqual( previousElement, yArray.get( i ) ) ) {
+			return i;
+		}
+	}
+
+	if ( yArray.length === previousLength && preferredIndex < yArray.length ) {
+		return preferredIndex;
+	}
+
+	return preferredIndex < yArray.length ? preferredIndex : -1;
+}
+
+function mergeYArrayLocalChanges(
+	yArray: Y.Array< unknown >,
+	newValue: unknown[],
+	previousValue: unknown[],
+	query: Record< string, BlockAttributeSchema >,
+	cursorPosition: number | null
+): boolean {
+	if ( arePlainValuesEqual( newValue, previousValue ) ) {
+		return true;
+	}
+
+	// No remote divergence: preserve existing behavior for ordinary local
+	// inserts/deletes/reorders.
+	if ( isYArrayEqualToPlainArray( yArray, previousValue ) ) {
+		return false;
+	}
+
+	const sharedLength = Math.min( previousValue.length, newValue.length );
+
+	for ( let i = 0; i < sharedLength; i++ ) {
+		const previousElement = previousValue[ i ];
+		const newElement = newValue[ i ];
+
+		if ( arePlainValuesEqual( previousElement, newElement ) ) {
+			continue;
+		}
+
+		const currentIndex = findYArrayElementIndex(
+			yArray,
+			previousElement,
+			i,
+			previousValue.length
+		);
+
+		if ( currentIndex === -1 ) {
+			continue;
+		}
+
+		const currentElement = yArray.get( currentIndex );
+
+		if ( currentElement instanceof Y.Map && isRecord( newElement ) ) {
+			mergeYMapValues(
+				currentElement,
+				newElement,
+				query,
+				cursorPosition,
+				isRecord( previousElement ) ? previousElement : undefined
+			);
+		}
+	}
+
+	return true;
+}
+
 /**
  * Merge an incoming plain array into an existing Y.Array in-place.
  *
@@ -1274,7 +1389,16 @@ function mergeYArray(
 
 	const query = schema.query;
 
-	if ( mergeYArrayByElementIds( yArray, newValue, query, cursorPosition ) ) {
+	if (
+		previousValue &&
+		mergeYArrayLocalChanges(
+			yArray,
+			newValue,
+			previousValue,
+			query,
+			cursorPosition
+		)
+	) {
 		return;
 	}
 
@@ -1491,7 +1615,10 @@ function mergeYMapValues(
 
 	// Delete properties absent from the incoming object.
 	for ( const key of yMap.keys() ) {
-		if ( key !== ARRAY_ELEMENT_ID_KEY && ! Object.hasOwn( newObj, key ) ) {
+		if (
+			! Object.hasOwn( newObj, key ) &&
+			( ! previousObj || Object.hasOwn( previousObj, key ) )
+		) {
 			yMap.delete( key );
 		}
 	}
