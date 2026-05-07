@@ -229,7 +229,6 @@ export default class CollaborationUtils {
 	async waitForMutualDiscovery( { timeout }: { timeout?: number } = {} ) {
 		const pages = this.allPages;
 		const resolvedTimeout = timeout ?? 10000 + pages.length * 2500;
-		const roomName = await this.getCurrentPostRoomName( this.primaryPage );
 
 		if ( USE_TEST_WS_PROVIDER ) {
 			const roomName = await this.getCurrentPostRoomName(
@@ -290,21 +289,6 @@ export default class CollaborationUtils {
 			{ expected: expectedPeerCount, room: roomName },
 			{ timeout }
 		);
-	}
-
-	async getCurrentPostRoomName( page: Page ): Promise< string > {
-		const postId = await page.evaluate(
-			() =>
-				( window as any ).wp?.data
-					?.select( 'core/editor' )
-					?.getCurrentPostId?.()
-		);
-
-		if ( ! postId ) {
-			throw new Error( 'Current post ID is unavailable.' );
-		}
-
-		return `postType/post:${ postId }`;
 	}
 
 	/**

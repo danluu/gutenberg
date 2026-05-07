@@ -180,7 +180,7 @@ export function applyPostChangesToCRDTDoc(
 				mergeCrdtBlocks(
 					currentBlocks,
 					newValue,
-					cursorPosition,
+					newCursorPosition,
 					( options.baseRecord as PostChanges | undefined )?.blocks
 				);
 				break;

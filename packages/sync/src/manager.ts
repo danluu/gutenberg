@@ -61,6 +61,10 @@ interface EntityState {
 	ydoc: CRDTDoc;
 }
 
+interface ApplyPersistedCrdtDocOptions {
+	shouldPersist?: boolean;
+}
+
 const CRDT_DOC_META_HAS_PROVIDER_SYNCED_REMOTE_STATE =
 	'hasProviderSyncedRemoteState';
 
@@ -75,6 +79,14 @@ function getEntityId(
 	objectId: ObjectID | null
 ): EntityID {
 	return `${ objectType }_${ objectId }`;
+}
+
+function areUint8ArraysEqual( a: Uint8Array, b: Uint8Array ): boolean {
+	if ( a.length !== b.length ) {
+		return false;
+	}
+
+	return a.every( ( value, index ) => value === b[ index ] );
 }
 
 function getTopLevelRecordKeysFromEvents(
@@ -653,11 +665,27 @@ export function createSyncManager( debug = false ): SyncManager {
 		objectType: ObjectType,
 		objectId: ObjectID,
 		record: ObjectData
-	): Promise< void > {
+	): Promise< boolean > {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+		const previousStateVector = entityState?.ydoc
+			? Y.encodeStateVector( entityState.ydoc )
+			: null;
+
 		internal.applyPersistedCrdtDoc( objectType, objectId, record, {
 			shouldPersist: false,
 		} );
 		await internal.updateEntityRecord( objectType, objectId );
+
+		const nextStateVector = entityState?.ydoc
+			? Y.encodeStateVector( entityState.ydoc )
+			: null;
+
+		return !! (
+			previousStateVector &&
+			nextStateVector &&
+			! areUint8ArraysEqual( previousStateVector, nextStateVector )
+		);
 	}
 
 	/**
@@ -827,13 +855,12 @@ export function createSyncManager( debug = false ): SyncManager {
 		);
 	}
 
-	/* eslint-disable-next-line jsdoc/check-line-alignment */
 	/**
 	 * Create object meta to persist the CRDT document in the entity record.
 	 *
 	 * @param {ObjectType} objectType Object type.
 	 * @param {ObjectID}   objectId   Object ID.
-	 * @param {number}     [baseVersion=0] Base version from the server.
+	 * @param {Object}     options    Options for persisted CRDT creation.
 	 */
 	async function createPersistedCRDTDoc(
 		objectType: ObjectType,
@@ -857,6 +884,18 @@ export function createSyncManager( debug = false ): SyncManager {
 				options.basePersistedCRDTDoc
 			),
 		} );
+	}
+
+	function getCRDTRecordData(
+		objectType: ObjectType,
+		objectId: ObjectID
+	): ObjectData | undefined {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+
+		return entityState?.ydoc.getMap( CRDT_RECORD_MAP_KEY ).toJSON() as
+			| ObjectData
+			| undefined;
 	}
 
 	function scheduleUpdateCRDTDoc(

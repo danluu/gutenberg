@@ -236,45 +236,30 @@ export const getEntityRecord =
 						// This effectively means that only post entities support CRDT
 						// persistence. As we add support for syncing additional entity,
 						// we'll need to revisit where persisted CRDT documents are stored.
-						persistCRDTDoc: async () => {
-							const editedRecord =
-								await resolveSelect.getEditedEntityRecord(
-									kind,
-									name,
-									key
-								);
+						persistCRDTDoc: () => {
+							resolveSelect
+								.getEditedEntityRecord( kind, name, key )
+								.then( ( editedRecord ) => {
+									const { meta, status } = editedRecord;
+									if ( 'auto-draft' === status || ! meta ) {
+										return;
+									}
 
 									const entityIdKey =
 										entityConfig.key || DEFAULT_ENTITY_KEY;
 
-									// Trigger a save to persist the CRDT document. The entity's
-									// pre-persist hooks will create the persisted CRDT document
-									// and apply it to the record's meta.
 									dispatch.saveEntityRecord(
 										kind,
 										name,
 										{
-											[ entityIdKey ]: key,
+											[ entityIdKey ]:
+												editedRecord[ entityIdKey ] ??
+												key,
 											meta,
 										},
 										{ __unstableSkipSyncUpdate: true }
 									);
-									// getEntityRecord re-applies the persisted CRDT
-									// doc to the local Y.Doc via load(). The
-									// edited record now reflects merged state.
-									const mergedRecord =
-										await resolveSelect.getEditedEntityRecord(
-											kind,
-											name,
-											key
-										);
-									await dispatch.saveEntityRecord(
-										kind,
-										name,
-										mergedRecord
-									);
-								}
-							} catch {}
+								} );
 						},
 						addUndoMeta: ( ydoc, meta ) => {
 							const selectionHistory =
