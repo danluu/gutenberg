@@ -6,6 +6,103 @@ Bug type: `rtc_top_level_block_move_duplicates_paragraph_and_drops_sibling_after
 
 Transport: `http`
 
+## Pass 168 update
+
+Pass 168 re-read the pass-167 summary, source JSONL row, source generated spec,
+source log, source error context, source screenshots, source trace action
+stream, RTC enablement code, current `mergeCrdtBlocks()` code, current trunk
+negative controls, known-fixes negative controls, and the existing branch/video
+artifacts.
+
+The practical real-user likelihood is now classified as `low` for normal
+Gutenberg use, with a `medium` conditional risk inside active real-time
+collaboration sessions. The bug is still real, but normal single-user editing
+cannot exercise it. The natural trigger requires the post editor with real-time
+collaboration enabled, two browser sessions/users on the same draft, ordinary
+top-level paragraph/heading blocks, and this structural sequence:
+
+```text
+editor A deletes a top-level heading
+editor B inserts a paragraph before the original paragraph
+editor A moves that original paragraph down below its sibling
+```
+
+The source Playwright trace uses normal toolbar actions only:
+
+```text
+click heading text
+Block tools -> Options -> Delete
+click paragraph text
+Block tools -> Options -> Add before
+type the inserted paragraph
+click paragraph text
+Block tools -> Move down
+```
+
+No malformed block tree, direct store mutation, injected CRDT document,
+network fault, save/reload, or browser reload is part of the trigger. The
+fuzz-only details are the exact seed strings, automatic user/post creation, and
+explicit convergence waits between steps. Those waits make the ordering
+deterministic, but they correspond to ordinary user pauses between edits rather
+than an impossible product state.
+
+The strongest evidence for `low` instead of `medium` across normal use is that
+the feature is explicitly presented as early-access real-time collaboration,
+the site editor is excluded, single-user sessions are immune, and the failure
+needs two live editors to restructure adjacent top-level blocks in a specific
+order. The strongest evidence against reducing it further is that the actual
+editing operations are common, the setting is enabled on Gutenberg plugin
+activation when collaboration is allowed, the source browser trace hit the bug
+on the first attempt, and the low-level CRDT repro shows the duplicate/drop
+state without Playwright timing.
+
+Fresh pass-168 verification:
+
+```text
+fixed PR branch:
+  npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts --runTestsByPath --no-cache --runInBand
+  exit 0
+  81 passed, 81 total
+
+  npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts
+  exit 0
+
+current origin/trunk 86d1b6741a57cdc066485370fe051285f2ebd0b4
+  + 29c497e2479 focused low-level repro:
+  exit 1
+  5 failed, 1 passed, 75 skipped
+
+known-fixes base 3cba2b1e56a98787de08dc6c7df2434759e8f908
+  + 29c497e2479 focused low-level repro:
+  exit 1
+  3 failed, 3 passed, 79 skipped
+```
+
+The known-fixes base still reproduces the product symptom:
+
+```text
+Expected: ["Inserted paragraph", "Sibling paragraph", "Moved paragraph"]
+Received: ["Inserted paragraph", "Moved paragraph", "Moved paragraph"]
+```
+
+`WP_ENV_PORT=9900 WP_BASE_URL=http://localhost:9900 npm run wp-env status`
+reported the environment was not initialized, and a plain `docker ps` hung for
+30 seconds until killed. A fresh browser replay was therefore not feasible in
+this local environment. The archived source Playwright trace remains the
+natural-user browser repro, and the pass-165 annotated video is present and
+valid:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-165/video/07f8eb5c4218-pass165-annotated.mp4
+codec=h264 width=2560 height=1240 duration=18.000000 nb_frames=450 size=380479
+```
+
+The shortest additional experiment that would most improve confidence is a
+healthy-wp-env Playwright run of this same natural workflow for about 20
+attempts with human-like pauses and without explicit per-step convergence waits.
+That would measure whether the harness-controlled ordering appears naturally in
+ordinary co-editing cadence.
+
 ## Pass 167 update
 
 Pass 167 refreshed both branches onto current `origin/trunk`
