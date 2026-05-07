@@ -481,3 +481,108 @@ Pass 167 generated a fresh annotated headless video at:
 ```
 
 `ffprobe` reports a 1280x720 video, 1050 frames, 35 seconds.
+
+## Pass 168 Practical Impact
+
+Pass 168 rechecked the source result and classifies the real-user likelihood as
+`low`.
+
+This is a real product bug, but the normal workflow has several prerequisites:
+
+- Real-time collaboration must be enabled. In the Gutenberg plugin this is an
+  early-access setting and is enabled by default when collaboration is allowed,
+  but it is still a narrower population than ordinary single-user editing.
+- The affected surface is the post editor. Collaboration is disabled on the
+  site editor by `gutenberg_inject_real_time_collaboration_setting`.
+- The default transport is HTTP polling. Plugins can replace the provider, but
+  the source failure and repro use the default `wp-sync` polling provider.
+- At least two browser sessions or users must be editing the same post at the
+  same time. The source has both a two-user list-item move failure and a
+  three-user large-post failure.
+- A local edit must be accepted into the WordPress edited record while its
+  Y.Doc write is still queued by `setTimeout(0)`, and an incoming remote Yjs
+  update must be projected back to the store before that queued write runs.
+
+The fuzz-only parts are the high-concurrency stress choreography, the generated
+large 5000-word fixture, and the precise `Promise.all` timing. The ordinary
+editor behavior is stronger than the fuzz shape: valid clicks, normal toolbar
+Move up/Move down buttons, normal keyboard text insertion, save, reload, and
+HTTP polling sync. The deterministic unit repro shows the core race does not
+depend on malformed blocks, direct state mutation, artificial transport faults,
+or oversized documents.
+
+The blast radius is content/state loss rather than an OOM for this refreshed
+source run. A stale local CRDT value can be written back into the editor and
+drop a collaborator's unsaved text or leave peers with divergent block/list
+order. If the stale projection is saved, the bad state can persist. There is no
+evidence in this refreshed trace of duplicate content, repeated HTTP 500s,
+process OOM, or a save loop. Recovery is manual: a user can retype the lost
+content or use revisions/undo if the loss is noticed before or after save.
+
+Strongest evidence for `low` rather than `very-low`:
+
+- The feature is enabled by default for allowed Gutenberg plugin installs, and
+  HTTP polling is the default provider.
+- The unit repro needs only one local edit plus one remote update in the
+  deferred-write window.
+- Polling with active collaborators is periodic, so long editing sessions create
+  repeated opportunities for the race.
+
+Strongest evidence against a higher classification:
+
+- Real-time collaboration is explicitly early access and applies to fewer users
+  than normal post editing.
+- The race window is one event-loop tick, so a single isolated edit is unlikely
+  to hit it.
+- The source browser failures use stress-style overlapping actions and a large
+  generated document to amplify the race.
+- Oversized single-document updates have a separate lockout path and are not
+  the mechanism here.
+
+The shortest additional experiment that would improve confidence is a
+statistical two-user browser loop on the unfixed base: use a small ordinary post
+with one shared paragraph, have user A type a marker while user B applies a
+remote title/body edit, repeat 100 to 1000 times under the HTTP polling provider,
+and record the empirical marker-loss rate with and without a small artificial
+server response delay.
+
+Pass 168 refreshed the exact focused known-fixes check. Applying only the
+deterministic `SyncManager` repro to known-fixes base
+`3cba2b1e56a98787de08dc6c7df2434759e8f908` still fails:
+
+```diff
+  {
+    body: "Remote Body",
++   title: "Initial Title",
+  }
+```
+
+The fixed PR branch still passes the focused repro and the full
+`packages/sync/src/test/manager.ts` suite, and the targeted block CRDT
+negative controls still pass.
+
+Pass 168 again attempted the requested browser environment on the suggested
+port:
+
+```bash
+WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 \
+RTC_MANIFEST_WS_START_PORT=20416 RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run wp-env status
+
+WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 \
+RTC_MANIFEST_WS_START_PORT=20416 RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run wp-env start
+```
+
+`wp-env status` reported `Environment not initialized`. `wp-env start` produced
+only the npm banner for roughly 70 seconds and hung in the same Docker startup
+path as pass 167; the process group was terminated before Playwright was
+launched. This is an environment blocker, not a product counterexample.
+
+Pass 168 generated a fresh annotated headless video at:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-168/video/4af28404874c-pass168-annotated.mp4
+```
+
+`ffprobe` reports a 1280x720 video, 900 frames, 30 seconds.
