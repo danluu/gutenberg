@@ -576,11 +576,25 @@ export const prePersistPostType = async (
 
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
-		if ( ! hasSerializedDoc ) {
-			serializedDoc = await (
-				syncManager ?? getSyncManager()
-			)?.createPersistedCRDTDoc( objectType, objectId );
-		}
+		const objectType = `postType/${ name }`;
+		const objectId = persistedRecord.id;
+
+		let baseVersion = 0;
+		try {
+			const persistedCrdtDoc =
+				persistedRecord.meta?.[
+					POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+				];
+			if ( persistedCrdtDoc ) {
+				const parsed = JSON.parse( persistedCrdtDoc );
+				baseVersion = parsed.baseVersion ?? 0;
+			}
+		} catch {}
+		const serializedDoc = await getSyncManager()?.createPersistedCRDTDoc(
+			objectType,
+			objectId,
+			baseVersion
+		);
 
 		if ( serializedDoc ) {
 			newEdits.meta = {
