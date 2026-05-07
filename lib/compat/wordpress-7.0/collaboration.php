@@ -98,122 +98,260 @@ if ( ! function_exists( 'wp_collaboration_register_meta' ) ) {
 	add_action( 'init', 'gutenberg_rest_api_crdt_post_meta' );
 }
 
-if ( ! function_exists( 'gutenberg_crdt_intercept_post_meta_update' ) ) {
+if ( ! function_exists( 'gutenberg_get_persisted_crdt_document_checksum' ) ) {
 	/**
-	 * Intercepts post meta updates for the persisted CRDT document to
-	 * implement optimistic concurrency control.  Clients embed a `baseVersion`
-	 * field in the serialized document.  Before writing, this filter checks
-	 * that the client's base version matches the version currently stored on
-	 * the server.  When versions match the write proceeds and the version is
-	 * incremented atomically using a compare-and-swap on the database row.
+	 * Returns a deterministic checksum for a persisted CRDT document payload.
 	 *
-	 * When the stored version does not match the client's base version the
-	 * write is rejected — another client has already updated the document.
-	 * The rejected client will retry after receiving the latest version
-	 * through the next server response.
+	 * This checksum mirrors @wordpress/sync and intentionally versions the
+	 * serialized Yjs document payload itself, not the surrounding debugging
+	 * metadata.
 	 *
-	 * @param mixed  $check      Whether to allow the update.  Returning a
-	 *                           non-null value short-circuits update_metadata().
-	 * @param int    $object_id  Post ID.
-	 * @param string $meta_key   Meta key being updated.
-	 * @param mixed  $meta_value New meta value (JSON string).
-	 * @return mixed Null to allow WordPress to proceed, false to reject, true
-	 *               when the write was handled directly.
+	 * @param string $document Base64-encoded Yjs document update.
+	 * @return string Document checksum.
 	 */
-	function gutenberg_crdt_intercept_post_meta_update( $check, $object_id, $meta_key, $meta_value ) {
-		if ( '_crdt_document' !== $meta_key ) {
-			return $check;
+	function gutenberg_get_persisted_crdt_document_checksum( string $document ): string {
+		$hash_a = 0x811c9dc5;
+		$hash_b = $hash_a ^ 0x9e3779b9;
+		$prime  = 0x01000193;
+		$length = strlen( $document );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char_code = ord( $document[ $i ] );
+			$hash_a    = ( ( $hash_a ^ $char_code ) * $prime ) & 0xffffffff;
+			$hash_b    = ( ( $hash_b ^ $char_code ^ ( $i & 0xff ) ) * $prime ) & 0xffffffff;
 		}
 
-		$incoming = json_decode( $meta_value, true );
-		if ( ! is_array( $incoming ) ) {
-			return $check;
-		}
-
-		$base_version = (int) ( $incoming['baseVersion'] ?? 0 );
-
-		global $wpdb;
-
-		$row = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT meta_id, meta_value FROM $wpdb->postmeta
-				WHERE post_id = %d AND meta_key = %s",
-				$object_id,
-				'_crdt_document'
-			)
-		);
-
-		if ( $row ) {
-			// Existing meta — check version before writing.
-			$current = json_decode( $row->meta_value, true );
-			$current_version = (int) ( is_array( $current ) ? ( $current['baseVersion'] ?? 0 ) : 0 );
-
-			if ( $current_version !== $base_version ) {
-				return false; // Stale — client's base version does not match the server.
-			}
-
-			$incoming['baseVersion'] = $current_version + 1;
-			$new_value = wp_json_encode( $incoming );
-
-			// Atomic compare-and-swap: only update if the row hasn't changed
-			// since we last read it.
-			$affected = $wpdb->update(
-				$wpdb->postmeta,
-				array( 'meta_value' => $new_value ),
-				array(
-					'meta_id'    => $row->meta_id,
-					'meta_value' => $row->meta_value,
-				)
-			);
-
-			if ( 0 === $affected ) {
-				return false; // Lost the race — another request updated first.
-			}
-
-			wp_cache_delete( $object_id, 'post_meta' );
-
-			/**
-			 * Fires immediately after a CRDT-document post meta row is updated.
-			 * Mirrors WordPress Core's `updated_post_meta` action to keep
-			 * caches and hooks consistent.
-			 *
-			 * @param int    $meta_id    Meta ID.
-			 * @param int    $object_id  Post ID.
-			 * @param string $meta_key   Meta key.
-			 * @param mixed  $meta_value Meta value.
-			 */
-			do_action( 'updated_post_meta', $row->meta_id, $object_id, $meta_key, $meta_value );
-
-			return true; // Handled — short-circuit WordPress.
-		}
-
-		// First-time write: no stored row yet.  Let WordPress do the INSERT.
-		// The `pre_update_post__crdt_document` filter will inject
-		// baseVersion=1 before the row is created.
-		return $check;
+		return $length . ':' . sprintf( '%08x%08x', $hash_a, $hash_b );
 	}
-	add_filter( 'update_post_metadata', 'gutenberg_crdt_intercept_post_meta_update', 10, 4 );
 }
 
-if ( ! function_exists( 'gutenberg_crdt_set_initial_base_version' ) ) {
+if ( ! function_exists( 'gutenberg_parse_persisted_crdt_document' ) ) {
 	/**
-	 * Sets the initial `baseVersion` on the first write of a persisted CRDT
-	 * document.  WordPress's `update_post_metadata` filter cannot modify the
-	 * value for INSERTs (only short-circuit them), so this companion filter
-	 * injects `baseVersion=1` when the stored row doesn't exist yet.
+	 * Parses a persisted CRDT document post meta value.
 	 *
-	 * @param mixed $meta_value New meta value (JSON string).
-	 * @return mixed Modified meta value with baseVersion set, or the original.
+	 * @param mixed $value Post meta value.
+	 * @return array|null Parsed CRDT document metadata, or null when invalid.
 	 */
-	function gutenberg_crdt_set_initial_base_version( $meta_value ) {
-		$decoded = json_decode( $meta_value, true );
-		if ( is_array( $decoded ) && empty( $decoded['baseVersion'] ) ) {
-			$decoded['baseVersion'] = 1;
-			return wp_json_encode( $decoded );
+	function gutenberg_parse_persisted_crdt_document( $value ): ?array {
+		if ( ! is_string( $value ) || '' === $value ) {
+			return null;
 		}
-		return $meta_value;
+
+		$decoded = json_decode( $value, true );
+		if ( ! is_array( $decoded ) || ! isset( $decoded['document'] ) || ! is_string( $decoded['document'] ) ) {
+			return null;
+		}
+
+		return $decoded;
 	}
-	add_filter( 'pre_update_post__crdt_document', 'gutenberg_crdt_set_initial_base_version', 10, 1 );
+}
+
+if ( ! function_exists( 'gutenberg_get_persisted_crdt_document_version' ) ) {
+	/**
+	 * Returns the server version represented by a persisted CRDT document value.
+	 *
+	 * @param mixed $value Post meta value.
+	 * @return string|null Version string, or null when the value is invalid.
+	 */
+	function gutenberg_get_persisted_crdt_document_version( $value ): ?string {
+		$decoded = gutenberg_parse_persisted_crdt_document( $value );
+		if ( null === $decoded ) {
+			return null;
+		}
+
+		return 'document:' . gutenberg_get_persisted_crdt_document_checksum( $decoded['document'] );
+	}
+}
+
+if ( ! function_exists( 'gutenberg_get_persisted_crdt_document_base_version' ) ) {
+	/**
+	 * Returns the base version submitted with a persisted CRDT document value.
+	 *
+	 * @param mixed $value Post meta value.
+	 * @return string|null Base version, or null when missing.
+	 */
+	function gutenberg_get_persisted_crdt_document_base_version( $value ): ?string {
+		$decoded = gutenberg_parse_persisted_crdt_document( $value );
+		if ( null === $decoded || empty( $decoded['baseVersion'] ) || ! is_string( $decoded['baseVersion'] ) ) {
+			return null;
+		}
+
+		return $decoded['baseVersion'];
+	}
+}
+
+if ( ! function_exists( 'gutenberg_validate_persisted_crdt_document_base_version' ) ) {
+	/**
+	 * Validates that an incoming persisted CRDT document is based on the latest
+	 * server copy.
+	 *
+	 * @param int   $post_id    Post ID.
+	 * @param mixed $meta_value Incoming post meta value.
+	 * @return true|WP_Error True when valid, otherwise an error.
+	 */
+	function gutenberg_validate_persisted_crdt_document_base_version( int $post_id, $meta_value ) {
+		$current_value = get_metadata_raw(
+			'post',
+			$post_id,
+			'_crdt_document',
+			true
+		);
+
+		if ( ! is_string( $current_value ) || '' === $current_value ) {
+			return true;
+		}
+
+		$current_version = gutenberg_get_persisted_crdt_document_version( $current_value );
+		if ( null === $current_version ) {
+			return true;
+		}
+
+		$incoming_version = gutenberg_get_persisted_crdt_document_version( $meta_value );
+		if ( is_string( $incoming_version ) && hash_equals( $current_version, $incoming_version ) ) {
+			return true;
+		}
+
+		$base_version = gutenberg_get_persisted_crdt_document_base_version( $meta_value );
+		if ( is_string( $base_version ) && hash_equals( $current_version, $base_version ) ) {
+			return true;
+		}
+
+		return new WP_Error(
+			'rest_crdt_document_stale',
+			__( 'Could not update the persisted CRDT document because it is stale.', 'gutenberg' ),
+			array(
+				'currentVersion' => $current_version,
+				'status'         => 409,
+			)
+		);
+	}
+}
+
+if ( ! function_exists( 'gutenberg_prevent_stale_crdt_document_meta_update' ) ) {
+	/**
+	 * Rejects stale persisted CRDT document post meta updates.
+	 *
+	 * @param null|bool $check      Whether to short-circuit the update.
+	 * @param int       $object_id  Post ID.
+	 * @param string    $meta_key   Meta key.
+	 * @param mixed     $meta_value Meta value.
+	 * @param mixed     $prev_value Previous meta value.
+	 * @return null|bool Whether to short-circuit the update.
+	 */
+	function gutenberg_prevent_stale_crdt_document_meta_update( $check, int $object_id, string $meta_key, $meta_value, $prev_value ) {
+		if ( null !== $check || '_crdt_document' !== $meta_key ) {
+			return $check;
+		}
+
+		$result = gutenberg_validate_persisted_crdt_document_base_version( $object_id, $meta_value );
+		if ( is_wp_error( $result ) ) {
+			return false;
+		}
+
+		return $check;
+	}
+	add_filter( 'update_post_metadata', 'gutenberg_prevent_stale_crdt_document_meta_update', 10, 5 );
+}
+
+if ( ! function_exists( 'gutenberg_prevent_stale_crdt_document_meta_add' ) ) {
+	/**
+	 * Rejects stale persisted CRDT document post meta additions.
+	 *
+	 * This covers the race where update_metadata() observed no existing meta row,
+	 * but another request added one before add_metadata() runs.
+	 *
+	 * @param null|bool $check      Whether to short-circuit the add.
+	 * @param int       $object_id  Post ID.
+	 * @param string    $meta_key   Meta key.
+	 * @param mixed     $meta_value Meta value.
+	 * @param bool      $unique     Whether only one value may exist.
+	 * @return null|bool Whether to short-circuit the add.
+	 */
+	function gutenberg_prevent_stale_crdt_document_meta_add( $check, int $object_id, string $meta_key, $meta_value, bool $unique ) {
+		if ( null !== $check || '_crdt_document' !== $meta_key ) {
+			return $check;
+		}
+
+		$current_value = get_metadata_raw(
+			'post',
+			$object_id,
+			'_crdt_document',
+			true
+		);
+
+		if ( is_string( $current_value ) && '' !== $current_value ) {
+			return false;
+		}
+
+		return $check;
+	}
+	add_filter( 'add_post_metadata', 'gutenberg_prevent_stale_crdt_document_meta_add', 10, 5 );
+}
+
+if ( ! function_exists( 'gutenberg_reject_stale_crdt_document_rest_update' ) ) {
+	/**
+	 * Rejects stale persisted CRDT document updates before REST post mutations.
+	 *
+	 * @param stdClass        $prepared_post Prepared post object.
+	 * @param WP_REST_Request $request       Request object.
+	 * @return stdClass|WP_Error Prepared post object or conflict error.
+	 */
+	function gutenberg_reject_stale_crdt_document_rest_update( $prepared_post, WP_REST_Request $request ) {
+		$meta     = $request->get_param( 'meta' );
+		$meta_key = '_crdt_document';
+
+		if ( ! is_array( $meta ) || ! array_key_exists( $meta_key, $meta ) ) {
+			return $prepared_post;
+		}
+
+		$post_id = isset( $request['id'] ) ? (int) $request['id'] : 0;
+		if ( ! $post_id && isset( $prepared_post->ID ) ) {
+			$post_id = (int) $prepared_post->ID;
+		}
+
+		if ( ! $post_id ) {
+			return $prepared_post;
+		}
+
+		$result = gutenberg_validate_persisted_crdt_document_base_version( $post_id, $meta[ $meta_key ] );
+		return is_wp_error( $result ) ? $result : $prepared_post;
+	}
+}
+
+if ( ! function_exists( 'gutenberg_register_crdt_document_rest_conflict_filter' ) ) {
+	/**
+	 * Registers the REST stale-CRDT guard for a post type.
+	 *
+	 * @param string       $post_type        Post type name.
+	 * @param WP_Post_Type $post_type_object Post type object.
+	 */
+	function gutenberg_register_crdt_document_rest_conflict_filter( string $post_type, $post_type_object = null ): void {
+		static $registered = array();
+
+		if ( isset( $registered[ $post_type ] ) ) {
+			return;
+		}
+
+		if ( $post_type_object instanceof WP_Post_Type && ! $post_type_object->show_in_rest ) {
+			return;
+		}
+
+		$registered[ $post_type ] = true;
+		add_filter( "rest_pre_insert_{$post_type}", 'gutenberg_reject_stale_crdt_document_rest_update', 10, 2 );
+	}
+	add_action( 'registered_post_type', 'gutenberg_register_crdt_document_rest_conflict_filter', 10, 2 );
+}
+
+if ( ! function_exists( 'gutenberg_register_crdt_document_rest_conflict_filters' ) ) {
+	/**
+	 * Registers REST stale-CRDT guards for post types already registered.
+	 */
+	function gutenberg_register_crdt_document_rest_conflict_filters(): void {
+		foreach ( get_post_types( array( 'show_in_rest' => true ), 'objects' ) as $post_type => $post_type_object ) {
+			gutenberg_register_crdt_document_rest_conflict_filter( $post_type, $post_type_object );
+		}
+	}
+	add_action( 'init', 'gutenberg_register_crdt_document_rest_conflict_filters', 100 );
 }
 
 if ( ! function_exists( 'wp_collaboration_inject_setting' ) ) {
