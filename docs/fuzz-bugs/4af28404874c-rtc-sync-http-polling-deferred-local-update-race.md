@@ -321,14 +321,14 @@ click "Item Epsilon"
 click toolbar "Move up"
 ```
 
-The same trace parse counted only successful `wp-sync` polling responses for
-the relevant endpoint: 60 successful `POST /wp-json/wp-sync/v1/updates`
-responses in the large-post trace and 28 successful responses in the list-item
-trace. The non-2xx entries were expected login/options redirects, cancelled
-external Gravatar/admin-ajax requests, and one cancelled polling request during
-page transition; there were no `500`, PHP fatal, allowed-memory, or OOM
-responses. This keeps the classification as a real RTC convergence defect with
-a misleading OOM bucket label.
+The same trace parse counted successful `wp-sync` polling responses for the
+relevant endpoint: 59 successful `POST /wp-json/wp-sync/v1/updates` responses
+in the large-post trace and 28 successful responses in the list-item trace. The
+non-2xx entries were expected login/options redirects, cancelled external
+Gravatar/admin-ajax requests, and one cancelled polling request during page
+transition; there were no `500`, PHP fatal, allowed-memory, or OOM responses.
+This keeps the classification as a real RTC convergence defect with a
+misleading OOM bucket label.
 
 The focused unit repro was also re-run against the requested known-fixes base
 commit `3cba2b1e56a98787de08dc6c7df2434759e8f908` after applying only the
