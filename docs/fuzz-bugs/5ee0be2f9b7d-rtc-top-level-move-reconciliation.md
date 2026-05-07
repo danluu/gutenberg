@@ -9104,3 +9104,57 @@ ffmpeg decode completed with no errors, and the extracted 8s frame shows both
 fresh known-fixes editor screens, the natural action log, the expected/observed
 orders, the nested child-move root-cause proof, and the fixed-branch
 verification.
+
+## Pass 161 Verification
+
+Pass 161 independently re-read the source JSONL row, generated spec, archived
+source log, error-context snapshot, trace actions, current branch state, and
+`mergeCrdtBlocks()` implementation. The source trace still shows only ordinary
+editor operations: block Options > Delete, collaborator Options > Add before,
+typing the inserted paragraph, and the toolbar Move down button. The failure is
+still a semantic split after convergence, not a locator or readiness failure:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+The added pass-161 proof is a direct `mergeCrdtBlocks()` negative control on a
+clean known-fixes worktree at `3cba2b1e56a98787de08dc6c7df2434759e8f908`, with
+only the repro-test commit `a7f79df448e0ecb9c6b9a1f7048031cf532af5d0`
+cherry-picked. Before the fix, the direct helper fails below Playwright:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --testNamePattern="does not rewrite block records when moving adjacent top-level blocks|represents adjacent pure moves as structural array changes|replicates direct pure move merges as structural array changes" --runInBand --no-cache
+```
+
+Results: all three tests failed. The captured moved Y.Map contained the
+displaced sibling content, and the local/remote observer proofs saw nested
+`YMap`/`YText` events instead of one structural array change. The same focused
+direct helper tests pass on the fixed branch.
+
+Pass 161 also reran the browser-level known-fixes negative control against
+`http://localhost:9903`; it failed in `43.2s` with the same split editor state
+as the source row. The fixed branch remains a clean three-commit stack over
+current `origin/trunk` `777af47425fbb6608b8f1453976abd1458c3d81d`:
+
+```text
+a7f79df448e Add CRDT repros for RTC adjacent move identity rewrite
+83bc38f49ec Add RTC top-level move Playwright repro
+f72df45f8e3 Avoid rewriting CRDT block records for pure moves
+```
+
+Fresh pass-161 fixed-branch verification:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --testNamePattern="does not rewrite block records when moving adjacent top-level blocks|represents adjacent pure moves as structural array changes|replicates direct pure move merges as structural array changes" --runInBand --no-cache
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+Results: the focused direct helper tests passed, the two CRDT unit suites
+passed `81/81`, targeted JS lint exited `0`, `git diff --check` produced no
+output, and the natural-user Playwright repro passed headlessly in `20.7s` test
+time (`22.1s` overall).
