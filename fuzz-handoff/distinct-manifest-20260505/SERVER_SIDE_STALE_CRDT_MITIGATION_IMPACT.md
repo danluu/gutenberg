@@ -328,6 +328,25 @@ API separately. A stale request can therefore pass preflight and be invalidated
 before the post row write, or a later meta conflict can be discovered after
 post fields have already changed.
 
+The ordering matters for credit. In the normal REST post controller,
+`prepare_item_for_database()` runs before `rest_pre_insert_*`; after that,
+`wp_update_post( ..., false )` writes `wp_posts` before REST terms, registered
+meta, and additional REST fields are updated. During `wp_update_post()`,
+filters and hooks such as `wp_insert_post_data`, `pre_post_update`,
+`edit_post`, `post_updated`, `save_post_*`, `save_post`, and `wp_insert_post`
+can run before REST meta is persisted. Only `wp_after_insert_post` is delayed.
+Therefore a bundle conflict discovered during `_crdt_document` meta persistence
+is too late for atomicity unless the implementation can roll back the post row
+and any already-published side effects.
+
+The current fallback meta filters are also not a structured conflict surface.
+The REST pre-insert path can return a 409 such as `rest_crdt_document_stale`,
+but lower-level `update_post_metadata` and `add_post_metadata` filters can only
+short-circuit meta writes. If a race passes pre-insert and is caught by the meta
+filter, the REST meta layer can surface a generic meta database error after
+`wp_posts` fields have already changed. That path should not receive full
+bundle-atomicity credit.
+
 A plugin-level lock could serialize cooperating REST requests, and a custom
 Gutenberg endpoint could prototype a stricter transactional write. That is not
 the same as making the normal WordPress post save path CAS-protected.
@@ -714,6 +733,16 @@ object; a batch HTTP 200 containing a subrequest 409 is still a guarded
 conflict. Private protocol values should not appear as normal editable entity
 fields, registered meta, revisioned fields, public schema fields, or
 schema-driven client form fields.
+
+Batch semantics need same-entity ordering. A REST batch containing multiple
+guarded writes for the same entity can evaluate several subrequests against the
+same base and then commit them in an order the client did not model. Strict mode
+should reject same-entity guarded subrequests in one batch, serialize them with
+explicit dependency tokens, or require the client to submit ordered dependent
+attempts. Sparse `_fields` must also not strip conflict/no-op protocol bodies;
+if normal field filtering can remove current token, attempt id, conflict kind,
+retryability, or canonical observation order, the protocol needs a private
+header/envelope outside editable entity fields.
 
 Protocol-field stripping is a downgrade surface. `_fields` filtering, REST
 middleware, proxy normalization, plugin sanitizers, Core Data entity
@@ -1340,6 +1369,28 @@ most empty/corrupt-content rows to full because many already have collapsed
 live editors, malformed CRDT/block state, reload divergence, or missing
 convergence before the save reaches the server.
 
+Materialization sensitivity should be reported as a promotion within the
+existing touched set, not as new row reach:
+
+| Materialization variant | Full | Partial | Touched | Gate |
+| --- | ---: | ---: | ---: | --- |
+| Base estimate, validation-only projection | 8 rows / 16 weighted | 29 rows / 42 weighted | 37 rows / 58 weighted | No server rewrite from CRDT. |
+| Promote row `29` only | 9 rows / 18 weighted | 28 rows / 40 weighted | 37 rows / 58 weighted | Exact bad save's submitted CRDT decodes to projectable checkpoint blocks/title while submitted `content` regressed to Search-only or stale content, and the materialized response settles the editor. |
+| Promote rows `29` and `196` | 10 rows / 20 weighted | 27 rows / 38 weighted | 37 rows / 58 weighted | Same proof for `29`, plus archived row `196` proves the accepted empty-content save carried a trustworthy non-empty projectable submitted CRDT and clean client settlement. |
+
+Rows that should not be promoted through materialization without new evidence:
+
+| Rows | Why not full materialization credit |
+| --- | --- |
+| `15`, `18`, `32` | Requests or traces suggest non-empty CRDT/block state, but the live editors had already collapsed to blank or zero blocks. Materialization can improve durable containment only unless the response repairs live state and preserves intent. |
+| `37`, `54`, `69`, `94`, `138`, `216`, `228` | Current evidence mostly proves final divergence or reload/live collapse, not exact bad-request proof that the accepted submitted CRDT was still trustworthy and projectable. |
+| `19`, `40`, `43`, `62`, `64`, `67`, `136`, `211`, `212`, `241`, `242` | Malformed, flattened, plain-text, or invalid-markup rows are projection-containment candidates. If the CRDT/block tree is already corrupt, materialization can faithfully persist corruption. |
+| `52`, `60`, `63`, `141` | These need atomic bundle persistence, title/content freshness, read-path proof, or client repair. Content materialization alone does not resolve split, oscillating, or ambiguous post/meta state. |
+| `2`, `5`, `17`, `27`, `56`, `57` | First wrong state is live/shared editor state before persistence. Materialization can at most contain later durable damage. |
+| `8`, `155`, `156`, `243` | Main defect is stale protected-field freshness. They need bundle or per-field freshness; materialization alone cannot prove title correctness if title is not authoritative in CRDT. |
+| `89` | Foreign-document contamination; materialization would save the wrong document unless post-bound provenance rejects it first. |
+| `23`, `45`, `90`, `227` | These are no-op/canonicalization rows, not materialization rows. |
+
 The strongest materialization design can prove only this invariant: at commit
 time, for the declared protected-field write set, every committed protected
 field is either unchanged or equals the server's deterministic projection of
@@ -1833,6 +1884,10 @@ Operational degraded behavior should also be specified:
 | Mixed-version collaborators | Keep token emission, disable strict enforcement for the session unless compatibility is proven. | `degraded_mixed_client_session` |
 | Object-cache/preload incoherence detected | Serve uncached edit-context reads or force refetch before save. | `degraded_cache_incoherence` |
 | Capability/KSES/authorship policy unavailable | Disable materialization; keep only CAS/projection telemetry that is safe under normal REST permissions. | `degraded_materialization_security_policy_unavailable` |
+| Decision ledger or audit chain unavailable | Fail closed or downgrade to shadow; do not enforce without a durable decision/audit record. | `degraded_audit_unavailable` |
+| Schema migration or token-table index incomplete | Keep token emission shadow-only until final storage primitives, indexes, and attempt/provenance tables are active before read and commit. | `degraded_schema_migration_active` |
+| Feature-flag/config propagation lag | Treat as mixed old/new servers; strict saves need one coherent policy epoch across write-serving webheads. | `degraded_policy_epoch_split` |
+| Operational backpressure | If lock, token-store, projection CPU, decode, audit, or storage pressure avoids bad writes through timeout/throttle, report operational containment rather than mitigation success. | `operational_backpressure_contained` |
 
 A degraded accept should not be counted as mitigation success. Telemetry should
 record `degraded_reason`, `degraded_decision`, `protected_fields_written`,
@@ -2270,6 +2325,24 @@ server would need to become a live CRDT arbiter, or the client merge code would
 need to stop producing the wrong block tree, before those rows move into the
 fixed category.
 
+Adjacent server-side mitigations should be kept separate from the second
+mitigation's 8/29 estimate:
+
+| Adjacent mitigation | Belongs in second mitigation? | Defensible sensitivity |
+| --- | --- | --- |
+| Field-vector tokens for `title`/`content`/`excerpt`/`_crdt_document` | Yes, as the stronger token shape for the editor-content bundle. | No additive row credit; they make existing stale-save rows `8`, `155`, `156`, and `243` more defensible and reduce false conflicts. |
+| Post-bound CRDT provenance and room-generation gating | No, separate wrong-document invariant. | `+1` full / `+1` weighted only for row `89` when bootstrap, room join, save, and client discard/refetch are all covered. |
+| `/wp-sync` storage/replay durability | No, separate sync-history mitigation. | Strongest defensible subset is about 12 rows / 32 weighted (`1`, `80`, `108`, `197`, `198`, `200`, `220`, `221`, `222`, `267`, `269`, `279`); broader `/wp-sync` bucket is 17 / 38 but needs room-authority or delivery proof. |
+| Server-side live room authority | No, separate transport/room-authority design, not save validation. | If it subsumes sync durability, at most the `/wp-sync` 17 / 38 plus row `89` provenance sensitivity; it should not be credited for block-merge/Y.Array rows without operation-level merge invariants. |
+
+A combined non-live-CRDT planning upper bound can be stated only with the
+mechanisms separated: 37 rows / 58 weighted touched by the full second
+mitigation, plus 1 / 1 for provenance, plus up to 17 / 38 for full sync
+room/history authority. That is 55 rows / 97 weighted before the report's six
+durable-containment-only rows, or 61 rows / 128 weighted with those containment
+rows included. It should not be described as "the second mitigation fixes 55
+rows"; the added rows are provenance and transport/storage work.
+
 ### Confirmation and test plan
 
 The mitigation should be evaluated with instrumentation before treating the
@@ -2352,6 +2425,7 @@ Report two denominators for every measured run:
 | --- | --- | --- |
 | Frozen manifest denominator | All 279 rows / 452 weighted failures. | Product planning and comparison with this report. |
 | Eligible-opportunity denominator | Rows whose reproduced trace reached the implemented guarded mechanism before terminal damage. | Engineering effectiveness of the mitigation itself. |
+| Benign-valid-write denominator | Valid saves that should not reject or materialize: legitimate empty posts, opaque/freeform/deprecated/unregistered blocks, autosaves, revision restores, status-only writes, and legacy invalidations. | Safety gate for false rejects and bad materialization. |
 
 The headline impact should stay on the frozen denominator. The
 eligible-opportunity denominator answers a different question: when the server
@@ -2360,6 +2434,13 @@ A high eligible success rate with a low frozen-manifest fraction means the
 mitigation works but most bugs are outside its causal window. A low eligible
 success rate means the implementation is not yet proving the invariants even
 for rows it should cover.
+
+Each measured row should also declare the environment stratum it covers:
+transport, browser, DB engine and isolation level, object-cache mode, multisite
+state, REST batch usage, post lifecycle state, plugin/metabox surface, active
+collaborator capability mix, and post type/controller. Credit applies only to
+the strata exercised by the evidence packet; other deployment strata remain
+estimated even if the row ID is measured elsewhere.
 
 For each mechanism, publish:
 
@@ -2580,6 +2661,12 @@ with a signature or external timestamp. If artifacts are regenerated after
 review without preserving the old digest chain, the affected rows become
 `measurement_inconclusive_artifact_integrity`.
 
+Published aggregate tables should be reproducible from those packets. Keep a
+verifier that takes the frozen analysis plan, signed evidence packet list, and
+row manifest, then recomputes the full/partial/containment/unimpacted counts.
+Hand-maintained Markdown tables are summaries; they should not be the source of
+truth for measured impact.
+
 Fixture provenance should be explicit:
 
 | Fixture source | Row-credit implication |
@@ -2682,6 +2769,21 @@ projection, materialization, CRDT no-op, canonicalization, provenance, and
 client repair. A row should not be promoted to measured full if it only passes
 with all mechanisms enabled and no ablation identifies which invariant was
 necessary.
+
+For overlapping mechanisms, one-at-a-time disables are not enough. Add
+`only_this_mechanism_enabled` and `all_except_this_mechanism_enabled` runs for
+rows where CAS, projection, materialization, no-op settlement, and client repair
+can all influence the terminal oracle. This separates necessary, sufficient, and
+incidental mechanisms. A fixture should also fail under baseline or under an
+intentionally disabled claimed mechanism; a fixture that passes both with and
+without the mechanism is attribution-inconclusive.
+
+Crash and fatal-error cutpoints should be explicit for atomicity rows. Inject a
+process kill, PHP fatal, DB disconnect, or lost response at attempt prepare,
+token check, post write, meta write, token advance, cache invalidation, hook
+emission, response assembly, and retry replay. Full atomicity credit requires
+recovery to classify the attempt and prove that no split protected bundle or
+orphaned token remains.
 
 The ledger should also record proof debt so estimates do not harden into
 claims before the evidence exists:
@@ -2879,6 +2981,17 @@ shadow, fallback, or different policy epoch should not be accepted for strict
 row credit unless the client refetched under the same policy epoch used at
 commit.
 
+Capability should be pinned to the token's issuance epoch. A strict save that
+loses token preservation, write-set declaration, idempotency, monotonic response
+ordering, or 409 repair support on retry, service-worker replay, REST
+middleware, batch wrapping, or cached editor assets should fail/refetch rather
+than continue under the old token. Already-loaded old JavaScript in editor tabs,
+browser back-forward cache, CDN cache, service workers, mobile WebViews, or
+admin screens opened before deploy counts as an old client until it performs an
+asset/protocol epoch handshake. Heartbeat or awareness presence is not proof of
+capability; capability leases need expiry and refresh before strict room
+enforcement.
+
 Hidden tabs, offline editors, queued REST saves, retry queues, service-worker
 requests, and background mobile clients should count as potentially active
 collaborators until they reconnect, advertise support, or are quarantined.
@@ -2911,6 +3024,15 @@ Telemetry dimensions should include `save_attempt_id`, `logical_save_id`,
 `final_dirty_state`, `pre_save_visible_hash`, `post_repair_visible_hash`, and
 `guarded_path_present`. Count server containment and client repair separately:
 a 409 proves rejection, not user-visible repair.
+
+Use distinct terminal states in production and fixtures:
+`server_contained`, `client_settled_visible_conflict`,
+`client_repaired_saved`, and `row_resolved`. A preserved local draft plus a
+visible conflict is a successful safety outcome, but it is not the same as the
+original save workflow completing cleanly. Automatic repair should additionally
+prove that final DB, fresh reload, and peer state match the pre-save
+local-intent marker; a clean DB that drops the user's intended edit is failed
+repair or containment, not resolution.
 
 Client telemetry is useful for correlation but not trusted evidence by itself.
 Measured credit should require server attempt outcomes plus an independent
@@ -3324,6 +3446,13 @@ pre-insert validation callback:
   them until after commit. Otherwise a hook-triggered second write can deadlock,
   bypass the token check, or invalidate the token for the save still assembling
   its response.
+- `register_rest_field()` update callbacks run after the post row, REST terms,
+  and REST meta. They can call `wp_update_post()`, `update_post_meta()`, or
+  external systems, and the post object used for the final REST response may not
+  reflect protected-field changes made by those callbacks. Strict bundle mode
+  should either forbid additional-field callbacks from mutating protected fields,
+  require them to declare and participate in the bundle write set, or re-read
+  protected hashes after callbacks and invalidate the token on mismatch.
 - Capability checks must be repeated at commit time and on conflict repair. A
   user can pass REST preflight, then lose `edit_post`, `unfiltered_html`,
   post-type-specific caps, status-transition caps, or meta-field capability
