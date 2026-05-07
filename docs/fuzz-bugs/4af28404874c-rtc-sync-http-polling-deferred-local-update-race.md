@@ -21,22 +21,26 @@ The source log failed after the editor loaded and after normal user actions:
 - `two users concurrently move list items` failed because the moved list item
   order did not converge.
 
-I reran the same refreshed known-fixes shard environment and reproduced the
-product failure rather than a readiness, timeout, or setup issue:
+Pass 165 re-read the source log, screenshots, error contexts, and Playwright
+trace. The trace shows the editor readiness waits completing, normal login,
+click, save, reload, toolbar, and keyboard actions, and repeated successful
+`POST /wp-json/wp-sync/v1/updates` responses. There are no captured `500`
+responses, PHP OOMs, or locator/action failures in the source trace for this
+signature.
 
 ```bash
-cd /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505-http-3
-WP_BASE_URL=http://localhost:9603 \
-WP_ENV_TESTS_PORT=9603 \
-npm run test:e2e -- \
-  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
-  --project=chromium --workers=1
+rg -n "Error: expect\\(received\\)|Admin was here|betaIdx|Expected: > 2|Received:   1" \
+  /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505-http-3/fuzz-handoff/distinct-manifest-20260505/results-refresh-http-shard-3/logs/0014-4af28404874c-rtc-sync-http-polling-oom-due-to-oversized-shared-rooms.log
+
+unzip -p \
+  /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505-http-3/fuzz-handoff/distinct-manifest-20260505/results-refresh-http-shard-3/outputs/0014-4af28404874c/playwright-artifacts/test-results/editor-collaboration-colla-61b7f-ge-post-with-diverse-blocks-chromium/trace.zip \
+  '*trace.network' |
+  rg -n 'wp-sync|"status":500|Fatal error|Allowed memory size|oom' -i
 ```
 
-Result: exit code 1. The large-post test again lost one of the concurrent text
-markers, and the list-item test again failed the final order assertion. The run
-also logged a later permission-denied room unregister, but that occurred after
-the editor actions and does not explain the content divergence.
+Result: the log points directly at semantic convergence assertions, while the
+network trace shows healthy `wp-sync` polling traffic and no OOM evidence. This
+reclassifies the bucket label as misleading for this refreshed source run.
 
 ## Repros
 
@@ -74,15 +78,19 @@ the same moves are applied directly to Yjs documents, which narrows the source
 failure away from the block merge algorithm and toward the sync-manager
 scheduling boundary.
 
-Fixed command:
+Pass-165 fixed commands:
 
 ```bash
-npm run test:unit -- \
-  packages/sync/src/test/manager.ts \
-  packages/core-data/src/utils/test/crdt-blocks.ts
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
 ```
 
-Fixed result: PASS, 2 suites and 100 tests.
+Fixed result: the full `SyncManager` suite passed, 27/27 tests. The two list
+move negative controls passed, with the rest of `crdt-blocks.ts` skipped by the
+test-name filter.
 
 ### Playwright repro
 
@@ -106,19 +114,28 @@ paragraph. On an unfixed run it failed with `Expected substring:
 marker. This repro is timing-sensitive, so the unit test is the deterministic
 proof and the full stress spec remains useful as a broader regression check.
 
-Fixed full-spec command:
+Fresh pass-165 browser execution was blocked by local Docker/wp-env state before
+Playwright could start:
 
 ```bash
-WP_BASE_URL=http://localhost:9910 \
-WP_ENV_PORT=9910 \
-RTC_MANIFEST_WS_START_PORT=20680 \
+WP_ENV_PORT=9902 \
+WP_BASE_URL=http://localhost:9902 \
+RTC_MANIFEST_WS_START_PORT=20416 \
 RTC_MANIFEST_WS_FIXED_PORT=1 \
-npm run test:e2e -- \
-  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
-  --project=chromium --workers=1
+npm run wp-env status
+
+WP_ENV_PORT=9902 \
+WP_BASE_URL=http://localhost:9902 \
+RTC_MANIFEST_WS_START_PORT=20416 \
+RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run wp-env start
 ```
 
-Fixed result: PASS, all 3 tests.
+Result: `wp-env status` reported `uninitialized`. `wp-env start` hung in
+`docker compose down` for the pass-165 worktree, and read-only `docker ps` /
+`docker network ls` calls also hung. The source Playwright trace remains the
+browser evidence, and the committed Playwright repro remains the natural-user
+regression coverage.
 
 ## Root Cause
 
