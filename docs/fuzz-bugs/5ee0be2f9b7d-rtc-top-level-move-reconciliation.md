@@ -9158,3 +9158,73 @@ Results: the focused direct helper tests passed, the two CRDT unit suites
 passed `81/81`, targeted JS lint exited `0`, `git diff --check` produced no
 output, and the natural-user Playwright repro passed headlessly in `20.7s` test
 time (`22.1s` overall).
+
+## Pass 162 Verification
+
+Pass 162 independently re-read the pass-161 summary, source JSONL row, generated
+natural-user spec, archived source log, error-context snapshot, source trace
+actions, current branch state, and the current `mergeCrdtBlocks()` code. The
+source trace still shows ordinary editor actions only: block Options > Delete,
+collaborator Options > Add before, typing the inserted paragraph, and toolbar
+Move down. The source and fresh known-fixes browser states fail only after the
+semantic convergence check:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+The pass-162 added value is a fresh verification that the existing branch,
+video standard, and fix still satisfy the requested bar after independently
+recovering a broken local Docker/OrbStack state. Initial browser attempts were
+discarded because Docker disappeared mid-run and the pages navigated to
+Chromium error documents. After `orb start`, explicit wp-env subnets, and
+recreating only the stale fixed-branch wp-env containers, both WordPress sites
+returned HTTP 200 and the browser reruns were valid.
+
+Fresh pass-162 known-fixes direct negative control used a clean detached
+worktree at `3cba2b1e56a98787de08dc6c7df2434759e8f908` with only repro commit
+`a7f79df448e0ecb9c6b9a1f7048031cf532af5d0` cherry-picked:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --testNamePattern="does not rewrite block records when moving adjacent top-level blocks|represents adjacent pure moves as structural array changes|replicates direct pure move merges as structural array changes" --runInBand --no-cache
+```
+
+Result: expected failure, `3 failed`. The captured moved Y.Map was rewritten to
+the displaced sibling content, and local/remote observer proofs saw nested
+`YMap`/`YText` updates instead of one structural array change.
+
+Fresh pass-162 known-fixes browser negative control:
+
+```bash
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-162/artifacts/knownfix-playwright-artifacts-pass162-rerun RTC_MANIFEST_WS_START_PORT=20450 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_EC47_ATTEMPTS=1 RTC_EC47_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-162/artifacts/knownfix-ec47-attempts-pass162-rerun PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts --project=chromium --workers=1
+```
+
+Result: expected failure in `43.1s`, with the same primary/collaborator split
+as the source row.
+
+Fresh pass-162 fixed-branch verification on the unchanged PR branch
+`f72df45f8e3a19ca3238332d31522522267456c4`, based on current `origin/trunk`
+`777af47425fbb6608b8f1453976abd1458c3d81d`:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-post-block-move.ts packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-162/artifacts/fixed-playwright-artifacts-pass162-rerun RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+Results: the two CRDT unit suites passed `81/81`, targeted JS lint exited `0`,
+`git diff --check` produced no output, and the natural-user Playwright repro
+passed headlessly in `20.4s` test time (`22.0s` overall).
+
+Pass 162 created and validated a fresh annotated stitched-screen video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-162/video/5ee0be2f9b7d/rtc-top-level-move-reconciliation-pass162-annotated.mp4
+```
+
+`ffprobe` reports H.264 video, `1920x1080`, `24.0s`, and `720` frames. A full
+ffmpeg decode completed with no errors, and the extracted 8s frame shows both
+fresh known-fixes editor screens, the natural action log, the expected/observed
+orders, and pass-162 fixed-branch verification.
