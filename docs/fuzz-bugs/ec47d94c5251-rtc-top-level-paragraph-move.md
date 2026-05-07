@@ -1936,3 +1936,62 @@ not initialized; `npm run wp-env start` produced no progress for 40 seconds and
 was interrupted; `docker info` hung after printing the client header and was
 killed. The existing source trace/screenshots and pass-79/pass-165 annotated
 videos remain the browser-level evidence.
+
+## Pass 168 practical-impact and branch recheck
+
+Pass 168 re-read the source JSONL row, archived Playwright log, error context,
+trace actions, natural-user repro spec, low-level repro commit, root-cause
+code, and branch state. The bug remains a real RTC product defect, not a
+readiness wait, locator error, generated-spec issue, environment failure,
+inverted assertion, or expected behavior.
+
+The archived HTTP source run still failed only after the natural editor
+sequence completed. The trace shows:
+
+- a normal REST-created post containing a heading and two paragraphs;
+- primary user toolbar `Delete` of the heading;
+- collaborator toolbar `Add before` and typing of the inserted paragraph;
+- primary user toolbar `Move down` of the emoji paragraph;
+- final convergence polling over materialized editor block trees.
+
+The final source state is still content corruption: the primary editor has
+`inserted, sibling, emoji`, while the collaborator has `inserted, emoji,
+emoji`.
+
+Real-user likelihood remains `low`, with one sharper distinction: it is not
+`very-low` for sites actually using the Gutenberg plugin's RTC path because the
+plugin registers the `wp_collaboration_enabled` setting with default `true`
+when collaboration is allowed and the post editor has sync config. It is also
+not `medium` or `high` for normal Gutenberg use overall because it still
+requires two active editors in the same post, editing the same nearby top-level
+region, with a stale full-block snapshot or same-array reorder echo occurring
+around a delete, insert-before, and move-down sequence.
+
+Fresh pass-168 verification:
+
+- `origin/trunk` is still `19c460ff7c8` (`Editor: Paginate revisions slider by
+  100 per page (#77200)`), and both ec47 branches still fork from that commit.
+- The PR branch still has the requested three commits: non-Playwright repros,
+  natural-user Playwright repro, then fix.
+- `git ls-remote --heads danluu` confirms both branches are pushed:
+  `20424d2ed38` for the explanation branch and `0c1fd6f6e25` for the PR
+  branch before this documentation-only pass-168 update.
+- The fixed PR branch passes the three focused CRDT repros, including the
+  same-array cache/reorder repro.
+- The fixed PR branch passes the full
+  `packages/core-data/src/utils/test/crdt-blocks.ts` suite (`78 passed`).
+- JS lint for the touched source, unit test, and Playwright spec files passes.
+- `git diff --check HEAD~3..HEAD` passes.
+- Known-fixes head `3cba2b1e56a98787de08dc6c7df2434759e8f908` plus only the
+  non-Playwright repro commit still fails
+  `observes reordered blocks when the editor reuses the same block array
+  reference`, receiving `inserted, emoji, another` instead of
+  `inserted, another, emoji`.
+- The pass-75 annotated headless H.264 video is readable (`1600x900`,
+  duration `39.0s`), and its saved fixed-run JSON shows both editors converged
+  to `inserted, sibling, emoji`.
+
+The shortest remaining experiment to improve practical-impact confidence is
+still an instrumented repeated Playwright run of the natural sequence with
+small randomized delays. That would estimate hit rate under realistic editor
+timing; the current evidence proves reachability and impact but not frequency.
