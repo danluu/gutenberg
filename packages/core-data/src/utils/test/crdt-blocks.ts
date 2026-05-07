@@ -32,6 +32,10 @@ jest.mock( '@wordpress/blocks', () => ( {
 			attributes: { content: { type: 'rich-text' } },
 		},
 		{
+			name: 'core/quote',
+			attributes: { citation: { type: 'rich-text' } },
+		},
+		{
 			name: 'core/image',
 			attributes: {
 				blob: { type: 'string', role: 'local' },
@@ -360,6 +364,208 @@ describe( 'crdt-blocks', () => {
 				block1.get( 'attributes' ) as YBlockAttributes
 			 ).get( 'content' ) as Y.Text;
 			expect( content1.toString() ).toBe( 'First' );
+		} );
+
+		it( 'does not rewrite neighboring mixed block records during a top-level move', () => {
+			const insertedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Remote inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted-block',
+			};
+			const quoteBlock: Block = {
+				name: 'core/quote',
+				attributes: { citation: 'Quote citation' },
+				innerBlocks: [
+					{
+						name: 'core/paragraph',
+						attributes: { content: 'Quote text' },
+						innerBlocks: [],
+						clientId: 'quote-inner-paragraph',
+					},
+				],
+				clientId: 'quote-block',
+			};
+			const movedParagraph: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Paragraph moved above quote' },
+				innerBlocks: [],
+				clientId: 'moved-paragraph',
+			};
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, quoteBlock, movedParagraph ],
+				null
+			);
+
+			const quoteYBlock = yblocks.get( 1 );
+			const paragraphYBlock = yblocks.get( 2 );
+			const rewrittenBlockTypes: string[] = [];
+			yblocks.observeDeep( ( events ) => {
+				for ( const event of events ) {
+					if (
+						event.target instanceof Y.Map &&
+						event.keysChanged.has( 'name' )
+					) {
+						rewrittenBlockTypes.push(
+							event.target.get( 'name' ) as string
+						);
+					}
+				}
+			} );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, movedParagraph, quoteBlock ],
+				null
+			);
+
+			expect( rewrittenBlockTypes ).toEqual( [] );
+			expect( [ undefined, 'core/quote' ] ).toContain(
+				quoteYBlock.get( 'name' )
+			);
+			expect( [ undefined, 'core/paragraph' ] ).toContain(
+				paragraphYBlock.get( 'name' )
+			);
+			expect(
+				( yblocks.toJSON() as Block[] ).map( ( block ) => block.name )
+			).toEqual( [ 'core/paragraph', 'core/paragraph', 'core/quote' ] );
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.clientId
+				)
+			).toEqual( [
+				insertedBlock.clientId,
+				movedParagraph.clientId,
+				quoteBlock.clientId,
+			] );
+		} );
+
+		it( 'observes a mixed block move after a remote shift when the editor reuses the block array', () => {
+			const insertedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Remote inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted-block',
+			};
+			const quoteBlock: Block = {
+				name: 'core/quote',
+				attributes: { citation: 'Quote citation' },
+				innerBlocks: [
+					{
+						name: 'core/paragraph',
+						attributes: { content: 'Quote text' },
+						innerBlocks: [],
+						clientId: 'quote-inner-paragraph',
+					},
+				],
+				clientId: 'quote-block',
+			};
+			const movedParagraph: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Paragraph moved above quote' },
+				innerBlocks: [],
+				clientId: 'moved-paragraph',
+			};
+			const sharedEditorBlocks = [
+				insertedBlock,
+				quoteBlock,
+				movedParagraph,
+			];
+
+			mergeCrdtBlocks( yblocks, sharedEditorBlocks, null );
+
+			sharedEditorBlocks.splice( 1, 2, movedParagraph, quoteBlock );
+			mergeCrdtBlocks( yblocks, sharedEditorBlocks, null );
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.clientId
+				)
+			).toEqual( [
+				insertedBlock.clientId,
+				movedParagraph.clientId,
+				quoteBlock.clientId,
+			] );
+			expect(
+				( yblocks.toJSON() as Block[] ).map( ( block ) => block.name )
+			).toEqual( [ 'core/paragraph', 'core/paragraph', 'core/quote' ] );
+		} );
+
+		it( 'keeps mixed block identities when a moved block was also edited', () => {
+			const insertedBlock: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Remote inserted paragraph' },
+				innerBlocks: [],
+				clientId: 'inserted-block',
+			};
+			const quoteBlock: Block = {
+				name: 'core/quote',
+				attributes: { citation: 'Quote citation' },
+				innerBlocks: [
+					{
+						name: 'core/paragraph',
+						attributes: { content: 'Quote text' },
+						innerBlocks: [],
+						clientId: 'quote-inner-paragraph',
+					},
+				],
+				clientId: 'quote-block',
+			};
+			const movedParagraph: Block = {
+				name: 'core/paragraph',
+				attributes: { content: 'Paragraph before edit' },
+				innerBlocks: [],
+				clientId: 'moved-paragraph',
+			};
+			const editedMovedParagraph: Block = {
+				...movedParagraph,
+				attributes: { content: 'Paragraph moved after edit' },
+			};
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, quoteBlock, movedParagraph ],
+				null
+			);
+
+			const rewrittenBlockTypes: string[] = [];
+			yblocks.observeDeep( ( events ) => {
+				for ( const event of events ) {
+					if (
+						event.target instanceof Y.Map &&
+						event.keysChanged.has( 'name' )
+					) {
+						rewrittenBlockTypes.push(
+							event.target.get( 'name' ) as string
+						);
+					}
+				}
+			} );
+
+			mergeCrdtBlocks(
+				yblocks,
+				[ insertedBlock, editedMovedParagraph, quoteBlock ],
+				null
+			);
+
+			expect( rewrittenBlockTypes ).toEqual( [] );
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.clientId
+				)
+			).toEqual( [
+				insertedBlock.clientId,
+				movedParagraph.clientId,
+				quoteBlock.clientId,
+			] );
+			expect(
+				( yblocks.toJSON() as Block[] ).map( ( block ) => block.name )
+			).toEqual( [ 'core/paragraph', 'core/paragraph', 'core/quote' ] );
+			expect(
+				( yblocks.toJSON() as Block[] )[ 1 ].attributes.content
+			).toBe( 'Paragraph moved after edit' );
 		} );
 
 		it( 'creates Y.Text for rich-text attributes', () => {
