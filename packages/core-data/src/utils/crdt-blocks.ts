@@ -280,7 +280,8 @@ function areBlocksEqual( gblock: Block, yblock: YBlock ): boolean {
 
 function createNewYAttributeMap(
 	blockName: string,
-	attributes: BlockAttributes
+	attributes: BlockAttributes,
+	blockPath?: string
 ): YBlockAttributes {
 	return new Y.Map(
 		Object.entries( attributes ).map(
@@ -290,7 +291,10 @@ function createNewYAttributeMap(
 					createNewYAttributeValue(
 						blockName,
 						attributeName,
-						attributeValue
+						attributeValue,
+						blockPath
+							? `${ blockPath }/attributes/${ attributeName }`
+							: undefined
 					),
 				];
 			}
@@ -301,10 +305,11 @@ function createNewYAttributeMap(
 function createNewYAttributeValue(
 	blockName: string,
 	attributeName: string,
-	attributeValue: unknown
+	attributeValue: unknown,
+	attributePath?: string
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
-	return createYValueFromSchema( schema, attributeValue );
+	return createYValueFromSchema( schema, attributeValue, attributePath );
 }
 
 /**
@@ -316,13 +321,15 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema           The attribute type definition.
+ * @param value            The plain JS value to convert.
+ * @param arrayElementPath Optional stable path used to seed array element IDs.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
 	schema: BlockAttributeSchema | undefined,
-	value: unknown
+	value: unknown,
+	arrayElementPath?: string
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	if ( ! schema ) {
 		return value;
@@ -338,14 +345,22 @@ function createYValueFromSchema(
 
 		yArray.insert(
 			0,
-			value.map( ( item ) => createYMapFromQuery( query, item ) )
+			value.map( ( item, index ) =>
+				createYMapFromQuery(
+					query,
+					item,
+					arrayElementPath
+						? `${ arrayElementPath }/${ index }`
+						: undefined
+				)
+			)
 		);
 
 		return yArray;
 	}
 
 	if ( schema.type === 'object' && schema.query && isRecord( value ) ) {
-		return createYMapFromQuery( schema.query, value );
+		return createYMapFromQuery( schema.query, value, arrayElementPath );
 	}
 
 	return value;
@@ -365,32 +380,42 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Optional stable ID for this array element.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
 	query: Record< string, BlockAttributeSchema >,
-	obj: unknown
+	obj: unknown,
+	arrayElementId?: string
 ): Y.Map< unknown > {
 	if ( ! isRecord( obj ) ) {
 		return new Y.Map();
 	}
 
-	const arrayElementId = getArrayElementId( obj ) ?? uuidv4();
+	const resolvedArrayElementId =
+		getArrayElementId( obj ) ?? arrayElementId ?? uuidv4();
 	const entries: [ string, unknown ][] = Object.entries( obj )
 		.filter( ( [ key ] ) => key !== ARRAY_ELEMENT_ID_KEY )
 		.map( ( [ key, val ] ): [ string, unknown ] => {
 			const subSchema = query[ key ];
-			return [ key, createYValueFromSchema( subSchema, val ) ];
+			return [
+				key,
+				createYValueFromSchema(
+					subSchema,
+					val,
+					`${ resolvedArrayElementId }/${ key }`
+				),
+			];
 		} );
 
-	entries.push( [ ARRAY_ELEMENT_ID_KEY, arrayElementId ] );
+	entries.push( [ ARRAY_ELEMENT_ID_KEY, resolvedArrayElementId ] );
 
 	return new Y.Map( entries );
 }
 
-function createNewYBlock( block: Block ): YBlock {
+function createNewYBlock( block: Block, blockPath?: string ): YBlock {
 	return createYMap< YBlockRecord >(
 		Object.fromEntries(
 			Object.entries( block ).map( ( [ key, value ] ) => {
@@ -398,7 +423,11 @@ function createNewYBlock( block: Block ): YBlock {
 					case 'attributes': {
 						return [
 							key,
-							createNewYAttributeMap( block.name, value ),
+							createNewYAttributeMap(
+								block.name,
+								value,
+								blockPath
+							),
 						];
 					}
 
@@ -412,8 +441,13 @@ function createNewYBlock( block: Block ): YBlock {
 
 						innerBlocks.insert(
 							0,
-							value.map( ( innerBlock: Block ) =>
-								createNewYBlock( innerBlock )
+							value.map( ( innerBlock: Block, index: number ) =>
+								createNewYBlock(
+									innerBlock,
+									blockPath
+										? `${ blockPath }/innerBlocks/${ index }`
+										: undefined
+								)
 							)
 						);
 
@@ -751,7 +785,9 @@ function mergeCrdtBlocksIntoYBlocks(
 
 	// inserts
 	for ( let i = 0; i < numOfInsertionsNeeded; i++, left++ ) {
-		const newBlock = [ createNewYBlock( incomingBlocksToSync[ left ] ) ];
+		const newBlock = [
+			createNewYBlock( blocksToSync[ left ], String( left ) ),
+		];
 
 		yblocks.insert( left, newBlock );
 	}
@@ -851,33 +887,6 @@ function stripArrayElementIds( value: unknown ): unknown {
 	return value;
 }
 
-function arePlainValuesEqual( a: unknown, b: unknown ): boolean {
-	return fastDeepEqual(
-		stripArrayElementIds( a ),
-		stripArrayElementIds( b )
-	);
-}
-
-function isExpectedYValueTypeForSchema(
-	schema: BlockAttributeSchema | undefined,
-	newVal: unknown,
-	currentVal: unknown
-): boolean {
-	if ( schema?.type === 'rich-text' ) {
-		return currentVal instanceof Y.Text;
-	}
-
-	if ( schema?.type === 'array' && schema.query && Array.isArray( newVal ) ) {
-		return currentVal instanceof Y.Array;
-	}
-
-	if ( schema?.type === 'object' && schema.query && isRecord( newVal ) ) {
-		return currentVal instanceof Y.Map;
-	}
-
-	return true;
-}
-
 function mergeYArrayByElementIds(
 	yArray: Y.Array< unknown >,
 	newValue: unknown[],
@@ -933,101 +942,6 @@ function mergeYArrayByElementIds(
 	return true;
 }
 
-function isYArrayEqualToPlainArray(
-	yArray: Y.Array< unknown >,
-	value: unknown[]
-): boolean {
-	return (
-		yArray.length === value.length &&
-		value.every( ( element, index ) =>
-			areArrayElementsEqual( element, yArray.get( index ) )
-		)
-	);
-}
-
-function findYArrayElementIndex(
-	yArray: Y.Array< unknown >,
-	previousElement: unknown,
-	preferredIndex: number,
-	previousLength: number
-): number {
-	const previousId = getArrayElementId( previousElement );
-
-	if ( previousId ) {
-		for ( let i = 0; i < yArray.length; i++ ) {
-			if ( getArrayElementId( yArray.get( i ) ) === previousId ) {
-				return i;
-			}
-		}
-	}
-
-	for ( let i = 0; i < yArray.length; i++ ) {
-		if ( areArrayElementsEqual( previousElement, yArray.get( i ) ) ) {
-			return i;
-		}
-	}
-
-	if ( yArray.length === previousLength && preferredIndex < yArray.length ) {
-		return preferredIndex;
-	}
-
-	return preferredIndex < yArray.length ? preferredIndex : -1;
-}
-
-function mergeYArrayLocalChanges(
-	yArray: Y.Array< unknown >,
-	newValue: unknown[],
-	previousValue: unknown[],
-	query: Record< string, BlockAttributeSchema >,
-	cursorPosition: number | null
-): boolean {
-	if ( arePlainValuesEqual( newValue, previousValue ) ) {
-		return true;
-	}
-
-	// No remote divergence: preserve existing behavior for ordinary local
-	// inserts/deletes/reorders.
-	if ( isYArrayEqualToPlainArray( yArray, previousValue ) ) {
-		return false;
-	}
-
-	const sharedLength = Math.min( previousValue.length, newValue.length );
-
-	for ( let i = 0; i < sharedLength; i++ ) {
-		const previousElement = previousValue[ i ];
-		const newElement = newValue[ i ];
-
-		if ( arePlainValuesEqual( previousElement, newElement ) ) {
-			continue;
-		}
-
-		const currentIndex = findYArrayElementIndex(
-			yArray,
-			previousElement,
-			i,
-			previousValue.length
-		);
-
-		if ( currentIndex === -1 ) {
-			continue;
-		}
-
-		const currentElement = yArray.get( currentIndex );
-
-		if ( currentElement instanceof Y.Map && isRecord( newElement ) ) {
-			mergeYMapValues(
-				currentElement,
-				newElement,
-				query,
-				cursorPosition,
-				isRecord( previousElement ) ? previousElement : undefined
-			);
-		}
-	}
-
-	return true;
-}
-
 /**
  * Merge an incoming plain array into an existing Y.Array in-place.
  *
@@ -1055,19 +969,6 @@ function mergeYArray(
 	}
 
 	const query = schema.query;
-
-	if (
-		previousValue &&
-		mergeYArrayLocalChanges(
-			yArray,
-			newValue,
-			previousValue,
-			query,
-			cursorPosition
-		)
-	) {
-		return;
-	}
 
 	if ( mergeYArrayByElementIds( yArray, newValue, query, cursorPosition ) ) {
 		return;
@@ -1286,11 +1187,7 @@ function mergeYMapValues(
 
 	// Delete properties absent from the incoming object.
 	for ( const key of yMap.keys() ) {
-		if (
-			key !== ARRAY_ELEMENT_ID_KEY &&
-			! Object.hasOwn( newObj, key ) &&
-			( ! previousObj || Object.hasOwn( previousObj, key ) )
-		) {
+		if ( key !== ARRAY_ELEMENT_ID_KEY && ! Object.hasOwn( newObj, key ) ) {
 			yMap.delete( key );
 		}
 	}
