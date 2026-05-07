@@ -12,6 +12,7 @@ MIN_DISK_FREE_MB="${RTC_BUG_DEEP_MIN_DISK_FREE_MB:-81920}"
 LOW_DISK_FREE_MB="${RTC_BUG_DEEP_LOW_DISK_FREE_MB:-40960}"
 CPU_START_LIMIT="${RTC_BUG_DEEP_CPU_START_LIMIT:-88}"
 LAUNCH_STAGGER_SECS="${RTC_BUG_DEEP_LAUNCH_STAGGER_SECS:-4}"
+MAX_REQUEUES="${RTC_BUG_DEEP_MAX_REQUEUES:-3}"
 
 root="/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing"
 refresh_glob="/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505*/fuzz-handoff/distinct-manifest-20260505/results-refresh-*/results.jsonl"
@@ -247,13 +248,18 @@ cleanup_transient_startup_failures() {
 		[ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && continue
 		log_file="$log_dir/deep-pass-$pass-$sig.log"
 		[ -f "$log_file" ] || continue
-		if grep -q 'Failed to load cloud requirements' "$log_file"; then
+		exit_code="$(cat "$dir/$sig.exit" 2>/dev/null || true)"
+		if grep -Eq 'Failed to load cloud requirements|stream disconnected|codex_core::tools::router|write_stdin failed|panic|exited -1' "$log_file" || [ "$exit_code" = "101" ]; then
 			requeues_file="$dir/$sig.requeues"
 			requeues="$(cat "$requeues_file" 2>/dev/null || echo 0)"
 			requeues=$(( requeues + 1 ))
 			echo "$requeues" > "$requeues_file"
-			rm -f "$dir/$sig.failed" "$dir/$sig.exit" "$dir/$sig.claimed" "$dir/$sig.wrapper.pid" "$dir/$sig.paused"
-			log "pass=$pass requeueing deep-$sig after transient codex startup failure requeues=$requeues"
+			if [ "$requeues" -le "$MAX_REQUEUES" ]; then
+				rm -f "$dir/$sig.failed" "$dir/$sig.exit" "$dir/$sig.claimed" "$dir/$sig.wrapper.pid" "$dir/$sig.paused"
+				log "pass=$pass requeueing deep-$sig after no-summary codex/tool failure requeues=$requeues"
+			else
+				log "pass=$pass leaving deep-$sig failed after no-summary codex/tool failure requeues=$requeues max=$MAX_REQUEUES"
+			fi
 		fi
 	done
 }
