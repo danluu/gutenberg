@@ -140,6 +140,65 @@ The source browser failure still has a valid non-timeout Playwright row,
 valid `1280x720` screenshots, a valid trace zip, and a final semantic
 divergence snapshot from ordinary editor actions.
 
+## Pass 167 Practical Impact
+
+Pass 167 classifies the real-user likelihood as **low overall** for normal
+Gutenberg use, but **medium inside active RTC co-editing sessions**.
+
+The natural workflow is:
+
+1. Two editors have the same post open in the post editor with RTC
+   collaboration enabled over HTTP polling sync.
+2. The post has adjacent top-level paragraph-like blocks.
+3. One editor removes a top-level block before them.
+4. The other editor inserts a new top-level paragraph before one remaining
+   paragraph.
+5. After both sessions observe the structural edits, the first editor moves
+   the original paragraph down by one toolbar step.
+
+No malformed block markup, direct state mutation, synthetic block tree,
+network fault injection, save/reload, or unusual browser API is needed for the
+natural Playwright repro. The source trace shows ordinary toolbar/menu actions:
+select heading, Options > Delete, collaborator Options > Add before, type
+paragraph text, then Move down.
+
+The uncommon prerequisite is not the UI action itself; deleting, inserting, and
+moving paragraphs are ordinary editor behavior. The rare prerequisite is the
+collaborative timing: two live sessions must perform structural edits in the
+same small top-level neighborhood before the later move. This is why the
+likelihood is not high for general Gutenberg users. It is more plausible for
+teams actively co-editing outlines, release notes, documentation, or article
+sections where paragraphs are frequently inserted and reordered.
+
+Blast radius is content corruption, not a cosmetic UI-only mismatch. One peer
+can lose a sibling paragraph and show a duplicate of the moved paragraph:
+
+```text
+expected: inserted, displaced sibling, moved paragraph
+observed: inserted, moved paragraph, moved paragraph
+```
+
+If the bad peer saves or the state becomes the authoritative synced state, this
+can persist as duplicated content plus lost content. I did not see evidence for
+a save loop, performance/OOM risk, or a persistence-layer-only failure in this
+signature. Recovery is manual while both sessions are open: compare peers or
+revision history, restore the missing paragraph, and remove the duplicate.
+
+Strongest evidence for the classification: the archived source run and trace
+use natural editor actions and fail after convergence; multiple same-family
+fuzz signatures hit move reconciliation; and the pass-167 known-fixes control
+reproduces the defect below Playwright through both `mergeCrdtBlocks()` and the
+post CRDT entrypoint. Strongest evidence against higher likelihood: the bug is
+RTC-only, requires at least two live sessions/users, needs a narrow structural
+edit ordering, and pass 167 could not collect a fresh live browser frequency
+sample because local `wp-env` stalled before launch.
+
+The shortest confidence-improving experiment is a live RTC browser loop on a
+healthy Docker runtime that repeats only this natural action sequence 50-100
+times with small randomized think times between the delete, Add before, and
+Move down actions. That would turn the likelihood estimate from structural
+reasoning plus fuzz density into an observed hit rate for normal UI actions.
+
 ## Verification
 
 Pass 40 refreshed both branches onto current `origin/trunk`:
