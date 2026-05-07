@@ -77,8 +77,6 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
  */
 export type MergeCursorPosition = WPBlockSelection | null;
 
-const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
-
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
  * to their string (HTML) representation. This is necessary for array-type and
@@ -411,6 +409,62 @@ function createNewYBlock( block: Block ): YBlock {
 	);
 }
 
+function getReorderedBlocksByClientId(
+	yblocks: YBlocks,
+	incomingBlocks: Block[],
+	start: number,
+	length: number
+): Block[] | null {
+	const existingByClientId = new Map< string, Block >();
+	const incomingClientIds = new Set< string >();
+	let hasOrderChange = false;
+
+	for ( let i = 0; i < length; i++ ) {
+		const yblock = yblocks.get( start + i );
+		const clientId = yblock.get( 'clientId' );
+
+		if (
+			! clientId ||
+			existingByClientId.has( clientId ) ||
+			typeof clientId !== 'string'
+		) {
+			return null;
+		}
+
+		existingByClientId.set( clientId, yblock.toJSON() as unknown as Block );
+	}
+
+	for ( let i = 0; i < length; i++ ) {
+		const incomingBlock = incomingBlocks[ start + i ];
+		const clientId = incomingBlock.clientId;
+
+		if (
+			! clientId ||
+			incomingClientIds.has( clientId ) ||
+			! existingByClientId.has( clientId )
+		) {
+			return null;
+		}
+
+		incomingClientIds.add( clientId );
+
+		if ( yblocks.get( start + i ).get( 'clientId' ) !== clientId ) {
+			hasOrderChange = true;
+		}
+	}
+
+	if (
+		! hasOrderChange ||
+		incomingClientIds.size !== existingByClientId.size
+	) {
+		return null;
+	}
+
+	return incomingBlocks
+		.slice( start, start + length )
+		.map( ( block ) => existingByClientId.get( block.clientId! )! );
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -426,16 +480,7 @@ export function mergeCrdtBlocks(
 	incomingBlocks: Block[],
 	attributeCursor: MergeCursorPosition
 ): void {
-	// Ensure we are working with serializable block data.
-	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
-		serializableBlocksCache.set(
-			incomingBlocks,
-			makeBlocksSerializable( incomingBlocks )
-		);
-	}
-
-	const incomingBlocksToSync =
-		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const incomingBlocksToSync = makeBlocksSerializable( incomingBlocks );
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -490,6 +535,36 @@ export function mergeCrdtBlocks(
 		0,
 		yblocks.length - incomingBlocksToSync.length
 	);
+
+	const reorderedBlocksByClientId =
+		numOfUpdatesNeeded > 1 &&
+		numOfInsertionsNeeded === 0 &&
+		numOfDeletionsNeeded === 0 &&
+		getReorderedBlocksByClientId(
+			yblocks,
+			incomingBlocksToSync,
+			left,
+			numOfUpdatesNeeded
+		);
+
+	if ( reorderedBlocksByClientId ) {
+		const insertAt = left;
+		const reorderedBlocks =
+			reorderedBlocksByClientId.map( createNewYBlock );
+		const applyReorder = () => {
+			yblocks.delete( insertAt, numOfUpdatesNeeded );
+			yblocks.insert( insertAt, reorderedBlocks );
+			mergeCrdtBlocks( yblocks, incomingBlocksToSync, attributeCursor );
+		};
+
+		// Keep the structural replacement atomic for observers and remote sync.
+		if ( yblocks.doc ) {
+			yblocks.doc.transact( applyReorder );
+		} else {
+			applyReorder();
+		}
+		return;
+	}
 
 	// updates
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
