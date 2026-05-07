@@ -586,3 +586,133 @@ Pass 168 generated a fresh annotated headless video at:
 ```
 
 `ffprobe` reports a 1280x720 video, 900 frames, 30 seconds.
+
+## Pass 169 Current Known-Fixes Verification
+
+Pass 169 rechecked the bug against the May 7 backlink-aware known-fixes base
+instead of the older May 5 refresh checkout. The manifest identifies the
+current synthetic base as:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507
+f256024286dd80a4c0e2579f658c109256abf648
+```
+
+This base includes current `origin/trunk`
+`86d1b6741a57cdc066485370fe051285f2ebd0b4` plus the merged and proposed
+#77716 RTC backlink set. It is still a best-effort integration branch because
+several open PRs overlap in the CRDT/sync code.
+
+Applying only the deterministic `SyncManager` repro from commit 1 to that base
+still fails:
+
+```bash
+base=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507
+pr=/Users/danluu/dev/fuzz/gutenberg-bug-4af28404874c
+tmp=$(mktemp -d /private/tmp/4af28404874c-pass169-knownfix.XXXXXX)
+repo="$tmp/repo"
+git -C "$base" worktree add --detach "$repo" HEAD
+ln -s "$base/node_modules" "$repo/node_modules" 2>/dev/null || true
+ln -s "$base/packages/sync/node_modules" "$repo/packages/sync/node_modules" 2>/dev/null || true
+git -C "$pr" show --format= --binary ad78680a998 -- \
+  packages/sync/src/test/manager.ts > "$tmp/manager-test.patch"
+git -C "$repo" apply "$tmp/manager-test.patch"
+cd "$repo"
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: FAIL on known-fixes head `f256024286dd`. The current known-fixes stack
+changes the symptom from the older one-call failure to two stale projections.
+A diagnostic rerun printed the exact calls:
+
+```text
+pass169-editRecord-calls [[{"title":"Initial Title","body":"Remote Body"}],[{"title":"Initial Title","body":"Remote Body"}]]
+```
+
+That means the remote-key reconciliation work in the current synthetic stack
+does not provide the missing happens-before edge. `_updateEntityRecord` can
+still compare the Y.Doc against an edited record that already contains a local
+title while the Y.Doc still contains the stale initial title.
+
+The PR branch was rebased onto the same current `origin/trunk` and kept the
+required three-commit sequence:
+
+1. `ad78680a998 Add RTC deferred update race repro`
+2. `eaf894fa2d9 Add RTC stress Playwright repro`
+3. `14f563ba871 Flush RTC updates before remote reconciliation`
+
+Fixed verification after the rebase:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
+
+npm run lint:js -- \
+  packages/sync/src/manager.ts \
+  packages/sync/src/test/manager.ts \
+  packages/core-data/src/utils/test/crdt-blocks.ts \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts
+```
+
+Results: PASS, PASS, PASS, PASS. The full `SyncManager` suite passed 27/27
+tests. The block CRDT command passed the two targeted list-move negative
+controls with the rest skipped by the name filter.
+
+Pass 169 generated a fresh annotated headless video at:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-169/video/4af28404874c-pass169-annotated.mp4
+```
+
+`ffprobe` reports a 1280x720 video, 900 frames, 30 seconds.
+
+Pass 169 keeps the practical likelihood classification at `low`, with a
+sharper boundary:
+
+- In ordinary single-user editing the likelihood is effectively none because no
+  remote Yjs update is being projected back into the same editor.
+- In casual two-user collaboration it is low because the local write is queued
+  only until the next timer tick.
+- In active co-editing sessions it is not `very-low`: once collaborator
+  awareness is detected, the default HTTP provider polls every second, and each
+  normal edit creates another deferred local-write window.
+
+The natural user workflow remains: post editor, real-time collaboration enabled,
+default HTTP polling provider, two or three active browser sessions/users on the
+same post, and normal editor actions such as typing in a paragraph or using the
+list-item toolbar move buttons. Save/reload is not required for the minimal
+race, though the source stress test also saved and refreshed before the failed
+same-paragraph edit. The source's large generated post, precise `Promise.all`
+timing, and broad stress choreography are fuzz amplifiers, not prerequisites.
+
+Additional practical-impact evidence from code:
+
+- `wp_collaboration_enabled` defaults to true when collaboration is allowed and
+  the plugin activation hook sets it to `1`, but the UI text labels this as
+  early access.
+- `gutenberg_inject_real_time_collaboration_setting` disables collaboration on
+  the site editor, so the affected editor surface is the post editor.
+- `getDefaultProviderCreators()` returns the HTTP polling provider; plugins can
+  filter providers, but the default path matches the source trace.
+- `POLLING_INTERVAL_WITH_COLLABORATORS_IN_MS` is 1000 ms, while solo polling is
+  4000 ms and background-tab polling is 25000 ms.
+- The HTTP polling code has a 1 MB encoded-update guard and reports
+  `DOCUMENT_SIZE_LIMIT_EXCEEDED`; the refreshed source trace instead shows
+  successful `wp-sync` responses and semantic assertion failures.
+
+Blast radius remains content/state loss rather than OOM for this signature:
+local or remote paragraph text can be dropped from the edited record, list
+ordering can diverge, and a user can persist the bad state by saving. There is
+no evidence in the refreshed source trace of duplicate content, repeated HTTP
+500s, a save loop, or process OOM. The recovery path is user-visible correction,
+undo if still available, or revisions after save.
