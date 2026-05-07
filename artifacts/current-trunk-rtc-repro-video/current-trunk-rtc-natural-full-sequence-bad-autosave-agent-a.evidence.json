@@ -1,0 +1,350 @@
+{
+	"scenario": "bad-autosave",
+	"postId": 1256,
+	"markerA": "A-SAVED-THEN-LOST-1778174173514-42036-2",
+	"markerB": "B-STAYS-SAVED-1778174173514-42036-2",
+	"room": "postType/post:1256",
+	"attempt": 2,
+	"trunk": "4abced82501bdbf44fd373ed5f87ea68eecab4de",
+	"bHasABeforeBEdit": false,
+	"canonicalAfterBSave": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+	},
+	"heal": {
+		"state": {
+			"aHasA": true,
+			"aHasB": false,
+			"bHasA": true,
+			"bHasB": false
+		},
+		"healed": false,
+		"waitedMs": 90471
+	},
+	"syncCountsAfterRelease": {
+		"A": 85,
+		"B": 87
+	},
+	"canonicalBeforeClose": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+	},
+	"revisionsBeforeClose": [
+		{
+			"id": 1261,
+			"postName": "1256-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:24",
+			"isAutosave": true,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1260,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:22",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1259,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:21",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1258,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:16",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"requestsBeforeClose": [
+		{
+			"label": "A",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T17:16:16.339Z",
+			"finishedAt": "2026-05-07T17:16:16.437Z",
+			"responseId": 1256,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": false,
+			"responseHasA": false,
+			"responseHasB": false
+		},
+		{
+			"label": "A",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T17:16:21.072Z",
+			"finishedAt": "2026-05-07T17:16:21.128Z",
+			"responseId": 1256,
+			"responseSlug": "",
+			"requestHasA": true,
+			"requestHasB": false,
+			"responseHasA": true,
+			"responseHasB": false
+		},
+		{
+			"label": "B",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T17:16:16.362Z",
+			"finishedAt": "2026-05-07T17:16:16.447Z",
+			"responseId": 1256,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": false,
+			"responseHasA": false,
+			"responseHasB": false
+		},
+		{
+			"label": "B",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T17:16:22.123Z",
+			"finishedAt": "2026-05-07T17:16:22.183Z",
+			"responseId": 1256,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": true,
+			"responseHasA": false,
+			"responseHasB": true
+		},
+		{
+			"label": "B",
+			"kind": "autosave",
+			"status": 200,
+			"startedAt": "2026-05-07T17:16:24.286Z",
+			"finishedAt": "2026-05-07T17:16:24.337Z",
+			"responseId": 1261,
+			"responseSlug": "1256-autosave-v1",
+			"requestHasA": true,
+			"requestHasB": false,
+			"responseHasA": true,
+			"responseHasB": false
+		}
+	],
+	"revisionsAfterClose": [
+		{
+			"id": 1261,
+			"postName": "1256-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:24",
+			"isAutosave": true,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1260,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:22",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1259,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:21",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1258,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:16",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"canonicalAfterClose": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+	},
+	"reopenEditorState": {
+		"hasA": false,
+		"hasB": true
+	},
+	"noticesAfterReopen": [
+		{
+			"visible": true,
+			"text": "Warning noticeThere is an autosave of this post that is more recent than the version below.View the autosave"
+		}
+	],
+	"canonicalAfterReopen": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+	},
+	"revisionsAfterReopen": [
+		{
+			"id": 1261,
+			"postName": "1256-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:24",
+			"isAutosave": true,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1260,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:22",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1259,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:21",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778174173514-42036-2</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1258,
+			"postName": "1256-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 17:16:16",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"autosaveNoticeHref": "http://localhost:8891/wp-admin/revision.php?revision=1261",
+	"status": "completed",
+	"framesDir": "artifacts/current-trunk-rtc-repro-video/frames-current-trunk-rtc-natural-full-sequence-bad-autosave-agent-a",
+	"videoPath": "artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-natural-full-sequence-bad-autosave-agent-a.mp4",
+	"evidencePath": "artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-natural-full-sequence-bad-autosave-agent-a.evidence.json",
+	"screenshotValidation": {
+		"checkedFrameCount": 7,
+		"expectedFrameWidth": 2560,
+		"expectedFrameHeight": 1280,
+		"allFramesHaveExpectedSize": true,
+		"spotChecks": [
+			{
+				"file": "frame-001.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 203975
+			},
+			{
+				"file": "frame-002.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 225978
+			},
+			{
+				"file": "frame-003.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 196511
+			},
+			{
+				"file": "frame-004.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 199926
+			},
+			{
+				"file": "frame-005.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 220540
+			},
+			{
+				"file": "frame-006.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 249941
+			},
+			{
+				"file": "frame-007.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 244815
+			}
+		]
+	},
+	"ffprobe": {
+		"programs": [],
+		"stream_groups": [],
+		"streams": [
+			{
+				"codec_name": "h264",
+				"width": 2560,
+				"height": 1280,
+				"avg_frame_rate": "30/1",
+				"nb_frames": "1470"
+			}
+		],
+		"format": {
+			"duration": "49.000000",
+			"size": "1263393",
+			"bit_rate": "206268"
+		}
+	},
+	"generatedAt": "2026-05-07T17:18:17.894Z",
+	"scriptPath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-repro-video/make-browser-window-outcome-video.mjs"
+}

@@ -1,0 +1,253 @@
+{
+	"scenario": "no-autosave",
+	"postId": 1225,
+	"markerA": "A-SAVED-THEN-LOST-1778113528959-47548-3",
+	"markerB": "B-STAYS-SAVED-1778113528959-47548-3",
+	"room": "postType/post:1225",
+	"attempt": 3,
+	"trunk": "4abced82501bdbf44fd373ed5f87ea68eecab4de",
+	"bHasABeforeBEdit": false,
+	"canonicalAfterBSave": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778113528959-47548-3</p>\n<!-- /wp:paragraph -->"
+	},
+	"heal": {
+		"state": null,
+		"healed": false,
+		"waitedMs": 0
+	},
+	"syncCountsAtClose": {
+		"A": 3,
+		"B": 5
+	},
+	"requestsBeforeClose": [
+		{
+			"label": "A",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T00:25:30.948Z",
+			"finishedAt": "2026-05-07T00:25:31.059Z",
+			"responseId": 1225,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": false,
+			"responseHasA": false,
+			"responseHasB": false
+		},
+		{
+			"label": "A",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T00:25:35.613Z",
+			"finishedAt": "2026-05-07T00:25:35.652Z",
+			"responseId": 1225,
+			"responseSlug": "",
+			"requestHasA": true,
+			"requestHasB": false,
+			"responseHasA": true,
+			"responseHasB": false
+		},
+		{
+			"label": "B",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T00:25:30.928Z",
+			"finishedAt": "2026-05-07T00:25:31.050Z",
+			"responseId": 1225,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": false,
+			"responseHasA": false,
+			"responseHasB": false
+		},
+		{
+			"label": "B",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-07T00:25:36.589Z",
+			"finishedAt": "2026-05-07T00:25:36.641Z",
+			"responseId": 1225,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": true,
+			"responseHasA": false,
+			"responseHasB": true
+		}
+	],
+	"revisionsAfterClose": [
+		{
+			"id": 1232,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778113528959-47548-3</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1231,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:35",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778113528959-47548-3</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1228,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:31",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1229,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:31",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"canonicalAfterClose": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778113528959-47548-3</p>\n<!-- /wp:paragraph -->"
+	},
+	"reopenEditorState": {
+		"hasA": false,
+		"hasB": true
+	},
+	"noticesAfterReopen": [],
+	"canonicalAfterReopen": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778113528959-47548-3</p>\n<!-- /wp:paragraph -->"
+	},
+	"revisionsAfterReopen": [
+		{
+			"id": 1232,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778113528959-47548-3</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1231,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:35",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778113528959-47548-3</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1228,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:31",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 1229,
+			"postName": "1225-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-07 00:25:31",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"autosaveNoticeHref": null,
+	"status": "completed",
+	"framesDir": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-repro-video/frames-current-trunk-rtc-browser-window-no-autosave",
+	"videoPath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-browser-window-no-autosave.mp4",
+	"evidencePath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-repro-video/current-trunk-rtc-browser-window-no-autosave.evidence.json",
+	"screenshotValidation": {
+		"checkedFrameCount": 4,
+		"expectedFrameWidth": 2560,
+		"expectedFrameHeight": 1280,
+		"allFramesHaveExpectedSize": true,
+		"spotChecks": [
+			{
+				"file": "frame-001.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 203316
+			},
+			{
+				"file": "frame-002.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 225485
+			},
+			{
+				"file": "frame-003.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 194662
+			},
+			{
+				"file": "frame-004.png",
+				"width": 2560,
+				"height": 1280,
+				"sizeBytes": 238723
+			}
+		]
+	},
+	"ffprobe": {
+		"programs": [],
+		"stream_groups": [],
+		"streams": [
+			{
+				"codec_name": "h264",
+				"width": 2560,
+				"height": 1280,
+				"avg_frame_rate": "30/1",
+				"nb_frames": "840"
+			}
+		],
+		"format": {
+			"duration": "28.000000",
+			"size": "739903",
+			"bit_rate": "211400"
+		}
+	},
+	"generatedAt": "2026-05-07T00:25:45.891Z",
+	"scriptPath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-repro-video/make-browser-window-outcome-video.mjs"
+}

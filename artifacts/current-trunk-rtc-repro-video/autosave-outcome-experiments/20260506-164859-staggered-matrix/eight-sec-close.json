@@ -1,0 +1,584 @@
+{
+	"experimentName": "eight-sec-close",
+	"outputPath": "/Users/danluu/dev/fuzz/gutenberg-stale-content-overwrite-current-trunk-20260506/artifacts/current-trunk-rtc-repro-video/autosave-outcome-experiments/20260506-164859-staggered-matrix/eight-sec-close.json",
+	"startedAt": "2026-05-06T23:49:01.481Z",
+	"trunk": "fc17d2f7f74de39d4965cb68357d27b4f5dacf5b",
+	"config": {
+		"startDelayMs": 32000,
+		"waitBeforeBSaveMs": 0,
+		"waitAfterBSaveBeforeReleaseMs": 0,
+		"waitAfterHealBeforeCloseMs": 8000,
+		"waitAfterReopenMs": 3000,
+		"waitForHealTimeoutMs": 90000
+	},
+	"postId": 866,
+	"markerA": "A-SAVED-THEN-LOST-1778111373882-33207",
+	"markerB": "B-STAYS-SAVED-1778111373882-33207",
+	"room": "postType/post:866",
+	"bHasABeforeBEdit": false,
+	"bStateAfterTypingB": {
+		"hasA": false,
+		"hasB": true
+	},
+	"revisionsBeforeBSave": [
+		{
+			"id": 874,
+			"postName": "866-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:42",
+			"isAutosave": true,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 132,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 872,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:41",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 869,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 870,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"canonicalAfterBSave": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"length": 152,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+	},
+	"revisionsBeforeRelease": [
+		{
+			"id": 877,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:46",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"length": 152,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 874,
+			"postName": "866-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:45",
+			"isAutosave": true,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"length": 152,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 872,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:41",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 869,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 870,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"heal": {
+		"state": {
+			"aHasA": true,
+			"aHasB": false,
+			"bHasA": true,
+			"bHasB": false
+		},
+		"healed": false,
+		"waitedMs": 90303
+	},
+	"syncCountsAfterHeal": {
+		"A": 62,
+		"B": 53
+	},
+	"canonicalAfterHeal": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"length": 152,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+	},
+	"revisionsAfterHeal": [
+		{
+			"id": 874,
+			"postName": "866-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:54",
+			"isAutosave": true,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 877,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:46",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"length": 152,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 872,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:41",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 869,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 870,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"canonicalBeforeClose": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"length": 152,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+	},
+	"revisionsBeforeClose": [
+		{
+			"id": 874,
+			"postName": "866-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:54",
+			"isAutosave": true,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 877,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:46",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"length": 152,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 872,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:41",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 869,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 870,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"noticesBeforeClose": {
+		"A": [],
+		"B": []
+	},
+	"requestsBeforeClose": [
+		{
+			"label": "A",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-06T23:49:36.591Z",
+			"finishedAt": "2026-05-06T23:49:36.805Z",
+			"responseId": 866,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": false,
+			"responseHasA": false,
+			"responseHasB": false,
+			"requestLength": 63,
+			"responseLength": 63
+		},
+		{
+			"label": "A",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-06T23:49:41.494Z",
+			"finishedAt": "2026-05-06T23:49:41.674Z",
+			"responseId": 866,
+			"responseSlug": "",
+			"requestHasA": true,
+			"requestHasB": false,
+			"responseHasA": true,
+			"responseHasB": false,
+			"requestLength": 156,
+			"responseLength": 156
+		},
+		{
+			"label": "B",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-06T23:49:36.588Z",
+			"finishedAt": "2026-05-06T23:49:36.800Z",
+			"responseId": 866,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": false,
+			"responseHasA": false,
+			"responseHasB": false,
+			"requestLength": 63,
+			"responseLength": 63
+		},
+		{
+			"label": "B",
+			"kind": "autosave",
+			"status": 200,
+			"startedAt": "2026-05-06T23:49:42.437Z",
+			"finishedAt": "2026-05-06T23:49:42.513Z",
+			"responseId": 874,
+			"responseSlug": "866-autosave-v1",
+			"requestHasA": false,
+			"requestHasB": false,
+			"responseHasA": false,
+			"responseHasB": false,
+			"requestLength": 132,
+			"responseLength": 132
+		},
+		{
+			"label": "B",
+			"kind": "autosave",
+			"status": 200,
+			"startedAt": "2026-05-06T23:49:45.600Z",
+			"finishedAt": "2026-05-06T23:49:45.687Z",
+			"responseId": 874,
+			"responseSlug": "866-autosave-v1",
+			"requestHasA": false,
+			"requestHasB": true,
+			"responseHasA": false,
+			"responseHasB": true,
+			"requestLength": 152,
+			"responseLength": 152
+		},
+		{
+			"label": "B",
+			"kind": "post-save",
+			"status": 200,
+			"startedAt": "2026-05-06T23:49:46.942Z",
+			"finishedAt": "2026-05-06T23:49:47.052Z",
+			"responseId": 866,
+			"responseSlug": "",
+			"requestHasA": false,
+			"requestHasB": true,
+			"responseHasA": false,
+			"responseHasB": true,
+			"requestLength": 152,
+			"responseLength": 152
+		},
+		{
+			"label": "B",
+			"kind": "autosave",
+			"status": 200,
+			"startedAt": "2026-05-06T23:49:54.460Z",
+			"finishedAt": "2026-05-06T23:49:54.958Z",
+			"responseId": 874,
+			"responseSlug": "866-autosave-v1",
+			"requestHasA": true,
+			"requestHasB": false,
+			"responseHasA": true,
+			"responseHasB": false,
+			"requestLength": 156,
+			"responseLength": 156
+		}
+	],
+	"revisionsAfterClose": [
+		{
+			"id": 874,
+			"postName": "866-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:54",
+			"isAutosave": true,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 877,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:46",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"length": 152,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 872,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:41",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 869,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 870,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"canonicalAfterClose": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"length": 152,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+	},
+	"reopenEditorState": {
+		"hasA": true,
+		"hasB": false
+	},
+	"noticesAfterReopen": [
+		{
+			"visible": true,
+			"text": "Warning noticeThere is an autosave of this post that is more recent than the version below.View the autosave"
+		}
+	],
+	"canonicalAfterReopen": {
+		"hasA": false,
+		"hasB": true,
+		"hasBoth": false,
+		"length": 152,
+		"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+	},
+	"revisionsAfterReopen": [
+		{
+			"id": 874,
+			"postName": "866-autosave-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:51:40",
+			"isAutosave": true,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 877,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:46",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": true,
+			"hasBoth": false,
+			"length": 152,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>B-STAYS-SAVED-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 872,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:41",
+			"isAutosave": false,
+			"hasA": true,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 156,
+			"content": "<!-- wp:paragraph -->\n<p>Initial body.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A-SAVED-THEN-LOST-1778111373882-33207</p>\n<!-- /wp:paragraph -->"
+		},
+		{
+			"id": 869,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"id": 870,
+			"postName": "866-revision-v1",
+			"postType": "revision",
+			"postStatus": "inherit",
+			"postModifiedGmt": "2026-05-06 23:49:36",
+			"isAutosave": false,
+			"hasA": false,
+			"hasB": false,
+			"hasBoth": false,
+			"length": 63,
+			"content": "<!-- wp:paragraph --><p>Initial body.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"status": "completed",
+	"finishedAt": "2026-05-06T23:51:43.918Z"
+}
