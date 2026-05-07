@@ -9289,3 +9289,73 @@ full. It revalidated the pass-162 annotated video instead:
 
 `ffprobe` reports H.264 video, `1920x1080`, `24.0s`, and size `467829` bytes.
 A full `ffmpeg -f null` decode completed with no errors.
+
+## Pass 165 Verification
+
+Pass 165 independently re-read the pass-163 summary, the source JSONL row, the
+generated natural-user spec, the archived source log, the error-context
+snapshot, source screenshots, trace actions, current branch state, and the
+current `mergeCrdtBlocks()` implementation. The source trace still shows
+ordinary editor actions only: block Options > Delete, collaborator Options >
+Add before, typing the inserted paragraph, and toolbar Move down. The archived
+failure is still a semantic split after those actions, not a timeout, locator
+failure, malformed spec, or inverted assertion:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+Pass 165 added a clean known-fixes negative control outside the handoff tree so
+Jest would not scan old copied worktrees. The detached worktree
+`/Users/danluu/dev/fuzz/gutenberg-pass165-knownfix-clean` was checked out at
+known-fixes base `3cba2b1e56a98787de08dc6c7df2434759e8f908`, with only the
+low-level repro test commit `a7f79df448e` applied:
+
+```bash
+git worktree add /Users/danluu/dev/fuzz/gutenberg-pass165-knownfix-clean 3cba2b1e56a98787de08dc6c7df2434759e8f908
+cd /Users/danluu/dev/fuzz/gutenberg-pass165-knownfix-clean
+ln -s /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/node_modules node_modules
+git checkout a7f79df448e -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts
+PATH=/Users/danluu/dev/fuzz/gutenberg/node_modules/.bin:$PATH NODE_PATH=/Users/danluu/dev/fuzz/gutenberg/node_modules npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts --runInBand --testNamePattern="does not rewrite block records|represents adjacent pure moves|replicates direct pure move merges|non-adjacent pure moves|represents adjacent pure block moves|applies adjacent pure block moves|generated structural edit sequence|does not morph post-entrypoint"
+```
+
+Result: expected failure, `8 failed, 73 skipped, 81 total`. The failures cover
+both `mergeCrdtBlocks()` and `applyPostChangesToCRDTDoc()`. The captured moved
+Y.Map was rewritten to the displaced sibling content, and local/remote observer
+proofs saw nested `YMap`/`YText` updates instead of a single structural array
+change.
+
+Pass 165 also rebased the PR branch onto current `origin/trunk`
+`12a12af12a48b86223152498c688d7f87fbfae2f` while preserving the requested
+three-commit order:
+
+```text
+acff11ccd56 Add CRDT repros for RTC adjacent move identity rewrite
+0e30cf7cfa5 Add RTC top-level move Playwright repro
+6c49ea3f0f1 Avoid rewriting CRDT block records for pure moves
+```
+
+Fresh pass-165 fixed-branch verification:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-bug-5ee0be2f9b7d
+PATH=/Users/danluu/dev/fuzz/gutenberg/node_modules/.bin:$PATH NODE_PATH=/Users/danluu/dev/fuzz/gutenberg/node_modules npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts --runInBand
+PATH=/Users/danluu/dev/fuzz/gutenberg/node_modules/.bin:$PATH NODE_PATH=/Users/danluu/dev/fuzz/gutenberg/node_modules npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+```
+
+Results: the two CRDT unit suites passed `81/81`, targeted JS lint exited `0`,
+and `git diff --check` produced no output.
+
+Fresh pass-165 browser reruns were blocked by the local container runtime:
+
+```bash
+WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 RTC_MANIFEST_WS_START_PORT=20424 RTC_MANIFEST_WS_FIXED_PORT=1 npm run wp-env start
+```
+
+Result: `wp-env start` failed before any Playwright action with an
+OrbStack/Docker socket EOF while listing compose containers. This is an
+environment blocker for fresh browser reruns only; it does not affect the
+archived source Playwright failure, the pass-162/pass-163 headless browser
+reruns, or the pass-165 low-level proof.
