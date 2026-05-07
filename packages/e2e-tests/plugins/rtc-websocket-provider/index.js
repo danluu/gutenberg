@@ -1,7 +1,12 @@
 ( function () {
 	const TEST_PROVIDER_NAMESPACE = 'gutenberg-test/rtc-websocket-provider';
 	const DEFAULT_URL = 'ws://127.0.0.1:18991';
+	const CRDT_RECORD_MAP_KEY = 'document';
+	const HAS_PROVIDER_SYNCED_REMOTE_STATE_META =
+		'hasProviderSyncedRemoteState';
+	const LOCAL_SYNC_MANAGER_ORIGIN = 'syncManager';
 	const REMOTE_ORIGIN = { source: TEST_PROVIDER_NAMESPACE };
+	let emptyYjsUpdateV2Base64 = null;
 
 	const settings = window.gutenbergTestWebSocketSync || {};
 	const globalState = ( window.__gutenbergTestWebSocketSync = {
@@ -37,6 +42,30 @@
 		return bytes;
 	}
 
+	function getEmptyYjsUpdateV2Base64() {
+		if ( emptyYjsUpdateV2Base64 ) {
+			return emptyYjsUpdateV2Base64;
+		}
+
+		const emptyDoc = new window.wp.sync.Y.Doc();
+		emptyYjsUpdateV2Base64 = toBase64(
+			window.wp.sync.Y.encodeStateAsUpdateV2(
+				emptyDoc,
+				window.wp.sync.Y.encodeStateVector( emptyDoc )
+			)
+		);
+		emptyDoc.destroy();
+		return emptyYjsUpdateV2Base64;
+	}
+
+	function isEmptyYjsUpdateV2( encodedUpdate ) {
+		return encodedUpdate === getEmptyYjsUpdateV2Base64();
+	}
+
+	function hasDocumentState( ydoc ) {
+		return ydoc.getMap( CRDT_RECORD_MAP_KEY ).size > 0;
+	}
+
 	function ensureRoomDebugState( room ) {
 		if ( ! globalState.rooms[ room ] ) {
 			globalState.rooms[ room ] = {
@@ -44,6 +73,7 @@
 				clientId: null,
 				receivedMessages: 0,
 				sentMessages: 0,
+				synced: false,
 				status: 'disconnected',
 			};
 		}
@@ -122,16 +152,26 @@
 	}
 
 	class TestWebSocketProvider {
-		constructor( { awareness, room, ydoc } ) {
+		constructor( { awareness, requiresDocumentState, room, ydoc } ) {
 			this.awareness = awareness || new window.wp.sync.Awareness( ydoc );
+			this.allowSyncManagerUpdates = false;
+			this.currentStatus = { status: 'connecting' };
 			this.destroyed = false;
 			this.listeners = {
 				status: new Set(),
 			};
 			this.pendingMessages = [];
 			this.reconnectDelayMs = 250;
+			this.requiresDocumentState = requiresDocumentState;
 			this.room = room;
+			this.hasCompletedInitialSync = false;
+			this.waitingForPeerSnapshot = false;
+			this.resolveReady = null;
+			this.ready = new Promise( ( resolve ) => {
+				this.resolveReady = resolve;
+			} );
 			this.socket = null;
+			this.synced = false;
 			this.ydoc = ydoc;
 
 			this.onDocUpdate = this.onDocUpdate.bind( this );
@@ -149,10 +189,14 @@
 		on( event, callback ) {
 			if ( this.listeners[ event ] ) {
 				this.listeners[ event ].add( callback );
+				if ( event === 'status' ) {
+					callback( this.currentStatus );
+				}
 			}
 		}
 
 		emitStatus( status ) {
+			this.currentStatus = status;
 			updateDebugState( this.room, { status: status.status } );
 			for ( const callback of this.listeners.status ) {
 				callback( status );
@@ -170,17 +214,15 @@
 
 			socket.addEventListener( 'open', () => {
 				this.reconnectDelayMs = 250;
-				this.emitStatus( { status: 'connected' } );
 				this.send( {
 					type: 'join',
 					room: this.room,
 					clientId: this.ydoc.clientID,
 					awareness: this.awareness.getLocalState() || {},
-					state: toBase64(
-						window.wp.sync.Y.encodeStateAsUpdateV2( this.ydoc )
+					stateVector: toBase64(
+						window.wp.sync.Y.encodeStateVector( this.ydoc )
 					),
 				} );
-				this.flushPendingMessages();
 			} );
 
 			socket.addEventListener( 'message', ( event ) => {
@@ -192,6 +234,8 @@
 					return;
 				}
 
+				this.synced = false;
+				updateDebugState( this.room, { synced: false } );
 				this.emitStatus( { status: 'disconnected' } );
 				const delay = this.reconnectDelayMs;
 				this.reconnectDelayMs = Math.min(
@@ -269,14 +313,48 @@
 			} );
 
 			if ( message.type === 'snapshot' ) {
-				for ( const update of message.updates || [] ) {
-					window.wp.sync.Y.applyUpdateV2(
-						this.ydoc,
-						fromBase64( update ),
-						REMOTE_ORIGIN
-					);
-				}
-				applyAwarenessState( this.awareness, message.awareness );
+				const updates = message.updates || [];
+				const hasExistingPeers = Number( message.peerCount ) > 1;
+				window.setTimeout( () => {
+					const isInitialSync = ! this.hasCompletedInitialSync;
+					for ( const update of updates ) {
+						window.wp.sync.Y.applyUpdateV2(
+							this.ydoc,
+							fromBase64( update ),
+							REMOTE_ORIGIN
+						);
+					}
+					const hasPeerState =
+						updates.length > 0 &&
+						( ! this.requiresDocumentState ||
+							hasDocumentState( this.ydoc ) );
+					if ( ! this.hasCompletedInitialSync ) {
+						this.allowSyncManagerUpdates =
+							! hasPeerState && ! hasExistingPeers;
+						this.waitingForPeerSnapshot =
+							! hasPeerState && hasExistingPeers;
+						if ( hasPeerState ) {
+							this.ydoc.meta?.set(
+								HAS_PROVIDER_SYNCED_REMOTE_STATE_META,
+								true
+							);
+						}
+					}
+					applyAwarenessState( this.awareness, message.awareness );
+					if ( this.waitingForPeerSnapshot ) {
+						updateDebugState( this.room, {
+							awarenessCount: this.awareness.getStates().size,
+						} );
+						return;
+					}
+					this.markSynced( {
+						discardPendingMessages: isInitialSync && hasPeerState,
+					} );
+					updateDebugState( this.room, {
+						awarenessCount: this.awareness.getStates().size,
+					} );
+				}, 0 );
+				return;
 			} else if (
 				message.type === 'update' &&
 				message.clientId !== this.ydoc.clientID
@@ -286,6 +364,37 @@
 					fromBase64( message.update ),
 					REMOTE_ORIGIN
 				);
+				const isPeerSnapshotResponse =
+					this.waitingForPeerSnapshot &&
+					! isEmptyYjsUpdateV2( message.update ) &&
+					( ! this.requiresDocumentState ||
+						hasDocumentState( this.ydoc ) );
+				if ( isPeerSnapshotResponse ) {
+					this.waitingForPeerSnapshot = false;
+					this.ydoc.meta?.set(
+						HAS_PROVIDER_SYNCED_REMOTE_STATE_META,
+						true
+					);
+					this.markSynced( { discardPendingMessages: true } );
+				}
+			} else if (
+				message.type === 'sync-request' &&
+				message.clientId !== this.ydoc.clientID
+			) {
+				const stateVector = message.stateVector
+					? fromBase64( message.stateVector )
+					: undefined;
+				this.send( {
+					type: 'update',
+					room: this.room,
+					clientId: this.ydoc.clientID,
+					update: toBase64(
+						window.wp.sync.Y.encodeStateAsUpdateV2(
+							this.ydoc,
+							stateVector
+						)
+					),
+				} );
 			} else if ( message.type === 'awareness' ) {
 				applyAwarenessState( this.awareness, message.awareness );
 			} else if ( message.type === 'remove-awareness' ) {
@@ -297,29 +406,67 @@
 			} );
 		}
 
+		markSynced( { discardPendingMessages = false } = {} ) {
+			this.synced = true;
+			updateDebugState( this.room, { synced: true } );
+			this.emitStatus( { status: 'connected' } );
+
+			if ( discardPendingMessages ) {
+				this.pendingMessages = [];
+			} else {
+				this.flushPendingMessages();
+			}
+
+			this.hasCompletedInitialSync = true;
+
+			if ( this.resolveReady ) {
+				this.resolveReady();
+				this.resolveReady = null;
+			}
+		}
+
 		onDocUpdate( update, origin ) {
-			if ( origin === REMOTE_ORIGIN ) {
+			if (
+				origin === REMOTE_ORIGIN ||
+				( origin === LOCAL_SYNC_MANAGER_ORIGIN &&
+					this.synced &&
+					! this.allowSyncManagerUpdates )
+			) {
 				return;
 			}
 
-			this.send( {
+			const message = {
 				type: 'update',
 				room: this.room,
 				clientId: this.ydoc.clientID,
 				update: toBase64( update ),
-			} );
+			};
+
+			if ( ! this.synced ) {
+				this.pendingMessages.push( message );
+				return;
+			}
+
+			this.send( message );
 		}
 
 		onAwarenessUpdate() {
 			updateDebugState( this.room, {
 				awarenessCount: this.awareness.getStates().size,
 			} );
-			this.send( {
+			const message = {
 				type: 'awareness',
 				room: this.room,
 				clientId: this.ydoc.clientID,
 				awareness: this.awareness.getLocalState() || {},
-			} );
+			};
+
+			if ( ! this.synced ) {
+				this.pendingMessages.push( message );
+				return;
+			}
+
+			this.send( message );
 		}
 
 		destroy() {
@@ -337,6 +484,8 @@
 				this.socket.close( 1000, 'destroy' );
 			}
 
+			this.synced = false;
+			updateDebugState( this.room, { synced: false } );
 			this.emitStatus( { status: 'disconnected' } );
 		}
 	}
@@ -348,9 +497,11 @@
 				: objectType;
 			const provider = new TestWebSocketProvider( {
 				awareness,
+				requiresDocumentState: objectId !== null,
 				room,
 				ydoc,
 			} );
+			await provider.ready;
 
 			return {
 				destroy: () => provider.destroy(),

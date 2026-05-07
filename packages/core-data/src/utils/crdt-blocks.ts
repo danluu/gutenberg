@@ -769,20 +769,344 @@ function createNewYBlock( block: Block, blockPath?: string ): YBlock {
 	);
 }
 
+function getBlockClientId( block: Block ): string | null {
+	return block.clientId || null;
+}
+
+function getYBlockClientId( yblock: YBlock ): string | null {
+	const clientId = yblock.get( 'clientId' );
+	return typeof clientId === 'string' && clientId ? clientId : null;
+}
+
+function canReorderYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[]
+): boolean {
+	if ( yblocks.length !== blocksToSync.length || yblocks.length < 2 ) {
+		return false;
+	}
+
+	const incomingClientIds = blocksToSync.map( getBlockClientId );
+	const currentClientIds = yblocks.toArray().map( getYBlockClientId );
+
+	if (
+		incomingClientIds.some( ( clientId ) => ! clientId ) ||
+		currentClientIds.some( ( clientId ) => ! clientId )
+	) {
+		return false;
+	}
+
+	const incomingSet = new Set( incomingClientIds );
+
+	if ( incomingSet.size !== incomingClientIds.length ) {
+		return false;
+	}
+
+	const currentSet = new Set( currentClientIds );
+
+	return (
+		currentSet.size === currentClientIds.length &&
+		currentSet.size === incomingSet.size &&
+		currentClientIds.every( ( clientId ) => incomingSet.has( clientId ) )
+	);
+}
+
+function canReorderBlocksByClientId(
+	baseBlocks: Block[],
+	blocksToSync: Block[]
+): boolean {
+	if ( baseBlocks.length !== blocksToSync.length || baseBlocks.length < 2 ) {
+		return false;
+	}
+
+	const baseClientIds = baseBlocks.map( getBlockClientId );
+	const incomingClientIds = blocksToSync.map( getBlockClientId );
+
+	if (
+		baseClientIds.some( ( clientId ) => ! clientId ) ||
+		incomingClientIds.some( ( clientId ) => ! clientId )
+	) {
+		return false;
+	}
+
+	const baseSet = new Set( baseClientIds );
+
+	return (
+		baseSet.size === baseClientIds.length &&
+		baseSet.size === incomingClientIds.length &&
+		incomingClientIds.every( ( clientId ) => baseSet.has( clientId ) )
+	);
+}
+
+function reorderYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[]
+): void {
+	if ( ! canReorderYBlocksByClientId( yblocks, blocksToSync ) ) {
+		return;
+	}
+
+	for (
+		let targetIndex = 0;
+		targetIndex < blocksToSync.length;
+		targetIndex++
+	) {
+		const targetClientId = getBlockClientId( blocksToSync[ targetIndex ] );
+
+		if (
+			getYBlockClientId( yblocks.get( targetIndex ) ) === targetClientId
+		) {
+			continue;
+		}
+
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === targetClientId
+			);
+
+		if ( currentIndex === -1 ) {
+			return;
+		}
+
+		const reorderedBlock = createNewYBlock( blocksToSync[ targetIndex ] );
+		yblocks.delete( currentIndex, 1 );
+		yblocks.insert( targetIndex, [ reorderedBlock ] );
+	}
+}
+
+function rebaseYBlocksByClientId(
+	yblocks: YBlocks,
+	baseBlocks: Block[] | undefined,
+	blocksToSync: Block[]
+): boolean {
+	if (
+		! baseBlocks ||
+		! canReorderYBlocksByClientId( yblocks, baseBlocks ) ||
+		! canReorderBlocksByClientId( baseBlocks, blocksToSync )
+	) {
+		return false;
+	}
+
+	const rebasedClientIds = baseBlocks.map( getBlockClientId );
+
+	for (
+		let targetIndex = 0;
+		targetIndex < blocksToSync.length;
+		targetIndex++
+	) {
+		const targetClientId = getBlockClientId( blocksToSync[ targetIndex ] );
+
+		if ( rebasedClientIds[ targetIndex ] === targetClientId ) {
+			continue;
+		}
+
+		const baseIndex = rebasedClientIds.indexOf( targetClientId );
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === targetClientId
+			);
+
+		if ( baseIndex === -1 || currentIndex === -1 ) {
+			return false;
+		}
+
+		const reorderedBlock = createNewYBlock(
+			yblocks.get( currentIndex ).toJSON() as unknown as Block
+		);
+		yblocks.delete( currentIndex, 1 );
+		yblocks.insert( targetIndex, [ reorderedBlock ] );
+
+		rebasedClientIds.splice( baseIndex, 1 );
+		rebasedClientIds.splice( targetIndex, 0, targetClientId );
+	}
+
+	return true;
+}
+
+function mergeBlockIntoYBlock(
+	yblock: YBlock,
+	block: Block,
+	cursorPosition: number | null,
+	baseBlock?: Block
+): void {
+	const baseAttributes = baseBlock?.attributes ?? {};
+
+	Object.entries( block ).forEach( ( [ key, value ] ) => {
+		switch ( key ) {
+			case 'attributes': {
+				const currentAttributes = yblock.get( key );
+
+				// If attributes are not set on the yblock, use the new values.
+				if ( ! currentAttributes ) {
+					yblock.set(
+						key,
+						createNewYAttributeMap( block.name, value )
+					);
+					break;
+				}
+
+				Object.entries( value ).forEach(
+					( [ attributeName, attributeValue ] ) => {
+						if (
+							baseBlock &&
+							fastDeepEqual(
+								baseAttributes[ attributeName ],
+								attributeValue
+							)
+						) {
+							return;
+						}
+
+						const currentAttribute =
+							currentAttributes?.get( attributeName );
+
+						const isExpectedType = isExpectedAttributeType(
+							block.name,
+							attributeName,
+							currentAttribute
+						);
+
+						// Y types (Y.Text, Y.Array, Y.Map) cannot be compared
+						// with fastDeepEqual against plain values. Delegate to
+						// mergeYValue which handles no-op detection at the edges.
+						const isYType =
+							currentAttribute instanceof Y.AbstractType;
+
+						const isAttributeChanged =
+							! isExpectedType ||
+							isYType ||
+							! fastDeepEqual( currentAttribute, attributeValue );
+
+						if ( isAttributeChanged ) {
+							updateYBlockAttribute(
+								block.name,
+								attributeName,
+								attributeValue,
+								currentAttributes,
+								cursorPosition,
+								baseAttributes[ attributeName ]
+							);
+						}
+					}
+				);
+
+				// Delete any attributes that are no longer present.
+				currentAttributes.forEach(
+					( _attrValue: unknown, attrName: string ) => {
+						if ( ! value.hasOwnProperty( attrName ) ) {
+							if (
+								baseBlock &&
+								! Object.prototype.hasOwnProperty.call(
+									baseAttributes,
+									attrName
+								)
+							) {
+								return;
+							}
+							currentAttributes.delete( attrName );
+						}
+					}
+				);
+
+				break;
+			}
+
+			case 'innerBlocks': {
+				if (
+					baseBlock &&
+					fastDeepEqual( baseBlock.innerBlocks, value ?? [] )
+				) {
+					break;
+				}
+
+				// Recursively merge innerBlocks
+				let yInnerBlocks = yblock.get( key );
+
+				if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
+					yInnerBlocks = new Y.Array< YBlock >();
+					yblock.set( key, yInnerBlocks );
+				}
+
+				mergeCrdtBlocks(
+					yInnerBlocks,
+					value ?? [],
+					cursorPosition,
+					baseBlock?.innerBlocks
+				);
+				break;
+			}
+
+			default:
+				if ( baseBlock && fastDeepEqual( baseBlock[ key ], value ) ) {
+					break;
+				}
+
+				if ( ! fastDeepEqual( block[ key ], yblock.get( key ) ) ) {
+					yblock.set( key, value );
+				}
+		}
+	} );
+	yblock.forEach( ( _v, k ) => {
+		if ( ! block.hasOwnProperty( k ) ) {
+			if (
+				baseBlock &&
+				! Object.prototype.hasOwnProperty.call( baseBlock, k )
+			) {
+				return;
+			}
+			yblock.delete( k );
+		}
+	} );
+}
+
+function mergeYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	cursorPosition: number | null,
+	baseBlocks?: Block[]
+): void {
+	const incomingBlocksByClientId = new Map(
+		blocksToSync.map( ( block ) => [ getBlockClientId( block ), block ] )
+	);
+	const baseBlocksByClientId = new Map(
+		( baseBlocks ?? [] ).map( ( block ) => [
+			getBlockClientId( block ),
+			block,
+		] )
+	);
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+		const clientId = getYBlockClientId( yblock );
+		const block = incomingBlocksByClientId.get( clientId );
+
+		if ( block ) {
+			mergeBlockIntoYBlock(
+				yblock,
+				block,
+				cursorPosition,
+				baseBlocksByClientId.get( clientId )
+			);
+		}
+	}
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
  *
- * @param yblocks         The blocks in the local Y.Doc.
- * @param incomingBlocks  Gutenberg blocks being synced.
- * @param attributeCursor When provided, describes a selection cursor falling within a
- *                        RichText field associated with a specific block and attribute.
- *                        Derived from the changes that produced the blocks.
+ * @param yblocks        The blocks in the local Y.Doc.
+ * @param incomingBlocks Gutenberg blocks being synced.
+ * @param cursorPosition The position of the cursor after the change occurs.
+ * @param baseBlocks     Optional pre-change block snapshot used for rebasing.
  */
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
-	attributeCursor: MergeCursorPosition
+	cursorPosition: number | null,
+	baseBlocks?: Block[]
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -792,7 +1116,22 @@ export function mergeCrdtBlocks(
 		);
 	}
 	const blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
-	const previousBlocks = previousLocalBlocksCache.get( yblocks );
+	const baseBlocksToSync = baseBlocks
+		? makeBlocksSerializable( baseBlocks )
+		: undefined;
+
+	if ( rebaseYBlocksByClientId( yblocks, baseBlocksToSync, blocksToSync ) ) {
+		mergeYBlocksByClientId(
+			yblocks,
+			blocksToSync,
+			cursorPosition,
+			baseBlocksToSync
+		);
+		removeDuplicateClientIds( yblocks );
+		return;
+	}
+
+	reorderYBlocksByClientId( yblocks, blocksToSync );
 
 	mergeCrdtBlocksIntoYBlocks(
 		yblocks,
@@ -869,223 +1208,12 @@ function mergeCrdtBlocksIntoYBlocks(
 		const yblock = yblocks.get( left );
 		const previousBlock = previousBlocks?.[ left ];
 
-		Object.entries( block ).forEach( ( [ key, value ] ) => {
-			switch ( key ) {
-				case 'attributes': {
-					const currentAttributes = yblock.get( key );
-					const previousAttributes = previousBlock?.attributes;
-
-						// When the local block has no attributes, adopt the incoming set.
-						if ( ! localAttributes ) {
-							localYBlock.set(
-								incomingBlockProperty,
-								createNewYAttributeMap(
-									incomingYBlock.name,
-									incomingAttributes
-								)
-							);
-							break;
-						}
-
-						// Otherwise the attributes need to be merged.
-						Object.entries( incomingAttributes ).forEach(
-							( [
-								incomingAttributeName,
-								incomingAttributeValue,
-							] ) => {
-								const currentAttribute = localAttributes?.get(
-									incomingAttributeName
-								);
-
-								const isExpectedType = isExpectedAttributeType(
-									incomingYBlock.name,
-									incomingAttributeName,
-									currentAttribute
-								);
-
-								// Y types (Y.Text, Y.Array, Y.Map) cannot be
-								// compared with fastDeepEqual against plain values.
-								// Delegate to mergeYValue which handles no-op
-								// detection at the edges.
-								const isYType =
-									currentAttribute instanceof Y.AbstractType;
-
-								const isAttributeChanged =
-									! isExpectedType ||
-									isYType ||
-									! fastDeepEqual(
-										currentAttribute,
-										incomingAttributeValue
-									);
-
-								if ( isAttributeChanged ) {
-									updateYBlockAttribute(
-										incomingYBlock.name,
-										incomingYBlock.clientId,
-										incomingAttributeName,
-										incomingAttributeValue,
-										localAttributes,
-										attributeCursor
-									);
-								}
-							}
-						);
-
-						// Delete any attributes that are no longer present.
-						localAttributes.forEach(
-							( _attrValue: unknown, attrName: string ) => {
-								if (
-									! incomingBlockPropertyValue.hasOwnProperty(
-										attrName
-									)
-								) {
-									localAttributes.delete( attrName );
-								}
-							}
-						);
-
-						break;
-					}
-
-					case 'innerBlocks': {
-						// Recursively merge innerBlocks
-						let yInnerBlocks = localYBlock.get(
-							incomingBlockProperty
-						);
-
-						if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
-							yInnerBlocks = new Y.Array< YBlock >();
-							localYBlock.set(
-								incomingBlockProperty,
-								yInnerBlocks
-							);
-						}
-
-						mergeCrdtBlocks(
-							yInnerBlocks,
-							incomingBlockPropertyValue ?? [],
-							attributeCursor
-						);
-						break;
-					}
-
-					Object.entries( value ).forEach(
-						( [ attributeName, attributeValue ] ) => {
-							const currentAttribute =
-								currentAttributes?.get( attributeName );
-							const previousAttributeValue =
-								previousAttributes?.[ attributeName ];
-
-							const isExpectedType = isExpectedAttributeType(
-								block.name,
-								attributeName,
-								currentAttribute
-							);
-
-							if (
-								previousAttributes &&
-								Object.hasOwn(
-									previousAttributes,
-									attributeName
-								) &&
-								arePlainValuesEqual(
-									previousAttributeValue,
-									attributeValue
-								) &&
-								isExpectedType
-							) {
-								return;
-							}
-
-							// Y types (Y.Text, Y.Array, Y.Map) cannot be
-							// compared with fastDeepEqual against plain values.
-							// Delegate to mergeYValue which handles no-op
-							// detection at the edges.
-							const isYType =
-								currentAttribute instanceof Y.AbstractType;
-
-							const isAttributeChanged =
-								! isExpectedType ||
-								isYType ||
-								! fastDeepEqual(
-									currentAttribute,
-									attributeValue
-								);
-
-							if ( isAttributeChanged ) {
-								updateYBlockAttribute(
-									block.name,
-									attributeName,
-									attributeValue,
-									currentAttributes,
-									cursorPosition,
-									previousAttributeValue
-								);
-							}
-						}
-					);
-
-					// Delete any attributes that are no longer present.
-					currentAttributes.forEach(
-						( _attrValue: unknown, attrName: string ) => {
-							if (
-								! value.hasOwnProperty( attrName ) &&
-								( ! previousAttributes ||
-									Object.hasOwn(
-										previousAttributes,
-										attrName
-									) )
-							) {
-								currentAttributes.delete( attrName );
-							}
-						}
-					);
-
-					break;
-				}
-
-				case 'innerBlocks': {
-					// Recursively merge innerBlocks
-					let yInnerBlocks = yblock.get( key );
-
-					if ( ! ( yInnerBlocks instanceof Y.Array ) ) {
-						yInnerBlocks = new Y.Array< YBlock >();
-						yblock.set( key, yInnerBlocks );
-					}
-
-					mergeCrdtBlocksIntoYBlocks(
-						yInnerBlocks,
-						value ?? [],
-						cursorPosition,
-						previousBlock?.innerBlocks
-					);
-					break;
-				}
-
-				default:
-					if (
-						previousBlock &&
-						arePlainValuesEqual(
-							block[ key ],
-							previousBlock[ key ]
-						)
-					) {
-						break;
-					}
-
-					if ( ! fastDeepEqual( block[ key ], yblock.get( key ) ) ) {
-						yblock.set( key, value );
-					}
-			}
-		} );
-		yblock.forEach( ( _v, k ) => {
-			if (
-				! block.hasOwnProperty( k ) &&
-				( ! previousBlock || previousBlock.hasOwnProperty( k ) )
-			) {
-				yblock.delete( k );
-			}
-		} );
+		mergeBlockIntoYBlock(
+			yblock,
+			block,
+			cursorPosition,
+			baseBlocksToSync?.[ left ]
+		);
 	}
 
 	// deletes
@@ -1100,7 +1228,10 @@ function mergeCrdtBlocksIntoYBlocks(
 		yblocks.insert( left, newBlock );
 	}
 
-	// remove duplicate clientids
+	removeDuplicateClientIds( yblocks );
+}
+
+function removeDuplicateClientIds( yblocks: YBlocks ): void {
 	const knownClientIds = new Set< string >();
 	for ( let j = 0; j < yblocks.length; j++ ) {
 		const yblock: YBlock = yblocks.get( j );
@@ -1374,14 +1505,14 @@ function mergeYArrayLocalChanges(
  * @param newValue       The new plain array to merge into the Y.Array.
  * @param schema         The attribute schema (must have `query`).
  * @param cursorPosition The local cursor position for rich-text delta merges.
- * @param previousValue  The previous plain local array value.
+ * @param baseValue      Optional pre-change array snapshot used for rebasing.
  */
 function mergeYArray(
 	yArray: Y.Array< unknown >,
 	newValue: unknown[],
 	schema: BlockAttributeSchema,
 	cursorPosition: number | null,
-	previousValue?: unknown[]
+	baseValue?: unknown
 ): void {
 	if ( ! schema.query ) {
 		return;
@@ -1390,13 +1521,13 @@ function mergeYArray(
 	const query = schema.query;
 
 	if (
-		previousValue &&
-		mergeYArrayLocalChanges(
+		Array.isArray( baseValue ) &&
+		mergeYArrayWithBase(
 			yArray,
 			newValue,
-			previousValue,
-			query,
-			cursorPosition
+			schema,
+			cursorPosition,
+			baseValue
 		)
 	) {
 		return;
@@ -1487,6 +1618,147 @@ function mergeYArray(
 	}
 }
 
+function mergeYArrayWithBase(
+	yArray: Y.Array< unknown >,
+	newValue: unknown[],
+	schema: BlockAttributeSchema,
+	cursorPosition: number | null,
+	baseValue: unknown[]
+): boolean {
+	if ( ! schema.query || yArray.length !== baseValue.length ) {
+		return false;
+	}
+
+	const query = schema.query;
+	const numOfCommonEntries = Math.min( baseValue.length, newValue.length );
+
+	let left = 0;
+	let right = 0;
+
+	for (
+		;
+		left < numOfCommonEntries &&
+		fastDeepEqual( baseValue[ left ], newValue[ left ] );
+		left++
+	) {
+		/* nop */
+	}
+
+	for (
+		;
+		right < numOfCommonEntries - left &&
+		fastDeepEqual(
+			baseValue[ baseValue.length - right - 1 ],
+			newValue[ newValue.length - right - 1 ]
+		);
+		right++
+	) {
+		/* nop */
+	}
+
+	if ( baseValue.length === newValue.length + 1 ) {
+		const preferredDeleteIndex = getPreferredSingleDeleteIndex(
+			yArray,
+			baseValue,
+			newValue
+		);
+
+		if ( preferredDeleteIndex !== undefined ) {
+			left = preferredDeleteIndex;
+			right = baseValue.length - preferredDeleteIndex - 1;
+		}
+	}
+
+	const deleteCount =
+		baseValue.length === newValue.length
+			? 0
+			: baseValue.length - left - right;
+	const insertCount =
+		baseValue.length === newValue.length
+			? 0
+			: newValue.length - left - right;
+
+	if ( deleteCount > 0 ) {
+		yArray.delete( left, deleteCount );
+	}
+
+	if ( insertCount > 0 ) {
+		yArray.insert(
+			left,
+			newValue
+				.slice( left, left + insertCount )
+				.map( ( item ) => createYMapFromQuery( query, item ) )
+		);
+	}
+
+	for ( let index = 0; index < newValue.length; index++ ) {
+		const isInserted = index >= left && index < left + insertCount;
+		let baseIndex: number | undefined;
+		if ( ! isInserted ) {
+			baseIndex =
+				index < left ? index : index - insertCount + deleteCount;
+		}
+		const newElement = newValue[ index ];
+
+		if (
+			baseIndex !== undefined &&
+			fastDeepEqual( baseValue[ baseIndex ], newElement )
+		) {
+			continue;
+		}
+
+		const currentElement = yArray.get( index );
+		if ( currentElement instanceof Y.Map && isRecord( newElement ) ) {
+			mergeYMapValues(
+				currentElement,
+				newElement,
+				query,
+				cursorPosition,
+				baseIndex === undefined ? undefined : baseValue[ baseIndex ]
+			);
+			continue;
+		}
+
+		yArray.delete( 0, yArray.length );
+		yArray.insert(
+			0,
+			newValue.map( ( item ) => createYMapFromQuery( query, item ) )
+		);
+		break;
+	}
+
+	return true;
+}
+
+function getPreferredSingleDeleteIndex(
+	yArray: Y.Array< unknown >,
+	baseValue: unknown[],
+	newValue: unknown[]
+): number | undefined {
+	let firstCandidate: number | undefined;
+
+	for ( let index = 0; index < baseValue.length; index++ ) {
+		const candidateValue = [
+			...baseValue.slice( 0, index ),
+			...baseValue.slice( index + 1 ),
+		];
+
+		if ( ! fastDeepEqual( candidateValue, newValue ) ) {
+			continue;
+		}
+
+		firstCandidate ??= index;
+
+		if (
+			areArrayElementsEqual( baseValue[ index ], yArray.get( index ) )
+		) {
+			return index;
+		}
+	}
+
+	return firstCandidate;
+}
+
 /**
  * Merge a single value into a Y.Map entry, using the attribute schema to
  * decide how to merge.
@@ -1500,7 +1772,7 @@ function mergeYArray(
  * @param yMap           The Y.Map that owns this entry.
  * @param key            The key of this entry in the Y.Map.
  * @param cursorPosition The local cursor position for rich-text delta merges.
- * @param previousVal    The previous plain local value for this entry.
+ * @param baseVal        Optional pre-change value used for rebasing.
  */
 function mergeYValue(
 	schema: BlockAttributeSchema | undefined,
@@ -1508,7 +1780,7 @@ function mergeYValue(
 	yMap: Y.Map< unknown >,
 	key: string,
 	cursorPosition: number | null,
-	previousVal?: unknown
+	baseVal?: unknown
 ): void {
 	const currentVal = yMap.get( key );
 
@@ -1536,13 +1808,7 @@ function mergeYValue(
 		Array.isArray( newVal ) &&
 		currentVal instanceof Y.Array
 	) {
-		mergeYArray(
-			currentVal,
-			newVal,
-			schema,
-			cursorPosition,
-			Array.isArray( previousVal ) ? previousVal : undefined
-		);
+		mergeYArray( currentVal, newVal, schema, cursorPosition, baseVal );
 	} else if (
 		schema?.type === 'object' &&
 		schema.query &&
@@ -1554,7 +1820,7 @@ function mergeYValue(
 			newVal,
 			schema.query,
 			cursorPosition,
-			isRecord( previousVal ) ? previousVal : undefined
+			baseVal
 		);
 	} else {
 		const newYValue = createYValueFromSchema( schema, newVal );
@@ -1578,27 +1844,22 @@ function mergeYValue(
  * @param newObj         The new plain object to merge into the Y.Map.
  * @param query          The query schema defining property types.
  * @param cursorPosition The local cursor position for rich-text delta merges.
- * @param previousObj    The previous plain local object value.
+ * @param baseObj        Optional pre-change object used for rebasing.
  */
 function mergeYMapValues(
 	yMap: Y.Map< unknown >,
 	newObj: Record< string, unknown >,
 	query: Record< string, BlockAttributeSchema >,
 	cursorPosition: number | null,
-	previousObj?: Record< string, unknown >
+	baseObj?: unknown
 ): void {
-	for ( const [ key, newVal ] of Object.entries( newObj ) ) {
-		const previousVal = previousObj?.[ key ];
+	const baseRecord = isRecord( baseObj ) ? baseObj : undefined;
 
+	for ( const [ key, newVal ] of Object.entries( newObj ) ) {
 		if (
-			previousObj &&
-			Object.hasOwn( previousObj, key ) &&
-			arePlainValuesEqual( previousVal, newVal ) &&
-			isExpectedYValueTypeForSchema(
-				query[ key ],
-				newVal,
-				yMap.get( key )
-			)
+			baseRecord &&
+			Object.hasOwn( baseRecord, key ) &&
+			fastDeepEqual( baseRecord[ key ], newVal )
 		) {
 			continue;
 		}
@@ -1609,16 +1870,16 @@ function mergeYMapValues(
 			yMap,
 			key,
 			cursorPosition,
-			previousVal
+			baseRecord?.[ key ]
 		);
 	}
 
 	// Delete properties absent from the incoming object.
 	for ( const key of yMap.keys() ) {
-		if (
-			! Object.hasOwn( newObj, key ) &&
-			( ! previousObj || Object.hasOwn( previousObj, key ) )
-		) {
+		if ( ! Object.hasOwn( newObj, key ) ) {
+			if ( baseRecord && ! Object.hasOwn( baseRecord, key ) ) {
+				continue;
+			}
 			yMap.delete( key );
 		}
 	}
@@ -1627,12 +1888,12 @@ function mergeYMapValues(
 /**
  * Update a single attribute on a Yjs block attributes map (currentAttributes).
  *
- * @param blockName              The block type name, e.g. 'core/paragraph'.
- * @param attributeName          The name of the attribute to update, e.g. 'content'.
- * @param attributeValue         The new value for the attribute.
- * @param currentAttributes      The Y.Map holding the block's current attributes.
- * @param cursorPosition         The local cursor position, used when merging rich-text deltas.
- * @param previousAttributeValue The previous plain local value for the attribute.
+ * @param blockName          The block type name, e.g. 'core/paragraph'.
+ * @param attributeName      The name of the attribute to update, e.g. 'content'.
+ * @param attributeValue     The new value for the attribute.
+ * @param currentAttributes  The Y.Map holding the block's current attributes.
+ * @param cursorPosition     The local cursor position, used when merging rich-text deltas.
+ * @param baseAttributeValue Optional pre-change attribute value used for rebasing.
  */
 function updateYBlockAttribute(
 	blockName: string,
@@ -1641,7 +1902,7 @@ function updateYBlockAttribute(
 	attributeValue: unknown,
 	currentAttributes: YBlockAttributes,
 	cursorPosition: number | null,
-	previousAttributeValue?: unknown
+	baseAttributeValue?: unknown
 ): void {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
 
@@ -1660,7 +1921,7 @@ function updateYBlockAttribute(
 		currentAttributes,
 		attributeName,
 		cursorPosition,
-		previousAttributeValue
+		baseAttributeValue
 	);
 }
 

@@ -288,7 +288,8 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			{ id: 1, meta: {} }
+			{ id: 1, meta: {} },
+			{ __unstableSkipSyncUpdate: true }
 		);
 	} );
 
@@ -339,7 +340,8 @@ describe( 'getEntityRecord', () => {
 		expect( dispatch.saveEntityRecord ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			{ id: 1, meta: {} }
+			{ id: 1, meta: {} },
+			{ __unstableSkipSyncUpdate: true }
 		);
 	} );
 

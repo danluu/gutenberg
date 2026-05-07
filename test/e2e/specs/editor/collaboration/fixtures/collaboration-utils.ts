@@ -283,6 +283,7 @@ export default class CollaborationUtils {
 
 				return (
 					matchingRoom?.status === 'connected' &&
+					matchingRoom?.synced === true &&
 					matchingRoom?.awarenessCount >= expected
 				);
 			},
@@ -542,7 +543,9 @@ export default class CollaborationUtils {
 						.__gutenbergTestWebSocketSync;
 					const rooms = Object.values( state?.rooms ?? {} );
 					return rooms.some(
-						( room: any ) => room?.status === 'connected'
+						( room: any ) =>
+							room?.status === 'connected' &&
+							room?.synced === true
 					);
 				},
 				undefined,
