@@ -9284,3 +9284,66 @@ height=1080
 nb_frames=840
 duration=28.000000
 ```
+
+## Pass 168 practical-impact and branch refresh
+
+Pass 168 keeps the real-user likelihood classification at **low**. In broad
+normal Gutenberg use the exposure is narrow because RTC must be enabled and the
+same user must have duplicate editor sessions on one post. It is not
+`very-low` for RTC-enabled editing, because the required actions are still
+ordinary editor actions: type a title, type paragraph content in another tab,
+reload that tab, then save from the first tab. The repro does not require
+malformed blocks, direct state mutation, synthetic REST faults, multiple
+WordPress users, network-delay injection, or unusual block types.
+
+Pass 168 independently reran the source trace decoder:
+
+```text
+earlier_crdt_had_customer_title=true
+final_save_raw_customer_crdt_initial=true
+final_rest_raw_customer_crdt_initial=true
+PASS trace proves raw title customer while persisted CRDT title is initial
+```
+
+This is the narrow root-cause proof: the final REST record contains the
+customer title in the canonical raw post field, while `_crdt_document` still
+contains the initial title. A later CRDT-to-editor diff can therefore replay
+the stale persisted title into an editor with a dirty newer title.
+
+The branches were rebased onto current `origin/trunk`
+`86d1b6741a5435ac4611e6e8ae36bf54e1d546e9`:
+
+```text
+explanation branch head after rebase, before this pass-168 doc update:
+4221f12c435 Update RTC title loss pass 167 impact analysis
+
+PR branch commit order:
+1b9db7b372d Add RTC title reload unit repros
+d09ceb420b3 Add same-user title save-after-reload browser repro
+fd4dc607adc Preserve RTC title across reload saves
+```
+
+Fresh pass-168 fixed sync-manager verification after the rebase:
+
+```text
+npm run test:unit -- packages/sync/src/test/manager.ts --runInBand --testNamePattern='serializes the record being saved|serializes the current edited record|passes the persisted record'
+
+PASS packages/sync/src/test/manager.ts
+Test Suites: 1 passed, 1 total
+Tests: 26 skipped, 3 passed, 29 total
+```
+
+A broader local core-data unit run was attempted but did not execute those
+tests because the local test bootstrap failed while importing `packages/date`:
+
+```text
+TypeError: Cannot read properties of undefined (reading 'zone')
+at packages/date/src/index.ts:212
+```
+
+That was not counted as product evidence. A fresh browser rerun on
+`WP_ENV_PORT=9904` was also locally blocked: `wp-env status` reported that the
+environment was not initialized, and `wp-env start --config .wp-env.test.json`
+produced no output beyond the npm/wp-env banner for about 60 seconds before the
+start process was terminated. The archived source trace and pass-118 headless
+stitched video remain the browser evidence.
