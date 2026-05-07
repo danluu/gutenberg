@@ -6,6 +6,85 @@ Bug type: `rtc_top_level_block_move_duplicates_paragraph_and_drops_sibling_after
 
 Transport: `http`
 
+## Pass 167 update
+
+Pass 167 refreshed both branches onto current `origin/trunk`
+`19c460ff7c85289ad7bcc92911fdae9bc650b0c3` and focused on practical user
+impact. The classification remains a real Gutenberg RTC product bug. The
+real-user likelihood is `medium` for active real-time collaboration sessions:
+the source repro uses ordinary post-editor actions on ordinary top-level blocks,
+but it requires two live editors on the same post and a specific structural edit
+interleaving. Across all Gutenberg usage the likelihood is lower because
+single-user editing and sites with collaboration disabled cannot exercise this
+path.
+
+Natural triggering workflow:
+
+```text
+post editor, real-time collaboration enabled, HTTP sync transport
+editor A and editor B open the same draft
+initial top-level blocks: heading, paragraph, sibling paragraph
+editor A deletes the heading through block Options -> Delete
+editor B selects the paragraph and uses Options -> Add before
+editor B types a normal inserted paragraph
+editor A selects the original paragraph and clicks Move down
+```
+
+The source trace shows those UI actions completing. There is no injected block
+tree, direct data-store mutation, malformed locator, save/reload requirement,
+network fault, or browser-tab reload in the triggering path. The waits between
+steps are fuzz-harness control points; they make the scenario easier to reason
+about but are not the root cause. The low-level reducer reproduces the same
+duplicate/drop state without Playwright or timing.
+
+Pass 167 verification on the rebased PR branch:
+
+```text
+fixed PR branch:
+  npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts --runTestsByPath --no-cache --runInBand
+  exit 0
+  81 passed, 81 total
+
+  npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts
+  exit 0
+
+current origin/trunk 19c460ff7c85289ad7bcc92911fdae9bc650b0c3
+  + f56839a80a8 focused low-level repro:
+  exit 1
+  6 failed, 75 passed, 81 total
+
+known-fixes base 3cba2b1e56a98787de08dc6c7df2434759e8f908
+  + f56839a80a8 focused low-level repro:
+  exit 1
+  3 failed, 82 passed, 85 total
+```
+
+The known-fixes base still reproduces the exact duplicate/drop symptom:
+
+```text
+Expected: ["Inserted paragraph", "Sibling paragraph", "Moved paragraph"]
+Received: ["Inserted paragraph", "Moved paragraph", "Moved paragraph"]
+```
+
+Fresh browser replay was not feasible in pass 167 because
+`WP_ENV_PORT=9904 npm run wp-env status` reported the environment as
+uninitialized and `docker ps` hung until killed. The archived source
+Playwright trace remains the natural-user negative browser repro, and the
+pass-114 annotated headless video remains valid:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-114/video/07f8eb5c4218-pass114-verified-annotated.mp4
+codec=h264 width=2560 height=1240 duration=18.000000 nb_frames=450 size=378303
+```
+
+The rebased PR branch now has the requested three commits:
+
+```text
+f56839a80a8 Add RTC top-level block move unit repro
+1c55a4ce4d5 Add RTC top-level block move Playwright repro
+ee639ba4b65 Fix RTC top-level block move reconciliation
+```
+
 ## Pass 165 update
 
 Pass 165 re-read the pass-114 summary, source JSONL row, source log, source
