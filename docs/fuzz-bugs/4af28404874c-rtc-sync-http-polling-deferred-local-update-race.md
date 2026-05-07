@@ -301,3 +301,68 @@ Annotated video:
 The video is a headless screenshot stitch from the refreshed known-fixes
 Playwright failure artifacts. It shows all three editor screens from the source
 failure and a progressive action/observation log.
+
+## Pass 166 Independent Verification
+
+Pass 166 re-read the refreshed source artifacts rather than relying on the prior
+summary. The source test log still fails only on semantic assertions:
+
+- The large-post test missed `Admin was here` after normal editor typing.
+- The list-item test kept `Item Beta` before `Item Gamma` after toolbar moves.
+
+Trace parsing found the natural user actions in the source traces:
+
+```text
+insertText "Admin was here"
+insertText "Editor was here"
+click "Item Beta"
+click toolbar "Move down"
+click "Item Epsilon"
+click toolbar "Move up"
+```
+
+The same trace parse counted only successful `wp-sync` polling responses for
+the relevant endpoint: 60 successful `POST /wp-json/wp-sync/v1/updates`
+responses in the large-post trace and 28 successful responses in the list-item
+trace. The non-2xx entries were expected login/options redirects, cancelled
+external Gravatar/admin-ajax requests, and one cancelled polling request during
+page transition; there were no `500`, PHP fatal, allowed-memory, or OOM
+responses. This keeps the classification as a real RTC convergence defect with
+a misleading OOM bucket label.
+
+The focused unit repro was also re-run against the requested known-fixes base
+commit `3cba2b1e56a98787de08dc6c7df2434759e8f908` after applying only the
+repro test from commit 1. It failed with the stale local field:
+
+```diff
+  {
+    body: "Remote Body",
++   title: "Initial Title",
+  }
+```
+
+On the fixed PR branch, pass 166 re-ran:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
+```
+
+Results: PASS, PASS, PASS.
+
+The local pass-166 browser attempt on `WP_ENV_PORT=9901` was blocked before
+Playwright by host Docker state: `wp-env start` hung in
+`docker compose ... down --remove-orphans`, and a read-only `docker ps` call
+also hung. This is an environment blocker, not a counterexample to the browser
+repro or fix. A fresh pass-166 headless stitched video was generated at:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-166/video/4af28404874c-pass166-annotated.mp4
+```
