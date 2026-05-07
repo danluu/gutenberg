@@ -86,6 +86,60 @@ Jepsen-style correctness: the defect was a convergence failure caused by represe
 
 Dan-Luu-style simplicity/performance: the new path is O(n) over the already-detected changed slice. It avoids LCS and broad CRDT redesign, and it leaves common text edits on the existing merge path.
 
+## Pass 166 Update
+
+Pass 166 adds a narrower root-cause proof below Playwright. The new unit repro
+observes the original `Y.Text` objects owned by the adjacent `moved-block` and
+`displaced-block` records during the pure move:
+
+```text
+[inserted, moved, displaced] -> [inserted, displaced, moved]
+```
+
+On the known-fixes base (`3cba2b1e56a98787de08dc6c7df2434759e8f908`), with
+only the repro test copied in, the new test fails with:
+
+```text
+Expected: []
+Received:
+[
+  { "ownerClientId": "moved-block",
+    "content": "Another paragraph exists so the top-level list is not degenerate." },
+  { "ownerClientId": "displaced-block",
+    "content": "Emoji and multibyte: hi ..., cafe, naive, ..." }
+]
+```
+
+That proves the old merge path locally rewrites sibling rich-text payloads for a
+logical move before the bad update is ever replicated to another peer. This is
+stronger than merely observing final browser divergence or generic nested
+`YMap`/`YText` event targets.
+
+The fixed PR branch was refreshed to keep the requested three-commit order:
+
+```text
+4622b3b505f Add CRDT repros for RTC adjacent move identity rewrite
+e0ed401d62f Add RTC top-level move Playwright repro
+79ce881a642 Avoid rewriting CRDT block records for pure moves
+```
+
+Pass 166 verification on the fixed branch:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts --runInBand
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check origin/trunk..HEAD
+```
+
+Results: CRDT suites passed `82/82`; targeted JS lint exited `0`;
+`git diff --check origin/trunk..HEAD` produced no output.
+
+Fresh pass-166 browser rerun remained infeasible locally because `wp-env start`
+on `WP_ENV_PORT=9902` hung in `docker compose down` before any browser action.
+The source browser failure still has a valid non-timeout Playwright row,
+valid `1280x720` screenshots, a valid trace zip, and a final semantic
+divergence snapshot from ordinary editor actions.
+
 ## Verification
 
 Pass 40 refreshed both branches onto current `origin/trunk`:
