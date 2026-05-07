@@ -73,3 +73,15 @@ Immediate repair needed:
   duplicate, or still real with a better repro.
 - Create a reconstruction queue for the 95 non-runnable likely-real groups.
 - Keep the current eight confirmed-real likelihood loop running separately.
+
+Repair started:
+
+- Created `coverage-queue.tsv` with 166 rows:
+  - 71 `passed-runnable`
+  - 95 `nonrunnable`
+- Added `run-coverage-dispatcher.sh` and `run-coverage-worker.sh`.
+- Started tmux session `rtc-handoff-coverage` with
+  `RTC_COVERAGE_MAX_PARALLEL=8`.
+- Updated `run-worker-health-monitor.sh` so the monitor keeps
+  `rtc-handoff-coverage` alive and logs `coverage_active`,
+  `coverage_queue`, `coverage_done`, and `coverage_failed`.
