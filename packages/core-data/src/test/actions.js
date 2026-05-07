@@ -1046,6 +1046,70 @@ describe( 'saveEntityRecord', () => {
 
 		expect( result ).toBe( postType );
 	} );
+
+	it( 'passes save options to the entity pre-persist hook', async () => {
+		const post = { id: 10, title: 'new post' };
+		const persistedPost = { id: 10, title: 'old post' };
+		const __unstableFetch = jest.fn( ( request ) => request.data );
+		const __unstablePrePersist = jest.fn( () => ( {
+			content: 'prepared content',
+		} ) );
+		const options = {
+			__unstableFetch,
+			__unstableIsRevisionRestore: true,
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				__unstablePrePersist,
+			},
+		];
+		const select = {
+			getRawEntityRecord: () => persistedPost,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post,
+			options
+		)( { select, dispatch, resolveSelect } );
+
+		expect( __unstablePrePersist ).toHaveBeenCalledWith(
+			persistedPost,
+			post,
+			options
+		);
+		expect( __unstableFetch ).toHaveBeenCalledWith( {
+			path: '/wp/v2/posts/10',
+			method: 'PUT',
+			data: {
+				...post,
+				content: 'prepared content',
+			},
+		} );
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			{
+				...post,
+				content: 'prepared content',
+			},
+			undefined,
+			true,
+			{
+				...post,
+				content: 'prepared content',
+			}
+		);
+		expect( result ).toEqual( {
+			...post,
+			content: 'prepared content',
+		} );
+	} );
 } );
 
 describe( 'receiveUserPermission', () => {
