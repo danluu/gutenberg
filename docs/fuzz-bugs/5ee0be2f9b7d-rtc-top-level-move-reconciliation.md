@@ -9228,3 +9228,64 @@ Pass 162 created and validated a fresh annotated stitched-screen video:
 ffmpeg decode completed with no errors, and the extracted 8s frame shows both
 fresh known-fixes editor screens, the natural action log, the expected/observed
 orders, and pass-162 fixed-branch verification.
+
+## Pass 163 Verification
+
+Pass 163 re-read the pass-162 summary, the source JSONL row, the generated
+natural-user spec, the archived source log, the error-context snapshot, source
+screenshots, trace actions, branch state, and current `mergeCrdtBlocks()` code.
+The source result remains a clean semantic failure after successful ordinary UI
+actions and a convergence wait, not a timeout, locator failure, malformed spec,
+or environment failure:
+
+```text
+primary:      inserted paragraph, displaced sibling paragraph, moved paragraph
+collaborator: inserted paragraph, moved paragraph, moved paragraph
+```
+
+Pass 163 added a wider non-Playwright negative-control rerun on the known-fixes
+base worktree at `3cba2b1e56a98787de08dc6c7df2434759e8f908` with only repro
+tests applied. Instead of rerunning only the three focused direct-helper tests,
+it reran both CRDT suites:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts
+```
+
+Result: expected failure, `10 failed, 75 passed`. The failures cover direct
+`mergeCrdtBlocks()`, the real post entrypoint `applyPostChangesToCRDTDoc()`,
+remote update application, pure permutations, nested child moves, and the exact
+generated structural edit sequence. The event-level symptom is still nested
+`YMap`/`YText` mutation of block records instead of one structural array change,
+and the captured moved Y.Map still reads the displaced sibling content.
+
+Pass 163 attempted to create a fresh detached known-fixes test-only worktree, but
+the filesystem had only about `194 MiB` free and Git failed while checking out
+files with `No space left on device`. The existing pass-162 known-fixes
+test-only worktree was therefore reused for the fresh pass-163 command above.
+
+Fresh pass-163 fixed-branch verification on PR branch
+`f72df45f8e3a19ca3238332d31522522267456c4`, based on current `origin/trunk`
+`777af47425fbb6608b8f1453976abd1458c3d81d`:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-post-block-move.ts test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts
+git diff --check
+WP_ENV_PORT=9902 WP_BASE_URL=http://localhost:9902 RTC_MANIFEST_WS_START_PORT=20400 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/rtc-top-level-move-reconciliation.spec.ts --project=chromium --workers=1
+```
+
+Results: the two CRDT unit suites passed `81/81`, targeted JS lint exited `0`,
+`git diff --check` produced no output, and the natural-user Playwright repro
+passed headlessly in `21.9s`. Local wp-env was already running for this worktree,
+but on port `9902`; `http://localhost:9900` was closed.
+
+Pass 163 did not create another full browser video because the filesystem was
+full. It revalidated the pass-162 annotated video instead:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-162/video/5ee0be2f9b7d/rtc-top-level-move-reconciliation-pass162-annotated.mp4
+```
+
+`ffprobe` reports H.264 video, `1920x1080`, `24.0s`, and size `467829` bytes.
+A full `ffmpeg -f null` decode completed with no errors.
