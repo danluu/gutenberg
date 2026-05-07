@@ -199,6 +199,31 @@ times with small randomized think times between the delete, Add before, and
 Move down actions. That would turn the likelihood estimate from structural
 reasoning plus fuzz density into an observed hit rate for normal UI actions.
 
+## Pass 168 Practical Impact Adjustment
+
+Pass 168 raises the conditional likelihood inside the RTC product surface from
+low-medium to **medium**. The source spec does not require a tight simultaneous
+editing race: it waits for mutual discovery and convergence after deleting the
+heading, waits again after the collaborator's Add before insertion, and only
+then moves the paragraph down. The real prerequisite is alternating structural
+edits by two live collaborators in the same top-level block neighborhood, not
+packet loss, delayed sync, reload churn, injected faults, or overlapping
+keystrokes.
+
+Across all Gutenberg editing sessions the likelihood is still lower because
+most sessions are single-user and many installs will not have RTC collaboration
+enabled. For teams actively using RTC to co-edit outlines, docs, release notes,
+or article sections, the sequence is ordinary enough to matter: remove a
+heading, insert a paragraph before an existing paragraph, then move that
+existing paragraph one slot.
+
+The handoff data also argues against treating this as a one-off. Filtering the
+likely-real manifest for the `ec47d94c5251` adjacent move family finds 9 rows
+covering 16 signatures, all over HTTP, with 6 high-confidence and 3
+medium-confidence classifications. That does not give a real-world incidence
+rate, but it does show that the same user-action-shaped merge defect was found
+from multiple seeds.
+
 ## Verification
 
 Pass 40 refreshed both branches onto current `origin/trunk`:
