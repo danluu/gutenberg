@@ -4,8 +4,15 @@ Bug signature: `c71d49e9ecf9`
 
 Bug type: `rtc_top_level_move_reconciliation_leaves_peer_on_pre_move_order_after_remote_structural_edits`
 
-The failure is a product-level RTC convergence bug, not a readiness wait,
-locator issue, malformed generated fixture, or inverted assertion.
+The original failure was a product-level RTC convergence bug, not a readiness
+wait, locator issue, malformed generated fixture, or inverted assertion.
+
+Pass 170 changes the current disposition for the final May 7 known-fixes base:
+the original natural-user workflow passes on the current backlink-aware
+known-fixes branch, but a lower-level same-array-reference reorder hazard still
+survives there. Treat the original `c71d49e9ecf9` browser workflow as covered by
+the current known-fixes stack, and the same-array cache issue as a remaining
+robustness gap with lower demonstrated real-user likelihood.
 
 ## Evidence
 
@@ -99,6 +106,20 @@ interleaving but fails the reused-array reorder. That A/B result isolates the
 remaining known-fixes defect to the `serializableBlocksCache` keying by the
 mutable incoming block array reference.
 
+Pass 170 reran the checks against the final current known-fixes base
+`f256024286dd80a4c0e2579f658c109256abf648`, not the earlier partial May 5/May 7
+base used by prior passes. Applying a focused standalone low-level regression to
+that base produced one pass and one failure: the stale remote-insert/top-level
+move interleaving passed, while the reused mutable block-array reorder still
+failed with received `[Inserted paragraph, Emoji and multibyte, Another
+paragraph]`. The original natural-user HTTP Playwright spec, added without the
+fix to a disposable `f2560242` clone, passed 6/6 attempts on `WP_ENV_PORT=10025`.
+The rebased fix branch on current `origin/trunk` passed the same natural-user
+spec, the full `crdt-blocks.ts` unit suite, and touched-file JS lint. This
+narrows the surviving concern from the original reproduced user workflow to a
+cache invalidation robustness gap whose user-level trigger still needs direct
+evidence.
+
 ## Root cause
 
 Top-level post blocks are synced as full snapshots through
@@ -118,13 +139,20 @@ identities. On the receiving peer, an older local snapshot with the pre-move
 order could then rewrite the newly-received order and leave the peer with stale
 order and duplicated content.
 
-The known-fixes base contains an earlier merge-base reconciliation attempt, but
-it still memoizes `makeBlocksSerializable( incomingBlocks )` in
+Older known-fixes bases contained an earlier merge-base reconciliation attempt,
+but still memoized `makeBlocksSerializable( incomingBlocks )` in
 `serializableBlocksCache` by the mutable `incomingBlocks` array object. When the
 block editor reuses that array reference and mutates its order, the cached
 serializable copy still has the pre-move order. The final top-level move is then
 invisible to reconciliation, so the peer can remain on the pre-move order and
 duplicate the moved paragraph.
+
+The final current known-fixes base has enough stale-local reconciliation to fix
+the browser workflow above, but still has the same `serializableBlocksCache`.
+The remaining low-level failure is therefore specifically about cache
+invalidation when the same `incomingBlocks` object is mutated and reused across a
+move; pass 170 did not find a current natural-user browser route that forces
+that exact data shape.
 
 The behavior originates with `84019935998c16f877e976ad85e84748355d7282`
 ("Improve CRDT \"merge logic\" for post entities", PR #72262), which introduced
