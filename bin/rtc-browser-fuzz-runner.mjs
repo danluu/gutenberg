@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { execFile, spawn } from 'child_process';
+import { execFile, execFileSync, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const REPO_ROOT = path.resolve(
@@ -283,10 +283,7 @@ async function runCombinedCommand( {
 	let timedOut = false;
 	const timeout = setTimeout( () => {
 		timedOut = true;
-		child.kill( 'SIGTERM' );
-		setTimeout( () => {
-			child.kill( 'SIGKILL' );
-		}, 5000 ).unref();
+		terminatePidTree( child.pid );
 	}, timeoutMs );
 
 	const result = await new Promise( ( resolve, reject ) => {
@@ -342,10 +339,7 @@ async function runCodexCommand( {
 	let timedOut = false;
 	const timeout = setTimeout( () => {
 		timedOut = true;
-		child.kill( 'SIGTERM' );
-		setTimeout( () => {
-			child.kill( 'SIGKILL' );
-		}, 5000 ).unref();
+		terminatePidTree( child.pid );
 	}, timeoutMs );
 
 	const result = await new Promise( ( resolve, reject ) => {
@@ -370,6 +364,52 @@ async function runCodexCommand( {
 		stdoutPath,
 		stderrPath,
 	};
+}
+
+function terminatePidTree( rootPid ) {
+	if ( ! rootPid ) {
+		return;
+	}
+
+	const pids = [ ...collectDescendantPids( rootPid ).reverse(), rootPid ];
+	for ( const pid of pids ) {
+		try {
+			process.kill( pid, 'SIGTERM' );
+		} catch {}
+	}
+
+	setTimeout( () => {
+		for ( const pid of pids ) {
+			try {
+				process.kill( pid, 'SIGKILL' );
+			} catch {}
+		}
+	}, 5000 ).unref();
+}
+
+function collectDescendantPids( pid, seen = new Set() ) {
+	if ( seen.has( pid ) ) {
+		return [];
+	}
+	seen.add( pid );
+
+	let childPids = [];
+	try {
+		childPids = execFileSync( 'pgrep', [ '-P', String( pid ) ], {
+			encoding: 'utf8',
+			timeout: 5000,
+		} )
+			.split( '\n' )
+			.map( ( value ) => Number.parseInt( value, 10 ) )
+			.filter( Number.isFinite );
+	} catch {
+		return [];
+	}
+
+	return childPids.flatMap( ( childPid ) => [
+		childPid,
+		...collectDescendantPids( childPid, seen ),
+	] );
 }
 
 function runQuietCommand( command, args, cwd = REPO_ROOT ) {
