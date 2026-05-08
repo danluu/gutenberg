@@ -52,7 +52,9 @@ target_parallel() {
 	free="$(free_mb)"
 	disk_free="$(disk_free_mb)"
 	cpu="$(cpu_per_core_pct)"
-	if [ "$free" -lt "$LOW_FREE_MB" ] || [ "$disk_free" -lt "$LOW_DISK_FREE_MB" ] || [ "$cpu" -gt 98 ]; then
+	if [ "$free" -lt "$LOW_FREE_MB" ] || [ "$disk_free" -lt "$LOW_DISK_FREE_MB" ]; then
+		echo 0
+	elif [ "$cpu" -gt 98 ]; then
 		echo 1
 	elif [ "$free" -lt "$MIN_FREE_MB" ] || [ "$disk_free" -lt "$MIN_DISK_FREE_MB" ] || [ "$cpu" -gt "$CPU_START_LIMIT" ]; then
 		echo 3
