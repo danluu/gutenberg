@@ -869,3 +869,83 @@ confidence gap is empirical rate, not mechanism: the shortest useful additional
 experiment is still a repeated two-user browser loop on a small post to measure
 marker-loss frequency under default polling, optionally with small server
 response delay.
+
+## Pass 172 Current-Trunk Verification After #77666
+
+Pass 172 rebased both branches onto current `origin/trunk`
+`114082fd16895304936ddd048e617891ab8f9f48`
+(`RTC: Fix title divergence between users on page refresh after title update
+(#77666)`). This trunk head matters because `#77666` was one of the open RTC
+PRs included in the May 7 synthetic known-fixes base and it made substantial
+changes to `test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts`.
+
+The current trunk head still does not close this `SyncManager` ordering bug.
+`packages/sync/src/manager.ts` still reads `handlers.getEditedRecord()` in
+`_updateEntityRecord()` without first flushing local CRDT writes queued by the
+public `update()` method, and the public method is still:
+
+```ts
+update: debugWrap( yieldToEventLoop( updateCRDTDoc ) ),
+```
+
+`git blame` on current trunk attributes `yieldToEventLoop()` and the public
+`update` wrapper to `62054e939e02f730302c71be4f5fdc5d37ccfe58`
+(`#75029`). It also shows the later save-path sleep from `#75975` remains only
+in `createPersistedCRDTDoc()`, not in remote reconciliation.
+
+Pass 172 applied only the commit-1 unit repro to current trunk and the May 7
+known-fixes base:
+
+- current `origin/trunk` `114082fd1689`: FAIL, one `editRecord` call projects
+  `{ body: "Remote Body", title: "Initial Title" }`.
+- known-fixes base `f256024286dd`: FAIL, two `editRecord` calls, matching the
+  synthetic base's remote-key scheduling path.
+
+The rebased PR branch now keeps this commit order:
+
+1. `1eb7afc5f10 Add RTC deferred update race repro`
+2. `35af5f8233c Add RTC stress Playwright repro`
+3. `bdc86ff48dd Flush RTC updates before remote reconciliation`
+
+Pass 172 verification on the rebased fixed branch:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
+
+npm run lint:js -- \
+  packages/sync/src/manager.ts \
+  packages/sync/src/test/manager.ts \
+  packages/core-data/src/utils/test/crdt-blocks.ts \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts
+
+WP_ENV_PORT=10007 \
+WP_BASE_URL=http://localhost:10007 \
+RTC_MANIFEST_WS_START_PORT=21256 \
+RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  --project=chromium --workers=1 \
+  --grep "two users preserve simultaneous paragraph edits"
+```
+
+Results: PASS, PASS, PASS, PASS, and the headless Chromium test passed
+1/1 after 15.5 seconds.
+
+Pass 172 keeps the practical real-user likelihood at `low`, but with a sharper
+scope: the bug is low-likelihood across all Gutenberg users because RTC is
+early access and the race window is one event-loop tick, but it is a credible
+content-loss risk inside actual RTC coediting sessions because the trigger uses
+normal post-editor actions, normal HTTP polling, two ordinary users/tabs on the
+same post, and no malformed blocks or direct state mutation. The shortest
+remaining confidence-improving experiment is a small-post two-user browser loop
+that measures marker-loss rate over hundreds of local edits while a collaborator
+poll response lands under the default HTTP provider.
