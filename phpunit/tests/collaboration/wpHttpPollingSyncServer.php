@@ -559,6 +559,60 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		$this->assertErrorResponse( 'rest_sync_body_too_large', $response, 413 );
 	}
 
+	/**
+	 * Verifies that a large but valid persisted update history is returned in
+	 * bounded chunks instead of being materialized in one oversized response.
+	 *
+	 * @ticket 64890
+	 */
+	public function test_sync_splits_large_persisted_history_by_response_byte_budget(): void {
+		wp_set_current_user( self::$editor_id );
+
+		$room        = $this->get_post_room();
+		$update_data = base64_encode( str_repeat( 'x', 384 * KB_IN_BYTES ) );
+		$updates     = array();
+		for ( $i = 0; $i < 20; $i++ ) {
+			$updates[] = array(
+				'data' => $update_data,
+				'type' => 'update',
+			);
+		}
+
+		$seed_response = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 1, 0, array( 'user' => 'seed' ), $updates ),
+			)
+		);
+		$this->assertSame( 200, $seed_response->get_status() );
+
+		$first_response = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 2, 0, array( 'user' => 'catchup' ) ),
+			)
+		);
+		$this->assertSame( 200, $first_response->get_status() );
+
+		$first_data = $first_response->get_data();
+		$first_room = $first_data['rooms'][0];
+
+		$this->assertGreaterThan( 0, count( $first_room['updates'] ) );
+		$this->assertLessThan( 20, count( $first_room['updates'] ) );
+		$this->assertLessThanOrEqual( 8 * MB_IN_BYTES, strlen( wp_json_encode( $first_data ) ) );
+
+		$second_response = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 2, $first_room['end_cursor'], array( 'user' => 'catchup' ) ),
+			)
+		);
+		$this->assertSame( 200, $second_response->get_status() );
+
+		$second_data = $second_response->get_data();
+		$second_room = $second_data['rooms'][0];
+
+		$this->assertSame( 20, count( $first_room['updates'] ) + count( $second_room['updates'] ) );
+		$this->assertGreaterThan( $first_room['end_cursor'], $second_room['end_cursor'] );
+	}
+
 	/*
 	 * Response format tests.
 	 */
