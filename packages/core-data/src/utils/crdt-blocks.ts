@@ -427,6 +427,11 @@ function reconcileStaleLocalBlocks(
 	const localClientIdSet = new Set( localClientIds );
 	const previousClientIdSet = new Set( previousClientIds );
 	const currentClientIdSet = new Set( currentClientIds );
+	const hasLocalOnlyInsertedBlocks = localClientIds.some(
+		( clientId ) =>
+			! previousClientIdSet.has( clientId ) &&
+			! currentClientIdSet.has( clientId )
+	);
 	// The local editor sends full block snapshots. Reconcile those snapshots
 	// against the last local base before running the full-array merge so remote
 	// top-level inserts/deletes are not inferred as local structural edits.
@@ -447,11 +452,18 @@ function reconcileStaleLocalBlocks(
 
 	currentBlocks.forEach( ( currentBlock, currentIndex ) => {
 		const clientId = getBlockClientId( currentBlock );
+		const isMissingFromLocal =
+			!! clientId && ! localClientIdSet.has( clientId );
+		const shouldPreserveMissingCurrentBlock =
+			isMissingFromLocal &&
+			( ! previousClientIdSet.has( clientId ) ||
+				hasLocalOnlyInsertedBlocks );
 
 		if (
 			! clientId ||
 			localClientIdSet.has( clientId ) ||
-			previousClientIdSet.has( clientId ) ||
+			( previousClientIdSet.has( clientId ) &&
+				! shouldPreserveMissingCurrentBlock ) ||
 			blockIdsToSync.has( clientId )
 		) {
 			return;
