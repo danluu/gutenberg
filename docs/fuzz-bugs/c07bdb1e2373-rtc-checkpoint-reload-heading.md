@@ -38,7 +38,52 @@ Observed blast radius:
 
 ## Root-Cause Narrowing
 
-The failure appears to involve two interacting stale-state paths:
+Pass 172 narrowed the first bad state to the save completion path on the
+current known-fixes base, using an isolated `wp-env-test` instance on port
+9957.
+
+Before save, the primary editor had the expected six blocks in both
+`core/block-editor.getBlocks()` and `core.getEditedEntityRecord()`. At the
+save snackbar, the REST-backed entity record contained the correct six-block
+checkpoint, but the saving tab had a stale non-transient `content` edit with
+the original three-block baseline layered over that raw record:
+
+- `core/block-editor.getBlocks()`: three baseline blocks;
+- raw entity record `content.raw`: six checkpoint blocks;
+- edited record `content`: three baseline blocks;
+- non-transient edit keys: `content`;
+- `hasEdits`: `true`.
+
+The collaborator still had the six-block checkpoint. This shows the bug is not
+caused by the later collaborator reload or heading insertion; those actions are
+only the original fuzzer's oracle for the already-diverged save state.
+
+The likely root cause is `prePersistPostType` replaying an unchanged persisted
+`_crdt_document` from the freshness check into the active sync manager before a
+normal local save. `syncManager.applyPersistedCRDTDoc()` is not harmless: it
+eventually calls `updateEntityRecord()`, so replaying the stale baseline CRDT
+document can write stale CRDT-derived content back into the saving tab even
+though the REST save response contains the correct local body.
+
+The pass-172 candidate fix changes the replay guard so `prePersistPostType`
+only applies the latest persisted CRDT document when either:
+
+- server-saved fields changed during the freshness check; or
+- the latest persisted CRDT document differs from the base persisted CRDT
+  document already known to this editor.
+
+With that guard, the same timeline probe converged: both collaborators kept the
+six-block checkpoint after save and both reached the expected seven-block state
+after reload plus heading insertion. The targeted `prePersistPostType` unit
+tests and `npm run build -- --skip-types` also passed.
+
+This fix was verified in the synthetic current known-fixes checkout
+(`f256024286dd80a4c0e2579f658c109256abf648`). The existing repro PR branch is
+based on `origin/trunk`, which does not yet contain the full stale-save
+protection code path from the proposed RTC stack, so pass 172 did not add this
+small guard as a standalone trunk-based fix commit.
+
+Pass 171 had pointed at two broader stale-state paths:
 
 1. `prePersistPostType` serializes `_crdt_document` during save. On the known-fixes base, the saved REST body can be correct while the serialized CRDT document remains stale, so a save response can reapply a stale CRDT snapshot to an active editor.
 2. Content-only CRDT updates can intentionally set `blocks` to `undefined` so blocks should be reparsed from serialized content, but active editor state can retain a stale transient block array and never reparse.
@@ -51,12 +96,8 @@ Candidate patches tested during pass 171:
 - forcing `prePersistPostType` to update the CRDT document with local save edits before serializing: made persisted `_crdt_document` contain the six-block content, but active editor divergence still failed;
 - clearing transient blocks after successful save: did not resolve the active editor divergence.
 
-The most useful next experiment is to instrument the saving tab immediately before and after `saveEntityRecord` to compare:
-
-- `core/block-editor.getBlocks()`;
-- `core.getEditedEntityRecord( 'postType', type, id ).content`;
-- `core.getEditedEntityRecord( 'postType', type, id ).blocks`;
-- `syncManager.getCRDTRecordData( 'postType/post', id )`;
-- the REST response's `_crdt_document`.
-
-That should identify whether the stale three-block UI is retained in the block-editor store, the core-data transient `blocks` edit, or an RTC reconciliation write-back after the save response.
+The next most useful experiment is to run the pass-172 timeline probe multiple
+times on both the patched known-fixes checkout and the head of the proposed
+stale-save protection PR, with and without the guard above. That would quantify
+flake rate and separate the proposed PR's behavior from the synthetic
+known-fixes integration base.
