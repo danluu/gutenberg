@@ -48,9 +48,40 @@ The lower-level repros exercise `mergeCrdtBlocks()` directly:
 - acknowledged remote insert, then stale one-slot Search move;
 - true two-document concurrent remote insert and stale Search move.
 
-The known-fixes checkout at
-`/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505` still fails
-this pass's stricter lower-level test: two of the three focused cases fail.
+Pass 170 rechecked the current backlink-aware known-fixes base at
+`/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507`
+(`f256024286d`). That base includes the #77716 backlink-aware RTC set listed in
+`KNOWN_FIXES_BASE_STATUS_20260507.md`. It improves the old failure but still
+fails the one-slot Search move case: the shared paragraph is dropped when it is
+present in the local previous snapshot but absent from the stale moving
+editor's incoming full snapshot.
+
+## Practical Impact
+
+Real-user likelihood: `low`.
+
+This does not need malformed blocks or direct state mutation. A user can trigger
+it in the post editor when two collaborators edit the same post over RTC
+WebSocket sync, one collaborator has a Search block selected, another
+collaborator inserts a top-level paragraph above nearby blocks, and the first
+collaborator moves the stale selected Search block before their editor has
+applied the inserted paragraph. Save/reload is not required for the live
+corruption, though saving after convergence can persist the corrupted block tree.
+
+The common prerequisites are ordinary collaborative editing, a top-level
+paragraph insert, and toolbar block movement. The rarer prerequisites are using
+a Search block and hitting the stale-selection timing window. Multiple browser
+tabs or users are required because the defect is in RTC merge semantics. Network
+delay is not strictly required, but a delay or busy editor makes the stale window
+more likely. The checkpoint-heavy archived fuzz scenario is artificial; the
+natural repro reduces it to a selected Search block, a remote paragraph insert,
+and a local Move up action.
+
+Blast radius is content loss/corruption: an acknowledged paragraph can disappear
+from both collaborators after convergence, and older variants could duplicate a
+Search block. There is no evidence of an OOM, performance spiral, or save loop
+for this signature. Recovery is manual undo if the user notices immediately, or
+revision restore if the corrupted post has been saved.
 
 ## Root Cause
 
@@ -135,4 +166,3 @@ Observed on the fix branch:
 - `crdt-stale-search-move.test.ts`: 3 passed.
 - `crdt-blocks.ts`: 71 passed.
 - focused E2E: 1 passed.
-
