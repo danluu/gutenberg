@@ -1050,9 +1050,10 @@ function buildCodexPrompt( {
 			'- Only inspect local repository files and the listed command logs.',
 			'Tasks:',
 			'1. Determine whether this is a real collaboration bug, a test bug, or a harness/environment issue.',
-			'2. Do not edit shared source, tests, package files, or run configuration.',
-			'3. If this looks like a false positive, describe the smallest harness change that should be made later.',
-			'4. Output only JSON that matches the provided schema.',
+			'2. Score user-hit likelihood as userHitLikelihoodScore from 0 to 5, where 0 means harness-only/not user-visible, 1 means very rare or developer-only, 2 means uncommon edge workflow, 3 means plausible normal collaborative editing workflow, 4 means common workflow or common content shape, and 5 means very likely in default/common use. Explain the score in userHitLikelihoodRationale.',
+			'3. Do not edit shared source, tests, package files, or run configuration.',
+			'4. If this looks like a false positive, describe the smallest harness change that should be made later.',
+			'5. Output only JSON that matches the provided schema.',
 			'Rules:',
 			'- Do not weaken coverage by broad string matching or skipping large classes of failures.',
 			'- Prefer preflight validation and explicit infra classification over ignoring failing logs.',
@@ -1094,6 +1095,9 @@ async function runCodexFailureAnalysis( {
 					? 'not_real'
 					: 'uncertain',
 			confidence: 'low',
+			userHitLikelihoodScore: 0,
+			userHitLikelihoodRationale:
+				'Inline analysis is disabled; asynchronous triage has not yet evaluated user-hit likelihood.',
 			summary:
 				'Inline Codex analysis is disabled for this long-running fuzz run; the asynchronous deep-triage watcher owns detailed analysis.',
 			evidence: attempts.map(

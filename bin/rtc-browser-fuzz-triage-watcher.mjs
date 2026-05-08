@@ -545,13 +545,19 @@ async function applyAnalysisGates(
 			continue;
 		}
 
-		if ( signature.status === 'queued' || signature.status === 'retry' ) {
+		if (
+			signature.status === 'queued' ||
+			signature.status === 'retry' ||
+			signature.status === 'analysis-gated'
+		) {
 			signature.status = 'analysis-gated';
 			signature.analysisGate = {
 				gatedAt: new Date().toISOString(),
 				sourceTier: gate.sourceTier,
 				classification: gate.classification,
 				confidence: gate.confidence,
+				userHitLikelihoodScore: gate.userHitLikelihoodScore,
+				userHitLikelihoodRationale: gate.userHitLikelihoodRationale,
 				distinctBugType: gate.distinctBugType,
 				isDuplicateOf: gate.isDuplicateOf,
 				candidateStatus: gate.candidateStatus,
@@ -577,6 +583,11 @@ function getAnalysisGate( analysisDecision, deepAnalysisDecision ) {
 			sourceTier: 'deep-analysis-tier',
 			classification: deepAnalysisDecision.classification,
 			confidence: deepAnalysisDecision.confidence,
+			userHitLikelihoodScore: normalizeUserHitLikelihoodScore(
+				deepAnalysisDecision.userHitLikelihoodScore
+			),
+			userHitLikelihoodRationale:
+				deepAnalysisDecision.userHitLikelihoodRationale ?? '',
 			distinctBugType: deepAnalysisDecision.distinctBugType,
 			isDuplicateOf: deepAnalysisDecision.duplicateOf,
 			candidateStatus: deepAnalysisDecision.candidateStatus,
@@ -591,6 +602,11 @@ function getAnalysisGate( analysisDecision, deepAnalysisDecision ) {
 			sourceTier: 'analysis-tier',
 			classification: analysisDecision.classification,
 			confidence: analysisDecision.confidence,
+			userHitLikelihoodScore: normalizeUserHitLikelihoodScore(
+				analysisDecision.userHitLikelihoodScore
+			),
+			userHitLikelihoodRationale:
+				analysisDecision.userHitLikelihoodRationale ?? '',
 			distinctBugType: analysisDecision.distinctBugType,
 			isDuplicateOf: analysisDecision.isDuplicateOf,
 			candidateStatus: null,
@@ -601,6 +617,16 @@ function getAnalysisGate( analysisDecision, deepAnalysisDecision ) {
 	}
 
 	return null;
+}
+
+function normalizeUserHitLikelihoodScore( value ) {
+	const parsed =
+		typeof value === 'number' ? value : Number.parseInt( value, 10 );
+	if ( ! Number.isInteger( parsed ) ) {
+		return 0;
+	}
+
+	return Math.max( 0, Math.min( 5, parsed ) );
 }
 
 async function readAnalysisDecisions() {
@@ -997,22 +1023,23 @@ function buildCodexPrompt( signature ) {
 		'',
 		'Required work:',
 		'1. Decide whether this is a real Gutenberg/RTC correctness bug, an infra/harness issue, or not real.',
-		'2. Compare the examples and decide whether they are one distinct bug type or duplicates of another signature in the same run.',
-		'3. If it may be real, try to reproduce at every useful level: unit, REST/API, browser/manual, and Playwright.',
-		'4. A Playwright repro must use real user actions and real editor/browser behavior. Do not use fault injection, artificial route blocking, artificial sleeps as a cause, or direct state mutation as the repro mechanism.',
-		'5. If a realistic Playwright repro is not obvious, keep trying in a bounded loop until the repro-hours budget is spent or a realistic repro is found.',
-		'6. Write durable artifacts in the triage job directory: analysis.md, bug-report.md for real bugs, false-positive.md for not-real/infra, and any repro files or commands you create.',
-		'7. If after the bounded search the issue is not real or cannot be reproduced realistically, document why and recommend keep_fuzzing, suppress_as_infra, or manual_triage as appropriate.',
-		'8. Do not revert user changes. If you edit repository files, keep changes narrowly scoped and list them in changedFiles.',
-		'9. Keep filesystem searches narrow. Do not run broad `find`/`rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search only the triage job directory, the current fuzz run directory, the listed example artifact directories, and specific source files discovered with `git ls-files` or direct paths.',
-		"10. Do not search historical fuzz generations unless an exact related signature path is already listed in this prompt. If you need duplicate context, read this run's watcher/analysis state files instead of walking the artifact tree.",
-		'11. The active fuzz environment is the wp-env test environment on port 8950. Check it with: WP_ENV_PORT=8950 WP_BASE_URL=http://localhost:8950 npm run wp-env-test -- status. Do not use npm run wp-env status for this run; that checks a different development environment and may be stopped.',
-		'12. Do not stop, start, clean, or reset the shared fuzz environment while fuzz lanes are running. If a reproduction needs a separate environment, create a separate worktree or terminal with a different port and document it.',
-		'13. Never run a Playwright repro command against the shared port 8950 environment unless the command sets GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1, GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1, WP_ENV_PORT=8950, WP_BASE_URL=http://localhost:8950, and WP_ARTIFACTS_PATH under the triage job directory. The default Playwright global setup deletes all posts and can invalidate active fuzz lanes.',
-		'14. Do not run tests or fixtures that call deleteAllPosts(), deleteAllUsers(), wp-env clean, wp-env start, or other destructive shared-environment cleanup against port 8950 while fuzz lanes are active. Use a separate worktree/port for destructive reproduction attempts.',
-		'15. You may launch additional codex exec processes or terminal subprocesses for independent repro searches when helpful. Keep every artifact and status file under the triage job directory.',
-		'16. Prefer Codex-heavy trace, screenshot, log, and code analysis before starting browser work. Only launch Playwright once you have a concrete hypothesis, and do not run multiple long browser loops concurrently from this job.',
-		'17. Do not run `npm run wp-env-test start`, `npm run wp-env start`, or default `.wp-env.test.json` startup from `/Users/danluu/dev/fuzz/gutenberg` or `/Users/danluu/dev/fuzz/gutenberg-rtc-post-content-safe-sync-fuzz`; those are shared fuzz environments. If browser repro work needs a WordPress environment, create a job-local wp-env config under the triage job directory with a unique non-shared port and run `npm exec wp-env --config <that-config> start` only for that isolated environment.',
+		'2. Score user-hit likelihood as userHitLikelihoodScore from 0 to 5, where 0 means harness-only/not user-visible, 1 means very rare or developer-only, 2 means uncommon edge workflow, 3 means plausible normal collaborative editing workflow, 4 means common workflow or common content shape, and 5 means very likely in default/common use. Explain the score in userHitLikelihoodRationale.',
+		'3. Compare the examples and decide whether they are one distinct bug type or duplicates of another signature in the same run.',
+		'4. If it may be real, try to reproduce at every useful level: unit, REST/API, browser/manual, and Playwright.',
+		'5. A Playwright repro must use real user actions and real editor/browser behavior. Do not use fault injection, artificial route blocking, artificial sleeps as a cause, or direct state mutation as the repro mechanism.',
+		'6. If a realistic Playwright repro is not obvious, keep trying in a bounded loop until the repro-hours budget is spent or a realistic repro is found.',
+		'7. Write durable artifacts in the triage job directory: analysis.md, bug-report.md for real bugs, false-positive.md for not-real/infra, and any repro files or commands you create.',
+		'8. If after the bounded search the issue is not real or cannot be reproduced realistically, document why and recommend keep_fuzzing, suppress_as_infra, or manual_triage as appropriate.',
+		'9. Do not revert user changes. If you edit repository files, keep changes narrowly scoped and list them in changedFiles.',
+		'10. Keep filesystem searches narrow. Do not run broad `find`/`rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search only the triage job directory, the current fuzz run directory, the listed example artifact directories, and specific source files discovered with `git ls-files` or direct paths.',
+		"11. Do not search historical fuzz generations unless an exact related signature path is already listed in this prompt. If you need duplicate context, read this run's watcher/analysis state files instead of walking the artifact tree.",
+		'12. The active fuzz environment is the wp-env test environment on port 8950. Check it with: WP_ENV_PORT=8950 WP_BASE_URL=http://localhost:8950 npm run wp-env-test -- status. Do not use npm run wp-env status for this run; that checks a different development environment and may be stopped.',
+		'13. Do not stop, start, clean, or reset the shared fuzz environment while fuzz lanes are running. If a reproduction needs a separate environment, create a separate worktree or terminal with a different port and document it.',
+		'14. Never run a Playwright repro command against the shared port 8950 environment unless the command sets GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1, GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1, WP_ENV_PORT=8950, WP_BASE_URL=http://localhost:8950, and WP_ARTIFACTS_PATH under the triage job directory. The default Playwright global setup deletes all posts and can invalidate active fuzz lanes.',
+		'15. Do not run tests or fixtures that call deleteAllPosts(), deleteAllUsers(), wp-env clean, wp-env start, or other destructive shared-environment cleanup against port 8950 while fuzz lanes are active. Use a separate worktree/port for destructive reproduction attempts.',
+		'16. You may launch additional codex exec processes or terminal subprocesses for independent repro searches when helpful. Keep every artifact and status file under the triage job directory.',
+		'17. Prefer Codex-heavy trace, screenshot, log, and code analysis before starting browser work. Only launch Playwright once you have a concrete hypothesis, and do not run multiple long browser loops concurrently from this job.',
+		'18. Do not run `npm run wp-env-test start`, `npm run wp-env start`, or default `.wp-env.test.json` startup from `/Users/danluu/dev/fuzz/gutenberg` or `/Users/danluu/dev/fuzz/gutenberg-rtc-post-content-safe-sync-fuzz`; those are shared fuzz environments. If browser repro work needs a WordPress environment, create a job-local wp-env config under the triage job directory with a unique non-shared port and run `npm exec wp-env --config <that-config> start` only for that isolated environment.',
 		'',
 		'Output only JSON matching the schema. The JSON should point at the artifacts you wrote.',
 	].join( '\n' );
@@ -1033,6 +1060,12 @@ async function writeStatusMarkdown( statusPath, signature ) {
 		lines.push(
 			`Classification: ${ result.classification }`,
 			`Confidence: ${ result.confidence }`,
+			`User hit likelihood: ${ normalizeUserHitLikelihoodScore(
+				result.userHitLikelihoodScore
+			) }/5`,
+			`User hit likelihood rationale: ${
+				result.userHitLikelihoodRationale ?? ''
+			}`,
 			`Distinct bug type: ${ result.distinctBugType }`,
 			`Recommended action: ${ result.recommendedAction }`,
 			'',
@@ -1061,6 +1094,12 @@ async function writeStatusMarkdown( statusPath, signature ) {
 			}`,
 			`Analysis classification: ${ signature.analysisGate.classification }`,
 			`Analysis confidence: ${ signature.analysisGate.confidence }`,
+			`User hit likelihood: ${ normalizeUserHitLikelihoodScore(
+				signature.analysisGate.userHitLikelihoodScore
+			) }/5`,
+			`User hit likelihood rationale: ${
+				signature.analysisGate.userHitLikelihoodRationale ?? ''
+			}`,
 			`Distinct bug type: ${ signature.analysisGate.distinctBugType }`,
 			`Duplicate of: ${ signature.analysisGate.isDuplicateOf ?? 'none' }`,
 			`Candidate status: ${

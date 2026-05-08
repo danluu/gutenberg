@@ -290,11 +290,31 @@ const DISABLE_PARSER_STRESS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS === '1';
 const EXTRA_COLLABORATOR_COUNT = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS',
-	ACTION_PROFILE === 'session-lifecycle' ? 1 : 0
+	[ 'session-lifecycle', 'three-user-late-join' ].includes( ACTION_PROFILE )
+		? 1
+		: 0
 );
 const ENABLE_LIFECYCLE_EVENTS =
 	process.env.GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS === '1' ||
-	ACTION_PROFILE === 'session-lifecycle';
+	[
+		'session-lifecycle',
+		'three-user-late-join',
+		'multi-reload-lifecycle',
+	].includes( ACTION_PROFILE );
+const LIFECYCLE_RELOAD_COUNT = getEnvNonNegativeInt(
+	'GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT',
+	ACTION_PROFILE === 'multi-reload-lifecycle' ? 2 : 1
+);
+const SAVE_CHECKPOINT_COUNT = getEnvNonNegativeInt(
+	'GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT',
+	2
+);
+const FORCE_LATE_JOIN_STEP = getEnvOptionalNonNegativeInt(
+	'GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP'
+);
+const FORCE_RELOAD_STEPS = getEnvIntList(
+	'GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS'
+);
 const COLLECT_CDP_COVERAGE =
 	process.env.GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE === '1';
 const BEHAVIORAL_COVERAGE_FILENAME = 'rtc-behavioral-coverage.ndjson';
@@ -327,6 +347,24 @@ function getEnvNonNegativeInt( name: string, fallback: number ): number {
 
 	if ( Number.isNaN( parsedValue ) || parsedValue < 0 ) {
 		throw new Error( `Expected ${ name } to be a non-negative integer.` );
+	}
+
+	return parsedValue;
+}
+
+function getEnvOptionalNonNegativeInt( name: string ): number | null {
+	const rawValue = process.env[ name ];
+
+	if ( ! rawValue ) {
+		return null;
+	}
+
+	const parsedValue = Number.parseInt( rawValue, 10 );
+
+	if ( Number.isNaN( parsedValue ) || parsedValue < 0 ) {
+		throw new Error(
+			`Expected ${ name } to be a non-negative integer when set.`
+		);
 	}
 
 	return parsedValue;
@@ -634,6 +672,57 @@ function chooseMilestoneSteps(
 	}
 
 	return steps;
+}
+
+function reserveMilestoneStep(
+	step: number | null,
+	stepCount: number,
+	usedSteps: Set< number >
+): number {
+	if ( step === null ) {
+		return -1;
+	}
+
+	if ( stepCount <= 1 ) {
+		usedSteps.add( 0 );
+		return 0;
+	}
+
+	const normalizedStep = Math.max( 1, Math.min( stepCount - 1, step ) );
+	usedSteps.add( normalizedStep );
+	return normalizedStep;
+}
+
+function reserveMilestoneSteps(
+	steps: number[] | null,
+	stepCount: number,
+	usedSteps: Set< number >
+): Set< number > | null {
+	if ( steps === null ) {
+		return null;
+	}
+
+	return new Set(
+		steps.map( ( step ) =>
+			reserveMilestoneStep( step, stepCount, usedSteps )
+		)
+	);
+}
+
+function chooseLateJoinStep(
+	rng: Random,
+	stepCount: number,
+	usedSteps: Set< number >,
+	forcedLateJoinStep: number,
+	hasAdditionalCollaborators: boolean
+): number {
+	if ( ! ENABLE_LIFECYCLE_EVENTS || ! hasAdditionalCollaborators ) {
+		return -1;
+	}
+
+	return forcedLateJoinStep === -1
+		? chooseMilestoneStep( rng, stepCount, usedSteps )
+		: forcedLateJoinStep;
 }
 
 function escapeHtml( value: string ): string {
@@ -1330,9 +1419,6 @@ async function editNestedParagraph(
 	const targetIndex = Math.floor( rng() * 1000000 );
 	const updated = await page.evaluate(
 		( { content, nestedTargetIndex } ) => {
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
 			const blocks = ( window as any ).wp.data
 				.select( 'core/block-editor' )
 				.getBlocks();
@@ -1354,6 +1440,9 @@ async function editNestedParagraph(
 
 			const target =
 				nestedParagraphs[ nestedTargetIndex % nestedParagraphs.length ];
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
 			blockEditor.updateBlockAttributes( target.clientId, {
 				content,
 			} );
@@ -1383,9 +1472,6 @@ async function moveBlockIntoGroup(
 	const targetIndex = Math.floor( rng() * 1000000 );
 	const moved = await page.evaluate(
 		( { moveSourceIndex, moveTargetIndex } ) => {
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
 			const blocks = ( window as any ).wp.data
 				.select( 'core/block-editor' )
 				.getBlocks();
@@ -1402,6 +1488,9 @@ async function moveBlockIntoGroup(
 
 			const source = movable[ moveSourceIndex % movable.length ];
 			const target = groups[ moveTargetIndex % groups.length ];
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
 			blockEditor.moveBlockToPosition(
 				source.clientId,
 				'',
@@ -1431,9 +1520,6 @@ async function deleteNestedBlock(
 	const targetIndex = Math.floor( rng() * 1000000 );
 	const deleted = await page.evaluate(
 		( { nestedTargetIndex } ) => {
-			const blockEditor = ( window as any ).wp.data.dispatch(
-				'core/block-editor'
-			);
 			const blocks = ( window as any ).wp.data
 				.select( 'core/block-editor' )
 				.getBlocks();
@@ -1455,6 +1541,9 @@ async function deleteNestedBlock(
 
 			const target =
 				nestedBlocks[ nestedTargetIndex % nestedBlocks.length ];
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
 			blockEditor.removeBlocks( [ target.clientId ], false );
 			return true;
 		},
@@ -2325,7 +2414,10 @@ const ACTIONS: PageAction[] = [
 ];
 
 function getActiveActions(): PageAction[] {
-	if ( ACTION_PROFILE === 'full' ) {
+	if (
+		ACTION_PROFILE === 'full' ||
+		ACTION_PROFILE === 'parser-serialization'
+	) {
 		if ( ! DISABLE_PARSER_STRESS ) {
 			return ACTIONS;
 		}
@@ -2341,7 +2433,8 @@ function getActiveActions(): PageAction[] {
 
 	if (
 		ACTION_PROFILE === 'persistence' ||
-		ACTION_PROFILE === 'persistence-no-title'
+		ACTION_PROFILE === 'persistence-no-title' ||
+		ACTION_PROFILE === 'revision-persistence'
 	) {
 		const persistenceActionLabels = new Set( [
 			'insert-paragraph',
@@ -2363,7 +2456,11 @@ function getActiveActions(): PageAction[] {
 		);
 	}
 
-	if ( ACTION_PROFILE === 'structure' ) {
+	if (
+		ACTION_PROFILE === 'structure' ||
+		ACTION_PROFILE === 'three-user-late-join' ||
+		ACTION_PROFILE === 'multi-reload-lifecycle'
+	) {
 		const structureActionLabels = new Set( [
 			'insert-paragraph',
 			'append-paragraph',
@@ -2489,27 +2586,47 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				cdpSessions = await startCdpCoverage( pages );
 
 				const usedMilestones = new Set< number >();
+				const forcedLateJoinStep =
+					ENABLE_LIFECYCLE_EVENTS &&
+					additionalCollaborators.length > 0
+						? reserveMilestoneStep(
+								FORCE_LATE_JOIN_STEP,
+								STEP_COUNT,
+								usedMilestones
+						  )
+						: -1;
+				const forcedLifecycleReloadSteps =
+					ENABLE_LIFECYCLE_EVENTS && ! DISABLE_RELOAD
+						? reserveMilestoneSteps(
+								FORCE_RELOAD_STEPS,
+								STEP_COUNT,
+								usedMilestones
+						  )
+						: null;
 				const saveSteps = chooseMilestoneSteps(
 					rng,
 					STEP_COUNT,
 					usedMilestones,
-					STEP_COUNT >= 3 ? 2 : 1
+					STEP_COUNT >= 3 ? SAVE_CHECKPOINT_COUNT : 1
 				);
 				const reloadStep = DISABLE_RELOAD
 					? -1
 					: chooseMilestoneStep( rng, STEP_COUNT, usedMilestones );
-				const lateJoinStep =
-					ENABLE_LIFECYCLE_EVENTS &&
+				const lateJoinStep = chooseLateJoinStep(
+					rng,
+					STEP_COUNT,
+					usedMilestones,
+					forcedLateJoinStep,
 					additionalCollaborators.length > 0
-						? chooseMilestoneStep( rng, STEP_COUNT, usedMilestones )
-						: -1;
+				);
 				const lifecycleReloadSteps =
 					ENABLE_LIFECYCLE_EVENTS && ! DISABLE_RELOAD
-						? chooseMilestoneSteps(
+						? forcedLifecycleReloadSteps ??
+						  chooseMilestoneSteps(
 								rng,
 								STEP_COUNT,
 								usedMilestones,
-								1
+								LIFECYCLE_RELOAD_COUNT
 						  )
 						: new Set< number >();
 				const saveCheckpoints: SaveCheckpoint[] = [];
@@ -2627,6 +2744,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 								pages
 							);
 						} );
+
 						recordHistory( behavior, {
 							label: action.label,
 							phase: 'action',

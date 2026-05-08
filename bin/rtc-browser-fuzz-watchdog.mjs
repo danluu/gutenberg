@@ -8,8 +8,7 @@ import { fileURLToPath } from 'url';
 const REPO_ROOT =
 	process.env.RTC_FUZZ_WATCHDOG_REPO_ROOT ??
 	path.resolve( path.dirname( fileURLToPath( import.meta.url ) ), '..' );
-const SESSION =
-	process.env.RTC_FUZZ_WATCHDOG_SESSION ?? 'rtc-fuzz-supervisor';
+const SESSION = process.env.RTC_FUZZ_WATCHDOG_SESSION ?? 'rtc-fuzz-supervisor';
 const OUTPUT_DIR = process.env.RTC_FUZZ_WATCHDOG_OUTPUT_DIR;
 const GROUPS_PATH = process.env.RTC_FUZZ_WATCHDOG_GROUPS_PATH;
 const SUPERVISOR_DURATION_HOURS =
@@ -38,6 +37,10 @@ const CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS = getPositiveIntegerEnv(
 	'RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS',
 	24
 );
+const CLEANUP_STALE_WP_ENV_VOLUMES =
+	process.env.RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_VOLUMES === '1';
+const CLEANUP_STALE_WP_ENV_DIRECTORIES =
+	process.env.RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_DIRECTORIES === '1';
 
 if ( ! OUTPUT_DIR ) {
 	throw new Error( 'RTC_FUZZ_WATCHDOG_OUTPUT_DIR is required.' );
@@ -74,14 +77,19 @@ function shellQuote( value ) {
 
 function runCommand( command, args ) {
 	return new Promise( ( resolve ) => {
-		execFile( command, args, { encoding: 'utf8' }, ( error, stdout, stderr ) => {
-			resolve( {
-				ok: ! error,
-				code: error?.code ?? 0,
-				stdout,
-				stderr,
-			} );
-		} );
+		execFile(
+			command,
+			args,
+			{ encoding: 'utf8' },
+			( error, stdout, stderr ) => {
+				resolve( {
+					ok: ! error,
+					code: error?.code ?? 0,
+					stdout,
+					stderr,
+				} );
+			}
+		);
 	} );
 }
 
@@ -140,7 +148,9 @@ function buildSupervisorCommand() {
 		`export RTC_FUZZ_SUPERVISOR_DURATION_HOURS=${ shellQuote(
 			SUPERVISOR_DURATION_HOURS
 		) }`,
-		`export RTC_FUZZ_SUPERVISOR_POLL_MS=${ shellQuote( SUPERVISOR_POLL_MS ) }`,
+		`export RTC_FUZZ_SUPERVISOR_POLL_MS=${ shellQuote(
+			SUPERVISOR_POLL_MS
+		) }`,
 		'while true; do node bin/rtc-browser-fuzz-supervisor.mjs; code=$?; echo "SUPERVISOR_EXIT:$code $(date -u +%Y-%m-%dT%H:%M:%SZ)"; sleep 30; done',
 	].join( '; ' );
 }
@@ -191,15 +201,21 @@ function summarizeCleanupReport( report ) {
 		dryRun: report.dryRun,
 		minAgeHours: report.minAgeHours,
 		activeProjects: report.activeProjects?.length ?? 0,
-		containerCandidates:
-			report.containers?.removeCandidates?.length ?? 0,
+		containerCandidates: report.containers?.removeCandidates?.length ?? 0,
 		containersRemoved: report.containers?.removed?.length ?? 0,
 		networkCandidates: report.networks?.removeCandidates?.length ?? 0,
 		networksRemoved: report.networks?.removed?.length ?? 0,
-		staleWpEnvDirectoryCount:
-			report.staleWpEnvDirectories?.count ?? 0,
+		volumeCandidates: report.volumes?.removeCandidates?.length ?? 0,
+		volumesRemoved: report.volumes?.removed?.length ?? 0,
+		staleWpEnvDirectoryCount: report.staleWpEnvDirectories?.count ?? 0,
+		staleWpEnvDirectoryCandidates:
+			report.staleWpEnvDirectories?.removeCandidates?.length ?? 0,
+		staleWpEnvDirectoriesRemoved:
+			report.staleWpEnvDirectories?.removed?.length ?? 0,
 		containerErrors: report.containers?.errors?.length ?? 0,
 		networkErrors: report.networks?.errors?.length ?? 0,
+		volumeErrors: report.volumes?.errors?.length ?? 0,
+		directoryErrors: report.staleWpEnvDirectories?.errors?.length ?? 0,
 	};
 }
 
@@ -216,11 +232,16 @@ async function maybeCleanupStaleWpEnv() {
 		CLEANUP_SCRIPT_PATH,
 		'--apply',
 		'--json',
+		...( CLEANUP_STALE_WP_ENV_VOLUMES ? [ '--prune-volumes' ] : [] ),
+		...( CLEANUP_STALE_WP_ENV_DIRECTORIES
+			? [ '--prune-directories' ]
+			: [] ),
 		`--min-age-hours=${ CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS }`,
 	] );
 
 	if ( ! result.ok ) {
-		const output = result.stderr || result.stdout || `code=${ result.code }`;
+		const output =
+			result.stderr || result.stdout || `code=${ result.code }`;
 		await log( `stale wp-env cleanup failed: ${ output.trim() }` );
 		await event( {
 			kind: 'wp-env-cleanup-failed',
@@ -246,7 +267,7 @@ async function maybeCleanupStaleWpEnv() {
 
 	const summary = summarizeCleanupReport( report );
 	await log(
-		`stale wp-env cleanup: removed ${ summary.containersRemoved } container(s), ${ summary.networksRemoved } network(s); candidates ${ summary.containerCandidates } container(s), ${ summary.networkCandidates } network(s); stale dirs reported ${ summary.staleWpEnvDirectoryCount }.`
+		`stale wp-env cleanup: removed ${ summary.containersRemoved } container(s), ${ summary.networksRemoved } network(s), ${ summary.volumesRemoved } volume(s), ${ summary.staleWpEnvDirectoriesRemoved } directories; candidates ${ summary.containerCandidates } container(s), ${ summary.networkCandidates } network(s), ${ summary.volumeCandidates } volume(s), ${ summary.staleWpEnvDirectoryCandidates } orphaned directories; stale dirs reported ${ summary.staleWpEnvDirectoryCount }.`
 	);
 	await event( {
 		kind: 'wp-env-cleanup',
@@ -312,6 +333,8 @@ await event( {
 	cleanupStaleWpEnv: CLEANUP_STALE_WP_ENV,
 	cleanupStaleWpEnvIntervalMs: CLEANUP_STALE_WP_ENV_INTERVAL_MS,
 	cleanupStaleWpEnvMinAgeHours: CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS,
+	cleanupStaleWpEnvVolumes: CLEANUP_STALE_WP_ENV_VOLUMES,
+	cleanupStaleWpEnvDirectories: CLEANUP_STALE_WP_ENV_DIRECTORIES,
 } );
 
 while ( true ) {

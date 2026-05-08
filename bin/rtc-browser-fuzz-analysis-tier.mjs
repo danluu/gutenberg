@@ -11,7 +11,12 @@ const SCHEMA_PATH = path.join(
 	REPO_ROOT,
 	'bin/rtc-browser-analysis-tier.schema.json'
 );
+const ANALYSIS_GUARD_BIN = path.join(
+	REPO_ROOT,
+	'bin/rtc-browser-fuzz-analysis-guard-bin'
+);
 const SHARED_PATH = [
+	ANALYSIS_GUARD_BIN,
 	path.join( REPO_ROOT, 'node_modules/.bin' ),
 	process.env.PATH,
 ]
@@ -120,9 +125,9 @@ async function readJson( filePath, fallback ) {
 
 async function writeJson( filePath, value ) {
 	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
-	const tmpPath = `${ filePath }.tmp-${ process.pid }-${ Date.now() }-${ Math.random()
-		.toString( 36 )
-		.slice( 2 ) }`;
+	const tmpPath = `${ filePath }.tmp-${
+		process.pid
+	}-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }`;
 	await fs.writeFile( tmpPath, JSON.stringify( value, null, 2 ) + '\n' );
 	await fs.rename( tmpPath, filePath );
 }
@@ -199,10 +204,8 @@ async function isTransientCodexStartupFailure( job ) {
 		return false;
 	}
 
-	return (
-		TRANSIENT_CODEX_STARTUP_PATTERNS.some( ( pattern ) =>
-			stderr.includes( pattern )
-		)
+	return TRANSIENT_CODEX_STARTUP_PATTERNS.some( ( pattern ) =>
+		stderr.includes( pattern )
 	);
 }
 
@@ -235,7 +238,11 @@ function shouldAnalyzeSignature( signature, job ) {
 		return false;
 	}
 
-	if ( [ 'completed', 'not-real', 'infra', 'no-realistic-repro' ].includes( signature.status ) ) {
+	if (
+		[ 'completed', 'not-real', 'infra', 'no-realistic-repro' ].includes(
+			signature.status
+		)
+	) {
 		return false;
 	}
 
@@ -259,7 +266,11 @@ function shouldAnalyzeSignature( signature, job ) {
 		return false;
 	}
 
-	return job.status === 'queued' || job.status === 'retry' || job.status === 'failed';
+	return (
+		job.status === 'queued' ||
+		job.status === 'retry' ||
+		job.status === 'failed'
+	);
 }
 
 function sortSignaturesForAnalysis( a, b ) {
@@ -368,6 +379,8 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 				...process.env,
 				PATH: SHARED_PATH,
 				RTC_FUZZ_ANALYSIS_JOB_DIR: jobDir,
+				RTC_FUZZ_ANALYSIS_REPO_ROOT: REPO_ROOT,
+				RTC_FUZZ_ANALYSIS_RUN_DIR: RUN_DIR,
 			},
 			stdio: [
 				'ignore',
@@ -423,7 +436,9 @@ function buildCodexPrompt( sourceState, signature, paths ) {
 		)
 		.join( '\n' );
 	const currentCounts = {};
-	for ( const sourceSignature of Object.values( sourceState.signatures ?? {} ) ) {
+	for ( const sourceSignature of Object.values(
+		sourceState.signatures ?? {}
+	) ) {
 		currentCounts[ sourceSignature.status ] =
 			( currentCounts[ sourceSignature.status ] ?? 0 ) + 1;
 	}
@@ -453,6 +468,7 @@ function buildCodexPrompt( sourceState, signature, paths ) {
 		`- ${ paths.handoffPath }: a concrete handoff plan for the lower-parallel deep-triage/repro tier, including what browser repro to attempt if needed.`,
 		'',
 		'Classify whether this looks like a real correctness bug, infra/harness issue, duplicate of another signature, or uncertain. Prefer specific evidence over generic guesses.',
+		'Score user-hit likelihood as userHitLikelihoodScore from 0 to 5, where 0 means harness-only/not user-visible, 1 means very rare or developer-only, 2 means uncommon edge workflow, 3 means plausible normal collaborative editing workflow, 4 means common workflow or common content shape, and 5 means very likely in default/common use. Explain the score in userHitLikelihoodRationale.',
 		'If this needs browser reproduction, provide a realistic Playwright/manual repro plan, but do not run it.',
 		'Output only JSON matching the schema.',
 	].join( '\n' );
@@ -461,7 +477,9 @@ function buildCodexPrompt( sourceState, signature, paths ) {
 async function runScanCycle() {
 	const sourceState = await readJson( TRIAGE_STATE_PATH, null );
 	if ( ! sourceState ) {
-		throw new Error( `Missing triage watcher state at ${ TRIAGE_STATE_PATH }` );
+		throw new Error(
+			`Missing triage watcher state at ${ TRIAGE_STATE_PATH }`
+		);
 	}
 
 	const state = await readState();

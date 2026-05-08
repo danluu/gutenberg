@@ -169,7 +169,8 @@ async function runWpEnvStatusCheck() {
 }
 
 async function runWpInstallHealthCheck() {
-	const requiredPluginPath = 'gutenberg-test-plugins/disable-animations.php';
+	const requiredPluginPath =
+		'gutenberg-test-plugins/disable-animations.php';
 	const requiredTheme = 'twentytwentyone';
 	const php = [
 		`$plugin = WP_PLUGIN_DIR . '/${ requiredPluginPath }';`,
@@ -179,7 +180,16 @@ async function runWpInstallHealthCheck() {
 	].join( ' ' );
 	const result = spawn(
 		RESOLVED_NPM_BIN,
-		[ 'run', 'wp-env-test', '--', 'run', 'cli', 'wp', 'eval', php ],
+		[
+			'run',
+			'wp-env-test',
+			'--',
+			'run',
+			'cli',
+			'wp',
+			'eval',
+			php,
+		],
 		{
 			cwd: REPO_ROOT,
 			env: {
@@ -282,10 +292,6 @@ async function main() {
 			process.env.RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS ?? '1',
 		httpHealthTimeoutMs:
 			process.env.RTC_FUZZ_HTTP_HEALTH_TIMEOUT_MS ?? '10000',
-		actionProfile:
-			process.env.RTC_FUZZ_ACTION_PROFILE ??
-			process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ??
-			'full',
 		startSeed: START_SEED,
 		stepCount: STEP_COUNT,
 		lanes,

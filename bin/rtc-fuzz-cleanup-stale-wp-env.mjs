@@ -8,6 +8,8 @@ import { execFile } from 'child_process';
 const args = process.argv.slice( 2 );
 const APPLY = args.includes( '--apply' );
 const JSON_OUTPUT = args.includes( '--json' );
+const PRUNE_VOLUMES = args.includes( '--prune-volumes' );
+const PRUNE_DIRECTORIES = args.includes( '--prune-directories' );
 const MIN_AGE_HOURS = getNumberOption( 'min-age-hours', 24 );
 const WP_ENV_HOME =
 	process.env.RTC_FUZZ_WP_ENV_HOME ?? path.join( os.homedir(), '.wp-env' );
@@ -22,8 +24,12 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 			'By default this is a dry run. With --apply it removes only:',
 			'- stopped Docker Compose containers whose compose working_dir is under ~/.wp-env',
 			'- unused Docker Compose networks whose compose project is a wp-env project',
+			'With --apply --prune-volumes it also removes only unused wp-env Docker volumes',
+			'from inactive compose projects older than the age threshold.',
+			'With --apply --prune-directories it also removes orphaned ~/.wp-env',
+			'directories older than the age threshold that have no Docker resources attached.',
 			'',
-			'It never stops or removes running containers and never removes volumes.',
+			'It never stops or removes running containers. It never removes active-project volumes.',
 		].join( '\n' ) + '\n'
 	);
 	process.exit( 0 );
@@ -31,9 +37,9 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 
 function getNumberOption( name, fallback ) {
 	const prefix = `--${ name }=`;
-	const raw = args.find( ( arg ) => arg.startsWith( prefix ) )?.slice(
-		prefix.length
-	);
+	const raw = args
+		.find( ( arg ) => arg.startsWith( prefix ) )
+		?.slice( prefix.length );
 	if ( raw === undefined || raw === '' ) {
 		return fallback;
 	}
@@ -75,7 +81,10 @@ function isUnderDirectory( child, parent ) {
 	if ( ! child ) {
 		return false;
 	}
-	const relative = path.relative( path.resolve( parent ), path.resolve( child ) );
+	const relative = path.relative(
+		path.resolve( parent ),
+		path.resolve( child )
+	);
 	return relative === '' || ( relative && ! relative.startsWith( '..' ) );
 }
 
@@ -90,7 +99,8 @@ function couldBeWpEnvComposeProjectName( project ) {
 function hasWpEnvComposePathLabels( resource ) {
 	const labels = getLabels( resource );
 	const workingDir = labels[ 'com.docker.compose.project.working_dir' ] ?? '';
-	const configFiles = labels[ 'com.docker.compose.project.config_files' ] ?? '';
+	const configFiles =
+		labels[ 'com.docker.compose.project.config_files' ] ?? '';
 
 	if ( workingDir && isUnderDirectory( workingDir, WP_ENV_HOME ) ) {
 		return true;
@@ -111,7 +121,9 @@ async function wpEnvProjectDirectoryExists( project ) {
 	if ( ! project || ! couldBeWpEnvComposeProjectName( project ) ) {
 		return false;
 	}
-	const stats = await fs.stat( path.join( WP_ENV_HOME, project ) ).catch( () => null );
+	const stats = await fs
+		.stat( path.join( WP_ENV_HOME, project ) )
+		.catch( () => null );
 	return stats?.isDirectory() === true;
 }
 
@@ -129,7 +141,11 @@ async function isWpEnvComposeResource( resource, knownWpEnvProjects ) {
 }
 
 async function listInspect( resource, argsForList ) {
-	const list = await runCommand( 'docker', [ resource, 'ls', ...argsForList ] );
+	const list = await runCommand( 'docker', [
+		resource,
+		'ls',
+		...argsForList,
+	] );
 	if ( ! list.ok ) {
 		return {
 			ok: false,
@@ -150,7 +166,11 @@ async function listInspect( resource, argsForList ) {
 		};
 	}
 
-	const inspect = await runCommand( 'docker', [ resource, 'inspect', ...ids ] );
+	const inspect = await runCommand( 'docker', [
+		resource,
+		'inspect',
+		...ids,
+	] );
 	if ( ! inspect.ok ) {
 		return {
 			ok: false,
@@ -169,15 +189,17 @@ function summarizeContainer( container ) {
 	const labels = getLabels( container );
 	return {
 		id: container.Id.slice( 0, 12 ),
-		name: container.Name?.replace( /^\//, '' ) ?? container.Id.slice( 0, 12 ),
+		name:
+			container.Name?.replace( /^\//, '' ) ?? container.Id.slice( 0, 12 ),
 		project: labels[ 'com.docker.compose.project' ] ?? null,
 		service: labels[ 'com.docker.compose.service' ] ?? null,
-		workingDir:
-			labels[ 'com.docker.compose.project.working_dir' ] ?? null,
+		workingDir: labels[ 'com.docker.compose.project.working_dir' ] ?? null,
 		state: container.State?.Status ?? 'unknown',
 		running: container.State?.Running === true,
 		createdAt: container.Created,
-		ageHours: Number( ( ageMs( container.Created ) / 3600000 ).toFixed( 2 ) ),
+		ageHours: Number(
+			( ageMs( container.Created ) / 3600000 ).toFixed( 2 )
+		),
 	};
 }
 
@@ -191,6 +213,41 @@ function summarizeNetwork( network ) {
 		ageHours: Number( ( ageMs( network.Created ) / 3600000 ).toFixed( 2 ) ),
 		attachedContainers: Object.keys( network.Containers ?? {} ).length,
 	};
+}
+
+function summarizeVolume( volume ) {
+	const labels = getLabels( volume );
+	return {
+		name: volume.Name,
+		project: labels[ 'com.docker.compose.project' ] ?? null,
+		volume: labels[ 'com.docker.compose.volume' ] ?? null,
+		createdAt: volume.CreatedAt ?? null,
+		ageHours: Number(
+			(
+				ageMs( volume.CreatedAt ?? new Date().toISOString() ) / 3600000
+			).toFixed( 2 )
+		),
+	};
+}
+
+function summarizeDirectory( directory ) {
+	return {
+		path: directory.path,
+		mtime: directory.mtime,
+		ageHours: directory.ageHours,
+	};
+}
+
+function getUsedVolumeNames( containers ) {
+	const used = new Set();
+	for ( const container of containers ) {
+		for ( const mount of container.Mounts ?? [] ) {
+			if ( mount.Type === 'volume' && mount.Name ) {
+				used.add( mount.Name );
+			}
+		}
+	}
+	return used;
 }
 
 async function removeResources( resource, ids ) {
@@ -220,6 +277,37 @@ async function removeResources( resource, ids ) {
 			},
 		],
 	};
+}
+
+function isSafeWpEnvDirectoryPath( dirPath ) {
+	return (
+		isUnderDirectory( dirPath, WP_ENV_HOME ) &&
+		path.resolve( dirPath ) !== path.resolve( WP_ENV_HOME )
+	);
+}
+
+async function removeDirectories( directories ) {
+	const removed = [];
+	const errors = [];
+	for ( const directory of directories ) {
+		if ( ! isSafeWpEnvDirectoryPath( directory.path ) ) {
+			errors.push( {
+				path: directory.path,
+				output: 'refusing to remove path outside wp-env home',
+			} );
+			continue;
+		}
+		try {
+			await fs.rm( directory.path, { recursive: true, force: true } );
+			removed.push( directory.path );
+		} catch ( error ) {
+			errors.push( {
+				path: directory.path,
+				output: error.message,
+			} );
+		}
+	}
+	return { removed, errors };
 }
 
 async function listStaleWpEnvDirectories( activeWorkingDirs ) {
@@ -267,12 +355,20 @@ async function main() {
 		'label=com.docker.compose.project',
 		'-q',
 	] );
+	const volumeInspect = await listInspect( 'volume', [
+		'--filter',
+		'label=com.docker.compose.project',
+		'-q',
+	] );
 
-	if ( ! containerInspect.ok || ! networkInspect.ok ) {
+	if ( ! containerInspect.ok || ! networkInspect.ok || ! volumeInspect.ok ) {
 		const failure = {
 			ok: false,
 			dryRun: ! APPLY,
-			error: containerInspect.error ?? networkInspect.error,
+			error:
+				containerInspect.error ??
+				networkInspect.error ??
+				volumeInspect.error,
 		};
 		process.stdout.write( JSON.stringify( failure, null, 2 ) + '\n' );
 		process.exitCode = 1;
@@ -286,6 +382,17 @@ async function main() {
 		if (
 			project &&
 			( hasWpEnvComposePathLabels( container ) ||
+				( await wpEnvProjectDirectoryExists( project ) ) )
+		) {
+			knownWpEnvProjects.add( project );
+		}
+	}
+	for ( const volume of volumeInspect.items ) {
+		const labels = getLabels( volume );
+		const project = labels[ 'com.docker.compose.project' ];
+		if (
+			project &&
+			( hasWpEnvComposePathLabels( volume ) ||
 				( await wpEnvProjectDirectoryExists( project ) ) )
 		) {
 			knownWpEnvProjects.add( project );
@@ -372,24 +479,108 @@ async function main() {
 		);
 	}
 
-	const staleDirectories = await listStaleWpEnvDirectories(
-		activeWorkingDirs
+	const containerInspectAfterContainers = APPLY
+		? await listInspect( 'container', [
+				'-a',
+				'--filter',
+				'label=com.docker.compose.project',
+				'-q',
+		  ] )
+		: containerInspect;
+	const usedVolumeNames = getUsedVolumeNames(
+		containerInspectAfterContainers.items
 	);
+	const wpEnvVolumes = [];
+	for ( const volume of volumeInspect.items ) {
+		if ( await isWpEnvComposeResource( volume, knownWpEnvProjects ) ) {
+			wpEnvVolumes.push( volume );
+		}
+	}
+	const removeVolumeCandidates = wpEnvVolumes.filter( ( volume ) => {
+		const labels = getLabels( volume );
+		const project = labels[ 'com.docker.compose.project' ];
+		if ( project && activeProjects.has( project ) ) {
+			return false;
+		}
+		if ( usedVolumeNames.has( volume.Name ) ) {
+			return false;
+		}
+		return ageMs( volume.CreatedAt ) >= MIN_AGE_MS;
+	} );
+
+	let volumeRemoval = {
+		removed: [],
+		errors: [],
+	};
+	if ( APPLY && PRUNE_VOLUMES ) {
+		volumeRemoval = await removeResources(
+			'volume',
+			removeVolumeCandidates.map( ( volume ) => volume.Name )
+		);
+	}
+
+	const staleDirectories =
+		await listStaleWpEnvDirectories( activeWorkingDirs );
+	const allWorkingDirs = new Set();
+	const resourceProjects = new Set();
+	for ( const resource of [
+		...wpEnvContainers,
+		...wpEnvNetworks,
+		...wpEnvVolumes,
+	] ) {
+		const labels = getLabels( resource );
+		const project = labels[ 'com.docker.compose.project' ];
+		const workingDir = labels[ 'com.docker.compose.project.working_dir' ];
+		if ( project ) {
+			resourceProjects.add( project );
+		}
+		if ( workingDir ) {
+			allWorkingDirs.add( workingDir );
+		}
+	}
+	const removeDirectoryCandidates = staleDirectories.filter(
+		( directory ) => {
+			const name = path.basename( directory.path );
+			if ( activeWorkingDirs.has( directory.path ) ) {
+				return false;
+			}
+			if ( allWorkingDirs.has( directory.path ) ) {
+				return false;
+			}
+			if ( resourceProjects.has( name ) ) {
+				return false;
+			}
+			return true;
+		}
+	);
+
+	let directoryRemoval = {
+		removed: [],
+		errors: [],
+	};
+	if ( APPLY && PRUNE_DIRECTORIES ) {
+		directoryRemoval = await removeDirectories( removeDirectoryCandidates );
+	}
 
 	const report = {
 		ok:
 			containerRemoval.errors.length === 0 &&
-			networkRemoval.errors.length === 0,
+			networkRemoval.errors.length === 0 &&
+			volumeRemoval.errors.length === 0 &&
+			directoryRemoval.errors.length === 0,
 		dryRun: ! APPLY,
+		pruneVolumes: PRUNE_VOLUMES,
+		pruneDirectories: PRUNE_DIRECTORIES,
 		minAgeHours: MIN_AGE_HOURS,
 		wpEnvHome: WP_ENV_HOME,
 		activeProjects: [ ...activeProjects ].sort(),
 		containers: {
 			wpEnvComposeTotal: wpEnvContainers.length,
-			removeCandidates: removeContainerCandidates.map(
-				summarizeContainer
+			removeCandidates:
+				removeContainerCandidates.map( summarizeContainer ),
+			removed: containerRemoval.removed.map( ( id ) =>
+				id.slice( 0, 12 )
 			),
-			removed: containerRemoval.removed.map( ( id ) => id.slice( 0, 12 ) ),
 			errors: containerRemoval.errors,
 		},
 		networks: {
@@ -398,10 +589,25 @@ async function main() {
 			removed: networkRemoval.removed.map( ( id ) => id.slice( 0, 12 ) ),
 			errors: networkRemoval.errors,
 		},
+		volumes: {
+			wpEnvComposeTotal: wpEnvVolumes.length,
+			removeCandidates: removeVolumeCandidates.map( summarizeVolume ),
+			removed: volumeRemoval.removed,
+			errors: volumeRemoval.errors,
+			note: PRUNE_VOLUMES
+				? 'Only unused volumes from inactive wp-env compose projects are removed.'
+				: 'Volume removal is opt-in. Rerun with --apply --prune-volumes to remove candidates.',
+		},
 		staleWpEnvDirectories: {
 			count: staleDirectories.length,
 			examples: staleDirectories.slice( 0, 20 ),
-			note: 'Directories are reported only. This script does not delete ~/.wp-env directories or Docker volumes.',
+			removeCandidates:
+				removeDirectoryCandidates.map( summarizeDirectory ),
+			removed: directoryRemoval.removed,
+			errors: directoryRemoval.errors,
+			note: PRUNE_DIRECTORIES
+				? 'Only orphaned stale directories with no Docker resources attached are removed.'
+				: 'Directory removal is opt-in. Rerun with --apply --prune-directories to remove orphaned stale directories.',
 		},
 	};
 
@@ -417,13 +623,21 @@ async function main() {
 			`active projects: ${ report.activeProjects.length }`,
 			`stopped container candidates: ${ report.containers.removeCandidates.length }`,
 			`unused network candidates: ${ report.networks.removeCandidates.length }`,
+			`unused volume candidates: ${ report.volumes.removeCandidates.length }`,
 			`stale ~/.wp-env dirs reported: ${ report.staleWpEnvDirectories.count }`,
+			`orphaned stale ~/.wp-env dir candidates: ${ report.staleWpEnvDirectories.removeCandidates.length }`,
 			...( APPLY
 				? [
 						`containers removed: ${ report.containers.removed.length }`,
 						`networks removed: ${ report.networks.removed.length }`,
+						`volumes removed: ${ report.volumes.removed.length }`,
+						`directories removed: ${ report.staleWpEnvDirectories.removed.length }`,
 				  ]
-				: [ 'rerun with --apply to remove candidates' ] ),
+				: [
+						PRUNE_VOLUMES || PRUNE_DIRECTORIES
+							? 'rerun with --apply and the same prune flags to remove candidates'
+							: 'rerun with --apply to remove container/network candidates; add --prune-volumes and/or --prune-directories for unused wp-env storage',
+				  ] ),
 		].join( '\n' ) + '\n'
 	);
 }

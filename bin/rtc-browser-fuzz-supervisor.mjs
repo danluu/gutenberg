@@ -26,6 +26,14 @@ const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const STATE_PATH = path.join( OUTPUT_DIR, 'supervisor-state.json' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'supervisor.log' );
 const EVENTS_PATH = path.join( OUTPUT_DIR, 'events.ndjson' );
+const AUTO_REPAIR_WP_ENV =
+	process.env.RTC_FUZZ_SUPERVISOR_AUTO_REPAIR_WP_ENV !== '0';
+const AUTO_REPAIR_ORBSTACK_DOCKER =
+	process.env.RTC_FUZZ_SUPERVISOR_AUTO_REPAIR_ORBSTACK_DOCKER !== '0';
+const ORBSTACK_DOCKER_RESTART_COOLDOWN_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_ORBSTACK_DOCKER_RESTART_COOLDOWN_MS',
+	10 * 60 * 1000
+);
 const DEFAULT_GROUPS = [
 	{
 		name: 'default-http',
@@ -38,9 +46,10 @@ const DEFAULT_GROUPS = [
 	},
 ];
 
+let lastOrbStackDockerRestartAt = 0;
 let groupConfigs = parseGroups();
 await fs.mkdir( OUTPUT_DIR, { recursive: true } );
-let state = await loadInitialState();
+const state = await loadInitialState();
 await writeState();
 
 function getPositiveIntegerEnv( name, fallback ) {
@@ -121,7 +130,17 @@ async function loadInitialState() {
 			}
 		}
 		existingState.groups = existingState.groups.map( ( groupState ) => {
-			const group = getGroupConfig( groupState.name );
+			const group = groupConfigs.find(
+				( candidate ) => candidate.name === groupState.name
+			);
+			if ( ! group ) {
+				return {
+					...groupState,
+					status: 'disabled',
+					lastReason: 'removed-from-groups-policy',
+					activeRunDirs: [],
+				};
+			}
 			return {
 				...createInitialGroupState( group ),
 				...groupState,
@@ -221,6 +240,17 @@ async function syncGroupConfigs() {
 			continue;
 		}
 
+		if ( existingGroupState.status === 'disabled' ) {
+			await event( {
+				group: group.name,
+				kind: 'policy',
+				action: 're-enable-group',
+				reason: 'present-in-groups-policy',
+			} );
+			existingGroupState.status = 'recovering';
+			existingGroupState.lastReason = 're-added-to-groups-policy';
+		}
+
 		for ( const key of [ 'repoRoot', 'transport', 'lanes', 'stepCount' ] ) {
 			if ( existingGroupState[ key ] !== group[ key ] ) {
 				await event( {
@@ -240,6 +270,7 @@ async function syncGroupConfigs() {
 		if ( ! nextGroupNames.has( groupState.name ) ) {
 			groupState.status = 'disabled';
 			groupState.lastReason = 'removed-from-groups-policy';
+			groupState.activeRunDirs = [];
 		}
 	}
 
@@ -331,9 +362,60 @@ async function runWpEnv( group, args, options = {} ) {
 	} );
 }
 
+async function fileExists( filePath ) {
+	try {
+		await fs.access( filePath );
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 function parseHttpPort( statusOutput ) {
 	const match = statusOutput.match( /http port:\s+(\d+)/i );
 	return match ? Number.parseInt( match[ 1 ], 10 ) : null;
+}
+
+function parseWpEnvInstallPath( output ) {
+	const match = String( output ?? '' ).match( /install path:\s+(.+)/i );
+	return match ? match[ 1 ].trim() : null;
+}
+
+function getComposeProjectName( installPath ) {
+	return path.basename( path.resolve( installPath ) );
+}
+
+function getComposePath( installPath ) {
+	return path.join( installPath, 'docker-compose.yml' );
+}
+
+function getOutputSnippet( output, maxLength = 1200 ) {
+	const normalized = String( output ?? '' )
+		.replaceAll( '\r', '' )
+		.replace( /\s+/g, ' ' )
+		.trim();
+	if ( normalized.length <= maxLength ) {
+		return normalized;
+	}
+	return `${ normalized.slice( 0, maxLength ) }...`;
+}
+
+function looksLikeStaleDockerEndpoint( output ) {
+	return /endpoint with name .* already exists|active endpoints|failed to set up container networking|network .* has active endpoints|invalid IP/i.test(
+		String( output ?? '' )
+	);
+}
+
+function looksLikeDockerDiskPressure( output ) {
+	return /No space left on device|Disk got full|failed to register layer|layerdb\/tmp\/write-set.*file exists/i.test(
+		String( output ?? '' )
+	);
+}
+
+function looksLikeWordPressDbFailure( output ) {
+	return /Error establishing a database connection|database connection/i.test(
+		String( output ?? '' )
+	);
 }
 
 function normalizeBaseUrl( value ) {
@@ -380,7 +462,11 @@ async function probeRestEndpoint( baseUrl ) {
 					status: response.status,
 				};
 			}
-			failures.push( `${ endpoint } status=${ response.status }` );
+			failures.push(
+				`${ endpoint } status=${
+					response.status
+				} body=${ getOutputSnippet( body, 240 ) }`
+			);
 		} catch ( error ) {
 			failures.push( `${ endpoint } ${ error.message }` );
 		} finally {
@@ -393,6 +479,358 @@ async function probeRestEndpoint( baseUrl ) {
 		baseUrl,
 		failures,
 	};
+}
+
+async function findHealthyRestEndpoint( candidates ) {
+	for ( const candidate of candidates ) {
+		const probe = await probeRestEndpoint( candidate );
+		if ( probe.ok ) {
+			return probe;
+		}
+	}
+	return null;
+}
+
+function makeBaseUrlCandidates( group, statusOutput, siteUrl ) {
+	const httpPort = parseHttpPort( statusOutput );
+	return [
+		normalizeBaseUrl( group.env?.RTC_FUZZ_BASE_URL ),
+		normalizeBaseUrl( group.env?.WP_BASE_URL ),
+		siteUrl,
+		httpPort ? `http://localhost:${ httpPort }` : null,
+	]
+		.filter( Boolean )
+		.filter(
+			( value, index, values ) => values.indexOf( value ) === index
+		);
+}
+
+async function getWpEnvComposeServices( group, installPath ) {
+	const composePath = getComposePath( installPath );
+	const projectName = getComposeProjectName( installPath );
+	const result = await runCommand( {
+		command: 'docker',
+		args: [
+			'compose',
+			'-f',
+			composePath,
+			'-p',
+			projectName,
+			'config',
+			'--services',
+		],
+		cwd: group.repoRoot,
+		env: buildEnv( group ),
+		timeoutMs: 60000,
+		logPath: path.join(
+			OUTPUT_DIR,
+			`${ group.name }-wp-env-compose-services.log`
+		),
+	} );
+
+	if ( ! result.ok ) {
+		return [ 'mysql', 'wordpress', 'cli' ];
+	}
+
+	const services = result.output
+		.split( '\n' )
+		.map( ( line ) => line.trim() )
+		.filter( Boolean );
+	const preferredOrder = [
+		'mysql',
+		'tests-mysql',
+		'wordpress',
+		'tests-wordpress',
+		'cli',
+		'tests-cli',
+	];
+	const selected = preferredOrder.filter( ( service ) =>
+		services.includes( service )
+	);
+	return selected.length
+		? selected
+		: services.filter( ( service ) => ! service.includes( 'phpmyadmin' ) );
+}
+
+async function runWpEnvCompose( group, installPath, args, label, timeoutMs ) {
+	const composePath = getComposePath( installPath );
+	const projectName = getComposeProjectName( installPath );
+	return runCommand( {
+		command: 'docker',
+		args: [ 'compose', '-f', composePath, '-p', projectName, ...args ],
+		cwd: group.repoRoot,
+		env: buildEnv( group ),
+		timeoutMs,
+		logPath: path.join( OUTPUT_DIR, `${ group.name }-${ label }.log` ),
+	} );
+}
+
+async function maybeRunSafeDockerPrune( group, reason, diagnosticOutput ) {
+	if (
+		! looksLikeDockerDiskPressure( diagnosticOutput ) &&
+		! looksLikeWordPressDbFailure( diagnosticOutput )
+	) {
+		return;
+	}
+
+	const commands = [
+		[ 'container', [ 'container', 'prune', '-f' ] ],
+		[ 'image', [ 'image', 'prune', '-af' ] ],
+		[ 'builder', [ 'builder', 'prune', '-af' ] ],
+		[ 'volume', [ 'volume', 'prune', '-f' ] ],
+	];
+	for ( const [ label, args ] of commands ) {
+		const result = await runCommand( {
+			command: 'docker',
+			args,
+			cwd: group.repoRoot,
+			env: buildEnv( group ),
+			timeoutMs: label === 'builder' ? 10 * 60 * 1000 : 3 * 60 * 1000,
+			logPath: path.join(
+				OUTPUT_DIR,
+				`${ group.name }-docker-${ label }-prune.log`
+			),
+		} );
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: `docker-${ label }-prune`,
+			reason,
+			ok: result.ok,
+			code: result.code,
+			output: getOutputSnippet( result.output ),
+		} );
+	}
+}
+
+async function restartOrbStackDockerIfNeeded( group, reason, output ) {
+	if ( ! AUTO_REPAIR_ORBSTACK_DOCKER ) {
+		return false;
+	}
+	if ( ! looksLikeStaleDockerEndpoint( output ) ) {
+		return false;
+	}
+	if (
+		Date.now() - lastOrbStackDockerRestartAt <
+		ORBSTACK_DOCKER_RESTART_COOLDOWN_MS
+	) {
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'orbstack-docker-restart-skipped',
+			reason,
+			cooldownMs: ORBSTACK_DOCKER_RESTART_COOLDOWN_MS,
+			output: getOutputSnippet( output ),
+		} );
+		return false;
+	}
+
+	await log(
+		`${ group.name }: restarting OrbStack Docker to clear stale Docker network endpoint state.`
+	);
+	const result = await runCommand( {
+		command: 'orb',
+		args: [ 'restart', 'docker' ],
+		cwd: group.repoRoot,
+		env: buildEnv( group ),
+		timeoutMs: 3 * 60 * 1000,
+		logPath: path.join(
+			OUTPUT_DIR,
+			`${ group.name }-orbstack-docker-restart.log`
+		),
+	} );
+	lastOrbStackDockerRestartAt = Date.now();
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'orbstack-docker-restart',
+		reason,
+		ok: result.ok,
+		code: result.code,
+		output: getOutputSnippet( result.output ),
+	} );
+	return result.ok;
+}
+
+async function waitForHealthyRestEndpoint( candidates, timeoutMs = 45000 ) {
+	const deadline = Date.now() + timeoutMs;
+	let lastProbe = null;
+	while ( Date.now() < deadline ) {
+		for ( const candidate of candidates ) {
+			const probe = await probeRestEndpoint( candidate );
+			lastProbe = probe;
+			if ( probe.ok ) {
+				return probe;
+			}
+		}
+		await sleep( 1000 );
+	}
+	return lastProbe;
+}
+
+async function repairWpEnvWithGeneratedCompose( {
+	group,
+	reason,
+	statusOutput,
+	diagnosticOutput = '',
+	candidates = [],
+	restRepair = false,
+} ) {
+	if ( ! AUTO_REPAIR_WP_ENV ) {
+		return false;
+	}
+
+	const installPath = parseWpEnvInstallPath( statusOutput );
+	if ( ! installPath ) {
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-generated-compose-skipped',
+			reason,
+			why: 'missing-install-path',
+		} );
+		return false;
+	}
+
+	const composePath = getComposePath( installPath );
+	if ( ! ( await fileExists( composePath ) ) ) {
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-generated-compose-skipped',
+			reason,
+			why: 'missing-compose-file',
+			composePath,
+		} );
+		return false;
+	}
+
+	await maybeRunSafeDockerPrune( group, reason, diagnosticOutput );
+
+	const services = await getWpEnvComposeServices( group, installPath );
+	const steps = restRepair
+		? [
+				{
+					label: 'wp-env-compose-restart',
+					args: [ 'restart', ...services ],
+					timeoutMs: 3 * 60 * 1000,
+				},
+				{
+					label: 'wp-env-compose-force-recreate',
+					args: [
+						'up',
+						'-d',
+						'--force-recreate',
+						'--remove-orphans',
+						...services,
+					],
+					timeoutMs: 10 * 60 * 1000,
+				},
+		  ]
+		: [
+				{
+					label: 'wp-env-compose-up',
+					args: [ 'up', '-d', '--remove-orphans', ...services ],
+					timeoutMs: 10 * 60 * 1000,
+				},
+				{
+					label: 'wp-env-compose-restart',
+					args: [ 'restart', ...services ],
+					timeoutMs: 3 * 60 * 1000,
+				},
+		  ];
+
+	await log(
+		`${
+			group.name
+		}: attempting generated-compose wp-env repair (${ reason }); services=${ services.join(
+			','
+		) }.`
+	);
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'wp-env-generated-compose-start',
+		reason,
+		installPath,
+		services,
+		restRepair,
+	} );
+
+	for ( const step of steps ) {
+		const result = await runWpEnvCompose(
+			group,
+			installPath,
+			step.args,
+			step.label,
+			step.timeoutMs
+		);
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: step.label,
+			reason,
+			ok: result.ok,
+			code: result.code,
+			output: getOutputSnippet( result.output ),
+		} );
+
+		if ( result.ok ) {
+			if ( candidates.length === 0 ) {
+				return true;
+			}
+			const probe = await waitForHealthyRestEndpoint( candidates );
+			if ( probe?.ok ) {
+				return true;
+			}
+		}
+
+		if ( looksLikeStaleDockerEndpoint( result.output ) ) {
+			await runWpEnvCompose(
+				group,
+				installPath,
+				[ 'down', '--remove-orphans' ],
+				'wp-env-compose-down-stale-endpoint',
+				3 * 60 * 1000
+			);
+			if (
+				await restartOrbStackDockerIfNeeded(
+					group,
+					reason,
+					result.output
+				)
+			) {
+				const retry = await runWpEnvCompose(
+					group,
+					installPath,
+					[ 'up', '-d', '--remove-orphans', ...services ],
+					'wp-env-compose-up-after-orbstack-restart',
+					10 * 60 * 1000
+				);
+				await event( {
+					group: group.name,
+					kind: 'repair',
+					action: 'wp-env-compose-up-after-orbstack-restart',
+					reason,
+					ok: retry.ok,
+					code: retry.code,
+					output: getOutputSnippet( retry.output ),
+				} );
+				if ( retry.ok ) {
+					if ( candidates.length === 0 ) {
+						return true;
+					}
+					const probe =
+						await waitForHealthyRestEndpoint( candidates );
+					if ( probe?.ok ) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 async function getWpSiteUrl( group ) {
@@ -453,9 +891,17 @@ async function ensureWpEnv( groupState ) {
 			),
 		} );
 		if ( ! startResult.ok ) {
-			throw new Error(
-				`${ group.name }: wp-env start failed; see ${ group.name }-wp-env-start.log`
-			);
+			const repaired = await repairWpEnvWithGeneratedCompose( {
+				group,
+				reason: 'wp-env-start-failed',
+				statusOutput: statusResult.output,
+				diagnosticOutput: startResult.output,
+			} );
+			if ( ! repaired ) {
+				throw new Error(
+					`${ group.name }: wp-env start failed; see ${ group.name }-wp-env-start.log`
+				);
+			}
 		}
 		statusResult = await runWpEnv( group, [ 'status' ], {
 			timeoutMs: 120000,
@@ -464,47 +910,89 @@ async function ensureWpEnv( groupState ) {
 				`${ group.name }-wp-env-status.log`
 			),
 		} );
+		if (
+			! statusResult.ok ||
+			! statusResult.output.includes( 'status: running' )
+		) {
+			throw new Error(
+				`${ group.name }: wp-env repair did not restore running status.`
+			);
+		}
 	}
 
-	const siteUrl = await getWpSiteUrl( group );
-	const httpPort = parseHttpPort( statusResult.output );
-	const candidates = [
-		normalizeBaseUrl( group.env?.RTC_FUZZ_BASE_URL ),
-		normalizeBaseUrl( group.env?.WP_BASE_URL ),
-		siteUrl,
-		httpPort ? `http://localhost:${ httpPort }` : null,
-	]
-		.filter( Boolean )
-		.filter(
-			( value, index, values ) => values.indexOf( value ) === index
-		);
+	let siteUrl = await getWpSiteUrl( group );
+	const candidates = makeBaseUrlCandidates(
+		group,
+		statusResult.output,
+		siteUrl
+	);
 
-	for ( const candidate of candidates ) {
-		const probe = await probeRestEndpoint( candidate );
-		if ( probe.ok ) {
-			if ( siteUrl && siteUrl !== candidate ) {
-				await log(
-					`${ group.name }: repairing WordPress base URL ${ siteUrl } -> ${ candidate }.`
-				);
-				await event( {
-					group: group.name,
-					kind: 'repair',
-					action: 'wp-option-base-url',
-					from: siteUrl,
-					to: candidate,
-				} );
-				await setWpBaseUrl( group, candidate );
-			}
-			groupState.currentBaseUrl = candidate;
-			groupState.lastHealthyAt = new Date().toISOString();
-			return candidate;
+	let probe = await findHealthyRestEndpoint( candidates );
+	if ( ! probe ) {
+		const diagnosticOutput = candidates.length
+			? (
+					await Promise.all(
+						candidates.map( async ( candidate ) =>
+							probeRestEndpoint( candidate )
+						)
+					)
+			  )
+					.flatMap( ( candidateProbe ) => candidateProbe.failures )
+					.join( '\n' )
+			: 'no candidate REST endpoint';
+		await repairWpEnvWithGeneratedCompose( {
+			group,
+			reason: 'rest-endpoint-unhealthy',
+			statusOutput: statusResult.output,
+			diagnosticOutput,
+			candidates,
+			restRepair: true,
+		} );
+		statusResult = await runWpEnv( group, [ 'status' ], {
+			timeoutMs: 120000,
+			logPath: path.join(
+				OUTPUT_DIR,
+				`${ group.name }-wp-env-status.log`
+			),
+		} );
+		const repairedSiteUrl = await getWpSiteUrl( group );
+		const repairedCandidates = makeBaseUrlCandidates(
+			group,
+			statusResult.output,
+			repairedSiteUrl
+		);
+		probe = await findHealthyRestEndpoint( repairedCandidates );
+		if ( probe ) {
+			siteUrl = repairedSiteUrl;
+			candidates.splice( 0, candidates.length, ...repairedCandidates );
 		}
+	}
+
+	if ( probe ) {
+		if ( siteUrl && siteUrl !== probe.baseUrl ) {
+			await log(
+				`${ group.name }: repairing WordPress base URL ${ siteUrl } -> ${ probe.baseUrl }.`
+			);
+			await event( {
+				group: group.name,
+				kind: 'repair',
+				action: 'wp-option-base-url',
+				from: siteUrl,
+				to: probe.baseUrl,
+			} );
+			await setWpBaseUrl( group, probe.baseUrl );
+		}
+		groupState.currentBaseUrl = probe.baseUrl;
+		groupState.lastHealthyAt = new Date().toISOString();
+		return probe.baseUrl;
 	}
 
 	throw new Error(
 		`${
 			group.name
-		}: no healthy REST endpoint. candidates=${ candidates.join( ', ' ) }`
+		}: no healthy REST endpoint after repair. candidates=${ candidates.join(
+			', '
+		) }`
 	);
 }
 

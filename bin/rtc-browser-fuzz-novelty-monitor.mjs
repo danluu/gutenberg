@@ -47,6 +47,18 @@ const OBSERVED_RUN_DIRS = parsePathList(
 const FORCE_START = process.env.RTC_FUZZ_NOVELTY_FORCE_START === '1';
 const INCLUDE_RECHECK_COVERAGE =
 	process.env.RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE === '1';
+const ENABLE_HTTP_PROBE =
+	process.env.RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE === '1';
+const MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS',
+	7
+);
+const PAUSE_ON_STARTUP_FAILURE =
+	process.env.RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE !== '0';
+const STARTUP_FAILURE_LIMIT = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_LIMIT',
+	2
+);
 
 const PROFILE_GROUPS = [
 	{
@@ -57,8 +69,6 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
-			RTC_FUZZ_DISABLE_REVISION_RESTORE: '1',
-			GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE: '1',
 		},
 	},
 	{
@@ -71,14 +81,89 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
-			RTC_FUZZ_DISABLE_REVISION_RESTORE: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-persistence-no-title',
+		actionProfile: 'persistence-no-title',
+		startSeed: 980001,
+		stepCount: 12,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-revision-persistence',
+		actionProfile: 'revision-persistence',
+		startSeed: 990001,
+		stepCount: 10,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE: '0',
+			GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			RTC_FUZZ_DISABLE_REVISION_RESTORE: '0',
+			RTC_FUZZ_ENABLE_REVISION_RESTORE_PROBE: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-three-user-late-join',
+		actionProfile: 'three-user-late-join',
+		startSeed: 1000001,
+		stepCount: 10,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-parser-serialization',
+		actionProfile: 'parser-serialization',
+		startSeed: 1010001,
+		stepCount: 9,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-multi-reload-lifecycle',
+		actionProfile: 'multi-reload-lifecycle',
+		startSeed: 1020001,
+		stepCount: 12,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+		},
+	},
+	{
+		name: 'novelty-http-persistence-probe',
+		actionProfile: 'persistence-no-title',
+		transport: 'http',
+		startSeed: 1030001,
+		stepCount: 8,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
 			GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE: '1',
 		},
 	},
 ];
 
 await fs.mkdir( OUTPUT_DIR, { recursive: true } );
-let state = ( await readJsonFile( STATE_PATH ) ) ?? {
+const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	startedAt: new Date().toISOString(),
 	enabledGroups: [ 'novelty-ws-structure' ],
 	featureCounts: {},
@@ -86,6 +171,8 @@ let state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	fileOffsets: {},
 	recordCountsByProfile: {},
 	recordCountsByTransport: {},
+	startupFailureCountsByProfile: {},
+	pausedGroups: {},
 	recordsSeen: 0,
 	healthWarnings: [],
 	lastUpdatedAt: null,
@@ -94,6 +181,8 @@ let state = ( await readJsonFile( STATE_PATH ) ) ?? {
 state.fileOffsets ??= {};
 state.recordCountsByProfile ??= {};
 state.recordCountsByTransport ??= {};
+state.startupFailureCountsByProfile ??= {};
+state.pausedGroups ??= {};
 state.healthWarnings ??= [];
 
 function getPositiveIntegerEnv( name, fallback ) {
@@ -159,15 +248,6 @@ async function writeJsonFileAtomic( filePath, value ) {
 	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
 	await fs.writeFile( tmpPath, JSON.stringify( value, null, 2 ) + '\n' );
 	await fs.rename( tmpPath, filePath );
-}
-
-async function fileExists( filePath ) {
-	try {
-		await fs.access( filePath );
-		return true;
-	} catch {
-		return false;
-	}
 }
 
 async function findCoverageFiles( roots ) {
@@ -337,6 +417,10 @@ function summarizeNovelty( records ) {
 		if ( record.status === 'failed' ) {
 			byProfile[ profile ].failures += 1;
 		}
+		if ( isStartupDiscoveryFailure( record ) ) {
+			state.startupFailureCountsByProfile[ profile ] =
+				( state.startupFailureCountsByProfile[ profile ] ?? 0 ) + 1;
+		}
 
 		for ( const key of featureKeysForRecord( record ) ) {
 			if ( ! state.featureCounts[ key ] ) {
@@ -369,36 +453,97 @@ function summarizeNovelty( records ) {
 	};
 }
 
+function isStartupDiscoveryFailure( record ) {
+	if ( record.status !== 'failed' ) {
+		return false;
+	}
+	if ( ( record.actions?.length ?? 0 ) > 0 ) {
+		return false;
+	}
+	if ( ( record.userCount ?? 0 ) > 0 ) {
+		return false;
+	}
+
+	const errorText = [
+		record.error,
+		...( record.historyEvents ?? [] ).map( ( event ) => event.error ),
+	]
+		.filter( Boolean )
+		.join( '\n' );
+
+	return /waitForMutualDiscovery|waitForTestWebSocketAwarenessPeerCount|Target page, context or browser has been closed|Test timeout/i.test(
+		errorText
+	);
+}
+
 function sampleResources() {
 	const load1 = os.loadavg()[ 0 ];
 	const cores = os.cpus().length;
 	const freeMemoryGb = os.freemem() / 1024 ** 3;
 	const totalMemoryGb = os.totalmem() / 1024 ** 3;
+	const memoryPressureFreePercent = sampleMacMemoryPressureFreePercent();
+	const memoryHasHeadroom =
+		memoryPressureFreePercent === null
+			? freeMemoryGb > 3
+			: memoryPressureFreePercent >= 20;
 	return {
 		cores,
 		freeMemoryGb,
 		load1,
+		memoryHasHeadroom,
+		memoryPressureFreePercent,
 		totalMemoryGb,
-		hasHeadroom: load1 < cores * 1.25 && freeMemoryGb > 3,
+		hasHeadroom: load1 < cores * 1.25 && memoryHasHeadroom,
 	};
 }
 
+function sampleMacMemoryPressureFreePercent() {
+	if ( process.platform !== 'darwin' ) {
+		return null;
+	}
+
+	try {
+		const output = execFileSync( 'memory_pressure', {
+			encoding: 'utf8',
+			timeout: 10000,
+		} );
+		const match = output.match(
+			/System-wide memory free percentage:\s*(\d+)%/
+		);
+		return match ? Number.parseInt( match[ 1 ], 10 ) : null;
+	} catch {
+		return null;
+	}
+}
+
 function buildGroup( profile ) {
+	const transport = profile.transport ?? 'ws';
+	const transportEnv =
+		transport === 'ws'
+			? {
+					GUTENBERG_RTC_TEST_WS_PROVIDER: '1',
+					GUTENBERG_RTC_TEST_WS_PORT: WS_PORT,
+					GUTENBERG_RTC_TEST_WS_URL: `ws://127.0.0.1:${ WS_PORT }`,
+			  }
+			: {
+					GUTENBERG_RTC_TEST_WS_PROVIDER: '0',
+			  };
+
 	return {
 		name: profile.name,
 		repoRoot: REPO_ROOT,
-		transport: 'ws',
+		transport,
 		lanes: 1,
 		startSeed: profile.startSeed,
 		stepCount: profile.stepCount,
-		wsPort: Number.parseInt( WS_PORT, 10 ),
+		...( transport === 'ws'
+			? { wsPort: Number.parseInt( WS_PORT, 10 ) }
+			: {} ),
 		env: {
 			WP_ENV_PORT,
 			WP_BASE_URL: BASE_URL,
 			RTC_FUZZ_BASE_URL: BASE_URL,
-			GUTENBERG_RTC_TEST_WS_PROVIDER: '1',
-			GUTENBERG_RTC_TEST_WS_PORT: WS_PORT,
-			GUTENBERG_RTC_TEST_WS_URL: `ws://127.0.0.1:${ WS_PORT }`,
+			...transportEnv,
 			GUTENBERG_RTC_BROWSER_ACTION_PROFILE: profile.actionProfile,
 			GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE:
 				profile.collectCdpCoverage ? '1' : '0',
@@ -410,10 +555,83 @@ function buildGroup( profile ) {
 async function applyPolicy( novelty, resources ) {
 	const enabled = new Set( state.enabledGroups );
 	const lifecycleEnabled = enabled.has( 'novelty-ws-lifecycle' );
+	const persistenceNoTitleEnabled = enabled.has(
+		'novelty-ws-persistence-no-title'
+	);
+	const revisionPersistenceEnabled = enabled.has(
+		'novelty-ws-revision-persistence'
+	);
+	const threeUserLateJoinEnabled = enabled.has(
+		'novelty-ws-three-user-late-join'
+	);
+	const parserSerializationEnabled = enabled.has(
+		'novelty-ws-parser-serialization'
+	);
+	const multiReloadLifecycleEnabled = enabled.has(
+		'novelty-ws-multi-reload-lifecycle'
+	);
+	const httpProbeEnabled = enabled.has( 'novelty-http-persistence-probe' );
 	const structureRecords =
 		state.recordCountsByProfile?.structure ??
 		novelty.byProfile.structure?.records ??
 		0;
+	const lifecycleRecords =
+		state.recordCountsByProfile?.[ 'session-lifecycle' ] ??
+		novelty.byProfile[ 'session-lifecycle' ]?.records ??
+		0;
+	const persistenceNoTitleRecords =
+		state.recordCountsByProfile?.[ 'persistence-no-title' ] ??
+		novelty.byProfile[ 'persistence-no-title' ]?.records ??
+		0;
+	const parserRecords =
+		state.recordCountsByProfile?.[ 'parser-serialization' ] ??
+		novelty.byProfile[ 'parser-serialization' ]?.records ??
+		0;
+	const users3Records = state.featureCounts?.[ 'users:3' ] ?? 0;
+	const reload2Records = state.featureCounts?.[ 'reload-count:2' ] ?? 0;
+	const revisionEligibleRecords =
+		state.featureCounts?.[ 'revision-eligible:true' ] ?? 0;
+
+	async function enableGroup( group, reason ) {
+		if (
+			enabled.has( group ) ||
+			enabled.size >= MAX_ENABLED_GROUPS ||
+			state.pausedGroups?.[ group ]
+		) {
+			return false;
+		}
+
+		enabled.add( group );
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'enable-group',
+			group,
+			reason,
+		} );
+		await log( `Enabled ${ group } group.` );
+		return true;
+	}
+
+	async function pauseGroup( group, reason ) {
+		if ( ! enabled.has( group ) ) {
+			return false;
+		}
+
+		enabled.delete( group );
+		state.pausedGroups[ group ] = {
+			at: new Date().toISOString(),
+			reason,
+		};
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'pause-group',
+			group,
+			reason,
+		} );
+		await log( `Paused ${ group } group: ${ reason }` );
+		await terminateGroupLanes( group, reason );
+		return true;
+	}
 
 	if (
 		! lifecycleEnabled &&
@@ -421,14 +639,118 @@ async function applyPolicy( novelty, resources ) {
 		state.recordsSeen > 0 &&
 		structureRecords >= 10
 	) {
-		enabled.add( 'novelty-ws-lifecycle' );
-		state.changes.push( {
-			at: new Date().toISOString(),
-			action: 'enable-group',
-			group: 'novelty-ws-lifecycle',
-			reason: 'structure profile has enough coverage or low novelty; add late-join/reload lifecycle coverage',
-		} );
-		await log( 'Enabled novelty-ws-lifecycle group.' );
+		await enableGroup(
+			'novelty-ws-lifecycle',
+			'structure profile has enough coverage or low novelty; add late-join/reload lifecycle coverage'
+		);
+	}
+
+	if (
+		! persistenceNoTitleEnabled &&
+		resources.hasHeadroom &&
+		lifecycleEnabled &&
+		lifecycleRecords >= 50
+	) {
+		await enableGroup(
+			'novelty-ws-persistence-no-title',
+			'structure and lifecycle profiles have plateaued with headroom; add websocket persistence-no-title coverage'
+		);
+	}
+
+	if (
+		! revisionPersistenceEnabled &&
+		resources.hasHeadroom &&
+		persistenceNoTitleRecords >= 1 &&
+		revisionEligibleRecords < 500
+	) {
+		await enableGroup(
+			'novelty-ws-revision-persistence',
+			'revision-restore coverage is low; add focused save/reload/browser revision restore coverage'
+		);
+	}
+
+	if (
+		! threeUserLateJoinEnabled &&
+		resources.hasHeadroom &&
+		lifecycleEnabled &&
+		users3Records < 100
+	) {
+		await enableGroup(
+			'novelty-ws-three-user-late-join',
+			'three-user late-join coverage is low; force a real late join early in the seed'
+		);
+	}
+
+	if (
+		! parserSerializationEnabled &&
+		resources.hasHeadroom &&
+		structureRecords >= 50 &&
+		parserRecords < 50
+	) {
+		await enableGroup(
+			'novelty-ws-parser-serialization',
+			'parser and block-serialization stress coverage is low; enable parser-stress actions without injected faults'
+		);
+	}
+
+	if (
+		! multiReloadLifecycleEnabled &&
+		resources.hasHeadroom &&
+		lifecycleRecords >= 50 &&
+		reload2Records < 100
+	) {
+		await enableGroup(
+			'novelty-ws-multi-reload-lifecycle',
+			'multi-reload lifecycle coverage is low; add two reload checkpoints in one seed'
+		);
+	}
+
+	if (
+		! httpProbeEnabled &&
+		ENABLE_HTTP_PROBE &&
+		resources.hasHeadroom &&
+		enabled.size < MAX_ENABLED_GROUPS
+	) {
+		await enableGroup(
+			'novelty-http-persistence-probe',
+			'HTTP probe explicitly enabled; run a low-fault persistence lane after quarantine'
+		);
+	}
+
+	if ( PAUSE_ON_STARTUP_FAILURE ) {
+		const pauseOrder = [
+			[ 'novelty-ws-parser-serialization', 'parser-serialization' ],
+			[ 'novelty-ws-multi-reload-lifecycle', 'multi-reload-lifecycle' ],
+			[ 'novelty-ws-three-user-late-join', 'three-user-late-join' ],
+			[ 'novelty-ws-revision-persistence', 'revision-persistence' ],
+		];
+
+		for ( const [ group, profile ] of pauseOrder ) {
+			const startupFailures =
+				state.startupFailureCountsByProfile?.[ profile ] ?? 0;
+			if ( startupFailures >= STARTUP_FAILURE_LIMIT ) {
+				await pauseGroup(
+					group,
+					`profile ${ profile } produced ${ startupFailures } pre-action WS discovery/startup failures`
+				);
+			}
+		}
+
+		if ( ! resources.hasHeadroom && enabled.size > 5 ) {
+			for ( const [ group, profile ] of pauseOrder.slice( 0, 2 ) ) {
+				if (
+					enabled.size <= 5 ||
+					( state.startupFailureCountsByProfile?.[ profile ] ??
+						0 ) === 0
+				) {
+					continue;
+				}
+				await pauseGroup(
+					group,
+					`temporary resource guard: no headroom and profile ${ profile } already hit a pre-action startup failure`
+				);
+			}
+		}
 	}
 
 	state.enabledGroups = [ ...enabled ];
@@ -436,6 +758,104 @@ async function applyPolicy( novelty, resources ) {
 		enabled.has( profile.name )
 	).map( buildGroup );
 	await writeJsonFileAtomic( GROUPS_PATH, groups );
+}
+
+async function terminateGroupLanes( groupName, reason ) {
+	const supervisorState = await readJsonFile(
+		path.join( OUTPUT_DIR, 'supervisor-state.json' )
+	);
+	const groupState = ( supervisorState?.groups ?? [] ).find(
+		( group ) => group.name === groupName
+	);
+	const runDirs = [
+		...( groupState?.activeRunDirs ?? [] ),
+		groupState?.currentRunDir,
+	].filter( Boolean );
+	const terminated = [];
+
+	for ( const runDir of new Set( runDirs ) ) {
+		const manifest = await readJsonFile(
+			path.join( runDir, 'lanes.json' )
+		);
+		for ( const lane of manifest?.lanes ?? [] ) {
+			if ( ! lane.pid ) {
+				continue;
+			}
+			const killedPids = terminatePidTree( lane.pid );
+			if ( killedPids.length ) {
+				terminated.push( {
+					pid: lane.pid,
+					runDir,
+					lane: lane.laneLabel,
+					killedPids,
+				} );
+			}
+		}
+	}
+
+	if ( terminated.length ) {
+		const killedCount = terminated.reduce(
+			( count, item ) => count + item.killedPids.length,
+			0
+		);
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'terminate-paused-group-lanes',
+			group: groupName,
+			reason,
+			count: killedCount,
+		} );
+		await log(
+			`Terminated ${ killedCount } process(es) for paused group ${ groupName }.`
+		);
+	}
+}
+
+function terminatePidTree( rootPid ) {
+	const pids = [ ...collectDescendantPids( rootPid ).reverse(), rootPid ];
+	const killed = [];
+
+	for ( const pid of pids ) {
+		try {
+			process.kill( pid, 'SIGTERM' );
+			killed.push( pid );
+		} catch {}
+	}
+
+	setTimeout( () => {
+		for ( const pid of pids ) {
+			try {
+				process.kill( pid, 'SIGKILL' );
+			} catch {}
+		}
+	}, 5000 ).unref();
+
+	return killed;
+}
+
+function collectDescendantPids( pid, seen = new Set() ) {
+	if ( seen.has( pid ) ) {
+		return [];
+	}
+	seen.add( pid );
+
+	let childPids = [];
+	try {
+		childPids = execFileSync( 'pgrep', [ '-P', String( pid ) ], {
+			encoding: 'utf8',
+			timeout: 5000,
+		} )
+			.split( '\n' )
+			.map( ( value ) => Number.parseInt( value, 10 ) )
+			.filter( Number.isFinite );
+	} catch {
+		return [];
+	}
+
+	return childPids.flatMap( ( childPid ) => [
+		childPid,
+		...collectDescendantPids( childPid, seen ),
+	] );
 }
 
 function tmuxHasSession( sessionName ) {
@@ -466,16 +886,16 @@ async function ensureSupervisor( resources ) {
 
 	const command = [
 		`cd ${ shellQuote( REPO_ROOT ) }`,
-		`RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=${ shellQuote( OUTPUT_DIR ) }`,
-		`RTC_FUZZ_SUPERVISOR_GROUPS_PATH=${ shellQuote( GROUPS_PATH ) }`,
-		`RTC_FUZZ_SUPERVISOR_DURATION_HOURS=${ shellQuote(
+		`export RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=${ shellQuote( OUTPUT_DIR ) }`,
+		`export RTC_FUZZ_SUPERVISOR_GROUPS_PATH=${ shellQuote( GROUPS_PATH ) }`,
+		`export RTC_FUZZ_SUPERVISOR_DURATION_HOURS=${ shellQuote(
 			String( Math.max( 0.1, ( END_AT - Date.now() ) / 3600000 ) )
 		) }`,
-		'RTC_FUZZ_SUPERVISOR_POLL_MS=60000',
+		'export RTC_FUZZ_SUPERVISOR_POLL_MS=60000',
 		`${ shellQuote(
 			process.execPath
 		) } bin/rtc-browser-fuzz-supervisor.mjs`,
-	].join( ' ' );
+	].join( '; ' );
 
 	spawn( 'tmux', [ 'new-session', '-d', '-s', SUPERVISOR_SESSION, command ], {
 		cwd: REPO_ROOT,
@@ -572,6 +992,11 @@ async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
 		`- memory: ${ resources.freeMemoryGb.toFixed(
 			1
 		) }G free / ${ resources.totalMemoryGb.toFixed( 1 ) }G total`,
+		`- memory pressure free: ${
+			resources.memoryPressureFreePercent === null
+				? 'n/a'
+				: `${ resources.memoryPressureFreePercent }%`
+		}`,
 		`- headroom for adding groups: ${
 			resources.hasHeadroom ? 'yes' : 'no'
 		}`,
@@ -590,6 +1015,9 @@ async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
 		`- all-time records by transport: ${ JSON.stringify(
 			state.recordCountsByTransport ?? {}
 		) }`,
+		`- pre-action startup failures by profile: ${ JSON.stringify(
+			state.startupFailureCountsByProfile ?? {}
+		) }`,
 		'',
 		'## Health',
 		...( healthWarnings.length
@@ -601,6 +1029,15 @@ async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
 			( group ) =>
 				`- ${ group.name }: ${ group.transport }, profile=${ group.env?.GUTENBERG_RTC_BROWSER_ACTION_PROFILE }, lanes=${ group.lanes }, seed=${ group.startSeed }`
 		),
+		'',
+		'## Paused Groups',
+		...Object.entries( state.pausedGroups ?? {} ).map(
+			( [ group, value ] ) =>
+				`- ${ group }: ${ value.at } ${ value.reason }`
+		),
+		...( Object.keys( state.pausedGroups ?? {} ).length
+			? []
+			: [ '- none' ] ),
 		'',
 		'## Recent Changes',
 		...( state.changes ?? [] )

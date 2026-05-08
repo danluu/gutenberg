@@ -13,6 +13,9 @@ The pipeline has four durable parts:
 -   A multi-level triage system that separates cheap Codex-only analysis from expensive browser repro work.
 -   A periodic monitor that watches resources, queues, stale lanes, duplicate gating, and job recovery.
 
+For a long run, treat each durable part as a service with a tmux owner. Do not
+leave one-shot commands as the only copy of an important process.
+
 ## Base Branch
 
 Use a fuzz base that is close to trunk and auditable.
@@ -88,6 +91,30 @@ transport stacks without mixing them in the same `wp-env`.
 Do not run `wp-env clean`, stop shared fuzz `wp-env`s, or restart shared services
 while lanes or browser triage jobs are active.
 
+## Process Ownership
+
+Use separate long-running processes with clear ownership. This avoids monitors
+fighting each other and makes recovery auditable.
+
+-   `rtc-browser-fuzz-supervisor.mjs` owns active fuzz groups, lane replacement,
+    shared `wp-env` health repair, WS relay startup, and per-group plugin
+    activation.
+-   `rtc-browser-fuzz-watchdog.mjs` owns supervisor liveness checks and stale
+    stopped `wp-env` cleanup. It should restart a missing or stale supervisor,
+    not run fuzz lanes itself.
+-   `rtc-browser-fuzz-live-analysis-monitor.mjs` owns Codex-only first-level
+    analysis for the currently active generation directories. It runs the
+    triage watcher only in `--gate-only` mode.
+-   `rtc-browser-fuzz-deep-analysis-tier.mjs` owns second-level Codex-only
+    analysis for likely-real and uncertain candidates. Start it separately for
+    generation dirs with a real backlog.
+-   `rtc-browser-fuzz-triage-watcher.mjs` without `--gate-only` owns
+    browser-heavy repro work. Keep its parallelism low.
+-   `rtc-browser-fuzz-novelty-monitor.mjs` owns novelty-guided group generation
+    and the novelty supervisor session.
+-   A periodic Codex monitor owns human-readable status updates and bounded job
+    adjustments. It should append every decision to `monitor-status.md`.
+
 ## Stale wp-env Cleanup
 
 Long fuzz and triage campaigns can leave old `wp-env` Docker Compose projects
@@ -107,7 +134,11 @@ Safety properties:
 -   a compose project is protected if any container in that project is running
 -   only stopped containers older than the age threshold are removed
 -   only unused wp-env compose networks older than the age threshold are removed
--   Docker volumes and `~/.wp-env` directories are reported but not deleted
+-   unused wp-env Docker volumes from inactive projects are reported by default
+    and removed only when volume pruning is explicitly enabled
+-   orphaned `~/.wp-env` directories with no Docker resources attached are
+    reported by default and removed only when directory pruning is explicitly
+    enabled
 
 Useful manual dry run:
 
@@ -115,11 +146,82 @@ Useful manual dry run:
 node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --json --min-age-hours=24
 ```
 
+Useful manual apply when disk pressure is from stale `wp-env` volumes:
+
+```bash
+node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --apply --prune-volumes --json --min-age-hours=24
+```
+
+Useful manual apply when disk pressure is from orphaned generated `~/.wp-env`
+directories:
+
+```bash
+node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --apply --prune-directories --json --min-age-hours=24
+```
+
 Watchdog controls:
 
 -   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV=0`: disable cleanup
 -   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_INTERVAL_MS=1800000`: cleanup interval
 -   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_MIN_AGE_HOURS=24`: minimum resource age
+-   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_VOLUMES=1`: also remove unused
+    stale `wp-env` Docker volumes from inactive projects. Leave this disabled if
+    you want the monitor to report volume candidates but require a manual prune.
+-   `RTC_FUZZ_WATCHDOG_CLEANUP_STALE_WP_ENV_DIRECTORIES=1`: also remove
+    orphaned generated `~/.wp-env` directories that have no Docker resources
+    attached. Leave this disabled if you want a manual confirmation step.
+
+## Active wp-env And Docker Repair
+
+The supervisor owns active shared `wp-env` repair. Humans and Codex analysis
+jobs should not manually clean or restart active shared environments while lanes
+are running.
+
+The supervisor first tries normal `wp-env` commands. If `wp-env start` or the
+REST health probe fails, it can parse the `install path:` from `wp-env status`
+and use the generated Docker Compose file directly:
+
+```bash
+docker compose -f "$INSTALL_PATH/docker-compose.yml" -p "$( basename "$INSTALL_PATH" )" ...
+```
+
+The generated-compose fallback intentionally targets only the core services it
+needs. It prefers `mysql`, `tests-mysql`, `wordpress`, `tests-wordpress`, `cli`,
+and `tests-cli`; if those names are not present, it excludes phpMyAdmin when
+selecting fallback services. This avoids failing a fuzz run because an optional
+phpMyAdmin image cannot be pulled.
+
+Repair controls:
+
+-   `RTC_FUZZ_SUPERVISOR_AUTO_REPAIR_WP_ENV=0`: disable generated-compose
+    active `wp-env` repair.
+-   `RTC_FUZZ_SUPERVISOR_AUTO_REPAIR_ORBSTACK_DOCKER=0`: disable OrbStack Docker
+    restart repair.
+-   `RTC_FUZZ_SUPERVISOR_ORBSTACK_DOCKER_RESTART_COOLDOWN_MS=600000`: minimum
+    delay between automatic `orb restart docker` attempts.
+
+Repair actions are logged in `events.ndjson` with `kind=repair` and in
+per-group files such as:
+
+-   `<group>-wp-env-compose-services.log`
+-   `<group>-wp-env-compose-up.log`
+-   `<group>-wp-env-compose-restart.log`
+-   `<group>-wp-env-compose-force-recreate.log`
+-   `<group>-wp-env-compose-down-stale-endpoint.log`
+-   `<group>-wp-env-compose-up-after-orbstack-restart.log`
+-   `<group>-orbstack-docker-restart.log`
+
+If Docker layer, volume, or WordPress database pressure is detected, the
+supervisor may run safe Docker pruning commands:
+
+-   `docker container prune -f`
+-   `docker image prune -af`
+-   `docker builder prune -af`
+-   `docker volume prune -f`
+
+Those logs are written as `<group>-docker-<container|image|builder|volume>-prune.log`.
+This is intentionally narrower than deleting run artifacts or active compose
+projects.
 
 ## Group Config
 
@@ -194,29 +296,44 @@ mkdir -p "$RUN_ROOT"
 $EDITOR "$RUN_ROOT/supervisor-groups.json"
 ```
 
-Start the supervisor in tmux:
+Start the supervisor in a durable tmux loop. The loop matters: if the
+supervisor exits after a recoverable local failure, tmux keeps the service owner
+alive and the watchdog has a stable session to inspect.
 
 ```bash
-tmux new-session -d -s rtc-fuzz-supervisor \
-	"cd /path/to/gutenberg; \
-	RTC_FUZZ_SUPERVISOR_OUTPUT_DIR='$RUN_ROOT' \
-	RTC_FUZZ_SUPERVISOR_GROUPS_PATH='$RUN_ROOT/supervisor-groups.json' \
-	RTC_FUZZ_SUPERVISOR_DURATION_HOURS=14 \
-	RTC_FUZZ_SUPERVISOR_POLL_MS=60000 \
-	node bin/rtc-browser-fuzz-supervisor.mjs"
+tmux new-session -d -s rtc-fuzz-supervisor "bash -lc '
+cd /path/to/gutenberg
+export RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$RUN_ROOT\"
+export RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$RUN_ROOT/supervisor-groups.json\"
+export RTC_FUZZ_SUPERVISOR_DURATION_HOURS=14
+export RTC_FUZZ_SUPERVISOR_POLL_MS=60000
+while true; do
+	node bin/rtc-browser-fuzz-supervisor.mjs
+	code=\$?
+	echo SUPERVISOR_EXIT:\$code \$( date -u +%Y-%m-%dT%H:%M:%SZ )
+	sleep 30
+done
+'"
 ```
 
 Start the watchdog in a separate tmux session. It restarts the supervisor if the
 tmux session disappears or `supervisor-state.json` stops updating.
 
 ```bash
-tmux new-session -d -s rtc-fuzz-watchdog \
-	"cd /path/to/gutenberg; \
-	RTC_FUZZ_WATCHDOG_OUTPUT_DIR='$RUN_ROOT' \
-	RTC_FUZZ_WATCHDOG_GROUPS_PATH='$RUN_ROOT/supervisor-groups.json' \
+tmux new-session -d -s rtc-fuzz-watchdog "bash -lc '
+cd /path/to/gutenberg
+while true; do
+	RTC_FUZZ_WATCHDOG_OUTPUT_DIR=\"$RUN_ROOT\" \
+	RTC_FUZZ_WATCHDOG_GROUPS_PATH=\"$RUN_ROOT/supervisor-groups.json\" \
 	RTC_FUZZ_WATCHDOG_SESSION=rtc-fuzz-supervisor \
 	RTC_FUZZ_WATCHDOG_DURATION_HOURS=14 \
-	node bin/rtc-browser-fuzz-watchdog.mjs"
+	RTC_FUZZ_WATCHDOG_POLL_MS=60000 \
+	node bin/rtc-browser-fuzz-watchdog.mjs
+	code=\$?
+	echo WATCHDOG_EXIT:\$code \$( date -u +%Y-%m-%dT%H:%M:%SZ )
+	sleep 30
+done
+'"
 ```
 
 The supervisor writes:
@@ -346,9 +463,25 @@ It also emits `shouldDeepTriage` and one of:
 -   `merge_with_duplicate`
 -   `keep_collecting`
 
+Every analysis result must also include `userHitLikelihoodScore` and
+`userHitLikelihoodRationale`. The score is `0..5`: `0` means harness-only or
+not user-visible, `1` means very rare or developer-only, `2` means an uncommon
+edge workflow, `3` means a plausible normal collaborative editing workflow, `4`
+means a common workflow or common content shape, and `5` means very likely in
+default/common use. Deep-analysis jobs use this score as a tie-breaker so common
+likely-real bugs are processed before rare likely-real bugs with the same
+priority and confidence.
+
 The triage watcher gates duplicate/noise decisions from this tier as
 `analysis-gated`, so browser triage capacity is reserved for likely-real
 signatures.
+
+The analysis tier automatically prepends
+`bin/rtc-browser-fuzz-analysis-guard-bin` to `PATH` for Codex jobs. The guard
+wrappers refuse broad `find` or `rg` roots such as `artifacts`,
+`artifacts/rtc-browser-fuzz`, and `test/e2e/artifacts`. Do not bypass this for
+normal analysis jobs; inspect a specific seed, lane, signature, source file, or
+small artifact subtree instead.
 
 ### Level 2: Deeper Codex-Only Analysis
 
@@ -383,6 +516,39 @@ Deep-analysis duplicate and false-positive decisions are folded back by the
 triage watcher. Confirmed likely-real and realistic-repro-search decisions stay
 eligible for browser-heavy work.
 
+If older result artifacts predate the likelihood fields, backfill them before
+building handoff manifests or filing issues:
+
+```bash
+node bin/rtc-fuzz-backfill-user-hit-likelihood.mjs "$RUN_ROOT"
+```
+
+The backfill updates completed result JSON, visible `STATUS.md` files, embedded
+triage watcher gate state, and writes
+`$RUN_ROOT/user-hit-likelihood-backfill.json` grouped by distinct likely-real bug
+type.
+
+For long runs, keep deep analysis alive in tmux and point it at only the active
+generation dirs that have likely-real or uncertain backlog:
+
+```bash
+tmux new-session -d -s rtc-deep-analysis-current "bash -lc '
+cd /path/to/gutenberg
+while true; do
+	RTC_FUZZ_DEEP_ANALYSIS_MAX_PARALLEL=4 \
+	RTC_FUZZ_DEEP_ANALYSIS_MAX_ATTEMPTS=2 \
+	RTC_FUZZ_DEEP_ANALYSIS_INTERVAL_MS=45000 \
+	RTC_FUZZ_DEEP_ANALYSIS_CODEX_TIMEOUT_MS=5400000 \
+	RTC_FUZZ_DEEP_ANALYSIS_MODEL=gpt-5.4 \
+	RTC_FUZZ_DEEP_ANALYSIS_REASONING_EFFORT=xhigh \
+	node bin/rtc-browser-fuzz-deep-analysis-tier.mjs \"$RUN_DIR\"
+	code=\$?
+	echo DEEP_ANALYSIS_EXIT:\$code \$( date -u +%Y-%m-%dT%H:%M:%SZ )
+	sleep 30
+done
+'"
+```
+
 ### Job Startup Failures
 
 The analysis tiers treat transient Codex startup/connectivity failures as
@@ -391,9 +557,70 @@ lookup failures, and startup policy fetch failures. These are recorded as
 `transientFailureReason=codex-startup-connectivity` with a backoff rather than
 consuming the normal attempt budget.
 
+### Active Generation Attachment
+
+Use `bin/rtc-browser-fuzz-live-analysis-monitor.mjs` for supervised runs where
+the current generation directories change over time. It reads
+`supervisor-state.json`, discovers each active generation directory, runs
+gate-only signature discovery, and keeps one Codex-only analysis-tier tmux
+session attached to each active directory.
+
+```bash
+tmux new-session -d -s rtc-live-analysis-active "bash -lc '
+cd /path/to/gutenberg
+while true; do
+	RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 \
+	RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=4 \
+	RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 \
+	RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 \
+	node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$RUN_ROOT\"
+	code=\$?
+	echo LIVE_ANALYSIS_EXIT:\$code \$( date -u +%Y-%m-%dT%H:%M:%SZ )
+	sleep 30
+done
+'"
+```
+
+If a novelty supervisor writes into a subdirectory under the same run root,
+start a second live-analysis monitor with a different tmux prefix so per-run
+analysis session names cannot collide:
+
+```bash
+tmux new-session -d -s rtc-live-analysis-novelty "bash -lc '
+cd /path/to/gutenberg
+while true; do
+	RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 \
+	RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=2 \
+	RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 \
+	RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 \
+	RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=rtc-analysis-live-novelty \
+	node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$RUN_ROOT/novelty-live\"
+	code=\$?
+	echo LIVE_ANALYSIS_NOVELTY_EXIT:\$code \$( date -u +%Y-%m-%dT%H:%M:%SZ )
+	sleep 30
+done
+'"
+```
+
+The monitor writes:
+
+-   `$RUN_ROOT/live-analysis-monitor.log`
+-   `$RUN_ROOT/live-analysis-monitor-events.ndjson`
+-   `$RUN_ROOT/live-analysis-monitor-state.json`
+-   per-generation `$RUN_DIR/.triage-watcher/state.json`
+-   per-generation `$RUN_DIR/.triage-watcher/analysis-tier/state.json`
+
+This monitor is intentionally Codex-heavy and browser-light. It uses the triage
+watcher only in `--gate-only` mode, so it does not start browser repro jobs. Run
+browser-heavy triage separately after the analysis tiers identify high-value
+likely-real candidates.
+
 ## Recommended Tmux Layout
 
-For each current generation directory, use separate named sessions. Example:
+For each current generation directory, use separate named sessions. Prefer the
+live-analysis monitor for first-level analysis because it follows current
+generation dirs automatically. Use direct per-generation sessions for deep
+analysis and browser-heavy triage. Example ad hoc sessions:
 
 ```bash
 tmux new-session -d -s rtc-analysis-ws-current \
@@ -412,7 +639,61 @@ expensive because each can spawn Playwright, Chrome, and shared `wp-env` load.
 ## Periodic Monitoring
 
 The periodic monitor should append every pass to `monitor-status.md` in the run
-root. Each pass should include:
+root. It is the place to record human-readable health, queue state, and job
+adjustments.
+
+Create a run-specific prompt at `$RUN_ROOT/periodic-codex-monitor-prompt.md`.
+Keep it concrete: list the repo path, run root, active service ports, current
+baseline tmux sessions that must not be killed, hard safety constraints, and the
+exact status file to append.
+
+Minimum prompt requirements:
+
+-   check machine health, service health, lane freshness, queue sizes, and
+    analysis/deep-analysis state
+-   kill only narrow pathological child searches or clearly failed one-shot
+    boost wrappers
+-   launch Codex-only work before browser-heavy work when the bottleneck is
+    analysis
+-   fold completed duplicate/noise decisions back into triage state
+-   append a timestamped section to `monitor-status.md`
+-   report actions taken, current bottleneck, and current policy
+
+Start the periodic monitor in a durable tmux loop. This template stores each
+Codex pass under `$RUN_ROOT/periodic-codex-monitor/<timestamp>/`.
+
+```bash
+tmux new-session -d -s rtc-periodic-codex-monitor "bash -lc '
+set -u
+REPO=/path/to/gutenberg
+RUN_ROOT=/path/to/gutenberg/artifacts/rtc-browser-fuzz/current-run
+PROMPT=\"\$RUN_ROOT/periodic-codex-monitor-prompt.md\"
+LOG_ROOT=\"\$RUN_ROOT/periodic-codex-monitor\"
+INTERVAL_SECONDS=\"\${RTC_PERIODIC_CODEX_MONITOR_INTERVAL_SECONDS:-900}\"
+mkdir -p \"\$LOG_ROOT\"
+while true; do
+	ts=\$( date -u +%Y%m%dT%H%M%SZ )
+	pass_dir=\"\$LOG_ROOT/\$ts\"
+	mkdir -p \"\$pass_dir\"
+	codex exec \
+		-C \"\$REPO\" \
+		-m gpt-5.4 \
+		-c model_reasoning_effort=\\\"high\\\" \
+		--dangerously-bypass-approvals-and-sandbox \
+		--output-last-message \"\$pass_dir/final.md\" \
+		--json \
+		\"\$( cat \"\$PROMPT\" )\" \
+		> \"\$pass_dir/events.jsonl\" \
+		2> \"\$pass_dir/stderr.log\"
+	code=\$?
+	echo \"\$code\" > \"\$pass_dir/exit-code.txt\"
+	echo PERIODIC_CODEX_MONITOR_EXIT:\$code \$( date -u +%Y-%m-%dT%H:%M:%SZ )
+	sleep \"\$INTERVAL_SECONDS\"
+done
+'"
+```
+
+Each pass should include:
 
 -   watchdog status and age
 -   HTTP, WS, and relay reachability
@@ -433,6 +714,8 @@ top -l 1 -n 15 -o cpu -stats pid,ppid,state,time,cpu,mem,command
 memory_pressure
 pgrep -af "codex exec" | wc -l
 pgrep -af "chrome|headless|playwright" | wc -l
+node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --json --min-age-hours=24
+node bin/rtc-fuzz-prune-completed-codex-events.mjs "$RUN_ROOT" --json --min-age-minutes=30
 ```
 
 Minimum service checks:
@@ -449,6 +732,18 @@ starts a long-lived broad `find` or `rg` over `artifacts/rtc-browser-fuzz`,
 terminate that child process. If one analysis worker repeatedly respawns
 pathological scans, mark only that job failed and leave the rest of the pipeline
 running.
+
+Completed Codex raw event streams can become large. It is safe to prune them
+after durable outputs exist:
+
+```bash
+node bin/rtc-fuzz-prune-completed-codex-events.mjs "$RUN_ROOT" --apply --json --min-age-minutes=30
+```
+
+This removes only raw `events.jsonl` / monitor stderr files for completed
+periodic monitor, analysis-tier, and deep-analysis-tier jobs. It keeps
+`final.md`, `exit-code.txt`, `result.json`, `analysis.md`, `handoff.md`,
+`deep-analysis.md`, and `repro-handoff.md`.
 
 ## Scaling Policy
 
@@ -507,21 +802,57 @@ profiles, block types, action pairs, lifecycle events, fault types, and CDP
 coverage hashes, then can enable additional supervisor groups when novelty
 stalls and resources permit.
 
-Example:
+Example durable novelty monitor:
 
 ```bash
-RTC_FUZZ_NOVELTY_OUTPUT_DIR="$RUN_ROOT/novelty" \
-RTC_FUZZ_NOVELTY_GROUPS_PATH="$RUN_ROOT/novelty/supervisor-groups.json" \
-RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS="$RUN_ROOT" \
-RTC_FUZZ_NOVELTY_BASE_URL=http://localhost:8889 \
-RTC_FUZZ_NOVELTY_WP_ENV_PORT=8889 \
-RTC_FUZZ_NOVELTY_WS_PORT=18991 \
-node bin/rtc-browser-fuzz-novelty-monitor.mjs
+tmux new-session -d -s rtc-fuzz-novelty-monitor "bash -lc '
+cd /path/to/gutenberg
+while true; do
+	RTC_FUZZ_NOVELTY_OUTPUT_DIR=\"$RUN_ROOT/novelty-live\" \
+	RTC_FUZZ_NOVELTY_GROUPS_PATH=\"$RUN_ROOT/novelty-live/supervisor-groups.json\" \
+	RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS=\"$RUN_ROOT\" \
+	RTC_FUZZ_NOVELTY_BASE_URL=http://localhost:8889 \
+	RTC_FUZZ_NOVELTY_WP_ENV_PORT=8889 \
+	RTC_FUZZ_NOVELTY_WS_PORT=18991 \
+	RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION=rtc-fuzz-novelty-supervisor \
+	node bin/rtc-browser-fuzz-novelty-monitor.mjs
+	code=\$?
+	echo NOVELTY_MONITOR_EXIT:\$code \$( date -u +%Y-%m-%dT%H:%M:%SZ )
+	sleep 30
+done
+'"
 ```
 
-The implemented novelty profiles are `structure` and `session-lifecycle`. They
-are meant to broaden surface area, not to replace the full or persistence
-profiles.
+The novelty monitor writes `novelty-state.json`, `novelty-status.md`,
+`novelty-monitor.log`, and a generated `supervisor-groups.json`. It starts or
+keeps alive the tmux session named by `RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION`.
+That supervisor session then writes its own `supervisor-state.json` under the
+novelty output directory. Attach a separate live-analysis monitor to that
+novelty output directory if novelty groups are expected to produce triage
+backlog.
+
+The implemented novelty profiles are:
+
+-   `structure`: nested groups, nested edits, group moves, deletes, and other
+    tree-shape operations.
+-   `session-lifecycle`: late join, reload, and reconnect style coverage.
+-   `persistence-no-title`: save/reload persistence without title edits, to
+    avoid dominating on known title-only persistence noise.
+-   `revision-persistence`: save/reload plus revision-restore coverage. This
+    should stay enabled unless a real revision bug or a specific harness issue
+    is documented.
+-   `three-user-late-join`: a third collaborator joins after editing has
+    started.
+-   `parser-serialization`: parser and serialization stress without sync fault
+    injection.
+-   `multi-reload-lifecycle`: more than one real browser reload during a seed.
+-   `novelty-http-persistence-probe`: optional HTTP probe. Enable it with
+    `RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE=1`, preferably in a separate HTTP-only
+    supervisor/env so switching provider plugins does not disrupt active WS
+    groups.
+
+These profiles are meant to broaden surface area, not to replace the full or
+persistence profiles.
 
 The novelty monitor tracks offsets per coverage file and skips triage/recheck
 directories by default. This keeps deep-triage reruns from inflating exploration
@@ -532,6 +863,18 @@ The novelty status file includes health warnings when enabled profiles do not
 produce ingested coverage or when a profile requests CDP coverage but no CDP
 hashes are observed. Treat those warnings as instrumentation failures before
 making scheduling decisions from novelty counts.
+
+The novelty monitor also tracks pre-action startup failures by profile. A
+pre-action startup failure is a run that fails before any user action and before
+any collaborator is recorded, usually while waiting for WS mutual discovery. By
+default, `RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE=1` pauses a profile after
+`RTC_FUZZ_NOVELTY_STARTUP_FAILURE_LIMIT=2` such failures, removes it from the
+generated supervisor groups, and sends `SIGTERM` to its active lanes. When the
+machine has no resource headroom and more than five novelty groups are enabled,
+the monitor can also temporarily pause lower-priority profiles that have already
+hit one startup failure. Paused groups are written to `novelty-status.md` and
+`novelty-state.json`; clear the `pausedGroups` entry only after the startup
+failure is understood or the resource mix has been reduced.
 
 ## Stop, Resume, And Handoff
 
@@ -548,15 +891,29 @@ tmux kill-session -t rtc-fuzz-supervisor
 tmux kill-session -t rtc-fuzz-watchdog
 ```
 
-To stop analysis or triage, kill their tmux sessions. Do not delete
-`.triage-watcher`; it is the durable queue and result store.
+To stop monitors and analysis services, kill their tmux sessions:
+
+```bash
+tmux kill-session -t rtc-live-analysis-active
+tmux kill-session -t rtc-live-analysis-novelty
+tmux kill-session -t rtc-fuzz-novelty-monitor
+tmux kill-session -t rtc-fuzz-novelty-supervisor
+tmux kill-session -t rtc-periodic-codex-monitor
+```
+
+To stop individual per-generation analysis or triage, kill those tmux sessions.
+Do not delete `.triage-watcher`; it is the durable queue and result store.
 
 To resume:
 
 1. Restart the same supervisor/watchdog with the same `RUN_ROOT` and groups path.
-2. Read active/current generation dirs from `supervisor-state.json`.
-3. Restart triage, analysis, and deep-analysis sessions for the active dirs.
-4. Append a resume entry to `monitor-status.md`.
+2. Restart the live-analysis monitor for the supervised run root.
+3. Restart the novelty monitor if novelty-guided expansion was enabled.
+4. Read active/current generation dirs from `supervisor-state.json`.
+5. Restart browser-heavy triage and deep-analysis sessions for active dirs that
+   still have likely-real or uncertain backlog.
+6. Restart the periodic Codex monitor.
+7. Append a resume entry to `monitor-status.md`.
 
 For another machine, hand off:
 
@@ -568,6 +925,30 @@ For another machine, hand off:
 -   all `.triage-watcher/**/result.json`, `analysis.md`, `deep-analysis.md`, `handoff.md`, and `repro-handoff.md`
 -   one canonical seed/artifact directory per likely-real distinct bug family
 -   a manifest mapping distinct bug type to canonical repro candidate and commands
+
+## Remote Publishing
+
+Keep the reproducible fuzzer code on `danluu/try/fuzz`:
+
+```bash
+git push danluu HEAD:try/fuzz
+```
+
+Run status and human-readable explanations should be published on a separate
+explanation branch so they do not churn the fuzzer branch. Use a branch name
+with a date and run id, for example:
+
+```bash
+git switch -c explain/rtc-fuzz-run-$( date -u +%Y%m%d )
+git add docs/explanations/architecture/real-time-collaboration-fuzzing-pipeline-runbook.md
+git add -f "$RUN_ROOT/monitor-status.md" "$RUN_ROOT/base-update.md"
+git commit -m "Document RTC fuzz run status"
+git push danluu HEAD
+```
+
+Do not add the full artifact tree to Git. Publish compact status, manifests,
+handoff files, and canonical repro artifacts only when they are small enough to
+review.
 
 ## Status Commands
 
@@ -604,10 +985,14 @@ NODE
 
 ## Safety Rules
 
--   Do not clean or restart shared `wp-env`s while lanes or browser triage are running.
+-   Do not manually clean or restart shared `wp-env`s while lanes or browser
+    triage are running. The supervisor's bounded active-environment repair is
+    the exception and should be recorded through its repair logs/events.
 -   Do not disable revision restore unless a documented known bug requires it.
 -   Do not revert unrelated worktree changes while updating the fuzz base or scripts.
 -   Do not let analysis-only tiers run Playwright, Chrome, Docker, `wp-env`, or tests.
+-   Do not bypass the analysis guard-bin wrappers for normal Codex-only
+    analysis. Broad artifact scans have previously starved useful work.
 -   Do not file a bug from a candidate that only has a fault-injected or state-mutating repro.
 -   Do not delete run dirs, lane dirs, or `.triage-watcher` while a run may be resumed.
 -   Keep every monitor action durable in `monitor-status.md`.

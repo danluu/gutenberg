@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="${RTC_FUZZ_ANALYSIS_REPO_ROOT:-}"
+
+for arg in "$@"; do
+	case "$arg" in
+		artifacts|./artifacts|artifacts/rtc-browser-fuzz|./artifacts/rtc-browser-fuzz|test/e2e/artifacts|./test/e2e/artifacts)
+			echo "rtc analysis guard: refusing broad find rooted at '$arg'" >&2
+			exit 64
+			;;
+	esac
+
+	if [ -n "$repo_root" ]; then
+		case "$arg" in
+			"$repo_root"/artifacts|"$repo_root"/artifacts/rtc-browser-fuzz|"$repo_root"/test/e2e/artifacts)
+				echo "rtc analysis guard: refusing broad find rooted at '$arg'" >&2
+				exit 64
+				;;
+		esac
+	fi
+done
+
+exec /usr/bin/find "$@"

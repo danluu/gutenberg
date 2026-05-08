@@ -11,7 +11,12 @@ const SCHEMA_PATH = path.join(
 	REPO_ROOT,
 	'bin/rtc-browser-deep-analysis-tier.schema.json'
 );
+const ANALYSIS_GUARD_BIN = path.join(
+	REPO_ROOT,
+	'bin/rtc-browser-fuzz-analysis-guard-bin'
+);
 const SHARED_PATH = [
+	ANALYSIS_GUARD_BIN,
 	path.join( REPO_ROOT, 'node_modules/.bin' ),
 	process.env.PATH,
 ]
@@ -131,9 +136,9 @@ async function readJsonIfPresent( filePath ) {
 
 async function writeJson( filePath, value ) {
 	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
-	const tmpPath = `${ filePath }.tmp-${ process.pid }-${ Date.now() }-${ Math.random()
-		.toString( 36 )
-		.slice( 2 ) }`;
+	const tmpPath = `${ filePath }.tmp-${
+		process.pid
+	}-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }`;
 	await fs.writeFile( tmpPath, JSON.stringify( value, null, 2 ) + '\n' );
 	await fs.rename( tmpPath, filePath );
 }
@@ -210,10 +215,8 @@ async function isTransientCodexStartupFailure( job ) {
 		return false;
 	}
 
-	return (
-		TRANSIENT_CODEX_STARTUP_PATTERNS.some( ( pattern ) =>
-			stderr.includes( pattern )
-		)
+	return TRANSIENT_CODEX_STARTUP_PATTERNS.some( ( pattern ) =>
+		stderr.includes( pattern )
 	);
 }
 
@@ -274,14 +277,18 @@ async function collectCandidates( sourceState, analysisState ) {
 				firstResult.classification
 			)
 		) {
-			relatedSummaries.push( {
-				hash: firstJob.hash,
-				classification: firstResult.classification,
-				confidence: firstResult.confidence,
-				action: firstResult.recommendedTriageAction,
-				distinctBugType: firstResult.distinctBugType,
-				duplicateOf: firstResult.isDuplicateOf,
-				summary: firstResult.summary,
+				relatedSummaries.push( {
+					hash: firstJob.hash,
+					classification: firstResult.classification,
+					confidence: firstResult.confidence,
+					userHitLikelihoodScore:
+						normalizeUserHitLikelihoodScore(
+							firstResult.userHitLikelihoodScore
+						),
+					action: firstResult.recommendedTriageAction,
+					distinctBugType: firstResult.distinctBugType,
+					duplicateOf: firstResult.isDuplicateOf,
+					summary: firstResult.summary,
 			} );
 		}
 	}
@@ -323,15 +330,33 @@ function sortCandidates( a, b ) {
 		return aAction - bAction;
 	}
 
-	const aConfidence =
-		confidencePriority[ a.firstResult.confidence ] ?? 3;
-	const bConfidence =
-		confidencePriority[ b.firstResult.confidence ] ?? 3;
+	const aConfidence = confidencePriority[ a.firstResult.confidence ] ?? 3;
+	const bConfidence = confidencePriority[ b.firstResult.confidence ] ?? 3;
 	if ( aConfidence !== bConfidence ) {
 		return aConfidence - bConfidence;
 	}
 
+	const aUserHitLikelihood = normalizeUserHitLikelihoodScore(
+		a.firstResult.userHitLikelihoodScore
+	);
+	const bUserHitLikelihood = normalizeUserHitLikelihoodScore(
+		b.firstResult.userHitLikelihoodScore
+	);
+	if ( aUserHitLikelihood !== bUserHitLikelihood ) {
+		return bUserHitLikelihood - aUserHitLikelihood;
+	}
+
 	return ( b.signature?.count ?? 0 ) - ( a.signature?.count ?? 0 );
+}
+
+function normalizeUserHitLikelihoodScore( value ) {
+	const parsed =
+		typeof value === 'number' ? value : Number.parseInt( value, 10 );
+	if ( ! Number.isInteger( parsed ) ) {
+		return 0;
+	}
+
+	return Math.max( 0, Math.min( 5, parsed ) );
 }
 
 function shouldDeepAnalyzeCandidate( candidate, job ) {
@@ -359,7 +384,11 @@ function shouldDeepAnalyzeCandidate( candidate, job ) {
 		return false;
 	}
 
-	return job.status === 'queued' || job.status === 'retry' || job.status === 'failed';
+	return (
+		job.status === 'queued' ||
+		job.status === 'retry' ||
+		job.status === 'failed'
+	);
 }
 
 async function launchQueuedDeepAnalysisJobs(
@@ -379,7 +408,12 @@ async function launchQueuedDeepAnalysisJobs(
 			continue;
 		}
 
-		if ( ! shouldDeepAnalyzeCandidate( candidate, state.jobs[ candidate.hash ] ) ) {
+		if (
+			! shouldDeepAnalyzeCandidate(
+				candidate,
+				state.jobs[ candidate.hash ]
+			)
+		) {
 			continue;
 		}
 
@@ -478,6 +512,8 @@ async function launchCodexDeepAnalysisJob(
 				...process.env,
 				PATH: SHARED_PATH,
 				RTC_FUZZ_DEEP_ANALYSIS_JOB_DIR: jobDir,
+				RTC_FUZZ_ANALYSIS_REPO_ROOT: REPO_ROOT,
+				RTC_FUZZ_ANALYSIS_RUN_DIR: RUN_DIR,
 			},
 			stdio: [
 				'ignore',
@@ -563,11 +599,21 @@ function buildCodexPrompt( sourceState, candidate, relatedSummaries, paths ) {
 		.slice( 0, 20 )
 		.map(
 			( summary ) =>
-				`- ${ summary.hash }: ${ summary.classification }/${ summary.confidence } action=${ summary.action } type=${ summary.distinctBugType } duplicateOf=${ summary.duplicateOf ?? 'none' } summary=${ summary.summary }`
+				`- ${ summary.hash }: ${ summary.classification }/${
+					summary.confidence
+				} userHitLikelihood=${
+					summary.userHitLikelihoodScore ?? 'unknown'
+				}/5 action=${ summary.action } type=${
+					summary.distinctBugType
+				} duplicateOf=${ summary.duplicateOf ?? 'none' } summary=${
+					summary.summary
+				}`
 		)
 		.join( '\n' );
 	const statusCounts = {};
-	for ( const sourceSignature of Object.values( sourceState.signatures ?? {} ) ) {
+	for ( const sourceSignature of Object.values(
+		sourceState.signatures ?? {}
+	) ) {
 		statusCounts[ sourceSignature.status ] =
 			( statusCounts[ sourceSignature.status ] ?? 0 ) + 1;
 	}
@@ -617,9 +663,10 @@ function buildCodexPrompt( sourceState, candidate, relatedSummaries, paths ) {
 		'Depth requirements:',
 		'1. Identify the smallest plausible failure mechanism and which layer owns it: Yjs/CRDT sync, provider transport, REST/persistence, editor data store, block serialization, rich text, or test harness.',
 		'2. Compare against related signatures and decide whether this is distinct, a duplicate family member, or a symptom of a broader root cause.',
-		'3. Actively look for false-positive explanations: timeout pressure, missing awareness, login/setup failure, helper direct state mutation, invalid fuzz operation, or expected conflict behavior.',
-		'4. If still plausibly real, describe realistic repros at every useful level. The Playwright plan must use real editor UI/user actions and real sync behavior, not route blocking, artificial fault injection, direct store mutation, or test-only state mutation.',
-		'5. If a realistic repro is not currently credible, say what additional loop/search should be delegated and exactly what would count as success.',
+		'3. Score user-hit likelihood as userHitLikelihoodScore from 0 to 5, where 0 means harness-only/not user-visible, 1 means very rare or developer-only, 2 means uncommon edge workflow, 3 means plausible normal collaborative editing workflow, 4 means common workflow or common content shape, and 5 means very likely in default/common use. Explain the score in userHitLikelihoodRationale.',
+		'4. Actively look for false-positive explanations: timeout pressure, missing awareness, login/setup failure, helper direct state mutation, invalid fuzz operation, or expected conflict behavior.',
+		'5. If still plausibly real, describe realistic repros at every useful level. The Playwright plan must use real editor UI/user actions and real sync behavior, not route blocking, artificial fault injection, direct store mutation, or test-only state mutation.',
+		'6. If a realistic repro is not currently credible, say what additional loop/search should be delegated and exactly what would count as success.',
 		'Output only JSON matching the schema.',
 	].join( '\n' );
 }
@@ -627,7 +674,9 @@ function buildCodexPrompt( sourceState, candidate, relatedSummaries, paths ) {
 async function runScanCycle() {
 	const sourceState = await readJson( TRIAGE_STATE_PATH, null );
 	if ( ! sourceState ) {
-		throw new Error( `Missing triage watcher state at ${ TRIAGE_STATE_PATH }` );
+		throw new Error(
+			`Missing triage watcher state at ${ TRIAGE_STATE_PATH }`
+		);
 	}
 
 	const analysisState = await readJson( ANALYSIS_STATE_PATH, null );
@@ -659,11 +708,13 @@ async function runScanCycle() {
 	process.stdout.write(
 		`[${ new Date().toISOString() }] sourceSignatures=${
 			Object.keys( sourceState.signatures ?? {} ).length
-		} firstLevelJobs=${ Object.keys( analysisState.jobs ?? {} ).length } candidates=${
-			candidates.length
-		} deepJobs=${ Object.keys( state.jobs ).length } active=${
-			getActiveJobHashes( state ).size
-		} counts=${ JSON.stringify( counts ) }\n`
+		} firstLevelJobs=${
+			Object.keys( analysisState.jobs ?? {} ).length
+		} candidates=${ candidates.length } deepJobs=${
+			Object.keys( state.jobs ).length
+		} active=${ getActiveJobHashes( state ).size } counts=${ JSON.stringify(
+			counts
+		) }\n`
 	);
 }
 
