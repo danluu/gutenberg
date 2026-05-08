@@ -88,7 +88,9 @@ function topLevelClientIds( doc: Y.Doc ): ( string | undefined )[] {
 
 function groupChildren( doc: Y.Doc, clientId: string ): string[] {
 	const blocks = postBlocks( doc ).toJSON() as Block[];
-	const matchedGroup = blocks.find( ( block ) => block.clientId === clientId );
+	const matchedGroup = blocks.find(
+		( block ) => block.clientId === clientId
+	);
 
 	return ( matchedGroup?.innerBlocks ?? [] ).map(
 		( block ) => block.attributes.content as string
