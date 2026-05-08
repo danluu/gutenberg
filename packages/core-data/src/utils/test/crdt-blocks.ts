@@ -445,6 +445,48 @@ describe( 'crdt-blocks', () => {
 			doc2.destroy();
 		} );
 
+		it( 'preserves a local append when the cached base already contains a remote append at the same position', () => {
+			const paragraph = ( clientId: string, content: string ): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+			const contents = () =>
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				);
+			const initialBlocks = [
+				paragraph( 'anchor', 'Anchor' ),
+				paragraph( 'tail', 'Tail' ),
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					...initialBlocks,
+					paragraph( 'remote-appended', 'Remote append' ),
+				],
+				null
+			);
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					...initialBlocks,
+					paragraph( 'local-appended', 'Local append' ),
+				],
+				null
+			);
+
+			expect( contents() ).toEqual( [
+				'Anchor',
+				'Tail',
+				'Remote append',
+				'Local append',
+			] );
+		} );
+
 		it( 'rebases a delayed list item move over a remote list item move', () => {
 			const createListBlock = ( itemOrder: string[] ): Block[] => [
 				{
