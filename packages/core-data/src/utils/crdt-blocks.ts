@@ -1098,6 +1098,86 @@ function mergeYBlocksByClientId(
 	}
 }
 
+function syncYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	cursorPosition: MergeCursorPosition,
+	baseBlocks?: Block[]
+): boolean {
+	const incomingClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( blocksToSync );
+
+	if ( ! incomingClientIds ) {
+		return false;
+	}
+
+	const currentClientIds = yblocks.toArray().map( getYBlockClientId );
+
+	if ( currentClientIds.some( ( clientId ) => ! clientId ) ) {
+		return false;
+	}
+
+	const currentSet = new Set( currentClientIds );
+
+	if ( currentSet.size !== currentClientIds.length ) {
+		return false;
+	}
+
+	const incomingSet = new Set( incomingClientIds );
+
+	for ( let index = yblocks.length - 1; index >= 0; index-- ) {
+		const clientId = getYBlockClientId( yblocks.get( index ) );
+
+		if ( ! clientId || ! incomingSet.has( clientId ) ) {
+			yblocks.delete( index, 1 );
+		}
+	}
+
+	for (
+		let targetIndex = 0;
+		targetIndex < incomingClientIds.length;
+		targetIndex++
+	) {
+		const targetClientId = incomingClientIds[ targetIndex ];
+
+		if (
+			targetIndex < yblocks.length &&
+			getYBlockClientId( yblocks.get( targetIndex ) ) ===
+			targetClientId
+		) {
+			continue;
+		}
+
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === targetClientId
+			);
+
+		if ( currentIndex === -1 ) {
+			yblocks.insert( targetIndex, [
+				createNewYBlock( blocksToSync[ targetIndex ] ),
+			] );
+			continue;
+		}
+
+		const reorderedBlock = createNewYBlock(
+			yblocks.get( currentIndex ).toJSON() as unknown as Block
+		);
+		yblocks.delete( currentIndex, 1 );
+		yblocks.insert( targetIndex, [ reorderedBlock ] );
+	}
+
+	mergeYBlocksByClientId(
+		yblocks,
+		blocksToSync,
+		cursorPosition,
+		baseBlocks
+	);
+
+	return true;
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -1144,6 +1224,19 @@ export function mergeCrdtBlocks(
 	}
 
 	reorderYBlocksByClientId( yblocks, blocksToSync );
+
+	if (
+		syncYBlocksByClientId(
+			yblocks,
+			blocksToSync,
+			cursorPosition,
+			previousBlocks
+		)
+	) {
+		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, localBlocksToSync );
+		return;
+	}
 
 	mergeCrdtBlocksIntoYBlocks(
 		yblocks,
