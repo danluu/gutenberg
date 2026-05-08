@@ -64,6 +64,14 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		const MAX_UPDATE_DATA_SIZE = MB_IN_BYTES;
 
 		/**
+		 * Maximum serialized update bytes returned for a room in one response.
+		 *
+		 * @since 7.0.0
+		 * @var int
+		 */
+		const MAX_RESPONSE_UPDATES_DATA_SIZE = 8 * MB_IN_BYTES;
+
+		/**
 		 * Sync update type: compaction.
 		 *
 		 * @since 7.0.0
@@ -581,8 +589,10 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 * } Response data for this room.
 		 */
 		private function get_updates( string $room, int $client_id, int $cursor, bool $is_compactor ): array {
-			$updates_after_cursor = $this->storage->get_updates_after_cursor( $room, $cursor );
+			$updates_after_cursor = $this->storage->get_updates_after_cursor( $room, $cursor, self::MAX_RESPONSE_UPDATES_DATA_SIZE );
 			$total_updates        = $this->storage->get_update_count( $room );
+			$end_cursor           = $this->storage->get_cursor( $room );
+			$has_more_updates     = $this->storage->has_more_updates( $room );
 
 			// Filter out this client's updates, except compaction updates.
 			$typed_updates = array();
@@ -597,10 +607,10 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				);
 			}
 
-			$should_compact = $is_compactor && $total_updates > self::COMPACTION_THRESHOLD;
+			$should_compact = $is_compactor && ! $has_more_updates && $total_updates > self::COMPACTION_THRESHOLD;
 
 			return array(
-				'end_cursor'     => $this->storage->get_cursor( $room ),
+				'end_cursor'     => $end_cursor,
 				'room'           => $room,
 				'should_compact' => $should_compact,
 				'total_updates'  => $total_updates,

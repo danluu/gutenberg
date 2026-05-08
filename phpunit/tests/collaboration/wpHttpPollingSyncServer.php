@@ -569,7 +569,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		wp_set_current_user( self::$editor_id );
 
 		$room        = $this->get_post_room();
-		$update_data = base64_encode( str_repeat( 'x', 384 * KB_IN_BYTES ) );
+		$update_data = base64_encode( str_repeat( 'x', 512 * KB_IN_BYTES ) );
 		$updates     = array();
 		for ( $i = 0; $i < 20; $i++ ) {
 			$updates[] = array(
