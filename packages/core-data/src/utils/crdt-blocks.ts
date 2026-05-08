@@ -78,6 +78,7 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 export type MergeCursorPosition = WPBlockSelection | null;
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -154,6 +155,74 @@ function makeBlocksSerializable( blocks: Block[] ): Block[] {
 			attributes: makeBlockAttributesSerializable( name, attributes ),
 			innerBlocks: makeBlocksSerializable( innerBlocks ),
 		};
+	} );
+}
+
+function getBlockClientId( block: Block ): string | undefined {
+	return 'string' === typeof block.clientId && block.clientId
+		? block.clientId
+		: undefined;
+}
+
+function getClientIdsIfEveryBlockHasUniqueId(
+	blocks: Block[]
+): string[] | null {
+	const ids: string[] = [];
+	const seenIds = new Set< string >();
+
+	for ( const block of blocks ) {
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId || seenIds.has( clientId ) ) {
+			return null;
+		}
+
+		ids.push( clientId );
+		seenIds.add( clientId );
+	}
+
+	return ids;
+}
+
+function removeRemotelyDeletedBlocks(
+	yblocks: YBlocks,
+	localBlocksToSync: Block[]
+): Block[] {
+	const previousBlocks = previousLocalBlocksCache.get( yblocks );
+
+	if ( ! previousBlocks ) {
+		return localBlocksToSync;
+	}
+
+	const localClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( localBlocksToSync );
+	const previousClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( previousBlocks );
+	const currentClientIds = getClientIdsIfEveryBlockHasUniqueId(
+		yblocks.toJSON() as Block[]
+	);
+
+	if ( ! localClientIds || ! previousClientIds || ! currentClientIds ) {
+		return localBlocksToSync;
+	}
+
+	const localClientIdSet = new Set( localClientIds );
+	const currentClientIdSet = new Set( currentClientIds );
+	const remotelyDeletedClientIds = new Set(
+		previousClientIds.filter(
+			( clientId ) =>
+				localClientIdSet.has( clientId ) &&
+				! currentClientIdSet.has( clientId )
+		)
+	);
+
+	if ( ! remotelyDeletedClientIds.size ) {
+		return localBlocksToSync;
+	}
+
+	return localBlocksToSync.filter( ( block ) => {
+		const clientId = getBlockClientId( block );
+		return ! clientId || ! remotelyDeletedClientIds.has( clientId );
 	} );
 }
 
@@ -434,8 +503,12 @@ export function mergeCrdtBlocks(
 		);
 	}
 
-	const incomingBlocksToSync =
+	const localBlocksToSync =
 		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const incomingBlocksToSync = removeRemotelyDeletedBlocks(
+		yblocks,
+		localBlocksToSync
+	);
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -648,6 +721,8 @@ export function mergeCrdtBlocks(
 		}
 		knownClientIds.add( clientId );
 	}
+
+	previousLocalBlocksCache.set( yblocks, localBlocksToSync );
 }
 
 /**
