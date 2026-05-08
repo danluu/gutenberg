@@ -238,3 +238,50 @@ Evidence video:
 
 The video stitches the source failure screenshots, source trace action route,
 known-fixes control failure, and rebased fixed-branch verification.
+
+## Pass 171 refresh
+
+Pass 171 rechecked the bug against the May 7 known-fixes base and rebased the
+PR branch onto current `origin/trunk`:
+
+- `origin/trunk`: `000ad18641c i18n: add context to table header/footer label (#78007)`.
+- Known-fixes base: `f256024286dd80a4c0e2579f658c109256abf648`.
+- Fresh known-fixes repro-only commit: `24bf4bc1fc2 Add RTC remote insert delete CRDT repro`.
+- Rebased PR branch head: `c1eb7ba2401 Advance RTC block merge base after remote delivery`.
+- Rebased PR commit order:
+  1. `c8e4cd4e63d Add RTC remote insert delete CRDT repro`
+  2. `e052b78556a Add WebSocket table delete Playwright repro`
+  3. `c1eb7ba2401 Advance RTC block merge base after remote delivery`
+
+Fresh known-fixes control:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache --testNamePattern='preserves a remote table insert|does not reintroduce a remote table|matches the source order|deletes delivered blocks while preserving unseen remote inserts'
+```
+
+Result on `f256024286d` plus the repro commit:
+
+- `preserves a remote table insert when a stale local snapshot edits another block`: PASS.
+- `does not reintroduce a remote table after that remote insert has become the local base`: FAIL; the CRDT block list still included `core/table`.
+- `matches the source order: collaborator paragraph, primary table, collaborator table delete`: FAIL; the primary document still included the table content.
+- `deletes delivered blocks while preserving unseen remote inserts in the same stale snapshot`: FAIL; the delivered-deleted paragraph remained next to the unseen table.
+
+Fresh verification on the rebased PR branch:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt.ts packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts
+git diff --check origin/trunk..HEAD
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 RTC_MANIFEST_WS_START_PORT=21176 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_98E7_REALISTIC_REPRO_DIR=/Users/danluu/dev/fuzz/gutenberg-bug-98e7f896ffb0/artifacts/pass-171/playwright-fixed-results npm run test:e2e -- test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts --project=chromium --workers=1
+```
+
+Results:
+
+- Focused repro unit file: PASS, 6 tests.
+- Existing CRDT block unit file: PASS, 71 tests.
+- Targeted JS lint: exit 0.
+- `git diff --check origin/trunk..HEAD`: exit 0.
+- Natural Playwright repro: PASS, 2 scenarios.
+- Pass-171 result JSONs showed `convergenceError: null` and no `core/table`
+  in either editor after deletion.
