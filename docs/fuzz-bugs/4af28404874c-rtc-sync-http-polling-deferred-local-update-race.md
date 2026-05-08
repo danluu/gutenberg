@@ -819,3 +819,53 @@ repro now runs cleanly in a correctly initialized `.wp-env.test.json`
 environment. The prerequisites remain active RTC in the post editor, the
 default HTTP polling transport, at least two users/tabs on the same post, and a
 remote update landing during a one-tick deferred local CRDT write window.
+
+## Pass 171 Current-Trunk and PR-Head Check
+
+Pass 171 rebased both branches onto current `origin/trunk`
+`69090de8aaf6cd5c458da874f39534c630f11ab7`
+(`Update Changelog for 23.1.1`). The commits between pass 170's base
+`c9c72087881e7e8c3887df4c9b0acf000ecba0c8` and this trunk head do not touch
+`packages/sync`, `packages/core-data/src/utils`, or the collaboration E2E
+specs, and current trunk still reads `handlers.getEditedRecord()` in
+`_updateEntityRecord()` without flushing the deferred local Y.Doc update queue.
+
+The PR branch still keeps the requested three-commit sequence:
+
+1. `baac193abf4 Add RTC deferred update race repro`
+2. `8a407b02f7b Add RTC stress Playwright repro`
+3. `bfaba9304e6 Flush RTC updates before remote reconciliation`
+
+Pass 171 re-ran the deterministic `SyncManager` repro after applying only the
+commit-1 test to these unfixed heads:
+
+- current `origin/trunk` `69090de8aaf6`
+- synthetic known-fixes base `f256024286dd`
+- individual proposed manager-touching PR heads `pr/77889`
+  `2a3963211ee`, `pr/77890` `bd511b424f1`, and `pr/77924` `1a46ebf162`
+
+All five heads fail the repro. Current trunk and `pr/77889`/`pr/77890` project
+the stale title back once:
+
+```diff
+  {
+    body: "Remote Body",
++   title: "Initial Title",
+  }
+```
+
+The synthetic known-fixes base fails with two `editRecord` calls, and `pr/77924`
+still projects the stale title despite its remote-key version scheduling tests.
+This handles the known-fixes manifest caveat directly: the conflicting open PR
+heads that changed `packages/sync/src/manager.ts` do not close this local
+happens-before gap on their own.
+
+The pass-171 practical likelihood classification remains `low`. The workflow
+is ordinary within the affected feature population - two users in the post
+editor, RTC enabled, default HTTP polling, normal typing or toolbar moves - but
+the feature is early access and the remote projection must overlap a
+one-event-loop-tick local CRDT write deferral. The strongest remaining
+confidence gap is empirical rate, not mechanism: the shortest useful additional
+experiment is still a repeated two-user browser loop on a small post to measure
+marker-loss frequency under default polling, optionally with small server
+response delay.
