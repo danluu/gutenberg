@@ -6,11 +6,15 @@ The original fuzz signature is a downstream `waitForResponse` timeout caused by 
 
 The May 7 known-fixes base adds useful input-side guards: a 16 MiB request-body limit, a 50-room request limit, and a 1 MiB encoded update-data limit. Those guards do not close the read-side failure mode. On current `origin/trunk`, `get_updates_after_cursor()` still selects every `wp_sync_update_data` row after the client's cursor, decodes every row, and only then lets the HTTP server filter updates for the response. A fresh or reloaded client with cursor `0` can therefore force the server to load and JSON-encode all retained history for each requested room.
 
+Pass 171 confirmed this independently on the May 7 known-fixes wp-env. A REST-level probe seeded 20 valid 512 KiB update payloads through `/wp-sync/v1/updates`, which stays under the 16 MiB request cap, then requested catch-up from a second client at cursor `0`. The server returned all 20 updates in one `200` response: `catch_updates=20`, `catch_total_updates=20`, and `catch_json_bytes=13981772` despite an intended 8 MiB response-update budget.
+
 ## Why This Matters
 
 The count-only compaction threshold does not bound bytes. A room can hold fewer than `COMPACTION_THRESHOLD` rows while still retaining many MiB of valid update data. The handoff describes exactly that shape: roughly 13.20 MiB retained after pruning, above the intended 8 MiB cap. With multiple rooms in one HTTP poll, response assembly can become much larger than either the request-body budget or PHP's practical memory headroom.
 
 The visible user impact is not a Playwright-only timeout. Users see collaboration disconnects and failed room catch-up. Saved post content was not shown corrupting in this signature, but collaboration state can fail to recover until persisted sync-room history is compacted or cleared.
+
+One important current-runtime caveat: the running wp-env for current WordPress loads `/var/www/html/wp-includes/collaboration/class-wp-sync-post-meta-storage.php`, not Gutenberg's compat copy. The pass-170 PR branch patches the Gutenberg compat class, which is the right shape for a backport/source fix, but the same change has to be mirrored into WordPress core's collaboration classes before it fixes current-trunk wp-env behavior.
 
 ## Practical Likelihood
 
