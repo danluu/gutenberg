@@ -1236,6 +1236,94 @@ describe( 'saveEntityRecord', () => {
 		);
 		expect( result ).toBe( updatedRecord );
 	} );
+
+	it( 'preserves save-time edits when a stale CRDT retry refetch drops them from the selected edited record', async () => {
+		const staleError = {
+			code: 'rest_crdt_document_stale',
+			data: { status: 409 },
+		};
+		const post = {
+			id: 10,
+			title: 'previous title',
+			content: 'previous content',
+			meta: {},
+		};
+		const record = {
+			id: 10,
+			title: 'local title',
+			content: 'local content',
+		};
+		const latestRecord = {
+			id: 10,
+			title: 'previous title',
+			content: 'previous content',
+			meta: { _crdt_document: 'server-crdt-doc' },
+		};
+		const selectedRecordAfterRefresh = {
+			id: 10,
+			title: 'local title',
+			content: 'previous content',
+			meta: {},
+		};
+		const updatedRecord = {
+			id: 10,
+			title: 'local title',
+			content: 'local content',
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const prePersist = jest
+			.fn()
+			.mockResolvedValueOnce( {
+				meta: { _crdt_document: 'stale-crdt-doc' },
+			} )
+			.mockResolvedValueOnce( {
+				meta: { _crdt_document: 'fresh-crdt-doc' },
+			} );
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				baseURLParams: { context: 'edit' },
+				syncConfig: {},
+				__unstablePrePersist: prePersist,
+			},
+		];
+		const select = {
+			getRawEntityRecord: jest.fn( () => post ),
+			getEditedEntityRecord: jest.fn( () => selectedRecordAfterRefresh ),
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn(),
+			update: jest.fn(),
+		};
+		getSyncManager.mockReturnValue( syncManager );
+		apiFetch
+			.mockRejectedValueOnce( staleError )
+			.mockResolvedValueOnce( latestRecord )
+			.mockResolvedValueOnce( updatedRecord );
+
+		await saveEntityRecord(
+			'postType',
+			'post',
+			record
+		)( {
+			select,
+			dispatch,
+			resolveSelect,
+		} );
+
+		expect( apiFetch ).toHaveBeenNthCalledWith( 3, {
+			path: '/wp/v2/posts/10',
+			method: 'PUT',
+			data: {
+				...selectedRecordAfterRefresh,
+				content: 'local content',
+				meta: { _crdt_document: 'fresh-crdt-doc' },
+			},
+		} );
+	} );
 } );
 
 describe( 'receiveUserPermission', () => {
