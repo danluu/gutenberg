@@ -65,8 +65,32 @@ function paragraph( clientId: string, content: string ): Block {
 	};
 }
 
+function group( clientId: string, innerBlocks: Block[] ): Block {
+	return {
+		name: 'core/group',
+		clientId,
+		attributes: {},
+		innerBlocks,
+	};
+}
+
 function contentsOf( yblocks: YBlocks ): string[] {
 	return ( yblocks.toJSON() as Block[] ).map(
+		( block ) => block.attributes.content as string
+	);
+}
+
+function topLevelClientIds( doc: Y.Doc ): ( string | undefined )[] {
+	return postBlocks( doc )
+		.toJSON()
+		.map( ( block ) => block.clientId );
+}
+
+function groupChildren( doc: Y.Doc, clientId: string ): string[] {
+	const blocks = postBlocks( doc ).toJSON() as Block[];
+	const matchedGroup = blocks.find( ( block ) => block.clientId === clientId );
+
+	return ( matchedGroup?.innerBlocks ?? [] ).map(
 		( block ) => block.attributes.content as string
 	);
 }
@@ -323,5 +347,77 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 
 		remoteDoc.destroy();
+	} );
+
+	it( 'preserves a remote move into a group when a stale local edit includes a base record', () => {
+		const movingPeer = new Y.Doc();
+		const stalePeer = new Y.Doc();
+		const movedParagraph = paragraph( 'moved', 'Moved paragraph' );
+		const initialBlocks = [
+			paragraph( 'local-edited', 'Alpha' ),
+			group( 'group', [
+				paragraph( 'group-alpha', 'Nested group paragraph alpha.' ),
+				paragraph( 'group-beta', 'Nested group paragraph beta.' ),
+			] ),
+			movedParagraph,
+			paragraph( 'tail', 'Tail' ),
+		];
+		const movedBlocks = [
+			paragraph( 'local-edited', 'Alpha' ),
+			group( 'group', [
+				movedParagraph,
+				paragraph( 'group-alpha', 'Nested group paragraph alpha.' ),
+				paragraph( 'group-beta', 'Nested group paragraph beta.' ),
+			] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleBlocks = [
+			paragraph( 'local-edited', 'Alpha local edit' ),
+			group( 'group', [
+				paragraph( 'group-alpha', 'Nested group paragraph alpha.' ),
+				paragraph( 'group-beta', 'Nested group paragraph beta.' ),
+			] ),
+			movedParagraph,
+			paragraph( 'tail', 'Tail' ),
+		];
+
+		applyPostChangesToCRDTDoc(
+			movingPeer,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+		Y.applyUpdate( stalePeer, Y.encodeStateAsUpdate( movingPeer ) );
+
+		applyPostChangesToCRDTDoc(
+			movingPeer,
+			{ blocks: movedBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+		Y.applyUpdate( stalePeer, Y.encodeStateAsUpdate( movingPeer ) );
+
+		applyPostChangesToCRDTDoc(
+			stalePeer,
+			{ blocks: staleBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+		Y.applyUpdate( movingPeer, Y.encodeStateAsUpdate( stalePeer ) );
+
+		for ( const doc of [ movingPeer, stalePeer ] ) {
+			expect( topLevelClientIds( doc ) ).toEqual( [
+				'local-edited',
+				'group',
+				'tail',
+			] );
+			expect( groupChildren( doc, 'group' ) ).toEqual( [
+				'Moved paragraph',
+				'Nested group paragraph alpha.',
+				'Nested group paragraph beta.',
+			] );
+		}
+
+		movingPeer.destroy();
+		stalePeer.destroy();
 	} );
 } );
