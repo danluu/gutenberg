@@ -9404,3 +9404,78 @@ that rollback. There is no evidence of duplicate content, save loops,
 performance risk, or OOM risk. Recovery is straightforward if noticed before a
 later save, because the source trace showed the canonical REST title had been
 saved correctly; recovery becomes harder after a subsequent stale-title save.
+
+## Pass 170 current known-fixes correction
+
+Pass 170 rechecked the bug on the current backlink-aware May 7 known-fixes base
+rather than the older May 5 refresh checkout:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507
+f256024286dd80a4c0e2579f658c109256abf648
+```
+
+The earlier pass-169 lower-level assertion is still true in a narrow API sense:
+that base does not implement this PR branch's explicit
+`createPersistedCRDTDoc( ..., { record } )` save-payload overlay, and a
+test-only sync-manager assertion expecting that API fails with:
+
+```text
+Expected: "Customer title"
+Received: "Initial title"
+```
+
+However, pass 170 found that this is no longer enough to claim the natural user
+workflow survives the current known-fixes base. The current base has additional
+stale-save protection in `prePersistPostType`: it fetches the latest persisted
+record, applies persisted CRDT state when needed, and uses the current CRDT
+record to reconcile locally changed raw saved fields. With the current
+known-fixes `build/` copied into the Docker-visible test worktree, the natural
+same-user title reload Playwright repro passed four consecutive times:
+
+```text
+npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-same-user-title-loss.spec.ts \
+  --project=chromium
+
+1 passed
+
+npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-same-user-title-loss.spec.ts \
+  --project=chromium \
+  --repeat-each=3
+
+3 passed
+```
+
+The fixed PR branch was rebased onto current `origin/trunk`
+`b57b0ae2291f504caf44018b18b3e412e8411acc` and still has the requested commit
+order:
+
+```text
+214b35e7370 Add RTC title reload unit repros
+a1d262cdd06 Add same-user title save-after-reload browser repro
+f4caa7a8927 Preserve RTC title across reload saves
+```
+
+The rebased PR branch's focused sync-manager checks passed:
+
+```text
+PASS packages/sync/src/test/manager.ts
+Tests: 26 skipped, 3 passed, 29 total
+```
+
+The same natural browser repro also passed after copying the existing fixed
+`build/` artifact into the Docker-visible test worktree:
+
+```text
+1 passed
+Collaboration - same user title loss › saves the active title after a same-user browser session reloads
+```
+
+Pass 170 therefore changes the current status from "survives all current
+known-fixes" to "historically real and still well explained, but the current
+backlink-aware known-fixes base appears to cover the natural user workflow." The
+PR branch remains a narrower hardening proposal for the save-payload
+serialization invariant, not required evidence that the browser workflow is
+still user-reachable on the current combined known-fixes base.
