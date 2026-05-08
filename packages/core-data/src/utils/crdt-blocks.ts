@@ -929,6 +929,76 @@ function rebaseYBlocksByClientId(
 	return true;
 }
 
+function areClientIdsEqual( a: string[], b: string[] ): boolean {
+	return (
+		a.length === b.length &&
+		a.every( ( value, index ) => value === b[ index ] )
+	);
+}
+
+function reconcileUnchangedBaseSnapshot(
+	yblocks: YBlocks,
+	baseBlocks: Block[] | undefined,
+	blocksToSync: Block[]
+): { baseBlocks: Block[]; blocksToSync: Block[] } | undefined {
+	if ( ! baseBlocks ) {
+		return;
+	}
+
+	const baseClientIds = getClientIdsIfEveryBlockHasUniqueId( baseBlocks );
+	const incomingClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( blocksToSync );
+	const currentBlocks = yblocks.toJSON() as Block[];
+	const currentClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( currentBlocks );
+
+	if (
+		! baseClientIds ||
+		! incomingClientIds ||
+		! currentClientIds ||
+		! areClientIdsEqual( baseClientIds, incomingClientIds )
+	) {
+		return;
+	}
+
+	const incomingBlocksByClientId = new Map(
+		blocksToSync.map( ( block ) => [ getBlockClientId( block ), block ] )
+	);
+	const baseBlocksByClientId = new Map(
+		baseBlocks.map( ( block ) => [ getBlockClientId( block ), block ] )
+	);
+	const reconciledBlocks: Block[] = [];
+	const reconciledBaseBlocks: Block[] = [];
+
+	currentBlocks.forEach( ( currentBlock ) => {
+		const clientId = getBlockClientId( currentBlock );
+
+		if ( ! clientId ) {
+			return;
+		}
+
+		const incomingBlock = incomingBlocksByClientId.get( clientId );
+
+		if ( incomingBlock ) {
+			reconciledBlocks.push( incomingBlock );
+			reconciledBaseBlocks.push(
+				baseBlocksByClientId.get( clientId ) ?? currentBlock
+			);
+			return;
+		}
+
+		if ( ! baseBlocksByClientId.has( clientId ) ) {
+			reconciledBlocks.push( currentBlock );
+			reconciledBaseBlocks.push( currentBlock );
+		}
+	} );
+
+	return {
+		baseBlocks: reconciledBaseBlocks,
+		blocksToSync: reconciledBlocks,
+	};
+}
+
 function mergeBlockIntoYBlock(
 	yblock: YBlock,
 	block: Block,
@@ -1125,11 +1195,18 @@ export function mergeCrdtBlocks(
 	const baseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
+	const reconciledSnapshot = reconcileUnchangedBaseSnapshot(
+		yblocks,
+		baseBlocksToSync,
+		localBlocksToSync
+	);
 	const previousBlocks =
-		baseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
-	const blocksToSync = baseBlocksToSync
+		reconciledSnapshot?.baseBlocks ??
+		baseBlocksToSync ??
+		previousLocalBlocksCache.get( yblocks );
+	const blocksToSync = reconciledSnapshot?.blocksToSync ?? ( baseBlocksToSync
 		? localBlocksToSync
-		: reconcileStaleLocalBlocks( yblocks, localBlocksToSync );
+		: reconcileStaleLocalBlocks( yblocks, localBlocksToSync ) );
 
 	if ( rebaseYBlocksByClientId( yblocks, previousBlocks, blocksToSync ) ) {
 		mergeYBlocksByClientId(
