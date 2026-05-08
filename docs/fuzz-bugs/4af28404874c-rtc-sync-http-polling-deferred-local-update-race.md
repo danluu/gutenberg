@@ -716,3 +716,106 @@ ordering can diverge, and a user can persist the bad state by saving. There is
 no evidence in the refreshed source trace of duplicate content, repeated HTTP
 500s, a save loop, or process OOM. The recovery path is user-visible correction,
 undo if still available, or revisions after save.
+
+## Pass 170 Current-Trunk and Clean E2E Verification
+
+Pass 170 rebased both branches onto current `origin/trunk`
+`c9c72087881e7e8c3887df4c9b0acf000ecba0c8`
+(`Dashboard: REST endpoint for the default layout (#78066)`). That trunk commit
+touches dashboard files and `package-lock.json`, not RTC sync or collaboration
+code, so it does not change the root-cause analysis.
+
+The PR branch still keeps the requested three-commit sequence:
+
+1. `38c9b03db7a Add RTC deferred update race repro`
+2. `3766b03faa0 Add RTC stress Playwright repro`
+3. `661c86b26b1 Flush RTC updates before remote reconciliation`
+
+Pass 170 re-ran the deterministic repro against the current May 7
+backlink-aware known-fixes base:
+
+```bash
+base=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507
+pr=/Users/danluu/dev/fuzz/gutenberg-bug-4af28404874c
+tmp=$(mktemp -d /private/tmp/4af28404874c-pass170-knownfix.XXXXXX)
+repo="$tmp/repo"
+git -C "$base" worktree add --detach "$repo" HEAD
+ln -s "$base/node_modules" "$repo/node_modules" 2>/dev/null || true
+ln -s "$base/packages/sync/node_modules" "$repo/packages/sync/node_modules" 2>/dev/null || true
+git -C "$pr" show --format= --binary 38c9b03db7a -- \
+  packages/sync/src/test/manager.ts > "$tmp/manager-test.patch"
+git -C "$repo" apply "$tmp/manager-test.patch"
+cd "$repo"
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: FAIL on known-fixes head `f256024286dd`. The fresh failure is
+`Expected number of calls: 1; Received number of calls: 2`, which independently
+confirms that the current proposed remote-key reconciliation stack still does
+not establish the missing local-update-before-remote-projection ordering.
+
+The rebased fixed PR branch passed the focused repro and broader local checks:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
+
+npm run lint:js -- \
+  packages/sync/src/manager.ts \
+  packages/sync/src/test/manager.ts \
+  packages/core-data/src/utils/test/crdt-blocks.ts \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts
+```
+
+Results: PASS, PASS, PASS, PASS.
+
+Pass 170 also started the clean E2E test environment with `.wp-env.test.json`
+on the requested port:
+
+```bash
+WP_ENV_PORT=10007 \
+WP_BASE_URL=http://localhost:10007 \
+RTC_MANIFEST_WS_START_PORT=21256 \
+RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run wp-env-test start
+```
+
+The first Playwright retry exposed a repro-harness issue rather than an RTC
+failure: the joined user's welcome guide intercepted the click on the shared
+paragraph. The Playwright helper was corrected to use the same
+`Editor.setPreferences()` path for joined users that the primary editor already
+uses. After folding that correction into commit 2, the natural-user browser
+repro passed on the fixed branch:
+
+```bash
+WP_ENV_PORT=10007 \
+WP_BASE_URL=http://localhost:10007 \
+RTC_MANIFEST_WS_START_PORT=21256 \
+RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  --project=chromium --workers=1 \
+  --grep "two users preserve simultaneous paragraph edits"
+```
+
+Result: PASS, 1/1 test. This strengthens the browser evidence for the committed
+repro: on a clean test environment it exercises normal two-user editor actions
+and the fixed branch preserves both typed paragraph markers.
+
+The practical likelihood classification remains `low`. Pass 170's main change
+is confidence, not severity: the lowest deterministic test still fails on the
+current known-fixes base; the rebased fix still passes; and the natural browser
+repro now runs cleanly in a correctly initialized `.wp-env.test.json`
+environment. The prerequisites remain active RTC in the post editor, the
+default HTTP polling transport, at least two users/tabs on the same post, and a
+remote update landing during a one-tick deferred local CRDT write window.
