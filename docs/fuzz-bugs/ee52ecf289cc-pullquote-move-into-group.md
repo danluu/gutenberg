@@ -1,0 +1,129 @@
+# RTC Pullquote Move Into Group Can Preserve a Stale Top-Level Copy
+
+Bug signature: `ee52ecf289cc`
+
+Bug type: `rtc_pullquote_move_into_group_leaves_stale_top_level_pullquote`
+
+## Summary
+
+The fuzzer reported a collaboration divergence where one peer sees a Pullquote
+moved inside a Group while another peer keeps a stale top-level copy of the same
+Pullquote. The deterministic CRDT-level reconstruction is real on `origin/trunk`:
+if a remote peer moves a block into a Group and the local peer later submits a
+full stale block snapshot from before that move, `mergeCrdtBlocks` treats the
+stale top-level Pullquote as local structure and reintroduces it.
+
+I could not make the natural Playwright scenario fail in this pass. Real user
+likelihood is therefore low for the current browser flow, but the merge failure
+is a product-code correctness issue in the RTC block CRDT path and the failure
+shape matches the historical fuzz artifact family.
+
+## Natural Workflow
+
+The plausible user workflow is:
+
+1. Two collaborators edit the same post with RTC enabled over the HTTP transport.
+2. The post contains a Group and a Pullquote, or one collaborator inserts a
+   Pullquote while another has the same document open.
+3. One collaborator moves the Pullquote into the Group.
+4. Another collaborator's editor submits a stale full block snapshot whose
+   top-level structure still has the Pullquote outside the Group.
+
+No malformed block HTML or invalid block tree is required. The rare prerequisite
+is the stale full-snapshot timing: the block editor and sync manager have to race
+so that an older local block tree is merged after the Yjs document already
+contains the remote reparenting.
+
+## Impact
+
+The observed failure is duplicate or stale content, not a crash. If the corrupted
+CRDT state is saved, users can persist a duplicate Pullquote or lose the intended
+top-level structure around the Group/Pullquote move. Recovery is manual: reload
+or delete the stale duplicate if the state has not already been saved, otherwise
+edit the content back into shape. I saw no evidence of a save loop, performance
+spiral, or OOM risk.
+
+## Root Cause
+
+Gutenberg RTC syncs blocks by repeatedly merging full block snapshots into a Yjs
+array in `mergeCrdtBlocks`. The merge code correctly handles current snapshots,
+but before the known stale-snapshot fix it has no base tree for deciding whether
+top-level additions/deletions are local intent or a stale view of remote
+structure.
+
+For this bug, the relevant sequence is:
+
+1. The local Yjs document starts as:
+   `Pullquote(pullquote-client-id), Group(group-client-id)`.
+2. A remote Yjs update changes the document to:
+   `Group(group-client-id)[Pullquote(pullquote-client-id)]`.
+3. The local editor then emits its old snapshot:
+   `Pullquote(pullquote-client-id), Group(group-client-id)`.
+4. The old merge logic sees the top-level Pullquote in the incoming snapshot and
+   preserves/reinserts it, even though that block was the same logical block that
+   remote sync had just moved inside the Group.
+
+`git blame` points the original block merge implementation around
+`mergeCrdtBlocks` to the initial RTC block CRDT work. The stale-snapshot
+reconciliation in proposed fix commit `5bda437f0cc4` (`Preserve saved content
+from stale editor snapshots`) is the relevant fix family. The current
+known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` fixes the direct
+no-base reconstruction, though an integration path with explicit base blocks
+still needs care.
+
+## Fix Plan
+
+Track the last local block snapshot for each Yjs block array. Before merging a
+new local snapshot, compare:
+
+- the last local snapshot,
+- the current Yjs snapshot,
+- the incoming local snapshot.
+
+If a block has the same stable `clientId` in all three snapshots and the incoming
+copy has not changed relative to the last local copy, prefer the current Yjs copy
+so remote structural moves are retained. If a block existed locally and
+previously but no longer exists in the current Yjs snapshot, treat that as a
+remote deletion unless the local copy changed. Insert current remote-only blocks
+back into the outgoing snapshot near their current neighbors so unrelated remote
+inserts are not dropped by the full-array merge.
+
+The guard only runs when all blocks in the compared arrays have unique
+`clientId`s. If the merge cannot prove identity, it falls back to the existing
+behavior.
+
+## Robustness Review
+
+Kernel-maintainer view: the fix keeps the old path as fallback when identity is
+ambiguous, avoids global mutable state by keying cache entries to the Yjs block
+array, and adds a deterministic unit repro for the exact stale reparent shape.
+
+Distributed-systems view: this is an operation/base problem. Full snapshots are
+not causally annotated, so the merge has to infer whether a snapshot is stale.
+Using the last local snapshot gives the merge a local base and prevents an old
+snapshot from overwriting concurrent remote structural edits that the local user
+did not actually change.
+
+Simplicity/performance view: the code adds several linear scans over the block
+tree and maps by `clientId`. That is more code than ideal, but it is confined to
+RTC block merging, avoids parsing serialized HTML, and only pays the extra cost
+when syncing full block snapshots.
+
+## Verification
+
+Focused unit repro added:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-pullquote-move-into-group.test.ts -- --runTestsByPath --runInBand
+```
+
+Existing CRDT suite:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runTestsByPath --runInBand
+```
+
+Natural browser coverage was added for two collaborators inserting, editing, and
+moving a Pullquote into a Group. It passed both before and after the source fix
+in this pass, so it is coverage for the workflow, not a confirmed browser-level
+reproduction.
