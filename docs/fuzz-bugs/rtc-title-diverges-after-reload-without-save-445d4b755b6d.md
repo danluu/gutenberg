@@ -116,9 +116,34 @@ Tests: 3 failed, 54 skipped, 10 passed, 67 total
 Two failures are expectation drift in the mocked sync origin. The important
 resolver failure shows the conflict-integrated `persistCRDTDoc` path saving only
 `{ id, meta }` where the title-preservation test expected the current edited
-record. Browser verification on port `9903` was blocked by Docker returning EOF
-while starting `wp-env`, so the synthetic base should not be treated as a clean
-fix verification for this family.
+record. That still means the synthetic base should not be treated as a clean fix
+verification for this family without checking the relevant PR head directly.
+
+## Pass 171 Verification
+
+Pass 171 rechecked the existing PR branch after replacing the shared
+`node_modules` symlink with a local install, because the shared install resolved
+package symlinks back into the known-fixes checkout. With local package links,
+`npm run build` passed.
+
+The browser repro commit was also corrected to use the collaboration fixture API
+available on `origin/trunk`: it now waits through visible body convergence,
+explicit sync cycles, entity readiness/save settling, and mutual discovery
+instead of calling the newer `waitForConvergence` helper from the synthetic
+known-fixes stack.
+
+Verified commands on the PR branch:
+
+```text
+npm run build
+node ./tools/eslint/lint-js.cjs --config eslint.config.cjs test/e2e/specs/editor/collaboration/collaboration-title-reload-divergence.spec.ts
+git diff --check
+WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 RTC_MANIFEST_WS_START_PORT=20424 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload-divergence.spec.ts --project=chromium
+```
+
+The standard Chromium E2E repro passed in 24.7 seconds on the fixed branch. A
+separate video-enabled run produced a Playwright video, final screenshots,
+trace, and an annotated stitched MP4 under the pass-171 artifact directory.
 
 ## Root Cause
 
