@@ -132,7 +132,8 @@ explicit sync cycles, entity readiness/save settling, and mutual discovery
 instead of calling the newer `waitForConvergence` helper from the synthetic
 known-fixes stack.
 
-Verified commands on the PR branch:
+The PR branch was then rebased onto current `origin/trunk` (`2f319f2c353`) and
+the key checks were rerun. Verified commands on the rebased PR branch:
 
 ```text
 npm run build
@@ -141,7 +142,7 @@ git diff --check
 WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 RTC_MANIFEST_WS_START_PORT=20424 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-title-reload-divergence.spec.ts --project=chromium
 ```
 
-The standard Chromium E2E repro passed in 24.7 seconds on the fixed branch. A
+The standard Chromium E2E repro passed in 26.2 seconds on the fixed branch. A
 separate video-enabled run produced a Playwright video, final screenshots,
 trace, and an annotated stitched MP4 under the pass-171 artifact directory.
 
