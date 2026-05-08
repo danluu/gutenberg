@@ -30,6 +30,13 @@ function addTitleToAutoDraft( record ) {
 	return record.status === 'auto-draft' ? { ...record, title: '' } : record;
 }
 
+function isStaleCRDTDocumentError( error ) {
+	return (
+		error?.code === 'rest_crdt_document_stale' &&
+		error?.data?.status === 409
+	);
+}
+
 /**
  * Returns an action object used in signalling that authors have been received.
  * Ignored from documentation as it's internal to the data store.
@@ -462,7 +469,7 @@ export const editEntityRecord =
 				objectId,
 				editsWithMerges,
 				origin,
-				{ isNewUndoLevel }
+				{ baseRecord: editedRecord, isNewUndoLevel }
 			);
 		}
 		if ( ! options.undoIgnore ) {
@@ -585,29 +592,33 @@ export const __unstableCreateUndoLevel =
 /**
  * Action triggered to save an entity record.
  *
- * @param {string}   kind                         Kind of the received entity.
- * @param {string}   name                         Name of the received entity.
- * @param {Object}   record                       Record to be saved.
- * @param {Object}   options                      Saving options.
- * @param {boolean}  [options.isAutosave=false]   Whether this is an autosave.
- * @param {Function} [options.__unstableFetch]    Internal use only. Function to
- *                                                call instead of `apiFetch()`.
- *                                                Must return a promise.
- * @param {boolean}  [options.throwOnError=false] If false, this action suppresses all
- *                                                the exceptions. Defaults to false.
+ * @param {string}   kind                                     Kind of the received entity.
+ * @param {string}   name                                     Name of the received entity.
+ * @param {Object}   record                                   Record to be saved.
+ * @param {Object}   options                                  Saving options.
+ * @param {boolean}  [options.isAutosave=false]               Whether this is an autosave.
+ * @param {Function} [options.__unstableFetch]                Internal use only. Function to
+ *                                                            call instead of `apiFetch()`.
+ *                                                            Must return a promise.
+ * @param {boolean}  [options.__unstableSkipSyncUpdate=false] Whether to mark
+ *                                                            synced entities
+ *                                                            as saved without
+ *                                                            applying the
+ *                                                            server response to
+ *                                                            the CRDT.
+ * @param {boolean}  [options.throwOnError=false]             If false, this action suppresses all
+ *                                                            the exceptions. Defaults to false.
  */
 export const saveEntityRecord =
-	(
-		kind,
-		name,
-		record,
-		{
+	( kind, name, record, options = {} ) =>
+	async ( { select, resolveSelect, dispatch } ) => {
+		const {
 			isAutosave = false,
 			__unstableFetch = apiFetch,
+			__unstableSkipSyncUpdate = false,
 			throwOnError = false,
-		} = {}
-	) =>
-	async ( { select, resolveSelect, dispatch } ) => {
+		} = options;
+
 		logEntityDeprecation( kind, name, 'saveEntityRecord' );
 		const configs = await resolveSelect.getEntitiesConfig( kind );
 		const entityConfig = configs.find(
@@ -688,6 +699,22 @@ export const saveEntityRecord =
 					// is intentionally excluded to avoid stale values
 					// overriding reverted fields.
 					const merged = { ...persistedRecord, ...record };
+
+					// The persisted CRDT document is managed through explicit
+					// saves (which call __unstablePrePersist to serialize a
+					// fresh copy). Autosaves carry a stale copy from the last
+					// server response and will either be rejected by the
+					// server's version check or, worse, overwrite a newer
+					// document. Strip it so autosaves don't touch sync data.
+					if ( merged.meta ) {
+						const {
+							/* eslint-disable-next-line camelcase */
+							_crdt_document,
+							...metaWithoutCRDT
+						} = merged.meta;
+						merged.meta = metaWithoutCRDT;
+					}
+
 					const data = [
 						'title',
 						'excerpt',
@@ -769,21 +796,80 @@ export const saveEntityRecord =
 						);
 					}
 				} else {
-					let edits = record;
-					if ( entityConfig.__unstablePrePersist ) {
-						edits = {
-							...edits,
-							...( await entityConfig.__unstablePrePersist(
-								persistedRecord,
-								edits
-							) ),
-						};
+					const prepareEdits = async (
+						baseRecord,
+						recordToPersist
+					) => {
+						let edits = recordToPersist;
+						if ( entityConfig.__unstablePrePersist ) {
+							edits = {
+								...edits,
+								...( await entityConfig.__unstablePrePersist(
+									baseRecord,
+									edits
+								) ),
+							};
+						}
+						return edits;
+					};
+
+					let edits = await prepareEdits(
+						persistedRecord,
+						record
+					);
+					try {
+						updatedRecord = await __unstableFetch( {
+							path,
+							method: recordId ? 'PUT' : 'POST',
+							data: edits,
+						} );
+					} catch ( _error ) {
+						const syncManager = getSyncManager();
+						if (
+							! recordId ||
+							! entityConfig.syncConfig ||
+							! isStaleCRDTDocumentError( _error ) ||
+							! syncManager?.applyPersistedCRDTDoc
+						) {
+							throw _error;
+						}
+
+						const latestRecordPath = entityConfig.baseURLParams
+							? addQueryArgs( path, entityConfig.baseURLParams )
+							: path;
+						const latestRecord = await __unstableFetch( {
+							path: latestRecordPath,
+						} );
+						dispatch.receiveEntityRecords(
+							kind,
+							name,
+							latestRecord,
+							undefined,
+							true
+						);
+
+						await syncManager.applyPersistedCRDTDoc(
+							`${ kind }/${ name }`,
+							recordId,
+							latestRecord
+						);
+
+						const mergedRecord =
+							select.getEditedEntityRecord?.(
+								kind,
+								name,
+								recordId
+							) || record;
+						edits = await prepareEdits(
+							latestRecord,
+							mergedRecord
+						);
+						updatedRecord = await __unstableFetch( {
+							path,
+							method: 'PUT',
+							data: edits,
+						} );
 					}
-					updatedRecord = await __unstableFetch( {
-						path,
-						method: recordId ? 'PUT' : 'POST',
-						data: edits,
-					} );
 					dispatch.receiveEntityRecords(
 						kind,
 						name,
@@ -798,7 +884,7 @@ export const saveEntityRecord =
 						getSyncManager()?.update(
 							`${ kind }/${ name }`,
 							recordId,
-							updatedRecord,
+							__unstableSkipSyncUpdate ? {} : updatedRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);

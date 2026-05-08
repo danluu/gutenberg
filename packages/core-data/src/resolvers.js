@@ -240,20 +240,24 @@ export const getEntityRecord =
 							resolveSelect
 								.getEditedEntityRecord( kind, name, key )
 								.then( ( editedRecord ) => {
-									// Don't persist the CRDT document if the record is still an
-									// auto-draft or if the entity does not support meta.
 									const { meta, status } = editedRecord;
 									if ( 'auto-draft' === status || ! meta ) {
 										return;
 									}
 
-									// Trigger a save to persist the CRDT document. The entity's
-									// pre-persist hooks will create the persisted CRDT document
-									// and apply it to the record's meta.
+									const entityIdKey =
+										entityConfig.key || DEFAULT_ENTITY_KEY;
+
 									dispatch.saveEntityRecord(
 										kind,
 										name,
-										editedRecord
+										{
+											[ entityIdKey ]:
+												editedRecord[ entityIdKey ] ??
+												key,
+											meta,
+										},
+										{ __unstableSkipSyncUpdate: true }
 									);
 								} );
 						},

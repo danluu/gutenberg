@@ -119,8 +119,13 @@ export interface CollectionHandlers {
 }
 
 export interface SyncManagerUpdateOptions {
+	baseRecord?: ObjectData;
 	isSave?: boolean;
 	isNewUndoLevel?: boolean;
+}
+
+export interface CreatePersistedCRDTDocOptions {
+	basePersistedCRDTDoc?: string | null;
 }
 
 export interface RecordHandlers {
@@ -139,7 +144,8 @@ export interface RecordHandlers {
 export interface SyncConfig {
 	applyChangesToCRDTDoc: (
 		ydoc: Y.Doc,
-		changes: Partial< ObjectData >
+		changes: Partial< ObjectData >,
+		options?: SyncManagerUpdateOptions
 	) => void;
 	createAwareness?: (
 		ydoc: Y.Doc,
@@ -157,10 +163,20 @@ export interface SyncConfig {
 }
 
 export interface SyncManager {
+	applyPersistedCRDTDoc: (
+		objectType: ObjectType,
+		objectId: ObjectID,
+		record: ObjectData
+	) => Promise< boolean >;
 	createPersistedCRDTDoc: (
 		objectType: ObjectType,
-		objectId: ObjectID
+		objectId: ObjectID,
+		options?: CreatePersistedCRDTDocOptions
 	) => Promise< string | null >;
+	getCRDTRecordData: (
+		objectType: ObjectType,
+		objectId: ObjectID
+	) => ObjectData | undefined;
 	getAwareness: < State extends Awareness >(
 		objectType: ObjectType,
 		objectId: ObjectID
