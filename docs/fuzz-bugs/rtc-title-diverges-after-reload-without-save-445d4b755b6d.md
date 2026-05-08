@@ -132,7 +132,7 @@ explicit sync cycles, entity readiness/save settling, and mutual discovery
 instead of calling the newer `waitForConvergence` helper from the synthetic
 known-fixes stack.
 
-The PR branch was then rebased onto current `origin/trunk` (`2f319f2c353`) and
+The PR branch was then rebased onto then-current `origin/trunk` (`2f319f2c353`) and
 the key checks were rerun. Verified commands on the rebased PR branch:
 
 ```text
@@ -145,6 +145,32 @@ WP_ENV_PORT=9903 WP_BASE_URL=http://localhost:9903 RTC_MANIFEST_WS_START_PORT=20
 The standard Chromium E2E repro passed in 26.2 seconds on the fixed branch. A
 separate video-enabled run produced a Playwright video, final screenshots,
 trace, and an annotated stitched MP4 under the pass-171 artifact directory.
+
+## Pass 172 Verification
+
+Pass 172 rebased the PR branch again onto `origin/trunk` `26ba26ff7dd` while
+preserving the requested three-commit order:
+
+```text
+a991843fd91 Add RTC title reload unit repros
+21b84ab1caf Add RTC title reload browser repro
+73f28dbb74d Preserve RTC title across reload saves
+```
+
+The current known-fixes base still fails the focused resolver regression that
+guards this bug family:
+
+```text
+cd /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507
+npm run test:unit -- packages/core-data/src/test/resolvers.js --runInBand --testNamePattern='persistCRDTDoc does not replay a stale save response into the sync document'
+
+FAIL packages/core-data/src/test/resolvers.js
+Expected save payload title: "Synced Title"
+Received save payload: { id: 1, meta: {} }
+```
+
+On the refreshed PR branch, the focused lower-level checks passed again, as did
+the browser-repro eslint check, `git diff --check`, and `npm run build`.
 
 ## Root Cause
 
