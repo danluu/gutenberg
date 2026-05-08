@@ -285,3 +285,46 @@ Results:
 - Natural Playwright repro: PASS, 2 scenarios.
 - Pass-171 result JSONs showed `convergenceError: null` and no `core/table`
   in either editor after deletion.
+
+## Pass 172 refresh
+
+Pass 172 rebased both requested branches onto current `origin/trunk` again:
+
+- `origin/trunk`: `dc3bc7decd0 Add missing Portal Storybook subcomponents (#78108)`.
+- Explanation branch head before this documentation update: `2f21b7bb42a Refresh RTC table delete reintroduction analysis`.
+- PR branch head: `52b35aed841 Advance RTC block merge base after remote delivery`.
+- PR branch commit order:
+  1. `1e036e38e8a Add RTC remote insert delete CRDT repro`
+  2. `44402e6c6de Add WebSocket table delete Playwright repro`
+  3. `52b35aed841 Advance RTC block merge base after remote delivery`
+
+Pass 172 reran the known-fixes control on the required May 7 base
+`f256024286d` plus only the repro commit `24bf4bc1fc2`. The unseen remote
+table insert preservation case still passed, while the three delivered-delete
+cases still failed:
+
+- delivered remote table delete returned an extra `core/table`;
+- source-order collaborator paragraph, primary table, collaborator delete ended
+  with the table content still present;
+- mixed delivered-delete plus unseen-insert kept the delivered-deleted
+  paragraph.
+
+Fresh verification on the pass-172 rebased PR branch:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt.ts packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts
+git diff --check origin/trunk..HEAD
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 RTC_MANIFEST_WS_START_PORT=21176 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_98E7_REALISTIC_REPRO_DIR=/Users/danluu/dev/fuzz/gutenberg-bug-98e7f896ffb0/artifacts/pass-172/playwright-fixed-results npm run test:e2e -- test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts --project=chromium --workers=1
+```
+
+Results:
+
+- Focused repro unit file: PASS, 6 tests.
+- Existing CRDT block unit file: PASS, 71 tests.
+- Targeted JS lint: exit 0.
+- `git diff --check origin/trunk..HEAD`: exit 0.
+- Natural Playwright repro: PASS, 2 scenarios.
+- Pass-172 result JSONs showed `convergenceError: null`, matching block-name
+  arrays, and no `core/table` in either editor after deletion.
