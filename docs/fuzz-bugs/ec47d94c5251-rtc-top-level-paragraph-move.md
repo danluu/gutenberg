@@ -2062,3 +2062,92 @@ supports reachability on the current known-fixes base, but it does not raise
 frequency: real users still need active RTC collaboration in the post editor,
 two editors touching the same nearby top-level block list, and a stale or
 cache-hidden full snapshot around delete, insert-before, and move-down.
+
+## Pass 170 current known-fixes recheck
+
+Pass 170 narrows the current May 7 known-fixes status and downgrades the
+practical risk for the integrated known-fixes base.
+
+The current known-fixes base remains:
+
+```text
+f256024286dd80a4c0e2579f658c109256abf648
+Integrate RTC known-fix stack
+```
+
+A fresh detached worktree of that exact SHA was tested with a smaller
+pass-170-only unit repro. The two-doc stale full-snapshot echo that models a
+normal Yjs remote move now passes on current known-fixes. The only failing
+check is the object-identity cache control, where the same JavaScript block
+array object is mutated from `inserted, emoji, another` to `inserted, another,
+emoji` and passed to `mergeCrdtBlocks()` again:
+
+```text
+FAIL packages/core-data/src/utils/test/ec47-pass170-knownfix-current.test.ts
+
+preserves a later remote move when a peer emits its stale pre-move snapshot:
+PASS
+
+observes a top-level reorder even when the editor reuses the same block array object:
+Expected: [ "Inserted paragraph", "Another paragraph", "Emoji and multibyte" ]
+Received: [ "Inserted paragraph", "Emoji and multibyte", "Another paragraph" ]
+```
+
+The natural Playwright repro was then run against the same current known-fixes
+code on the requested HTTP port. The first attempt used the regular
+`.wp-env.json` environment and failed before browser actions because the e2e
+RTC websocket test plugin was not mounted. After restarting with
+`.wp-env.test.json`, the same natural-toolbar spec passed:
+
+```text
+WP_ENV_PORT=10030 WP_BASE_URL=http://localhost:10030 \
+RTC_MANIFEST_WS_START_PORT=21440 RTC_MANIFEST_WS_FIXED_PORT=1 \
+RTC_EC47_OUTPUT_DIR=.../pass-170/work/ec47-current-knownfix.8pVz1b/browser-output \
+npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts --project=chromium
+
+1 passed
+```
+
+The saved attempt JSON shows both editors converged to:
+
+```text
+RTC ec47 realistic inserted paragraph 1
+Another paragraph exists so the top-level list is not degenerate.
+Emoji and multibyte: hi 👋🏼, cafe, naive, こんにちは, مرحبا.
+```
+
+This is a material correction to the pass-169 risk assessment. The historical
+archived source run is still a real product bug on the older stack, and the PR
+branch's cache-removal fix still closes a real defensive gap in
+`mergeCrdtBlocks()`. But under the current backlink-aware known-fixes base, the
+ordinary delete, add-before, and move-down workflow is no longer reproduced at
+the unit fresh-array level or the browser natural-action level.
+
+Practical-impact classification for current known-fixes is therefore
+`very-low`, not `low`. A real user would need active RTC collaboration and the
+same nearby top-level edit pattern, plus an unproven product path that reuses
+the exact same top-level block array object after reordering it in place. Code
+inspection of the ordinary post-editor path argues against that being common:
+`useBlockSync()` sends `getBlocks()` output to `editEntityRecord()`, while the
+block-editor reducer rebuilds the root `innerBlocks` array when toolbar move
+actions update block order. The remaining same-array test is still useful as a
+robustness regression, but pass 170 did not prove it is hit by normal toolbar
+editing on the current known-fixes base.
+
+The shortest experiment that would most improve confidence is an instrumented
+current-known-fixes browser run that logs, for every `mergeCrdtBlocks()` call,
+the incoming block-array object identity, clientId order, and call origin
+during 100-200 randomized repetitions of delete, insert-before, move, drag,
+undo, redo, and list-view reorder actions. That would directly answer whether
+the residual same-array cache hazard is product-reachable.
+
+Fresh pass-170 fixed-branch verification after rebasing onto current
+`origin/trunk` `c9c72087881`:
+
+- The PR branch still has the requested three commits: non-Playwright repros,
+  natural-user Playwright repro, then fix.
+- The focused three-test CRDT command passes on the PR branch.
+- The full `packages/core-data/src/utils/test/crdt-blocks.ts` suite passes
+  (`78 passed`).
+- JS lint for the touched source, unit-test, and Playwright spec files passes.
+- `git diff --check HEAD~3..HEAD` passes.
