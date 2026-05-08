@@ -249,7 +249,7 @@ cleanup_transient_startup_failures() {
 		log_file="$log_dir/deep-pass-$pass-$sig.log"
 		[ -f "$log_file" ] || continue
 		exit_code="$(cat "$dir/$sig.exit" 2>/dev/null || true)"
-		if grep -Eq 'Failed to load cloud requirements|stream disconnected|codex_core::tools::router|write_stdin failed|panic|exited -1' "$log_file" || [ "$exit_code" = "101" ]; then
+		if grep -Eq 'Failed to load cloud requirements|stream disconnected|codex_core::tools::router|write_stdin failed|panic|exited -1|403 Forbidden|429 Too Many Requests|exceeded retry limit' "$log_file" || [ "$exit_code" = "101" ]; then
 			requeues_file="$dir/$sig.requeues"
 			requeues="$(cat "$requeues_file" 2>/dev/null || echo 0)"
 			requeues=$(( requeues + 1 ))
