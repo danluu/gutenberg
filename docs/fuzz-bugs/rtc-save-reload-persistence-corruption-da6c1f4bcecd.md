@@ -365,3 +365,67 @@ The committed browser repro remains natural-user-action-only, and the saved pass
 The fix depends on stable unique `clientId`s in each block list. If a degraded block tree lacks usable IDs, the code intentionally falls back to the old merge behavior. That avoids guessing identity but means such malformed snapshots still have weaker conflict handling.
 
 The reconciliation preserves remote inserts around current neighbors, but concurrent sibling order is intentionally not specified. The correctness property is preservation, not a deterministic total order for simultaneous appends.
+
+## Pass 172 Verification
+
+Pass 172 fetched current `origin/trunk` and rebased both branches again:
+
+```text
+origin/trunk = dc3bc7decd0aed8733ee6538c0feb368da19703d
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+b46d3384b96 Add RTC stale top-level append regression test
+1428b959aec Add RTC stale append persistence browser repro
+9ee413402dc Preserve RTC remote inserts across stale block snapshots
+```
+
+The rebased PR branch passes the focused CRDT unit files:
+
+```text
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+`git diff --check origin/trunk...HEAD` also passed on the PR branch.
+
+Pass 172 added a fresh detached test-only worktree from the current backlink-aware known-fixes base:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-172/work/knownfix-da6c-current
+base = f256024286dd80a4c0e2579f658c109256abf648
+test file = packages/core-data/src/utils/test/da6c-pass172-crdt-read-stale.ts
+```
+
+The pass-172 test again exercises the ordinary reload/hydration route: an editor reads blocks through `getPostChangesFromCRDTDoc()`, receives an unobserved remote paragraph insert, then emits either an unchanged stale full `blocks` snapshot or a stale same-anchor collaborator append. The current known-fixes base still fails both tests:
+
+```text
+keeps an unobserved remote insert after a hydrated editor emits an unchanged stale snapshot:
+Expected ["Baseline", "Shared anchor", "Primary paragraph", "Trailing"]
+Received ["Baseline", "Shared anchor", "Trailing"]
+
+keeps both same-anchor sibling appends after a hydrated stale local snapshot is saved:
+Expected length: 5
+Received length: 4
+Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+Pass 172 also rechecked the source trace. It records the primary marker being typed and visibly asserted, then the collaborator marker being typed and visibly asserted. The later normalized `blocks` and `serializedContent` contain `rtc-9b9e-collaborator-1777975808112` but omit `rtc-9b9e-primary-1777975808112`. The final click timeout is therefore still downstream of content loss.
+
+The saved headless evidence video remains readable:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-167/video/da6c1f4bcecd/da6c1f4bcecd-pass167-evidence.mp4
+duration=56.000000
+size=407706
+```
+
+A fresh local Playwright run remains blocked before browser execution. `wp-env status` on the requested port 9936 reports the environment as uninitialized, and `wp-env start` fails because another local `wp-env` phpMyAdmin container owns port 9000:
+
+```text
+Bind for 0.0.0.0:9000 failed: port is already allocated
+wp-env-gutenberg-bug-ba7fe0fd5418-a63fe623-phpmyadmin-1 Up 12 hours 0.0.0.0:9000->80/tcp
+```
