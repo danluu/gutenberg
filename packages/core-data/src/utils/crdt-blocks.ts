@@ -78,6 +78,172 @@ export type YBlockAttributes = Y.Map< Y.Text | unknown >;
 export type MergeCursorPosition = WPBlockSelection | null;
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+const previousBlocksByYArray = new WeakMap< YBlocks, Block[] >();
+const deletedClientIdsByYArray = new WeakMap< YBlocks, Set< string > >();
+
+function getBlockClientId( block: Block ): string | undefined {
+	return block.clientId || undefined;
+}
+
+function getYBlockClientId( yblock: YBlock ): string | undefined {
+	const clientId = yblock.get( 'clientId' );
+	return typeof clientId === 'string' && clientId ? clientId : undefined;
+}
+
+function getBlockClientIds( blocks: Block[] ): Set< string > {
+	const clientIds = new Set< string >();
+
+	for ( const block of blocks ) {
+		const clientId = getBlockClientId( block );
+		if ( clientId ) {
+			clientIds.add( clientId );
+		}
+	}
+
+	return clientIds;
+}
+
+function getYBlockClientIds( yblocks: YBlocks ): Set< string > {
+	const clientIds = new Set< string >();
+
+	for ( let i = 0; i < yblocks.length; i++ ) {
+		const clientId = getYBlockClientId( yblocks.get( i ) );
+		if ( clientId ) {
+			clientIds.add( clientId );
+		}
+	}
+
+	return clientIds;
+}
+
+function getDeletedClientIds( yblocks: YBlocks ): Set< string > {
+	let deletedClientIds = deletedClientIdsByYArray.get( yblocks );
+	if ( ! deletedClientIds ) {
+		deletedClientIds = new Set< string >();
+		deletedClientIdsByYArray.set( yblocks, deletedClientIds );
+	}
+	return deletedClientIds;
+}
+
+function reconcileStaleDeletedBlocks(
+	yblocks: YBlocks,
+	incomingBlocks: Block[],
+	baseBlocks?: Block[]
+): Block[] {
+	if ( baseBlocks ) {
+		const baseClientIds = getBlockClientIds( baseBlocks );
+		const currentClientIds = getYBlockClientIds( yblocks );
+
+		if ( yblocks.length === 0 || baseClientIds.size === 0 ) {
+			return incomingBlocks;
+		}
+
+		const baseClientIdOrder = baseBlocks.map( getBlockClientId );
+		const baseClientIdIndexes = new Map< string, number >();
+		baseClientIdOrder.forEach( ( clientId, index ) => {
+			if ( clientId ) {
+				baseClientIdIndexes.set( clientId, index );
+			}
+		} );
+		const hasCurrentBaseBlockBefore = ( index: number ) =>
+			baseClientIdOrder
+				.slice( 0, index )
+				.some(
+					( clientId ) => clientId && currentClientIds.has( clientId )
+				);
+		const hasCurrentBaseBlockAfter = ( index: number ) =>
+			baseClientIdOrder
+				.slice( index + 1 )
+				.some(
+					( clientId ) => clientId && currentClientIds.has( clientId )
+				);
+
+		let changed = false;
+		const reconciledBlocks = incomingBlocks.filter( ( block ) => {
+			const clientId = getBlockClientId( block );
+			const baseIndex = clientId
+				? baseClientIdIndexes.get( clientId )
+				: undefined;
+
+			if (
+				clientId &&
+				baseIndex !== undefined &&
+				! currentClientIds.has( clientId )
+			) {
+				if (
+					! hasCurrentBaseBlockBefore( baseIndex ) ||
+					! hasCurrentBaseBlockAfter( baseIndex )
+				) {
+					return true;
+				}
+
+				changed = true;
+				return false;
+			}
+
+			return true;
+		} );
+
+		return changed ? reconciledBlocks : incomingBlocks;
+	}
+
+	const previousBlocks = previousBlocksByYArray.get( yblocks );
+	if ( ! previousBlocks ) {
+		return incomingBlocks;
+	}
+
+	const incomingClientIds = getBlockClientIds( incomingBlocks );
+	const previousClientIds = getBlockClientIds( previousBlocks );
+	const currentClientIds = getYBlockClientIds( yblocks );
+	const deletedClientIds = getDeletedClientIds( yblocks );
+
+	// A present CRDT block may be a legitimate Yjs restore, so stop filtering it.
+	for ( const clientId of [ ...deletedClientIds ] ) {
+		if ( currentClientIds.has( clientId ) ) {
+			deletedClientIds.delete( clientId );
+		}
+	}
+
+	for ( const clientId of previousClientIds ) {
+		if (
+			! incomingClientIds.has( clientId ) &&
+			currentClientIds.has( clientId )
+		) {
+			deletedClientIds.add( clientId );
+		}
+	}
+
+	const staleDeletedClientIds = new Set< string >();
+	for ( const clientId of previousClientIds ) {
+		if (
+			incomingClientIds.has( clientId ) &&
+			! currentClientIds.has( clientId )
+		) {
+			staleDeletedClientIds.add( clientId );
+		}
+	}
+
+	let changed = false;
+	const reconciledBlocks = incomingBlocks.filter( ( block ) => {
+		const clientId = getBlockClientId( block );
+		if ( ! clientId ) {
+			return true;
+		}
+
+		if (
+			( deletedClientIds.has( clientId ) ||
+				staleDeletedClientIds.has( clientId ) ) &&
+			! currentClientIds.has( clientId )
+		) {
+			changed = true;
+			return false;
+		}
+
+		return true;
+	} );
+
+	return changed ? reconciledBlocks : incomingBlocks;
+}
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -420,11 +586,13 @@ function createNewYBlock( block: Block ): YBlock {
  * @param attributeCursor When provided, describes a selection cursor falling within a
  *                        RichText field associated with a specific block and attribute.
  *                        Derived from the changes that produced the blocks.
+ * @param baseBlocks
  */
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
-	attributeCursor: MergeCursorPosition
+	attributeCursor: MergeCursorPosition,
+	baseBlocks?: Block[]
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -434,8 +602,11 @@ export function mergeCrdtBlocks(
 		);
 	}
 
-	const incomingBlocksToSync =
-		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const incomingBlocksToSync = reconcileStaleDeletedBlocks(
+		yblocks,
+		serializableBlocksCache.get( incomingBlocks ) ?? [],
+		baseBlocks
+	);
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
@@ -648,6 +819,8 @@ export function mergeCrdtBlocks(
 		}
 		knownClientIds.add( clientId );
 	}
+
+	previousBlocksByYArray.set( yblocks, incomingBlocksToSync );
 }
 
 /**

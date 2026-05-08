@@ -410,12 +410,18 @@ async function loadPostTypeEntities() {
 			 * Apply changes from the local editor to the local CRDT document so
 			 * that those changes can be synced to other peers (via the provider).
 			 *
-			 * @param {import('@wordpress/sync').CRDTDoc}               crdtDoc
-			 * @param {Partial< import('@wordpress/sync').ObjectData >} changes
+			 * @param {import('@wordpress/sync').CRDTDoc}                  crdtDoc
+			 * @param {Partial< import('@wordpress/sync').ObjectData >}    changes
+			 * @param {import('@wordpress/sync').SyncManagerUpdateOptions} options
 			 * @return {void}
 			 */
-			applyChangesToCRDTDoc: ( crdtDoc, changes ) =>
-				applyPostChangesToCRDTDoc( crdtDoc, changes, syncedProperties ),
+			applyChangesToCRDTDoc: ( crdtDoc, changes, options ) =>
+				applyPostChangesToCRDTDoc(
+					crdtDoc,
+					changes,
+					syncedProperties,
+					options
+				),
 
 			/**
 			 * Create the awareness instance for the entity's CRDT document.
