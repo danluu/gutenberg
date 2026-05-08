@@ -234,6 +234,214 @@ describe( 'crdt-blocks', () => {
 			expect( content.toString() ).toBe( 'Block 1' );
 		} );
 
+		it( 'does not resurrect a locally deleted top-level block from a stale snapshot', () => {
+			const createParagraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+
+			const followUp = createParagraph(
+				'follow-up',
+				'Follow-up heading'
+			);
+			const insertedParagraph = createParagraph(
+				'inserted-paragraph',
+				'Seed 951195 step 2 user 0 paragraph 879021'
+			);
+			const insertedHeading = createParagraph(
+				'inserted-heading',
+				'Seed 951195 step 3 user 0 heading'
+			);
+			const tail = createParagraph(
+				'tail',
+				'Tail paragraph kept for save and reload stability checks.'
+			);
+			const movedInitialParagraph = createParagraph(
+				'moved-initial-paragraph',
+				'Long shared paragraph used as the initial collaborative editing surface.'
+			);
+			const snapshotBeforeHeadingInsert = [
+				followUp,
+				insertedParagraph,
+				tail,
+				movedInitialParagraph,
+			];
+
+			const staleSnapshotWithInsertedParagraph = [
+				followUp,
+				insertedParagraph,
+				insertedHeading,
+				tail,
+				movedInitialParagraph,
+			];
+			const snapshotAfterDelete = [
+				followUp,
+				insertedHeading,
+				tail,
+				movedInitialParagraph,
+			];
+
+			mergeCrdtBlocks(
+				yblocks,
+				staleSnapshotWithInsertedParagraph,
+				null
+			);
+			mergeCrdtBlocks( yblocks, snapshotAfterDelete, null );
+			mergeCrdtBlocks(
+				yblocks,
+				staleSnapshotWithInsertedParagraph,
+				null,
+				snapshotBeforeHeadingInsert
+			);
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.clientId
+				)
+			).toEqual( [
+				'follow-up',
+				'inserted-heading',
+				'tail',
+				'moved-initial-paragraph',
+			] );
+		} );
+
+		it( 'allows a later local reinsert when the update base does not contain the block', () => {
+			const createParagraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+
+			const keptBlock = createParagraph( 'kept', 'Kept block' );
+			const reinsertedBlock = createParagraph(
+				'reinserted',
+				'Reinserted block'
+			);
+			const initialBlocks = [ keptBlock, reinsertedBlock ];
+			const snapshotAfterDelete = [ keptBlock ];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks(
+				yblocks,
+				snapshotAfterDelete,
+				null,
+				initialBlocks
+			);
+			mergeCrdtBlocks(
+				yblocks,
+				initialBlocks,
+				null,
+				snapshotAfterDelete
+			);
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.clientId
+				)
+			).toEqual( [ 'kept', 'reinserted' ] );
+		} );
+
+		it( 'keeps base blocks when the current CRDT has no overlap with the update base', () => {
+			const createParagraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+
+			const followUp = createParagraph(
+				'follow-up',
+				'Follow-up heading'
+			);
+			const insertedParagraph = createParagraph(
+				'inserted-paragraph',
+				'Seed 951195 step 2 user 0 paragraph 879021'
+			);
+			const tail = createParagraph(
+				'tail',
+				'Tail paragraph kept for save and reload stability checks.'
+			);
+			const unrelatedCurrentBlock = createParagraph(
+				'unrelated-current',
+				'Current CRDT block from another partial update'
+			);
+
+			mergeCrdtBlocks( yblocks, [ unrelatedCurrentBlock ], null );
+			mergeCrdtBlocks(
+				yblocks,
+				[ followUp, insertedParagraph, tail ],
+				null,
+				[ followUp, tail ]
+			);
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.clientId
+				)
+			).toEqual( [ 'follow-up', 'inserted-paragraph', 'tail' ] );
+		} );
+
+		it( 'keeps absent base suffix blocks when the current CRDT only has a base prefix', () => {
+			const createParagraph = (
+				clientId: string,
+				content: string
+			): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+
+			const followUp = createParagraph(
+				'follow-up',
+				'Follow-up heading'
+			);
+			const insertedParagraph = createParagraph(
+				'inserted-paragraph',
+				'Seed 951195 step 2 user 0 paragraph 879021'
+			);
+			const tail = createParagraph(
+				'tail',
+				'Tail paragraph kept for save and reload stability checks.'
+			);
+			const movedInitialParagraph = createParagraph(
+				'moved-initial-paragraph',
+				'Long shared paragraph used as the initial collaborative editing surface.'
+			);
+
+			mergeCrdtBlocks( yblocks, [ followUp ], null );
+			mergeCrdtBlocks(
+				yblocks,
+				[ followUp, insertedParagraph, tail, movedInitialParagraph ],
+				null,
+				[ followUp, tail, movedInitialParagraph ]
+			);
+
+			expect(
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.clientId
+				)
+			).toEqual( [
+				'follow-up',
+				'inserted-paragraph',
+				'tail',
+				'moved-initial-paragraph',
+			] );
+		} );
+
 		it( 'handles innerBlocks recursively', () => {
 			const blocksWithInner: Block[] = [
 				{
