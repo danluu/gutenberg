@@ -113,7 +113,7 @@ while :; do
 	ensure_monitor_window \
 		"rtc-bug-deep-processing" \
 		"monitor" \
-		"RTC_BUG_DEEP_MAX_PARALLEL=6 RTC_BUG_DEEP_MIN_DISK_FREE_MB=102400 RTC_BUG_DEEP_LOW_DISK_FREE_MB=81920 RTC_BUG_DEEP_LAUNCH_STAGGER_SECS=4 RTC_BUG_DEEP_CODEX_RETRIES=5 /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/run-deep-dispatcher.sh"
+		"RTC_BUG_DEEP_MAX_PARALLEL=6 RTC_BUG_DEEP_MIN_DISK_FREE_MB=122880 RTC_BUG_DEEP_LOW_DISK_FREE_MB=92160 RTC_BUG_DEEP_LAUNCH_STAGGER_SECS=4 RTC_BUG_DEEP_CODEX_RETRIES=5 /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/run-deep-dispatcher.sh"
 	ensure_monitor_window \
 		"rtc-rerun-compare" \
 		"compare" \
