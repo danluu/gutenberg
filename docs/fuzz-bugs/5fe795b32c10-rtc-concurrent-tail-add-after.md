@@ -47,6 +47,59 @@ TC 5fe7 add-after primary paragraph 1
 
 Expected inserted primary text was `RTC 5fe7 add-after primary paragraph 1`; the leading `R` was dropped even with a 160 ms/key delay.
 
+Pass 172 added repeatability checks against the same known-fixes commit using a
+detached worktree with a real copied `build/` directory and the WebSocket
+provider aligned to port `20960`. The earlier pass-171 "very-low" likelihood
+classification is no longer supported: 160 ms/key typing reproduced repeatedly,
+including with explicit post-menu pauses intended to model human reaction time.
+
+```bash
+env WP_ENV_HOME=/tmp/wp-env-5fe795b32c10-p172 \
+	WP_ENV_PORT=9970 \
+	WP_BASE_URL=http://localhost:9970 \
+	WP_ENV_PHPMYADMIN_PORT=9971 \
+	GUTENBERG_RTC_TEST_WS_PORT=20960 \
+	RTC_MANIFEST_WS_START_PORT=20960 \
+	RTC_MANIFEST_WS_FIXED_PORT=1 \
+	RTC_5FE7_ADD_AFTER_ATTEMPTS=20 \
+	RTC_5FE7_ADD_AFTER_TYPE_DELAY_MS=160 \
+	RTC_5FE7_ADD_AFTER_POST_MENU_DELAY_MS=0 \
+	RTC_5FE7_ADD_AFTER_OUTPUT_DIR=/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output \
+	npm run test:e2e:rtc-websocket -- \
+	test/e2e/specs/editor/collaboration/websocket/collaboration-5fe795b32c10-pass171-add-after-delay.spec.ts \
+	--project=chromium --workers=1
+```
+
+Result: attempts 1-5 passed, attempt 6 failed and Playwright stopped the rest.
+Both peers converged on a primary paragraph missing the leading `R`:
+
+```text
+TC 5fe7 add-after primary paragraph 6
+RTC 5fe7 add-after collaborator paragraph 6
+```
+
+With a 250 ms pause after `Add after`, attempts 1-3 passed and attempt 4
+failed. Both peers converged on a primary paragraph missing the `RTC ` prefix:
+
+```text
+5fe7 add-after primary paragraph 4
+RTC 5fe7 add-after collaborator paragraph 4
+```
+
+With a 500 ms pause after `Add after`, attempts 1-2 passed and attempt 3
+failed. Both peers converged on a primary paragraph missing the space before the
+attempt number:
+
+```text
+RTC 5fe7 add-after primary paragraph3
+RTC 5fe7 add-after collaborator paragraph 3
+```
+
+Trace timing for the 500 ms failure confirms this was not immediate
+post-menu typing: one `Add after` click completed at 26616 ms, the other at
+26634 ms, the test waited 500 ms on both pages, and typing began at 27127 ms
+and 27137 ms with a 160 ms/key delay.
+
 At 10 ms/key, both inserted paragraphs were more severely corrupted:
 
 ```text
@@ -83,7 +136,7 @@ The natural workflow is ordinary post editor collaboration over the WebSocket RT
 4. Both choose block toolbar Options -> `Add after`.
 5. Both type into the newly inserted paragraph before the concurrent insertion and selection state fully settle.
 
-Multiple users/tabs and RTC collaboration are required. No save/reload, injected malformed blocks, direct state mutation, or network delay is required to observe the defect. Human-speed typing at 160 ms/key still lost a character, so the race is not limited to an unrealistically fast Playwright path, although the exact workflow requires both collaborators to edit the same insertion point at nearly the same time.
+Multiple users/tabs and RTC collaboration are required. No save/reload, injected malformed blocks, direct state mutation, or network delay is required to observe the defect. Human-speed typing at 160 ms/key still loses characters even after 250 ms and 500 ms post-menu pauses, so the race is not limited to an unrealistically fast Playwright path, although the exact workflow requires both collaborators to edit the same insertion point at nearly the same time.
 
 Blast radius is content corruption, not just a UI-only mismatch. Both peers converge to the same wrong text, the editor remains dirty, and saving would persist the corrupted paragraphs. Recovery is manual retyping or undo if noticed quickly; if saved or autosaved unnoticed, the corrupted content can survive.
 
@@ -125,8 +178,10 @@ Revised plan: first instrument and prove whether each missing character was pres
 
 ## Artifacts
 
-- Failure JSON, 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
+- Failure JSON, pass-172 160 ms/key no post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output/attempt-6.json`
+- Failure JSON, pass-172 160 ms/key with 250 ms post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay250-attempts20-output/attempt-4.json`
+- Failure JSON, pass-172 160 ms/key with 500 ms post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay500-attempts10-output/attempt-3.json`
+- Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
 - Annotated stitched video: `/tmp/5fe795b32c10-p170-current-knownfix-type160-annotated.mp4`
-
