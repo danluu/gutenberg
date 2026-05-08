@@ -813,10 +813,7 @@ export const saveEntityRecord =
 						return edits;
 					};
 
-					let edits = await prepareEdits(
-						persistedRecord,
-						record
-					);
+					let edits = await prepareEdits( persistedRecord, record );
 					try {
 						updatedRecord = await __unstableFetch( {
 							path,
@@ -854,12 +851,35 @@ export const saveEntityRecord =
 							latestRecord
 						);
 
-						const mergedRecord =
+						const selectedMergedRecord =
 							select.getEditedEntityRecord?.(
 								kind,
 								name,
 								recordId
 							) || record;
+						const mergedRecord = { ...selectedMergedRecord };
+						for ( const [ key, value ] of Object.entries(
+							record
+						) ) {
+							const selectedValue = selectedMergedRecord?.[ key ];
+							if (
+								! Object.prototype.hasOwnProperty.call(
+									selectedMergedRecord,
+									key
+								) ||
+								( ! fastDeepEqual( value, selectedValue ) &&
+									( fastDeepEqual(
+										selectedValue,
+										persistedRecord?.[ key ]
+									) ||
+										fastDeepEqual(
+											selectedValue,
+											latestRecord?.[ key ]
+										) ) )
+							) {
+								mergedRecord[ key ] = value;
+							}
+						}
 						edits = await prepareEdits(
 							latestRecord,
 							mergedRecord
