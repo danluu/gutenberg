@@ -170,6 +170,40 @@ function useAutosavePurge() {
 	}, [ isEditedPostNew, postId ] );
 }
 
+function useAutosaveOnPageUnload( autosave ) {
+	const { postId, isEditedPostNew, isDirty, isAutosaveable } = useSelect(
+		( select ) => ( {
+			postId: select( editorStore ).getCurrentPostId(),
+			isEditedPostNew: select( editorStore ).isEditedPostNew(),
+			isDirty: select( editorStore ).isEditedPostDirty(),
+			isAutosaveable: select( editorStore ).isEditedPostAutosaveable(),
+		} ),
+		[]
+	);
+
+	const flushLocalAutosave = useCallback( () => {
+		if ( ! isAutosaveable ) {
+			return;
+		}
+
+		if ( ! isDirty && ! localAutosaveGet( postId, isEditedPostNew ) ) {
+			return;
+		}
+
+		autosave( { local: true } );
+	}, [ autosave, isAutosaveable, isDirty, isEditedPostNew, postId ] );
+
+	useEffect( () => {
+		window.addEventListener( 'pagehide', flushLocalAutosave );
+		window.addEventListener( 'beforeunload', flushLocalAutosave );
+
+		return () => {
+			window.removeEventListener( 'pagehide', flushLocalAutosave );
+			window.removeEventListener( 'beforeunload', flushLocalAutosave );
+		};
+	}, [ flushLocalAutosave ] );
+}
+
 function LocalAutosaveMonitor() {
 	const { autosave } = useDispatch( editorStore );
 	const deferredAutosave = useCallback( () => {
@@ -177,6 +211,7 @@ function LocalAutosaveMonitor() {
 	}, [] );
 	useAutosaveNotice();
 	useAutosavePurge();
+	useAutosaveOnPageUnload( autosave );
 
 	const localAutosaveInterval = useSelect(
 		( select ) =>
