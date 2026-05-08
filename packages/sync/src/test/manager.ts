@@ -23,6 +23,7 @@ import {
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
 	CRDT_STATE_MAP_SAVED_BY_KEY as SAVED_BY_KEY,
 	LOCAL_EDITOR_ORIGIN,
+	LOCAL_UNDO_IGNORED_ORIGIN,
 } from '../config';
 import { getProviderCreators } from '../providers';
 import type {
@@ -648,6 +649,47 @@ describe( 'SyncManager', () => {
 				now
 			);
 			expect( stateMap.get( SAVED_BY_KEY ) ).toBe( ydoc.clientID );
+		} );
+
+		it( 'reconciles the local record from the CRDT document after a save', async () => {
+			mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
+				( ydoc: CRDTDoc, changes: ObjectData ) => {
+					const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+					Object.entries( changes ).forEach( ( [ key, value ] ) => {
+						ymap.set( key, value );
+					} );
+				}
+			);
+			mockHandlers.getEditedRecord.mockResolvedValue( mockRecord );
+
+			const manager = createSyncManager();
+
+			await manager.load(
+				mockSyncConfig,
+				'post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+			mockHandlers.editRecord.mockClear();
+
+			manager.update(
+				'post',
+				'123',
+				{ title: 'Locally saved title' },
+				LOCAL_EDITOR_ORIGIN
+			);
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			manager.update( 'post', '123', {}, LOCAL_UNDO_IGNORED_ORIGIN, {
+				isSave: true,
+			} );
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+			await Promise.resolve();
+
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
+				title: 'Locally saved title',
+			} );
 		} );
 	} );
 

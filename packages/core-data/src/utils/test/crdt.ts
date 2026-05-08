@@ -6,7 +6,14 @@ import { Y } from '@wordpress/sync';
 /**
  * External dependencies
  */
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	jest,
+} from '@jest/globals';
 
 /**
  * Mock getBlockTypes so CRDT merging can identify rich-text attributes.
@@ -49,6 +56,8 @@ jest.mock( '@wordpress/blocks', () => {
 /**
  * WordPress dependencies
  */
+import { registerBlockType, unregisterBlockType } from '@wordpress/blocks';
+import { createElement } from '@wordpress/element';
 import { RichTextData } from '@wordpress/rich-text';
 
 /**
@@ -63,7 +72,7 @@ import {
 	type PostChanges,
 	type YPostRecord,
 } from '../crdt';
-import type { YBlock, YBlockRecord, YBlocks } from '../crdt-blocks';
+import type { Block, YBlock, YBlockRecord, YBlocks } from '../crdt-blocks';
 import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
@@ -126,10 +135,26 @@ describe( 'crdt', () => {
 	beforeEach( () => {
 		doc = new Y.Doc();
 		jest.clearAllMocks();
+		registerBlockType( 'core/paragraph', {
+			apiVersion: 3,
+			title: 'Paragraph',
+			category: 'text',
+			attributes: {
+				content: {
+					type: 'string',
+					source: 'html',
+					selector: 'p',
+					role: 'content',
+				},
+			},
+			save: ( { attributes } ) =>
+				createElement( 'p', null, attributes.content as string ),
+		} );
 	} );
 
 	afterEach( () => {
 		doc.destroy();
+		unregisterBlockType( 'core/paragraph' );
 	} );
 
 	describe( 'applyPostChangesToCRDTDoc', () => {
@@ -183,6 +208,46 @@ describe( 'crdt', () => {
 			const title = map.get( 'title' );
 			expect( title ).toBeInstanceOf( Y.Text );
 			expect( title?.toString() ).toBe( 'Raw Title' );
+		} );
+
+		it( 'keeps the block map in sync when raw content changes without a block edit', () => {
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					blocks: [
+						{
+							name: 'core/paragraph',
+							attributes: { content: 'Old paragraph' },
+							innerBlocks: [],
+						},
+					],
+				} as unknown as PostChanges,
+				defaultSyncedProperties
+			);
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					content:
+						'<!-- wp:paragraph -->\n' +
+						'<p>Old paragraph</p>\n' +
+						'<!-- /wp:paragraph -->\n\n' +
+						'<!-- wp:paragraph -->\n' +
+						'<p>New paragraph from save</p>\n' +
+						'<!-- /wp:paragraph -->',
+				} as PostChanges,
+				defaultSyncedProperties
+			);
+
+			const blocks = map.get( 'blocks' )?.toJSON() as Block[];
+
+			expect( blocks ).toHaveLength( 2 );
+			expect( blocks[ 1 ] ).toMatchObject( {
+				name: 'core/paragraph',
+				attributes: {
+					content: 'New paragraph from save',
+				},
+			} );
 		} );
 
 		it( 'skips "Auto Draft" template title when no current value exists', () => {
