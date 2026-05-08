@@ -592,6 +592,10 @@ export function createSyncManager( debug = false ): SyncManager {
 					markEntityAsSaved( ydoc );
 				}
 			}, origin );
+
+			if ( isSave && objectId !== null ) {
+				void internal.updateEntityRecord( objectType, objectId );
+			}
 		}
 
 		if ( collectionState && isSave ) {

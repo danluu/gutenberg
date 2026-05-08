@@ -6,7 +6,7 @@ import fastDeepEqual from 'fast-deep-equal/es6/index.js';
 /**
  * WordPress dependencies
  */
-import { __unstableSerializeAndClean } from '@wordpress/blocks';
+import { __unstableSerializeAndClean, parse } from '@wordpress/blocks';
 import {
 	type CRDTDoc,
 	type ObjectData,
@@ -194,6 +194,25 @@ export function applyPostChangesToCRDTDoc(
 				} else {
 					const newYText = new Y.Text( rawValue ?? '' );
 					ymap.set( key, newYText );
+				}
+
+				if (
+					key === 'content' &&
+					syncedProperties.has( 'blocks' ) &&
+					! Object.hasOwn( changes, 'blocks' )
+				) {
+					let currentBlocks = ymap.get( 'blocks' );
+
+					if ( ! ( currentBlocks instanceof Y.Array ) ) {
+						currentBlocks = new Y.Array< YBlock >();
+						ymap.set( 'blocks', currentBlocks );
+					}
+
+					mergeCrdtBlocks(
+						currentBlocks,
+						parse( rawValue ?? '' ) as unknown as Block[],
+						null
+					);
 				}
 
 				break;
