@@ -2151,3 +2151,80 @@ Fresh pass-170 fixed-branch verification after rebasing onto current
   (`78 passed`).
 - JS lint for the touched source, unit-test, and Playwright spec files passes.
 - `git diff --check HEAD~3..HEAD` passes.
+
+## Pass 171 branch and practical-impact recheck
+
+Pass 171 re-read the current May 7 known-fixes manifest, the pass-170 summary,
+the source JSONL row, the existing natural-user repro, current known-fixes
+`crdt-blocks.ts`, and the ordinary post-editor move/data flow.
+
+The May 7 known-fixes base is still
+`f256024286dd80a4c0e2579f658c109256abf648` and still contains both the newer
+stale-local reconciliation helpers and the old object-identity
+`serializableBlocksCache`:
+
+```text
+packages/core-data/src/utils/crdt-blocks.ts:75
+const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+
+packages/core-data/src/utils/crdt-blocks.ts:1117-1124
+if ( ! serializableBlocksCache.has( incomingBlocks ) ) { ... }
+const localBlocksToSync =
+        serializableBlocksCache.get( incomingBlocks ) ?? [];
+```
+
+`git blame` on the current known-fixes base still attributes the cache and the
+cache lookup to `84019935998c` (`Improve CRDT "merge logic" for post entities
+(#72262)`), with the current integration commit only adapting the surrounding
+lookup. The PR branch removes that cache-sensitive path and keeps the
+same-array regression tests.
+
+The practical-likelihood classification remains `very-low` for the current
+known-fixes stack, not because the historical bug was false, but because the
+remaining known-fixes failure requires same-array object reuse that pass 171
+still did not observe in the ordinary toolbar route. The ordinary top-level
+toolbar move path argues against same-array reuse:
+
+- `moveBlockToPosition()` dispatches `MOVE_BLOCKS_TO_POSITION`.
+- the block-editor reducer calls `moveTo()`;
+- `moveTo()` clones the order array with `[ ...array ]` and returns a new array
+  through `insertAt()`;
+- `updateParentInnerBlocksInTree()` rebuilds the root `innerBlocks` array with
+  `.map()`;
+- `getBlocks()` returns that rebuilt `innerBlocks` array to the entity/block
+  editor flow.
+
+That does not prove no other block manipulation path can reuse the exact
+top-level block array object. It does explain why pass 170's natural browser
+run on the current known-fixes base passed while the synthetic same-array unit
+control failed.
+
+Fresh pass-171 branch verification:
+
+- `origin/trunk` is `73662749ec2` (`Experiment: Content types reuse
+  createStatusAction (#78102)`). The 18 commits since the previous branch base
+  do not touch `packages/core-data/src/utils/crdt-blocks.ts`,
+  `packages/core-data/src/utils/test/crdt-blocks.ts`, the collaboration spec,
+  or the sync stack.
+- The explanation branch was rebased onto `73662749ec2`.
+- The PR branch was rebased onto `73662749ec2` and still has the requested
+  three commits: non-Playwright repros, natural-user Playwright repro, then fix.
+- The focused four-test CRDT command passed, including the stale snapshot and
+  same-array cache cases.
+- The full `packages/core-data/src/utils/test/crdt-blocks.ts` suite passed
+  (`78 passed`).
+- JS lint for the touched source, unit-test, and Playwright spec files passed.
+- `git diff --check HEAD~3..HEAD` passed.
+- A fresh one-attempt headless Playwright run of
+  `test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts`
+  passed on `WP_ENV_PORT=10030` / `RTC_MANIFEST_WS_START_PORT=21440`. The saved
+  `attempt-1.json` shows both editors converged to inserted paragraph, sibling
+  paragraph, then emoji paragraph.
+
+Pass 171's shortest confidence-improving experiment is narrower than pass 170's
+generic recommendation: instrument the current known-fixes browser bundle
+inside `mergeCrdtBlocks()` to log whether the exact same `incomingBlocks`
+object identity is reused across a top-level toolbar move, List View reorder,
+drag reorder, undo/redo, and pattern/group transform. If those logs show only
+fresh arrays for ordinary actions, the remaining cache-only risk should be
+treated as defensive-hardening rather than a likely user workflow.
