@@ -477,3 +477,59 @@ Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailin
 ```
 
 Pass 173 contribution: the likelihood classification remains `medium`, but the evidence is now narrower. The failing browser trace and the known-fixes unit repro both collapse to the same real-user shape: a hydrated editor emits a full `blocks` snapshot that is causally older than a remote sibling paragraph insert. The trace timing is only about 0.65s between the primary typing start and collaborator typing start, so the window is a normal quick collaborative edit rather than a long artificial sleep.
+
+## Pass 174 Verification
+
+Pass 174 fetched current `origin/trunk` and rebased both branches again:
+
+```text
+origin/trunk = 6aa5ea1a40db818a9c0d2d85d0d0476f7d40392a
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+866aabe0e9f Add RTC stale top-level append regression test
+f2fad5986d0 Add RTC stale append persistence browser repro
+84f47ddd1a4 Preserve RTC remote inserts across stale block snapshots
+```
+
+The rebased PR branch still passes the focused CRDT unit files:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt.ts --runInBand
+
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+`git diff --check origin/trunk...HEAD` also passed on both the PR branch and explanation branch.
+
+Pass 174 also avoided relying on the mutable shared known-fixes checkout because that path was dirty and on another bug branch. Instead it created a fresh detached worktree at the manifest's exact backlink-aware base:
+
+```text
+base = f256024286dd80a4c0e2579f658c109256abf648
+worktree = /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-174/work/da6c-knownfix-f256
+test file = packages/core-data/src/utils/test/da6c-pass174-crdt-read-stale.ts
+```
+
+The isolated known-fixes negative still fails both minimal CRDT-read stale snapshot tests:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/da6c-pass174-crdt-read-stale.ts --runInBand
+
+FAIL packages/core-data/src/utils/test/da6c-pass174-crdt-read-stale.ts
+Tests: 2 failed, 2 total
+
+keeps an unobserved remote insert after a hydrated editor emits an unchanged stale snapshot:
+Expected ["Baseline", "Shared anchor", "Primary paragraph", "Trailing"]
+Received ["Baseline", "Shared anchor", "Trailing"]
+
+keeps both same-anchor sibling appends after a hydrated stale local snapshot is saved:
+Expected length: 5
+Received length: 4
+Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+Pass 174 contribution: this independently rechecked the known-fixes base from a clean detached `f256024...` worktree, not from the mutable shared checkout. It also confirms that the ordinary CRDT-read/hydrated-editor route fails even when the local stale snapshot is unchanged, so the risk is not limited to an active same-anchor collaborator append. A user tab that has hydrated an older block list can later emit a no-op full `blocks` snapshot and still delete a remote paragraph it never observed.
