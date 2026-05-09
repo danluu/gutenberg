@@ -1005,3 +1005,62 @@ interleaving. The browser workflow still requires at least two active editors or
 tabs on the same post under the HTTP polling provider, but it does not require
 malformed blocks, direct state mutation, unusual save APIs, browser crashes, or
 server errors. The remaining uncertainty is frequency, not reachability.
+
+## Pass 174 Current-Base Recheck
+
+Pass 174 rebased both branches onto current `origin/trunk`
+`b38f9b4d86d0505199f5efd78c2adf213e428e78`
+(`Fix lockfile drift and missing dep from content-types consolidation (#78109)`).
+The two new trunk commits since pass 173 touch connectors, content-types, and
+`package-lock.json`, not RTC sync-manager runtime code.
+
+This pass re-read the source result, log, error contexts, and trace. The source
+result is still a failed, non-timeout browser run. The failing log assertions are
+semantic convergence checks: the large-post test missed `Admin was here`, and
+the list-item test kept the moved item before the expected peer item. The trace
+contains normal post-editor pages and `wp-sync` traffic: 60 `wp-sync` trace
+entries in the large-post failure and 28 in the list-item failure. Searching the
+same trace streams for `500`, `Fatal error`, `Allowed memory`, and `oom` found
+no matches. This keeps the OOM/oversized-room bucket label misleading for this
+refreshed run.
+
+Pass 174 applied only the commit-1 manager repro to current trunk and the exact
+May 7 known-fixes commit:
+
+- current `origin/trunk` `b38f9b4d86d`: FAIL, one `editRecord` call projects
+  `{ body: "Remote Body", title: "Initial Title" }`.
+- known-fixes base `f256024286dd`: FAIL, two `editRecord` calls, so the
+  backlink-aware synthetic fix stack still does not restore the local
+  happens-before edge before remote reconciliation.
+
+The rebased PR branch now keeps the requested three-commit sequence:
+
+1. `5a170225b57 Add RTC deferred update race repro`
+2. `78284f07b67 Add RTC stress Playwright repro`
+3. `309f39b4e26 Flush RTC updates before remote reconciliation`
+
+Pass 174 fixed-branch verification:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
+```
+
+Results: PASS, PASS, PASS.
+
+Pass 174 classifies practical likelihood as `medium` for active RTC
+collaboration sessions, while still low across all Gutenberg installations. The
+new evidence for the sharper rating is that the source failure is not an
+oversized-room/OOM path: it uses healthy HTTP polling, ordinary post-editor user
+actions, at most a few active rooms in prior payload inspection, and a normal
+`editEntityRecord` -> deferred `SyncManager.update` path. The required
+interleaving is still narrow, but a normal coediting session with the default
+HTTP polling provider has repeated opportunities for a polling response to land
+while another user's local Y.Doc write is queued for the next event-loop tick.
