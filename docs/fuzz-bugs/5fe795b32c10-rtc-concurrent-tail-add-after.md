@@ -189,6 +189,15 @@ npm run test:unit -- packages/core-data/src/utils/test/rtc-tail-insert-base-repr
 
 Temporary repro file: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/packages/core-data/src/utils/test/rtc-tail-insert-base-repro.test.ts`.
 
+Pass 175 rebuilt that proof in the existing post CRDT adapter path rather than calling only the block merge helper. The new test applies an initial post, applies a remote tail append, then applies a local tail append with `options.baseRecord.blocks` still pointing at the initial three-block snapshot. On the exact known-fixes SHA `f256024286dd80a4c0e2579f658c109256abf648`, the test fails by dropping `Remote inserted`:
+
+```text
+Expected: Alpha, Beta, Tail, Remote inserted, Local inserted
+Received: Alpha, Beta, Tail, Local inserted
+```
+
+Applying the adjacent RTC fix from `try/rtc-top-level-move-after-checkpoint-duplicates-heading-and-9cf81e169f7e-pr` makes the same focused test pass. The fix changes `mergeCrdtBlocks()` so the base-record path also runs `reconcileStaleLocalBlocks( yblocks, localBlocksToSync, baseBlocksToSync )`, preserving current remote client IDs before the left-right fallback. This is a narrow root-cause proof for the whole-paragraph loss seen in pass 174; the older partial-character failures still need a natural Playwright rerun on the fixed branch to prove they are covered by the same structural fix.
+
 ## Practical Impact
 
 Likelihood: `medium`.
@@ -242,7 +251,7 @@ Audit:
 - Jepsen-style correctness: two peers inserting distinct sibling blocks at the same position and typing distinct text should converge to a state containing both exact strings. Convergence to the same corrupted value is still a consistency failure because it loses acknowledged local writes.
 - Simplicity/performance skepticism: avoid broad serialization locks on all block updates; a targeted guard around active RichText/local pending input or a narrower CRDT rebase invariant is preferable to delaying all remote updates.
 
-Revised plan after pass 174: add the unit-level base-snapshot sibling-insert regression first, then fix `mergeCrdtBlocks()` so base-aware local snapshots also preserve remote client IDs that were not present in the base and are not explicitly deleted locally. The fix should run before the left-right full-array fallback and should use client-id ancestry, not timing or selection state. After the structural invariant passes, keep the natural Playwright `Add after` repro because it verifies the real editor action path, per-key typing, and transport convergence. If partial character loss remains after structural preservation, instrument the rich-text delta path separately.
+Revised plan after pass 175: keep the lower-level adapter regression as commit 1, keep the natural toolbar `Add after` Playwright repro as commit 2, and use the base-aware stale-snapshot reconciliation fix as commit 3. Before treating the fix as complete, rerun the Playwright repro on the fixed branch with the 160 ms/key and 2000 ms +/-500 ms post-menu jitter settings. If the structural paragraph loss is gone but partial character loss remains, instrument the rich-text delta path separately.
 
 ## Artifacts
 
@@ -256,6 +265,8 @@ Revised plan after pass 174: add the unit-level base-snapshot sibling-insert reg
 - Failure JSON, pass-174 160 ms/key with 2000 ms +/-500 ms post-menu jitter: `/tmp/5fe795b32c10-p174-knownfix-type160-postdelay2000-jitter500-classified-attempts20-output/attempt-2.json`
 - Pass-174 trace, 2-second jitter failure: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/test/e2e/artifacts/test-results/editor-collaboration-webso-1cb81-d-after-realistic-attempt-2-chromium/trace.zip`
 - Temporary pass-174 unit-level repro: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/packages/core-data/src/utils/test/rtc-tail-insert-base-repro.test.ts`
+- Pass-175 fixed-branch unit repro: `packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts` on `try/rtc-concurrent-tail-insert-corrupts-or-diverges-top-level--5fe795b32c10-pr`
+- Pass-175 PR branch URL: `https://github.com/danluu/gutenberg/tree/try/rtc-concurrent-tail-insert-corrupts-or-diverges-top-level--5fe795b32c10-pr`
 - Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
