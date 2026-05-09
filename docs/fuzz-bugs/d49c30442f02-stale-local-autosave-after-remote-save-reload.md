@@ -43,6 +43,16 @@ That adjacent fix changes CRDT save/reload reconciliation in `core-data`, but it
 does not add a `pagehide`/`beforeunload` local-autosave flush and does not touch
 `LocalAutosaveMonitor`.
 
+Pass 173 refreshed both artifact branches onto current `origin/trunk`
+`80699422e63115adf1bd39c4db520575a816e747`
+(`Docs: shortcode transforms with wrapped content + rawHandler JSDoc`). That
+trunk commit does not touch editor autosave, RTC, or sync code. Pass 173 also
+reran the committed repro on current trunk with the fixed ignored editor build
+bundle deliberately replaced by the known-fixes build bundle that lacks
+`useAutosaveOnPageUnload`; the pre-fix/current-trunk repro failed with
+`expected count 0, received 2` for the stale browser-backup notice. Restoring the
+fixed bundle and rerunning the PR branch passed.
+
 ## Natural Repro
 
 The committed repro on the PR branch creates a draft post with one paragraph and uses two real browser users in the post editor:
@@ -183,9 +193,9 @@ PR branch:
 
 PR branch commits:
 
-1. `b37f7755206` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
-2. `280b46ff7ae` - natural two-user Playwright repro.
-3. `e2edc068e9d` - page-unload local autosave flush fix.
+1. `94d71e52cc6` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
+2. `c8a4964689b` - natural two-user Playwright repro.
+3. `54beec0821f` - page-unload local autosave flush fix.
 
 ## Verification
 
@@ -207,6 +217,23 @@ Pass 172 rebase verification on current `origin/trunk`
 `WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
 
 Result after fix: `1 passed (24.6s)`.
+
+Pass 173 rebase verification on current `origin/trunk`
+`80699422e63115adf1bd39c4db520575a816e747`:
+
+`WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
+
+Result after fix: `1 passed (22.1s)`.
+
+Pass 173 pre-fix/current-trunk verification used the repro commit
+`c8a4964689b` and temporarily replaced ignored `build/scripts/editor/index.js`
+and `index.min.js` with the known-fixes editor build bundle, because the
+worktree's ignored build output still contained the fixed unload hook after
+switching source commits. With the no-unload build active, the same command
+failed at the stale warning assertion:
+
+`expected count 0, received 2` for
+`The backup of this post in your browser is different from the version below.`
 
 Video run:
 
