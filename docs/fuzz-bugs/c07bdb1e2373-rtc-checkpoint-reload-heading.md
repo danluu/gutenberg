@@ -24,9 +24,20 @@ The failure does require RTC collaboration, two sessions, and a save checkpoint 
 
 ## Practical Impact
 
-Real-user likelihood: **low**.
+Real-user likelihood for normal current Gutenberg use: **very low**.
 
-The prerequisites are not default single-user editing, but they are realistic for the RTC feature: two collaborators, post editor, paragraph/heading/Search blocks, save draft, and reload/continued editing. The exact generated heading-after-reload suffix duplication has not yet been isolated from the earlier post-save divergence on the known-fixes base, but the post-save divergence itself is user-visible and can lead to a stale tab overwriting or duplicating body content on a later save.
+Conditional likelihood for a site running the synthetic backlink-aware RTC
+known-fixes stack: **low**.
+
+The distinction matters. The reproduced bug is not in ordinary single-user
+editing and the narrowed root cause depends on a proposed cross-PR RTC stack
+rather than clean `origin/trunk`. Within that RTC stack, however, the user
+workflow is realistic: two collaborators, post editor, paragraph/heading/Search
+blocks, Save draft, and reload/continued editing. The exact generated
+heading-after-reload suffix duplication has not yet been isolated from the
+earlier post-save divergence on the known-fixes base, but the post-save
+divergence itself is user-visible and can lead to a stale tab overwriting or
+duplicating body content on a later save.
 
 Observed blast radius:
 
@@ -132,3 +143,13 @@ The next most useful experiment is to run the pass-172 timeline probe multiple
 times on the exact combination of PR `77876` plus PR `77890`, with and without
 the unchanged-CRDT-document guard. That would quantify flake rate and separate
 the true cross-PR regression from behavior in either PR head alone.
+
+Pass 175 audited artifact sufficiency instead of rerunning the browser. The
+existing repro branch contains the natural Playwright repro and an empty
+lower-level placeholder commit, but no fix commit. That is intentional rather
+than a missed step: the pass-172/pass-174 guard applies to `prePersistPostType`
+code that is present in the known-fixes/proposed RTC stack, while the
+trunk-based PR branch does not contain that code path as a standalone target.
+The explanation branch and annotated video are sufficient for triage; a final
+PR branch with all three requested commits should be created only against the
+proposed stale-save stack or after that stack lands on trunk.
