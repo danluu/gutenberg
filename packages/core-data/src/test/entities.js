@@ -633,6 +633,55 @@ describe( 'prePersistPostType', () => {
 			},
 		} );
 	} );
+
+	it( 'does not replay an unchanged persisted CRDT document over local save edits', async () => {
+		const persistedCrdtDoc = 'same-persisted-doc';
+		const latestRecord = {
+			id: 123,
+			content: { raw: 'base content' },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: persistedCrdtDoc,
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
+			createPersistedCRDTDoc: jest
+				.fn()
+				.mockResolvedValueOnce( 'local-doc-before-replay' )
+				.mockResolvedValueOnce( 'local-doc-after-replay' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: 'stale CRDT content',
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: 'base content' },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
+						persistedCrdtDoc,
+				},
+			},
+			{ content: 'new local content' },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
+		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
+					'local-doc-before-replay',
+			},
+		} );
+	} );
 } );
 
 describe( 'loadPostTypeEntities', () => {
