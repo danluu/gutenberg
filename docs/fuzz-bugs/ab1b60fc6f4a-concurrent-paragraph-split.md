@@ -68,6 +68,16 @@ Pass 172 added timing and negative root-cause probes:
 
 This makes the destructive interleaving look like a tight live editor/input race: remote sync applies block updates while the browser is still dispatching real key events into contenteditable paragraphs created by the same concurrent split.
 
+Pass 173 checked whether the issue is limited to the wrapped-line `End` behavior. A widened viewport still left `End` at offset `31` in the 40-character checkpoint paragraph, so the original seed is genuinely a visual-line split. A second probe then sent nine `ArrowRight` key presses after `End`, putting both collaborators at offset `40`, the true logical end of the paragraph. On the clean known-fixes base `f256024286dd80a4c0e2579f658c109256abf648`, that true-end append variant still failed at `10ms` per character:
+
+```text
+rtc-save-paragraph-marker-953255-3-0-end
+Seed 953255 step 4 user0 cocrrent pragaph 185113
+Seed 953255 stepse 1 concurrent pargraph 169
+```
+
+In that run, after concurrent `Enter` both users were selected at offset `0` in different newly inserted empty paragraph `clientId`s. The original checkpoint paragraph stayed intact, and the corruption appeared only during concurrent typing. A matched true-end run at `50ms` per character preserved both user strings. This means the bug is not limited to suffix-duplication from visual-line splitting, but the true-end destructive variant is more cadence-sensitive than the original wrapped-line seed.
+
 ## Likely Root Cause
 
 `mergeCrdtBlocks` was introduced by `84019935998` (`Improve CRDT "merge logic" for post entities`, PR #72262). Its left/right sweep uses block positions as a fallback when reconciling full block snapshots into Yjs block arrays. Later RTC fix work added saved-base snapshots and client-id rebasing, but the observed failure still reaches a browser path where a local full snapshot, the current Yjs array, and the block-editor selection are changing while keyboard input continues to stream.
@@ -82,9 +92,9 @@ Those lower-level probes did not reproduce the browser corruption. Pass 172 also
 
 ## Practical Impact
 
-Likelihood for the destructive interleaving signature: `very-low`.
+Likelihood for the destructive interleaving signature: `low`.
 
-The workflow requires RTC collaboration, two browser tabs or users editing the same post, websocket sync, focus on the same wrapped paragraph, near-simultaneous `End`, `Enter`, and immediate typing, and the defect is easiest to trigger when there is a block after the paragraph. Those timing and same-paragraph requirements are uncommon, but the individual actions are ordinary editor behavior. Pass 172 suggests the destructive character interleaving needs unusually fast synchronized typing: it reproduced at `10ms` and `50ms` per character, but not in single runs at `80ms` or `120ms`.
+The workflow requires RTC collaboration, two browser tabs or users editing the same post, websocket sync, focus on the same paragraph, near-simultaneous paragraph splitting or paragraph-end appending, and immediate overlapping typing. Those timing and same-paragraph requirements are uncommon, but the individual actions are ordinary editor behavior. Pass 172 suggests the wrapped-line destructive character interleaving needs unusually fast synchronized typing: it reproduced at `10ms` and `50ms` per character, but not in single runs at `80ms` or `120ms`. Pass 173 raises the likelihood above `very-low` because a true logical-end append can also corrupt typed text, although that variant reproduced at `10ms` and passed at `50ms` in single clean-base runs.
 
 Blast radius is content corruption. The corrupted state appears in the block tree on both peers before save, so saving can persist truncated, duplicated, or interleaved paragraph text. At slower typing cadences, the severe interleaving did not reproduce in pass 172, but the concurrent split still duplicated the suffix text into both inserted paragraphs. There is no evidence of a save loop, OOM, or performance failure. Recovery is by undo, manual repair, or post revisions if the corrupted content has already been saved.
 
