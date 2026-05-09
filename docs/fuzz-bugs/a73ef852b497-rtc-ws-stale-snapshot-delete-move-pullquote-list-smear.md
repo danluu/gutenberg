@@ -144,3 +144,18 @@ Likelihood on current known-fixes base: `low`.
 The required workflow is plausible but timing-sensitive: real-time collaborative editing, adjacent List/Pullquote/Paragraph blocks, concurrent delete/move operations, and a stale full-block snapshot landing after a remote structural update. The exact archived sequence came from fuzzing, but the operations themselves are normal editor actions.
 
 Blast radius is content corruption. The live editor can contain the wrong block type, misplaced list items, Pullquote-only attributes on Paragraph blocks, and deleted or duplicated neighboring content. If saved, the corruption can persist. Recovery is manual cleanup or revision restore; there is no evidence of save loops, performance/OOM risk, or pure UI-only inconsistency.
+
+## Pass 172 Update
+
+Pass 172 re-ran the committed low-level proof on clean detached worktrees:
+
+- `3dabfbbb862` test-only failed with 58 List/Pullquote smear cases out of 96 checked interleavings.
+- `a4cbae8da63` fixed branch passed the same test.
+
+The failure path is narrower than "any move conflict": it needs the stale local snapshot to change the clientId set or length, usually by deleting a nearby block. That shape bypasses `rebaseYBlocksByClientId`, is not fully handled by `reorderYBlocksByClientId`, and then reaches the positional `mergeCrdtBlocksIntoYBlocks` update loop. The positional loop merges `blocksToSync[left]` into `yblocks.get(left)`, so when the ids have shifted it can rewrite a Paragraph with Pullquote attributes or a Pullquote with List item descendants.
+
+A temporary natural-action Playwright probe was drafted at:
+
+`/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-172/a73-lowlevel.Ygdb7V/test-only/test/e2e/specs/editor/collaboration/collaboration-a73ef852b497-natural-probe.spec.ts`
+
+The probe uses a valid preexisting Paragraph/List/Pullquote/Paragraph post and real toolbar/options-menu actions for concurrent move and delete. It was not committed because `wp-env start` for that new worktree stalled while cloning `wordpress-develop` for PHPUnit setup, so the browser probe did not run and no video was produced. The remaining evidence gap is therefore still an end-to-end, natural two-user WebSocket repro.
