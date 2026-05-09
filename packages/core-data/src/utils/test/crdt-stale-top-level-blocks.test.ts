@@ -40,6 +40,10 @@ jest.mock( '@wordpress/blocks', () => {
 	};
 } );
 
+jest.mock( '@wordpress/block-editor', () => ( {
+	store: {},
+} ) );
+
 /**
  * Internal dependencies
  */
@@ -321,6 +325,73 @@ describe( 'stale top-level block snapshots', () => {
 			'Beta',
 			'Gamma',
 		] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'preserves concurrent tail appends when a post update has a stale base record', () => {
+		const initialBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'beta', 'Beta' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: initialBlocks,
+				content: serializeBlocks( initialBlocks ),
+			},
+			SYNCED_POST_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		const remoteBlocks = [
+			...initialBlocks,
+			paragraph( 'remote-inserted', 'Remote inserted' ),
+		];
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: remoteBlocks,
+				content: serializeBlocks( remoteBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Tail',
+			'Remote inserted',
+		] );
+
+		const localBlocks = [
+			...initialBlocks,
+			paragraph( 'local-inserted', 'Local inserted' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: localBlocks,
+				content: serializeBlocks( localBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Tail',
+			'Remote inserted',
+			'Local inserted',
+		] );
+		expect( postContent( doc ) ).toContain( 'Remote inserted' );
+		expect( postContent( doc ) ).toContain( 'Local inserted' );
 
 		remoteDoc.destroy();
 	} );
