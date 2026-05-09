@@ -28,7 +28,18 @@ const POST_RAW_ATTRIBUTES = [ 'title', 'excerpt', 'content' ];
 
 const blocksTransientEdits = {
 	blocks: {
-		read: ( record ) => parse( record.content?.raw ?? '' ),
+		read: ( record ) => {
+			const content =
+				typeof record.content === 'string'
+					? record.content
+					: record.content?.raw;
+
+			if ( content === undefined ) {
+				return undefined;
+			}
+
+			return parse( content );
+		},
 		write: ( record ) => ( {
 			content: __unstableSerializeAndClean( record.blocks ),
 		} ),

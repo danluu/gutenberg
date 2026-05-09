@@ -183,6 +183,58 @@ const withMultiEntityRecordEdits = ( reducer ) => ( state, action ) => {
  * @return {AnyFunction} Reducer.
  */
 function entity( entityConfig ) {
+	function addReadableTransientEdits( record ) {
+		if ( ! record || ! entityConfig.transientEdits ) {
+			return record;
+		}
+
+		let nextRecord = record;
+		for ( const [ key, transientConfig ] of Object.entries(
+			entityConfig.transientEdits
+		) ) {
+			if (
+				nextRecord[ key ] !== undefined ||
+				! transientConfig ||
+				typeof transientConfig !== 'object' ||
+				typeof transientConfig.read !== 'function'
+			) {
+				continue;
+			}
+
+			const value = transientConfig.read( nextRecord );
+			if ( value === undefined ) {
+				continue;
+			}
+
+			if ( nextRecord === record ) {
+				nextRecord = { ...record };
+			}
+			nextRecord[ key ] = value;
+		}
+
+		return nextRecord;
+	}
+
+	function addReadableTransientEditsToReceiveAction( action ) {
+		if ( action.type !== 'RECEIVE_ITEMS' ) {
+			return action;
+		}
+
+		if ( Array.isArray( action.items ) ) {
+			let hasChanges = false;
+			const items = action.items.map( ( record ) => {
+				const nextRecord = addReadableTransientEdits( record );
+				hasChanges ||= nextRecord !== record;
+				return nextRecord;
+			} );
+
+			return hasChanges ? { ...action, items } : action;
+		}
+
+		const item = addReadableTransientEdits( action.items );
+		return item !== action.items ? { ...action, items: item } : action;
+	}
+
 	return compose( [
 		withMultiEntityRecordEdits,
 
@@ -198,10 +250,10 @@ function entity( entityConfig ) {
 
 		// Inject the entity config into the action.
 		replaceAction( ( action ) => {
-			return {
+			return addReadableTransientEditsToReceiveAction( {
 				key: entityConfig.key || DEFAULT_ENTITY_KEY,
 				...action,
-			};
+			} );
 		} ),
 	] )(
 		combineReducers( {
