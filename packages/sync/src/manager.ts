@@ -586,7 +586,13 @@ export function createSyncManager( debug = false ): SyncManager {
 				log( 'updateCRDTDoc', 'applying changes', entityId, {
 					changedKeys: Object.keys( changes ),
 				} );
-				syncConfig.applyChangesToCRDTDoc( ydoc, changes );
+				if ( options.baseRecord ) {
+					syncConfig.applyChangesToCRDTDoc( ydoc, changes, {
+						baseRecord: options.baseRecord,
+					} );
+				} else {
+					syncConfig.applyChangesToCRDTDoc( ydoc, changes );
+				}
 
 				if ( isSave ) {
 					markEntityAsSaved( ydoc );

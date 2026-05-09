@@ -122,14 +122,19 @@ function defaultApplyChangesToCRDTDoc(
  * @param {CRDTDoc}     ydoc
  * @param {PostChanges} changes
  * @param {Set<string>} syncedProperties
+ * @param {Object}      options
+ * @param {ObjectData}  options.baseRecord
  * @return {void}
  */
 export function applyPostChangesToCRDTDoc(
 	ydoc: CRDTDoc,
 	changes: PostChanges,
-	syncedProperties: Set< string >
+	syncedProperties: Set< string >,
+	options: { baseRecord?: ObjectData } = {}
 ): void {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
+	const shouldDeriveContentFromBlocks =
+		syncedProperties.has( 'content' ) && Array.isArray( changes.blocks );
 
 	Object.keys( changes ).forEach( ( key ) => {
 		if ( ! syncedProperties.has( key ) ) {
@@ -169,13 +174,22 @@ export function applyPostChangesToCRDTDoc(
 
 				// Merge blocks does not need `setValue` because it is operating on a
 				// Yjs type that is already in the Y.Doc.
-				mergeCrdtBlocks( currentBlocks, newValue, newCursorPosition );
+				mergeCrdtBlocks(
+					currentBlocks,
+					newValue,
+					newCursorPosition,
+					( options.baseRecord as PostChanges | undefined )?.blocks
+				);
 				break;
 			}
 
 			case 'content':
 			case 'excerpt':
 			case 'title': {
+				if ( key === 'content' && shouldDeriveContentFromBlocks ) {
+					break;
+				}
+
 				const currentValue = ymap.get( key );
 				let rawValue = getRawValue( newValue );
 
