@@ -8,7 +8,7 @@ Transport: websocket
 
 Two collaborators editing the same post can converge on corrupted paragraph text when both select the same tail paragraph, use the block toolbar `Add after` action, and then type into the newly inserted paragraph concurrently. The bug is not the old May 5 readiness false positive: on the May 7 known-fixes base, WebSocket awareness reaches the ready state, both `Add after` menu actions run, both peers converge, and the final converged block tree contains the original three top-level blocks plus two inserted paragraphs with missing characters.
 
-The current evidence points at a real input/selection/sync race during key-by-key typing after concurrent block insertion. A single atomic `keyboard.insertText()` control passed, while ordinary key-by-key typing at both 10 ms/key and 160 ms/key corrupted content.
+The current evidence points at a real input/selection/sync race during key-by-key typing after concurrent block insertion. A single atomic `keyboard.insertText()` control passed, while ordinary key-by-key typing at both 10 ms/key and 160 ms/key corrupted content. Pass 173 further reproduced the defect with about a one-second post-menu delay plus jitter, then confirmed that using the normal `Save draft` button persists the corrupted paragraphs into REST `content.raw`.
 
 ## Reproduction Evidence
 
@@ -100,6 +100,41 @@ post-menu typing: one `Add after` click completed at 26616 ms, the other at
 26634 ms, the test waited 500 ms on both pages, and typing began at 27127 ms
 and 27137 ms with a 160 ms/key delay.
 
+Pass 173 pushed the timing farther away from an automation-only immediate
+typing path. It used the same detached known-fixes worktree at
+`f256024286dd80a4c0e2579f658c109256abf648`, the same natural block toolbar
+`Add after` action, and a temporary spec that records actual post-menu waits.
+With 160 ms/key typing, a 1000 ms base post-menu delay, and +/-200 ms jitter,
+attempts 1-5 passed and attempt 6 failed. The two `Add after` clicks completed
+29 ms apart; the peers then waited 1149 ms and 1002 ms respectively before
+typing. Both peers converged to:
+
+```text
+TC 5fe7 add-after primary paragraph 6
+RTC 5fe7 add-after collaborator paragraph 6
+```
+
+A second pass-173 run saved after detecting corruption. With actual post-menu
+waits of 1019 ms and 853 ms, attempt 2 converged both peers to:
+
+```text
+RTC 5fe7 add-after collaborator paragraph 2
+5fe7 add-after primary paragraph 2
+```
+
+After clicking the normal `Save draft` button, REST `content.raw` contained both
+corrupted inserted paragraphs:
+
+```html
+<!-- wp:paragraph -->
+<p>RTC 5fe7 add-after collaborator paragraph 2</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>5fe7 add-after primary paragraph 2</p>
+<!-- /wp:paragraph -->
+```
+
 At 10 ms/key, both inserted paragraphs were more severely corrupted:
 
 ```text
@@ -136,9 +171,9 @@ The natural workflow is ordinary post editor collaboration over the WebSocket RT
 4. Both choose block toolbar Options -> `Add after`.
 5. Both type into the newly inserted paragraph before the concurrent insertion and selection state fully settle.
 
-Multiple users/tabs and RTC collaboration are required. No save/reload, injected malformed blocks, direct state mutation, or network delay is required to observe the defect. Human-speed typing at 160 ms/key still loses characters even after 250 ms and 500 ms post-menu pauses, so the race is not limited to an unrealistically fast Playwright path, although the exact workflow requires both collaborators to edit the same insertion point at nearly the same time.
+Multiple users/tabs and RTC collaboration are required. No save/reload, injected malformed blocks, direct state mutation, or network delay is required to observe the defect. Human-speed typing at 160 ms/key still loses characters after 250 ms, 500 ms, and roughly 1 second post-menu waits, so the race is not limited to an unrealistically fast Playwright path, although the exact workflow requires both collaborators to edit the same insertion point at nearly the same time.
 
-Blast radius is content corruption, not just a UI-only mismatch. Both peers converge to the same wrong text, the editor remains dirty, and saving would persist the corrupted paragraphs. Recovery is manual retyping or undo if noticed quickly; if saved or autosaved unnoticed, the corrupted content can survive.
+Blast radius is content corruption, not just a UI-only mismatch. Both peers converge to the same wrong text, the editor remains dirty, and pass 173 verified that saving persists the corrupted paragraphs into post content. Recovery is manual retyping or undo if noticed quickly; after save/reload, recovery depends on revisions or manual repair.
 
 ## Root-Cause Direction
 
@@ -181,6 +216,10 @@ Revised plan: first instrument and prove whether each missing character was pres
 - Failure JSON, pass-172 160 ms/key no post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output/attempt-6.json`
 - Failure JSON, pass-172 160 ms/key with 250 ms post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay250-attempts20-output/attempt-4.json`
 - Failure JSON, pass-172 160 ms/key with 500 ms post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay500-attempts10-output/attempt-3.json`
+- Failure JSON, pass-173 160 ms/key with 1000 ms +/-200 ms post-menu jitter: `/tmp/5fe795b32c10-p173-knownfix-type160-postdelay1000-jitter200-attempts20-output/attempt-6.json`
+- Save-persistence JSON, pass-173 160 ms/key with 1000 ms +/-200 ms post-menu jitter: `/tmp/5fe795b32c10-p173-knownfix-type160-postdelay1000-jitter200-save-attempts20-output/attempt-2.json`
+- Pass-173 trace, jittered failure: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/test/e2e/artifacts/test-results/editor-collaboration-webso-cee7d-d-after-realistic-attempt-6-chromium/trace.zip`
+- Pass-173 trace, save-persistence failure: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/test/e2e/artifacts/test-results/editor-collaboration-webso-58c40-d-after-realistic-attempt-2-chromium/trace.zip`
 - Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
