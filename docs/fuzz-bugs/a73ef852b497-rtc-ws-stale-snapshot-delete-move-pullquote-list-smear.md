@@ -205,4 +205,12 @@ The printed triage state from the same run showed the List Y.Map rewritten as a 
 }
 ```
 
-The same focused test passed on the existing proof-fix commit `a4cbae8da63042e0bb8a1361a78bbfd64fdc6df4`, confirming that the clientId structural sync covers the narrowed root-cause schedule as well as the broader enumerator. `wp-env` was checked for the pass-175 worktree and was uninitialized; no new browser repro or video was produced in this pass.
+The same focused test passed on the proof-fix commit, confirming that the clientId structural sync covers the narrowed root-cause schedule as well as the broader enumerator. The PR branch was rebuilt with the focused repro folded into the first non-Playwright repro commit:
+
+```text
+21ca487683a Add RTC List/Pullquote stale snapshot repro
+6fa29ebacd6 Record missing natural Playwright repro for RTC List/Pullquote smear
+377adcfdae6 Avoid positional block smear after stale RTC snapshots
+```
+
+`wp-env` was checked for the pass-175 worktree and was uninitialized; no new browser repro or video was produced in this pass.
