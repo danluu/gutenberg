@@ -429,3 +429,51 @@ A fresh local Playwright run remains blocked before browser execution. `wp-env s
 Bind for 0.0.0.0:9000 failed: port is already allocated
 wp-env-gutenberg-bug-ba7fe0fd5418-a63fe623-phpmyadmin-1 Up 12 hours 0.0.0.0:9000->80/tcp
 ```
+
+## Pass 173 Verification
+
+Pass 173 fetched current `origin/trunk` and rebased both branches again:
+
+```text
+origin/trunk = 114082fd16895304936ddd048e617891ab8f9f48
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+b7753b0e152 Add RTC stale top-level append regression test
+f94f4e5dacd Add RTC stale append persistence browser repro
+b11a69daf3 Preserve RTC remote inserts across stale block snapshots
+```
+
+The rebased PR branch passes the focused CRDT unit files:
+
+```text
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+`git diff --check origin/trunk...HEAD` also passed on the PR branch.
+
+Pass 173 reran the current known-fixes negative using the existing detached test-only worktree at the backlink-aware base:
+
+```text
+base = f256024286dd80a4c0e2579f658c109256abf648
+test file = packages/core-data/src/utils/test/da6c-pass172-crdt-read-stale.ts
+```
+
+The current known-fixes base still fails the ordinary CRDT-read stale snapshot route:
+
+```text
+keeps an unobserved remote insert after a hydrated editor emits an unchanged stale snapshot:
+Expected ["Baseline", "Shared anchor", "Primary paragraph", "Trailing"]
+Received ["Baseline", "Shared anchor", "Trailing"]
+
+keeps both same-anchor sibling appends after a hydrated stale local snapshot is saved:
+Expected length: 5
+Received length: 4
+Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+Pass 173 contribution: the likelihood classification remains `medium`, but the evidence is now narrower. The failing browser trace and the known-fixes unit repro both collapse to the same real-user shape: a hydrated editor emits a full `blocks` snapshot that is causally older than a remote sibling paragraph insert. The trace timing is only about 0.65s between the primary typing start and collaborator typing start, so the window is a normal quick collaborative edit rather than a long artificial sleep.
