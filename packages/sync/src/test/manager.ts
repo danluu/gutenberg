@@ -185,6 +185,9 @@ describe( 'SyncManager', () => {
 			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
 				title: remoteTitle,
 			} );
+			expect(
+				mockSyncConfig.applyChangesToCRDTDoc
+			).not.toHaveBeenCalled();
 		} );
 
 		it( 'does not load entity when no providers are available', async () => {
@@ -406,13 +409,14 @@ describe( 'SyncManager', () => {
 			} );
 
 			it( 'applies a persisted CRDT doc with invalidated fields, then applies changes', async () => {
+				const persistedRecord = {
+					...mockRecord,
+					title: 'Invalidated title from persisted CRDT doc',
+				};
 				mockSyncConfig = {
 					...mockSyncConfig,
 					getPersistedCRDTDoc: jest.fn( () =>
-						createPersistedCRDTDoc( {
-							...mockRecord,
-							title: 'Invalidated title from persisted CRDT doc',
-						} )
+						createPersistedCRDTDoc( persistedRecord )
 					),
 				};
 
@@ -436,7 +440,9 @@ describe( 'SyncManager', () => {
 				).toHaveBeenCalledTimes( 1 );
 				expect(
 					mockSyncConfig.applyChangesToCRDTDoc
-				).toHaveBeenCalledWith( expect.any( Y.Doc ), expectedChanges );
+				).toHaveBeenCalledWith( expect.any( Y.Doc ), expectedChanges, {
+					baseRecord: persistedRecord,
+				} );
 
 				// getChangesFromCRDTDoc should be called with the persisted doc and record.
 				expect(
