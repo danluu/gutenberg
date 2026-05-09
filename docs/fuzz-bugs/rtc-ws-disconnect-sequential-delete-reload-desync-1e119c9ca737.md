@@ -12,6 +12,8 @@ The original artifact is no longer available locally and the row has no durable 
 
 Pass 174 found a second reload-specific route in the same family. During `SyncManager.load()`, provider updates can arrive before stale REST/persisted-record hydration completes. The known-fixes base had a guard for "provider already applied remote state", but no provider bootstrap path set that flag. It also registered the same record and state observers twice, which could double-dispatch later remote updates.
 
+Pass 175 independently re-read the code and re-ran the targeted checks. On the fixed PR branch, the signature CRDT regression passed (`2/2`), the sync-manager suite passed (`30/30`), and lint passed for the touched files. On a disposable tests-only worktree at `1289a0c796c` on top of the frozen known-fixes base, `packages/sync/src/test/manager.ts` failed in the expected three places: provider bootstrap still replayed stale hydration, invalidated persisted-doc updates were applied without `baseRecord`, and duplicate observers double-dispatched a later remote edit.
+
 ## Root Cause
 
 The known-fixes stack already reconciled stale full block snapshots when `mergeCrdtBlocks()` used `previousLocalBlocksCache`. The first missing case was the normal editor `baseRecord` path:
@@ -49,4 +51,4 @@ Blast radius is semantic content corruption: deleted paragraphs can reappear and
 
 ## Follow-Up
 
-The shortest confidence-improving browser experiment is a two-tab WebSocket Playwright timing search using natural editor actions only: create three paragraphs, delete the last two on one peer, close/reconnect/reload the other peer around that boundary, log `baseRecord.blocks` and current CRDT block IDs, and assert both visible blocks and persisted `content` after convergence/save.
+The shortest confidence-improving browser experiment is a two-tab WebSocket Playwright timing search using natural editor actions only: create three paragraphs, delete the last two on one peer, close/reconnect/reload the other peer around that boundary, log provider-bootstrap state, `hasProviderSyncedRemoteState`, `baseRecord.blocks`, current CRDT block IDs, `applyPersistedCrdtDoc()` decisions, and assert both visible blocks and persisted `content` after convergence/save.
