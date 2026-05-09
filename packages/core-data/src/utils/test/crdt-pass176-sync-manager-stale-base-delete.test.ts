@@ -66,7 +66,7 @@ import { getRootMap } from '../crdt-utils';
 const mockGetProviderCreators = jest.mocked( getProviderCreators );
 const SYNCED_POST_PROPERTIES = new Set( [ 'blocks', 'content' ] );
 
-function block(
+function makeBlock(
 	name: 'core/heading' | 'core/paragraph',
 	clientId: string,
 	content: string
@@ -94,7 +94,7 @@ function postBlocks( doc: Y.Doc ): Block[] {
 		getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY ).get(
 			'blocks'
 		) as YBlocks
-	).toJSON() as Block[];
+	 ).toJSON() as Block[];
 }
 
 function contentsOf( blocks: Block[] ): string[] {
@@ -140,19 +140,23 @@ describe( '62db5968059e sync-manager stale base delete reconstruction', () => {
 
 	it( 'does not replay a recently deleted remote heading through an allowed stale baseRecord update', async () => {
 		const initialBlocks = [
-			block( 'core/paragraph', 'alpha', 'Alpha' ),
-			block( 'core/paragraph', 'beta', 'Beta' ),
-			block( 'core/paragraph', 'tail', 'Tail' ),
+			makeBlock( 'core/paragraph', 'alpha', 'Alpha' ),
+			makeBlock( 'core/paragraph', 'beta', 'Beta' ),
+			makeBlock( 'core/paragraph', 'tail', 'Tail' ),
 		];
 		const withRemoteHeading = [
 			initialBlocks[ 0 ],
-			block( 'core/heading', 'remote-heading', 'Remote Heading' ),
+			makeBlock( 'core/heading', 'remote-heading', 'Remote Heading' ),
 			initialBlocks[ 1 ],
 			initialBlocks[ 2 ],
 		];
 		const afterRemoteDelete = initialBlocks;
 		const stalePeerEditWithDeletedHeading = [
-			block( 'core/paragraph', 'alpha', 'Alpha collaborator stale edit' ),
+			makeBlock(
+				'core/paragraph',
+				'alpha',
+				'Alpha collaborator stale edit'
+			),
 			withRemoteHeading[ 1 ],
 			initialBlocks[ 1 ],
 			initialBlocks[ 2 ],
@@ -200,9 +204,7 @@ describe( '62db5968059e sync-manager stale base delete reconstruction', () => {
 			handlers
 		);
 
-		let resolveEditedRecord!: (
-			record: Record< string, unknown >
-		) => void;
+		let resolveEditedRecord!: ( record: Record< string, unknown > ) => void;
 		const pendingEditedRecord = new Promise< Record< string, unknown > >(
 			( resolve ) => {
 				resolveEditedRecord = resolve;

@@ -264,6 +264,92 @@ function areBlocksEqual( gblock: Block, yblock: YBlock ): boolean {
 	);
 }
 
+function getBlockClientId( block: Block ): string | undefined {
+	return block.clientId;
+}
+
+function getClientIdsIfEveryBlockHasUniqueId(
+	blocks: Block[]
+): string[] | undefined {
+	const clientIds: string[] = [];
+	const seenClientIds = new Set< string >();
+
+	for ( const block of blocks ) {
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId || seenClientIds.has( clientId ) ) {
+			return undefined;
+		}
+
+		clientIds.push( clientId );
+		seenClientIds.add( clientId );
+	}
+
+	return clientIds;
+}
+
+function getCurrentBlocks( yblocks: YBlocks ): Block[] {
+	return yblocks.toJSON() as Block[];
+}
+
+function reconcileStaleLocalBlocks(
+	yblocks: YBlocks,
+	incomingBlocks: Block[],
+	baseBlocks?: Block[]
+): Block[] {
+	if ( ! baseBlocks ) {
+		return incomingBlocks;
+	}
+
+	const incomingClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( incomingBlocks );
+	const baseClientIds = getClientIdsIfEveryBlockHasUniqueId( baseBlocks );
+	const currentBlocks = getCurrentBlocks( yblocks );
+	const currentClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( currentBlocks );
+
+	if ( ! incomingClientIds || ! baseClientIds || ! currentClientIds ) {
+		return incomingBlocks;
+	}
+
+	const incomingClientIdSet = new Set( incomingClientIds );
+	const baseClientIdSet = new Set( baseClientIds );
+	const currentClientIdSet = new Set( currentClientIds );
+	const blocksToSync = incomingBlocks.filter( ( block ) => {
+		const clientId = getBlockClientId( block );
+		return (
+			! clientId ||
+			! baseClientIdSet.has( clientId ) ||
+			currentClientIdSet.has( clientId )
+		);
+	} );
+	const blockIdsToSync = new Set(
+		blocksToSync.map( ( block ) => getBlockClientId( block ) as string )
+	);
+
+	currentBlocks.forEach( ( currentBlock, currentIndex ) => {
+		const clientId = getBlockClientId( currentBlock );
+
+		if (
+			! clientId ||
+			incomingClientIdSet.has( clientId ) ||
+			baseClientIdSet.has( clientId ) ||
+			blockIdsToSync.has( clientId )
+		) {
+			return;
+		}
+
+		blocksToSync.splice(
+			Math.min( currentIndex, blocksToSync.length ),
+			0,
+			currentBlock
+		);
+		blockIdsToSync.add( clientId );
+	} );
+
+	return blocksToSync;
+}
+
 function createNewYAttributeMap(
 	blockName: string,
 	attributes: BlockAttributes
@@ -420,11 +506,13 @@ function createNewYBlock( block: Block ): YBlock {
  * @param attributeCursor When provided, describes a selection cursor falling within a
  *                        RichText field associated with a specific block and attribute.
  *                        Derived from the changes that produced the blocks.
+ * @param baseBlocks      Optional pre-change block snapshot used for stale snapshot reconciliation.
  */
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
-	attributeCursor: MergeCursorPosition
+	attributeCursor: MergeCursorPosition,
+	baseBlocks?: Block[]
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -434,8 +522,11 @@ export function mergeCrdtBlocks(
 		);
 	}
 
-	const incomingBlocksToSync =
-		serializableBlocksCache.get( incomingBlocks ) ?? [];
+	const incomingBlocksToSync = reconcileStaleLocalBlocks(
+		yblocks,
+		serializableBlocksCache.get( incomingBlocks ) ?? [],
+		baseBlocks ? makeBlocksSerializable( baseBlocks ) : undefined
+	);
 
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
