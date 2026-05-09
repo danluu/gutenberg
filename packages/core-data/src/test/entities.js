@@ -556,10 +556,7 @@ describe( 'prePersistPostType', () => {
 		};
 		const syncManager = {
 			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
-			createPersistedCRDTDoc: jest
-				.fn()
-				.mockResolvedValueOnce( 'before-apply-doc' )
-				.mockResolvedValueOnce( 'after-apply-doc' ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
 			getCRDTRecordData: jest.fn( () => ( {
 				content: 'partially flushed local crdt content',
 			} ) ),
@@ -580,15 +577,12 @@ describe( 'prePersistPostType', () => {
 			'/wp/v2/pages'
 		);
 
-		expect( syncManager.applyPersistedCRDTDoc ).toHaveBeenCalledWith(
-			'postType/page',
-			123,
-			latestRecord
-		);
+		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
 		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenCalledTimes( 2 );
 		expect( result ).toEqual( {
 			meta: {
-				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'after-apply-doc',
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
 			},
 		} );
 	} );
@@ -621,11 +615,7 @@ describe( 'prePersistPostType', () => {
 			'/wp/v2/pages'
 		);
 
-		expect( syncManager.applyPersistedCRDTDoc ).toHaveBeenCalledWith(
-			'postType/page',
-			123,
-			latestRecord
-		);
+		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
 		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
 		expect( result ).toEqual( {
 			meta: {
@@ -645,10 +635,7 @@ describe( 'prePersistPostType', () => {
 		};
 		const syncManager = {
 			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
-			createPersistedCRDTDoc: jest
-				.fn()
-				.mockResolvedValueOnce( 'local-doc-before-replay' )
-				.mockResolvedValueOnce( 'local-doc-after-replay' ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
 			getCRDTRecordData: jest.fn( () => ( {
 				content: 'stale CRDT content',
 			} ) ),
@@ -675,10 +662,10 @@ describe( 'prePersistPostType', () => {
 
 		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
 		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenCalledTimes( 2 );
 		expect( result ).toEqual( {
 			meta: {
-				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
-					'local-doc-before-replay',
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
 			},
 		} );
 	} );
