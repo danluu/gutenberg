@@ -233,3 +233,27 @@ confirms the current synthetic known-fixes base has not closed the stricter
 base-record variant; the trunk PR branch fixes the current no-`baseBlocks`
 merge path and the same moved-block reconciliation needs to be preserved when
 the proposed explicit-base API is integrated.
+
+## Pass 175 Independent Check
+
+Pass 175 independently re-ran the focused before/after evidence. The PR branch
+pre-fix commit `e46104c26bc` fails both Pullquote repro cases, leaving the
+Pullquote at top level next to an empty Group. The fixed head `13e5ae7a78b`
+passes the focused Pullquote repro and the existing `crdt-blocks.ts` suite.
+
+Pass 175 also created a fresh detached worktree at the May 7 known-fixes commit
+`f256024286dd80a4c0e2579f658c109256abf648` and drove the explicit
+`mergeCrdtBlocks( ..., baseBlocks )` path directly. That test fails with:
+
+```text
+[
+  "core/group:group-client-id:Local edit after stale view[core/pullquote:pullquote-client-id:Initial Pullquote body]",
+  "core/group:<fresh uuid>"
+]
+```
+
+That confirms the synthetic known-fixes base still bypasses stale moved-block
+reconciliation when explicit base blocks are supplied. The practical likelihood
+classification remains `low`: the user workflow is natural, but the browser
+race still needs a stale full-snapshot ordering that has not been captured as a
+clean failing Playwright run.
