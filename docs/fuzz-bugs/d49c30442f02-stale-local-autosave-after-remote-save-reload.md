@@ -53,6 +53,19 @@ bundle deliberately replaced by the known-fixes build bundle that lacks
 `expected count 0, received 2` for the stale browser-backup notice. Restoring the
 fixed bundle and rerunning the PR branch passed.
 
+Pass 174 refreshed both artifact branches onto current `origin/trunk`
+`b38f9b4d86d0505199f5efd78c2adf213e428e78`
+(`Fix lockfile drift and missing dep from content-types consolidation (#78109)`).
+The two trunk commits after pass 173 affect lockfiles/dependencies and PHPStan
+types, not editor autosave or RTC sync ordering. Static checks still show no
+`useAutosaveOnPageUnload`, `pagehide`, or relevant `beforeunload` hook in
+`origin/trunk` or in the required known-fixes base
+`f256024286dd80a4c0e2579f658c109256abf648`. Pass 174 reran the same natural
+repro at the pre-fix repro commit, again replacing the ignored editor build
+bundle with the no-unload known-fixes bundle. It failed at the stale warning
+assertion with `expected count 0, received 2`. The rebased PR branch, with the
+fixed bundle restored, passed the same test.
+
 ## Natural Repro
 
 The committed repro on the PR branch creates a draft post with one paragraph and uses two real browser users in the post editor:
@@ -89,6 +102,22 @@ RTC changed the ordering:
 - `48ce44dac7981eb730079563a3a2975b89840fac` (2026-01-28), "Real-time collaboration: Add default HTTP polling sync provider (#74564)"
 
 When a peer edit arrives, the non-saving tab's in-memory editor state can be newer than its local sessionStorage backup. When another peer saves, the remote-save signal and refetch/purge are asynchronous. If the user reloads before that asynchronous path clears or refreshes the local backup, the next page load compares the persisted server state against an older browser backup and offers to restore the older backup.
+
+Pass 174 narrowed the exact race boundary:
+
+- `autosave( { local: true } )` writes the current edited `title`, `content`,
+  and `excerpt` synchronously through `localAutosaveSet`.
+- `LocalAutosaveMonitor` on trunk only calls that local autosave through
+  `AutosaveMonitor`'s interval path; it has no page-lifecycle flush.
+- A peer save updates the CRDT saved timestamp via `markEntityAsSaved`; the
+  non-saving peer observes that remote state and calls `handlers.refetchRecord()`
+  asynchronously.
+- The local autosave purge path clears storage only after local save/autosave or
+  dirty-state transitions. It is not tied to the remote-save timestamp.
+
+That leaves a real browser lifecycle gap: the editor state can already include
+the peer's content while the local `sessionStorage` backup is still the older
+interval snapshot.
 
 ## Practical Impact
 
@@ -193,9 +222,9 @@ PR branch:
 
 PR branch commits:
 
-1. `94d71e52cc6` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
-2. `c8a4964689b` - natural two-user Playwright repro.
-3. `54beec0821f` - page-unload local autosave flush fix.
+1. `710bdee0e24` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
+2. `089d3db2058` - natural two-user Playwright repro.
+3. `3f900de8570` - page-unload local autosave flush fix.
 
 ## Verification
 
@@ -234,6 +263,29 @@ failed at the stale warning assertion:
 
 `expected count 0, received 2` for
 `The backup of this post in your browser is different from the version below.`
+
+Pass 174 rebase verification on current `origin/trunk`
+`b38f9b4d86d0505199f5efd78c2adf213e428e78`:
+
+`WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
+
+Pre-fix repro commit `089d3db2058`, with ignored editor build output replaced
+by the no-unload known-fixes bundle:
+
+`expected count 0, received 2` for
+`The backup of this post in your browser is different from the version below.`
+
+Fixed PR branch commit `3f900de8570`, with the fixed editor build bundle
+restored:
+
+`1 passed (21.7s)`.
+
+Pass 174 targeted lint:
+
+`npm run lint:js -- packages/editor/src/components/local-autosave-monitor/index.js test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts`
+
+Result: exit code 0, with four existing `react-hooks/exhaustive-deps` warnings
+in `local-autosave-monitor/index.js`.
 
 Video run:
 
