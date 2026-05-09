@@ -39,6 +39,8 @@ jest.mock( '@wordpress/blocks', () => {
  * Internal dependencies
  */
 import { mergeCrdtBlocks, type Block, type YBlock } from '../crdt-blocks';
+import { applyPostChangesToCRDTDoc } from '../crdt';
+import { CRDT_RECORD_MAP_KEY } from '../../sync';
 
 function paragraph( clientId: string, content: string ): Block {
 	return {
@@ -93,6 +95,12 @@ function rootClientIds( yblocks: Y.Array< YBlock > ): string[] {
 	return ( yblocks.toJSON() as Block[] ).map(
 		( block ) => block.clientId as string
 	);
+}
+
+function docBlocks( sourceDoc: Y.Doc ): Y.Array< YBlock > {
+	return sourceDoc
+		.getMap( CRDT_RECORD_MAP_KEY )
+		.get( 'blocks' ) as Y.Array< YBlock >;
 }
 
 function groupChildClientIds( yblocks: Y.Array< YBlock > ): string[] {
@@ -200,6 +208,46 @@ describe( 'd465f26f6b79 cross-scope move reconciliation', () => {
 			'moved-paragraph',
 		] );
 		expect( countMovedParagraphs( yblocks.toJSON() as Block[] ) ).toBe( 1 );
+		remoteDoc.destroy();
+	} );
+
+	it( 'uses baseRecord blocks on the post entity CRDT path', () => {
+		const syncedProperties = new Set( [ 'blocks' ] );
+		const baseBlocks = initialBlocks();
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: baseBlocks },
+			syncedProperties
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{ blocks: movedIntoGroup() },
+			syncedProperties,
+			{ blocks: baseBlocks }
+		);
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: staleLocalDuplicateWithTailEdit() },
+			syncedProperties,
+			{ blocks: baseBlocks }
+		);
+
+		const mergedBlocks = docBlocks( doc );
+		expect( rootClientIds( mergedBlocks ) ).toEqual( [
+			'group',
+			'tail-paragraph',
+		] );
+		expect( groupChildClientIds( mergedBlocks ) ).toEqual( [
+			'moved-paragraph',
+		] );
+		expect( countMovedParagraphs( mergedBlocks.toJSON() as Block[] ) ).toBe(
+			1
+		);
 		remoteDoc.destroy();
 	} );
 } );
