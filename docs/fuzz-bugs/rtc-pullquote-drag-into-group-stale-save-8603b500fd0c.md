@@ -6,7 +6,9 @@ The original handoff described a collaboration bug where a Pullquote inserted by
 one editor and dragged into a Group by another editor could leave a stale
 top-level duplicate. The straightforward convergence path is covered by the
 stale top-level block reconciliation work in `pr/77876`, but pass 172 found a
-remaining persistence race on the current known-fixes stack.
+remaining persistence race on the current known-fixes stack. Pass 173 narrowed
+that race to the stale serialized-content merge fallback used by
+`prePersistPostType`.
 
 ## Practical Trigger
 
@@ -73,25 +75,63 @@ Group and a second stale top-level Pullquote after the tail Paragraph:
 <!-- /wp:pullquote -->
 ```
 
-## Root-Cause Hypothesis
+## Root Cause
 
-The stale save writes an older persisted CRDT snapshot whose content still has
-the Pullquote as a top-level block. After the live editor CRDT converges to the
-correct nested shape, a later save re-applies or otherwise merges that stale
-persisted snapshot with the current live document. The save then serializes the
-union: the correct nested Pullquote plus the stale top-level Pullquote.
+The stale save writes content whose Pullquote is still a top-level block. After
+the live editor converges to the correct nested shape, a later save calls
+`prePersistPostType` in `packages/core-data/src/entities.js`. When applying the
+persisted CRDT document does not replace local content, the save path falls back
+to `mergeStaleSerializedBlockContent`.
 
-The relevant path is `prePersistPostType` in `packages/core-data/src/entities.js`,
-which fetches the latest REST record and calls
-`syncManager.applyPersistedCRDTDoc` before serializing the CRDT document for
-save. `packages/sync/src/manager.ts` has a guard intended to avoid replaying
-persisted snapshots after a provider has already applied remote state:
-`hasProviderSyncedRemoteState`. The WebSocket e2e provider sets this metadata
-when applying remote state, but the HTTP polling provider does not set it in
-trunk. A pass-172 candidate that set the same metadata in the HTTP polling
-provider passed the polling-manager unit test but did not yet fix the natural
-fast-save Playwright repro, so the persistence path needs a deeper audit before
-landing a fix.
+That helper has a branch for stale local content that is shorter than the latest
+saved content:
+
+```js
+latestBlocks.length > localBlocks.length &&
+	baseBlocks.length === latestBlocks.length;
+```
+
+It verifies that the top-level prefix block names still match, then appends the
+latest trailing blocks to the local blocks. That is correct when the local save
+is genuinely missing newly appended remote blocks. It is wrong when the trailing
+latest block was moved into an earlier local container. In this bug:
+
+- latest/stale REST content still has the Pullquote after the tail Paragraph;
+- local editor content has a shorter top-level list because the Pullquote moved
+  into the Group;
+- the top-level prefix still matches: Heading, Group, Paragraph;
+- the fallback appends the stale trailing Pullquote, producing a nested
+  Pullquote plus the stale top-level duplicate.
+
+Pass 173 added a focused unit repro for exactly this shape and a guard that
+counts serialized block identities recursively in local content. A latest
+trailing block is not appended if an extra matching serialized block is already
+present inside the local prefix. A companion unit test preserves legitimate
+trailing duplicate content when the prefix already contained the same serialized
+block.
+
+The natural fast-save Playwright repro passed after rebuilding the minified
+core-data bundle with that guard. The first pass-173 browser run still failed
+because the browser loaded `build/scripts/core-data/index.min.js`, while only
+the source and unminified build artifact had been patched.
+
+Focused unit verification:
+
+```bash
+npm run test:unit -- packages/core-data/src/test/entities.js --runInBand --testNamePattern='does not append a stale trailing block|preserves a trailing duplicate block|preserves latest trailing serialized blocks'
+```
+
+Result after the guard: `PASS`, 3 tests passed.
+
+Natural fixed repro:
+
+```bash
+RTC_8603_REPRO_DIR=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-173/8603-minified-guard-trace-results \
+WP_ENV_PORT=9990 WP_ENV_PHPMYADMIN_PORT=9992 WP_BASE_URL=http://localhost:9990 \
+npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-8603b500fd0c-pass173-immediate-save.spec.ts --grep 'remote-pullquote-drag-into-group' --reporter=line --trace on
+```
+
+Result after rebuilding the minified core-data bundle: `1 passed`.
 
 ## Impact
 
