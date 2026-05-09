@@ -28,16 +28,19 @@ The deleted region is therefore rehydrated as duplicate visible content.
 
 ## Practical Impact
 
-Real-user likelihood is `low` overall, and `medium` only for active RTC sessions
-where a peer reloads or rejoins during nearby structural edits.
+Real-user likelihood is `low` for RTC-enabled editing, and `very-low` for the
+general Gutenberg population because RTC collaboration is a prerequisite. Within
+an active RTC session the conditional likelihood rises to `medium` only when a
+peer reloads or rejoins during nearby structural edits.
 
 The natural workflow is two collaborators or two browser tabs editing the same
 post in the post editor with RTC enabled over the HTTP polling transport. The
 block types are common top-level paragraph and heading blocks. The common pieces
 are block move, block delete, and browser reload/rejoin. The rare pieces are the
 timing: a stale full-block snapshot based on the old order must land after the
-move/delete sequence, and the corrupted peer must save for the duplicate to
-persist.
+move/delete sequence. The archived analysis supplement says the saved post can
+also contain the duplicated tail, so this is not merely a live-editor split when
+the corrupted peer or reconciliation path saves.
 
 The blast radius is content corruption, not only a transient UI mismatch. A
 deleted paragraph can return as duplicate visible content and be saved. I found
@@ -92,6 +95,28 @@ Cherry-picking the prototype fix commit
 the wrapper regression pass. The existing `crdt-blocks.ts` unit suite also
 passed in that patched temporary state: 76 tests passed.
 
+Pass 174 reran the focused regressions on two relevant heads:
+
+```bash
+git worktree add --detach .../pass-174/work/.../f256 f256024286dd80a4c0e2579f658c109256abf648
+git worktree add --detach .../pass-174/work/.../pr77924 pr/77924
+git -C .../f256 cherry-pick -n 5461d73aedf
+git -C .../pr77924 cherry-pick -n 5461d73aedf
+npm run test:unit packages/core-data/src/utils/test/crdt-388717ee691c-pass171.test.ts packages/core-data/src/utils/test/crdt-388717-post-wrapper-pass172.test.ts -- --runInBand
+```
+
+Both the backlink-aware known-fixes base and the standalone `pr/77924` head
+failed both focused tests with the same duplicate:
+
+```text
+Expected: [ "Tail paragraph", "Follow-up heading" ]
+Received: [ "Tail paragraph", "Follow-up heading", "Tail paragraph" ]
+```
+
+The existing prototype PR branch was also rechecked in pass 174. The two focused
+tests passed, the surrounding `crdt-blocks.ts` unit suite passed with 76 tests,
+and `git diff --check HEAD~3..HEAD` reported no whitespace errors.
+
 ## Root Cause
 
 The vulnerable path is `mergeCrdtBlocks()` in
@@ -108,8 +133,9 @@ inserting the stale third `Tail paragraph`.
 The individual `pr/77924` head has the same boundary: its
 `rebaseYBlocksByClientId()` requires `canReorderYBlocksByClientId( yblocks,
 baseBlocks )` and `canReorderBlocksByClientId( baseBlocks, blocksToSync )`, both
-of which are same-length reorder checks. That PR therefore does not cover the
-move-plus-delete-plus-stale-reload shape by itself.
+of which are same-length reorder checks. Pass 174 confirmed that boundary
+dynamically by applying the focused regressions to the standalone `pr/77924`
+head and observing the same duplicate tail failure.
 
 The historical origin is the post-entity CRDT merge path introduced by:
 
@@ -144,9 +170,10 @@ unless it actually expresses a move relative to its base.
 
 ## Remaining Gap
 
-This explanation has a fresh low-level reproduction and a static PR-head
-boundary check, but not a clean natural-user Playwright repro or video. The
-shortest confidence-improving experiment is a two-user Playwright spec that uses
-normal block toolbar actions to move the tail paragraph, delays one HTTP polling
-update across a reload/rejoin, deletes the long paragraph, then asserts both
-live and saved block order.
+This explanation has fresh low-level and post-wrapper reproductions, a dynamic
+standalone `pr/77924` failure check, and a prototype fix verification, but not a
+clean natural-user Playwright repro or video. The shortest
+confidence-improving experiment is a two-user Playwright spec that uses normal
+block toolbar actions to move the tail paragraph, delays one HTTP polling update
+across a reload/rejoin, deletes the long paragraph, then asserts both live and
+saved block order.
