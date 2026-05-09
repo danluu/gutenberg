@@ -6,13 +6,14 @@ Bug type: `RTC title persistence gap on reload after move-block + edit-title`
 
 Transport: `websocket`
 
-Covering fix branch: `try/rtc-safe-sync-title-lost-after-reload-6f589c89600c-pr`
+Covering fix branch:
+`try/rtc-title-persistence-gap-on-reload-after-move-block-edit--cf62e53692ba-pr`
 
 ## Classification
 
-This signature is a real RTC persistence bug shape, but it is best treated as a
-member of the broader stale title / stale persisted CRDT document reload-save
-family covered by `6f589c89600c`.
+This signature is a real RTC persistence bug shape. It is best treated as a
+member of the stale title / stale persisted CRDT document reload-save family,
+with this signature's branch carrying the current repro-and-fix sequence.
 
 The high-confidence handoff row says that after a normal block move and title
 edit, both collaborators briefly show the edited title, but the title is not
@@ -60,8 +61,8 @@ persistence bug is fixed.
 
 ## Practical Impact
 
-Real-user likelihood: `high` for users who are already using RTC
-collaboration.
+Real-user likelihood: `medium` overall; `high` conditional on a site/user cohort
+already using RTC collaboration.
 
 Natural workflow:
 
@@ -87,16 +88,38 @@ Blast radius: title rollback or loss after reload/save, stale persisted
 an OOM, save loop, or pure UI-only inconsistency. Recovery is manual title
 repair or revision/autosave recovery if the stale state has already been saved.
 
+## Pass 175 Evidence
+
+Fresh checks in pass 175:
+
+- Recovered the original generated cf62 spec from
+  `1f5dc5bad4c560765d1f1ba12440671ad768266e`. The spec uses natural UI actions:
+  create a draft, join a collaborator, click the Heading block, click Move down
+  in the block toolbar, edit the title, and reload either session.
+- Confirmed the generated spec only fails when
+  `waitForConvergence( { includeCrdtDocument: true } )` throws. It captures REST
+  and CRDT snapshots but does not assert that the edited title survived in the
+  visible editor, REST `title.raw`, or decoded persisted `_crdt_document`.
+- Re-ran the lowest-level known-fixes repro at
+  `f256024286dd80a4c0e2579f658c109256abf648` in a detached temporary worktree
+  with the repro tests from `23fce95a1c6`. The sync-manager tests failed because
+  the serialized CRDT title stayed `Initial title` instead of `Customer title`,
+  and because `getChangesFromCRDTDoc` was called without the persisted record.
+- Re-ran the focused PR-branch unit coverage on
+  `98f39bdcdd02a0e3ff771d8408acaa7c7470f08a`; the title/persisted-record tests
+  passed.
+- Verified the existing stitched video artifact is present and readable:
+  H.264, 1920x1080, 28.0s,
+  `/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-118/6f589c89600c-pass118-stitched.mp4`.
+
 ## Relationship To The Covering Fix
 
-The closest fixed and branch-backed issue is `6f589c89600c`, whose repro showed
-a stale persisted CRDT document replaying an old raw title over a newer active
-editor title after reload/save. That branch includes:
+The current cf62 PR branch includes:
 
 ```text
-3fc0fd5da86 Add RTC title reload unit repros
-59e9d53c93c Add same-user title save-after-reload browser repro
-81334095e53 Preserve RTC title across reload saves
+23fce95a1c6 Add RTC title reload unit repros
+8439cc4d913 Add same-user title save-after-reload browser repro
+98f39bdcdd0 Preserve RTC title across reload saves
 ```
 
 The fix is transport-independent. It changes the shared sync/core-data path
@@ -123,9 +146,8 @@ f256024286dd80a4c0e2579f658c109256abf648
 
 It includes the #77716 backlink-aware set and the earlier title reload
 reconciliation work from PR `77666`, including commits `573b567b8d4` and
-`957b5e83014`.
-
-It does not contain the later covering fix commit `81334095e53`. In that base,
+`957b5e83014`, but it does not contain the later cf62 fix commit
+`98f39bdcdd0`. In that base,
 `createPersistedCRDTDoc` serializes the manager Y.Doc with base-version metadata,
 but it does not overlay the exact record being saved, and
 `getPostChangesFromCRDTDoc` has no persisted raw record context for raw text
@@ -150,7 +172,7 @@ Relevant commits and PRs:
 - `573b567b8d4` and `957b5e83014` / PR `#77666`: fixed an earlier title reload
   reconciliation case, but not the save-after-reload stale persisted raw title
   replay addressed by the covering branch.
-- `81334095e53`: adds the persisted-record context and exact persisted raw field
+- `98f39bdcdd0`: adds the persisted-record context and exact persisted raw field
   replay guard.
 
 ## Fix Plan Audit
@@ -174,7 +196,7 @@ edit; in that case the dirty local edit wins.
 For exact signature-level confidence, copy the cf62 generated spec onto the
 current known-fixes base, add hard assertions for the edited target title in the
 visible editors, REST `title.raw`, and decoded persisted `_crdt_document` after
-reload, then run once against `f256024286d` and once with `81334095e53` applied.
+reload, then run once against `f256024286d` and once with `98f39bdcdd0` applied.
 
 That experiment should be routed to the same title-persistence fix branch rather
 than creating a separate root-cause track.
