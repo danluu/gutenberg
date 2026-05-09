@@ -159,3 +159,14 @@ A temporary natural-action Playwright probe was drafted at:
 `/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-172/a73-lowlevel.Ygdb7V/test-only/test/e2e/specs/editor/collaboration/collaboration-a73ef852b497-natural-probe.spec.ts`
 
 The probe uses a valid preexisting Paragraph/List/Pullquote/Paragraph post and real toolbar/options-menu actions for concurrent move and delete. It was not committed because `wp-env start` for that new worktree stalled while cloning `wordpress-develop` for PHPUnit setup, so the browser probe did not run and no video was produced. The remaining evidence gap is therefore still an end-to-end, natural two-user WebSocket repro.
+
+## Pass 174 Update
+
+Pass 174 re-ran the committed split again from clean detached worktrees:
+
+- `3dabfbbb862` still fails the targeted List/Pullquote stale snapshot repro with 58 smear cases across 96 valid interleavings.
+- `a4cbae8da63` still passes the same targeted repro.
+
+I also audited the experimental `syncYBlocksByClientId` fix against the adjacent stale top-level insert/delete preservation path. The proof patch is less blunt than "make incoming blocks authoritative": `reconcileStaleLocalBlocks` first re-adds remote-only inserts that were not present in the previous local snapshot and drops remotely deleted blocks before the structural clientId sync runs. That is the right safety shape for the targeted bug, but the patch is still a proof-quality change. It needs a full adjacent regression run before it should be treated as upstream-ready.
+
+The adjacent `crdt-stale-top-level-blocks.test.ts` run was blocked again by the local dependency tree lacking `framer-motion`, so this branch still does not satisfy the full requested standard. Commit 2 on the PR branch remains an empty marker for the missing natural Playwright repro/video.
