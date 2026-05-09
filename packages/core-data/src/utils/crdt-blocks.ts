@@ -399,9 +399,11 @@ function reconcileStaleLocalBlockValues(
 
 function reconcileStaleLocalBlocks(
 	yblocks: YBlocks,
-	localBlocksToSync: Block[]
+	localBlocksToSync: Block[],
+	baseBlocks?: Block[]
 ): Block[] {
-	const previousBlocks = previousLocalBlocksCache.get( yblocks );
+	const previousBlocks =
+		baseBlocks ?? previousLocalBlocksCache.get( yblocks );
 
 	if ( ! previousBlocks ) {
 		return localBlocksToSync;
@@ -1128,7 +1130,11 @@ export function mergeCrdtBlocks(
 	const previousBlocks =
 		baseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
 	const blocksToSync = baseBlocksToSync
-		? localBlocksToSync
+		? reconcileStaleLocalBlocks(
+				yblocks,
+				localBlocksToSync,
+				baseBlocksToSync
+		  )
 		: reconcileStaleLocalBlocks( yblocks, localBlocksToSync );
 
 	if ( rebaseYBlocksByClientId( yblocks, previousBlocks, blocksToSync ) ) {

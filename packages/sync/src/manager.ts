@@ -247,6 +247,7 @@ export function createSyncManager( debug = false ): SyncManager {
 		const stateMap = ydoc.getMap( CRDT_STATE_MAP_KEY );
 		const now = Date.now();
 		let providerResults: ProviderCreatorResult[] = [];
+		let isHydratingRecord = true;
 
 		// Clean up providers and in-memory state when the entity is unloaded.
 		const unload = (): void => {
@@ -281,6 +282,17 @@ export function createSyncManager( debug = false ): SyncManager {
 
 			const currentEntityState = entityStates.get( entityId );
 			if ( currentEntityState ) {
+				if (
+					isHydratingRecord &&
+					remoteChangedKeys.length > 0 &&
+					transaction.origin !== LOCAL_SYNC_MANAGER_ORIGIN
+				) {
+					ydoc.meta?.set(
+						CRDT_DOC_META_HAS_PROVIDER_SYNCED_REMOTE_STATE,
+						true
+					);
+				}
+
 				remoteChangedKeys.forEach( ( key ) => {
 					currentEntityState.remoteKeyVersions.set(
 						key,
@@ -373,15 +385,8 @@ export function createSyncManager( debug = false ): SyncManager {
 		initializeYjsDoc( ydoc );
 
 		// Get and apply the persisted CRDT document, if it exists.
-		// Observers are attached after hydration so the applyUpdateV2 inside
-		// _applyPersistedCrdtDoc does not trigger _updateEntityRecord with the
-		// just-loaded state, which would dispatch a redundant editRecord whose
-		// blocks already match the editor's parsed content.
 		internal.applyPersistedCrdtDoc( objectType, objectId, record );
-
-		// Attach observers.
-		recordMap.observeDeep( onRecordUpdate );
-		stateMap.observe( onStateMapUpdate );
+		isHydratingRecord = false;
 	}
 
 	/**
@@ -619,6 +624,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		//    race condition.
 		const invalidations = getChangesFromCRDTDoc( tempDoc, record );
 		const invalidatedKeys = Object.keys( invalidations );
+		const baseRecord = tempDoc
+			.getMap( CRDT_RECORD_MAP_KEY )
+			.toJSON() as ObjectData;
 
 		// Destroy the temporary document to prevent leaks.
 		tempDoc.destroy();
@@ -646,7 +654,7 @@ export function createSyncManager( debug = false ): SyncManager {
 		// the entity. The persisted CRDT doc can be created by calling
 		// `syncManager.createPersistedCRDTDoc`.
 		targetDoc.transact( () => {
-			applyChangesToCRDTDoc( targetDoc, changes );
+			applyChangesToCRDTDoc( targetDoc, changes, { baseRecord } );
 			if ( shouldPersist ) {
 				handlers.persistCRDTDoc();
 			}
