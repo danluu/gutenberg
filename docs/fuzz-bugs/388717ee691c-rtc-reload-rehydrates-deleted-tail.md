@@ -147,6 +147,45 @@ The newer RTC fixes add clientId-aware reordering and stale-local filtering, but
 they do not jointly enforce deletion preservation and move preservation for a
 stale snapshot that carries a pre-delete base.
 
+Pass 175 added a narrower root-cause probe using two normal Yjs documents
+instead of directly rewriting the local block array. One document starts with
+the old three-block list and keeps its cached local base. The second document
+receives the same initial state, performs the move and delete through
+`mergeCrdtBlocks()`, and sends a normal Yjs update back to the first document.
+After that remote update, the first document is correctly at
+`Tail paragraph -> Follow-up heading`.
+
+On the exact known-fixes commit `f256024286d`, the probe shows three distinct
+behaviors:
+
+```text
+pure remote delete + stale cached-base snapshot:
+  Follow-up heading -> Tail paragraph
+  (passes: the existing stale-local filter drops the deleted long paragraph)
+
+remote move/delete + stale cached-base snapshot:
+  Follow-up heading -> Tail paragraph
+  (fails: deletion is preserved, but the concurrent move is rolled back)
+
+remote move/delete + stale explicit base snapshot:
+  Tail paragraph -> Follow-up heading -> Tail paragraph
+  (fails: move is preserved, but the deleted tail-position snapshot is appended)
+```
+
+That proves the duplicate-tail bug is not just a missing stale-snapshot filter.
+The current stack has two partial protections that cover different sides of the
+state space: the cached-base path can preserve deletion but not move order, and
+the explicit-base path preserves the move/delete state until the stale snapshot
+arrives and then reintroduces duplicate visible content. The product RTC edit
+path passes `baseRecord` from `editEntityRecord()` through the sync manager into
+`applyPostChangesToCRDTDoc()`, so the manifest shape follows the explicit-base
+branch.
+
+The prototype fix commit `7d0e079fc07d` passes the two focused regressions and
+also passes the explicit-base arm of the pass-175 probe. It does not fix the
+sibling cached-base move rollback arm, which should be treated as residual
+scope rather than as evidence against this manifest fix.
+
 ## Fix Plan
 
 The fix should stay local to block-list reconciliation and avoid unbounded
