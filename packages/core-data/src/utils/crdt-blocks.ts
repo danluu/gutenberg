@@ -399,9 +399,11 @@ function reconcileStaleLocalBlockValues(
 
 function reconcileStaleLocalBlocks(
 	yblocks: YBlocks,
-	localBlocksToSync: Block[]
+	localBlocksToSync: Block[],
+	baseBlocks?: Block[]
 ): Block[] {
-	const previousBlocks = previousLocalBlocksCache.get( yblocks );
+	const cachedPreviousBlocks = previousLocalBlocksCache.get( yblocks );
+	const previousBlocks = baseBlocks ?? cachedPreviousBlocks;
 
 	if ( ! previousBlocks ) {
 		return localBlocksToSync;
@@ -411,11 +413,19 @@ function reconcileStaleLocalBlocks(
 		getClientIdsIfEveryBlockHasUniqueId( localBlocksToSync );
 	const previousClientIds =
 		getClientIdsIfEveryBlockHasUniqueId( previousBlocks );
+	const deleteReferenceClientIds = getClientIdsIfEveryBlockHasUniqueId(
+		cachedPreviousBlocks ?? previousBlocks
+	);
 	const currentBlocks = yblocks.toJSON() as Block[];
 	const currentClientIds =
 		getClientIdsIfEveryBlockHasUniqueId( currentBlocks );
 
-	if ( ! localClientIds || ! previousClientIds || ! currentClientIds ) {
+	if (
+		! localClientIds ||
+		! previousClientIds ||
+		! deleteReferenceClientIds ||
+		! currentClientIds
+	) {
 		return localBlocksToSync;
 	}
 
@@ -431,7 +441,7 @@ function reconcileStaleLocalBlocks(
 	// against the last local base before running the full-array merge so remote
 	// top-level inserts/deletes are not inferred as local structural edits.
 	const remotelyDeletedClientIds = new Set(
-		previousClientIds.filter(
+		deleteReferenceClientIds.filter(
 			( clientId ) =>
 				localClientIdSet.has( clientId ) &&
 				! currentClientIdSet.has( clientId )
@@ -1127,9 +1137,11 @@ export function mergeCrdtBlocks(
 		: undefined;
 	const previousBlocks =
 		baseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
-	const blocksToSync = baseBlocksToSync
-		? localBlocksToSync
-		: reconcileStaleLocalBlocks( yblocks, localBlocksToSync );
+	const blocksToSync = reconcileStaleLocalBlocks(
+		yblocks,
+		localBlocksToSync,
+		baseBlocksToSync
+	);
 
 	if ( rebaseYBlocksByClientId( yblocks, previousBlocks, blocksToSync ) ) {
 		mergeYBlocksByClientId(
