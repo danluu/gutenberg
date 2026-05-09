@@ -36,6 +36,13 @@ Two checks were useful:
 
 That narrows the remaining bug to an immediate reload race rather than a permanent failure to purge stale local autosaves.
 
+Pass 172 refreshed both artifact branches onto `origin/trunk`
+`114082fd16895304936ddd048e617891ab8f9f48`, which includes #77666
+(`RTC: Fix title divergence between users on page refresh after title update`).
+That adjacent fix changes CRDT save/reload reconciliation in `core-data`, but it
+does not add a `pagehide`/`beforeunload` local-autosave flush and does not touch
+`LocalAutosaveMonitor`.
+
 ## Natural Repro
 
 The committed repro on the PR branch creates a draft post with one paragraph and uses two real browser users in the post editor:
@@ -111,12 +118,18 @@ Strongest evidence for `medium`:
 - Requires no malformed block, direct store mutation, synthetic CRDT state, or network fault.
 - The restore notice offers an explicit action that can persist stale content if followed.
 - RTC is now a default Gutenberg plugin experience.
+- WordPress sets `localAutosaveInterval` to 15 seconds, so the stale local
+  backup can be a normal interval-lagged snapshot, not just a millisecond-scale
+  scheduler artifact.
 
 Strongest evidence against `high`:
 
 - Requires two active collaborators.
 - Requires a reload in a narrow window after peer save and before remote-save refetch/purge settles.
 - If the user waits for the settled path, the known-fixes base clears the stale backup.
+- The current HTTP polling config in this base polls collaborators every 1
+  second, so the remote-save/refetch path usually has a short opportunity to
+  clear or supersede the stale backup before a user reloads.
 
 Shortest confidence-improving experiment:
 
@@ -170,9 +183,9 @@ PR branch:
 
 PR branch commits:
 
-1. `953fadf475f` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
-2. `677e0cb59e8` - natural two-user Playwright repro.
-3. `a23e5d13de9` - page-unload local autosave flush fix.
+1. `b37f7755206` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
+2. `280b46ff7ae` - natural two-user Playwright repro.
+3. `e2edc068e9d` - page-unload local autosave flush fix.
 
 ## Verification
 
@@ -187,6 +200,13 @@ After fix:
 `WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
 
 Result after fix: `1 passed (22.1s)`.
+
+Pass 172 rebase verification on current `origin/trunk`
+`114082fd16895304936ddd048e617891ab8f9f48`:
+
+`WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
+
+Result after fix: `1 passed (24.6s)`.
 
 Video run:
 
