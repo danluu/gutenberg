@@ -55,7 +55,7 @@ import { getRootMap } from '../crdt-utils';
 
 const SYNCED_POST_PROPERTIES = new Set( [ 'blocks', 'content' ] );
 
-function block(
+function makeBlock(
 	name: 'core/heading' | 'core/paragraph',
 	clientId: string,
 	content: string
@@ -83,7 +83,7 @@ function postBlocks( doc: Y.Doc ): Block[] {
 		getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY ).get(
 			'blocks'
 		) as YBlocks
-	).toJSON() as Block[];
+	 ).toJSON() as Block[];
 }
 
 function postContent( doc: Y.Doc ): string {
@@ -95,7 +95,9 @@ function postContent( doc: Y.Doc ): string {
 }
 
 function contentsOf( blocks: Block[] ): string[] {
-	return blocks.map( ( candidate ) => candidate.attributes.content as string );
+	return blocks.map(
+		( candidate ) => candidate.attributes.content as string
+	);
 }
 
 describe( '9cf81e169f7e stale top-level checkpoint move reconstruction', () => {
@@ -114,14 +116,18 @@ describe( '9cf81e169f7e stale top-level checkpoint move reconstruction', () => {
 
 	it( 'preserves the checkpoint paragraph and remote heading through a stale tail move', () => {
 		const initialBlocks = [
-			block( 'core/heading', 'initial-heading', 'Initial heading' ),
-			block( 'core/paragraph', 'shared-body', 'Shared body paragraph' ),
-			block(
+			makeBlock( 'core/heading', 'initial-heading', 'Initial heading' ),
+			makeBlock(
+				'core/paragraph',
+				'shared-body',
+				'Shared body paragraph'
+			),
+			makeBlock(
 				'core/paragraph',
 				'step-5-checkpoint',
 				'Step 5 saved checkpoint paragraph'
 			),
-			block( 'core/paragraph', 'old-tail', 'Old tail paragraph' ),
+			makeBlock( 'core/paragraph', 'old-tail', 'Old tail paragraph' ),
 		];
 
 		applyPostChangesToCRDTDoc(
@@ -137,7 +143,11 @@ describe( '9cf81e169f7e stale top-level checkpoint move reconstruction', () => {
 		const withRemoteHeading = [
 			initialBlocks[ 0 ],
 			initialBlocks[ 1 ],
-			block( 'core/heading', 'step-6-heading', 'Step 6 inserted heading' ),
+			makeBlock(
+				'core/heading',
+				'step-6-heading',
+				'Step 6 inserted heading'
+			),
 			initialBlocks[ 2 ],
 			initialBlocks[ 3 ],
 		];
