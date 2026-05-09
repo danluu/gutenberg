@@ -71,6 +71,40 @@ known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` fixes the direct
 no-base reconstruction, though an integration path with explicit base blocks
 still needs care.
 
+## Pass 172 Known-Fixes Adapter Check
+
+The combined known-fixes base also has a product-shaped variant of this family.
+In that branch, `editEntityRecord` forwards `baseRecord` through the sync
+manager, and `applyPostChangesToCRDTDoc` passes `baseRecord.blocks` into
+`mergeCrdtBlocks`.
+
+A focused pass-172 post-adapter repro drives that route with valid Pullquote and
+Group blocks plus derived post content:
+
+1. Initial local post blocks:
+   `Pullquote(pullquote-client-id), Group(group-client-id)`.
+2. Remote update:
+   `Group(group-client-id)[Pullquote(pullquote-client-id)]`.
+3. Local stale update through `applyPostChangesToCRDTDoc` with
+   `{ baseRecord: { blocks: initialBlocks } }`.
+
+On `f256024286dd80a4c0e2579f658c109256abf648`, the test fails before the small
+candidate change with:
+
+```text
+[
+  "core/group:group-client-id:RTC Pullquote body[core/pullquote:pullquote-client-id:RTC Pullquote body]",
+  "core/group:<fresh uuid>"
+]
+```
+
+That shows the explicit-base path is not merely a synthetic
+`mergeCrdtBlocks` call; it is reachable through the post CRDT adapter used by
+the current sync stack. Passing the explicit base snapshot into stale
+reconciliation instead of bypassing reconciliation fixes the adapter repro and
+keeps the `crdt-blocks.ts` unit suite passing in the disposable known-fixes
+worktree.
+
 ## Fix Plan
 
 Track the last local block snapshot for each Yjs block array. Before merging a
