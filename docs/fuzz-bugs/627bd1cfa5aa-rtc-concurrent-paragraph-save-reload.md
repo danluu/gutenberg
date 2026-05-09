@@ -36,6 +36,13 @@ latest record's persisted CRDT document is byte-for-byte the same document that
 the editor already had as its base, replaying that unchanged document can replace
 or suppress the local content edit during save preparation.
 
+Pass 174 repaired the PR-style branch verification. The pre-fix branch now fails
+the focused unit repro because `applyPersistedCRDTDoc` is called with the
+unchanged latest CRDT document; the final fix branch skips that replay, passes
+the full `packages/core-data/src/test/entities.js` file, passes a production
+build with `--skip-types`, and passes the natural same-user Playwright
+save/reload repro.
+
 ## Evidence
 
 - Manifest row:
@@ -49,8 +56,9 @@ or suppress the local content edit during save preparation.
   `npm run test:unit packages/core-data/src/test/entities.js -- --runInBand --testNamePattern='does not replay an unchanged persisted CRDT document over local save edits'`
   failed on `f256024286dd80a4c0e2579f658c109256abf648`; the unexpected call was
   `applyPersistedCRDTDoc( 'postType/page', 123, latestRecord )`.
-- A local candidate patch that gates CRDT replay on a changed latest persisted
-  CRDT document or a changed server saved field passed that unit repro.
+- Pass 174's final PR branch gates CRDT replay on a changed latest persisted
+  CRDT document or a changed server saved field, and passes the focused unit
+  repro plus the full `entities.js` unit file.
 - The same patched runtime preserved both concurrent paragraphs through reload
   in the natural browser probe. The strict pass-172 oracle still failed because
   it counted an intermediate REST `409` conflict response with an empty body as
