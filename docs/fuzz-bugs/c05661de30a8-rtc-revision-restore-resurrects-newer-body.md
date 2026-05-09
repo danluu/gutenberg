@@ -22,6 +22,7 @@ Strongest evidence for `medium`:
 - The known-fixes base commit is `f256024286dd80a4c0e2579f658c109256abf648`, the manifest's buildable synthetic integration of the backlink-aware RTC fix stack.
 - Pass 173 ran the exact c056 natural Playwright flow against a worktree using the known-fixes build output. It reached the restore/reload invariant and failed because persisted `content.raw` contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new`.
 - Pass 172's lower-level probe showed the same semantic failure inside `prePersistPostType()`: a restore-shaped shorter body save from `[old, new]` to `[old]` is treated as stale local content and returns merged content containing `[old, new]`.
+- Pass 174 checked the relevant stale-save PR head separately (`origin/pr/77876`, `6aad4e5801a`). That head independently has `restoreRevision()` using `blocks: undefined` and plain `savePost()`, plus `mergeStaleSerializedBlockContent()` and no revision-restore escape hatch, so this is not just an artifact of the synthetic known-fixes conflict resolution.
 
 Strongest evidence against `high`:
 
@@ -69,6 +70,8 @@ Jepsen-style correctness audit: restore is an explicit write that should dominat
 Simplicity/performance audit: the fix adds no polling, no new network request, and no new merge algorithm. The main risk is option leakage into ordinary saves, covered by the focused unit test asserting only `restoreRevision()` sends the restore option.
 
 Revised plan after pass 173: keep the trunk-facing branch with parsed restore blocks and option plumbing, and apply the pre-persist guard in the branch where the stale-save CRDT code lands. The exact c056 Playwright repro now reaches the persisted-content failure and should be retained as the natural-user regression test.
+
+Pass 174 rebased the trunk-facing PR branch to `origin/trunk` `b38f9b4d86d`. Current trunk still does not contain the stale-save body merge from PR `77876`, so the branch remains a forward-compatible restore fix plus option plumbing; the pre-persist restore guard must be applied when that stale-save code lands.
 
 ## Verification
 
