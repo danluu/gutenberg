@@ -949,3 +949,59 @@ same post, and no malformed blocks or direct state mutation. The shortest
 remaining confidence-improving experiment is a small-post two-user browser loop
 that measures marker-loss rate over hundreds of local edits while a collaborator
 poll response lands under the default HTTP provider.
+
+## Pass 173 Current-Trunk and Known-Fixes Recheck
+
+Pass 173 rebased both branches onto current `origin/trunk`
+`80699422e63115adf1bd39c4db520575a816e747`
+(`Docs: shortcode transforms with wrapped content + rawHandler JSDoc (#78003)`).
+This commit is unrelated to RTC runtime code, but rebasing removes the one-commit
+behind state from pass 172.
+
+The nominal known-fixes worktree path
+`/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507` was dirty and
+checked out on an unrelated RTC branch during this pass, so the known-fixes
+verification used the manifest's exact commit
+`f256024286dd80a4c0e2579f658c109256abf648` in a detached worktree instead of
+trusting that directory's current branch.
+
+Pass 173 applied only the commit-1 manager repro to unfixed current trunk and to
+the exact May 7 known-fixes commit:
+
+- current `origin/trunk` `80699422e631`: FAIL, one `editRecord` call projects
+  `{ body: "Remote Body", title: "Initial Title" }`, proving the stale local
+  title can still be written back into the edited record.
+- known-fixes base `f256024286dd`: FAIL, two `editRecord` calls, so the
+  synthetic backlink-aware fix stack still does not restore the local
+  happens-before edge before remote reconciliation.
+
+The rebased PR branch now keeps the requested three-commit sequence:
+
+1. `ed6e4f5457d Add RTC deferred update race repro`
+2. `b1ac95869e1 Add RTC stress Playwright repro`
+3. `7f09c944cfd Flush RTC updates before remote reconciliation`
+
+Pass 173 fixed-branch verification:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- \
+  --testNamePattern="preserves (concurrent non-overlapping list item moves|list item moves when clients independently initialized)" \
+  --runInBand
+```
+
+Results: PASS, PASS, PASS.
+
+Pass 173 keeps the practical likelihood classification at `low`, with this
+qualification: it is `very-low` for a default single-user Gutenberg installation
+where RTC is not enabled, but `low` for the product surface represented by this
+bug queue because a normal RTC coediting session can produce the needed
+interleaving. The browser workflow still requires at least two active editors or
+tabs on the same post under the HTTP polling provider, but it does not require
+malformed blocks, direct state mutation, unusual save APIs, browser crashes, or
+server errors. The remaining uncertainty is frequency, not reachability.
