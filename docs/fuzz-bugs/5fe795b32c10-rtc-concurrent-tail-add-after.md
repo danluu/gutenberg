@@ -8,7 +8,7 @@ Transport: websocket
 
 Two collaborators editing the same post can converge on corrupted paragraph text when both select the same tail paragraph, use the block toolbar `Add after` action, and then type into the newly inserted paragraph concurrently. The bug is not the old May 5 readiness false positive: on the May 7 known-fixes base, WebSocket awareness reaches the ready state, both `Add after` menu actions run, both peers converge, and the final converged block tree contains the original three top-level blocks plus two inserted paragraphs with missing characters.
 
-The current evidence points at a real input/selection/sync race during key-by-key typing after concurrent block insertion. A single atomic `keyboard.insertText()` control passed, while ordinary key-by-key typing at both 10 ms/key and 160 ms/key corrupted content. Pass 173 further reproduced the defect with about a one-second post-menu delay plus jitter, then confirmed that using the normal `Save draft` button persists the corrupted paragraphs into REST `content.raw`.
+The current evidence points at a stale full-block-snapshot merge race during key-by-key typing after concurrent block insertion. A single atomic `keyboard.insertText()` control passed, while ordinary key-by-key typing at both 10 ms/key and 160 ms/key corrupted content. Pass 173 further reproduced the defect with about a one-second post-menu delay plus jitter, then confirmed that using the normal `Save draft` button persists the corrupted paragraphs into REST `content.raw`. Pass 174 reproduced a stronger variant with 1.8-2.4 second post-menu waits: both `Add after` actions succeeded and both users typed, but the converged editor dropped one entire inserted sibling paragraph.
 
 ## Reproduction Evidence
 
@@ -159,6 +159,36 @@ env WP_ENV_HOME=/tmp/wp-env-5fe795b32c10-p170 \
 
 This strongly suggests the failure requires interleaved per-key editor updates, which is how ordinary typing arrives, rather than a purely structural inability to merge two final inserted paragraphs.
 
+Pass 174 tested the shortest timing follow-up from pass 173. The first 2-second jitter run failed on attempt 10 because a page timed out clicking the `Add after` menu item; that was classified as harness/action-locator noise, not this product bug. A rerun with action-locator failures separated failed on attempt 2 at the state assertion. Both toolbar `Add after` clicks completed 48 ms apart; the primary page waited 2435 ms and the collaborator waited 1775 ms before typing at 160 ms/key. Both peers were WebSocket-connected and synced, both typed, and both converged to four blocks containing only the collaborator's inserted paragraph:
+
+```text
+Long shared paragraph used as the initial collaborative editing surface.
+Follow-up heading
+Tail paragraph kept for save and reload stability checks.
+RTC 5fe7 add-after collaborator paragraph 2
+```
+
+Artifacts:
+
+- JSON: `/tmp/5fe795b32c10-p174-knownfix-type160-postdelay2000-jitter500-classified-attempts20-output/attempt-2.json`
+- Screenshots: `/tmp/5fe795b32c10-p174-knownfix-type160-postdelay2000-jitter500-classified-attempts20-output/attempt-2-primary.png`, `/tmp/5fe795b32c10-p174-knownfix-type160-postdelay2000-jitter500-classified-attempts20-output/attempt-2-secondary.png`
+- Trace: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/test/e2e/artifacts/test-results/editor-collaboration-webso-1cb81-d-after-realistic-attempt-2-chromium/trace.zip`
+
+Pass 174 also added a temporary unit-level repro that exercises the same merge invariant without Playwright, browser focus, menus, or WebSocket. It initializes `mergeCrdtBlocks()` with three paragraph blocks, applies a remote append, then applies a stale local append with the original three-block base snapshot. The current known-fixes code drops `Remote inserted` and leaves `Local inserted`:
+
+```text
+Expected: Alpha, Beta, Tail, Remote inserted, Local inserted
+Received: Alpha, Beta, Tail, Local inserted
+```
+
+Command:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/rtc-tail-insert-base-repro.test.ts
+```
+
+Temporary repro file: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/packages/core-data/src/utils/test/rtc-tail-insert-base-repro.test.ts`.
+
 ## Practical Impact
 
 Likelihood: `medium`.
@@ -171,7 +201,7 @@ The natural workflow is ordinary post editor collaboration over the WebSocket RT
 4. Both choose block toolbar Options -> `Add after`.
 5. Both type into the newly inserted paragraph before the concurrent insertion and selection state fully settle.
 
-Multiple users/tabs and RTC collaboration are required. No save/reload, injected malformed blocks, direct state mutation, or network delay is required to observe the defect. Human-speed typing at 160 ms/key still loses characters after 250 ms, 500 ms, and roughly 1 second post-menu waits, so the race is not limited to an unrealistically fast Playwright path, although the exact workflow requires both collaborators to edit the same insertion point at nearly the same time.
+Multiple users/tabs and RTC collaboration are required. No save/reload, injected malformed blocks, direct state mutation, or network delay is required to observe the defect. Human-speed typing at 160 ms/key still loses characters after 250 ms, 500 ms, roughly 1 second, and now 1.8-2.4 second post-menu waits, so the race is not limited to an unrealistically fast Playwright path, although the exact workflow requires both collaborators to choose the same insertion point almost simultaneously.
 
 Blast radius is content corruption, not just a UI-only mismatch. Both peers converge to the same wrong text, the editor remains dirty, and pass 173 verified that saving persists the corrupted paragraphs into post content. Recovery is manual retyping or undo if noticed quickly; after save/reload, recovery depends on revisions or manual repair.
 
@@ -179,12 +209,15 @@ Blast radius is content corruption, not just a UI-only mismatch. Both peers conv
 
 The previous pass correctly identified the archived old run as a readiness false positive: no `Add after` actions occurred and the generated spec caught readiness errors as reproduction. That does not explain the current-base run.
 
-The current run reaches WebSocket readiness and executes natural actions. The strongest current hypothesis is a selection/input race after concurrent block insertion:
+The current run reaches WebSocket readiness and executes natural actions. Pass 174 narrows the strongest current hypothesis from general selection/input loss to a stale full-block-snapshot merge gap in the base-record path:
 
 - `packages/core-data/src/actions.js` sends each cached typing update through `getSyncManager().update()` with a `baseRecord`.
 - `packages/core-data/src/utils/crdt.ts` passes the edited blocks, parsed selection cursor, and base blocks into `mergeCrdtBlocks()`.
-- The current known-fixes stack includes cursor scoping in `packages/core-data/src/utils/crdt-blocks.ts`, so mis-scoped rich-text cursor hints across unrelated blocks are less likely than in older baselines.
-- Atomic full-text insertion passes while key-by-key typing fails, pointing toward transient selection/focus restoration or stale local snapshots during per-key sync rather than a deterministic final-state merge failure.
+- `mergeCrdtBlocks()` has stale local snapshot reconciliation for the no-base path (`reconcileStaleLocalBlocks()`), which preserves remote top-level inserts before running the full-array merge.
+- Real editor updates normally arrive with `baseRecord`; when `baseBlocksToSync` is present, `mergeCrdtBlocks()` uses `localBlocksToSync` directly and skips `reconcileStaleLocalBlocks()`.
+- For concurrent sibling inserts, the by-client-id rebase guards reject the merge because the base/current/incoming block arrays do not have the same client-id set and length. The code then falls back to the left-right full-array merge, where the stale local four-block snapshot is treated as authoritative and the remote fifth block can be overwritten or deleted.
+- The temporary unit repro confirms this path without any browser or transport: a remote top-level append is dropped when the local append is merged with a base snapshot.
+- The current known-fixes stack includes cursor scoping in `packages/core-data/src/utils/crdt-blocks.ts`, so mis-scoped rich-text cursor hints across unrelated blocks are less likely than in older baselines. Partial text corruption may still involve rich-text delta ordering, but the pass-174 whole-paragraph loss is explained by structural stale-snapshot rebasing.
 
 The likely origin is in the RTC block merge/selection architecture introduced by the CRDT block sync work and later cursor-aware rich-text updates, especially:
 
@@ -209,7 +242,7 @@ Audit:
 - Jepsen-style correctness: two peers inserting distinct sibling blocks at the same position and typing distinct text should converge to a state containing both exact strings. Convergence to the same corrupted value is still a consistency failure because it loses acknowledged local writes.
 - Simplicity/performance skepticism: avoid broad serialization locks on all block updates; a targeted guard around active RichText/local pending input or a narrower CRDT rebase invariant is preferable to delaying all remote updates.
 
-Revised plan: first instrument and prove whether each missing character was present in the local block tree before sync. Without that proof, a fix risks papering over either DOM selection loss or CRDT overwrite with a timing workaround.
+Revised plan after pass 174: add the unit-level base-snapshot sibling-insert regression first, then fix `mergeCrdtBlocks()` so base-aware local snapshots also preserve remote client IDs that were not present in the base and are not explicitly deleted locally. The fix should run before the left-right full-array fallback and should use client-id ancestry, not timing or selection state. After the structural invariant passes, keep the natural Playwright `Add after` repro because it verifies the real editor action path, per-key typing, and transport convergence. If partial character loss remains after structural preservation, instrument the rich-text delta path separately.
 
 ## Artifacts
 
@@ -220,6 +253,9 @@ Revised plan: first instrument and prove whether each missing character was pres
 - Save-persistence JSON, pass-173 160 ms/key with 1000 ms +/-200 ms post-menu jitter: `/tmp/5fe795b32c10-p173-knownfix-type160-postdelay1000-jitter200-save-attempts20-output/attempt-2.json`
 - Pass-173 trace, jittered failure: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/test/e2e/artifacts/test-results/editor-collaboration-webso-cee7d-d-after-realistic-attempt-6-chromium/trace.zip`
 - Pass-173 trace, save-persistence failure: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/test/e2e/artifacts/test-results/editor-collaboration-webso-58c40-d-after-realistic-attempt-2-chromium/trace.zip`
+- Failure JSON, pass-174 160 ms/key with 2000 ms +/-500 ms post-menu jitter: `/tmp/5fe795b32c10-p174-knownfix-type160-postdelay2000-jitter500-classified-attempts20-output/attempt-2.json`
+- Pass-174 trace, 2-second jitter failure: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/test/e2e/artifacts/test-results/editor-collaboration-webso-1cb81-d-after-realistic-attempt-2-chromium/trace.zip`
+- Temporary pass-174 unit-level repro: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/packages/core-data/src/utils/test/rtc-tail-insert-base-repro.test.ts`
 - Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
