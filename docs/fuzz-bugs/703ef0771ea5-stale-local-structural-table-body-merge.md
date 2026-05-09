@@ -175,3 +175,45 @@ color space`; the JS/PHP build subprocesses finished before that failure. The
 strict ESLint command was also blocked by a missing generated
 `@wordpress/theme/build/prebuilt/js/design-tokens.cjs` module in the symlinked
 dependency setup. `git diff --check HEAD~3..HEAD` passed.
+
+Pass 175 rechecked the exact manifest base and the later local known-fixes
+path state separately:
+
+```bash
+git worktree add --detach /private/tmp/gutenberg-703-pass175-f256.81226 \
+	f256024286dd80a4c0e2579f658c109256abf648
+git -C /private/tmp/gutenberg-703-pass175-f256.81226 cherry-pick --no-commit \
+	450376d7c77
+npm --prefix /private/tmp/gutenberg-703-pass175-f256.81226 run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+
+git worktree add --detach /private/tmp/gutenberg-703-pass175-c8af.81643 \
+	c8af86c24a5c70784e4604b66b772a0511859a00
+git -C /private/tmp/gutenberg-703-pass175-c8af.81643 cherry-pick --no-commit \
+	450376d7c77
+npm --prefix /private/tmp/gutenberg-703-pass175-c8af.81643 run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Both negative controls failed with the same extra `remote append A` /
+`remote append B` table row. This confirms the bug survives the manifest's
+exact `f256024286d` synthetic known-fixes base and the later `c8af86c24a5`
+known-fixes-derived checkout.
+
+The PR branch was rebased again onto current `origin/trunk`
+`b38f9b4d86d0505199f5efd78c2adf213e428e78` in pass 175:
+
+```bash
+git -C /private/tmp/gutenberg-703-pr-pass171.DoXd2p rebase origin/trunk
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+git diff --check origin/trunk..HEAD
+```
+
+Result: the rebase completed cleanly, the focused unit test passed, and
+`git diff --check` passed. The pass-170 annotated headless video remains the
+current browser artifact; pass 175 did not rerun Playwright because the natural
+spec and fix code were unchanged except for the clean rebase.
