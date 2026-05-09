@@ -40,6 +40,12 @@ jest.mock( '@wordpress/blocks', () => {
 	};
 } );
 
+jest.mock( '../crdt-selection', () => ( {
+	getSelectionHistory: jest.fn(),
+	getShiftedSelection: jest.fn(),
+	updateSelectionHistory: jest.fn(),
+} ) );
+
 /**
  * Internal dependencies
  */
@@ -323,5 +329,76 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 
 		remoteDoc.destroy();
+	} );
+
+	it( 'does not resurrect a remotely deleted top-level block from a stale post update with a post-delete base record', () => {
+		const initialBlocks = [ paragraph( 'baseline', 'Baseline' ) ];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const peerDoc = new Y.Doc();
+		Y.applyUpdate( peerDoc, Y.encodeStateAsUpdate( doc ) );
+
+		const peerAInsert = paragraph( 'peer-a-insert', 'Peer A insert' );
+		const peerBInsert = paragraph( 'peer-b-insert', 'Peer B insert' );
+		const peerABlocks = [ ...initialBlocks, peerAInsert ];
+		const peerBBlocks = [ ...initialBlocks, peerBInsert ];
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: peerABlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+		applyPostChangesToCRDTDoc(
+			peerDoc,
+			{ blocks: peerBBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( peerDoc ) );
+		Y.applyUpdate( peerDoc, Y.encodeStateAsUpdate( doc ) );
+
+		const peerBConvergedBlocks = postBlocks( peerDoc ).toJSON() as Block[];
+		expect(
+			peerBConvergedBlocks.map( ( block ) => block.clientId )
+		).toEqual(
+			expect.arrayContaining( [ 'peer-a-insert', 'peer-b-insert' ] )
+		);
+
+		const peerBPostDeleteBlocks = peerBConvergedBlocks.filter(
+			( block ) => block.clientId !== 'peer-a-insert'
+		);
+		applyPostChangesToCRDTDoc(
+			peerDoc,
+			{ blocks: peerBPostDeleteBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: peerBConvergedBlocks } }
+		);
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( peerDoc ) );
+
+		const peerAPostDeleteBlocks = postBlocks( doc ).toJSON() as Block[];
+		expect(
+			peerAPostDeleteBlocks.map( ( block ) => block.clientId )
+		).not.toContain( 'peer-a-insert' );
+
+		const stalePeerABlocks = [ ...peerBConvergedBlocks ];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: stalePeerABlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: peerAPostDeleteBlocks } }
+		);
+
+		expect(
+			( postBlocks( doc ).toJSON() as Block[] ).map(
+				( block ) => block.clientId
+			)
+		).not.toContain( 'peer-a-insert' );
+
+		peerDoc.destroy();
 	} );
 } );
