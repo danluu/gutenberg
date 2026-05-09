@@ -93,6 +93,22 @@ six-block checkpoint after save and both reached the expected seven-block state
 after reload plus heading insertion. The targeted `prePersistPostType` unit
 tests and `npm run build -- --skip-types` also passed.
 
+Pass 174 added a lower-level, browser-free reproduction of the same guard
+boundary on an exact detached `f256024286dd80a4c0e2579f658c109256abf648`
+worktree. The new focused unit probe constructs a save where:
+
+- the persisted record and latest server record both have the same
+  `_crdt_document`;
+- the latest server content is still the base body;
+- the local save edit changes `content`;
+- the mocked CRDT replay would expose stale base content if called.
+
+On unmodified `f256`, the probe fails because `prePersistPostType` still calls
+`applyPersistedCRDTDoc( 'postType/page', 123, latestRecord )` even though the
+latest persisted CRDT document is byte-identical to the base persisted CRDT
+document. With the pass-172 guard applied and the two no-op replay expectations
+updated, the focused `prePersistPostType` suite passes with 14 tests.
+
 This fix was verified in the synthetic current known-fixes checkout
 (`f256024286dd80a4c0e2579f658c109256abf648`). The existing repro PR branch is
 based on `origin/trunk`, which does not yet contain the full stale-save
