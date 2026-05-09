@@ -143,7 +143,9 @@ function summarizeBlocks( state: any ): string[] {
 		if ( block?.name === 'core/heading' ) {
 			return `heading:${ block?.attributes?.content ?? '' }`;
 		}
-		return `${ block?.name ?? 'unknown' }:${ block?.attributes?.content ?? '' }`;
+		return `${ block?.name ?? 'unknown' }:${
+			block?.attributes?.content ?? ''
+		}`;
 	} );
 }
 
@@ -176,11 +178,11 @@ test.describe( 'c1c8ee8f4449 base-record stale move', () => {
 			await expect(
 				editor.canvas.getByText( EMOJI_PARAGRAPH, { exact: false } )
 			).toBeVisible();
-			const {
-				editor: collaboratorEditor,
-				page: collaboratorPage,
-			} = await collaborationUtils.joinUser( post.id, collaboratorUser );
-			await collaborationUtils.waitForMutualDiscovery( { timeout: 20000 } );
+			const { editor: collaboratorEditor, page: collaboratorPage } =
+				await collaborationUtils.joinUser( post.id, collaboratorUser );
+			await collaborationUtils.waitForMutualDiscovery( {
+				timeout: 20000,
+			} );
 			await collaborationUtils.waitForConvergence( { timeout: 20000 } );
 
 			const moveDownButton = await prepareMoveEmojiDown( editor, page );

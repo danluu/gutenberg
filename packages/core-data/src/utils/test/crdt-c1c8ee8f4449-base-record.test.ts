@@ -75,7 +75,7 @@ function postBlocks( doc: Y.Doc ): Block[] {
 		getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY ).get(
 			'blocks'
 		) as YBlocks
-	).toJSON() as Block[];
+	 ).toJSON() as Block[];
 }
 
 function postContent( doc: Y.Doc ): string {
@@ -92,11 +92,7 @@ function summaries( blocks: Block[] ): string[] {
 	);
 }
 
-function applyPostChanges(
-	doc: Y.Doc,
-	blocks: Block[],
-	baseBlocks?: Block[]
-) {
+function applyPostChanges( doc: Y.Doc, blocks: Block[], baseBlocks?: Block[] ) {
 	applyPostChangesToCRDTDoc(
 		doc,
 		{
