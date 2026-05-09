@@ -137,6 +137,13 @@ Result: `HEAD` was `c8af86c24a5c70784e4604b66b772a0511859a00`; the focused
 test failed because the CRDT table body had an extra `remote append A` /
 `remote append B` row.
 
+Pass 174 added a shorter scratch-only CRDT repro that stops immediately after
+the earliest bad interleaving: remote row append, then stale-local delete of
+the old tail row. On the same `c8af86c24a5c70784e4604b66b772a0511859a00`
+known-fixes head, that minimized test failed with `[row1, remote append,
+remote append]`, proving the append/prepend/tail-cell-edit suffix is not needed
+to trigger the corruption. The same minimized test passed on the fix branch.
+
 The same natural-user Playwright spec on this current known-fixes checkout
 timed out in `waitForCollaborationReady()` before exercising the table
 sequence, so that run is harness/readiness evidence only.
@@ -150,7 +157,7 @@ npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-s
 Result: 4 suites passed, 8 tests passed.
 
 PR branch verification, rebased onto `origin/trunk` at
-`114082fd16895304936ddd048e617891ab8f9f48`:
+`6aa5ea1a40db818a9c0d2d85d0d0476f7d40392a`:
 
 ```bash
 npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts --runInBand
@@ -158,8 +165,9 @@ WP_ENV_PORT=9946 WP_BASE_URL=http://localhost:9946 RTC_MANIFEST_WS_START_PORT=20
 WP_ENV_PORT=9946 WP_BASE_URL=http://localhost:9946 RTC_MANIFEST_WS_START_PORT=20768 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-703ef0771ea5-realistic.spec.ts
 ```
 
-Results: the focused unit test passed, and the natural Playwright repro passed
-headlessly.
+Results: the focused unit test passed after the May 9 rebase. The natural
+Playwright repro passed headlessly before the rebase; the spec and fix content
+were unchanged by the rebase.
 
 `npm run build` could not complete in this worktree because the theme primitive
 token generation step failed with `TypeError: [object Object] is not a valid
