@@ -68,26 +68,31 @@ The original CRDT block merge code was introduced by
 `84019935998c` (#72262). It used a left/right positional diff for block and
 attribute arrays. Later table-specific work in `09a21c64b5b` (#76913) taught
 query-array attributes such as table rows and cells to use Yjs nested types. The
-array stability work in `a6bfd3e55432` (#77164) added array element IDs and an
-ID-based merge path.
+array stability work in `a6bfd3e55432` (#77164) improved the positional
+left/right sweep, but current trunk still merges a stale full table-body
+snapshot against the live Y.Array without remembering the previous local table
+snapshot. After a remote delete/edit in the same row range, the stale local
+snapshot can therefore overwrite the survivor row and reinsert the deleted tail
+row before inserting the legitimate replacement row.
 
-That ID path handled fully identified arrays, but real table editing can produce
-partial ID snapshots. During ordinary typing in a table, Gutenberg can clone the
-edited row object. The survivor row can retain its row sync ID while the edited
-tail row loses its row-level sync ID and retains only nested cell IDs.
+The required May 7 known-fixes base also includes `14b3da16eca9` (#77723), which
+adds table query-array element IDs and an ID-based merge path. That narrows some
+table duplication cases, but it still fails this repro because ordinary table
+editing can produce partial ID snapshots. The survivor row can retain its row
+sync ID while the edited tail row loses its row-level sync ID and retains only
+nested cell IDs.
 
-On such a partial snapshot, `mergeYArrayByElementIds()` saw that some elements
-had IDs and entered the ID-based path. It matched the identified survivor row,
-then treated the ID-less edited tail row as a new row. The new row received a
-fresh path-derived ID such as `body/1`, replacing the original tail row locally.
-When a collaborator's delete for the original tail row ID later arrived, it no
-longer matched this locally replaced stale row, so the stale row survived and
-converged on both peers.
+On such a partial snapshot, the known-fixes `mergeYArrayByElementIds()` entered
+the ID-based path when any incoming row had an ID. It matched the identified
+survivor row, then treated the ID-less edited stale tail row as a new row. When a
+collaborator's delete for the original tail row identity arrived, it no longer
+matched this locally replaced stale row, so the stale row survived and the
+survivor edit could be lost.
 
-A second related problem was that the cached previous plain block snapshot did
-not consistently carry IDs back from the Yjs document after merges. That made
-later local snapshots harder to relate to the Yjs array, especially after a
-stale row was skipped and a replacement row was inserted.
+A related problem was that the cached previous plain block snapshot did not
+consistently carry IDs back from the Yjs document after merges. That made later
+local snapshots harder to relate to the Yjs array, especially after a stale row
+was skipped and a replacement row was inserted.
 
 ## Fix Plan
 
@@ -137,6 +142,15 @@ Revised plan:
 5. Add a two-editor Playwright repro using only table UI controls.
 
 ## Verification
+
+Current trunk check:
+
+```bash
+git worktree add --detach /tmp/59b7-origin-b38f9 origin/trunk
+git checkout try/stale-local-structural-table-body-merge-after-remote-diver-59b7e7cdec39-pr -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-merge.test.ts
+npm run test:unit -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-merge.test.ts --runInBand --testNamePattern='keeps a stale-local appended replacement row without resurrecting the remotely deleted tail row'
+# failed on origin/trunk b38f9b4d86d0505199f5efd78c2adf213e428e78
+```
 
 Known-fixes base check:
 
