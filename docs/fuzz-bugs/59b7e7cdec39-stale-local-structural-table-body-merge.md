@@ -7,9 +7,9 @@
 edits and deletes the old tail row while another user edits that stale tail row
 and appends a replacement row.
 
-The May 8 pass reproduced the issue below the browser with Yjs/core-data unit
-tests and with a natural two-editor Playwright flow over the HTTP polling
-transport. The current known-fixes base
+The May 8 and May 9 passes reproduced the issue below the browser with
+Yjs/core-data unit tests and with a natural two-editor Playwright flow over the
+HTTP polling transport. The current known-fixes base
 `f256024286dd80a4c0e2579f658c109256abf648` still fails the focused stale-row
 replacement case, so this is not covered by the May 7 known-fixes integration.
 
@@ -151,6 +151,9 @@ npm run test:unit -- packages/core-data/src/utils/test/crdt-stale-table-row-appe
 Fixed branch checks:
 
 ```bash
+git fetch origin refs/heads/trunk:refs/remotes/origin/trunk
+git rebase origin/trunk
+
 npm run test:unit -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-merge.test.ts packages/core-data/src/utils/test/crdt-59b7e7cdec39-post-table-merge.test.ts packages/core-data/src/utils/test/crdt-blocks.ts --runInBand
 # PASS, 3 suites, 82 tests
 
@@ -160,6 +163,13 @@ npm run build -- --skip-types
 WP_ENV_PORT=10176 WP_BASE_URL=http://localhost:10176 WP_ENV_PHPMYADMIN_PORT=10177 RTC_MANIFEST_WS_START_PORT=22608 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-59b7e7cdec39-realistic.spec.ts --project=chromium --workers=1
 # PASS, 1 test
 ```
+
+Pass 174 rebased the branches onto `origin/trunk`
+`b38f9b4d86d0505199f5efd78c2adf213e428e78` and reran the focused unit suites,
+the broader `crdt-blocks.ts` regression suite, `npm run build -- --skip-types`,
+and the natural two-editor Playwright repro. The pinned known-fixes base
+continued to fail the focused stale-row replacement test by keeping
+`local edited deleted row A` and losing `remote edited row 1 B`.
 
 ## Residual Risk
 
