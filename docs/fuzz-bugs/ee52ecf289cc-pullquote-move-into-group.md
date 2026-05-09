@@ -209,3 +209,27 @@ Natural browser coverage was added for two collaborators inserting, editing, and
 moving a Pullquote into a Group. It passed both before and after the source fix
 in this pass, so it is coverage for the workflow, not a confirmed browser-level
 reproduction.
+
+## Pass 174 Refresh
+
+Pass 174 rebased the PR branch on current `origin/trunk`
+`b38f9b4d86d0505199f5efd78c2adf213e428e78` and rewrote it into the requested
+three-commit shape:
+
+1. `6867d472dea` adds the focused non-Playwright CRDT repros.
+2. `e46104c26bc` adds the natural browser coverage.
+3. `13e5ae7a78b` applies the source fix.
+
+The pre-fix commit `e46104c26bc` fails the focused unit repro with the stale
+top-level Pullquote shape for both the no-edit and local-edit cases. The fixed
+head `13e5ae7a78b` passes the focused Pullquote repro and the existing
+`crdt-blocks.ts` suite.
+
+Pass 174 also rechecked the May 7 known-fixes manifest commit
+`f256024286dd80a4c0e2579f658c109256abf648` in a clean detached worktree. The
+explicit-base local-edit route still fails there, producing a Group whose
+attributes absorb the stale Pullquote edit plus a fresh empty Group. That
+confirms the current synthetic known-fixes base has not closed the stricter
+base-record variant; the trunk PR branch fixes the current no-`baseBlocks`
+merge path and the same moved-block reconciliation needs to be preserved when
+the proposed explicit-base API is integrated.
