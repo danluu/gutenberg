@@ -359,3 +359,45 @@ Pass 171 did not start a new wp-env stack because the unit-level negative
 control, fixed-branch unit tests, lint, and existing annotated headless browser
 artifact already covered the product defect, while the build remained blocked
 outside the RTC patch.
+
+Pass 175 rechecked the branch state after fetching current `origin/trunk`:
+
+```text
+b38f9b4d86d0505199f5efd78c2adf213e428e78 Fix lockfile drift and missing dep from content-types consolidation (#78109)
+```
+
+Both explanation and PR branches were already based on that commit and pushed
+to `danluu`.
+
+Pass 175 reran the focused fixed-branch unit repros:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `PASS`, 3 passed. It also reran the full `crdt-blocks` unit file
+(`PASS`, 78 passed), `npm run lint:js` for the three touched files (exit code
+0), and `git diff --check HEAD~3..HEAD` (exit code 0).
+
+Pass 175 repeated the known-fixes negative control in a detached worktree at
+`f256024286dd80a4c0e2579f658c109256abf648`, with the PR branch's regression
+test file overlaid. The stale full-snapshot test passed, but the two
+same-array/cache-sensitive tests failed:
+
+```text
+observes reordered blocks when the editor reuses the same block array reference
+preserves the moved sibling when a same-array move follows a remote insert echo
+```
+
+Both received the stale order:
+
+```text
+Inserted paragraph, Emoji and multibyte, Another paragraph
+```
+
+That independently confirms the current known-fixes base still has the
+`serializableBlocksCache` object-identity gap. A one-attempt known-fixes
+browser run in the same detached worktree did not reach the editing sequence:
+`waitForCollaborationReady()` timed out before `_wpCollaborationEnabled` became
+true. Pass 175 therefore treats that browser result as an environment/harness
+failure, not as product evidence for or against the bug.
