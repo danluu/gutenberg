@@ -104,6 +104,78 @@ describe( 'entities', () => {
 		} );
 	} );
 
+	it( 'hydrates readable transient edits before clearing persisted edits', () => {
+		const oldContent = '<!-- wp:paragraph --><p>old</p><!-- /wp:paragraph -->';
+		const newContent = [
+			'<!-- wp:paragraph --><p>old</p><!-- /wp:paragraph -->',
+			'<!-- wp:paragraph --><p>new</p><!-- /wp:paragraph -->',
+		].join( '\n' );
+		const oldBlocks = [ { attributes: { content: 'old' } } ];
+		const newBlocks = [
+			{ attributes: { content: 'old' } },
+			{ attributes: { content: 'new' } },
+		];
+		const stateWithConfig = entities( undefined, {
+			type: 'ADD_ENTITIES',
+			entities: [
+				{
+					kind: 'postType',
+					name: 'post',
+					transientEdits: {
+						blocks: {
+							read: ( record ) =>
+								record.content.raw === newContent
+									? newBlocks
+									: oldBlocks,
+						},
+					},
+				},
+			],
+		} );
+		const stateWithStaleRawBlocks = entities( stateWithConfig, {
+			type: 'RECEIVE_ITEMS',
+			kind: 'postType',
+			name: 'post',
+			items: {
+				id: 1,
+				content: { raw: oldContent },
+				blocks: oldBlocks,
+			},
+		} );
+		const stateWithSavedEdits = entities( stateWithStaleRawBlocks, {
+			type: 'EDIT_ENTITY_RECORD',
+			kind: 'postType',
+			name: 'post',
+			recordId: 1,
+			edits: {
+				blocks: newBlocks,
+				content: newContent,
+			},
+		} );
+
+		const state = entities( stateWithSavedEdits, {
+			type: 'RECEIVE_ITEMS',
+			kind: 'postType',
+			name: 'post',
+			items: {
+				id: 1,
+				content: { raw: newContent },
+			},
+			persistedEdits: {
+				blocks: newBlocks,
+				content: newContent,
+			},
+		} );
+		const record =
+			state.records.postType.post.queriedData.items.default[ 1 ];
+
+		expect( record.blocks ).toHaveLength( 2 );
+		expect(
+			record.blocks.map( ( block ) => block.attributes.content )
+		).toEqual( [ 'old', 'new' ] );
+		expect( state.records.postType.post.edits[ 1 ] ).toBeUndefined();
+	} );
+
 	it( 'returns with updated entities config', () => {
 		const originalState = deepFreeze( {} );
 		const state = entities( originalState, {
