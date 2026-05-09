@@ -565,7 +565,7 @@ export function createSyncManager( debug = false ): SyncManager {
 		origin: string,
 		options: SyncManagerUpdateOptions = {}
 	): void {
-		const { isSave = false, isNewUndoLevel = false } = options;
+		const { baseRecord, isSave = false, isNewUndoLevel = false } = options;
 		const entityId = getEntityId( objectType, objectId );
 		const entityState = entityStates.get( entityId );
 		const collectionState = collectionStates.get( objectType );
@@ -586,7 +586,13 @@ export function createSyncManager( debug = false ): SyncManager {
 				log( 'updateCRDTDoc', 'applying changes', entityId, {
 					changedKeys: Object.keys( changes ),
 				} );
-				syncConfig.applyChangesToCRDTDoc( ydoc, changes );
+				if ( baseRecord ) {
+					syncConfig.applyChangesToCRDTDoc( ydoc, changes, {
+						baseRecord,
+					} );
+				} else {
+					syncConfig.applyChangesToCRDTDoc( ydoc, changes );
+				}
 
 				if ( isSave ) {
 					markEntityAsSaved( ydoc );
