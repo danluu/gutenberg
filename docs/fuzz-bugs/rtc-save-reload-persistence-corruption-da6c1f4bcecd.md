@@ -588,3 +588,59 @@ Received ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
 ```
 
 Pass 175 contribution: the practical-impact classification remains `medium` inside RTC collaboration and low across all Gutenberg usage, but the workflow is now sharper. The most realistic risk is a joining or reloaded collaborator tab that hydrates an older block list and then emits a full `blocks` snapshot while another collaborator's paragraph insert is already in the CRDT document. The user does not need malformed blocks, direct state mutation, or an unusual block type; ordinary paragraph blocks and ordinary save/reload are enough to make the loss persistent.
+
+## Pass 176 Verification
+
+Pass 176 fetched current `origin/trunk`; it remains:
+
+```text
+origin/trunk = b38f9b4d86d0505199f5efd78c2adf213e428e78
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+ace190e7ada Add RTC stale top-level append regression test
+b5dab7b9d7c Add RTC stale append persistence browser repro
+e674126c2ef Preserve RTC remote inserts across stale block snapshots
+```
+
+The PR branch still passes the focused CRDT unit files:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt.ts --runInBand
+
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+Pass 176 also created a fresh detached worktree at the exact backlink-aware known-fixes base, avoiding the mutable shared checkout:
+
+```text
+base = f256024286dd80a4c0e2579f658c109256abf648
+worktree = /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-176/work/da6c-knownfix-f256-pass176
+test file = packages/core-data/src/utils/test/da6c-pass176-crdt-read-stale.ts
+```
+
+The pass-176 known-fixes negative still fails after exercising a CRDT-read stale snapshot:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/da6c-pass176-crdt-read-stale.ts --runInBand
+
+FAIL packages/core-data/src/utils/test/da6c-pass176-crdt-read-stale.ts
+Tests: 2 failed, 2 total
+
+keeps an unobserved remote insert after a reloaded editor saves an unchanged stale block snapshot:
+Expected ["Baseline", "Shared anchor", "Primary paragraph", "Trailing"]
+Received ["Baseline", "Shared anchor", "Trailing"]
+
+persists both same-anchor appends after a stale reloaded editor writes its full block snapshot:
+Expected length: 5
+Received length: 4
+Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+`wp-env status` on the requested port `9936` reported the PR-branch environment as uninitialized. A bounded `wp-env start` failed while creating phpMyAdmin because host port `9000` is already allocated by another wp-env container, so fresh local Playwright remains blocked by environment setup. The committed natural-user Playwright repro and existing annotated evidence video remain the browser-level artifacts for this pass.
+
+Pass 176 contribution: this reverified that the existing branch, video, and fix still satisfy the requested standard on current trunk, and it independently reran the current known-fixes negative from a new detached `f256024...` worktree. The practical impact classification remains `medium` inside RTC collaboration: the ordinary trigger is a reloaded or joining editor saving a stale full block snapshot after another collaborator's paragraph insert, which is uncommon but natural in collaborative editing and persists as real content loss after save/reload.
