@@ -105,6 +105,41 @@ reconciliation instead of bypassing reconciliation fixes the adapter repro and
 keeps the `crdt-blocks.ts` unit suite passing in the disposable known-fixes
 worktree.
 
+## Pass 173 Local-Edit Check
+
+Pass 173 found a stricter variant that the earlier candidate did not cover:
+the stale peer may have made a real Pullquote text edit while its local tree
+still shows that Pullquote at the top level. A correct merge should keep the
+remote structural move and apply the local text edit at the Pullquote's current
+nested location.
+
+On the May 7 known-fixes base, the explicit-base local-edit repro fails with:
+
+```text
+[
+  "core/group:group-client-id:Local edit after stale view[core/pullquote:pullquote-client-id:Initial Pullquote body]",
+  "core/group:<fresh uuid>"
+]
+```
+
+The simple pass-172 candidate removes the duplicate but loses the local edit:
+
+```text
+[
+  "core/group:group-client-id[core/pullquote:pullquote-client-id:Initial Pullquote body]"
+]
+```
+
+The revised fix maps a changed stale top-level block to the same `clientId` at
+its current nested location before removing the stale top-level copy. The same
+stricter repro now produces:
+
+```text
+[
+  "core/group:group-client-id[core/pullquote:pullquote-client-id:Local edit after stale view]"
+]
+```
+
 ## Fix Plan
 
 Track the last local block snapshot for each Yjs block array. Before merging a
@@ -117,10 +152,14 @@ new local snapshot, compare:
 If a block has the same stable `clientId` in all three snapshots and the incoming
 copy has not changed relative to the last local copy, prefer the current Yjs copy
 so remote structural moves are retained. If a block existed locally and
-previously but no longer exists in the current Yjs snapshot, treat that as a
-remote deletion unless the local copy changed. Insert current remote-only blocks
-back into the outgoing snapshot near their current neighbors so unrelated remote
-inserts are not dropped by the full-array merge.
+previously but no longer exists at the same top-level position, check whether
+the same `clientId` exists deeper in the current tree. If it does and the local
+copy changed, merge the local changes into that current nested block before
+dropping the stale top-level copy. If the same `clientId` is absent from the
+current tree, treat it as a remote deletion unless the merge cannot prove stable
+identity. Insert current remote-only blocks back into the outgoing snapshot near
+their current neighbors so unrelated remote inserts are not dropped by the
+full-array merge.
 
 The guard only runs when all blocks in the compared arrays have unique
 `clientId`s. If the merge cannot prove identity, it falls back to the existing
@@ -155,6 +194,15 @@ Existing CRDT suite:
 
 ```bash
 npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runTestsByPath --runInBand
+```
+
+Pass 173 strengthened the focused unit repro with a local-edit case:
+
+```text
+initial: Pullquote("RTC Pullquote body"), Group()
+remote:  Group(Pullquote("RTC Pullquote body"))
+local:   Pullquote("Local edit after stale view"), Group()
+final:   Group(Pullquote("Local edit after stale view"))
 ```
 
 Natural browser coverage was added for two collaborators inserting, editing, and
