@@ -10,8 +10,11 @@ row, and missed a later tail-cell edit.
 
 The exact generated browser spec from the handoff was weak because it caught
 the final convergence error without asserting it. Pass 170 reconstructed the
-sequence at the CRDT layer and reproduced the failure on the required May 7
-known-fixes base, `f256024286dd80a4c0e2579f658c109256abf648`.
+sequence at the CRDT layer and reproduced the failure on the May 7 known-fixes
+base, `f256024286dd80a4c0e2579f658c109256abf648`. Pass 173 rechecked the
+current known-fixes checkout at `c8af86c24a5c70784e4604b66b772a0511859a00`
+and the same low-level repro still fails with a duplicated
+`remote append A` / `remote append B` row.
 
 ## Practical Impact
 
@@ -50,9 +53,11 @@ CRDT repro needs no synthetic block tree. Strongest evidence against a higher
 classification: it needs RTC enabled, two active sessions on the same table,
 and a narrow row append/delete/append/prepend/edit order.
 
-Shortest additional confidence experiment: run the committed Playwright repro
-against a clean environment both before and after the fix with a save/reload
-after the final edit, then fetch the REST post body and `_crdt_document`.
+Shortest additional confidence experiment: run a minimized browser repro that
+stops immediately after the remote append plus stale delete interleaving, then
+save/reload and fetch the REST post body and `_crdt_document`. That would prove
+the earliest natural trigger and persistence path without the fuzz-derived
+append/prepend/tail-edit suffix.
 
 ## Root Cause
 
@@ -120,6 +125,22 @@ npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-s
 Result before the guard: failed with duplicated `remote append A` after the
 collaborator delete step.
 
+Current known-fixes checkout before this fix:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-173/work/703ef0771ea5-c8af-knownfix
+git rev-parse HEAD
+npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts --runInBand
+```
+
+Result: `HEAD` was `c8af86c24a5c70784e4604b66b772a0511859a00`; the focused
+test failed because the CRDT table body had an extra `remote append A` /
+`remote append B` row.
+
+The same natural-user Playwright spec on this current known-fixes checkout
+timed out in `waitForCollaborationReady()` before exercising the table
+sequence, so that run is harness/readiness evidence only.
+
 After the guard:
 
 ```bash
@@ -128,14 +149,17 @@ npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-s
 
 Result: 4 suites passed, 8 tests passed.
 
-PR branch verification:
+PR branch verification, rebased onto `origin/trunk` at
+`114082fd16895304936ddd048e617891ab8f9f48`:
 
 ```bash
-npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts packages/core-data/src/utils/test/crdt-blocks.ts --runInBand
-WP_ENV_PORT=9950 WP_BASE_URL=http://localhost:9950 npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-703ef0771ea5-realistic.spec.ts --project=chromium --workers=1
+npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts --runInBand
+WP_ENV_PORT=9946 WP_BASE_URL=http://localhost:9946 RTC_MANIFEST_WS_START_PORT=20768 RTC_MANIFEST_WS_FIXED_PORT=1 npm run wp-env start -- --config .wp-env.test.json
+WP_ENV_PORT=9946 WP_BASE_URL=http://localhost:9946 RTC_MANIFEST_WS_START_PORT=20768 RTC_MANIFEST_WS_FIXED_PORT=1 PLAYWRIGHT_HTML_OPEN=never npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-703ef0771ea5-realistic.spec.ts
 ```
 
-Results: unit tests passed, and the natural Playwright repro passed headlessly.
+Results: the focused unit test passed, and the natural Playwright repro passed
+headlessly.
 
 `npm run build` could not complete in this worktree because the theme primitive
 token generation step failed with `TypeError: [object Object] is not a valid
