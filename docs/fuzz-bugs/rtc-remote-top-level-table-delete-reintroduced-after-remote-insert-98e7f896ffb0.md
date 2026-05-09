@@ -328,3 +328,62 @@ Results:
 - Natural Playwright repro: PASS, 2 scenarios.
 - Pass-172 result JSONs showed `convergenceError: null`, matching block-name
   arrays, and no `core/table` in either editor after deletion.
+
+## Pass 173 current-trunk refresh
+
+Pass 173 rebased the PR branch onto current `origin/trunk` again:
+
+- `origin/trunk`: `80699422e63 Docs: shortcode transforms with wrapped content + rawHandler JSDoc (#78003)`.
+- Newly included trunk RTC change: `114082fd168 RTC: Fix title divergence between users on page refresh after title update (#77666)`.
+- PR branch head after rebase: `1d0bcd7d283 Advance RTC block merge base after remote delivery`.
+- PR branch commit order:
+  1. `9ef5b444d5a Add RTC remote insert delete CRDT repro`
+  2. `b80df7b909a Add WebSocket table delete Playwright repro`
+  3. `1d0bcd7d283 Advance RTC block merge base after remote delivery`
+
+Pass 173 reran the required known-fixes negative control at repro commit
+`24bf4bc1fc2`. The result matched pass 172: unseen remote table preservation
+passed, but the delivered-delete cases still failed with a reintroduced
+`core/table` or delivered-deleted paragraph.
+
+Pass 173 also added a useful negative control: run the repro-only stack on
+current `origin/trunk` without the proposed fix. That stack did not reintroduce
+the delivered table, but only because current trunk still lacks the
+stale-snapshot preservation behavior from the May 7 known-fixes integration.
+The repro-only current-trunk run instead failed the opposite safety property:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+```
+
+Result on `80699422e63` plus only the two repro commits:
+
+- `preserves a remote table insert when a stale local snapshot edits another block`: FAIL; the unseen `core/table` was dropped.
+- `does not reintroduce a remote table after that remote insert has become the local base`: PASS.
+- `matches the source order: collaborator paragraph, primary table, collaborator table delete`: PASS.
+- `deletes delivered blocks while preserving unseen remote inserts in the same stale snapshot`: FAIL; the unseen table was dropped.
+- Remote paragraph and nested remote paragraph delivered-delete cases: PASS.
+
+This narrows the root cause. The table-resurrection failure appears when the
+runtime has stale-snapshot protection for unseen remote inserts but does not
+advance the editor-visible base after CRDT delivery. Current trunk alone avoids
+this signature by not preserving those unseen inserts, which is a data-loss
+tradeoff rather than a proof that the underlying ambiguity is solved.
+
+Fresh verification on the pass-173 rebased PR branch:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+npm run lint:js -- packages/core-data/src/utils/crdt.ts packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 RTC_MANIFEST_WS_START_PORT=21176 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_98E7_REALISTIC_REPRO_DIR=/Users/danluu/dev/fuzz/gutenberg-bug-98e7f896ffb0/artifacts/pass-173/playwright-fixed-results npm run test:e2e -- test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts --project=chromium --workers=1
+```
+
+Results:
+
+- Focused repro unit file: PASS, 6 tests.
+- Existing CRDT block unit file: PASS, 71 tests.
+- Targeted JS lint: exit 0.
+- Natural Playwright repro: PASS, 2 scenarios.
+- Pass-173 result JSONs showed `convergenceError: null`, matching block-name
+  arrays, and no `core/table` in either editor after deletion.
