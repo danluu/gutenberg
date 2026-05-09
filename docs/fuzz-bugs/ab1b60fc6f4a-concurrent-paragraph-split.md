@@ -78,6 +78,16 @@ Seed 953255 stepse 1 concurrent pargraph 169
 
 In that run, after concurrent `Enter` both users were selected at offset `0` in different newly inserted empty paragraph `clientId`s. The original checkpoint paragraph stayed intact, and the corruption appeared only during concurrent typing. A matched true-end run at `50ms` per character preserved both user strings. This means the bug is not limited to suffix-duplication from visual-line splitting, but the true-end destructive variant is more cadence-sensitive than the original wrapped-line seed.
 
+Pass 174 tightened the true-end timing bracket on the same `f256024286dd80a4c0e2579f658c109256abf648` known-fixes base. With both collaborators again at logical offset `40` after `End` plus nine `ArrowRight` presses, a `15ms` per-character run still lost one character from the collaborator paragraph:
+
+```text
+rtc-save-paragraph-marker-953255-3-0-end
+Seed 953255 step 4 user 0 concurrent paragraph 185113
+Seed 953255 step 4 user 1 concurrent paragraph 69940
+```
+
+The same true-end probe passed at `20ms` and `30ms`, preserving both typed strings. This does not clear the bug, but it narrows the ordinary paragraph-end append corruption to a very tight live-input race in the current evidence.
+
 ## Likely Root Cause
 
 `mergeCrdtBlocks` was introduced by `84019935998` (`Improve CRDT "merge logic" for post entities`, PR #72262). Its left/right sweep uses block positions as a fallback when reconciling full block snapshots into Yjs block arrays. Later RTC fix work added saved-base snapshots and client-id rebasing, but the observed failure still reaches a browser path where a local full snapshot, the current Yjs array, and the block-editor selection are changing while keyboard input continues to stream.
@@ -95,6 +105,8 @@ Those lower-level probes did not reproduce the browser corruption. Pass 172 also
 Likelihood for the destructive interleaving signature: `low`.
 
 The workflow requires RTC collaboration, two browser tabs or users editing the same post, websocket sync, focus on the same paragraph, near-simultaneous paragraph splitting or paragraph-end appending, and immediate overlapping typing. Those timing and same-paragraph requirements are uncommon, but the individual actions are ordinary editor behavior. Pass 172 suggests the wrapped-line destructive character interleaving needs unusually fast synchronized typing: it reproduced at `10ms` and `50ms` per character, but not in single runs at `80ms` or `120ms`. Pass 173 raises the likelihood above `very-low` because a true logical-end append can also corrupt typed text, although that variant reproduced at `10ms` and passed at `50ms` in single clean-base runs.
+
+Pass 174 keeps the classification at `low` rather than raising it. The true logical-end append now has a tighter bracket: `10ms` and `15ms` failed, while `20ms`, `30ms`, and `50ms` passed in single clean-base runs. A real person can create overlapping edits, but sustained two-user same-paragraph typing at or below this cadence is still an edge case. The wrapped-line `End` shape remains more concerning because it reproduced at `50ms`, but it is a paragraph split before a suffix rather than a clean end append.
 
 Blast radius is content corruption. The corrupted state appears in the block tree on both peers before save, so saving can persist truncated, duplicated, or interleaved paragraph text. At slower typing cadences, the severe interleaving did not reproduce in pass 172, but the concurrent split still duplicated the suffix text into both inserted paragraphs. There is no evidence of a save loop, OOM, or performance failure. Recovery is by undo, manual repair, or post revisions if the corrupted content has already been saved.
 
