@@ -58,12 +58,28 @@ The collaborator still had the six-block checkpoint. This shows the bug is not
 caused by the later collaborator reload or heading insertion; those actions are
 only the original fuzzer's oracle for the already-diverged save state.
 
-The likely root cause is `prePersistPostType` replaying an unchanged persisted
-`_crdt_document` from the freshness check into the active sync manager before a
-normal local save. `syncManager.applyPersistedCRDTDoc()` is not harmless: it
-eventually calls `updateEntityRecord()`, so replaying the stale baseline CRDT
-document can write stale CRDT-derived content back into the saving tab even
-though the REST save response contains the correct local body.
+Pass 173 narrowed this further to an interaction between two proposed RTC
+fixes in the synthetic known-fixes base. PR `77876` added the save-time
+freshness check and made `prePersistPostType` replay the fetched persisted
+CRDT document whenever a latest document exists or local saved fields changed:
+
+```js
+const shouldApplyLatestCRDTDoc =
+	hasLatestPersistedCRDTDoc || locallyChangedSavedFields.length;
+```
+
+The head of PR `77876` has that broad condition, but its
+`applyPersistedCRDTDoc()` implementation only applies the persisted document
+and yields. In the synthetic known-fixes base, PR `77890`/the integration
+branch adds an `await internal.updateEntityRecord( objectType, objectId )`
+flush inside `applyPersistedCRDTDoc()`. The bug needs both parts: a no-new-info
+persisted CRDT replay during save, and a replay path that writes CRDT-derived
+state back into the core-data edited record.
+
+That makes `syncManager.applyPersistedCRDTDoc()` non-idempotent from the
+saving tab's point of view. Replaying the stale baseline CRDT document can
+write stale content into a non-transient `content` edit even though the REST
+save response contains the correct local body.
 
 The pass-172 candidate fix changes the replay guard so `prePersistPostType`
 only applies the latest persisted CRDT document when either:
@@ -97,7 +113,6 @@ Candidate patches tested during pass 171:
 - clearing transient blocks after successful save: did not resolve the active editor divergence.
 
 The next most useful experiment is to run the pass-172 timeline probe multiple
-times on both the patched known-fixes checkout and the head of the proposed
-stale-save protection PR, with and without the guard above. That would quantify
-flake rate and separate the proposed PR's behavior from the synthetic
-known-fixes integration base.
+times on the exact combination of PR `77876` plus PR `77890`, with and without
+the unchanged-CRDT-document guard. That would quantify flake rate and separate
+the true cross-PR regression from behavior in either PR head alone.
