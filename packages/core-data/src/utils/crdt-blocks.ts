@@ -1098,6 +1098,33 @@ function mergeYBlocksByClientId(
 	}
 }
 
+function getIndexedMergeBaseBlock(
+	previousBlocks: Block[] | undefined,
+	index: number,
+	block: Block,
+	yblock: YBlock
+): Block | undefined {
+	const previousBlock = previousBlocks?.[ index ];
+
+	if ( ! previousBlock ) {
+		return undefined;
+	}
+
+	const previousClientId = getBlockClientId( previousBlock );
+	const blockClientId = getBlockClientId( block );
+	const yblockClientId = getYBlockClientId( yblock );
+
+	if (
+		( previousClientId || blockClientId || yblockClientId ) &&
+		( previousClientId !== blockClientId ||
+			blockClientId !== yblockClientId )
+	) {
+		return undefined;
+	}
+
+	return previousBlock;
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -1218,7 +1245,12 @@ function mergeCrdtBlocksIntoYBlocks(
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
 		const block = blocksToSync[ left ];
 		const yblock = yblocks.get( left );
-		const previousBlock = previousBlocks?.[ left ];
+		const previousBlock = getIndexedMergeBaseBlock(
+			previousBlocks,
+			left,
+			block,
+			yblock
+		);
 
 		mergeBlockIntoYBlock( yblock, block, cursorPosition, previousBlock );
 	}
