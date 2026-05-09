@@ -170,3 +170,39 @@ Pass 174 re-ran the committed split again from clean detached worktrees:
 I also audited the experimental `syncYBlocksByClientId` fix against the adjacent stale top-level insert/delete preservation path. The proof patch is less blunt than "make incoming blocks authoritative": `reconcileStaleLocalBlocks` first re-adds remote-only inserts that were not present in the previous local snapshot and drops remotely deleted blocks before the structural clientId sync runs. That is the right safety shape for the targeted bug, but the patch is still a proof-quality change. It needs a full adjacent regression run before it should be treated as upstream-ready.
 
 The adjacent `crdt-stale-top-level-blocks.test.ts` run was blocked again by the local dependency tree lacking `framer-motion`, so this branch still does not satisfy the full requested standard. Commit 2 on the PR branch remains an empty marker for the missing natural Playwright repro/video.
+
+## Pass 175 Update
+
+Pass 175 added a smaller independent root-cause repro that exercises one concrete schedule instead of the 96-case enumerator:
+
+1. Start both peers from `intro, list, pullquote, tail`.
+2. Peer A moves `list` before `intro`, so the receiver's Yjs array is `list, intro, pullquote, tail`.
+3. Peer B still has the old local snapshot, deletes `intro`, and moves `list` below `pullquote`, producing `pullquote, list, tail`.
+4. The current known-fixes base rejects both clientId-aware reorder paths because the stale snapshot has a changed length/clientId set, then the positional fallback merges `blocksToSync[0]` into `yblocks.get(0)`.
+
+The focused pass-175 test failed on the exact known-fixes commit `f256024286dd80a4c0e2579f658c109256abf648`:
+
+```text
+FAIL packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+Expected: false
+Received: true
+```
+
+The printed triage state from the same run showed the List Y.Map rewritten as a Pullquote while retaining its two List Item children:
+
+```json
+{
+  "clientId": "pullquote",
+  "name": "core/pullquote",
+  "attributes": {
+    "value": "<p>Pullquote value</p>",
+    "citation": "Pullquote citation"
+  },
+  "innerBlocks": [
+    { "clientId": "list-item-one", "name": "core/list-item" },
+    { "clientId": "list-item-two", "name": "core/list-item" }
+  ]
+}
+```
+
+The same focused test passed on the existing proof-fix commit `a4cbae8da63042e0bb8a1361a78bbfd64fdc6df4`, confirming that the clientId structural sync covers the narrowed root-cause schedule as well as the broader enumerator. `wp-env` was checked for the pass-175 worktree and was uninitialized; no new browser repro or video was produced in this pass.
