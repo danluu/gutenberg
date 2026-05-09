@@ -2,11 +2,13 @@
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
+import { InnerBlocks } from '@wordpress/block-editor';
 import {
 	parse,
 	registerBlockType,
 	unregisterBlockType,
 } from '@wordpress/blocks';
+import { createElement } from '@wordpress/element';
 
 jest.mock( '@wordpress/api-fetch' );
 jest.mock( '../sync', () => ( {
@@ -34,6 +36,7 @@ import {
 } from '../utils/crdt';
 
 const TEST_BLOCK_NAME = 'test/stale-content-block';
+const TEST_CONTAINER_BLOCK_NAME = 'test/stale-container-block';
 
 function paragraphMarkup( content ) {
 	return `<!-- wp:${ TEST_BLOCK_NAME } ${ JSON.stringify( {
@@ -41,8 +44,22 @@ function paragraphMarkup( content ) {
 	} ) } /-->`;
 }
 
+function containerMarkup( contents ) {
+	return [
+		`<!-- wp:${ TEST_CONTAINER_BLOCK_NAME } -->`,
+		'<div>',
+		pageContent( contents ),
+		'</div>',
+		`<!-- /wp:${ TEST_CONTAINER_BLOCK_NAME } -->`,
+	].join( '\n' );
+}
+
 function pageContent( contents ) {
 	return contents.map( paragraphMarkup ).join( '\n\n' );
+}
+
+function countOccurrences( value, needle ) {
+	return value.split( needle ).length - 1;
 }
 
 describe( 'getMethodName', () => {
@@ -89,10 +106,22 @@ describe( 'prePersistPostType', () => {
 			},
 			save: () => null,
 		} );
+		registerBlockType( TEST_CONTAINER_BLOCK_NAME, {
+			apiVersion: 3,
+			title: 'Stale content container test block',
+			category: 'text',
+			save: () =>
+				createElement(
+					'div',
+					{},
+					createElement( InnerBlocks.Content )
+				),
+		} );
 	} );
 
 	afterAll( () => {
 		unregisterBlockType( TEST_BLOCK_NAME );
+		unregisterBlockType( TEST_CONTAINER_BLOCK_NAME );
 	} );
 
 	beforeEach( () => {
@@ -467,6 +496,91 @@ describe( 'prePersistPostType', () => {
 
 		expect( result.content ).toContain( 'stale local content' );
 		expect( result.content ).toContain( 'current content' );
+		expect( result.meta ).toEqual( {
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+	} );
+
+	it( 'does not append a stale trailing block that was moved into an earlier local block', async () => {
+		const staleTopLevelContent = [
+			paragraphMarkup( 'Alpha' ),
+			containerMarkup( [ 'Nested' ] ),
+			paragraphMarkup( 'Tail' ),
+			paragraphMarkup( 'Moved' ),
+		].join( '\n\n' );
+		const currentNestedContent = [
+			paragraphMarkup( 'Alpha' ),
+			containerMarkup( [ 'Nested', 'Moved' ] ),
+			paragraphMarkup( 'Tail' ),
+		].join( '\n\n' );
+		const latestRecord = {
+			id: 123,
+			content: { raw: staleTopLevelContent },
+			meta: {},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: staleTopLevelContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: staleTopLevelContent },
+			},
+			{ content: currentNestedContent },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		const savedContent = result.content ?? currentNestedContent;
+		expect( countOccurrences( savedContent, 'Moved' ) ).toBe( 1 );
+		expect( result.meta ).toEqual( {
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+	} );
+
+	it( 'preserves a trailing duplicate block when the prefix already contained the same serialized block', async () => {
+		const latestContent = pageContent( [ 'Alpha', 'Same', 'Same' ] );
+		const localContent = pageContent( [ 'local Alpha', 'Same' ] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: latestContent },
+			meta: {},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: latestContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: latestContent },
+			},
+			{ content: localContent },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( countOccurrences( result.content, 'Same' ) ).toBe( 2 );
+		expect( result.content ).toContain( 'local Alpha' );
 		expect( result.meta ).toEqual( {
 			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
 		} );
