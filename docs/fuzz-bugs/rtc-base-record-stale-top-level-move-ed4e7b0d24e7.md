@@ -1,0 +1,140 @@
+# RTC base-record stale top-level move can drop remote blocks
+
+## Summary
+
+Fuzz signature `ed4e7b0d24e7` was reported from a WebSocket RTC run as
+`rtc_top_level_move_after_reload_and_pullquote_duplicates_adjacent_paragraph`.
+The archived browser endpoint was a split after a reload, a top-level Pullquote
+edit, and a later adjacent Paragraph move: one peer ended with
+`Another -> Emoji -> Heading -> Group -> Pullquote`, while the other ended with
+`Another -> Another -> Heading -> Group -> Pullquote`.
+
+The runnable generated WebSocket spec for this signature is not a sufficient
+product repro. It waits for HTTP `wp-sync` responses even after installing the
+WebSocket provider, so it fails before the first state snapshot and before the
+final toolbar move.
+
+The useful reduced evidence is at the CRDT/product-route level on the May 7
+synthetic known-fixes base `f256024286dd80a4c0e2579f658c109256abf648`. That
+base includes proposed RTC PR `77924`, which passes an explicit `baseRecord`
+from `editEntityRecord()` into sync updates. In that stack, a stale adjacent
+top-level Paragraph move can omit a remote-only top-level Pullquote from the
+snapshot being merged. The pre-existing stale-local reconciliation handles the
+cached-history path, but the explicit-base path bypasses that reconciliation.
+
+Current `origin/trunk` at `b38f9b4d86d0505199f5efd78c2adf213e428e78` does not
+yet pass `baseRecord` through the same `getSyncManager()?.update()` call, so
+this document tracks a proposed-stack regression risk rather than a directly
+reproduced trunk bug.
+
+## Minimal Failing Shape
+
+The minimal failing sequence uses normal block data and the normal post CRDT
+apply route:
+
+1. Start with top-level blocks:
+   `Paragraph(Emoji), Paragraph(Another), Heading, Group`.
+2. The stale mover has locally applied that initial block snapshot, so its
+   local CRDT block cache matches the editor view before the remote change.
+3. A remote peer appends a top-level Pullquote and the stale mover receives the
+   Yjs update.
+4. The stale mover publishes a top-level adjacent Paragraph move from
+   `[ Emoji, Another, Heading, Group ]` to
+   `[ Another, Emoji, Heading, Group ]`.
+5. When that move is applied with `{ baseRecord: { blocks: initialBlocks } }`,
+   `mergeCrdtBlocks()` on `f256024286d` drops the remote-only Pullquote.
+
+A pass-175 scratch test showed the boundary:
+
+- Without an explicit `baseRecord`, the same stale move preserves the remote
+  Pullquote because cached local history drives stale-block reconciliation.
+- With an explicit `baseRecord`, the remote Pullquote is dropped on
+  `f256024286d`.
+- Applying fix commit `c8af86c24a5c70784e4604b66b772a0511859a00` makes both
+  cases pass.
+
+## Root Cause
+
+On `f256024286d`, `packages/core-data/src/actions.js` sends editor sync updates
+as:
+
+```js
+getSyncManager()?.update(
+	objectType,
+	objectId,
+	editsWithMerges,
+	origin,
+	{ baseRecord: editedRecord, isNewUndoLevel }
+);
+```
+
+`packages/core-data/src/utils/crdt.ts` forwards
+`options.baseRecord?.blocks` into `mergeCrdtBlocks()`.
+
+In `packages/core-data/src/utils/crdt-blocks.ts`, the integration commit keeps
+the explicit base as `previousBlocks`, but sets `blocksToSync` to the stale
+local editor snapshot directly:
+
+```ts
+const previousBlocks =
+	baseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
+const blocksToSync = baseBlocksToSync
+	? localBlocksToSync
+	: reconcileStaleLocalBlocks( yblocks, localBlocksToSync );
+```
+
+That means explicit-base edits skip `reconcileStaleLocalBlocks()`. Remote-only
+top-level blocks that are present in the Y.Doc but absent from the stale editor
+snapshot are interpreted as intentional removals.
+
+The proposed fix is small: let `reconcileStaleLocalBlocks()` accept the explicit
+base snapshot and call it in the explicit-base branch too.
+
+## User Impact
+
+Practical likelihood: low for active RTC users of the May 7 proposed-stack
+shape; very low for ordinary single-user Gutenberg and for current trunk as
+inspected here.
+
+Natural workflow:
+
+- Surface: post editor.
+- Transport: RTC collaboration, originally WebSocket.
+- Blocks: adjacent top-level Paragraphs, a Heading, a Group, and a top-level
+  Pullquote.
+- Timing: at least two tabs/users; one peer has a stale pre-Pullquote base
+  after reload or state lag while another peer has already inserted or edited a
+  top-level Pullquote.
+- Action: the stale peer moves an adjacent top-level Paragraph.
+- Save/reload: reload is part of the archived fuzz workflow and makes stale
+  base state plausible. A save is not required for the in-memory loss, but a
+  save from the corrupted peer could persist the bad tree.
+
+Common prerequisites are normal editor operations: collaborative editing,
+Paragraph/Pullquote/Group content, reload, and block movers. Rare prerequisites
+are the RTC audience, multi-peer stale timing, and the exact structural order.
+The exact `Another -> Another` duplicate endpoint remains fuzz-derived because
+no faithful WebSocket replay has completed.
+
+Blast radius is content corruption, not just a UI-only mismatch. The reduced
+repro loses a remote top-level Pullquote. The archived browser summary reports
+adjacent paragraph duplication. There is no evidence of save loops,
+performance/OOM risk, or a crash. Recovery is possible by undo before save,
+copying from the intact collaborator, or restoring a post revision after save.
+
+## Fix Plan
+
+1. Add a CRDT unit regression for the explicit-base stale top-level move.
+2. Add or repair a WebSocket-native browser repro that waits on WebSocket
+   provider state instead of HTTP `wp-sync` responses.
+3. Change `reconcileStaleLocalBlocks()` to accept an explicit base snapshot.
+4. In `mergeCrdtBlocks()`, use that reconciliation for explicit-base edits
+   before rebasing and merging by client ID.
+5. Keep the fix bounded to top-level stale-snapshot preservation; do not add a
+   new conflict-resolution system or direct serialized-HTML manipulation.
+
+The robustness concern is that base records are stale by design: they are only
+the local editor's pre-change view, not a complete description of all remote
+state already present in the CRDT document. A base-record merge must therefore
+still preserve remote-only Yjs blocks unless the incoming change explicitly
+proves a user deletion.
