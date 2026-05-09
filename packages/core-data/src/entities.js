@@ -38,6 +38,19 @@ function getSerializedBlockValue( block ) {
 	return __unstableSerializeAndClean( [ block ] ).trim();
 }
 
+function getSerializedBlockIdentity( block ) {
+	return `${ block.name }\u0000${ getSerializedBlockValue( block ) }`;
+}
+
+function countSerializedBlockIdentities( blocks, counts = new Map() ) {
+	for ( const block of blocks ) {
+		const identity = getSerializedBlockIdentity( block );
+		counts.set( identity, ( counts.get( identity ) ?? 0 ) + 1 );
+		countSerializedBlockIdentities( block.innerBlocks ?? [], counts );
+	}
+	return counts;
+}
+
 function getSerializedCRDTBlockContent( crdtRecord ) {
 	return Array.isArray( crdtRecord?.blocks )
 		? __unstableSerializeAndClean( crdtRecord.blocks ).trim()
@@ -92,15 +105,37 @@ function mergeStaleSerializedBlockContent(
 		latestBlocks.length > localBlocks.length &&
 		baseBlocks.length === latestBlocks.length
 	) {
+		const latestPrefixBlockCounts = countSerializedBlockIdentities(
+			latestBlocks.slice( 0, localBlocks.length )
+		);
+		const localBlockCounts = countSerializedBlockIdentities( localBlocks );
+		const trailingBlocksToAppend = [];
+
 		for ( let index = 0; index < localBlocks.length; index++ ) {
 			if ( localBlocks[ index ].name !== latestBlocks[ index ].name ) {
 				return;
 			}
 		}
 
+		for ( const latestTrailingBlock of latestBlocks.slice(
+			localBlocks.length
+		) ) {
+			const identity = getSerializedBlockIdentity( latestTrailingBlock );
+			const localCount = localBlockCounts.get( identity ) ?? 0;
+			const latestPrefixCount =
+				latestPrefixBlockCounts.get( identity ) ?? 0;
+
+			if ( localCount > latestPrefixCount ) {
+				localBlockCounts.set( identity, localCount - 1 );
+				continue;
+			}
+
+			trailingBlocksToAppend.push( latestTrailingBlock );
+		}
+
 		return __unstableSerializeAndClean( [
 			...localBlocks,
-			...latestBlocks.slice( localBlocks.length ),
+			...trailingBlocksToAppend,
 		] );
 	}
 
