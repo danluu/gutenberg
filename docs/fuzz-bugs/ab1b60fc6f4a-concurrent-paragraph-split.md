@@ -88,6 +88,16 @@ Seed 953255 step 4 user 1 concurrent paragraph 69940
 
 The same true-end probe passed at `20ms` and `30ms`, preserving both typed strings. This does not clear the bug, but it narrows the ordinary paragraph-end append corruption to a very tight live-input race in the current evidence.
 
+Pass 175 reran the original realistic browser spec once on the manifest-pinned known-fixes commit `f256024286dd80a4c0e2579f658c109256abf648` using websocket sync. The first concurrent append round failed after the session was ready and both peers converged to the same corrupted block tree:
+
+```text
+rtc-save-paragraph-marker-95325
+Seed 953255 step 45us-3 1 c-ncurrent paragraph 169400-end
+S5e-3-53255 step 0 user 0 co-enrrent paragraph 1d51
+```
+
+This pass confirms that the original visual-line split variant is still a direct product assertion failure on the known-fixes base, separate from the narrower true logical-end timing probe.
+
 ## Likely Root Cause
 
 `mergeCrdtBlocks` was introduced by `84019935998` (`Improve CRDT "merge logic" for post entities`, PR #72262). Its left/right sweep uses block positions as a fallback when reconciling full block snapshots into Yjs block arrays. Later RTC fix work added saved-base snapshots and client-id rebasing, but the observed failure still reaches a browser path where a local full snapshot, the current Yjs array, and the block-editor selection are changing while keyboard input continues to stream.
