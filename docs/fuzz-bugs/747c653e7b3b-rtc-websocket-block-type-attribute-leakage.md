@@ -50,6 +50,32 @@ Blast radius: real content corruption, not UI-only. Affected code can drop inser
 
 ## Reproduction Evidence
 
+Pass 175 rebuilt the focused adapter-level repro in fresh detached worktrees:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-175/work/747c653e7b3b-pass175/f256
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-175/work/747c653e7b3b-pass175/c8af
+```
+
+Temporary test:
+
+```text
+packages/core-data/src/utils/test/crdt-747c653e7b3b-pass175-explicit-base.test.ts
+```
+
+On `f256024286d`, the test failed because the final block client IDs dropped both live inserted Paragraphs:
+
+```text
+Expected: intro, remote-insert, middle, pullquote, local-insert, heading, tail, group
+Received: intro, middle, pullquote, heading, tail, group
+```
+
+On `c8af86c24a5`, the same test passed. The same repro and fix are also carried on:
+
+```text
+https://github.com/danluu/gutenberg/tree/try/rtc-websocket-convergence-corruption-with-block-type-and-a-747c653e7b3b-pr
+```
+
 Scratch test path:
 
 ```text
