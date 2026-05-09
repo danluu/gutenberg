@@ -16,6 +16,22 @@ import { toTree } from './to-tree';
 
 /** @typedef {import('./types').RichTextValue} RichTextValue */
 
+const VOID_ELEMENTS = new Set( [
+	'area',
+	'base',
+	'br',
+	'col',
+	'embed',
+	'hr',
+	'img',
+	'input',
+	'link',
+	'meta',
+	'source',
+	'track',
+	'wbr',
+] );
+
 /**
  * Create an HTML string from a Rich Text value.
  *
@@ -109,7 +125,7 @@ function createElementHTML( { type, attributes, object, children } ) {
 		) }"`;
 	}
 
-	if ( object ) {
+	if ( object && VOID_ELEMENTS.has( type.toLowerCase() ) ) {
 		return `<${ type }${ attributeString }>`;
 	}
 
