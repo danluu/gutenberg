@@ -533,3 +533,58 @@ Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailin
 ```
 
 Pass 174 contribution: this independently rechecked the known-fixes base from a clean detached `f256024...` worktree, not from the mutable shared checkout. It also confirms that the ordinary CRDT-read/hydrated-editor route fails even when the local stale snapshot is unchanged, so the risk is not limited to an active same-anchor collaborator append. A user tab that has hydrated an older block list can later emit a no-op full `blocks` snapshot and still delete a remote paragraph it never observed.
+
+## Pass 175 Verification
+
+Pass 175 fetched current `origin/trunk` and rebased both branches again:
+
+```text
+origin/trunk = b38f9b4d86d0505199f5efd78c2adf213e428e78
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+ace190e7ada Add RTC stale top-level append regression test
+b5dab7b9d7c Add RTC stale append persistence browser repro
+e674126c2ef Preserve RTC remote inserts across stale block snapshots
+```
+
+The rebased PR branch still passes the focused CRDT unit files:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt.ts --runInBand
+
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+`git diff --check origin/trunk...HEAD` also passed on the PR branch.
+
+Pass 175 again avoided the mutable shared known-fixes checkout because it was dirty and on another bug branch. A fresh detached worktree was created at the manifest's exact backlink-aware base:
+
+```text
+base = f256024286dd80a4c0e2579f658c109256abf648
+worktree = /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-175/work/da6c-knownfix-f256-pass175
+test file = packages/core-data/src/utils/test/da6c-pass175-crdt-read-stale.ts
+```
+
+The isolated known-fixes negative still fails both minimal CRDT-read stale snapshot tests:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/da6c-pass175-crdt-read-stale.ts --runInBand
+
+FAIL packages/core-data/src/utils/test/da6c-pass175-crdt-read-stale.ts
+Tests: 2 failed, 2 total
+
+keeps an unobserved remote insert after a hydrated editor emits an unchanged stale snapshot:
+Expected ["Baseline", "Shared anchor", "Primary paragraph", "Trailing"]
+Received ["Baseline", "Shared anchor", "Trailing"]
+
+keeps both same-anchor sibling appends after a hydrated stale local snapshot is saved:
+Expected ["Baseline", "Shared anchor", "Primary paragraph", "Collaborator paragraph", "Trailing"]
+Received ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+Pass 175 contribution: the practical-impact classification remains `medium` inside RTC collaboration and low across all Gutenberg usage, but the workflow is now sharper. The most realistic risk is a joining or reloaded collaborator tab that hydrates an older block list and then emits a full `blocks` snapshot while another collaborator's paragraph insert is already in the CRDT document. The user does not need malformed blocks, direct state mutation, or an unusual block type; ordinary paragraph blocks and ordinary save/reload are enough to make the loss persistent.
