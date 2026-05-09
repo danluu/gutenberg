@@ -78,6 +78,15 @@ describe( 'toHTMLString', () => {
 		);
 	} );
 
+	it( 'should preserve empty non-void elements with attributes', () => {
+		const HTML = 'Before <a id="empty-anchor"></a> after';
+		const element = createNode( `<p>${ HTML }</p>` );
+
+		expect( toHTMLString( { value: create( { element } ) } ) ).toEqual(
+			HTML
+		);
+	} );
+
 	it( 'should extract recreate HTML 4', () => {
 		const HTML = '<em>two 🍒</em>';
 		const element = createNode( `<p>${ HTML }</p>` );

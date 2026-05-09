@@ -615,6 +615,29 @@ describe( 'crdt', () => {
 			expect( block.attributes.content.text ).toBe( 'Hello world' );
 		} );
 
+		it( 'preserves empty inline anchors when hydrating rich-text block attributes', () => {
+			addBlockToDoc(
+				map,
+				'block-1',
+				'Before <a id="empty-anchor"></a> after'
+			);
+
+			const editedRecord = { blocks: [] } as unknown as Post;
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				editedRecord,
+				defaultSyncedProperties
+			);
+
+			const block = ( changes.blocks as any[] )?.[ 0 ];
+			expect( block ).toBeDefined();
+			expect( block.attributes.content ).toBeInstanceOf( RichTextData );
+			expect( block.attributes.content.toHTMLString() ).toBe(
+				'Before <a id="empty-anchor"></a> after'
+			);
+		} );
+
 		it( 'returns nested rich-text in array attributes as RichTextData', () => {
 			// Add a table block to the CRDT doc with nested cell content
 			// stored as plain strings.
