@@ -72,6 +72,26 @@ This is below Playwright, but it exercises the product CRDT merge entry point
 with normal `Block[]` snapshots and explicit `baseBlocks`. It does not inject
 malformed blocks or directly mutate editor state.
 
+Pass 172 moved the same sequence one layer up through
+`applyPostChangesToCRDTDoc()` with normal post-record `blocks` changes and
+`baseRecord.blocks` snapshots. On the same known-fixes base, the wrapper-level
+regression failed with the same result:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-172/work/388717-post-wrapper-knownfix
+npm run test:unit packages/core-data/src/utils/test/crdt-388717-post-wrapper-pass172.test.ts -- --runInBand
+```
+
+```text
+Expected: [ "Tail paragraph", "Follow-up heading" ]
+Received: [ "Tail paragraph", "Follow-up heading", "Tail paragraph" ]
+```
+
+Cherry-picking the prototype fix commit
+`1536fca9720fad8a8f5906cb0711a4b8fd09c101` into that temporary worktree made
+the wrapper regression pass. The existing `crdt-blocks.ts` unit suite also
+passed in that patched temporary state: 76 tests passed.
+
 ## Root Cause
 
 The vulnerable path is `mergeCrdtBlocks()` in
