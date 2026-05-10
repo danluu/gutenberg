@@ -253,6 +253,40 @@ Audit:
 
 Revised plan after pass 175: keep the lower-level adapter regression as commit 1, keep the natural toolbar `Add after` Playwright repro as commit 2, and use the base-aware stale-snapshot reconciliation fix as commit 3. Before treating the fix as complete, rerun the Playwright repro on the fixed branch with the 160 ms/key and 2000 ms +/-500 ms post-menu jitter settings. If the structural paragraph loss is gone but partial character loss remains, instrument the rich-text delta path separately.
 
+## Pass 176 Follow-up
+
+Pass 176 independently checked the pushed PR branch rather than relying only on
+the pass-175 summary.
+
+The adapter-level before/after result is clean:
+
+- Pre-fix PR-branch commit `1967025afb9` fails
+  `packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts` on
+  the stale-base tail append case, dropping `Remote inserted` and keeping
+  `Local inserted`.
+- Fixed PR-branch head `9b0f26239f1` passes the same six-test file.
+
+That confirms the 12-line base-record reconciliation change is necessary for
+the whole-paragraph loss proven by the post CRDT adapter. It does not yet prove
+the user-visible browser bug is fixed.
+
+Pass 176 also tried the committed natural Playwright repro on fixed head
+`9b0f26239f1` with the isolated environment
+`WP_ENV_HOME=/tmp/wp-env-5fe795b32c10-p176`, `WP_ENV_PORT=9970`, and
+`RTC_MANIFEST_WS_START_PORT=20960`. Both the initial run and a rerun after
+`wp option update wp_collaboration_enabled 1` failed before any `Add after`
+action: `waitForCollaborationReady()` timed out because
+`window._wpCollaborationEnabled` never became true. The attempt JSON has no
+snapshots, so this is a harness/readiness failure, not evidence of surviving
+content corruption on the fixed branch.
+
+The committed Playwright repro currently catches all errors in `runAttempt()`
+and marks them as `reproduced`. That is too broad for final branch quality: a
+readiness timeout can be reported with the same top-level failure message as a
+real state-corruption assertion. The branch still needs either the pass-174
+classified repro logic or equivalent setup-error classification before the
+browser test can be used as fixed-branch proof.
+
 ## Artifacts
 
 - Failure JSON, pass-172 160 ms/key no post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output/attempt-6.json`
@@ -267,6 +301,11 @@ Revised plan after pass 175: keep the lower-level adapter regression as commit 1
 - Temporary pass-174 unit-level repro: `/private/tmp/gutenberg-5fe795-p171-knownfix.SlckNV/packages/core-data/src/utils/test/rtc-tail-insert-base-repro.test.ts`
 - Pass-175 fixed-branch unit repro: `packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts` on `try/rtc-concurrent-tail-insert-corrupts-or-diverges-top-level--5fe795b32c10-pr`
 - Pass-175 PR branch URL: `https://github.com/danluu/gutenberg/tree/try/rtc-concurrent-tail-insert-corrupts-or-diverges-top-level--5fe795b32c10-pr`
+- Pass-176 pre-fix repro worktree: `/private/tmp/5fe795-pass176-prefix.r3ksp7`
+- Pass-176 fixed-branch readiness failure JSON:
+  `/tmp/5fe795b32c10-p176-fixed-natural-afteroption-attempts20-output/attempt-1.json`
+- Pass-176 fixed-branch readiness trace:
+  `/private/tmp/5fe795-pass175-knownfix.Pu0Ir5/test/e2e/artifacts/test-results/editor-collaboration-webso-d842e-d-after-realistic-attempt-1-chromium/trace.zip`
 - Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
