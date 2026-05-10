@@ -214,3 +214,21 @@ The same focused test passed on the proof-fix commit, confirming that the client
 ```
 
 `wp-env` was checked for the pass-175 worktree and was uninitialized; no new browser repro or video was produced in this pass.
+
+## Pass 176 Update
+
+Pass 176 rechecked the real-user path into the low-level merge. In the post editor, block changes are sent as full `blocks` arrays through `editEntityRecord`, and `core-data` passes the current edited record as `baseRecord` into the sync manager. The sync manager then calls `applyPostChangesToCRDTDoc`, which calls `mergeCrdtBlocks` with the block array and `baseRecord.blocks`. Ordinary block-editor actions can produce the needed structural deltas: `moveBlocksToPosition` dispatches `MOVE_BLOCKS_TO_POSITION`, and `removeBlocks` dispatches `REMOVE_BLOCKS`. This keeps the pass-175 low-level schedule aligned with normal editor behavior rather than a malformed block injection.
+
+Fresh verification on detached pass-176 worktrees:
+
+```text
+21ca487683a Add RTC List/Pullquote stale snapshot repro
+FAIL packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+Expected: false
+Received: true
+
+377adcfdae6 Avoid positional block smear after stale RTC snapshots
+PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+```
+
+The practical likelihood remains `low`: the operations are normal, but the bug requires two active RTC sessions to structurally edit the same small block neighborhood before the stale snapshot is reconciled. The missing artifact remains the same as pass 175: there is still no completed natural user-action Playwright repro or annotated video.
