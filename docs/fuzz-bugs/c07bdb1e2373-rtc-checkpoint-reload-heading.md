@@ -153,3 +153,28 @@ trunk-based PR branch does not contain that code path as a standalone target.
 The explanation branch and annotated video are sufficient for triage; a final
 PR branch with all three requested commits should be created only against the
 proposed stale-save stack or after that stack lands on trunk.
+
+Pass 176 independently checked the current `origin/trunk` boundary after
+fetching `origin/trunk` at `b38f9b4d86d0505199f5efd78c2adf213e428e78`.
+Clean trunk still creates a persisted CRDT document during post save, but it
+does not include the proposed stale-save freshness fetch, the
+`shouldApplyLatestCRDTDoc` predicate, or the public
+`syncManager.applyPersistedCRDTDoc()` replay/flush API. A focused diff from
+current trunk to the synthetic known-fixes commit `f256024286dd80a4c0e2579f658c109256abf648`
+shows those pieces added together in `packages/core-data/src/entities.js` and
+`packages/sync/src/manager.ts`:
+
+- `POST_TYPES_WITH_STALE_SAVE_PROTECTION` and the `baseURL` argument to
+  `prePersistPostType`;
+- save-time `apiFetch()` of the latest REST record;
+- `shouldApplyLatestCRDTDoc = hasLatestPersistedCRDTDoc ||
+  locallyChangedSavedFields.length`;
+- `applyPersistedCRDTDoc()` calling `internal.updateEntityRecord()` and being
+  exported on the sync manager.
+
+That makes the practical classification sharper: this is not reachable by a
+normal current-trunk single-user editor session, and it is not even reachable
+by current trunk's RTC save path as of `b38f9b4d86d`. It remains a real
+cross-PR regression risk for the proposed stale-save RTC stack because the
+existing Playwright timeline and lower-level proof both exercise code present
+at `f256`, not a malformed test-only state.
