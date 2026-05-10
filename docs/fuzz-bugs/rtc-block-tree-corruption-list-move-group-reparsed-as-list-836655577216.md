@@ -23,7 +23,7 @@ two-client: expected Group(2), received List(3)
 
 ## Practical Impact
 
-Real-user likelihood: `medium`.
+Real-user likelihood: `low`.
 
 Natural workflow:
 
@@ -31,10 +31,10 @@ Natural workflow:
 - Transport: HTTP polling sync; the same race is structurally possible for any transport that lets one peer edit from a stale block tree.
 - Blocks: top-level Heading, List, Group, Quote, plus a concurrently inserted Pullquote.
 - User actions: one user deletes the Heading and inserts a Pullquote after the Quote; another stale tab/user moves the List upward from the older tree.
-- Timing: requires a delayed or stale collaborator between the remote structural edit and the move. This can be a second browser tab, another user, or a short network delay.
+- Timing: requires a delayed or stale collaborator between the remote structural edit and the move. The default HTTP polling transport polls every 1 second with collaborators and every 25 seconds in a background tab, so stale windows are plausible, but the harmful order is narrower than simple request blocking.
 - Save/reload: not required to trigger the in-memory corruption. If saved or persisted into the CRDT document, the corrupted block tree can survive reload.
 
-Common prerequisites: RTC enabled, a collaborator or second tab, normal structural block edits, a List near a Group. Rare prerequisites: the collaborator must issue the move while still stale. Artificial parts from fuzzing/repro: the exact block sequence and forced delay/offline timing. The editor operations themselves are ordinary UI actions.
+Common prerequisites: RTC enabled, a collaborator or second tab, normal structural block edits, a List near a Group. Rare prerequisites: the collaborator must issue the move while still stale, and the HTTP update/response order must let that stale move reconcile with the concurrent delete/insert before the peer has already adopted the remote tree. Artificial parts from fuzzing/repro: the exact block sequence, forced delay/offline timing, and reconstructed reducer schedule. The editor operations themselves are ordinary UI actions.
 
 Blast radius:
 
@@ -45,11 +45,11 @@ Blast radius:
 - Performance/OOM: no evidence.
 - Recovery: undo may help if noticed immediately. Otherwise the user needs revision history or manual repair.
 
-Strongest evidence for `medium`: the failure uses ordinary block operations and a normal stale-collaboration timing window; the reducer reproduces on the known-fixes base with two Yjs clients; the Playwright repro passes only after the fix.
+Strongest evidence for `low` rather than `very-low`: the failure uses ordinary block operations; the reducer reproduces on the known-fixes base with valid Yjs documents and the same CRDT merge function used by the editor; HTTP polling naturally creates stale windows, especially for inactive/background collaborators.
 
-Strongest evidence against `high`: RTC is still an opt-in/experimental collaboration feature, and the race requires a stale peer to move the List in a specific interval.
+Strongest evidence against `medium`: the original generated spec/result artifacts are missing, the manifest marks the source as `no-realistic-repro`, and a copied natural-action Playwright route plus title-edit and stale-reload variants passed on the unpatched known-fixes base. The remaining proof is strong at the CRDT algorithm level but not yet a current-base browser failure.
 
-Shortest confidence-improving experiment: run the Playwright repro on an unpatched known-fixes checkout with a deterministic offline collaborator window and assert the corrupted final tree through the editor store.
+Shortest confidence-improving experiment: build an HTTP-provider scheduler repro that can separate upload from download for `/wp-sync/v1/updates`: let the stale collaborator upload the List move while withholding remote updates from that collaborator, then release both sides and assert both clients' `core/block-editor.getBlocks()` trees.
 
 ## Root Cause
 
@@ -110,5 +110,7 @@ Results:
 - Unit: 2 suites passed, 73 tests passed.
 - Lint: passed.
 - Playwright: 1 Chromium test passed.
+
+Current caveat: the Playwright test is a natural-action regression check for the fixed branch, but it should not be cited as proof that the same simple request-delay route fails on the unpatched known-fixes base. A later unpatched known-fixes UI check copied this spec and additional title/stale-reload variants into a detached `f256024286dd80a4c0e2579f658c109256abf648` worktree; those variants passed. The focused reducer above remains the strongest current evidence that the underlying CRDT merge bug survives that base.
 
 The wider `packages/core-data/src/utils/test/crdt.ts` suite was attempted but blocked by the linked checkout's incomplete dependency install (`framer-motion`, then `@emotion/css` missing), not by this patch.
