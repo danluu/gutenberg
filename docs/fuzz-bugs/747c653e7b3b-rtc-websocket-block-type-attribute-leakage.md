@@ -102,6 +102,22 @@ Result: passed.
 
 Both runs emitted the known symlinked-dependency Yjs duplicate-import warning; it did not prevent execution.
 
+Pass 176 checked the product call chain for the explicit-base case. Local post edits call the sync manager with `baseRecord: editedRecord`; the sync manager forwards that option to the post sync config; `applyPostChangesToCRDTDoc()` then passes `options.baseRecord.blocks` into `mergeCrdtBlocks()`. This makes the explicit-base path a normal collaborative editor path, not a test-only hook.
+
+Pass 176 also reran the carried regression on the PR branch. At test-only commit `07e637acb29`, after adding the same package-local dependency symlinks used by previous passes, the test fails with the two live inserted block IDs missing:
+
+```text
+Expected: intro, remote-insert, middle, pullquote, local-insert, heading, tail, group
+Received: intro, middle, pullquote, heading, tail, group
+```
+
+At PR branch head `74516c1fbb7`, the same focused test passes:
+
+```text
+PASS packages/core-data/src/utils/test/crdt-747c653e7b3b-pass175-explicit-base.test.ts
+Tests: 1 passed, 1 total
+```
+
 ## Fix Plan
 
 Initial fix: reconcile explicit `baseRecord.blocks` edits against the explicit base before merging.
