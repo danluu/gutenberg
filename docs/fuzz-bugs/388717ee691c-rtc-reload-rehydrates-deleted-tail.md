@@ -216,3 +216,35 @@ confidence-improving experiment is a two-user Playwright spec that uses normal
 block toolbar actions to move the tail paragraph, delays one HTTP polling update
 across a reload/rejoin, deletes the long paragraph, then asserts both live and
 saved block order.
+
+## Pass 176 Update
+
+Pass 176 rechecked the two focused regressions in clean detached worktrees. On
+exact known-fixes commit `f256024286dd80a4c0e2579f658c109256abf648`, after
+cherry-picking test commit `5461d73aedf`, both tests still fail with the
+manifest duplicate:
+
+```text
+Expected: [ "Tail paragraph", "Follow-up heading" ]
+Received: [ "Tail paragraph", "Follow-up heading", "Tail paragraph" ]
+```
+
+The same tests pass on prototype PR branch
+`try/rtc-reload-rehydrates-deleted-top-level-paragraph-as-dupli-388717ee691c-pr`
+at `7d0e079fc07d7ad3f937f0921d68a0d3d183f481`.
+
+Pass 176 also attempted a temporary natural Playwright probe using only normal
+post-editor UI actions for the move, reload, and delete. That probe did not
+reach the workflow: in the temporary `wp-env`, the editor never set
+`window._wpCollaborationEnabled`, and `wp eval` showed both
+`wp_is_collaboration_allowed()` and `wp_is_collaboration_enabled()` were not
+loaded. This is a harness/configuration blocker, not evidence that the browser
+workflow is safe.
+
+One additional product-path nuance from pass 176: applying a persisted CRDT
+document during reload uses `applyChangesToCRDTDoc()` without an explicit
+`baseRecord`, while ordinary entity edits call `editEntityRecord()`, pass
+`baseRecord: editedRecord` into the sync manager, and therefore exercise the
+explicit-base duplicate path. The highest-risk natural trigger is therefore not
+mere reload in isolation; it is reload/rejoin plus a stale follow-up entity edit
+or reconciliation update around the same move/delete window.
