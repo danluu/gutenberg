@@ -68,8 +68,9 @@ For this bug, the relevant sequence is:
 reconciliation in proposed fix commit `5bda437f0cc4` (`Preserve saved content
 from stale editor snapshots`) is the relevant fix family. The current
 known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` fixes the direct
-no-base reconstruction, though an integration path with explicit base blocks
-still needs care.
+no-edit duplicate reconstruction, but pass 176 found that it can still lose a
+valid stale-peer Pullquote text edit on the no-base route and can still corrupt
+the explicit `baseRecord.blocks` route.
 
 ## Pass 172 Known-Fixes Adapter Check
 
@@ -257,3 +258,66 @@ reconciliation when explicit base blocks are supplied. The practical likelihood
 classification remains `low`: the user workflow is natural, but the browser
 race still needs a stale full-snapshot ordering that has not been captured as a
 clean failing Playwright run.
+
+## Pass 176 No-Base Local-Edit Check
+
+Pass 176 added a fresh disposable test in a detached worktree at the exact
+known-fixes commit `f256024286dd80a4c0e2579f658c109256abf648`. The test
+contrasts three schedules:
+
+1. No-base stale snapshot with no Pullquote text edit.
+2. No-base stale snapshot where the stale peer edits the Pullquote text.
+3. Product-adapter stale update through `applyPostChangesToCRDTDoc` with
+   `{ baseRecord: { blocks: initialBlocks } }` and the same Pullquote text edit.
+
+The no-edit control passes, so the May 7 synthetic known-fixes base does avoid
+the original stale top-level duplicate when the stale Pullquote is unchanged:
+
+```text
+[
+  "core/group:group-client-id[core/pullquote:pullquote-client-id:Initial Pullquote body]"
+]
+```
+
+The no-base local-edit case still fails, but in a different way: it drops the
+stale peer's valid text edit and keeps the old nested text:
+
+```text
+Expected:
+[
+  "core/group:group-client-id[core/pullquote:pullquote-client-id:Local edit after stale view]"
+]
+
+Received:
+[
+  "core/group:group-client-id[core/pullquote:pullquote-client-id:Initial Pullquote body]"
+]
+```
+
+The explicit `baseRecord` adapter case still fails with the structural
+corruption shape:
+
+```text
+[
+  "core/group:group-client-id:Local edit after stale view[core/pullquote:pullquote-client-id:Initial Pullquote body]",
+  "core/group:<fresh uuid>"
+]
+```
+
+This narrows the root cause further: the May 7 stale reconciliation compares
+only top-level `clientId`s when deciding that a stale top-level Pullquote was
+remotely deleted. It does not search the current tree deeply enough to notice
+that the same Pullquote `clientId` now exists inside the Group. The PR branch
+fix does that deep lookup and, after rebasing onto current `origin/trunk`
+`5fc7223e96b2751c57b6c4ae840bb9e838bee9f0`, still passes:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-pullquote-move-into-group.test.ts -- --runTestsByPath --runInBand
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runTestsByPath --runInBand
+```
+
+The rebased PR branch now has this three-commit order:
+
+1. `3ecf9dd708b` adds the focused non-Playwright CRDT repros.
+2. `38a3b341000` adds the natural browser coverage.
+3. `573a24d2f1d` applies the source fix.
