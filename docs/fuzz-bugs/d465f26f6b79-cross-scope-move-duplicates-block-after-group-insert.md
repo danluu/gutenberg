@@ -10,7 +10,7 @@ Transport: HTTP
 
 This is a real RTC correctness bug. Pass 175 overturns the narrower pass 174 conclusion: the exact May 7 known-fixes base (`f256024286dd80a4c0e2579f658c109256abf648`) fixed the no-base `mergeCrdtBlocks()` route, but the normal editor route passes `baseRecord.blocks` through `core-data` and `sync`, and that base-backed route still reproduced the stale top-level duplicate on the exact known-fixes SHA.
 
-Current `origin/trunk` at `b38f9b4d86d0505199f5efd78c2adf213e428e78` also reproduces the no-base variant. The paired PR branch adds a low-level regression, a natural Playwright repro using the editor's Group menu action, and a fix that reconciles stale full block snapshots before structural merging.
+Current `origin/trunk` at `b38f9b4d86d0505199f5efd78c2adf213e428e78` also reproduces the no-base variant. The paired PR branch adds a low-level regression for both no-base and `baseBlocks` merge paths, a natural Playwright repro using the editor's Group menu action, and a fix that reconciles stale full block snapshots before structural merging.
 
 ## Practical impact
 
@@ -33,7 +33,7 @@ Strongest evidence for `medium`:
 - The handoff manifest marks this runnable and likely real: seed `956512`, confidence `medium`, recommended action `file_bug`.
 - On exact known-fixes SHA `f256024286dd80a4c0e2579f658c109256abf648`, a pass-175 scratch test using `baseBlocks` failed by ending with root client IDs `["group", "tail-paragraph", "<uuid>"]`: the stale moved paragraph was reinserted at root with a fresh client ID after duplicate-client-ID cleanup.
 - The normal editor path in that known-fixes base passes `baseRecord`: `core-data/src/actions.js` calls `getSyncManager()?.update(..., { baseRecord: editedRecord })`, `packages/sync/src/manager.ts` forwards it, and `packages/core-data/src/utils/crdt.ts` passes `baseRecord.blocks` into `mergeCrdtBlocks()`.
-- The final PR branch's low-level regression fails on current trunk and passes with the fix.
+- The final PR branch's low-level regression covers both the no-base helper route and the normal `baseBlocks` editor route. The `baseBlocks` variant fails on the exact known-fixes SHA and passes with the fix.
 - The final PR branch's natural Playwright repro passes with the fix after selecting a paragraph, invoking `Group` from the block options menu, editing a second paragraph while stale/offline, reconnecting, and asserting one nested moved paragraph with no top-level duplicate.
 
 Strongest evidence against `medium`:
@@ -101,7 +101,7 @@ WP_ENV_PORT=9948 WP_BASE_URL=http://localhost:9948 WP_ENV_PHPMYADMIN_PORT=10048 
 WP_ENV_PORT=9948 WP_BASE_URL=http://localhost:9948 WP_ENV_PHPMYADMIN_PORT=10048 RTC_MANIFEST_WS_START_PORT=20784 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-d465-cross-scope-move.spec.ts --project=chromium --workers=1 --trace on
 ```
 
-Results: all focused final-branch tests passed. The unit run emitted the existing duplicate-Yjs import warning but passed. The trace-enabled Playwright run produced `test/e2e/artifacts/test-results/editor-collaboration-colla-1b505-agraph-grouped-into-a-Group-chromium/trace.zip`.
+Results: all focused final-branch tests passed. After pass 176 strengthened the unit regression, the unit run reports two passing cases: without `baseBlocks` and with `baseBlocks`. The run emitted the existing duplicate-Yjs import warning but passed. The trace-enabled Playwright run produced `test/e2e/artifacts/test-results/editor-collaboration-colla-1b505-agraph-grouped-into-a-Group-chromium/trace.zip`.
 
 Annotated stitched video:
 
