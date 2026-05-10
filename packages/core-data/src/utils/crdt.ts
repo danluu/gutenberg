@@ -290,6 +290,109 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 	return getRootMap( crdtDoc, CRDT_RECORD_MAP_KEY ).toJSON();
 }
 
+function getGeneratedBlockSerialization( blocks: Block[] ): string {
+	return __unstableSerializeAndClean(
+		getGeneratedBlockSerializationBlocks( blocks )
+	).trim();
+}
+
+function getGeneratedBlockSerializationBlocks( blocks: Block[] ): Block[] {
+	return blocks.map( ( block ) => {
+		const innerBlocks = getGeneratedBlockSerializationBlocks(
+			block.innerBlocks ?? []
+		);
+
+		if (
+			block.isValid !== false ||
+			typeof block.originalContent !== 'string'
+		) {
+			return {
+				...block,
+				innerBlocks,
+			};
+		}
+
+		const generatedBlock: Block & { __unstableBlockSource?: unknown } = {
+			...block,
+			isValid: true,
+			innerBlocks,
+		};
+		delete generatedBlock.__unstableBlockSource;
+		delete generatedBlock.originalContent;
+		delete generatedBlock.validationIssues;
+
+		return generatedBlock;
+	} );
+}
+
+function hasInvalidBlockOriginalContent( blocks: Block[] ): boolean {
+	return blocks.some(
+		( block ) =>
+			( block.isValid === false &&
+				typeof block.originalContent === 'string' ) ||
+			hasInvalidBlockOriginalContent( block.innerBlocks ?? [] )
+	);
+}
+
+function parseHTMLFragmentForComparison(
+	html: string
+): DocumentFragment | null {
+	if ( typeof document === 'undefined' ) {
+		return null;
+	}
+
+	const template = document.createElement( 'template' );
+	template.innerHTML = html;
+
+	for ( const childNode of Array.from( template.content.childNodes ) ) {
+		if (
+			childNode.nodeType === 3 &&
+			childNode.textContent?.trim() === ''
+		) {
+			childNode.remove();
+		}
+	}
+
+	return template.content;
+}
+
+function areHTMLFragmentsEquivalent( first: string, second: string ): boolean {
+	const firstFragment = parseHTMLFragmentForComparison( first );
+	const secondFragment = parseHTMLFragmentForComparison( second );
+
+	return !! firstFragment && firstFragment.isEqualNode( secondFragment );
+}
+
+function hasPersistedBlockContentChanged(
+	blocks: Block[],
+	persistedContent: string | undefined
+): boolean {
+	const rawPersistedContent = persistedContent?.trim() ?? '';
+	const serializedBlocks = __unstableSerializeAndClean( blocks ).trim();
+
+	if ( serializedBlocks === rawPersistedContent ) {
+		return false;
+	}
+
+	if ( ! hasInvalidBlockOriginalContent( blocks ) ) {
+		return true;
+	}
+
+	try {
+		const generatedSerialization = getGeneratedBlockSerialization( blocks );
+
+		return (
+			generatedSerialization !== rawPersistedContent &&
+			! areHTMLFragmentsEquivalent(
+				generatedSerialization,
+				rawPersistedContent
+			)
+		);
+	} catch {
+		return true;
+	}
+}
+
 /**
  * Given a local Y.Doc that *may* contain changes from remote peers, compare
  * against the local record and determine if there are changes (edits) we want
@@ -342,8 +445,8 @@ export function getPostChangesFromCRDTDoc(
 					) {
 						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
 
-						return (
-							__unstableSerializeAndClean( blocksJson ).trim() !==
+						return hasPersistedBlockContentChanged(
+							blocksJson,
 							getRawValue( editedRecord.content )
 						);
 					}
