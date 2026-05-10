@@ -644,3 +644,54 @@ Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailin
 `wp-env status` on the requested port `9936` reported the PR-branch environment as uninitialized. A bounded `wp-env start` failed while creating phpMyAdmin because host port `9000` is already allocated by another wp-env container, so fresh local Playwright remains blocked by environment setup. The committed natural-user Playwright repro and existing annotated evidence video remain the browser-level artifacts for this pass.
 
 Pass 176 contribution: this reverified that the existing branch, video, and fix still satisfy the requested standard on current trunk, and it independently reran the current known-fixes negative from a new detached `f256024...` worktree. The practical impact classification remains `medium` inside RTC collaboration: the ordinary trigger is a reloaded or joining editor saving a stale full block snapshot after another collaborator's paragraph insert, which is uncommon but natural in collaborative editing and persists as real content loss after save/reload.
+
+## Pass 177 Verification
+
+Pass 177 fetched current `origin/trunk` and rebased both branches again:
+
+```text
+origin/trunk = daf20d82b937e13d0f55e908008be8b3037c2d67
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+a4207cfaeed Add RTC stale top-level append regression test
+9ac51d90b99 Add RTC stale append persistence browser repro
+6630f171e31 Preserve RTC remote inserts across stale block snapshots
+```
+
+The rebased PR branch still passes the focused CRDT unit files:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt.ts --runInBand
+
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+`git diff --check origin/trunk...HEAD` also passed on the PR branch.
+
+Pass 177 added a narrower, one-test adapter-level negative in the existing detached exact known-fixes worktree:
+
+```text
+base = f256024286dd80a4c0e2579f658c109256abf648
+worktree = /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-177/exact-f256
+test file = packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts
+```
+
+The test models the ordinary reload/hydration path only: `getPostChangesFromCRDTDoc()` hydrates an editor from the CRDT document, another collaborator inserts `Primary paragraph`, and the hydrated editor writes a stale full `blocks` snapshot with `Collaborator paragraph` after the same shared anchor. The exact known-fixes base still drops the unobserved remote insert:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts --runInBand
+
+FAIL packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts
+Expected length: 5
+Received length: 4
+Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+Pass 177 also re-read the source scenario from the refresh checkout. The provided spec path is no longer present in the main checkout, but the refresh source shows normal user actions for the failing sequence: visible text click, `End`, `Enter`, keyboard typing, save, collaborator reload, and further visible block deletes. Trace evidence is consistent with a product merge failure rather than a malformed generated spec: the primary marker was typed at trace time `55008.065` and visibly found; the collaborator marker was typed at `55655.889` and visibly found; later convergence snapshots at calls `1369` and `1374` contain only the collaborator marker in both normalized `blocks` and `serializedContent`.
+
+Pass 177 contribution: this rebases both branches to the latest trunk, reruns the fixed-branch focused suite, and adds a fresh exact-`f256024...` negative that isolates the practical reload/hydration route. The real-user likelihood classification remains `medium` for RTC collaborators and low across all Gutenberg usage. The workflow is natural but timing-dependent: two active editors, one reload/join/hydration window, one remote paragraph insert, one stale full block snapshot, then save/reload persistence.
