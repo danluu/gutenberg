@@ -53,6 +53,16 @@ A pass-175 scratch test showed the boundary:
 - Applying fix commit `c8af86c24a5c70784e4604b66b772a0511859a00` makes both
   cases pass.
 
+A pass-176 scratch test moved the proof one level closer to browser behavior.
+It used `SyncManager.update()` and the real post CRDT adapter, then applied a
+provider-style Yjs update containing the remote Pullquote into the stale
+editor's document. The stale editor scheduled the Paragraph move before the
+remote store reconciliation tick completed. On `f256024286d`, that manager-level
+race still dropped the Pullquote; after the same fix hunk, it passed. This is
+the natural event ordering a browser user can create by acting on a stale editor
+view immediately after a collaborator's remote update has reached the CRDT
+document.
+
 ## Root Cause
 
 On `f256024286d`, `packages/core-data/src/actions.js` sends editor sync updates
@@ -86,6 +96,13 @@ const blocksToSync = baseBlocksToSync
 That means explicit-base edits skip `reconcileStaleLocalBlocks()`. Remote-only
 top-level blocks that are present in the Y.Doc but absent from the stale editor
 snapshot are interpreted as intentional removals.
+
+`SyncManager` makes the race plausible rather than purely synthetic. Remote Yjs
+updates increment `remoteKeyVersions` and mark keys as reconciling before the
+local editor store has necessarily rendered the remote blocks. A local editor
+action scheduled after that version increment captures the current version and
+is allowed through the reconciliation filter, even if its `baseRecord.blocks`
+and outgoing `blocks` were computed from the stale editor view.
 
 The proposed fix is small: let `reconcileStaleLocalBlocks()` accept the explicit
 base snapshot and call it in the explicit-base branch too.
