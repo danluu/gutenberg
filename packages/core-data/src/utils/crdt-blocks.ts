@@ -203,6 +203,24 @@ function getBlocksByClientIdIfEveryBlockHasUniqueId(
 	);
 }
 
+function alignPreviousBlocksByClientId(
+	blocksToSync: Block[],
+	previousBlocks: Block[]
+): Array< Block | undefined > {
+	const blocksToSyncClientIds =
+		getClientIdsIfEveryBlockHasUniqueId( blocksToSync );
+	const previousBlocksByClientId =
+		getBlocksByClientIdIfEveryBlockHasUniqueId( previousBlocks );
+
+	if ( ! blocksToSyncClientIds || ! previousBlocksByClientId ) {
+		return previousBlocks;
+	}
+
+	return blocksToSyncClientIds.map( ( clientId ) =>
+		previousBlocksByClientId.get( clientId )
+	);
+}
+
 function findBlockIndexByClientId( blocks: Block[], clientId: string ): number {
 	return blocks.findIndex(
 		( block ) => getBlockClientId( block ) === clientId
@@ -399,9 +417,10 @@ function reconcileStaleLocalBlockValues(
 
 function reconcileStaleLocalBlocks(
 	yblocks: YBlocks,
-	localBlocksToSync: Block[]
+	localBlocksToSync: Block[],
+	baseBlocks?: Block[]
 ): Block[] {
-	const previousBlocks = previousLocalBlocksCache.get( yblocks );
+	const previousBlocks = baseBlocks ?? previousLocalBlocksCache.get( yblocks );
 
 	if ( ! previousBlocks ) {
 		return localBlocksToSync;
@@ -1128,8 +1147,15 @@ export function mergeCrdtBlocks(
 	const previousBlocks =
 		baseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
 	const blocksToSync = baseBlocksToSync
-		? localBlocksToSync
+		? reconcileStaleLocalBlocks(
+				yblocks,
+				localBlocksToSync,
+				baseBlocksToSync
+		  )
 		: reconcileStaleLocalBlocks( yblocks, localBlocksToSync );
+	const previousBlocksForMerge = previousBlocks
+		? alignPreviousBlocksByClientId( blocksToSync, previousBlocks )
+		: undefined;
 
 	if ( rebaseYBlocksByClientId( yblocks, previousBlocks, blocksToSync ) ) {
 		mergeYBlocksByClientId(
@@ -1149,7 +1175,7 @@ export function mergeCrdtBlocks(
 		yblocks,
 		blocksToSync,
 		cursorPosition,
-		previousBlocks
+		previousBlocksForMerge
 	);
 	previousLocalBlocksCache.set( yblocks, localBlocksToSync );
 }
@@ -1158,7 +1184,7 @@ function mergeCrdtBlocksIntoYBlocks(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
 	cursorPosition: MergeCursorPosition,
-	previousBlocks?: Block[]
+	previousBlocks?: Array< Block | undefined >
 ): void {
 	// This is a rudimentary diff implementation similar to the y-prosemirror diffing
 	// approach.
