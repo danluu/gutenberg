@@ -24,6 +24,10 @@ jest.mock( '@wordpress/blocks', () => {
 				attributes: { content: { type: 'rich-text' } },
 			},
 			{
+				name: 'core/heading',
+				attributes: { content: { type: 'rich-text' } },
+			},
+			{
 				name: 'core/table',
 				attributes: {
 					hasFixedLayout: { type: 'boolean' },
@@ -46,15 +50,25 @@ jest.mock( '@wordpress/blocks', () => {
 	};
 } );
 
+const {
+	__unstableSerializeAndClean,
+	getBlockType,
+	registerBlockType,
+	unregisterBlockType,
+} = jest.requireActual(
+	'@wordpress/blocks'
+) as typeof import('@wordpress/blocks');
+
 /**
  * WordPress dependencies
  */
+import { createElement, RawHTML } from '@wordpress/element';
 import { RichTextData } from '@wordpress/rich-text';
 
 /**
  * Internal dependencies
  */
-import { CRDT_RECORD_MAP_KEY } from '../../sync';
+import { CRDT_DOC_META_PERSISTENCE_KEY, CRDT_RECORD_MAP_KEY } from '../../sync';
 import {
 	applyPostChangesToCRDTDoc,
 	defaultCollectionSyncConfig,
@@ -82,6 +96,78 @@ const defaultSyncedProperties = new Set< string >( [
 	'tags',
 	'title',
 ] );
+
+function renderRichTextValue( value?: string | RichTextData ): string {
+	return typeof value === 'string' ? value : value?.toHTMLString() ?? '';
+}
+
+function registerEntityReferenceBlocks() {
+	registerBlockType( 'core/paragraph', {
+		apiVersion: 3,
+		category: 'text',
+		title: 'Paragraph',
+		attributes: {
+			content: {
+				type: 'rich-text',
+				source: 'rich-text',
+				selector: 'p',
+			},
+		},
+		save: ( {
+			attributes,
+		}: {
+			attributes: { content?: string | RichTextData };
+		} ) =>
+			createElement(
+				'p',
+				null,
+				createElement(
+					RawHTML,
+					null,
+					renderRichTextValue( attributes.content )
+				)
+			),
+	} );
+
+	registerBlockType( 'core/heading', {
+		apiVersion: 3,
+		category: 'text',
+		title: 'Heading',
+		attributes: {
+			content: {
+				type: 'rich-text',
+				source: 'rich-text',
+				selector: 'h1,h2,h3,h4,h5,h6',
+			},
+			level: {
+				type: 'number',
+				default: 2,
+			},
+		},
+		save: ( {
+			attributes,
+		}: {
+			attributes: { content?: string | RichTextData; level?: number };
+		} ) =>
+			createElement(
+				`h${ attributes.level ?? 2 }`,
+				null,
+				createElement(
+					RawHTML,
+					null,
+					renderRichTextValue( attributes.content )
+				)
+			),
+	} );
+}
+
+function unregisterEntityReferenceBlocks() {
+	for ( const blockName of [ 'core/paragraph', 'core/heading' ] ) {
+		if ( getBlockType( blockName ) ) {
+			unregisterBlockType( blockName );
+		}
+	}
+}
 
 describe( 'defaultCollectionSyncConfig', () => {
 	it( 'has no-op applyChangesToCRDTDoc', () => {
@@ -124,12 +210,13 @@ describe( 'crdt', () => {
 	let doc: Y.Doc;
 
 	beforeEach( () => {
-		doc = new Y.Doc();
+		doc = new Y.Doc( { meta: new Map() } );
 		jest.clearAllMocks();
 	} );
 
 	afterEach( () => {
 		doc.destroy();
+		unregisterEntityReferenceBlocks();
 	} );
 
 	describe( 'applyPostChangesToCRDTDoc', () => {
@@ -679,6 +766,126 @@ describe( 'crdt', () => {
 
 			expect( changes ).toHaveProperty( 'blocks' );
 			expect( changes.blocks ).toBeUndefined();
+		} );
+
+		it( 'does not invalidate persisted blocks for equivalent entity references and link attribute order', () => {
+			registerEntityReferenceBlocks();
+
+			const staleBlocks = [
+				{
+					name: 'core/paragraph',
+					clientId: 'paragraph-1',
+					attributes: {
+						content:
+							'D29 escaped <a href="https://example.test/search?q=alpha&#38;beta=2" title="A&amp;B">&lt;em&gt;paragraph&lt;/em&gt;</a> and &notin text.',
+					},
+					innerBlocks: [],
+					isValid: false,
+					originalContent:
+						'<p>D29 escaped <a href="https://example.test/search?q=alpha&#38;beta=2" title="A&amp;B">&lt;em&gt;paragraph&lt;/em&gt;</a> and &notin text.</p>',
+				},
+				{
+					name: 'core/heading',
+					clientId: 'heading-1',
+					attributes: {
+						content:
+							'D29 heading <a href="https://example.test/ref?one=1&#38;two=2" title="H&amp;B">&lt;em&gt;title&lt;/em&gt;</a>.',
+						level: 2,
+					},
+					innerBlocks: [],
+					isValid: false,
+					originalContent:
+						'<h2>D29 heading <a href="https://example.test/ref?one=1&#38;two=2" title="H&amp;B">&lt;em&gt;title&lt;/em&gt;</a>.</h2>',
+				},
+			];
+			const generatedBlocks = staleBlocks.map( ( block ) => {
+				const generatedBlock = { ...block, isValid: true };
+				delete ( generatedBlock as any ).originalContent;
+				delete ( generatedBlock as any ).validationIssues;
+				delete ( generatedBlock as any ).__unstableBlockSource;
+				return generatedBlock;
+			} );
+			const persistedContent = [
+				'<!-- wp:paragraph -->',
+				'<p>D29 escaped <a title="A&amp;B" href="https://example.test/search?q=alpha&amp;beta=2">&lt;em>paragraph&lt;/em></a> and &not;in text.</p>',
+				'<!-- /wp:paragraph -->',
+				'',
+				'<!-- wp:heading -->',
+				'<h2>D29 heading <a title="H&amp;B" href="https://example.test/ref?one=1&amp;two=2">&lt;em>title&lt;/em></a>.</h2>',
+				'<!-- /wp:heading -->',
+			].join( '\n' );
+
+			expect(
+				__unstableSerializeAndClean( staleBlocks ).trim()
+			).not.toBe( persistedContent );
+			expect(
+				__unstableSerializeAndClean( generatedBlocks ).trim()
+			).not.toBe( persistedContent );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					blocks: staleBlocks,
+					content: persistedContent,
+				} as unknown as PostChanges,
+				defaultSyncedProperties
+			);
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					content: {
+						raw: persistedContent,
+						rendered: persistedContent,
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
+		} );
+
+		it( 'invalidates persisted entity blocks when the generated content really changed', () => {
+			registerEntityReferenceBlocks();
+
+			const staleBlocks = [
+				{
+					name: 'core/paragraph',
+					clientId: 'paragraph-1',
+					attributes: {
+						content:
+							'D29 escaped <a href="https://example.test/search?q=alpha&#38;beta=2" title="A&amp;B">&lt;em&gt;paragraph&lt;/em&gt;</a> and &notin text.',
+					},
+					innerBlocks: [],
+					isValid: false,
+					originalContent:
+						'<p>D29 escaped <a href="https://example.test/search?q=alpha&#38;beta=2" title="A&amp;B">&lt;em&gt;paragraph&lt;/em&gt;</a> and &notin text.</p>',
+				},
+			];
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: staleBlocks } as unknown as PostChanges,
+				defaultSyncedProperties
+			);
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					content: {
+						raw: [
+							'<!-- wp:paragraph -->',
+							'<p>Changed server content.</p>',
+							'<!-- /wp:paragraph -->',
+						].join( '\n' ),
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).toHaveProperty( 'blocks' );
 		} );
 
 		it( 'detects content changes from string value', () => {
