@@ -71,7 +71,7 @@ Simplicity/performance audit: the fix adds no polling, no new network request, a
 
 Revised plan after pass 173: keep the trunk-facing branch with parsed restore blocks and option plumbing, and apply the pre-persist guard in the branch where the stale-save CRDT code lands. The exact c056 Playwright repro now reaches the persisted-content failure and should be retained as the natural-user regression test.
 
-Pass 174 rebased the trunk-facing PR branch to `origin/trunk` `b38f9b4d86d`. Current trunk still does not contain the stale-save body merge from PR `77876`, so the branch remains a forward-compatible restore fix plus option plumbing; the pre-persist restore guard must be applied when that stale-save code lands.
+Pass 176 rebased the trunk-facing PR branch to `origin/trunk` `5fc7223e96b`. Current trunk still does not contain the stale-save body merge from PR `77876`, so the branch remains a forward-compatible restore fix plus option plumbing; the pre-persist restore guard must be applied when that stale-save code lands.
 
 ## Verification
 
@@ -89,10 +89,10 @@ npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-c05661de30a8-real
 
 Result with known-fixes build output: failed at the intended product invariant. `persistedContent` contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new` after restore and reload.
 
-Focused unit verification on the rebased PR branch:
+Focused unit verification on the pass-176 rebased PR branch:
 
 ```bash
-npm run test:unit -- packages/editor/src/store/test/private-actions.js
+npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNamePattern=restoreRevision
 ```
 
-Result: passed.
+Result: passed after the branch was rebased to `origin/trunk` `5fc7223e96b`.
