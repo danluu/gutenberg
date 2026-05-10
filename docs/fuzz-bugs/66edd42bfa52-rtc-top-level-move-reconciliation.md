@@ -88,6 +88,15 @@ single-user editing; the users must touch the same nearby block region; and the
 bad result depends on stale full snapshots or top-level array reuse, not every
 move.
 
+Pass 176 current-base nuance: a fresh negative control on the manifest's
+known-fixes SHA (`f256024286dd80a4c0e2579f658c109256abf648`) still fails the
+two same-array/cache-sensitive tests, but the stale full-snapshot test passes
+there. A code audit of the normal toolbar action path found that
+`MOVE_BLOCKS_DOWN`, `INSERT_BLOCKS`, and block removal rebuild the parent
+`innerBlocks` array before `getBlocks()` returns it. That makes the remaining
+current-known-fixes residual less natural than the archived browser failure
+unless another editor path reuses and mutates the same block-array object.
+
 Shortest confidence-improving experiment: run the natural Playwright sequence
 100-200 times with small randomized delays between delete, insert-before, and
 move-down while logging each emitted block array order and object identity.
