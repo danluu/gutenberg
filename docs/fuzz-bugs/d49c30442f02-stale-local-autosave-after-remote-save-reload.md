@@ -66,6 +66,22 @@ bundle with the no-unload known-fixes bundle. It failed at the stale warning
 assertion with `expected count 0, received 2`. The rebased PR branch, with the
 fixed bundle restored, passed the same test.
 
+Pass 176 refreshed both artifact branches onto current `origin/trunk`
+`5fc7223e96b2751c57b6c4ae840bb9e838bee9f0`
+(`Classic Block: Use onReplace prop for migration actions (#78113)`). The only
+new trunk commit after pass 175 is a Classic block migration change and does not
+touch editor autosave, `core-data` save/refetch handling, or RTC sync. A targeted
+static check still finds no `useAutosaveOnPageUnload`, `pagehide`, or relevant
+`beforeunload` hook in `origin/trunk` or the required known-fixes base
+`f256024286dd80a4c0e2579f658c109256abf648` under
+`packages/editor/src/components/local-autosave-monitor`,
+`packages/editor/src/store`, `packages/core-data/src`, or `packages/sync/src`.
+The rebased fixed branch passed the same natural two-user Playwright repro:
+
+`WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
+
+Result after fix: `1 passed (21.0s)`.
+
 ## Natural Repro
 
 The committed repro on the PR branch creates a draft post with one paragraph and uses two real browser users in the post editor:
@@ -222,9 +238,9 @@ PR branch:
 
 PR branch commits:
 
-1. `710bdee0e24` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
-2. `089d3db2058` - natural two-user Playwright repro.
-3. `3f900de8570` - page-unload local autosave flush fix.
+1. `da4e4cb086f` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
+2. `d8dcda6cb04` - natural two-user Playwright repro.
+3. `ef05db3c953` - page-unload local autosave flush fix.
 
 ## Verification
 
@@ -286,6 +302,24 @@ Pass 174 targeted lint:
 
 Result: exit code 0, with four existing `react-hooks/exhaustive-deps` warnings
 in `local-autosave-monitor/index.js`.
+
+Pass 176 rebase verification on current `origin/trunk`
+`5fc7223e96b2751c57b6c4ae840bb9e838bee9f0`:
+
+`npm run lint:js -- packages/editor/src/components/local-autosave-monitor/index.js test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts`
+
+Result: exit code 0, with the same four existing
+`react-hooks/exhaustive-deps` warnings in `local-autosave-monitor/index.js`.
+
+`git diff --check origin/trunk..HEAD`
+
+Result: exit code 0.
+
+The first pass-176 e2e attempt used the default `.wp-env.json` environment and
+failed in global setup because the E2E test plugins were not mounted there. The
+test environment was restarted with `npm run wp-env-test -- start`, which uses
+`.wp-env.test.json` and mounts `packages/e2e-tests/plugins`; the same e2e command
+then passed on the rebased fixed branch.
 
 Video run:
 
