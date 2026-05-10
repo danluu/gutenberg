@@ -98,6 +98,29 @@ S5e-3-53255 step 0 user 0 co-enrrent paragraph 1d51
 
 This pass confirms that the original visual-line split variant is still a direct product assertion failure on the known-fixes base, separate from the narrower true logical-end timing probe.
 
+Pass 176 added a phase-instrumented replay on the same known-fixes commit, with fresh websocket state and the browser's stale local editor storage cleared before opening the seed post. This made the exact phase boundary visible:
+
+```text
+after End:
+rtc-save-paragraph-marker-953255-3-0-end
+
+after concurrent Enter:
+rtc-save-paragraph-marker-95325
+5-3-0-end
+5-3-0-end
+
+after concurrent typing:
+rtc-save-paragraph-marker-95325
+Seed 953255 step 5 user-13-oncu0rent paragraph 169940-end
+Seed 95-253 -tep 4 user 0 concu0rent par-grend1851
+```
+
+The clean pass-176 run used post `8`, whose REST response contained the expected checkpoint title/content before the editor opened. Both peers converged to the same corrupted final block tree. The annotated stitched video is local-only at:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-176/ab1b60fc6f4a-artifact-clean3-results/ab1b60fc6f4a-pass176-annotated-stitch.mp4
+```
+
 ## Likely Root Cause
 
 `mergeCrdtBlocks` was introduced by `84019935998` (`Improve CRDT "merge logic" for post entities`, PR #72262). Its left/right sweep uses block positions as a fallback when reconciling full block snapshots into Yjs block arrays. Later RTC fix work added saved-base snapshots and client-id rebasing, but the observed failure still reaches a browser path where a local full snapshot, the current Yjs array, and the block-editor selection are changing while keyboard input continues to stream.
@@ -110,6 +133,8 @@ Pass 171 tested three lower-level hypotheses:
 
 Those lower-level probes did not reproduce the browser corruption. Pass 172 also failed to reproduce the corruption with a closer divergent-editor-client-id model, and disabling shifted-selection restoration did not help. That is evidence against a standalone `mergeRichTextUpdate` bug, against a simple block-array merge failure, and against shifted-selection restoration as the only trigger. The remaining likely layer is the live editor/sync loop: remote updates dispatch block changes and rerender/selection effects while the browser is still sending real keystrokes into two paragraphs created by the same concurrent split.
 
+Pass 176 narrows this further. The first incorrect product state appears before typed text is involved: two simultaneous `Enter` key events at the same visual-line split point turn one suffix into two suffix paragraphs. The destructive text corruption then happens when both users type into those suffix-bearing split blocks. A correct final state could order the two inserted paragraphs differently, but it should preserve the original suffix exactly once and preserve each user's inserted text exactly once.
+
 ## Practical Impact
 
 Likelihood for the destructive interleaving signature: `low`.
@@ -117,6 +142,8 @@ Likelihood for the destructive interleaving signature: `low`.
 The workflow requires RTC collaboration, two browser tabs or users editing the same post, websocket sync, focus on the same paragraph, near-simultaneous paragraph splitting or paragraph-end appending, and immediate overlapping typing. Those timing and same-paragraph requirements are uncommon, but the individual actions are ordinary editor behavior. Pass 172 suggests the wrapped-line destructive character interleaving needs unusually fast synchronized typing: it reproduced at `10ms` and `50ms` per character, but not in single runs at `80ms` or `120ms`. Pass 173 raises the likelihood above `very-low` because a true logical-end append can also corrupt typed text, although that variant reproduced at `10ms` and passed at `50ms` in single clean-base runs.
 
 Pass 174 keeps the classification at `low` rather than raising it. The true logical-end append now has a tighter bracket: `10ms` and `15ms` failed, while `20ms`, `30ms`, and `50ms` passed in single clean-base runs. A real person can create overlapping edits, but sustained two-user same-paragraph typing at or below this cadence is still an edge case. The wrapped-line `End` shape remains more concerning because it reproduced at `50ms`, but it is a paragraph split before a suffix rather than a clean end append.
+
+Pass 176 keeps the overall classification at `low` but makes the split more concrete. The wrapped-line concurrent split is the practical risk: two users can press `End` and `Enter` on the same visible line of the same paragraph without malformed input or direct store mutation, and the suffix duplication already appears after `Enter`. The clean logical-end append variant remains `very-low` in current evidence because its typed-character-loss failures only appeared at very fast cadence.
 
 Blast radius is content corruption. The corrupted state appears in the block tree on both peers before save, so saving can persist truncated, duplicated, or interleaved paragraph text. At slower typing cadences, the severe interleaving did not reproduce in pass 172, but the concurrent split still duplicated the suffix text into both inserted paragraphs. There is no evidence of a save loop, OOM, or performance failure. Recovery is by undo, manual repair, or post revisions if the corrupted content has already been saved.
 
