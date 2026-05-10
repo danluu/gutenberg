@@ -217,3 +217,56 @@ Result: the rebase completed cleanly, the focused unit test passed, and
 `git diff --check` passed. The pass-170 annotated headless video remains the
 current browser artifact; pass 175 did not rerun Playwright because the natural
 spec and fix code were unchanged except for the clean rebase.
+
+Pass 176 added a target-context check that is important for interpreting the
+artifact branches:
+
+```bash
+git fetch origin trunk
+git worktree add --detach .../pass-176/703ef0771ea5-trunk-min origin/trunk
+git -C .../pass-176/703ef0771ea5-trunk-min cherry-pick --no-commit 450376d7c77
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: passed on current `origin/trunk`
+`b38f9b4d86d0505199f5efd78c2adf213e428e78`. That does not disprove the
+known-fixes bug; current trunk does not contain the stale-local
+`mergeYArrayLocalChanges()` path from `9c5dba15654e` / PR 77887. A direct
+ancestor check returned `1` for `9c5dba15654e` in `origin/trunk` and `0` for
+the same commit in `f256024286dd80a4c0e2579f658c109256abf648`.
+
+The same pass-176 test matrix failed on the relevant proposed PR head and on
+the exact synthetic known-fixes base:
+
+```bash
+git worktree add --detach .../pass-176/703ef0771ea5-pr77887-head pr/77887
+git -C .../pass-176/703ef0771ea5-pr77887-head cherry-pick --no-commit 450376d7c77
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+
+git worktree add --detach .../pass-176/703ef0771ea5-f256-matrix \
+	f256024286dd80a4c0e2579f658c109256abf648
+git -C .../pass-176/703ef0771ea5-f256-matrix cherry-pick --no-commit 450376d7c77
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Results:
+
+- `pr/77887` (`9c5dba15654e`) failed before the final assertions because the
+  later appended tail row could no longer be found.
+- `f256024286d` failed with the same extra duplicate `remote append A` /
+  `remote append B` row recorded in pass 175.
+- `try/stale-local-structural-table-body-merge-after-remote-appen-703ef0771ea5-pr`
+  at `114e27186b598ad378ecdc64febf6395739cf899` passed the focused unit test
+  and `git diff --check origin/trunk..HEAD`.
+
+Practical impact nuance: for users on current trunk alone, this exact repro is
+not currently a red test because the risky stale-local merge path is absent.
+For users or reviewers evaluating the backlink-aware known-fixes/proposed RTC
+stack, the bug remains real unless the stable-id mismatch guard from the PR
+branch is included.
