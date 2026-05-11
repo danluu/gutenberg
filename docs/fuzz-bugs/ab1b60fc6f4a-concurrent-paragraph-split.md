@@ -145,6 +145,30 @@ Received array: ["5-3-0-end", "5-3-0-end"]
 
 This reproduces the duplicate-suffix invariant below Playwright and below the editor DOM. It does not reproduce the later browser-only typed-character interleaving; that still appears to require the live contenteditable/input and remote-dispatch timing from the browser path.
 
+Pass 178 repeated the low-level probe on the manifest-pinned known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` through `applyPostChangesToCRDTDoc()`, not just `mergeCrdtBlocks()`. The diagnostic test used two synced Yjs docs and concurrent post block snapshots. The visual-line split invariant failed:
+
+```text
+Expected length: 1
+Received length: 2
+Received array: ["User A 5-3-0-end", "User B 5-3-0-end"]
+```
+
+The same test file included a true-end append control using concurrent snapshots of:
+
+```text
+rtc-save-paragraph-marker-953255-3-0-end
+Seed 953255 step 4 user 0 concurrent paragraph 185113
+```
+
+and:
+
+```text
+rtc-save-paragraph-marker-953255-3-0-end
+Seed 953255 step 4 user 1 concurrent paragraph 169940
+```
+
+That control passed below the browser, preserving the checkpoint and both inserted paragraphs. This sharpens the split: the duplicate-suffix part is a deterministic post-CRDT merge defect that survives the known-fixes base; the true-end typed-character loss is not explained by this lower-level merge alone and still needs the live editor/input timing path.
+
 ## Likely Root Cause
 
 `mergeCrdtBlocks` was introduced by `84019935998` (`Improve CRDT "merge logic" for post entities`, PR #72262). Its left/right sweep uses block positions as a fallback when reconciling full block snapshots into Yjs block arrays. Later RTC fix work added saved-base snapshots and client-id rebasing, but the observed failure still reaches a browser path where a local full snapshot, the current Yjs array, and the block-editor selection are changing while keyboard input continues to stream.
@@ -161,6 +185,8 @@ Pass 176 narrows this further. The first incorrect product state appears before 
 
 Pass 177 supports that root-cause split. A pure Yjs/`mergeCrdtBlocks()` probe can reproduce suffix duplication from concurrent split snapshots without any browser automation, readiness waiting, REST setup, or generated fuzz harness. The same probe does not explain the typed-character interleaving, so the bug family should still be treated as two coupled failures: a structural split representation bug that creates duplicate suffix blocks, followed by a live editor race that can interleave text while users type into those duplicate suffix-bearing blocks.
 
+Pass 178 strengthens the root-cause boundary on the known-fixes base. The post-level apply path still has no operation identity for "both peers split the same base paragraph at the same offset." The final Yjs block records only contain normal paragraph blocks with `clientId`, `name`, `attributes.content`, and `innerBlocks`; that is enough to converge, but not enough to distinguish an inherited suffix duplicated by a concurrent split from two legitimate adjacent paragraphs that happen to share a suffix. That is why a suffix-similarity cleanup remains unsafe even though it would satisfy the narrow failing unit assertion.
+
 ## Practical Impact
 
 Likelihood for the destructive interleaving signature: `low`.
@@ -173,8 +199,10 @@ Pass 176 keeps the overall classification at `low` but makes the split more conc
 
 Pass 177 keeps the classification at `low`. The independent unit-level duplication proof raises confidence that the structural failure is real, but it does not raise normal-user frequency: users still need RTC collaboration and near-simultaneous same-paragraph splits or appends.
 
+Pass 178 keeps the destructive interleaving classification at `low`, while classifying the structural duplicate-suffix subcase as `medium` conditional on two collaborators splitting the same non-final paragraph position. The action sequence is ordinary enough that two users could hit it during active co-editing of a paragraph, especially on a wrapped line where `End` lands visually rather than at the logical paragraph end. The lower-level true-end control passed, so the practical clean-append typed-character-loss subcase remains `very-low` in current evidence.
+
 Blast radius is content corruption. The corrupted state appears in the block tree on both peers before save, so saving can persist truncated, duplicated, or interleaved paragraph text. At slower typing cadences, the severe interleaving did not reproduce in pass 172, but the concurrent split still duplicated the suffix text into both inserted paragraphs. There is no evidence of a save loop, OOM, or performance failure. Recovery is by undo, manual repair, or post revisions if the corrupted content has already been saved.
 
 ## Fix Direction
 
-Do not land a block-array-only fix without proving it against the browser path. The next fix should instrument the live sync manager and RichText input path enough to compare, per keystroke, the DOM selection, block-editor selected `clientId`, Yjs block `clientId`, relative selection target, and paragraph text before and after applying remote changes. Since disabling shifted-selection restoration did not clear the failure, the next suspect is remote block dispatch/rerender disturbing active contenteditable input rather than `getShiftedSelection()` alone.
+Do not land a suffix-similarity cleanup. Pass 178 shows why that tempting patch is unsafe: the current CRDT record has no base-split provenance, so adjacent paragraphs ending in the same text could be either the bug or legitimate content. A safer fix needs split provenance, operation-level split modeling, or a manager-level reconciliation that can prove both suffix-bearing blocks came from the same base paragraph and offset before coalescing the suffix. The browser interleaving part still needs instrumentation in the live sync manager and RichText input path enough to compare, per keystroke, the DOM selection, block-editor selected `clientId`, Yjs block `clientId`, relative selection target, and paragraph text before and after applying remote changes.
