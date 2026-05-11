@@ -14,9 +14,9 @@ failure. The source manifest row in `likely-real-issues.jsonl` marks the
 canonical signature as high confidence and recommends filing the bug.
 
 The bug still reproduces on the backlink-aware known-fixes base
-`rtc-known-fixes-current-20260507` at `f256024286d`. Pass 177 independently
-reapplied the unit repro to exact `f256024286d` and confirmed that the stale
-paragraph is resurrected. The low-level repro applies:
+`rtc-known-fixes-current-20260507` at `f256024286d`. Pass 179 independently
+reapplied the current unit repro to exact `f256024286d` and confirmed that the
+stale paragraph is resurrected. The low-level repro applies:
 
 1. a full snapshot containing `inserted-paragraph` and `inserted-heading`;
 2. a newer snapshot after `inserted-paragraph` was deleted;
@@ -30,9 +30,11 @@ Expected: [ "follow-up", "inserted-heading", "tail", "moved-initial-paragraph" ]
 Received: [ "follow-up", "inserted-paragraph", "inserted-heading", "tail", "moved-initial-paragraph" ]
 ```
 
-The fix branch was rebased onto current `origin/trunk` `84ecc0f1476` on
-2026-05-11. The same focused CRDT repro and guard tests pass on the rebased
-fix branch.
+The fix branch was rebased again in pass 179 onto current `origin/trunk`
+`e20ec719971` on 2026-05-12. The same focused CRDT repro and guard tests pass
+on the rebased fix branch, and the natural WebSocket spec passes under the
+upstream `#78179` y-websocket test harness at
+`test/e2e/specs/editor/collaboration/websocket-only/collaboration-4dbfc625566b-realistic.spec.ts`.
 
 The archived browser reproduction also reached the natural UI delete action
 and captured divergence: the primary editor retained
@@ -59,12 +61,14 @@ No malformed blocks, artificial block trees, direct state mutation, save/reload
 cycle, or transport fault injection is required for the product scenario.
 
 The blast radius is content divergence and possible content resurrection. A
-paragraph that one collaborator deleted can stay visible in another editor. If
-the stale editor saves or emits another snapshot, the deleted content can be
-persisted or re-propagated. There is no evidence of a save loop, persistence
-crash, OOM, or broad performance failure. Recovery is manual: notice the stale
-block, delete it again after convergence, and avoid saving from the stale
-editor before correcting it.
+paragraph that one collaborator deleted can stay visible in another editor. The
+archived browser artifact shows a UI block-tree split with matching title and
+matching surrounding blocks, not a readiness or locator failure. If the stale
+editor saves or emits another snapshot, the deleted content can be persisted or
+re-propagated. There is no evidence of a save loop, persistence crash, OOM, or
+broad performance failure. Recovery is manual: notice the stale block, delete it
+again after convergence, and avoid saving from the stale editor before
+correcting it.
 
 The strongest evidence for `low` is that ordinary UI actions and ordinary text
 blocks reproduce the issue, and the low-level CRDT boundary fails
