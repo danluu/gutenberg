@@ -16,7 +16,11 @@ unit repro and a natural Code Editor collaboration repro.
 
 Practical real-user likelihood is **very-low**. The content and history
 requirements are unusual, but all user-facing actions in the Playwright repro
-are normal editor actions.
+are normal editor actions. Pass 178 kept this classification after checking
+that the natural route is a raw-source/import route: ordinary Visual Editor
+typing does not normally create preserved invalid `originalContent` with this
+mix of semicolonless entities, escaped visible tags, URL ampersands, and
+attribute-order differences.
 
 ## Practical Impact
 
@@ -109,12 +113,27 @@ Pass 177 rebased the explanation and PR branches onto `origin/trunk`
 `3d0da214614`. The d29 patch cherry-picked cleanly on that trunk, and the
 focused unit repro/fix check passed there.
 
+Pass 178 rebased both branches onto `origin/trunk`
+`96263113a874ab1fc1668f7bb500c98766e90e76`. The unchanged fix stack still
+applies cleanly. A fresh focused unit run on the rebased PR branch passed both
+d29 checks:
+
+```text
+npm install --ignore-scripts
+npm run --workspace @wordpress/icons build
+npm run test:unit -- packages/core-data/src/utils/test/crdt.ts --testNamePattern='equivalent entity references|generated content really changed' --runInBand --no-cache
+PASS, 2 selected tests passed, 45 skipped
+
+git diff --check origin/trunk...HEAD
+PASS
+```
+
 PR branch commit order:
 
 ```text
-dae89916538 Add RTC entity reference normalization CRDT repro
-bef797fd653 Add RTC d29 entity reference Playwright repro
-8db8734894a Fix RTC entity reference normalization comparison
+7202f58a717 Add RTC entity reference normalization CRDT repro
+e8011bbb08c Add RTC d29 entity reference Playwright repro
+da75fd4a253 Fix RTC entity reference normalization comparison
 ```
 
 Final verification on the fixed branch:
