@@ -1146,6 +1146,23 @@ npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBan
 
 Results: PASS, PASS (`27/27`), PASS (`73/73`).
 
+Pass 178 also initialized `wp-env` on `WP_ENV_PORT=10007`, installed the local
+CSS-animation test plugin that global setup expects in fresh wp-env instances,
+and ran the committed natural-user Playwright repro on the rebased fixed branch:
+
+```bash
+WP_ENV_PORT=10007 \
+WP_BASE_URL=http://localhost:10007 \
+RTC_MANIFEST_WS_START_PORT=21256 \
+RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  --project=chromium --workers=1 \
+  --grep "two users preserve simultaneous paragraph edits"
+```
+
+Result: PASS, one Chromium test passed in 21.5s.
+
 Pass 178 keeps the practical classification at `medium` within active RTC
 coediting sessions over HTTP polling and `low` across all Gutenberg users. The
 bug is reachable through ordinary post-editor collaboration actions with two
