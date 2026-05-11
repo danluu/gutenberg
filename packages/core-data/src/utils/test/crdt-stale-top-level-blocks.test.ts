@@ -1,9 +1,4 @@
 /**
- * WordPress dependencies
- */
-import { Y } from '@wordpress/sync';
-
-/**
  * External dependencies
  */
 import {
@@ -14,6 +9,11 @@ import {
 	it,
 	jest,
 } from '@jest/globals';
+
+/**
+ * WordPress dependencies
+ */
+import { Y } from '@wordpress/sync';
 
 /**
  * Mock getBlockTypes so CRDT merging can identify rich-text attributes.
@@ -40,6 +40,10 @@ jest.mock( '@wordpress/blocks', () => {
 	};
 } );
 
+jest.mock( '../../../../sync/src/providers', () => ( {
+	getProviderCreators: jest.fn(),
+} ) );
+
 /**
  * Internal dependencies
  */
@@ -52,9 +56,15 @@ import {
 	type YBlocks,
 } from '../crdt-blocks';
 import { getRootMap } from '../crdt-utils';
+import { createSyncManager } from '../../../../sync/src/manager';
+import { LOCAL_EDITOR_ORIGIN } from '../../../../sync/src/config';
+import { getProviderCreators } from '../../../../sync/src/providers';
 
 const SYNCED_BLOCK_PROPERTIES = new Set( [ 'blocks' ] );
 const SYNCED_POST_PROPERTIES = new Set( [ 'blocks', 'content' ] );
+const OBJECT_TYPE = 'postType/post';
+const OBJECT_ID = '74369';
+const mockGetProviderCreators = jest.mocked( getProviderCreators );
 
 function paragraph( clientId: string, content: string ): Block {
 	return {
@@ -117,11 +127,80 @@ function serializeBlocks( blocks: Block[] ): string {
 		.join( '\n\n' );
 }
 
+function cloneBlocks( blocks: Block[] ): Block[] {
+	return JSON.parse( JSON.stringify( blocks ) ) as Block[];
+}
+
+function waitForDeferredUpdate() {
+	return new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+}
+
+function createBlocksSyncConfig( onApply?: ( ydoc: Y.Doc ) => void ) {
+	return {
+		applyChangesToCRDTDoc: (
+			ydoc: Y.Doc,
+			changes: { blocks?: Block[] },
+			options?: { baseRecord?: { blocks?: Block[] } }
+		) => {
+			onApply?.( ydoc );
+			applyPostChangesToCRDTDoc(
+				ydoc,
+				changes,
+				SYNCED_BLOCK_PROPERTIES,
+				options
+			);
+		},
+		getChangesFromCRDTDoc: (
+			ydoc: Y.Doc,
+			editedRecord: { blocks?: Block[] }
+		) => {
+			const blocks = blockTree( ydoc );
+			return JSON.stringify( blocks ) ===
+				JSON.stringify( editedRecord.blocks )
+				? {}
+				: { blocks };
+		},
+		getPersistedCRDTDoc: () => null,
+	};
+}
+
+function blockTree( doc: Y.Doc ): Block[] {
+	return postBlocks( doc ).toJSON() as Block[];
+}
+
+function createHandlers( initialBlocks: Block[] ) {
+	let editedBlocks = cloneBlocks( initialBlocks );
+
+	return {
+		addUndoMeta: jest.fn(),
+		editRecord: jest.fn( ( changes: { blocks?: Block[] } ) => {
+			if ( changes.blocks ) {
+				editedBlocks = cloneBlocks( changes.blocks );
+			}
+		} ),
+		getEditedRecord: jest.fn( async () => ( {
+			id: OBJECT_ID,
+			blocks: cloneBlocks( editedBlocks ),
+		} ) ),
+		onStatusChange: jest.fn(),
+		persistCRDTDoc: jest.fn(),
+		refetchRecord: jest.fn( async () => {} ),
+		restoreUndoMeta: jest.fn(),
+	};
+}
+
 describe( 'stale top-level block snapshots', () => {
 	let doc: Y.Doc;
 	let yblocks: Y.Array< YBlock >;
 
 	beforeEach( () => {
+		jest.clearAllMocks();
+		mockGetProviderCreators.mockReturnValue( [
+			jest.fn( async () => ( {
+				destroy: jest.fn(),
+				on: jest.fn(),
+			} ) ),
+		] );
 		doc = new Y.Doc();
 		yblocks = doc.getArray< YBlock >();
 	} );
@@ -421,5 +500,103 @@ describe( 'stale top-level block snapshots', () => {
 
 		movingPeer.destroy();
 		stalePeer.destroy();
+	} );
+
+	it( 'preserves the remote group move through SyncManager when local stale update is scheduled after remote reconciliation starts', async () => {
+		const manager = createSyncManager();
+		let capturedDoc: Y.Doc | undefined;
+		const movedParagraph = paragraph( 'moved', 'Moved paragraph' );
+		const initialBlocks = [
+			paragraph( 'local-edited', 'Alpha' ),
+			group( 'group', [
+				paragraph( 'group-alpha', 'Nested group paragraph alpha.' ),
+				paragraph( 'group-beta', 'Nested group paragraph beta.' ),
+			] ),
+			movedParagraph,
+			paragraph( 'tail', 'Tail' ),
+		];
+		const movedBlocks = [
+			paragraph( 'local-edited', 'Alpha' ),
+			group( 'group', [
+				movedParagraph,
+				paragraph( 'group-alpha', 'Nested group paragraph alpha.' ),
+				paragraph( 'group-beta', 'Nested group paragraph beta.' ),
+			] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleBlocks = [
+			paragraph( 'local-edited', 'Alpha local edit' ),
+			group( 'group', [
+				paragraph( 'group-alpha', 'Nested group paragraph alpha.' ),
+				paragraph( 'group-beta', 'Nested group paragraph beta.' ),
+			] ),
+			movedParagraph,
+			paragraph( 'tail', 'Tail' ),
+		];
+		const handlers = createHandlers( initialBlocks );
+
+		await manager.load(
+			createBlocksSyncConfig( ( ydoc ) => {
+				capturedDoc = ydoc;
+			} ),
+			OBJECT_TYPE,
+			OBJECT_ID,
+			{ id: OBJECT_ID, blocks: initialBlocks },
+			handlers
+		);
+		expect( capturedDoc ).toBeDefined();
+
+		let resolveEditedRecord!: ( record: {
+			id: string;
+			blocks: Block[];
+		} ) => void;
+		const editedRecordPromise = new Promise< {
+			id: string;
+			blocks: Block[];
+		} >( ( resolve ) => {
+			resolveEditedRecord = resolve;
+		} );
+		handlers.getEditedRecord.mockImplementationOnce(
+			() => editedRecordPromise
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate(
+			remoteDoc,
+			Y.encodeStateAsUpdate( capturedDoc as Y.Doc )
+		);
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{ blocks: movedBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+		Y.applyUpdate(
+			capturedDoc as Y.Doc,
+			Y.encodeStateAsUpdate( remoteDoc )
+		);
+
+		manager.update(
+			OBJECT_TYPE,
+			OBJECT_ID,
+			{ blocks: staleBlocks },
+			LOCAL_EDITOR_ORIGIN,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+		await waitForDeferredUpdate();
+
+		expect( topLevelClientIds( capturedDoc as Y.Doc ) ).toEqual( [
+			'local-edited',
+			'group',
+			'tail',
+		] );
+		expect( groupChildren( capturedDoc as Y.Doc, 'group' ) ).toEqual( [
+			'Moved paragraph',
+			'Nested group paragraph alpha.',
+			'Nested group paragraph beta.',
+		] );
+
+		resolveEditedRecord( { id: OBJECT_ID, blocks: movedBlocks } );
+		remoteDoc.destroy();
 	} );
 } );
