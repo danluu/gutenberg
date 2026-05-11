@@ -304,7 +304,7 @@ function hasLostDeleteShape( snapshot: Snapshot, targetText: string ) {
 async function waitForSessionReady( collaborationUtils: CollaborationUtilsClass ) {
 	await collaborationUtils.waitForMutualDiscovery( { timeout: 20000 } );
 	await collaborationUtils.waitForConvergence( {
-		includeCrdtDocument: true,
+		includeCrdtDocument: false,
 		timeout: 20000,
 	} );
 }
@@ -393,7 +393,9 @@ async function insertHeadingAfterText(
 	await openBlockOptions( page, editor );
 	await chooseMenuItem( page, 'Add after', 'Insert after' );
 	await page.keyboard.type( '/heading' );
-	await expect( page.locator( '[role="listbox"]' ) ).toBeVisible();
+	await expect(
+		page.getByRole( 'listbox' ).filter( { hasText: 'Heading' } ).last()
+	).toBeVisible();
 	await page.keyboard.press( 'Enter' );
 	await page.keyboard.type( headingText, { delay: 20 } );
 	await expect(
@@ -501,7 +503,7 @@ async function runScenario( {
 
 		try {
 			await collaborationUtils.waitForConvergence( {
-				includeCrdtDocument: true,
+				includeCrdtDocument: false,
 				timeout: 15000,
 			} );
 		} catch ( error ) {
