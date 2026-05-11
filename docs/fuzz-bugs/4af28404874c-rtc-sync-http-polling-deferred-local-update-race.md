@@ -1064,3 +1064,94 @@ actions, at most a few active rooms in prior payload inspection, and a normal
 interleaving is still narrow, but a normal coediting session with the default
 HTTP polling provider has repeated opportunities for a polling response to land
 while another user's local Y.Doc write is queued for the next event-loop tick.
+
+## Pass 178 Current-Trunk and Known-Fixes Recheck
+
+Pass 178 rebased the explanation and PR branches onto current `origin/trunk`
+`73a10fe6f8436f10798ca24a448e5da026565920`
+(`Design System: Add missing packages to Storybook introduction (#77504)`). The
+new trunk commits since pass 174 do not change the `SyncManager` runtime path,
+but one E2E helper commit touched collaboration test infrastructure, so the PR
+branch was rebased rather than treated as already-current.
+
+The focused lower-level repro was rerun against fetched current trunk in a
+detached worktree with only the repro commit applied:
+
+```bash
+git worktree add --detach /private/tmp/4af28404874c-pass178-current.OzB1Mj/repo origin/trunk
+cd /private/tmp/4af28404874c-pass178-current.OzB1Mj/repo
+ln -s /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507/node_modules node_modules
+git cherry-pick 5a170225b5708d6c6a7062963ef8fe2aae46b504
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: FAIL. The single failing assertion shows the stale projection still
+happens on current trunk: `editRecord` receives
+`{ body: "Remote Body", title: "Initial Title" }`.
+
+The same temp worktree then applied only the manager fix:
+
+```bash
+git cherry-pick 309f39b4e26d742c8adf9fa2ac21446b1d7582cc
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: PASS.
+
+The May 7 known-fixes manifest still names exact base
+`f256024286dd80a4c0e2579f658c109256abf648`; the checkout path named in the
+handoff was dirty and on an unrelated branch during this pass, so pass 178 used
+that exact commit by object ID in a detached worktree. With only the repro commit
+applied, the known-fixes stack still fails:
+
+```bash
+git worktree add --detach /private/tmp/4af28404874c-pass178-knownfix.thAkua/repo f256024286dd80a4c0e2579f658c109256abf648
+cd /private/tmp/4af28404874c-pass178-knownfix.thAkua/repo
+ln -s /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507/node_modules node_modules
+git cherry-pick 5a170225b5708d6c6a7062963ef8fe2aae46b504
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: FAIL. Instrumenting the temporary repro showed two `editRecord` calls,
+both with stale local data:
+`[[{"title":"Initial Title","body":"Remote Body"}],[{"title":"Initial Title","body":"Remote Body"}]]`.
+The backlink-aware known-fixes stack adds same-key reconciliation machinery, but
+it still does not restore the missing happens-before edge before remote
+reconciliation reads the edited record.
+
+The rebased PR branch now keeps the requested three-commit sequence on current
+trunk:
+
+1. `3cd60b90fff Add RTC deferred update race repro`
+2. `be4ccbd737f Add RTC stress Playwright repro`
+3. `d6db01a675f Flush RTC updates before remote reconciliation`
+
+Pass 178 fixed-branch verification:
+
+```bash
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand
+```
+
+Results: PASS, PASS (`27/27`), PASS (`73/73`).
+
+Pass 178 keeps the practical classification at `medium` within active RTC
+coediting sessions over HTTP polling and `low` across all Gutenberg users. The
+bug is reachable through ordinary post-editor collaboration actions with two
+clients on the same post, but it still requires RTC to be enabled and a polling
+or provider update to land in the short timer window after a local store edit and
+before the queued local Y.Doc write executes. The risk is real content
+corruption or loss if the stale edited record is saved; recovery is manual
+correction, undo when still usable, another peer's intact state, autosaves, or
+revisions.
