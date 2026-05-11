@@ -42,6 +42,7 @@ type AttemptResult = {
 	attempt: number;
 	error: string | null;
 	persistedContentContainsBoth: boolean;
+	persistedContentHasSingleCopies: boolean;
 	postId: number;
 	primaryText: string;
 	secondaryText: string;
@@ -58,6 +59,13 @@ const ATTEMPTS = Number.parseInt(
 );
 const SEARCH_2_LABEL =
 	'Search label rtc-save-search-option-marker-953376-2-1-end';
+const INITIAL_TOP_LEVEL_PARAGRAPHS = [
+	'Seed 953376 baseline paragraph.',
+	'Shared editing target paragraph.',
+	'rtc-save-paragraph-marker-953376-1-1-end',
+	'rtc-save-paragraph-marker-953376-2-1-end',
+	'Seed 953376 step 8 user 1 paragraph 25882',
+];
 const INITIAL_CONTENT = [
 	'<!-- wp:group {"layout":{"type":"constrained"}} -->',
 	'<div class="wp-block-group">',
@@ -173,6 +181,49 @@ function paragraphTexts( state: any ): string[] {
 		.map( ( block: any ) => plainText( block?.attributes?.content ) );
 }
 
+function countOccurrences( values: string[], expectedValue: string ): number {
+	return values.filter( ( value ) => value === expectedValue ).length;
+}
+
+function countSubstring( value: string, substring: string ): number {
+	return value.split( substring ).length - 1;
+}
+
+function expectedTopLevelParagraphs(
+	primaryText: string,
+	secondaryText: string
+): string[] {
+	return [ ...INITIAL_TOP_LEVEL_PARAGRAPHS, primaryText, secondaryText ];
+}
+
+function assertExpectedTopLevelParagraphs(
+	paragraphs: string[],
+	label: string,
+	primaryText: string,
+	secondaryText: string
+) {
+	const expectedParagraphs = expectedTopLevelParagraphs(
+		primaryText,
+		secondaryText
+	);
+
+	for ( const paragraph of expectedParagraphs ) {
+		expect( countOccurrences( paragraphs, paragraph ), label ).toBe( 1 );
+	}
+
+	expect( paragraphs, label ).toHaveLength( expectedParagraphs.length );
+}
+
+function hasExpectedPersistedParagraphs(
+	persistedContent: string,
+	primaryText: string,
+	secondaryText: string
+): boolean {
+	return expectedTopLevelParagraphs( primaryText, secondaryText ).every(
+		( paragraph ) => countSubstring( persistedContent, paragraph ) === 1
+	);
+}
+
 async function waitForSessionReady(
 	collaborationUtils: CollaborationUtilsClass
 ) {
@@ -197,7 +248,9 @@ async function typeTitle( editor: Editor, page: Page, title: string ) {
 		name: 'Add title',
 	} );
 	await titleBox.click();
-	await page.keyboard.press( `${ process.platform === 'darwin' ? 'Meta' : 'Control' }+A` );
+	await page.keyboard.press(
+		`${ process.platform === 'darwin' ? 'Meta' : 'Control' }+A`
+	);
 	await page.keyboard.press( 'Backspace' );
 	await page.keyboard.type( title, { delay: 20 } );
 	await expect( titleBox ).toContainText( title );
@@ -321,6 +374,7 @@ async function runAttempt( {
 		attempt,
 		error: null,
 		persistedContentContainsBoth: false,
+		persistedContentHasSingleCopies: false,
 		postId,
 		primaryText,
 		secondaryText,
@@ -349,7 +403,11 @@ async function runAttempt( {
 		await waitForSessionReady( collaborationUtils );
 
 		const [ afterAppendPrimary, afterAppendSecondary ] =
-			await normalizedStates( collaborationUtils, page, collaboratorPage );
+			await normalizedStates(
+				collaborationUtils,
+				page,
+				collaboratorPage
+			);
 		result.afterAppendPrimary = paragraphTexts( afterAppendPrimary );
 		result.afterAppendSecondary = paragraphTexts( afterAppendSecondary );
 		result.statesEqualAfterAppend =
@@ -360,8 +418,12 @@ async function runAttempt( {
 			[ 'primary after append', result.afterAppendPrimary ],
 			[ 'secondary after append', result.afterAppendSecondary ],
 		] as const ) {
-			expect( paragraphs, label ).toContain( primaryText );
-			expect( paragraphs, label ).toContain( secondaryText );
+			assertExpectedTopLevelParagraphs(
+				paragraphs,
+				label,
+				primaryText,
+				secondaryText
+			);
 		}
 		expect( result.statesEqualAfterAppend ).toBe( true );
 
@@ -373,7 +435,11 @@ async function runAttempt( {
 		] );
 
 		const [ afterReloadPrimary, afterReloadSecondary ] =
-			await normalizedStates( collaborationUtils, page, collaboratorPage );
+			await normalizedStates(
+				collaborationUtils,
+				page,
+				collaboratorPage
+			);
 		result.afterReloadPrimary = paragraphTexts( afterReloadPrimary );
 		result.afterReloadSecondary = paragraphTexts( afterReloadSecondary );
 		result.statesEqualAfterReload =
@@ -384,8 +450,12 @@ async function runAttempt( {
 			[ 'primary after reload', result.afterReloadPrimary ],
 			[ 'secondary after reload', result.afterReloadSecondary ],
 		] as const ) {
-			expect( paragraphs, label ).toContain( primaryText );
-			expect( paragraphs, label ).toContain( secondaryText );
+			assertExpectedTopLevelParagraphs(
+				paragraphs,
+				label,
+				primaryText,
+				secondaryText
+			);
 		}
 		expect( result.statesEqualAfterReload ).toBe( true );
 
@@ -398,9 +468,17 @@ async function runAttempt( {
 			persistedContent.includes( primaryText ) &&
 			persistedContent.includes( secondaryText );
 		expect( result.persistedContentContainsBoth ).toBe( true );
+		result.persistedContentHasSingleCopies = hasExpectedPersistedParagraphs(
+			persistedContent,
+			primaryText,
+			secondaryText
+		);
+		expect( result.persistedContentHasSingleCopies ).toBe( true );
 	} catch ( error ) {
 		result.error =
-			error instanceof Error ? error.stack ?? error.message : String( error );
+			error instanceof Error
+				? error.stack ?? error.message
+				: String( error );
 		throw error;
 	} finally {
 		writeResult( result );
@@ -409,48 +487,41 @@ async function runAttempt( {
 
 test.describe.configure( { mode: 'serial' } );
 
-test.describe(
-	'RTC 15df6c950a26 pass171 checkpointed concurrent tail append',
-	() => {
-		for ( let attempt = 0; attempt < ATTEMPTS; attempt++ ) {
-			test( `menu Add after after save/reload checkpoint attempt ${ attempt }`, async ( {
+test.describe( 'RTC 15df6c950a26 pass171 checkpointed concurrent tail append', () => {
+	for ( let attempt = 0; attempt < ATTEMPTS; attempt++ ) {
+		test( `menu Add after after save/reload checkpoint attempt ${ attempt }`, async ( {
+			collaborationUtils,
+			collaboratorUser,
+			editor,
+			page,
+			requestUtils,
+		} ) => {
+			test.setTimeout( 180000 );
+			ensureOutputDir();
+
+			const post = await requestUtils.createPost( {
+				content: INITIAL_CONTENT,
+				date_gmt: new Date().toISOString(),
+				status: 'draft',
+				title: `rtc-save-title-marker-953376-pass171-initial-${ attempt }`,
+			} );
+			expect( post.id ).toBeGreaterThan( 0 );
+
+			await collaborationUtils.openPost( post.id );
+			const { editor: collaboratorEditor, page: collaboratorPage } =
+				await collaborationUtils.joinUser( post.id, collaboratorUser );
+			await waitForSessionReady( collaborationUtils );
+
+			await runAttempt( {
+				attempt,
 				collaborationUtils,
-				collaboratorUser,
+				collaboratorEditor,
+				collaboratorPage,
 				editor,
 				page,
+				postId: post.id,
 				requestUtils,
-			} ) => {
-				test.setTimeout( 180000 );
-				ensureOutputDir();
-
-				const post = await requestUtils.createPost( {
-					content: INITIAL_CONTENT,
-					date_gmt: new Date().toISOString(),
-					status: 'draft',
-					title: `rtc-save-title-marker-953376-pass171-initial-${ attempt }`,
-				} );
-
-				await collaborationUtils.openPost( post.id );
-				const {
-					editor: collaboratorEditor,
-					page: collaboratorPage,
-				} = await collaborationUtils.joinUser(
-					post.id,
-					collaboratorUser
-				);
-				await waitForSessionReady( collaborationUtils );
-
-				await runAttempt( {
-					attempt,
-					collaborationUtils,
-					collaboratorEditor,
-					collaboratorPage,
-					editor,
-					page,
-					postId: post.id,
-					requestUtils,
-				} );
 			} );
-		}
+		} );
 	}
-);
+} );
