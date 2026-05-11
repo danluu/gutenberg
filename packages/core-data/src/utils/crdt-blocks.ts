@@ -397,6 +397,72 @@ function reconcileStaleLocalBlockValues(
 	return reconciledBlocks ?? localBlocks;
 }
 
+function blockWithoutClientIds( block: Block ): Omit< Block, 'clientId' > {
+	const { clientId, innerBlocks, ...rest } = block;
+	return {
+		...rest,
+		innerBlocks: ( innerBlocks ?? [] ).map( blockWithoutClientIds ),
+	};
+}
+
+function findCurrentBlockLocalIndexes(
+	currentBlocks: Block[],
+	localBlocks: Block[]
+): Map< number, number > {
+	const currentBlockLocalIndexes = new Map< number, number >();
+	let localStartIndex = 0;
+
+	currentBlocks.forEach( ( currentBlock, currentIndex ) => {
+		for (
+			let localIndex = localStartIndex;
+			localIndex < localBlocks.length;
+			localIndex++
+		) {
+			if (
+				fastDeepEqual(
+					blockWithoutClientIds( currentBlock ),
+					blockWithoutClientIds( localBlocks[ localIndex ] )
+				)
+			) {
+				currentBlockLocalIndexes.set( currentIndex, localIndex );
+				localStartIndex = localIndex + 1;
+				return;
+			}
+		}
+	} );
+
+	return currentBlockLocalIndexes;
+}
+
+function getRepresentedBlockInsertIndex(
+	currentBlocks: Block[],
+	currentIndex: number,
+	blocksToSync: Block[],
+	currentBlockLocalIndexes: Map< number, number >
+): number | null {
+	for ( let index = currentIndex - 1; index >= 0; index-- ) {
+		const previousLocalIndex = currentBlockLocalIndexes.get( index );
+
+		if ( previousLocalIndex !== undefined ) {
+			return Math.min( previousLocalIndex + 1, blocksToSync.length );
+		}
+	}
+
+	for (
+		let index = currentIndex + 1;
+		index < currentBlocks.length;
+		index++
+	) {
+		const nextLocalIndex = currentBlockLocalIndexes.get( index );
+
+		if ( nextLocalIndex !== undefined ) {
+			return Math.min( nextLocalIndex, blocksToSync.length );
+		}
+	}
+
+	return null;
+}
+
 function reconcileStaleLocalBlocks(
 	yblocks: YBlocks,
 	localBlocksToSync: Block[]
@@ -432,6 +498,10 @@ function reconcileStaleLocalBlocks(
 			! previousClientIdSet.has( clientId ) &&
 			! currentClientIdSet.has( clientId )
 	);
+	const currentBlockLocalIndexes = findCurrentBlockLocalIndexes(
+		currentBlocks,
+		localBlocksToSync
+	);
 	// The local editor sends full block snapshots. Reconcile those snapshots
 	// against the last local base before running the full-array merge so remote
 	// top-level inserts/deletes are not inferred as local structural edits.
@@ -456,6 +526,7 @@ function reconcileStaleLocalBlocks(
 			!! clientId && ! localClientIdSet.has( clientId );
 		const shouldPreserveMissingCurrentBlock =
 			isMissingFromLocal &&
+			! currentBlockLocalIndexes.has( currentIndex ) &&
 			( ! previousClientIdSet.has( clientId ) ||
 				hasLocalOnlyInsertedBlocks );
 
@@ -469,12 +540,19 @@ function reconcileStaleLocalBlocks(
 			return;
 		}
 
-		const insertIndex = getRemoteBlockInsertIndex(
-			currentBlocks,
-			currentIndex,
-			blocksToSync,
-			blockIdsToSync
-		);
+		const insertIndex =
+			getRepresentedBlockInsertIndex(
+				currentBlocks,
+				currentIndex,
+				blocksToSync,
+				currentBlockLocalIndexes
+			) ??
+			getRemoteBlockInsertIndex(
+				currentBlocks,
+				currentIndex,
+				blocksToSync,
+				blockIdsToSync
+			);
 		blocksToSync.splice( insertIndex, 0, currentBlock );
 		blockIdsToSync.add( clientId );
 	} );

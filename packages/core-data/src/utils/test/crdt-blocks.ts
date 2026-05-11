@@ -487,6 +487,53 @@ describe( 'crdt-blocks', () => {
 			] );
 		} );
 
+		it( 'does not duplicate unchanged blocks while preserving a stale append with refreshed client IDs', () => {
+			const paragraph = ( clientId: string, content: string ): Block => ( {
+				name: 'core/paragraph',
+				attributes: { content },
+				innerBlocks: [],
+				clientId,
+			} );
+			const contents = () =>
+				( yblocks.toJSON() as Block[] ).map(
+					( block ) => block.attributes.content
+				);
+
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					paragraph( 'anchor-old', 'Anchor' ),
+					paragraph( 'tail-old', 'Tail' ),
+				],
+				null
+			);
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					paragraph( 'anchor-old', 'Anchor' ),
+					paragraph( 'tail-old', 'Tail' ),
+					paragraph( 'remote-appended', 'Remote append' ),
+				],
+				null
+			);
+			mergeCrdtBlocks(
+				yblocks,
+				[
+					paragraph( 'anchor-new', 'Anchor' ),
+					paragraph( 'tail-new', 'Tail' ),
+					paragraph( 'local-appended', 'Local append' ),
+				],
+				null
+			);
+
+			expect( contents() ).toEqual( [
+				'Anchor',
+				'Tail',
+				'Remote append',
+				'Local append',
+			] );
+		} );
+
 		it( 'rebases a delayed list item move over a remote list item move', () => {
 			const createListBlock = ( itemOrder: string[] ): Block[] => [
 				{
