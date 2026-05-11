@@ -188,3 +188,31 @@ The suggested `WP_ENV_PORT=9911` environment was uninitialized and `wp-env start
 Residual risk:
 
 The fix is strongest when block arrays have unique stable client IDs and a previous local baseline. Ambiguous arrays fall back to the old merge behavior. The Playwright repro is a natural final-move browser check on a valid preseeded state; the lowest-level unit test is the canonical stale-snapshot regression.
+
+## Pass 177 update
+
+The older known-fixes note above predates the backlink-aware May 7 known-fixes base. Rechecking against the exact current required base changes the known-fixes disposition:
+
+```text
+current origin/trunk: 7145bd0b6b518c623258e7ccd4fbcb7762e52827
+known-fixes base:     f256024286dd80a4c0e2579f658c109256abf648
+```
+
+With only commit `1851183afb8a87f4b9830110e1afc2c7fd7d3720` cherry-picked to add the compact regression, current `origin/trunk` still fails:
+
+```text
+Expected top-level names:
+core/quote -> core/group -> core/list -> core/heading
+
+Received top-level names:
+core/quote -> core/heading -> core/group -> core/list
+```
+
+The exact known-fixes base passes the same targeted test:
+
+```text
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 1 passed, 76 skipped, 77 total
+```
+
+The practical-impact classification remains `low` for general Gutenberg use and `medium` only for active RTC sessions where collaborators perform structural moves around grouped content. The product risk is real content-tree corruption before the May 7 known-fixes stack, but the required known-fixes base covers this compact stale-snapshot route.
