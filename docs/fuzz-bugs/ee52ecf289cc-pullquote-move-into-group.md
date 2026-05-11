@@ -321,3 +321,35 @@ The rebased PR branch now has this three-commit order:
 1. `3ecf9dd708b` adds the focused non-Playwright CRDT repros.
 2. `38a3b341000` adds the natural browser coverage.
 3. `573a24d2f1d` applies the source fix.
+
+## Pass 177 Current-Trunk Verification
+
+Pass 177 rebased both the explanation branch and the three-commit PR branch on
+`origin/trunk` `bf2d0cc1f1e82d0db286f4aa9851f151e407b163`
+(`Editor: Refactor 'PostPublishPanel' into function component (#78083)`).
+
+The PR branch still has the requested commit order after the rebase:
+
+1. `1e2002acafe` adds the focused non-Playwright CRDT repros.
+2. `7dcde7f737c` adds the natural browser coverage.
+3. `fc802fbfcaa` applies the source fix.
+
+The focused Pullquote repro and the existing CRDT block suite both pass at
+fixed head `fc802fbfcaa`:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-pullquote-move-into-group.test.ts -- --runTestsByPath --runInBand
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runTestsByPath --runInBand
+```
+
+Results:
+
+```text
+crdt-pullquote-move-into-group.test.ts: 2 passed
+crdt-blocks.ts: 71 passed
+```
+
+This pass does not change the practical likelihood classification. The
+deterministic product-code bug and fix remain strong, while the natural browser
+test remains workflow coverage rather than a reliably failing browser race
+capture.
