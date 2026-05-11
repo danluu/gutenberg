@@ -315,6 +315,16 @@ const FORCE_LATE_JOIN_STEP = getEnvOptionalNonNegativeInt(
 const FORCE_RELOAD_STEPS = getEnvIntList(
 	'GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS'
 );
+const TEST_TIMEOUT_MS = getEnvInt(
+	'GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS',
+	Math.max(
+		300000,
+		120000 +
+			STEP_COUNT * 15000 +
+			( 1 + EXTRA_COLLABORATOR_COUNT ) * 45000 +
+			( ENABLE_LIFECYCLE_EVENTS ? 60000 : 0 )
+	)
+);
 const COLLECT_CDP_COVERAGE =
 	process.env.GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE === '1';
 const BEHAVIORAL_COVERAGE_FILENAME = 'rtc-behavioral-coverage.ndjson';
@@ -809,30 +819,40 @@ function group( blocks: string[] ): string {
 }
 
 function htmlEntityReferenceContent( seed: number ): string {
+	const rng = createRng( seed + 11 );
 	const textVariants = [
 		`Seed ${ seed } refs: AT&amp T, AT&amp;T, copy &copy 2026, reg &reg , decimal &#38 , hex &#x26 and escaped tags &lt;em&gt;text&lt;/em&gt;.`,
 		`Seed ${ seed } ambiguous refs: &notin; / &notin text, nbsp &nbsp gap, quote &quot;value&quot;, apos &apos;value&apos;, lt &lt and gt &gt.`,
+		`Seed ${ seed } legacy named refs: cent &cent price, pound &pound value, yen &yen value, current &curren value, acute &acute accent.`,
+		`Seed ${ seed } boundary refs: &copycat should stay text, &reg-test, &nbspx, ampersand &amp=value, decimal &#169 text, hex &#x000A9 text.`,
+		`Seed ${ seed } mixed case refs: &AMP no semicolon, &LT;tag&GT;, &QUOT;quoted&QUOT;, invalid-ish &madeup; stays visible.`,
 	];
 	const linkVariants = [
 		`<a href="https://example.test/search?q=alpha&amp;beta=2&amp-gamma=3&#38-delta=4&#x26-epsilon=5" title="A&amp B &copy 2026 &#34 quoted&#34;">attribute refs</a>`,
 		`<a href="https://example.test/path?name=Tom&amp;mode=rich&#x26-debug=1" aria-label="Tom &amp Jerry &copy 2026">aria refs</a>`,
+		`<a href="https://example.test/entity?copy=&copy&semi=&copy;&hex=&#xA9&dec=&#169" title="copy &copy reg &reg nbsp &nbsp done">entity attr refs</a>`,
+		`<span data-title="AT&amp T &copy 2026" aria-label="optional &notin text &amp attr">span attr refs</span>`,
+		`<abbr title="fish &amp chips &copycat &copy 2026">abbr refs</abbr>`,
 	];
 
 	return [
 		rawParagraph(
-			`${ pick( createRng( seed + 11 ), textVariants ) } ${ pick(
-				createRng( seed + 17 ),
-				linkVariants
-			) }`
+			`${ pick( rng, textVariants ) } ${ pick( rng, linkVariants ) }`
 		),
 		rawHeading(
-			`Heading refs &amp optional &copy ${ seed } with &#x26; hex`,
+			`Heading refs &amp optional &copy ${ seed } with &#x26; hex and &nbsp gap`,
 			3
+		),
+		rawParagraph(
+			`Textarea-like refs ${ seed }: <code title="code &amp attr &copy">AT&amp T &amp;amp; &lt;script&gt;</code>`
 		),
 	].join( '\n' );
 }
 
 function deprecatedBlockContent( seed: number ): string {
+	const imageUrl =
+		'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2260%22 viewBox=%220 0 120 60%22%3E%3Crect width=%22120%22 height=%2260%22 fill=%22%23553377%22/%3E%3Ctext x=%2210%22 y=%2235%22 font-size=%2216%22 fill=%22white%22%3EOLD%3C/text%3E%3C/svg%3E';
+
 	return [
 		`${ blockDelimiter( 'paragraph', {
 			align: 'center',
@@ -850,10 +870,37 @@ function deprecatedBlockContent( seed: number ): string {
 		`${ blockDelimiter( 'separator', {
 			customColor: '#335577',
 		} ) }\n<hr class="wp-block-separator has-text-color has-background" style="background-color:#335577;color:#335577" />\n<!-- /wp:separator -->`,
+		`${ blockDelimiter( 'spacer', {
+			height: 72 + ( seed % 30 ),
+			width: 120 + ( seed % 40 ),
+		} ) }\n<div class="wp-block-spacer" style="height:${
+			72 + ( seed % 30 )
+		}px;width:${
+			120 + ( seed % 40 )
+		}px" aria-hidden="true"></div>\n<!-- /wp:spacer -->`,
+		`${ blockDelimiter( 'verse', {
+			textAlign: 'center',
+		} ) }\n<pre style="text-align:center">Deprecated verse ${ seed }\nsecond line with &amp; refs</pre>\n<!-- /wp:verse -->`,
+		`${ blockDelimiter( 'image', {
+			alt: `Deprecated image ${ seed }`,
+			height: 60,
+			id: seed % 100000,
+			url: imageUrl,
+			width: 120,
+		} ) }\n<figure><img src="${ imageUrl }" alt="Deprecated image ${ seed }" class="wp-image-${
+			seed % 100000
+		}" width="120" height="60" /><figcaption>Deprecated image caption ${ seed }</figcaption></figure>\n<!-- /wp:image -->`,
+		`${ blockDelimiter( 'buttons', {
+			contentJustification: 'center',
+			orientation: 'vertical',
+		} ) }\n<div class="wp-block-buttons is-content-justification-center is-vertical"><!-- wp:button --><div class="wp-block-button"><a class="wp-block-button__link">Deprecated button ${ seed }</a></div><!-- /wp:button --></div>\n<!-- /wp:buttons -->`,
 	].join( '\n' );
 }
 
 function validationFixContent( seed: number ): string {
+	const imageUrl =
+		'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2260%22 viewBox=%220 0 120 60%22%3E%3Crect width=%22120%22 height=%2260%22 fill=%22%23775522%22/%3E%3Ctext x=%2210%22 y=%2235%22 font-size=%2216%22 fill=%22white%22%3EFIX%3C/text%3E%3C/svg%3E';
+
 	return [
 		'<!-- wp:heading -->',
 		`<h2 id="fuzz-heading-anchor-${ seed }" class="wp-block-heading fuzz-heading-class-${ seed }">Heading needing root fixes ${ seed }</h2>`,
@@ -866,6 +913,12 @@ function validationFixContent( seed: number ): string {
 		paragraph( `Nested paragraph in fixable group ${ seed }.` ),
 		'</div>',
 		'<!-- /wp:group -->',
+		'<!-- wp:quote -->',
+		`<blockquote id="fuzz-quote-anchor-${ seed }" class="wp-block-quote fuzz-quote-class-${ seed }"><p>Quote needing class and anchor fixes ${ seed }</p><cite>Fix pass</cite></blockquote>`,
+		'<!-- /wp:quote -->',
+		'<!-- wp:image -->',
+		`<figure id="fuzz-image-anchor-${ seed }" class="wp-block-image fuzz-image-class-${ seed }"><img src="${ imageUrl }" alt="Validation fix image ${ seed }"/><figcaption>Validation fix caption ${ seed }</figcaption></figure>`,
+		'<!-- /wp:image -->',
 	].join( '\n' );
 }
 
@@ -880,6 +933,13 @@ function equivalentHtmlContent( seed: number ): string {
 		rawParagraph(
 			`Equivalent entity paragraph ${ seed }: &copy and &copy; plus decimal &#169 and hex &#xA9;.`
 		),
+		rawParagraph(
+			`Equivalent class/style ${ seed }: <span class="beta alpha" style="margin:0px  1em; color: red;">styled</span> and <button disabled="">disabled</button>.`
+		),
+		`${ blockDelimiter( 'image', {
+			alt: `Equivalent image ${ seed }`,
+			url: `https://example.test/image-${ seed }.png`,
+		} ) }\n<figure class="wp-block-image extra-one extra-two"><img alt="Equivalent image ${ seed }" src="https://example.test/image-${ seed }.png"/></figure>\n<!-- /wp:image -->`,
 	].join( '\n' );
 }
 
@@ -1867,6 +1927,518 @@ async function editTableArrayAttributes(
 	);
 }
 
+async function insertCommonBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const blocks = await getTopLevelBlocks( page );
+	const index = Math.floor( rng() * ( blocks.length + 1 ) );
+	const variant = Math.floor( rng() * 5 );
+	const marker = `common-block-${ seed }-${ step }-${ userIndex }-${ Math.floor(
+		rng() * 1000000
+	) }`;
+	const imageUrl =
+		'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2260%22 viewBox=%220 0 120 60%22%3E%3Crect width=%22120%22 height=%2260%22 fill=%22%232267aa%22/%3E%3Ctext x=%2210%22 y=%2235%22 font-size=%2216%22 fill=%22white%22%3ERTC%3C/text%3E%3C/svg%3E';
+
+	await page.evaluate(
+		( { blockIndex, blockMarker, blockVariant, blockImageUrl } ) => {
+			const createBlock = ( window as any ).wp.blocks.createBlock;
+			let block;
+
+			switch ( blockVariant ) {
+				case 0: {
+					const button = createBlock( 'core/button', {
+						text: `Open ${ blockMarker }`,
+						url: `https://example.test/${ encodeURIComponent(
+							blockMarker
+						) }`,
+					} );
+					block = createBlock( 'core/buttons', {}, [ button ] );
+					break;
+				}
+				case 1:
+					block = createBlock( 'core/image', {
+						alt: `Image alt ${ blockMarker }`,
+						caption: `Image caption ${ blockMarker }`,
+						url: blockImageUrl,
+					} );
+					break;
+				case 2:
+					block = createBlock( 'core/code', {
+						content: `const marker = ${ JSON.stringify(
+							blockMarker
+						) };\nconsole.log( marker );`,
+					} );
+					break;
+				case 3: {
+					const left = createBlock( 'core/column', {}, [
+						createBlock( 'core/paragraph', {
+							content: `${ blockMarker } left column`,
+						} ),
+					] );
+					const right = createBlock( 'core/column', {}, [
+						createBlock( 'core/paragraph', {
+							content: `${ blockMarker } right column`,
+						} ),
+					] );
+					block = createBlock( 'core/columns', {}, [ left, right ] );
+					break;
+				}
+				default:
+					block = createBlock( 'core/preformatted', {
+						content: `${ blockMarker }\npreformatted line`,
+					} );
+					break;
+			}
+
+			( window as any ).wp.data
+				.dispatch( 'core/block-editor' )
+				.insertBlock( block, blockIndex );
+		},
+		{
+			blockImageUrl: imageUrl,
+			blockIndex: index,
+			blockMarker: marker,
+			blockVariant: variant,
+		}
+	);
+}
+
+async function editCommonBlockAttributes(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const targetIndex = Math.floor( rng() * 1000000 );
+	const marker = `common-edit-${ seed }-${ step }-${ userIndex }-${ Math.floor(
+		rng() * 1000000
+	) }`;
+	const updated = await page.evaluate(
+		( { blockMarker, commonTargetIndex } ) => {
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			const candidates: Array< {
+				attributes: Record< string, unknown >;
+				clientId: string;
+				name: string;
+			} > = [];
+			const visit = ( currentBlocks: Array< any > ) => {
+				for ( const block of currentBlocks ) {
+					if (
+						[
+							'core/button',
+							'core/buttons',
+							'core/code',
+							'core/column',
+							'core/columns',
+							'core/image',
+							'core/preformatted',
+						].includes( block.name )
+					) {
+						candidates.push( block );
+					}
+					visit( block.innerBlocks ?? [] );
+				}
+			};
+
+			visit( blocks );
+
+			if ( candidates.length === 0 ) {
+				return false;
+			}
+
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const target = candidates[ commonTargetIndex % candidates.length ];
+
+			switch ( target.name ) {
+				case 'core/button':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						text: `Button ${ blockMarker }`,
+						url: `https://example.test/updated/${ encodeURIComponent(
+							blockMarker
+						) }`,
+					} );
+					break;
+				case 'core/buttons':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						layout: {
+							justifyContent:
+								commonTargetIndex % 2 === 0
+									? 'center'
+									: 'right',
+							type: 'flex',
+						},
+					} );
+					break;
+				case 'core/image':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						alt: `Updated image alt ${ blockMarker }`,
+						caption: `Updated image caption ${ blockMarker }`,
+					} );
+					break;
+				case 'core/code':
+				case 'core/preformatted':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						content: `${ blockMarker }\nupdated formatted content`,
+					} );
+					break;
+				case 'core/column':
+				case 'core/columns':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						verticalAlignment:
+							commonTargetIndex % 2 === 0 ? 'center' : 'bottom',
+					} );
+					break;
+			}
+
+			return true;
+		},
+		{
+			blockMarker: marker,
+			commonTargetIndex: targetIndex,
+		}
+	);
+
+	if ( ! updated ) {
+		await insertCommonBlock( page, seed, step, userIndex, rng );
+	}
+}
+
+async function insertBlockGauntletBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const blocks = await getTopLevelBlocks( page );
+	const index = Math.floor( rng() * ( blocks.length + 1 ) );
+	const variant = Math.floor( rng() * 13 );
+	const marker = `gauntlet-${ seed }-${ step }-${ userIndex }-${ Math.floor(
+		rng() * 1000000
+	) }`;
+	const imageUrl =
+		'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2260%22 viewBox=%220 0 120 60%22%3E%3Crect width=%22120%22 height=%2260%22 fill=%22%23267745%22/%3E%3Ctext x=%2210%22 y=%2235%22 font-size=%2216%22 fill=%22white%22%3ERTC%3C/text%3E%3C/svg%3E';
+
+	await page.evaluate(
+		( { blockImageUrl, blockIndex, blockMarker, blockVariant } ) => {
+			const wp = ( window as any ).wp;
+			const createBlock = wp.blocks.createBlock;
+			const hasBlockType = ( name: string ) =>
+				Boolean( wp.blocks.getBlockType( name ) );
+			const paragraphBlock = ( content: string ) =>
+				createBlock( 'core/paragraph', { content } );
+			const safeBlock = (
+				name: string,
+				attributes: Record< string, unknown > = {},
+				innerBlocks: Array< any > = []
+			) =>
+				hasBlockType( name )
+					? createBlock( name, attributes, innerBlocks )
+					: paragraphBlock(
+							`${ blockMarker } fallback for ${ name }`
+					  );
+			let block;
+
+			switch ( blockVariant ) {
+				case 0:
+					block = safeBlock(
+						'core/details',
+						{ summary: `Details ${ blockMarker }` },
+						[ paragraphBlock( `${ blockMarker } details body` ) ]
+					);
+					break;
+				case 1:
+					block = safeBlock(
+						'core/cover',
+						{
+							dimRatio: 40,
+							isDark: true,
+							overlayColor: 'black',
+						},
+						[ paragraphBlock( `${ blockMarker } cover text` ) ]
+					);
+					break;
+				case 2:
+					block = safeBlock(
+						'core/media-text',
+						{
+							mediaPosition: 'left',
+							mediaType: 'image',
+							mediaUrl: blockImageUrl,
+						},
+						[ paragraphBlock( `${ blockMarker } media text` ) ]
+					);
+					break;
+				case 3:
+					block = safeBlock(
+						'core/gallery',
+						{
+							caption: `Gallery ${ blockMarker }`,
+						},
+						[
+							safeBlock( 'core/image', {
+								alt: `Gallery image ${ blockMarker }`,
+								caption: `Gallery image caption ${ blockMarker }`,
+								url: blockImageUrl,
+							} ),
+						]
+					);
+					break;
+				case 4:
+					block = safeBlock( 'core/file', {
+						fileName: `File ${ blockMarker }`,
+						href: blockImageUrl,
+						textLinkHref: blockImageUrl,
+					} );
+					break;
+				case 5:
+					block = safeBlock( 'core/social-links', {}, [
+						safeBlock( 'core/social-link', {
+							service: 'wordpress',
+							url: `https://example.test/${ encodeURIComponent(
+								blockMarker
+							) }`,
+						} ),
+					] );
+					break;
+				case 6:
+					block = safeBlock( 'core/spacer', {
+						height: `${ 48 + blockMarker.length }px`,
+					} );
+					break;
+				case 7:
+					block = safeBlock( 'core/separator', {
+						opacity: 'css',
+					} );
+					break;
+				case 8:
+					block = safeBlock( 'core/verse', {
+						content: `${ blockMarker }\nverse line two`,
+					} );
+					break;
+				case 9:
+					block = safeBlock( 'core/html', {
+						content: `<p>${ blockMarker } html</p>`,
+					} );
+					break;
+				case 10:
+					block = safeBlock( 'core/shortcode', {
+						text: `[gallery ids="${ blockMarker }"]`,
+					} );
+					break;
+				case 11:
+					block = safeBlock( 'core/more', {
+						customText: `Read more ${ blockMarker }`,
+					} );
+					break;
+				default:
+					block = safeBlock(
+						'core/quote',
+						{
+							citation: `Citation ${ blockMarker }`,
+						},
+						[ paragraphBlock( `${ blockMarker } quote text` ) ]
+					);
+					break;
+			}
+
+			wp.data
+				.dispatch( 'core/block-editor' )
+				.insertBlock( block, blockIndex );
+		},
+		{
+			blockImageUrl: imageUrl,
+			blockIndex: index,
+			blockMarker: marker,
+			blockVariant: variant,
+		}
+	);
+}
+
+async function editBlockGauntletAttributes(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const targetIndex = Math.floor( rng() * 1000000 );
+	const marker = `gauntlet-edit-${ seed }-${ step }-${ userIndex }-${ Math.floor(
+		rng() * 1000000
+	) }`;
+	const updated = await page.evaluate(
+		( { blockMarker, gauntletTargetIndex } ) => {
+			const wp = ( window as any ).wp;
+			const blocks = wp.data.select( 'core/block-editor' ).getBlocks();
+			const candidates: Array< {
+				attributes: Record< string, unknown >;
+				clientId: string;
+				innerBlocks?: Array< any >;
+				name: string;
+			} > = [];
+			const visit = ( currentBlocks: Array< any > ) => {
+				for ( const block of currentBlocks ) {
+					if (
+						[
+							'core/audio',
+							'core/cover',
+							'core/details',
+							'core/file',
+							'core/gallery',
+							'core/html',
+							'core/image',
+							'core/list-item',
+							'core/media-text',
+							'core/more',
+							'core/quote',
+							'core/separator',
+							'core/shortcode',
+							'core/social-link',
+							'core/social-links',
+							'core/spacer',
+							'core/verse',
+							'core/video',
+						].includes( block.name )
+					) {
+						candidates.push( block );
+					}
+					visit( block.innerBlocks ?? [] );
+				}
+			};
+
+			visit( blocks );
+
+			if ( candidates.length === 0 ) {
+				return false;
+			}
+
+			const target =
+				candidates[ gauntletTargetIndex % candidates.length ];
+			const blockEditor = wp.data.dispatch( 'core/block-editor' );
+
+			switch ( target.name ) {
+				case 'core/audio':
+				case 'core/video':
+				case 'core/gallery':
+				case 'core/image':
+				case 'core/embed':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						alt: `Alt ${ blockMarker }`,
+						caption: `Caption ${ blockMarker }`,
+					} );
+					break;
+				case 'core/cover':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						dimRatio: 20 + ( gauntletTargetIndex % 70 ),
+						overlayColor:
+							gauntletTargetIndex % 2 === 0
+								? 'black'
+								: 'vivid-red',
+					} );
+					break;
+				case 'core/details':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						summary: `Summary ${ blockMarker }`,
+					} );
+					break;
+				case 'core/file':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						fileName: `File ${ blockMarker }`,
+						textLinkHref: `https://example.test/file/${ encodeURIComponent(
+							blockMarker
+						) }`,
+					} );
+					break;
+				case 'core/html':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						content: `<div>${ blockMarker } html updated</div>`,
+					} );
+					break;
+				case 'core/list-item':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						content: `List item ${ blockMarker }`,
+					} );
+					break;
+				case 'core/media-text':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						mediaPosition:
+							gauntletTargetIndex % 2 === 0 ? 'left' : 'right',
+					} );
+					break;
+				case 'core/more':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						customText: `More ${ blockMarker }`,
+					} );
+					break;
+				case 'core/quote':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						citation: `Citation ${ blockMarker }`,
+					} );
+					break;
+				case 'core/separator':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						opacity:
+							gauntletTargetIndex % 2 === 0
+								? 'css'
+								: 'alpha-channel',
+					} );
+					break;
+				case 'core/shortcode':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						text: `[caption id="${ blockMarker }"]`,
+					} );
+					break;
+				case 'core/social-link':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						url: `https://example.test/social/${ encodeURIComponent(
+							blockMarker
+						) }`,
+					} );
+					break;
+				case 'core/social-links':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						iconColor: 'white',
+						iconColorValue: '#ffffff',
+						size:
+							gauntletTargetIndex % 2 === 0
+								? 'has-small-icon-size'
+								: 'has-normal-icon-size',
+					} );
+					break;
+				case 'core/spacer':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						height: `${ 40 + ( gauntletTargetIndex % 160 ) }px`,
+					} );
+					break;
+				case 'core/verse':
+					blockEditor.updateBlockAttributes( target.clientId, {
+						content: `${ blockMarker }\nupdated verse`,
+					} );
+					break;
+			}
+
+			return true;
+		},
+		{
+			blockMarker: marker,
+			gauntletTargetIndex: targetIndex,
+		}
+	);
+
+	if ( ! updated ) {
+		await insertBlockGauntletBlock( page, seed, step, userIndex, rng );
+	}
+}
+
 async function reparseEditedContent(
 	page: Page,
 	seed: number,
@@ -2380,6 +2952,26 @@ const ACTIONS: PageAction[] = [
 			editTableArrayAttributes( page, seed, step, userIndex, rng ),
 	},
 	{
+		label: 'insert-common-block',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			insertCommonBlock( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'edit-common-block-attributes',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			editCommonBlockAttributes( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'insert-block-gauntlet-block',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			insertBlockGauntletBlock( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'edit-block-gauntlet-attributes',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			editBlockGauntletAttributes( page, seed, step, userIndex, rng ),
+	},
+	{
 		label: 'insert-nested-group',
 		run: async ( page, seed, step, userIndex, rng ) =>
 			insertNestedGroup( page, seed, step, userIndex, rng ),
@@ -2413,6 +3005,22 @@ const ACTIONS: PageAction[] = [
 	},
 ];
 
+function getActionsByWeightedLabels( labels: string[] ): PageAction[] {
+	const actionsByLabel = new Map(
+		ACTIONS.map( ( action ) => [ action.label, action ] )
+	);
+
+	return labels.map( ( label ) => {
+		const action = actionsByLabel.get( label );
+
+		if ( ! action ) {
+			throw new Error( `Unknown fuzz action label "${ label }".` );
+		}
+
+		return action;
+	} );
+}
+
 function getActiveActions(): PageAction[] {
 	if (
 		ACTION_PROFILE === 'full' ||
@@ -2429,6 +3037,62 @@ function getActiveActions(): PageAction[] {
 		return ACTIONS.filter(
 			( action ) => ! parserStressActionLabels.has( action.label )
 		);
+	}
+
+	if ( ACTION_PROFILE === 'parser-transform' ) {
+		return getActionsByWeightedLabels( [
+			'append-parser-stress-content',
+			'append-parser-stress-content',
+			'append-parser-stress-content',
+			'reparse-edited-content',
+			'reparse-edited-content',
+			'insert-paragraph',
+			'edit-paragraph',
+			'insert-heading',
+			'delete-block',
+			'move-block',
+		] );
+	}
+
+	if ( ACTION_PROFILE === 'common-blocks' ) {
+		const commonBlockActionLabels = new Set( [
+			'insert-common-block',
+			'edit-common-block-attributes',
+			'insert-block-gauntlet-block',
+			'edit-block-gauntlet-attributes',
+			'insert-paragraph',
+			'append-paragraph',
+			'move-block',
+			'delete-block',
+			'move-block-into-group',
+			'edit-nested-paragraph',
+		] );
+
+		return ACTIONS.filter( ( action ) =>
+			commonBlockActionLabels.has( action.label )
+		);
+	}
+
+	if ( ACTION_PROFILE === 'block-gauntlet' ) {
+		return getActionsByWeightedLabels( [
+			'insert-block-gauntlet-block',
+			'insert-block-gauntlet-block',
+			'insert-block-gauntlet-block',
+			'edit-block-gauntlet-attributes',
+			'edit-block-gauntlet-attributes',
+			'edit-block-gauntlet-attributes',
+			'insert-block-gauntlet-block',
+			'edit-block-gauntlet-attributes',
+			'insert-common-block',
+			'edit-common-block-attributes',
+			'insert-nested-group',
+			'edit-nested-paragraph',
+			'move-block',
+			'move-block-into-group',
+			'delete-block',
+			'delete-nested-block',
+			'reparse-edited-content',
+		] );
 	}
 
 	if (
@@ -2509,7 +3173,10 @@ function getActiveActions(): PageAction[] {
 const ACTIVE_ACTIONS = getActiveActions();
 
 test.describe( 'Collaboration - Seeded Fuzzing', () => {
-	test.describe.configure( { mode: 'parallel' } );
+	test.describe.configure( {
+		mode: 'parallel',
+		timeout: TEST_TIMEOUT_MS,
+	} );
 
 	const seeds =
 		SEEDS ??
@@ -2523,7 +3190,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 			collaborationUtils,
 			requestUtils,
 		}, testInfo ) => {
-			test.setTimeout( Math.max( 90000, STEP_COUNT * 15000 ) );
+			test.setTimeout( TEST_TIMEOUT_MS );
 
 			const rng = createRng( seed );
 			const behavior = createBehaviorCoverage( seed );

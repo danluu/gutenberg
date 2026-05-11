@@ -365,6 +365,27 @@ Important runner defaults and controls:
 -   `RTC_FUZZ_ACTION_PROFILE` or `GUTENBERG_RTC_BROWSER_ACTION_PROFILE`: use `full`, `persistence`, `structure`, or `session-lifecycle`.
 -   `GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE=1`: collect Chrome coverage for novelty-guided runs.
 
+Current focused action profiles:
+
+-   `full`: default mixed editor actions.
+-   `persistence`: save/reload persistence with title edits.
+-   `persistence-no-title`: save/reload persistence without title edits.
+-   `structure`: nested group, move, delete, and tree-shape actions.
+-   `session-lifecycle`: late join, reload, and reconnect actions.
+-   `three-user-late-join`: three-user coverage with a forced late join.
+-   `multi-reload-lifecycle`: two browser reload checkpoints in one seed.
+-   `common-blocks`: common block-library surfaces such as image, buttons,
+    columns, code, and preformatted blocks.
+-   `block-gauntlet`: broader block-library surfaces such as details, cover,
+    media-text, gallery, file, social links, spacer, HTML, shortcode, more,
+    quote, separator, and verse.
+-   `parser-serialization`: parser and serialization stress mixed into normal
+    actions.
+-   `parser-transform`: focused load/reparse transform coverage. This heavily
+    weights `append-parser-stress-content` and `reparse-edited-content`, and
+    uses post contents with HTML character references, deprecated block forms,
+    built-in validation fixes, equivalent HTML, and freeform parser content.
+
 Each lane writes:
 
 -   `lane-N/state.json`
@@ -843,8 +864,20 @@ The implemented novelty profiles are:
     is documented.
 -   `three-user-late-join`: a third collaborator joins after editing has
     started.
+-   `common-blocks`: focused coverage for common blocks that were under-sampled
+    by the default action mix.
+-   `block-gauntlet`: focused coverage for broader block-library surfaces,
+    including details, cover, media-text, gallery, file, social links, spacer,
+    HTML, shortcode, more, quote, separator, and verse.
 -   `parser-serialization`: parser and serialization stress without sync fault
     injection.
+-   `parser-transform`: focused coverage for editor load/reparse transforms.
+    This is the lane to use for parser suggestions involving optional-semicolon
+    HTML character references, entity references in attributes, deprecated block
+    save forms, built-in validation fixes, equivalent HTML, freeform content,
+    and code-editor-to-visual-editor transitions. Run it with sync faults
+    disabled first so parser/RTC correctness bugs are not confused with
+    injected transport failures.
 -   `multi-reload-lifecycle`: more than one real browser reload during a seed.
 -   `novelty-http-persistence-probe`: optional HTTP probe. Enable it with
     `RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE=1`, preferably in a separate HTTP-only
@@ -863,6 +896,18 @@ The novelty status file includes health warnings when enabled profiles do not
 produce ingested coverage or when a profile requests CDP coverage but no CDP
 hashes are observed. Treat those warnings as instrumentation failures before
 making scheduling decisions from novelty counts.
+
+The parser-transform lane can produce a high volume of likely-real but
+duplicative failures. In recent runs, the common families were:
+
+-   HTML entity/reference normalization divergence after a parse/reset.
+-   Deprecated `core/verse` line-break divergence (`\n` versus `<br>`).
+-   Stale-prefix or stale-tail duplication after full-document parse/reset.
+-   Top-level ordering/index drift after reparse/freeform boundaries.
+
+When one of those dominates, keep one canonical signature for deep repro work
+and gate duplicate signatures in the analysis tier so the lane can continue
+exploring adjacent parser-transform cases.
 
 The novelty monitor also tracks pre-action startup failures by profile. A
 pre-action startup failure is a run that fails before any user action and before

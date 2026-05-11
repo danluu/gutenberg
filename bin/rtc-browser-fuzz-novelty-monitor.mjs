@@ -53,12 +53,90 @@ const MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS',
 	7
 );
+const TARGET_ENABLED_GROUPS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS',
+	3
+);
 const PAUSE_ON_STARTUP_FAILURE =
 	process.env.RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE !== '0';
 const STARTUP_FAILURE_LIMIT = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_LIMIT',
 	2
 );
+const EXPANSION_POLICY_VERSION = 2;
+
+const NO_FAULT_WS_ENV = {
+	GUTENBERG_RTC_TEST_WS_SKIP_RESET: '1',
+	GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+	GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '480000',
+	RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+	RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
+	RTC_FUZZ_RUN_TIMEOUT_MS: '720000',
+};
+
+const PROFILE_BY_GROUP = {
+	'novelty-ws-block-gauntlet': 'block-gauntlet',
+	'novelty-ws-common-blocks': 'common-blocks',
+	'novelty-ws-lifecycle': 'session-lifecycle',
+	'novelty-ws-multi-reload-lifecycle': 'multi-reload-lifecycle',
+	'novelty-ws-parser-serialization': 'parser-serialization',
+	'novelty-ws-parser-transform': 'parser-transform',
+	'novelty-ws-persistence-no-title': 'persistence-no-title',
+	'novelty-ws-revision-persistence': 'revision-persistence',
+	'novelty-ws-structure': 'structure',
+	'novelty-ws-three-user-late-join': 'three-user-late-join',
+};
+
+const HIGH_VALUE_EXPANSION_GROUPS = [
+	'novelty-ws-block-gauntlet',
+	'novelty-ws-parser-transform',
+	'novelty-ws-common-blocks',
+	'novelty-ws-parser-serialization',
+	'novelty-ws-revision-persistence',
+	'novelty-ws-three-user-late-join',
+	'novelty-ws-multi-reload-lifecycle',
+];
+
+const ROTATION_PAUSE_ORDER = [
+	'novelty-ws-structure',
+	'novelty-ws-persistence-no-title',
+	'novelty-ws-lifecycle',
+];
+
+const COMMON_BLOCK_TYPES = [
+	'core/button',
+	'core/buttons',
+	'core/code',
+	'core/column',
+	'core/columns',
+	'core/image',
+	'core/preformatted',
+];
+
+const BLOCK_GAUNTLET_TYPES = [
+	'core/cover',
+	'core/details',
+	'core/file',
+	'core/gallery',
+	'core/html',
+	'core/media-text',
+	'core/more',
+	'core/quote',
+	'core/separator',
+	'core/shortcode',
+	'core/social-link',
+	'core/social-links',
+	'core/spacer',
+	'core/verse',
+];
+
+const PARSER_TRANSFORM_INITIAL_PROFILES = [
+	'html-entity-reference',
+	'deprecated-block-content',
+	'validation-fix-content',
+	'equivalent-html-content',
+	'freeform-parser-content',
+];
 
 const PROFILE_GROUPS = [
 	{
@@ -69,6 +147,33 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
+		},
+	},
+	{
+		name: 'novelty-ws-common-blocks',
+		actionProfile: 'common-blocks',
+		startSeed: 965001,
+		stepCount: 10,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-block-gauntlet',
+		actionProfile: 'block-gauntlet',
+		startSeed: 966001,
+		stepCount: 10,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 		},
 	},
 	{
@@ -79,8 +184,11 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: true,
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 		},
 	},
 	{
@@ -91,6 +199,9 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 		},
 	},
 	{
@@ -132,6 +243,19 @@ const PROFILE_GROUPS = [
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
 			GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-parser-transform',
+		actionProfile: 'parser-transform',
+		startSeed: 1040001,
+		stepCount: 8,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 		},
 	},
 	{
@@ -179,6 +303,27 @@ const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	changes: [],
 };
 state.fileOffsets ??= {};
+state.expansionPolicyVersion ??= 0;
+
+if ( state.expansionPolicyVersion !== EXPANSION_POLICY_VERSION ) {
+	state.pausedGroups ??= {};
+	state.startupFailureCountsByProfile ??= {};
+
+	for ( const group of HIGH_VALUE_EXPANSION_GROUPS ) {
+		delete state.pausedGroups[ group ];
+		const profile = PROFILE_BY_GROUP[ group ];
+		if ( profile ) {
+			delete state.startupFailureCountsByProfile[ profile ];
+		}
+	}
+
+	state.expansionPolicyVersion = EXPANSION_POLICY_VERSION;
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'reset-expansion-pauses',
+		reason: 'new low-noise/rotation policy; retry under-covered expansion profiles',
+	} );
+}
 state.recordCountsByProfile ??= {};
 state.recordCountsByTransport ??= {};
 state.startupFailureCountsByProfile ??= {};
@@ -483,9 +628,9 @@ function sampleResources() {
 	const totalMemoryGb = os.totalmem() / 1024 ** 3;
 	const memoryPressureFreePercent = sampleMacMemoryPressureFreePercent();
 	const memoryHasHeadroom =
-		memoryPressureFreePercent === null
-			? freeMemoryGb > 3
-			: memoryPressureFreePercent >= 20;
+		freeMemoryGb > 3 &&
+		( memoryPressureFreePercent === null ||
+			memoryPressureFreePercent >= 20 );
 	return {
 		cores,
 		freeMemoryGb,
@@ -495,6 +640,38 @@ function sampleResources() {
 		totalMemoryGb,
 		hasHeadroom: load1 < cores * 1.25 && memoryHasHeadroom,
 	};
+}
+
+function getCommonBlockCoverageCount() {
+	return COMMON_BLOCK_TYPES.reduce(
+		( total, blockName ) =>
+			total + ( state.featureCounts?.[ `block:${ blockName }` ] ?? 0 ),
+		0
+	);
+}
+
+function getBlockGauntletCoverageCount() {
+	return BLOCK_GAUNTLET_TYPES.reduce(
+		( total, blockName ) =>
+			total + ( state.featureCounts?.[ `block:${ blockName }` ] ?? 0 ),
+		0
+	);
+}
+
+function getParserTransformInitialCoverageCount() {
+	return PARSER_TRANSFORM_INITIAL_PROFILES.reduce(
+		( total, profileName ) =>
+			total +
+			( state.featureCounts?.[ `initial:${ profileName }` ] ?? 0 ),
+		0
+	);
+}
+
+function getCoveredBlockTypeCount( blockTypes ) {
+	return blockTypes.filter(
+		( blockName ) =>
+			( state.featureCounts?.[ `block:${ blockName }` ] ?? 0 ) > 0
+	).length;
 }
 
 function sampleMacMemoryPressureFreePercent() {
@@ -544,6 +721,7 @@ function buildGroup( profile ) {
 			WP_BASE_URL: BASE_URL,
 			RTC_FUZZ_BASE_URL: BASE_URL,
 			...transportEnv,
+			...( transport === 'ws' ? NO_FAULT_WS_ENV : {} ),
 			GUTENBERG_RTC_BROWSER_ACTION_PROFILE: profile.actionProfile,
 			GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE:
 				profile.collectCdpCoverage ? '1' : '0',
@@ -554,6 +732,8 @@ function buildGroup( profile ) {
 
 async function applyPolicy( novelty, resources ) {
 	const enabled = new Set( state.enabledGroups );
+	const blockGauntletEnabled = enabled.has( 'novelty-ws-block-gauntlet' );
+	const commonBlocksEnabled = enabled.has( 'novelty-ws-common-blocks' );
 	const lifecycleEnabled = enabled.has( 'novelty-ws-lifecycle' );
 	const persistenceNoTitleEnabled = enabled.has(
 		'novelty-ws-persistence-no-title'
@@ -567,10 +747,23 @@ async function applyPolicy( novelty, resources ) {
 	const parserSerializationEnabled = enabled.has(
 		'novelty-ws-parser-serialization'
 	);
+	const parserTransformEnabled = enabled.has( 'novelty-ws-parser-transform' );
 	const multiReloadLifecycleEnabled = enabled.has(
 		'novelty-ws-multi-reload-lifecycle'
 	);
 	const httpProbeEnabled = enabled.has( 'novelty-http-persistence-probe' );
+	const commonBlockRecords =
+		state.recordCountsByProfile?.[ 'common-blocks' ] ??
+		novelty.byProfile[ 'common-blocks' ]?.records ??
+		0;
+	const commonBlockCoverageCount = getCommonBlockCoverageCount();
+	const blockGauntletRecords =
+		state.recordCountsByProfile?.[ 'block-gauntlet' ] ??
+		novelty.byProfile[ 'block-gauntlet' ]?.records ??
+		0;
+	const blockGauntletCoverageCount = getBlockGauntletCoverageCount();
+	const blockGauntletCoveredTypeCount =
+		getCoveredBlockTypeCount( BLOCK_GAUNTLET_TYPES );
 	const structureRecords =
 		state.recordCountsByProfile?.structure ??
 		novelty.byProfile.structure?.records ??
@@ -587,18 +780,122 @@ async function applyPolicy( novelty, resources ) {
 		state.recordCountsByProfile?.[ 'parser-serialization' ] ??
 		novelty.byProfile[ 'parser-serialization' ]?.records ??
 		0;
+	const parserTransformRecords =
+		state.recordCountsByProfile?.[ 'parser-transform' ] ??
+		novelty.byProfile[ 'parser-transform' ]?.records ??
+		0;
+	const parserTransformInitialCoverageCount =
+		getParserTransformInitialCoverageCount();
 	const users3Records = state.featureCounts?.[ 'users:3' ] ?? 0;
 	const reload2Records = state.featureCounts?.[ 'reload-count:2' ] ?? 0;
 	const revisionEligibleRecords =
 		state.featureCounts?.[ 'revision-eligible:true' ] ?? 0;
 
-	async function enableGroup( group, reason ) {
+	function canRotateAwayFromGroup( group ) {
+		switch ( group ) {
+			case 'novelty-ws-block-gauntlet':
+				return (
+					blockGauntletRecords >= 75 &&
+					blockGauntletCoverageCount >= 75 &&
+					blockGauntletCoveredTypeCount >= 10
+				);
+			case 'novelty-ws-common-blocks':
+				return (
+					commonBlockRecords >= 50 && commonBlockCoverageCount >= 50
+				);
+			case 'novelty-ws-parser-serialization':
+				return parserRecords >= 50;
+			case 'novelty-ws-parser-transform':
+				return (
+					parserTransformRecords >= 100 &&
+					parserTransformInitialCoverageCount >= 100
+				);
+			case 'novelty-ws-revision-persistence':
+				return revisionEligibleRecords >= 500;
+			case 'novelty-ws-three-user-late-join':
+				return users3Records >= 100;
+			case 'novelty-ws-multi-reload-lifecycle':
+				return reload2Records >= 100;
+			default:
+				return false;
+		}
+	}
+
+	async function pauseRotationCandidate( group, reason ) {
+		if ( enabled.size < TARGET_ENABLED_GROUPS ) {
+			return true;
+		}
+
+		const candidates = [
+			...ROTATION_PAUSE_ORDER,
+			...HIGH_VALUE_EXPANSION_GROUPS.filter( canRotateAwayFromGroup ),
+		];
+
+		for ( const candidate of candidates ) {
+			if ( candidate === group || ! enabled.has( candidate ) ) {
+				continue;
+			}
+
+			await pauseGroup(
+				candidate,
+				`rotating browser budget to ${ group }: ${ reason }`
+			);
+			return true;
+		}
+
+		return false;
+	}
+
+	async function enableGroup(
+		group,
+		reason,
+		{ allowRotation = false, budgetReserved = false } = {}
+	) {
+		if ( enabled.has( group ) ) {
+			return false;
+		}
+
+		if ( state.pausedGroups?.[ group ] && ! allowRotation ) {
+			return false;
+		}
+
 		if (
-			enabled.has( group ) ||
-			enabled.size >= MAX_ENABLED_GROUPS ||
-			state.pausedGroups?.[ group ]
+			allowRotation &&
+			! budgetReserved &&
+			! ( await pauseRotationCandidate( group, reason ) )
 		) {
 			return false;
+		}
+
+		if (
+			enabled.size >= MAX_ENABLED_GROUPS ||
+			( enabled.size >= TARGET_ENABLED_GROUPS &&
+				! resources.hasHeadroom &&
+				! allowRotation &&
+				! budgetReserved )
+		) {
+			return false;
+		}
+
+		if ( state.pausedGroups?.[ group ] ) {
+			delete state.pausedGroups[ group ];
+			const profile = PROFILE_BY_GROUP[ group ];
+			if ( profile ) {
+				delete state.startupFailureCountsByProfile[ profile ];
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'reset-startup-failure-budget',
+					group,
+					profile,
+					reason,
+				} );
+			}
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'unpause-group',
+				group,
+				reason,
+			} );
 		}
 
 		enabled.add( group );
@@ -633,6 +930,89 @@ async function applyPolicy( novelty, resources ) {
 		return true;
 	}
 
+	async function reserveBudgetForBlockGauntlet( reason ) {
+		if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
+			return true;
+		}
+
+		for ( const candidate of [
+			'novelty-ws-three-user-late-join',
+			'novelty-ws-revision-persistence',
+			'novelty-ws-common-blocks',
+		] ) {
+			if ( ! enabled.has( candidate ) ) {
+				continue;
+			}
+
+			await pauseGroup(
+				candidate,
+				`rotating browser budget to novelty-ws-block-gauntlet: ${ reason }`
+			);
+			return true;
+		}
+
+		return false;
+	}
+
+	async function reserveBudgetForParserTransform( reason ) {
+		if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
+			return true;
+		}
+
+		for ( const candidate of [
+			'novelty-ws-multi-reload-lifecycle',
+			'novelty-ws-three-user-late-join',
+			'novelty-ws-revision-persistence',
+			'novelty-ws-common-blocks',
+		] ) {
+			if ( ! enabled.has( candidate ) ) {
+				continue;
+			}
+
+			await pauseGroup(
+				candidate,
+				`rotating browser budget to novelty-ws-parser-transform: ${ reason }`
+			);
+			return true;
+		}
+
+		return false;
+	}
+
+	if (
+		! blockGauntletEnabled &&
+		( blockGauntletRecords < 75 || blockGauntletCoveredTypeCount < 10 )
+	) {
+		const reason =
+			'block-library gauntlet coverage is low: details/cover/media-text/gallery/file/social/spacer/html/shortcode are absent or rare';
+		await reserveBudgetForBlockGauntlet( reason );
+		await enableGroup( 'novelty-ws-block-gauntlet', reason );
+	}
+
+	if (
+		! commonBlocksEnabled &&
+		( commonBlockRecords < 50 || commonBlockCoverageCount < 50 )
+	) {
+		await enableGroup(
+			'novelty-ws-common-blocks',
+			'common block coverage is low: image/buttons/columns/code/preformatted are absent or rare',
+			{ allowRotation: true }
+		);
+	}
+
+	if (
+		! parserTransformEnabled &&
+		( parserTransformRecords < 75 ||
+			parserTransformInitialCoverageCount < 75 )
+	) {
+		const reason =
+			'parser transform coverage is low: HTML references, deprecations, built-in validation fixes, equivalent HTML, and code-editor reparse need focused coverage';
+		const budgetReserved = await reserveBudgetForParserTransform( reason );
+		await enableGroup( 'novelty-ws-parser-transform', reason, {
+			budgetReserved,
+		} );
+	}
+
 	if (
 		! lifecycleEnabled &&
 		resources.hasHeadroom &&
@@ -658,50 +1038,46 @@ async function applyPolicy( novelty, resources ) {
 	}
 
 	if (
-		! revisionPersistenceEnabled &&
-		resources.hasHeadroom &&
-		persistenceNoTitleRecords >= 1 &&
-		revisionEligibleRecords < 500
-	) {
-		await enableGroup(
-			'novelty-ws-revision-persistence',
-			'revision-restore coverage is low; add focused save/reload/browser revision restore coverage'
-		);
-	}
-
-	if (
-		! threeUserLateJoinEnabled &&
-		resources.hasHeadroom &&
-		lifecycleEnabled &&
-		users3Records < 100
-	) {
-		await enableGroup(
-			'novelty-ws-three-user-late-join',
-			'three-user late-join coverage is low; force a real late join early in the seed'
-		);
-	}
-
-	if (
 		! parserSerializationEnabled &&
-		resources.hasHeadroom &&
 		structureRecords >= 50 &&
 		parserRecords < 50
 	) {
 		await enableGroup(
 			'novelty-ws-parser-serialization',
-			'parser and block-serialization stress coverage is low; enable parser-stress actions without injected faults'
+			'parser and block-serialization stress coverage is low; enable parser-stress actions without injected faults',
+			{ allowRotation: true }
+		);
+	}
+
+	if (
+		! revisionPersistenceEnabled &&
+		persistenceNoTitleRecords >= 1 &&
+		revisionEligibleRecords < 500
+	) {
+		await enableGroup(
+			'novelty-ws-revision-persistence',
+			'revision-restore coverage is low; add focused save/reload/browser revision restore coverage',
+			{ allowRotation: true }
+		);
+	}
+
+	if ( ! threeUserLateJoinEnabled && users3Records < 100 ) {
+		await enableGroup(
+			'novelty-ws-three-user-late-join',
+			'three-user late-join coverage is low; force a real late join early in the seed',
+			{ allowRotation: true }
 		);
 	}
 
 	if (
 		! multiReloadLifecycleEnabled &&
-		resources.hasHeadroom &&
 		lifecycleRecords >= 50 &&
 		reload2Records < 100
 	) {
 		await enableGroup(
 			'novelty-ws-multi-reload-lifecycle',
-			'multi-reload lifecycle coverage is low; add two reload checkpoints in one seed'
+			'multi-reload lifecycle coverage is low; add two reload checkpoints in one seed',
+			{ allowRotation: true }
 		);
 	}
 
@@ -719,7 +1095,10 @@ async function applyPolicy( novelty, resources ) {
 
 	if ( PAUSE_ON_STARTUP_FAILURE ) {
 		const pauseOrder = [
+			[ 'novelty-ws-block-gauntlet', 'block-gauntlet' ],
+			[ 'novelty-ws-common-blocks', 'common-blocks' ],
 			[ 'novelty-ws-parser-serialization', 'parser-serialization' ],
+			[ 'novelty-ws-parser-transform', 'parser-transform' ],
 			[ 'novelty-ws-multi-reload-lifecycle', 'multi-reload-lifecycle' ],
 			[ 'novelty-ws-three-user-late-join', 'three-user-late-join' ],
 			[ 'novelty-ws-revision-persistence', 'revision-persistence' ],
