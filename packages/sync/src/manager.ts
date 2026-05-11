@@ -262,6 +262,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		// If the sync config supports awareness, create it.
 		const awareness = syncConfig.createAwareness?.( ydoc, objectId );
 
+		let isRemoteEntityUpdateScheduled = false;
+		const pendingRemoteChangedKeys = new Set< string >();
+
 		// When the CRDT document is updated by an UndoManager or a connection (not
 		// a local origin), update the local store.
 		const onRecordUpdate = (
@@ -291,11 +294,25 @@ export function createSyncManager( debug = false ): SyncManager {
 				} );
 			}
 
-			void internal.updateEntityRecord(
-				objectType,
-				objectId,
-				remoteChangedKeys
+			remoteChangedKeys.forEach( ( key ) =>
+				pendingRemoteChangedKeys.add( key )
 			);
+
+			if ( isRemoteEntityUpdateScheduled ) {
+				return;
+			}
+
+			isRemoteEntityUpdateScheduled = true;
+			setTimeout( () => {
+				const keysToReconcile = [ ...pendingRemoteChangedKeys ];
+				pendingRemoteChangedKeys.clear();
+				isRemoteEntityUpdateScheduled = false;
+				void internal.updateEntityRecord(
+					objectType,
+					objectId,
+					keysToReconcile
+				);
+			}, 0 );
 		};
 
 		const onStateMapUpdate = (
@@ -715,11 +732,18 @@ export function createSyncManager( debug = false ): SyncManager {
 		if ( entityState ) {
 			const { syncConfig, ydoc } = entityState;
 			let changesToApply = changes;
+			const canRebaseBlockChanges =
+				Array.isArray( changes.blocks ) &&
+				Array.isArray( options.baseRecord?.blocks );
 
 			if ( ! isSave && entityState.reconcilingRemoteKeys.size > 0 ) {
 				changesToApply = Object.fromEntries(
 					Object.entries( changes ).filter( ( [ key ] ) => {
 						if ( ! entityState.reconcilingRemoteKeys.has( key ) ) {
+							return true;
+						}
+
+						if ( key === 'blocks' && canRebaseBlockChanges ) {
 							return true;
 						}
 
