@@ -148,13 +148,16 @@ The same natural-user Playwright spec on this current known-fixes checkout
 timed out in `waitForCollaborationReady()` before exercising the table
 sequence, so that run is harness/readiness evidence only.
 
-After the guard:
+Earlier local scratch verification after the guard:
 
 ```bash
 npm run test:unit -- packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts packages/core-data/src/utils/test/crdt-stale-query-array.test.ts packages/core-data/src/utils/test/crdt-table-query-identity.test.ts packages/core-data/src/utils/test/crdt-table-duplicates-repro.test.ts --runInBand
 ```
 
 Result: 4 suites passed, 8 tests passed.
+Those adjacent scratch tests are not all committed on the current PR branch;
+the committed PR branch regression suite for this signature is
+`packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts`.
 
 PR branch verification, rebased onto `origin/trunk` at
 `6aa5ea1a40db818a9c0d2d85d0d0476f7d40392a`:
@@ -270,3 +273,79 @@ not currently a red test because the risky stale-local merge path is absent.
 For users or reviewers evaluating the backlink-aware known-fixes/proposed RTC
 stack, the bug remains real unless the stable-id mismatch guard from the PR
 branch is included.
+
+Pass 177 refreshed that target-context matrix after `origin/trunk` advanced to
+`daf20d82b937e13d0f55e908008be8b3037c2d67`.
+
+```bash
+git fetch origin trunk
+git rebase origin/trunk
+```
+
+Results:
+
+- The explanation branch rebased cleanly.
+- The PR branch rebased cleanly and kept the requested commit order:
+  `9355bf9819c Add stale table body CRDT repro`,
+  `6786e4b2656 Add stale table body collaboration repro`,
+  `c2f23b8a26d Fix stale table body structural merges`.
+
+Fresh pass-177 focused matrix:
+
+```bash
+git worktree add --detach .../pass-177/703ef0771ea5-f256-exact \
+	f256024286dd80a4c0e2579f658c109256abf648
+git -C .../pass-177/703ef0771ea5-f256-exact cherry-pick --no-commit \
+	450376d7c77
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: failed on exact known-fixes base with an extra duplicate
+`remote append A` / `remote append B` row.
+
+```bash
+git fetch origin '+pull/77887/head:refs/heads/pr/77887'
+git worktree add --detach .../pass-177/703ef0771ea5-pr77887-exact pr/77887
+git -C .../pass-177/703ef0771ea5-pr77887-exact cherry-pick --no-commit \
+	9355bf9819c
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: failed on refreshed PR 77887 head `9c5dba15654e`, before the final
+row-equality assertions, because the later appended tail row was already gone.
+
+```bash
+git worktree add --detach .../pass-177/703ef0771ea5-trunk-exact origin/trunk
+git -C .../pass-177/703ef0771ea5-trunk-exact cherry-pick --no-commit \
+	9355bf9819c
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: passed on current `origin/trunk`. `git grep` found no
+`mergeYArrayLocalChanges` or `__unstableSyncId` in
+`packages/core-data/src/utils/crdt-blocks.ts` on current trunk, so this is
+expected and does not disprove the proposed-stack bug.
+
+```bash
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+git diff --check origin/trunk..HEAD
+```
+
+Result on the rebased PR branch: the focused unit test passed and
+`git diff --check` passed.
+
+The pass-177 natural Playwright attempt on the rebased fixed branch did not
+reach the table workflow. It failed in `waitForCollaborationReady()` at
+`test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts:323`,
+with the editor loaded but `window._wpCollaborationEnabled` not true before the
+15s readiness timeout. That is a harness/readiness gap for this pass, not a
+product-failure signal. The existing pass-170 annotated fixed-workflow MP4
+still exists and validates with `ffprobe` as an 8.566667s, 212080-byte video.
