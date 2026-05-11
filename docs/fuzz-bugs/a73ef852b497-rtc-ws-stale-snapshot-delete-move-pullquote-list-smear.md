@@ -232,3 +232,25 @@ PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
 ```
 
 The practical likelihood remains `low`: the operations are normal, but the bug requires two active RTC sessions to structurally edit the same small block neighborhood before the stale snapshot is reconciled. The missing artifact remains the same as pass 175: there is still no completed natural user-action Playwright repro or annotated video.
+
+## Pass 177 Update
+
+Pass 177 reran the focused pass-175 repro on fresh detached worktrees:
+
+```text
+21ca487683a Add RTC List/Pullquote stale snapshot repro
+parent f256024286d Integrate RTC known-fix stack
+FAIL packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+Expected: false
+Received: true
+
+377adcfdae6 Avoid positional block smear after stale RTC snapshots
+base f256024286d plus test/marker/fix stack
+PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+```
+
+This independently confirms that the exact known-fixes base still reaches the positional smear path, and that the proof fix still covers the narrowed root-cause schedule.
+
+Pass 177 also reran the uncommitted natural WebSocket probe from pass 172 after starting the test `wp-env` config on `http://localhost:10161` with WebSocket port `22488`. The first run against the regular `wp-env` config failed before test execution because the WebSocket provider test plugin was not mounted. After switching to `.wp-env.test.json`, the probe loaded the editor but failed before the move/delete actions: the live editor block tree was replaced by older fuzz-seed content (`953376` on the first run, `956646` on the rerun) even though `wp post get` showed the database post still contained the intended four-block Paragraph/List/Pullquote/Paragraph fixture and `wp post meta list` showed no `_crdt_document` meta.
+
+That browser result is not a valid repro for this signature. It does, however, explain why the existing branch still lacks the requested natural-user video: the available probe is blocked by a separate WebSocket/e2e setup contamination problem before it can exercise the intended action interleaving. The practical likelihood classification stays `low`, not lower, because the CRDT-level product path remains real and the editor operations are ordinary; the missing data is frequency under a clean WebSocket browser schedule.
