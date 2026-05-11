@@ -64,6 +64,16 @@ That index-based update is not safe when the incoming local snapshot is stale an
 
 The known-fixes stack, especially PR `77924` (`1a46ebf1621`, `Fix RTC stale WebSocket and CRDT merge bugs`), added base-record plumbing, stale local snapshot reconciliation, and pure clientId move rebasing. That is necessary but not sufficient here: the pure-move fast path only works when the base and incoming client ID sets match, so the mixed delete/insert/move case still falls back to index rewriting.
 
+The exact known-fixes commit `f256024286dd80a4c0e2579f658c109256abf648` makes this failure mechanical:
+
+- `mergeCrdtBlocks` uses `localBlocksToSync` directly when `baseBlocks` is present, skipping stale-local reconciliation for explicit-base edits.
+- The current Yjs IDs after peer A are `[ list, group, quote, pullquote ]`.
+- The explicit base IDs are `[ heading, list, group, quote ]`.
+- Peer B's stale moved snapshot IDs are `[ list, heading, group, quote ]`.
+- `rebaseYBlocksByClientId` cannot run because the current/base ID sets differ.
+- `reorderYBlocksByClientId` cannot run because the current/incoming ID sets differ.
+- The residual left/right sweep matches only the leading `list`, then updates slot 1 by index. Slot 1 is the current `group`, but the incoming slot is stale `heading`, so the Group is rewritten as Heading in the same-document reducer. The two-client reducer reaches the related duplicate-List state through the same positional identity error after Yjs exchanges both updates.
+
 ## Fix Plan
 
 Initial plan:
