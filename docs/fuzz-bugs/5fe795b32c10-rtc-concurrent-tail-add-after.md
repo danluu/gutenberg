@@ -287,6 +287,59 @@ real state-corruption assertion. The branch still needs either the pass-174
 classified repro logic or equivalent setup-error classification before the
 browser test can be used as fixed-branch proof.
 
+## Pass 177 Follow-up
+
+Pass 177 hardened the PR-branch Playwright repro so it records one of
+`passed`, `reproduced`, or `inconclusive`, records the phase that failed, and
+only marks product reproduction when the run reaches the converged-state
+assertion. It also adds the pass-174 timing knobs to the committed spec:
+
+- `RTC_5FE7_ADD_AFTER_TYPE_DELAY_MS`
+- `RTC_5FE7_ADD_AFTER_POST_MENU_DELAY_MS`
+- `RTC_5FE7_ADD_AFTER_POST_MENU_JITTER_MS`
+
+With that classification in place, the fixed PR branch no longer failed at
+readiness in the isolated pass-177 environment. It reached the converged-state
+assertion on attempt 1 and reproduced a product failure with both inserted
+paragraphs present but the primary paragraph corrupted:
+
+```text
+RTC 5fe7 add-after primary paragrph 1
+RTC 5fe7 add-after collaborator paragraph 1
+```
+
+The two `Add after` actions completed 7 ms apart. The pages then waited
+1920 ms and 1522 ms before typing at 160 ms/key. Both peers converged to the
+same corrupted five-block state, so the pass-175 structural fix is incomplete:
+it addresses the whole-paragraph stale-base loss but not the natural per-key
+rich-text corruption.
+
+Pass 177 also added and pushed a narrower lower-level regression for a locally
+inserted block whose stale base-record snapshot is replayed after the current
+Yjs value has advanced. The test fails on the previous PR head `9b0f26239f1`
+with `RTC primary paragrph` and passes after preserving current rich text for
+inserted blocks that are unchanged from the last local snapshot. That patch is
+useful for one stale-replay shape, but it is not a complete product fix.
+
+After restoring a usable `build/` tree and patching the generated
+`build/scripts/core-data/index.js` for local verification, the same natural
+browser run still failed on attempt 1:
+
+```text
+RTC 5fe7 add-after primraragraph 1
+RTC 5fe7 add-after collaborator paragraph 1
+```
+
+The `Add after` actions completed 35 ms apart; the pages waited 2070 ms and
+2248 ms before typing at 160 ms/key. This leaves the root cause narrower but
+still unresolved: the surviving natural bug is below top-level block
+preservation and below a simple stale replay of an unchanged inserted-block
+snapshot. The next useful investigation is an instrumented browser run that
+logs every primary-block `content` value entering `mergeRichTextUpdate()`, the
+resolved cursor `{ clientId, attributeKey, offset }`, and the resulting Y.Text
+after each key. That should distinguish a bad incoming full snapshot from a bad
+rich-text delta/cursor application.
+
 ## Artifacts
 
 - Failure JSON, pass-172 160 ms/key no post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output/attempt-6.json`
@@ -306,6 +359,15 @@ browser test can be used as fixed-branch proof.
   `/tmp/5fe795b32c10-p176-fixed-natural-afteroption-attempts20-output/attempt-1.json`
 - Pass-176 fixed-branch readiness trace:
   `/private/tmp/5fe795-pass175-knownfix.Pu0Ir5/test/e2e/artifacts/test-results/editor-collaboration-webso-d842e-d-after-realistic-attempt-1-chromium/trace.zip`
+- Pass-177 fixed-branch classified failure JSON before the inserted-block
+  replay guard:
+  `/tmp/5fe795b32c10-p177-prfixed-classified-type160-postdelay2000-jitter500-attempts20-output/attempt-1.json`
+- Pass-177 fixed-branch classified trace before the inserted-block replay
+  guard:
+  `/private/tmp/5fe795-pass175-knownfix.Pu0Ir5/test/e2e/artifacts/test-results/editor-collaboration-webso-d842e-d-after-realistic-attempt-1-chromium/trace.zip`
+- Pass-177 fixed-branch classified failure JSON after the inserted-block
+  replay guard and local generated-bundle patch:
+  `/tmp/5fe795b32c10-p177-prfix2-built-classified-type160-postdelay2000-jitter500-attempts20-output/attempt-1.json`
 - Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
