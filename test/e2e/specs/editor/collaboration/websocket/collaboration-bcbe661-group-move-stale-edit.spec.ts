@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Locator, Page } from '@playwright/test';
+import type { FrameLocator, Locator, Page } from '@playwright/test';
 
 /**
  * Internal dependencies
@@ -45,6 +45,12 @@ type NormalizedBlock = {
 	name: string;
 };
 
+type BlockSummary = {
+	content: unknown;
+	inner: BlockSummary[];
+	name: string;
+};
+
 async function openListView( page: Page ) {
 	await page.getByRole( 'button', { name: 'Document Overview' } ).click();
 	const overview = page.getByRole( 'region', { name: 'Document Overview' } );
@@ -82,7 +88,7 @@ async function dragTargetParagraphIntoGroup( page: Page ) {
 
 async function replaceParagraphText(
 	page: Page,
-	editorCanvas: Locator,
+	editorCanvas: FrameLocator | Locator,
 	from: string,
 	to: string
 ) {
@@ -122,7 +128,7 @@ async function clearBrowserRtcState( page: Page ) {
 	} );
 }
 
-function summarizeBlocks( blocks: NormalizedBlock[] ) {
+function summarizeBlocks( blocks: NormalizedBlock[] ): BlockSummary[] {
 	return blocks.map( ( block ) => ( {
 		name: block.name,
 		content: block.attributes.content,
@@ -137,10 +143,7 @@ function getMovedParagraphSummary( blocks: NormalizedBlock[] ) {
 			block.attributes.content === TARGET_EDITED
 	).length;
 	const group = blocks.find( ( block ) => block.name === 'core/group' );
-	const groupHasContent = Object.hasOwn(
-		group?.attributes ?? {},
-		'content'
-	);
+	const groupHasContent = Object.hasOwn( group?.attributes ?? {}, 'content' );
 	const firstInner = group?.innerBlocks?.[ 0 ];
 
 	return {
@@ -181,7 +184,7 @@ test.describe( 'Collaboration - WebSocket group move stale edit replay', () => {
 						delayNextMessage: ( delayMs: number ) => void;
 					};
 				}
-			).__gutenbergTestWebSocketSync?.delayNextMessage( 3000 );
+			 ).__gutenbergTestWebSocketSync?.delayNextMessage( 3000 );
 		} );
 
 		await dragTargetParagraphIntoGroup( collaboratorPage );

@@ -203,6 +203,60 @@ function getBlocksByClientIdIfEveryBlockHasUniqueId(
 	);
 }
 
+function getBlocksByClientIdInTreeIfEveryBlockHasUniqueId(
+	blocks: Block[]
+): Map< string, Block > | null {
+	const blocksByClientId = new Map< string, Block >();
+	const stack = [ ...blocks ];
+
+	while ( stack.length > 0 ) {
+		const block = stack.pop() as Block;
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId || blocksByClientId.has( clientId ) ) {
+			return null;
+		}
+
+		blocksByClientId.set( clientId, block );
+		stack.push( ...( block.innerBlocks ?? [] ) );
+	}
+
+	return blocksByClientId;
+}
+
+function getBlockParentClientIdsInTreeIfEveryBlockHasUniqueId(
+	blocks: Block[]
+): Map< string, string | null > | null {
+	const parentClientIdsByClientId = new Map< string, string | null >();
+	const stack: Array< { block: Block; parentClientId: string | null } > =
+		blocks.map( ( block ) => ( {
+			block,
+			parentClientId: null,
+		} ) );
+
+	while ( stack.length > 0 ) {
+		const { block, parentClientId } = stack.pop() as {
+			block: Block;
+			parentClientId: string | null;
+		};
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId || parentClientIdsByClientId.has( clientId ) ) {
+			return null;
+		}
+
+		parentClientIdsByClientId.set( clientId, parentClientId );
+		stack.push(
+			...( block.innerBlocks ?? [] ).map( ( innerBlock ) => ( {
+				block: innerBlock,
+				parentClientId: clientId,
+			} ) )
+		);
+	}
+
+	return parentClientIdsByClientId;
+}
+
 function findBlockIndexByClientId( blocks: Block[], clientId: string ): number {
 	return blocks.findIndex(
 		( block ) => getBlockClientId( block ) === clientId
@@ -397,6 +451,134 @@ function reconcileStaleLocalBlockValues(
 	return reconciledBlocks ?? localBlocks;
 }
 
+function replaceBlockByClientIdInTree(
+	blocks: Block[],
+	clientId: string,
+	replacementBlock: Block
+): Block[] {
+	let replacedBlocks: Block[] | undefined;
+
+	blocks.forEach( ( block, index ) => {
+		let replacement = block;
+
+		if ( getBlockClientId( block ) === clientId ) {
+			replacement = replacementBlock;
+		} else {
+			const replacementInnerBlocks = replaceBlockByClientIdInTree(
+				block.innerBlocks ?? [],
+				clientId,
+				replacementBlock
+			);
+
+			if ( replacementInnerBlocks !== block.innerBlocks ) {
+				replacement = {
+					...block,
+					innerBlocks: replacementInnerBlocks,
+				};
+			}
+		}
+
+		if ( replacement !== block ) {
+			if ( ! replacedBlocks ) {
+				replacedBlocks = [ ...blocks ];
+			}
+
+			replacedBlocks[ index ] = replacement;
+		}
+	} );
+
+	return replacedBlocks ?? blocks;
+}
+
+function forEachBlockInTree(
+	blocks: Block[],
+	callback: ( block: Block ) => void
+): void {
+	blocks.forEach( ( block ) => {
+		callback( block );
+		forEachBlockInTree( block.innerBlocks ?? [], callback );
+	} );
+}
+
+function reconcileMovedStaleLocalBlockEdits(
+	blocksToSync: Block[],
+	localBlocks: Block[],
+	previousBlocks: Block[],
+	currentBlocks: Block[]
+): Block[] {
+	const previousBlocksByClientId =
+		getBlocksByClientIdInTreeIfEveryBlockHasUniqueId( previousBlocks );
+	const currentBlocksByClientId =
+		getBlocksByClientIdInTreeIfEveryBlockHasUniqueId( currentBlocks );
+	const localParentClientIdsByClientId =
+		getBlockParentClientIdsInTreeIfEveryBlockHasUniqueId( localBlocks );
+	const currentParentClientIdsByClientId =
+		getBlockParentClientIdsInTreeIfEveryBlockHasUniqueId( currentBlocks );
+
+	if (
+		! previousBlocksByClientId ||
+		! currentBlocksByClientId ||
+		! localParentClientIdsByClientId ||
+		! currentParentClientIdsByClientId
+	) {
+		return blocksToSync;
+	}
+
+	let reconciledBlocks = blocksToSync;
+
+	forEachBlockInTree( localBlocks, ( localBlock ) => {
+		const clientId = getBlockClientId( localBlock );
+
+		if ( ! clientId ) {
+			return;
+		}
+
+		const previousBlock = previousBlocksByClientId.get( clientId );
+		const currentBlock = currentBlocksByClientId.get( clientId );
+
+		if (
+			! previousBlock ||
+			! currentBlock ||
+			( fastDeepEqual( localBlock, previousBlock ) &&
+				localParentClientIdsByClientId.get( clientId ) ===
+					currentParentClientIdsByClientId.get( clientId ) )
+		) {
+			return;
+		}
+
+		let reconciledBlock = reconcileStaleLocalBlock(
+			localBlock,
+			previousBlock,
+			currentBlock
+		);
+
+		if (
+			reconciledBlock === currentBlock &&
+			fastDeepEqual( localBlock, previousBlock ) &&
+			localParentClientIdsByClientId.get( clientId ) !==
+				currentParentClientIdsByClientId.get( clientId ) &&
+			! fastDeepEqual( localBlock.attributes, currentBlock.attributes )
+		) {
+			reconciledBlock = {
+				...currentBlock,
+				attributes: localBlock.attributes,
+			};
+		}
+
+		if ( reconciledBlock === currentBlock ) {
+			return;
+		}
+
+		reconciledBlocks = replaceBlockByClientIdInTree(
+			reconciledBlocks,
+			clientId,
+			reconciledBlock
+		);
+	} );
+
+	return reconciledBlocks;
+}
+
 function reconcileStaleLocalBlocks(
 	yblocks: YBlocks,
 	localBlocksToSync: Block[]
@@ -467,7 +649,12 @@ function reconcileStaleLocalBlocks(
 		blockIdsToSync.add( clientId );
 	} );
 
-	return blocksToSync;
+	return reconcileMovedStaleLocalBlockEdits(
+		blocksToSync,
+		localBlocksToSync,
+		previousBlocks,
+		currentBlocks
+	);
 }
 
 /**
@@ -1098,6 +1285,33 @@ function mergeYBlocksByClientId(
 	}
 }
 
+function getIndexedMergeBaseBlock(
+	previousBlocks: Block[] | undefined,
+	index: number,
+	block: Block,
+	yblock: YBlock
+): Block | undefined {
+	const previousBlock = previousBlocks?.[ index ];
+
+	if ( ! previousBlock ) {
+		return undefined;
+	}
+
+	const previousClientId = getBlockClientId( previousBlock );
+	const blockClientId = getBlockClientId( block );
+	const yblockClientId = getYBlockClientId( yblock );
+
+	if (
+		( previousClientId || blockClientId || yblockClientId ) &&
+		( previousClientId !== blockClientId ||
+			blockClientId !== yblockClientId )
+	) {
+		return undefined;
+	}
+
+	return previousBlock;
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -1218,7 +1432,12 @@ function mergeCrdtBlocksIntoYBlocks(
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
 		const block = blocksToSync[ left ];
 		const yblock = yblocks.get( left );
-		const previousBlock = previousBlocks?.[ left ];
+		const previousBlock = getIndexedMergeBaseBlock(
+			previousBlocks,
+			left,
+			block,
+			yblock
+		);
 
 		mergeBlockIntoYBlock( yblock, block, cursorPosition, previousBlock );
 	}
