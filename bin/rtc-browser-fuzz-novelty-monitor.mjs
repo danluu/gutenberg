@@ -531,6 +531,110 @@ function featureKeysForRecord( record ) {
 	for ( const event of record.lifecycleEvents ?? [] ) {
 		keys.add( `lifecycle:${ event.type }:users-${ event.userCount }` );
 	}
+	for ( const event of record.invariantEvents ?? [] ) {
+		keys.add( `invariant:${ event.name }:${ event.status }` );
+		if ( event.status !== 'ok' ) {
+			keys.add( `invariant-signal:${ event.name }` );
+		}
+	}
+	const operationLedger = record.operationLedger ?? {};
+	keys.add( `operation-ledger-mode:${ operationLedger.mode ?? 'unknown' }` );
+	if ( ( operationLedger.created ?? 0 ) > 0 ) {
+		keys.add( 'operation-ledger:active' );
+		keys.add(
+			`operation-ledger-created:${ Math.min(
+				operationLedger.created ?? 0,
+				8
+			) }`
+		);
+		keys.add(
+			`operation-ledger-live:${ Math.min(
+				operationLedger.live ?? 0,
+				8
+			) }`
+		);
+		keys.add(
+			`operation-ledger-missing:${ Math.min(
+				operationLedger.missing ?? 0,
+				4
+			) }`
+		);
+	}
+	for ( const event of record.operationEvents ?? [] ) {
+		const scope = event.scope ?? 'any';
+		keys.add( `operation-event:${ event.status }:${ scope }` );
+		if ( event.actionLabel ) {
+			keys.add(
+				`operation-event-action:${ event.status }:${ event.actionLabel }:${ scope }`
+			);
+		}
+		if ( event.status === 'missing' && event.actionLabel ) {
+			keys.add( `operation-missing:${ event.actionLabel }:${ scope }` );
+		}
+	}
+	const invariantSnapshots = record.invariantSnapshots ?? [];
+	if ( invariantSnapshots.length > 0 ) {
+		const maxInvalidBlocks = Math.max(
+			...invariantSnapshots.map(
+				( snapshot ) => snapshot.invalidBlockCount ?? 0
+			)
+		);
+		const maxSerializedLength = Math.max(
+			...invariantSnapshots.map(
+				( snapshot ) => snapshot.serializedContentLength ?? 0
+			)
+		);
+		keys.add( `invalid-blocks:${ Math.min( maxInvalidBlocks, 4 ) }` );
+		keys.add(
+			`serialized-size-log2:${ Math.min(
+				Math.floor( Math.log2( Math.max( maxSerializedLength, 1 ) ) ),
+				20
+			) }`
+		);
+		if (
+			invariantSnapshots.some(
+				( snapshot ) => snapshot.duplicateClientIds?.length > 0
+			)
+		) {
+			keys.add( 'duplicate-client-ids' );
+		}
+		if (
+			invariantSnapshots.some(
+				( snapshot ) => ( snapshot.missingClientIdCount ?? 0 ) > 0
+			)
+		) {
+			keys.add( 'missing-client-ids' );
+		}
+		if (
+			invariantSnapshots.some(
+				( snapshot ) => ( snapshot.malformedInnerBlockCount ?? 0 ) > 0
+			)
+		) {
+			keys.add( 'malformed-inner-blocks' );
+		}
+		if (
+			invariantSnapshots.some(
+				( snapshot ) => ( snapshot.objectObjectStringCount ?? 0 ) > 0
+			)
+		) {
+			keys.add( 'object-object-attribute-string' );
+		}
+		if (
+			invariantSnapshots.some(
+				( snapshot ) => snapshot.canonicalRoundTripStable === false
+			)
+		) {
+			keys.add( 'serialization-roundtrip-changed' );
+		}
+		if (
+			invariantSnapshots.some(
+				( snapshot ) =>
+					snapshot.editedMatchesSerializedCanonical === false
+			)
+		) {
+			keys.add( 'edited-content-store-mismatch' );
+		}
+	}
 	if ( record.cdpCoverage?.hash ) {
 		keys.add( `cdp:${ record.cdpCoverage.hash }` );
 	}

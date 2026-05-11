@@ -164,6 +164,31 @@ type SaveCheckpoint = {
 	titleMarker: string;
 };
 
+type OperationWitnessInput = {
+	marker: string;
+	scope: 'content' | 'title';
+	source?: string;
+};
+
+type OperationLedgerMode = 'fail' | 'off' | 'shadow';
+
+type OperationLedgerEntry = OperationWitnessInput & {
+	actionLabel: string;
+	markerHash: string;
+	phase: string;
+	status: 'invalidated' | 'live' | 'missing' | 'retired';
+	step?: number;
+	userIndex?: number;
+};
+
+type OperationLedgerState = {
+	entries: OperationLedgerEntry[];
+	invalidatedByAction: Record< string, number >;
+	maxLive: number;
+	missingExamples: OperationLedgerSummary[ 'missingExamples' ];
+	mode: OperationLedgerMode;
+};
+
 type PageAction = {
 	label: string;
 	run: (
@@ -173,7 +198,7 @@ type PageAction = {
 		userIndex: number,
 		rng: Random,
 		pages: PageRef[]
-	) => Promise< void >;
+	) => Promise< OperationWitnessInput[] | void >;
 };
 
 type BehaviorActionTrace = {
@@ -201,6 +226,93 @@ type BehaviorHistoryEvent = {
 	userIndex?: number;
 };
 
+type BehaviorInvariantEvent = {
+	at: string;
+	details?: Record< string, unknown >;
+	name: string;
+	phase: string;
+	status: 'ok' | 'fail' | 'observed';
+	step?: number;
+};
+
+type BehaviorInvariantSnapshot = {
+	blockTypes: string[];
+	canonicalEditedContentHash?: string;
+	canonicalRoundTripStable?: boolean;
+	canonicalSerializedContentHash?: string;
+	duplicateClientIds: string[];
+	editedContentHash?: string;
+	editedContentLength?: number;
+	editedMatchesSerializedCanonical?: boolean;
+	invalidBlockCount: number;
+	malformedInnerBlockCount: number;
+	maxDepth: number;
+	missingClientIdCount: number;
+	objectObjectStringCount: number;
+	pageIndex: number;
+	phase: string;
+	rootBlockCount: number;
+	serializationError?: string;
+	serializedContentHash?: string;
+	serializedContentLength?: number;
+	step?: number;
+	totalBlockCount: number;
+	userIndex: number;
+};
+
+type BehaviorOperationEvent = {
+	actionLabel?: string;
+	at: string;
+	details?: Record< string, unknown >;
+	markerHash?: string;
+	phase: string;
+	scope?: OperationWitnessInput[ 'scope' ];
+	status: 'witnessed' | 'missing' | 'retired' | 'invalidated' | 'assert-ok';
+	step?: number;
+	userIndex?: number;
+};
+
+type OperationLedgerSummary = {
+	byScope: Record< OperationWitnessInput[ 'scope' ], number >;
+	created: number;
+	invalidated: number;
+	invalidatedByAction: Record< string, number >;
+	live: number;
+	maxLive: number;
+	missing: number;
+	missingExamples: Array< {
+		actionLabel: string;
+		markerHash: string;
+		phase: string;
+		scope: OperationWitnessInput[ 'scope' ];
+		step?: number;
+		userIndex?: number;
+	} >;
+	mode: OperationLedgerMode;
+	retired: number;
+	witnessed: number;
+};
+
+type RawEditorInvariantSnapshot = {
+	blockTypes: string[];
+	canonicalEditedContent?: string;
+	canonicalSerializedContent?: string;
+	duplicateClientIds: string[];
+	editedContent?: string;
+	invalidBlocks: Array< {
+		clientId?: string;
+		name?: string;
+	} >;
+	malformedInnerBlockCount: number;
+	maxDepth: number;
+	missingClientIdCount: number;
+	objectObjectStringCount: number;
+	rootBlockCount: number;
+	serializationError?: string;
+	serializedContent?: string;
+	totalBlockCount: number;
+};
+
 type BehaviorCoverage = {
 	actionProfile: string;
 	actions: BehaviorActionTrace[];
@@ -216,12 +328,16 @@ type BehaviorCoverage = {
 	faults: BehaviorFaultTrace[];
 	historyEvents: BehaviorHistoryEvent[];
 	initialContentProfile: string;
+	invariantEvents: BehaviorInvariantEvent[];
+	invariantSnapshots: BehaviorInvariantSnapshot[];
 	laneLabel: string;
 	lifecycleEvents: Array< {
 		step: number;
 		type: string;
 		userCount: number;
 	} >;
+	operationEvents: BehaviorOperationEvent[];
+	operationLedger: OperationLedgerSummary;
 	reloadStep: number;
 	reloads: Array< {
 		step: number;
@@ -258,6 +374,12 @@ type CdpCoverageSummary = {
 	scriptCount: number;
 };
 
+type CollaborativeState = {
+	blocks: Array< any >;
+	crdtDocument?: string | null;
+	title: string;
+};
+
 const SEED_START = getEnvInt( 'GUTENBERG_RTC_BROWSER_SEED_START', 701 );
 const SEED_COUNT = getEnvInt( 'GUTENBERG_RTC_BROWSER_SEED_COUNT', 3 );
 const SEEDS = getEnvIntList( 'GUTENBERG_RTC_BROWSER_SEEDS' );
@@ -286,6 +408,8 @@ const ENABLE_REVISION_RESTORE_PROBE =
 		'1' ) === '1';
 const ACTION_PROFILE =
 	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
+const OPERATION_LEDGER_MODE =
+	process.env.GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE ?? 'auto';
 const DISABLE_PARSER_STRESS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS === '1';
 const EXTRA_COLLABORATOR_COUNT = getEnvNonNegativeInt(
@@ -328,6 +452,10 @@ const TEST_TIMEOUT_MS = getEnvInt(
 const COLLECT_CDP_COVERAGE =
 	process.env.GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE === '1';
 const BEHAVIORAL_COVERAGE_FILENAME = 'rtc-behavioral-coverage.ndjson';
+const MAX_OPERATION_LEDGER_LIVE = getEnvNonNegativeInt(
+	'GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE',
+	128
+);
 const RETRIABLE_SYNC_FAILURE_STATUSES = [ 429, 500, 503 ];
 
 function getEnvInt( name: string, fallback: number ): number {
@@ -452,7 +580,64 @@ function getInitialContentProfile( seed: number ): string {
 	}
 }
 
+function isLowNoiseOperationLedgerProfile() {
+	return [
+		'multi-reload-lifecycle',
+		'persistence',
+		'persistence-no-title',
+		'session-lifecycle',
+		'structure',
+		'three-user-late-join',
+	].includes( ACTION_PROFILE );
+}
+
+function getOperationLedgerMode(): OperationLedgerMode {
+	if (
+		OPERATION_LEDGER_MODE === 'fail' ||
+		OPERATION_LEDGER_MODE === 'off' ||
+		OPERATION_LEDGER_MODE === 'shadow'
+	) {
+		return OPERATION_LEDGER_MODE;
+	}
+
+	if ( OPERATION_LEDGER_MODE !== 'auto' ) {
+		throw new Error(
+			`Unknown GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE "${ OPERATION_LEDGER_MODE }".`
+		);
+	}
+
+	return isLowNoiseOperationLedgerProfile() &&
+		( DISABLE_PARSER_STRESS ||
+			ACTION_PROFILE === 'persistence' ||
+			ACTION_PROFILE === 'persistence-no-title' )
+		? 'fail'
+		: 'shadow';
+}
+
+function createOperationLedgerSummary(
+	mode: OperationLedgerMode
+): OperationLedgerSummary {
+	return {
+		byScope: {
+			content: 0,
+			title: 0,
+		},
+		created: 0,
+		invalidated: 0,
+		invalidatedByAction: {},
+		live: 0,
+		maxLive: 0,
+		missing: 0,
+		missingExamples: [],
+		mode,
+		retired: 0,
+		witnessed: 0,
+	};
+}
+
 function createBehaviorCoverage( seed: number ): BehaviorCoverage {
+	const operationLedgerMode = getOperationLedgerMode();
+
 	return {
 		actionProfile: ACTION_PROFILE,
 		actions: [],
@@ -465,8 +650,12 @@ function createBehaviorCoverage( seed: number ): BehaviorCoverage {
 		faults: [],
 		historyEvents: [],
 		initialContentProfile: getInitialContentProfile( seed ),
+		invariantEvents: [],
+		invariantSnapshots: [],
 		laneLabel: process.env.GUTENBERG_RTC_LANE_LABEL ?? 'unknown',
 		lifecycleEvents: [],
+		operationEvents: [],
+		operationLedger: createOperationLedgerSummary( operationLedgerMode ),
 		reloadStep: -1,
 		reloads: [],
 		revisionRestore: {
@@ -492,10 +681,613 @@ function recordHistory(
 	} );
 }
 
+function recordInvariantEvent(
+	coverage: BehaviorCoverage,
+	event: Omit< BehaviorInvariantEvent, 'at' >
+) {
+	coverage.invariantEvents.push( {
+		at: new Date().toISOString(),
+		...event,
+	} );
+}
+
+function recordOperationEvent(
+	coverage: BehaviorCoverage,
+	event: Omit< BehaviorOperationEvent, 'at' >
+) {
+	coverage.operationEvents.push( {
+		at: new Date().toISOString(),
+		...event,
+	} );
+}
+
 function errorToString( error: unknown ): string {
 	return error instanceof Error
 		? error.stack ?? error.message
 		: String( error );
+}
+
+function hashString( value: string ): string {
+	return crypto.createHash( 'sha256' ).update( value ).digest( 'hex' );
+}
+
+function hashOperationMarker( marker: string ): string {
+	return hashString( marker ).slice( 0, 16 );
+}
+
+function createOperationLedger(
+	coverage: BehaviorCoverage
+): OperationLedgerState {
+	return {
+		entries: [],
+		invalidatedByAction: {},
+		maxLive: 0,
+		missingExamples: [],
+		mode: coverage.operationLedger.mode,
+	};
+}
+
+function getLiveOperationLedgerEntries(
+	ledger: OperationLedgerState,
+	scope?: OperationWitnessInput[ 'scope' ]
+) {
+	return ledger.entries.filter(
+		( entry ) =>
+			entry.status === 'live' &&
+			( scope === undefined || entry.scope === scope )
+	);
+}
+
+function updateOperationLedgerSummary(
+	coverage: BehaviorCoverage,
+	ledger: OperationLedgerState
+) {
+	const summary = createOperationLedgerSummary( ledger.mode );
+
+	for ( const entry of ledger.entries ) {
+		summary.created += 1;
+		summary.byScope[ entry.scope ] += 1;
+
+		switch ( entry.status ) {
+			case 'invalidated':
+				summary.invalidated += 1;
+				summary.witnessed += 1;
+				break;
+			case 'live':
+				summary.live += 1;
+				summary.witnessed += 1;
+				break;
+			case 'missing':
+				summary.missing += 1;
+				break;
+			case 'retired':
+				summary.retired += 1;
+				summary.witnessed += 1;
+				break;
+		}
+	}
+
+	summary.invalidatedByAction = { ...ledger.invalidatedByAction };
+	summary.maxLive = ledger.maxLive;
+	summary.missingExamples = [ ...ledger.missingExamples ];
+	coverage.operationLedger = summary;
+}
+
+function sanitizeOperationMarkerKind( kind: string ): string {
+	return (
+		kind
+			.toLowerCase()
+			.replaceAll( /[^a-z0-9]+/g, '-' )
+			.replaceAll( /^-|-$/g, '' ) || 'op'
+	);
+}
+
+function createOperationMarker( {
+	kind,
+	seed,
+	step,
+	suffix,
+	userIndex,
+}: {
+	kind: string;
+	seed: number;
+	step: number;
+	suffix: number;
+	userIndex: number;
+} ) {
+	return `rtcw-${ seed }-${ step }-u${ userIndex }-${ sanitizeOperationMarkerKind(
+		kind
+	) }-${ suffix.toString( 36 ) }`;
+}
+
+function createContentWitness(
+	marker: string,
+	source?: string
+): OperationWitnessInput {
+	return {
+		marker,
+		scope: 'content',
+		source,
+	};
+}
+
+function createTitleWitness(
+	marker: string,
+	source?: string
+): OperationWitnessInput {
+	return {
+		marker,
+		scope: 'title',
+		source,
+	};
+}
+
+function getCheckpointOperationWitnesses(
+	checkpoint: SaveCheckpoint
+): OperationWitnessInput[] {
+	return [
+		createContentWitness( checkpoint.marker, 'save-checkpoint-paragraph' ),
+		createContentWitness(
+			checkpoint.optionMarker,
+			'save-checkpoint-search'
+		),
+		createTitleWitness( checkpoint.titleMarker, 'save-checkpoint-title' ),
+	];
+}
+
+function hasOperationWitness(
+	state: CollaborativeState,
+	witness: OperationWitnessInput
+): boolean {
+	if ( witness.scope === 'title' ) {
+		return state.title.includes( witness.marker );
+	}
+
+	return hasMarker( state.blocks, witness.marker );
+}
+
+function hasPersistedOperationWitness(
+	post: RestPost,
+	witness: OperationWitnessInput
+): boolean {
+	if ( witness.scope === 'title' ) {
+		return getRawFieldValue( post.title ).includes( witness.marker );
+	}
+
+	return getRawFieldValue( post.content ).includes( witness.marker );
+}
+
+function recordOperationMissingExample(
+	ledger: OperationLedgerState,
+	entry: OperationLedgerEntry,
+	phase: string
+) {
+	if ( ledger.missingExamples.length >= 20 ) {
+		return;
+	}
+
+	ledger.missingExamples.push( {
+		actionLabel: entry.actionLabel,
+		markerHash: entry.markerHash,
+		phase,
+		scope: entry.scope,
+		step: entry.step,
+		userIndex: entry.userIndex,
+	} );
+}
+
+function createOperationLedgerFailureMessage(
+	phase: string,
+	missingEntries: OperationLedgerEntry[]
+) {
+	return `RTC operation witness missing during ${ phase }: ${ JSON.stringify(
+		missingEntries.map( ( entry ) => ( {
+			actionLabel: entry.actionLabel,
+			markerHash: entry.markerHash,
+			scope: entry.scope,
+			source: entry.source,
+			step: entry.step,
+			userIndex: entry.userIndex,
+		} ) )
+	) }`;
+}
+
+function refreshOperationLedgerMaxLive( ledger: OperationLedgerState ) {
+	ledger.maxLive = Math.max(
+		ledger.maxLive,
+		getLiveOperationLedgerEntries( ledger ).length
+	);
+}
+
+function invalidateOperationLedgerScope( {
+	actionLabel,
+	coverage,
+	ledger,
+	phase,
+	reason,
+	scope,
+	step,
+	userIndex,
+}: {
+	actionLabel: string;
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	phase: string;
+	reason: string;
+	scope: OperationWitnessInput[ 'scope' ];
+	step?: number;
+	userIndex?: number;
+} ) {
+	if ( ledger.mode === 'off' ) {
+		return;
+	}
+
+	const liveEntries = getLiveOperationLedgerEntries( ledger, scope );
+
+	if ( liveEntries.length === 0 ) {
+		return;
+	}
+
+	ledger.invalidatedByAction[ actionLabel ] =
+		( ledger.invalidatedByAction[ actionLabel ] ?? 0 ) + liveEntries.length;
+
+	for ( const entry of liveEntries ) {
+		entry.status = 'invalidated';
+		recordOperationEvent( coverage, {
+			actionLabel,
+			details: { reason },
+			markerHash: entry.markerHash,
+			phase,
+			scope: entry.scope,
+			status: 'invalidated',
+			step,
+			userIndex,
+		} );
+	}
+}
+
+function retireTitleOperationLedgerEntries( {
+	actionLabel,
+	coverage,
+	ledger,
+	phase,
+	step,
+	userIndex,
+}: {
+	actionLabel: string;
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	phase: string;
+	step?: number;
+	userIndex?: number;
+} ) {
+	for ( const entry of getLiveOperationLedgerEntries( ledger, 'title' ) ) {
+		entry.status = 'retired';
+		recordOperationEvent( coverage, {
+			actionLabel,
+			details: { reason: 'title-overwrite' },
+			markerHash: entry.markerHash,
+			phase,
+			scope: entry.scope,
+			status: 'retired',
+			step,
+			userIndex,
+		} );
+	}
+}
+
+function enforceOperationLedgerLiveCap( {
+	coverage,
+	ledger,
+	phase,
+	step,
+	userIndex,
+}: {
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	phase: string;
+	step?: number;
+	userIndex?: number;
+} ) {
+	if ( MAX_OPERATION_LEDGER_LIVE === 0 ) {
+		invalidateOperationLedgerScope( {
+			actionLabel: 'ledger-live-cap',
+			coverage,
+			ledger,
+			phase,
+			reason: 'ledger-live-cap',
+			scope: 'content',
+			step,
+			userIndex,
+		} );
+		invalidateOperationLedgerScope( {
+			actionLabel: 'ledger-live-cap',
+			coverage,
+			ledger,
+			phase,
+			reason: 'ledger-live-cap',
+			scope: 'title',
+			step,
+			userIndex,
+		} );
+		return;
+	}
+
+	while (
+		getLiveOperationLedgerEntries( ledger ).length >
+		MAX_OPERATION_LEDGER_LIVE
+	) {
+		const oldestEntry = getLiveOperationLedgerEntries( ledger )[ 0 ];
+		if ( ! oldestEntry ) {
+			return;
+		}
+
+		oldestEntry.status = 'invalidated';
+		ledger.invalidatedByAction[ 'ledger-live-cap' ] =
+			( ledger.invalidatedByAction[ 'ledger-live-cap' ] ?? 0 ) + 1;
+		recordOperationEvent( coverage, {
+			actionLabel: 'ledger-live-cap',
+			details: { reason: 'ledger-live-cap' },
+			markerHash: oldestEntry.markerHash,
+			phase,
+			scope: oldestEntry.scope,
+			status: 'invalidated',
+			step,
+			userIndex,
+		} );
+	}
+}
+
+function acknowledgeOperationWitnesses( {
+	actionLabel,
+	coverage,
+	ledger,
+	phase,
+	state,
+	step,
+	userIndex,
+	witnesses,
+}: {
+	actionLabel: string;
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	phase: string;
+	state: CollaborativeState;
+	step?: number;
+	userIndex?: number;
+	witnesses: OperationWitnessInput[];
+} ) {
+	if ( ledger.mode === 'off' || witnesses.length === 0 ) {
+		return;
+	}
+
+	const missingEntries: OperationLedgerEntry[] = [];
+
+	for ( const witness of witnesses ) {
+		const entry: OperationLedgerEntry = {
+			...witness,
+			actionLabel,
+			markerHash: hashOperationMarker( witness.marker ),
+			phase,
+			status: 'live',
+			step,
+			userIndex,
+		};
+
+		if ( ! hasOperationWitness( state, witness ) ) {
+			entry.status = 'missing';
+			ledger.entries.push( entry );
+			missingEntries.push( entry );
+			recordOperationMissingExample( ledger, entry, phase );
+			recordOperationEvent( coverage, {
+				actionLabel,
+				markerHash: entry.markerHash,
+				phase,
+				scope: entry.scope,
+				status: 'missing',
+				step,
+				userIndex,
+			} );
+			continue;
+		}
+
+		if ( witness.scope === 'title' ) {
+			retireTitleOperationLedgerEntries( {
+				actionLabel,
+				coverage,
+				ledger,
+				phase,
+				step,
+				userIndex,
+			} );
+		}
+
+		ledger.entries.push( entry );
+		recordOperationEvent( coverage, {
+			actionLabel,
+			markerHash: entry.markerHash,
+			phase,
+			scope: entry.scope,
+			status: 'witnessed',
+			step,
+			userIndex,
+		} );
+	}
+
+	enforceOperationLedgerLiveCap( {
+		coverage,
+		ledger,
+		phase,
+		step,
+		userIndex,
+	} );
+	refreshOperationLedgerMaxLive( ledger );
+
+	if ( missingEntries.length > 0 && ledger.mode === 'fail' ) {
+		throw new Error(
+			createOperationLedgerFailureMessage( phase, missingEntries )
+		);
+	}
+}
+
+function assertOperationLedgerPreserved( {
+	coverage,
+	ledger,
+	phase,
+	state,
+	step,
+}: {
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	phase: string;
+	state: CollaborativeState;
+	step?: number;
+} ) {
+	if ( ledger.mode === 'off' ) {
+		return;
+	}
+
+	const missingEntries: OperationLedgerEntry[] = [];
+
+	for ( const entry of getLiveOperationLedgerEntries( ledger ) ) {
+		if ( hasOperationWitness( state, entry ) ) {
+			continue;
+		}
+
+		entry.status = 'missing';
+		missingEntries.push( entry );
+		recordOperationMissingExample( ledger, entry, phase );
+		recordOperationEvent( coverage, {
+			actionLabel: entry.actionLabel,
+			markerHash: entry.markerHash,
+			phase,
+			scope: entry.scope,
+			status: 'missing',
+			step,
+			userIndex: entry.userIndex,
+		} );
+	}
+
+	if ( missingEntries.length === 0 ) {
+		recordOperationEvent( coverage, {
+			details: {
+				live: getLiveOperationLedgerEntries( ledger ).length,
+			},
+			phase,
+			status: 'assert-ok',
+			step,
+		} );
+		return;
+	}
+
+	if ( ledger.mode === 'fail' ) {
+		throw new Error(
+			createOperationLedgerFailureMessage( phase, missingEntries )
+		);
+	}
+}
+
+async function assertOperationLedgerPersisted( {
+	coverage,
+	ledger,
+	phase,
+	postId,
+	requestUtils,
+	step,
+}: {
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	phase: string;
+	postId: number;
+	requestUtils: RestRequestUtils;
+	step?: number;
+} ) {
+	if ( ledger.mode === 'off' ) {
+		return;
+	}
+
+	const post = await getPersistedPost( requestUtils, postId );
+	const missingEntries: OperationLedgerEntry[] = [];
+
+	for ( const entry of getLiveOperationLedgerEntries( ledger ) ) {
+		if ( hasPersistedOperationWitness( post, entry ) ) {
+			continue;
+		}
+
+		entry.status = 'missing';
+		missingEntries.push( entry );
+		recordOperationMissingExample( ledger, entry, phase );
+		recordOperationEvent( coverage, {
+			actionLabel: entry.actionLabel,
+			markerHash: entry.markerHash,
+			phase,
+			scope: entry.scope,
+			status: 'missing',
+			step,
+			userIndex: entry.userIndex,
+		} );
+	}
+
+	if ( missingEntries.length === 0 ) {
+		recordOperationEvent( coverage, {
+			details: {
+				live: getLiveOperationLedgerEntries( ledger ).length,
+			},
+			phase,
+			status: 'assert-ok',
+			step,
+		} );
+		return;
+	}
+
+	if ( ledger.mode === 'fail' ) {
+		throw new Error(
+			createOperationLedgerFailureMessage( phase, missingEntries )
+		);
+	}
+}
+
+const CONTENT_OPERATION_LEDGER_INVALIDATING_ACTIONS = new Set( [
+	'append-parser-stress-content',
+	'delete-block',
+	'delete-nested-block',
+	'edit-block-gauntlet-attributes',
+	'edit-common-block-attributes',
+	'edit-formatted-paragraph-at-cursor',
+	'edit-nested-paragraph',
+	'edit-paragraph',
+	'edit-rich-text-pair-block',
+	'edit-table-array-attributes',
+	'reparse-edited-content',
+] );
+
+function invalidateOperationLedgerAfterAction( {
+	actionLabel,
+	coverage,
+	ledger,
+	step,
+	userIndex,
+}: {
+	actionLabel: string;
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	step: number;
+	userIndex: number;
+} ) {
+	if ( ! CONTENT_OPERATION_LEDGER_INVALIDATING_ACTIONS.has( actionLabel ) ) {
+		return;
+	}
+
+	invalidateOperationLedgerScope( {
+		actionLabel,
+		coverage,
+		ledger,
+		phase: 'post-action-invalidate',
+		reason: 'ambiguous-content-target',
+		scope: 'content',
+		step,
+		userIndex,
+	} );
 }
 
 function getBlockStats( blocks: Array< any > ) {
@@ -521,6 +1313,424 @@ function getBlockStats( blocks: Array< any > ) {
 		totalBlocks,
 		types: Object.keys( counts ).sort(),
 	};
+}
+
+function allowsParserTransformContent( coverage: BehaviorCoverage ): boolean {
+	return (
+		! coverage.disableParserStress &&
+		( coverage.actionProfile === 'parser-transform' ||
+			coverage.actionProfile === 'parser-serialization' ||
+			! coverage.initialContentProfile.startsWith( 'base-' ) ||
+			coverage.actions.some(
+				( action ) =>
+					action.label === 'append-parser-stress-content' ||
+					action.label === 'reparse-edited-content'
+			) )
+	);
+}
+
+async function assertEditorInvariants( {
+	coverage,
+	pages,
+	phase,
+	requireCrossPageMatch = true,
+	step,
+}: {
+	coverage: BehaviorCoverage;
+	pages: PageRef[];
+	phase: string;
+	requireCrossPageMatch?: boolean;
+	step?: number;
+} ) {
+	const rawSnapshots = await Promise.all(
+		pages.map( async ( { page, userIndex }, pageIndex ) => ( {
+			pageIndex,
+			raw: await page.evaluate( () => {
+				const wp = ( window as any ).wp;
+				const blocks = wp.data
+					.select( 'core/block-editor' )
+					.getBlocks();
+				const editor = wp.data.select( 'core/editor' );
+				const seenClientIds = new Set< string >();
+				const duplicateClientIds = new Set< string >();
+				const blockTypes = new Set< string >();
+				const invalidBlocks: Array< {
+					clientId?: string;
+					name?: string;
+				} > = [];
+				let malformedInnerBlockCount = 0;
+				let maxDepth = 0;
+				let missingClientIdCount = 0;
+				let objectObjectStringCount = 0;
+				let totalBlockCount = 0;
+
+				const countObjectObjectStrings = ( value: unknown ) => {
+					if ( typeof value === 'string' ) {
+						if ( value.includes( '[object Object]' ) ) {
+							objectObjectStringCount += 1;
+						}
+						return;
+					}
+
+					if ( Array.isArray( value ) ) {
+						for ( const item of value ) {
+							countObjectObjectStrings( item );
+						}
+						return;
+					}
+
+					if ( value && typeof value === 'object' ) {
+						for ( const item of Object.values(
+							value as Record< string, unknown >
+						) ) {
+							countObjectObjectStrings( item );
+						}
+					}
+				};
+
+				const visit = (
+					currentBlocks: Array< any >,
+					depth: number
+				) => {
+					maxDepth = Math.max( maxDepth, depth );
+
+					for ( const block of currentBlocks ) {
+						totalBlockCount += 1;
+						blockTypes.add( block.name );
+
+						if ( block.clientId ) {
+							if ( seenClientIds.has( block.clientId ) ) {
+								duplicateClientIds.add( block.clientId );
+							}
+							seenClientIds.add( block.clientId );
+						} else {
+							missingClientIdCount += 1;
+						}
+
+						if ( block.isValid === false ) {
+							invalidBlocks.push( {
+								clientId: block.clientId,
+								name: block.name,
+							} );
+						}
+
+						countObjectObjectStrings( block.attributes ?? {} );
+						if (
+							block.innerBlocks !== undefined &&
+							! Array.isArray( block.innerBlocks )
+						) {
+							malformedInnerBlockCount += 1;
+						}
+						visit(
+							Array.isArray( block.innerBlocks )
+								? block.innerBlocks
+								: [],
+							depth + 1
+						);
+					}
+				};
+
+				visit( blocks, 0 );
+
+				const snapshot: RawEditorInvariantSnapshot = {
+					blockTypes: [ ...blockTypes ].sort(),
+					duplicateClientIds: [ ...duplicateClientIds ].sort(),
+					invalidBlocks,
+					malformedInnerBlockCount,
+					maxDepth,
+					missingClientIdCount,
+					objectObjectStringCount,
+					rootBlockCount: blocks.length,
+					totalBlockCount,
+				};
+
+				try {
+					snapshot.serializedContent = wp.blocks.serialize( blocks );
+					snapshot.editedContent =
+						editor.getEditedPostContent() ?? '';
+					snapshot.canonicalSerializedContent = wp.blocks.serialize(
+						wp.blocks.parse( snapshot.serializedContent )
+					);
+					snapshot.canonicalEditedContent = wp.blocks.serialize(
+						wp.blocks.parse( snapshot.editedContent )
+					);
+				} catch ( error ) {
+					snapshot.serializationError =
+						error instanceof Error
+							? error.stack ?? error.message
+							: String( error );
+				}
+
+				return snapshot;
+			} ),
+			userIndex,
+		} ) )
+	);
+	const snapshots: BehaviorInvariantSnapshot[] = rawSnapshots.map(
+		( { pageIndex, raw, userIndex } ) => ( {
+			blockTypes: raw.blockTypes,
+			canonicalEditedContentHash: raw.canonicalEditedContent
+				? hashString( raw.canonicalEditedContent )
+				: undefined,
+			canonicalRoundTripStable:
+				raw.serializedContent !== undefined &&
+				raw.canonicalSerializedContent !== undefined
+					? raw.serializedContent === raw.canonicalSerializedContent
+					: undefined,
+			canonicalSerializedContentHash: raw.canonicalSerializedContent
+				? hashString( raw.canonicalSerializedContent )
+				: undefined,
+			duplicateClientIds: raw.duplicateClientIds,
+			editedContentHash: raw.editedContent
+				? hashString( raw.editedContent )
+				: undefined,
+			editedContentLength: raw.editedContent?.length,
+			editedMatchesSerializedCanonical:
+				raw.canonicalEditedContent !== undefined &&
+				raw.canonicalSerializedContent !== undefined
+					? raw.canonicalEditedContent ===
+					  raw.canonicalSerializedContent
+					: undefined,
+			invalidBlockCount: raw.invalidBlocks.length,
+			malformedInnerBlockCount: raw.malformedInnerBlockCount,
+			maxDepth: raw.maxDepth,
+			missingClientIdCount: raw.missingClientIdCount,
+			objectObjectStringCount: raw.objectObjectStringCount,
+			pageIndex,
+			phase,
+			rootBlockCount: raw.rootBlockCount,
+			serializationError: raw.serializationError,
+			serializedContentHash: raw.serializedContent
+				? hashString( raw.serializedContent )
+				: undefined,
+			serializedContentLength: raw.serializedContent?.length,
+			step,
+			totalBlockCount: raw.totalBlockCount,
+			userIndex,
+		} )
+	);
+	coverage.invariantSnapshots.push( ...snapshots );
+
+	const strictParserContent = ! allowsParserTransformContent( coverage );
+	const failures: Array< {
+		details?: Record< string, unknown >;
+		name: string;
+	} > = [];
+	const serializationErrors = snapshots.filter(
+		( snapshot ) => snapshot.serializationError
+	);
+	const duplicateClientIds = snapshots.filter(
+		( snapshot ) => snapshot.duplicateClientIds.length > 0
+	);
+	const missingClientIds = snapshots.filter(
+		( snapshot ) => snapshot.missingClientIdCount > 0
+	);
+	const malformedInnerBlocks = snapshots.filter(
+		( snapshot ) => snapshot.malformedInnerBlockCount > 0
+	);
+	const objectObjectStrings = snapshots.filter(
+		( snapshot ) => snapshot.objectObjectStringCount > 0
+	);
+	const invalidBlocks = snapshots.filter(
+		( snapshot ) => snapshot.invalidBlockCount > 0
+	);
+	const roundTripChanges = snapshots.filter(
+		( snapshot ) => snapshot.canonicalRoundTripStable === false
+	);
+	const editedStoreMismatches = snapshots.filter(
+		( snapshot ) => snapshot.editedMatchesSerializedCanonical === false
+	);
+	let exactSerializedDivergences: BehaviorInvariantSnapshot[] = [];
+	let canonicalSerializedDivergences: BehaviorInvariantSnapshot[] = [];
+	let canonicalEditedDivergences: BehaviorInvariantSnapshot[] = [];
+	let exactEditedDivergences: BehaviorInvariantSnapshot[] = [];
+
+	if ( serializationErrors.length > 0 ) {
+		failures.push( {
+			details: { pages: serializationErrors },
+			name: 'serialize-parse-current-blocks',
+		} );
+	}
+
+	if ( duplicateClientIds.length > 0 ) {
+		failures.push( {
+			details: { pages: duplicateClientIds },
+			name: 'unique-client-ids',
+		} );
+	}
+
+	if ( missingClientIds.length > 0 ) {
+		failures.push( {
+			details: { pages: missingClientIds },
+			name: 'non-empty-client-ids',
+		} );
+	}
+
+	if ( malformedInnerBlocks.length > 0 ) {
+		failures.push( {
+			details: { pages: malformedInnerBlocks },
+			name: 'inner-blocks-are-arrays',
+		} );
+	}
+
+	if ( strictParserContent && objectObjectStrings.length > 0 ) {
+		failures.push( {
+			details: { pages: objectObjectStrings },
+			name: 'no-object-object-strings',
+		} );
+	}
+
+	if ( strictParserContent && invalidBlocks.length > 0 ) {
+		failures.push( {
+			details: { pages: invalidBlocks },
+			name: 'unexpected-invalid-blocks',
+		} );
+	}
+
+	if ( strictParserContent && roundTripChanges.length > 0 ) {
+		failures.push( {
+			details: { pages: roundTripChanges },
+			name: 'serialize-parse-roundtrip-stable',
+		} );
+	}
+
+	if ( strictParserContent && editedStoreMismatches.length > 0 ) {
+		failures.push( {
+			details: { pages: editedStoreMismatches },
+			name: 'edited-content-matches-block-store',
+		} );
+	}
+
+	if ( requireCrossPageMatch && serializationErrors.length === 0 ) {
+		const firstSerialized = rawSnapshots[ 0 ]?.raw.serializedContent;
+		const firstCanonicalSerialized =
+			rawSnapshots[ 0 ]?.raw.canonicalSerializedContent;
+		const firstCanonicalEdited =
+			rawSnapshots[ 0 ]?.raw.canonicalEditedContent;
+		const firstEdited = rawSnapshots[ 0 ]?.raw.editedContent;
+		exactSerializedDivergences = snapshots.filter(
+			( snapshot, index ) =>
+				rawSnapshots[ index ].raw.serializedContent !== firstSerialized
+		);
+		canonicalSerializedDivergences = snapshots.filter(
+			( snapshot, index ) =>
+				rawSnapshots[ index ].raw.canonicalSerializedContent !==
+				firstCanonicalSerialized
+		);
+		canonicalEditedDivergences = snapshots.filter(
+			( snapshot, index ) =>
+				rawSnapshots[ index ].raw.canonicalEditedContent !==
+				firstCanonicalEdited
+		);
+		exactEditedDivergences = snapshots.filter(
+			( snapshot, index ) =>
+				rawSnapshots[ index ].raw.editedContent !== firstEdited
+		);
+
+		if ( canonicalSerializedDivergences.length > 0 ) {
+			failures.push( {
+				details: { pages: canonicalSerializedDivergences },
+				name: 'cross-page-canonical-serialized-content',
+			} );
+		}
+
+		if ( canonicalEditedDivergences.length > 0 ) {
+			failures.push( {
+				details: { pages: canonicalEditedDivergences },
+				name: 'cross-page-canonical-edited-content',
+			} );
+		}
+
+		if ( strictParserContent && exactEditedDivergences.length > 0 ) {
+			failures.push( {
+				details: { pages: exactEditedDivergences },
+				name: 'cross-page-exact-edited-content',
+			} );
+		}
+	}
+
+	const recordCheck = (
+		name: string,
+		status: BehaviorInvariantEvent[ 'status' ],
+		details?: Record< string, unknown >
+	) => {
+		recordInvariantEvent( coverage, {
+			details,
+			name,
+			phase,
+			status,
+			step,
+		} );
+	};
+	const parserStressStatus = ( hasSignal: boolean ) => {
+		if ( ! hasSignal ) {
+			return 'ok';
+		}
+
+		return strictParserContent ? 'fail' : 'observed';
+	};
+
+	recordCheck(
+		'serialize-parse-current-blocks',
+		serializationErrors.length > 0 ? 'fail' : 'ok'
+	);
+	recordCheck(
+		'unique-client-ids',
+		duplicateClientIds.length > 0 ? 'fail' : 'ok'
+	);
+	recordCheck(
+		'non-empty-client-ids',
+		missingClientIds.length > 0 ? 'fail' : 'ok'
+	);
+	recordCheck(
+		'inner-blocks-are-arrays',
+		malformedInnerBlocks.length > 0 ? 'fail' : 'ok'
+	);
+	recordCheck(
+		'no-object-object-strings',
+		parserStressStatus( objectObjectStrings.length > 0 )
+	);
+	recordCheck(
+		'unexpected-invalid-blocks',
+		parserStressStatus( invalidBlocks.length > 0 ),
+		invalidBlocks.length > 0
+			? { invalidBlockCount: invalidBlocks.length }
+			: undefined
+	);
+	recordCheck(
+		'serialize-parse-roundtrip-stable',
+		parserStressStatus( roundTripChanges.length > 0 )
+	);
+	recordCheck(
+		'edited-content-matches-block-store',
+		parserStressStatus( editedStoreMismatches.length > 0 )
+	);
+	if ( requireCrossPageMatch ) {
+		recordCheck(
+			'cross-page-exact-serialized-content',
+			exactSerializedDivergences.length > 0 ? 'observed' : 'ok'
+		);
+		recordCheck(
+			'cross-page-canonical-serialized-content',
+			canonicalSerializedDivergences.length > 0 ? 'fail' : 'ok'
+		);
+		recordCheck(
+			'cross-page-canonical-edited-content',
+			canonicalEditedDivergences.length > 0 ? 'fail' : 'ok'
+		);
+		recordCheck(
+			'cross-page-exact-edited-content',
+			parserStressStatus( exactEditedDivergences.length > 0 )
+		);
+	}
+
+	if ( failures.length > 0 ) {
+		throw new Error(
+			`RTC editor invariant failure during ${ phase }${
+				step === undefined ? '' : ` step ${ step }`
+			}: ${ JSON.stringify( failures ) }`
+		);
+	}
 }
 
 async function writeBehaviorCoverage( coverage: BehaviorCoverage ) {
@@ -1250,9 +2460,14 @@ async function insertParagraph(
 	const index = append
 		? blocks.length
 		: Math.floor( rng() * ( blocks.length + 1 ) );
-	const content = `Seed ${ seed } step ${ step } user ${ userIndex } paragraph ${ Math.floor(
-		rng() * 1000000
-	) }`;
+	const marker = createOperationMarker( {
+		kind: append ? 'append-paragraph' : 'insert-paragraph',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const content = `${ marker } paragraph`;
 
 	await page.evaluate(
 		( { blockIndex, blockContent } ) => {
@@ -1268,6 +2483,13 @@ async function insertParagraph(
 		},
 		{ blockIndex: index, blockContent: content }
 	);
+
+	return [
+		createContentWitness(
+			marker,
+			append ? 'append-paragraph' : 'insert-paragraph'
+		),
+	];
 }
 
 async function insertCheckpointMarker( page: Page, marker: string ) {
@@ -1316,7 +2538,14 @@ async function insertHeading(
 	const blocks = await getTopLevelBlocks( page );
 	const level = pick( rng, [ 2, 3, 4 ] );
 	const index = Math.floor( rng() * ( blocks.length + 1 ) );
-	const content = `Seed ${ seed } step ${ step } user ${ userIndex } heading`;
+	const marker = createOperationMarker( {
+		kind: 'insert-heading',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const content = `${ marker } heading`;
 
 	await page.evaluate(
 		( { blockContent, blockIndex, headingLevel } ) => {
@@ -1337,6 +2566,8 @@ async function insertHeading(
 			headingLevel: level,
 		}
 	);
+
+	return [ createContentWitness( marker, 'insert-heading' ) ];
 }
 
 async function editExistingParagraph(
@@ -1434,19 +2665,26 @@ async function insertNestedGroup(
 ) {
 	const blocks = await getTopLevelBlocks( page );
 	const index = Math.floor( rng() * ( blocks.length + 1 ) );
+	const marker = createOperationMarker( {
+		kind: 'insert-nested-group',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
 
 	await page.evaluate(
-		( { blockIndex, marker } ) => {
+		( { blockIndex, groupMarker } ) => {
 			const paragraphBlock = ( window as any ).wp.blocks.createBlock(
 				'core/paragraph',
 				{
-					content: `${ marker } nested paragraph`,
+					content: `${ groupMarker } nested paragraph`,
 				}
 			);
 			const headingBlock = ( window as any ).wp.blocks.createBlock(
 				'core/heading',
 				{
-					content: `${ marker } nested heading`,
+					content: `${ groupMarker } nested heading`,
 					level: 3,
 				}
 			);
@@ -1464,9 +2702,11 @@ async function insertNestedGroup(
 		},
 		{
 			blockIndex: index,
-			marker: `Seed ${ seed } step ${ step } user ${ userIndex }`,
+			groupMarker: marker,
 		}
 	);
+
+	return [ createContentWitness( marker, 'insert-nested-group' ) ];
 }
 
 async function editNestedParagraph(
@@ -1622,6 +2862,14 @@ async function editTitle(
 	userIndex: number,
 	rng: Random
 ) {
+	const marker = createOperationMarker( {
+		kind: 'edit-title',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+
 	await page.evaluate(
 		( { title } ) => {
 			( window as any ).wp.data
@@ -1629,11 +2877,11 @@ async function editTitle(
 				.editPost( { title } );
 		},
 		{
-			title: `RTC seed ${ seed } step ${ step } user ${ userIndex } title ${ Math.floor(
-				rng() * 1000000
-			) }`,
+			title: `${ marker } title`,
 		}
 	);
+
+	return [ createTitleWitness( marker, 'edit-title' ) ];
 }
 
 async function insertConcurrentParagraphs(
@@ -1642,12 +2890,21 @@ async function insertConcurrentParagraphs(
 	step: number,
 	rng: Random
 ) {
-	const payloads = pages.map( ( { page, userIndex } ) => ( {
-		page,
-		content: `Seed ${ seed } step ${ step } user ${ userIndex } concurrent paragraph ${ Math.floor(
-			rng() * 1000000
-		) }`,
-	} ) );
+	const payloads = pages.map( ( { page, userIndex } ) => {
+		const marker = createOperationMarker( {
+			kind: 'concurrent-paragraphs',
+			seed,
+			step,
+			suffix: Math.floor( rng() * 1000000 ),
+			userIndex,
+		} );
+
+		return {
+			marker,
+			page,
+			content: `${ marker } concurrent paragraph`,
+		};
+	} );
 
 	await Promise.all(
 		payloads.map( async ( { page, content } ) => {
@@ -1666,6 +2923,10 @@ async function insertConcurrentParagraphs(
 				{ blockContent: content }
 			);
 		} )
+	);
+
+	return payloads.map( ( { marker } ) =>
+		createContentWitness( marker, 'concurrent-paragraphs' )
 	);
 }
 
@@ -3194,9 +4455,10 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 
 			const rng = createRng( seed );
 			const behavior = createBehaviorCoverage( seed );
+			const operationLedger = createOperationLedger( behavior );
 			let pages: PageRef[] = [];
 			let cdpSessions: CdpSession[] = [];
-			let lastState: { blocks?: Array< any > } | null = null;
+			let lastState: CollaborativeState | null = null;
 
 			try {
 				recordHistory( behavior, {
@@ -3250,6 +4512,11 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 
 				pages = getPageRefs( collaborationUtils );
 				behavior.userCount = pages.length;
+				await assertEditorInvariants( {
+					coverage: behavior,
+					pages,
+					phase: 'initial-convergence',
+				} );
 				cdpSessions = await startCdpCoverage( pages );
 
 				const usedMilestones = new Set< number >();
@@ -3329,6 +4596,18 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 							status: 'ok',
 							step,
 						} );
+						const lateJoinState =
+							await collaborationUtils.waitForConvergence( {
+								timeout: CONVERGENCE_TIMEOUT_MS,
+							} );
+						lastState = lateJoinState;
+						assertOperationLedgerPreserved( {
+							coverage: behavior,
+							ledger: operationLedger,
+							phase: 'late-join-convergence',
+							state: lateJoinState,
+							step,
+						} );
 						cdpSessions.push(
 							...( await startCdpCoverage(
 								pages.slice( previousPageCount )
@@ -3400,16 +4679,18 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						userIndex: actor.userIndex,
 					} );
 
+					let operationWitnesses: OperationWitnessInput[] = [];
 					try {
 						await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
-							await action.run(
-								actor.page,
-								seed,
-								step,
-								actor.userIndex,
-								rng,
-								pages
-							);
+							operationWitnesses =
+								( await action.run(
+									actor.page,
+									seed,
+									step,
+									actor.userIndex,
+									rng,
+									pages
+								) ) ?? [];
 						} );
 
 						recordHistory( behavior, {
@@ -3453,6 +4734,36 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					}
 					lastState = state;
 					expect( state.blocks.length ).toBeGreaterThan( 0 );
+					invalidateOperationLedgerAfterAction( {
+						actionLabel: action.label,
+						coverage: behavior,
+						ledger: operationLedger,
+						step,
+						userIndex: actor.userIndex,
+					} );
+					acknowledgeOperationWitnesses( {
+						actionLabel: action.label,
+						coverage: behavior,
+						ledger: operationLedger,
+						phase: 'post-action-convergence',
+						state,
+						step,
+						userIndex: actor.userIndex,
+						witnesses: operationWitnesses,
+					} );
+					assertOperationLedgerPreserved( {
+						coverage: behavior,
+						ledger: operationLedger,
+						phase: 'post-action-convergence',
+						state,
+						step,
+					} );
+					await assertEditorInvariants( {
+						coverage: behavior,
+						pages,
+						phase: 'post-action-convergence',
+						step,
+					} );
 
 					if ( saveSteps.has( step ) ) {
 						const saver = pick( rng, pages );
@@ -3495,6 +4806,46 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 								status: 'ok',
 								step,
 								userIndex: saver.userIndex,
+							} );
+							await assertEditorInvariants( {
+								coverage: behavior,
+								pages,
+								phase: 'save-checkpoint-convergence',
+								step,
+							} );
+							const checkpointState =
+								await collaborationUtils.waitForConvergence( {
+									includeCrdtDocument: true,
+									timeout: CONVERGENCE_TIMEOUT_MS,
+								} );
+							lastState = checkpointState;
+							acknowledgeOperationWitnesses( {
+								actionLabel: 'save-checkpoint',
+								coverage: behavior,
+								ledger: operationLedger,
+								phase: 'save-checkpoint-convergence',
+								state: checkpointState,
+								step,
+								userIndex: saver.userIndex,
+								witnesses:
+									getCheckpointOperationWitnesses(
+										checkpoint
+									),
+							} );
+							assertOperationLedgerPreserved( {
+								coverage: behavior,
+								ledger: operationLedger,
+								phase: 'save-checkpoint-convergence',
+								state: checkpointState,
+								step,
+							} );
+							await assertOperationLedgerPersisted( {
+								coverage: behavior,
+								ledger: operationLedger,
+								phase: 'save-checkpoint-persisted',
+								postId: post.id,
+								requestUtils,
+								step,
 							} );
 						} catch ( error ) {
 							recordHistory( behavior, {
@@ -3540,6 +4891,19 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 								status: 'ok',
 								step,
 								userIndex: reloader.userIndex,
+							} );
+							await assertEditorInvariants( {
+								coverage: behavior,
+								pages,
+								phase: 'reload-convergence',
+								step,
+							} );
+							assertOperationLedgerPreserved( {
+								coverage: behavior,
+								ledger: operationLedger,
+								phase: 'reload-convergence',
+								state: reloadedState,
+								step,
 							} );
 						} catch ( error ) {
 							recordHistory( behavior, {
@@ -3592,6 +4956,17 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				}
 				lastState = finalState;
 				behavior.blockStats = getBlockStats( finalState.blocks );
+				await assertEditorInvariants( {
+					coverage: behavior,
+					pages,
+					phase: 'final-convergence',
+				} );
+				assertOperationLedgerPreserved( {
+					coverage: behavior,
+					ledger: operationLedger,
+					phase: 'final-convergence',
+					state: finalState,
+				} );
 
 				expect( finalState.title ).not.toBe( '' );
 				expect( finalState.blocks.length ).toBeGreaterThan( 0 );
@@ -3616,6 +4991,51 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						requestUtils,
 						restorer: pick( rng, pages ),
 					} );
+					await assertEditorInvariants( {
+						coverage: behavior,
+						pages,
+						phase: 'revision-restore-convergence',
+					} );
+					if ( behavior.revisionRestore.eligible ) {
+						const restoredState =
+							await collaborationUtils.waitForConvergence( {
+								includeCrdtDocument: true,
+								timeout: CONVERGENCE_TIMEOUT_MS,
+							} );
+						lastState = restoredState;
+						invalidateOperationLedgerScope( {
+							actionLabel: 'revision-restore',
+							coverage: behavior,
+							ledger: operationLedger,
+							phase: 'revision-restore-convergence',
+							reason: 'document-restored-to-earlier-revision',
+							scope: 'content',
+						} );
+						invalidateOperationLedgerScope( {
+							actionLabel: 'revision-restore',
+							coverage: behavior,
+							ledger: operationLedger,
+							phase: 'revision-restore-convergence',
+							reason: 'document-restored-to-earlier-revision',
+							scope: 'title',
+						} );
+						acknowledgeOperationWitnesses( {
+							actionLabel: 'revision-restore',
+							coverage: behavior,
+							ledger: operationLedger,
+							phase: 'revision-restore-convergence',
+							state: restoredState,
+							witnesses: getCheckpointOperationWitnesses(
+								saveCheckpoints[ 0 ]
+							),
+						} );
+						assertOperationLedgerPreserved( {
+							coverage: behavior,
+							ledger: operationLedger,
+							phase: 'revision-restore-convergence',
+							state: restoredState,
+						} );
+					}
 					recordHistory( behavior, {
 						details: {
 							eligible: behavior.revisionRestore.eligible,
@@ -3653,6 +5073,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					behavior.blockStats = getBlockStats( lastState.blocks );
 				}
 				behavior.cdpCoverage = await stopCdpCoverage( cdpSessions );
+				updateOperationLedgerSummary( behavior, operationLedger );
 				await writeBehaviorCoverage( behavior ).catch( () => {} );
 			}
 		} );

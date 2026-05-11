@@ -364,6 +364,29 @@ Important runner defaults and controls:
 -   `RTC_FUZZ_STEP_COUNT=12`: current default action depth.
 -   `RTC_FUZZ_ACTION_PROFILE` or `GUTENBERG_RTC_BROWSER_ACTION_PROFILE`: use `full`, `persistence`, `structure`, or `session-lifecycle`.
 -   `GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE=1`: collect Chrome coverage for novelty-guided runs.
+-   `GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE=auto`: track semantic
+    witness markers for low-noise operations. `auto` hard-fails only on
+    low-noise/parser-stress-free profiles and records shadow-only observations
+    elsewhere. Set `fail`, `shadow`, or `off` explicitly when comparing modes.
+-   `GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE=128`: cap the number of
+    live witness markers checked after convergence, reload, save, and revision
+    restore.
+
+The operation ledger is deliberately narrow. It creates deterministic ASCII
+witness markers for low-noise actions such as paragraph/heading insertion,
+nested group insertion, concurrent paragraph insertion, title writes, and save
+checkpoints. A marker is acknowledged only after the user action returns,
+collaboration convergence succeeds, and the normalized editor state contains
+the marker. Later convergence, reload, save-persistence, late-join, final-state,
+and revision-restore checks verify that still-live witnesses survive. Broad
+parser, common-block, block-gauntlet, edit, and delete actions invalidate the
+relevant content scope instead of guessing causal targets. Title witnesses use a
+last-writer-wins rule: a new witnessed title retires older live title witnesses.
+
+Coverage output includes compact `operationLedger` summary fields and
+`operationEvents` with marker hashes only. Do not add raw marker strings to
+novelty keys; unique marker bodies would make novelty look better without
+improving coverage.
 
 Current focused action profiles:
 
