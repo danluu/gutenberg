@@ -22,10 +22,10 @@ top-level Paragraph move can omit a remote-only top-level Pullquote from the
 snapshot being merged. The pre-existing stale-local reconciliation handles the
 cached-history path, but the explicit-base path bypasses that reconciliation.
 
-Current `origin/trunk` at `b38f9b4d86d0505199f5efd78c2adf213e428e78` does not
-yet pass `baseRecord` through the same `getSyncManager()?.update()` call, so
-this document tracks a proposed-stack regression risk rather than a directly
-reproduced trunk bug.
+Current `origin/trunk` at `23f840960ebf80b59832a0d724fa1c018e79a186`
+(fetched 2026-05-11) does not yet pass `baseRecord` through the same
+`getSyncManager()?.update()` call, so this document tracks a proposed-stack
+regression risk rather than a directly reproduced trunk bug.
 
 ## Minimal Failing Shape
 
@@ -50,8 +50,8 @@ A pass-175 scratch test showed the boundary:
   Pullquote because cached local history drives stale-block reconciliation.
 - With an explicit `baseRecord`, the remote Pullquote is dropped on
   `f256024286d`.
-- Applying fix commit `c8af86c24a5c70784e4604b66b772a0511859a00` makes both
-  cases pass.
+- Applying the fix hunk carried by PR-branch commit
+  `425764ce85c9183550ba0fb17651e18b0541a461` makes both cases pass.
 
 A pass-176 scratch test moved the proof one level closer to browser behavior.
 It used `SyncManager.update()` and the real post CRDT adapter, then applied a
@@ -62,6 +62,12 @@ race still dropped the Pullquote; after the same fix hunk, it passed. This is
 the natural event ordering a browser user can create by acting on a stale editor
 view immediately after a collaborator's remote update has reached the CRDT
 document.
+
+A pass-177 verification reran the two regression files on the exact May 7
+known-fixes base with only the test commit applied. The cached-history control
+passed, while the explicit-base CRDT case and the `SyncManager.update()` race
+both dropped `remote-pullquote`. The same two files passed on the PR branch
+containing the fix.
 
 ## Root Cause
 
@@ -110,8 +116,8 @@ base snapshot and call it in the explicit-base branch too.
 ## User Impact
 
 Practical likelihood: low for active RTC users of the May 7 proposed-stack
-shape; very low for ordinary single-user Gutenberg and for current trunk as
-inspected here.
+shape; very low for ordinary single-user Gutenberg and for current trunk as of
+2026-05-11.
 
 Natural workflow:
 
