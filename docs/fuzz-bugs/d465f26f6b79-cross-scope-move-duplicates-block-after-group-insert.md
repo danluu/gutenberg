@@ -43,7 +43,9 @@ Strongest evidence against `medium`:
 - The timing needs a live collaboration race or stale/offline tab; single-user editing cannot hit this.
 - Browser drag-into-existing-Group attempts were brittle in Playwright and no-op'd before product assertions, so pass 175 switched to the natural toolbar Group action.
 
-Shortest confidence-improving experiment: run the final Playwright repro once without commit 3 and require it to fail with a duplicate, then run with commit 3. The low-level regression already provides the pre-fix failure signal, but a browser-level before/after pair would remove the remaining UI-route gap.
+Pass 177 follow-up: the natural Playwright test on the PR branch is not a reliable before/after proof. With assets rebuilt from commit 2 (`a2cf9179287`), the browser test passed 6/6 attempts instead of reproducing the duplicate. With assets rebuilt from commit 3 before the pass-177 correction, it failed in two different ways: once the Group move was lost while the stale tail edit survived, and once the Group move survived while the stale tail edit was lost. This means the current browser test is exercising a broader offline/reconnect ordering problem, not just the stale full-snapshot merge isolated by the unit regression.
+
+Shortest confidence-improving experiment: build a browser repro that keeps one peer's editor state stale while the shared CRDT document has already received the other peer's Group move, then force a normal editor edit from the stale peer. That is the browser-level ordering that matches the low-level `baseRecord` regression.
 
 ## Root cause
 
@@ -73,13 +75,15 @@ Jepsen-style correctness check: do not solve duplicates by dropping all remote-o
 
 Dan-Luu-style simplicity/performance check: the fix is still more code than ideal, but it is bounded to block-array reconciliation and uses maps/sets over sibling lists. It avoids global traversal on every attribute and avoids serialized-HTML parsing. The residual risk is semantic ambiguity when client IDs are missing or duplicated; the fix deliberately bails out in those cases rather than guessing.
 
-Revised plan implemented in the PR branch:
+Revised plan implemented in the PR branch and corrected in pass 177:
 
 - Add `baseRecord` plumbing from entity actions through the sync manager into `applyChangesToCRDTDoc()`.
 - Cache previous local block snapshots for no-base callers.
 - Reconcile stale local block values using `baseBlocks` when available, otherwise the previous local cache.
 - Apply reconciliation before the existing structural merge.
 - Keep local attribute changes that differ from the base while adopting current remote structure for unchanged fields.
+
+Pass 177 found that the earlier PR branch had added the optional `baseBlocks` argument and direct unit coverage, but had not actually wired `baseRecord.blocks` through the real editor/sync call path. The PR branch was amended to pass the pre-edit entity record from `editEntityRecord()` through the sync manager and into `applyPostChangesToCRDTDoc()`, and the unit regression now includes a post-entity CRDT-path case.
 
 ## Verification
 
@@ -92,16 +96,17 @@ npm run test:unit packages/core-data/src/utils/test/crdt-d465-pass175-base-recor
 
 Result on `f256024286dd80a4c0e2579f658c109256abf648`: failed one test and passed one test. The no-base route passed, while the `baseBlocks` route failed with an extra stale moved paragraph at root. This is the pass-175 evidence missing from pass 174.
 
-Final PR branch checks:
+Final PR branch checks through pass 177:
 
 ```bash
 cd /Users/danluu/dev/fuzz/gutenberg-bug-d465f26f6b79-pr
 npm run test:unit packages/core-data/src/utils/test/crdt-d465-cross-scope-move.test.ts -- --runInBand
-WP_ENV_PORT=9948 WP_BASE_URL=http://localhost:9948 WP_ENV_PHPMYADMIN_PORT=10048 RTC_MANIFEST_WS_START_PORT=20784 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-d465-cross-scope-move.spec.ts --project=chromium --workers=1
-WP_ENV_PORT=9948 WP_BASE_URL=http://localhost:9948 WP_ENV_PHPMYADMIN_PORT=10048 RTC_MANIFEST_WS_START_PORT=20784 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-d465-cross-scope-move.spec.ts --project=chromium --workers=1 --trace on
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
 ```
 
-Results: all focused final-branch tests passed. After pass 176 strengthened the unit regression, the unit run reports two passing cases: without `baseBlocks` and with `baseBlocks`. The run emitted the existing duplicate-Yjs import warning but passed. The trace-enabled Playwright run produced `test/e2e/artifacts/test-results/editor-collaboration-colla-1b505-agraph-grouped-into-a-Group-chromium/trace.zip`.
+Results: both focused unit suites passed. The d465 unit run now reports three passing cases: without `baseBlocks`, with direct `baseBlocks`, and through the post entity CRDT path. The sync manager suite reports 26 passing tests.
+
+Browser status after pass 177: not PR-ready. The current Playwright test is still valuable as a stress scenario, but it should not be treated as a passing natural repro for this specific fix. After rebuilding assets with the pass-177 corrected fix, the focused browser test still failed under the offline/reconnect schedule with the moved paragraph ending top-level in one run. That does not disprove the low-level bug; it shows the browser repro needs a tighter transport ordering to exercise the intended stale full-snapshot merge.
 
 Annotated stitched video:
 
