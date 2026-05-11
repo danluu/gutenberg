@@ -697,3 +697,52 @@ Pass 177 also re-read the source scenario from the refresh checkout. The provide
 For a fresh browser check, `wp-env` started on the requested port `9936`, but the committed Playwright repro could not reach its assertion. The first run failed in global setup because the local wp-env had not installed the optional `gutenberg-test-plugin-disables-the-css-animations` test plugin. After installing that local test plugin into wp-env without changing the branch, the repro reached the test body but timed out waiting for `_wpCollaborationEnabled === true`. This is an RTC harness/readiness blocker, not a content-loss result. The source trace and pass-167 annotated video remain the browser-level evidence.
 
 Pass 177 contribution: this rebases both branches to the latest trunk, reruns the fixed-branch focused suite, and adds a fresh exact-`f256024...` negative that isolates the practical reload/hydration route. The real-user likelihood classification remains `medium` for RTC collaborators and low across all Gutenberg usage. The workflow is natural but timing-dependent: two active editors, one reload/join/hydration window, one remote paragraph insert, one stale full block snapshot, then save/reload persistence.
+
+## Pass 178 Verification
+
+Pass 178 fetched current `origin/trunk` and rebased both branches again:
+
+```text
+origin/trunk = 569ea262b573872d5f364e9f4829132c47c683d4
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+93e033e6d0b Add RTC stale top-level append regression test
+9036b36cb53 Add RTC stale append persistence browser repro
+1c7e64d9905 Preserve RTC remote inserts across stale block snapshots
+```
+
+The rebased PR branch still passes the focused CRDT unit files:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt.ts --runInBand
+
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+`git diff --check origin/trunk...HEAD` also passed on the PR branch.
+
+Pass 178 reran the exact known-fixes negative from the immutable backlink-aware synthetic base:
+
+```text
+base = f256024286dd80a4c0e2579f658c109256abf648
+worktree = /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-177/exact-f256
+test file = packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts
+```
+
+The exact known-fixes base still drops the unobserved remote insert:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts --runInBand
+
+FAIL packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts
+Expected length: 5
+Received length: 4
+Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+Pass 178 contribution: this verifies that the existing branch/video/fix still satisfy the requested standard after rebasing to the current trunk. The practical-impact classification remains `medium` for active RTC collaboration: the shortest natural workflow is two editors on the same post, one editor reloads or joins from a hydrated block list, another editor inserts a paragraph, the stale editor emits a full `blocks` snapshot, and the corrupted canonical block tree is saved and survives reload.
