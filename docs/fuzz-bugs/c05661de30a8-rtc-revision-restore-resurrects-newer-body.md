@@ -22,6 +22,7 @@ Strongest evidence for `medium`:
 - The known-fixes base commit is `f256024286dd80a4c0e2579f658c109256abf648`, the manifest's buildable synthetic integration of the backlink-aware RTC fix stack.
 - Pass 173 ran the exact c056 natural Playwright flow against a worktree using the known-fixes build output. It reached the restore/reload invariant and failed because persisted `content.raw` contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new`.
 - Pass 172's lower-level probe showed the same semantic failure inside `prePersistPostType()`: a restore-shaped shorter body save from `[old, new]` to `[old]` is treated as stale local content and returns merged content containing `[old, new]`.
+- Pass 177 reran that low-level shape on a clean detached `f256024...` worktree. The focused `prePersistPostType()` probe again failed at the intended assertion because `result.content` contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new`.
 - Pass 177 rechecked the relevant stale-save PR head separately (`origin/pr/77876`, `6aad4e5801a`). That head independently has `restoreRevision()` using `blocks: undefined` and plain `savePost()`, plus `mergeStaleSerializedBlockContent()` and no revision-restore escape hatch, so this is not just an artifact of the synthetic known-fixes conflict resolution.
 
 Strongest evidence against `high`:
@@ -88,6 +89,14 @@ npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-c05661de30a8-real
 ```
 
 Result with known-fixes build output: failed at the intended product invariant. `persistedContent` contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new` after restore and reload.
+
+Pass 177 clean known-fixes low-level probe command:
+
+```bash
+npm run test:unit -- packages/core-data/src/test/entities.js --testNamePattern="authoritative revision restore"
+```
+
+Result on detached `f256024286dd80a4c0e2579f658c109256abf648`: failed at the intended assertion. `result.content` contained both c056 old and new markers after a restore-shaped save from old+new back to old only.
 
 Focused unit verification on the pass-177 rebased PR branch:
 
