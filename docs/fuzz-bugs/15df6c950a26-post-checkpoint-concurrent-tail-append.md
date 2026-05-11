@@ -51,6 +51,8 @@ This keeps the change small and local to `reconcileStaleLocalBlocks`, uses exist
 
 The main residual risk is the ambiguous delete-plus-insert case: a user who intentionally deletes a block and inserts another block in the same stale snapshot could have the deleted block preserved. In the absence of causal delete/insert intents, that is the safer failure mode for collaborative editing because it preserves content that can be manually deleted later instead of silently losing another collaborator's paragraph.
 
+Pass 177 found that this add-wins heuristic was still too broad after a reload, because serialized block content can be reparsed with refreshed client IDs. In that case, preserving every current block whose old client ID is absent from the local snapshot can duplicate the unchanged document prefix. The PR branch now narrows preservation by matching unchanged current/local blocks while ignoring client IDs, then only preserving missing current blocks that are not represented in the local snapshot. The added unit regression covers the refreshed-client-ID form.
+
 ## Branch artifacts
 
 The PR branch `try/rtc-ws-post-checkpoint-concurrent-tail-append-drops-one-re-15df6c950a26-pr` is based on the known-fixes integration SHA and has commits in this order:
@@ -58,5 +60,6 @@ The PR branch `try/rtc-ws-post-checkpoint-concurrent-tail-append-drops-one-re-15
 1. `Add regression test for stale append race`
 2. `Add UI repro for checkpointed tail append loss`
 3. `Preserve concurrent appends over stale snapshots`
+4. `Avoid duplicating refreshed client-id blocks`
 
 The explanation branch only records this analysis on top of `origin/trunk`, because the precise failing reconciliation code is currently part of the synthetic known-fixes base rather than plain trunk.
