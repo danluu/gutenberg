@@ -397,6 +397,62 @@ function reconcileStaleLocalBlockValues(
 	return reconciledBlocks ?? localBlocks;
 }
 
+function reconcileStaleLocalInsertedBlockValues(
+	localBlocks: Block[],
+	baseClientIdSet: Set< string >,
+	previousLocalBlocks: Block[] | undefined,
+	currentBlocks: Block[]
+): Block[] {
+	if ( ! previousLocalBlocks ) {
+		return localBlocks;
+	}
+
+	const previousLocalBlocksByClientId =
+		getBlocksByClientIdIfEveryBlockHasUniqueId( previousLocalBlocks );
+	const currentBlocksByClientId =
+		getBlocksByClientIdIfEveryBlockHasUniqueId( currentBlocks );
+
+	if ( ! previousLocalBlocksByClientId || ! currentBlocksByClientId ) {
+		return localBlocks;
+	}
+
+	let reconciledBlocks: Block[] | undefined;
+
+	localBlocks.forEach( ( localBlock, index ) => {
+		const clientId = getBlockClientId( localBlock );
+
+		if ( ! clientId || baseClientIdSet.has( clientId ) ) {
+			return;
+		}
+
+		const previousLocalBlock =
+			previousLocalBlocksByClientId.get( clientId );
+		const currentBlock = currentBlocksByClientId.get( clientId );
+
+		if ( ! previousLocalBlock || ! currentBlock ) {
+			return;
+		}
+
+		const reconciledBlock = reconcileStaleLocalBlock(
+			localBlock,
+			previousLocalBlock,
+			currentBlock
+		);
+
+		if ( reconciledBlock === localBlock ) {
+			return;
+		}
+
+		if ( ! reconciledBlocks ) {
+			reconciledBlocks = [ ...localBlocks ];
+		}
+
+		reconciledBlocks[ index ] = reconciledBlock;
+	} );
+
+	return reconciledBlocks ?? localBlocks;
+}
+
 function reconcileStaleLocalBlocks(
 	yblocks: YBlocks,
 	localBlocksToSync: Block[],
@@ -429,6 +485,13 @@ function reconcileStaleLocalBlocks(
 	const localClientIdSet = new Set( localClientIds );
 	const previousClientIdSet = new Set( previousClientIds );
 	const currentClientIdSet = new Set( currentClientIds );
+	const reconciledInsertedLocalBlocks =
+		reconcileStaleLocalInsertedBlockValues(
+			reconciledLocalBlocks,
+			previousClientIdSet,
+			previousLocalBlocksCache.get( yblocks ),
+			currentBlocks
+		);
 	// The local editor sends full block snapshots. Reconcile those snapshots
 	// against the last local base before running the full-array merge so remote
 	// top-level inserts/deletes are not inferred as local structural edits.
@@ -439,7 +502,7 @@ function reconcileStaleLocalBlocks(
 				! currentClientIdSet.has( clientId )
 		)
 	);
-	const blocksToSync = reconciledLocalBlocks.filter( ( block ) => {
+	const blocksToSync = reconciledInsertedLocalBlocks.filter( ( block ) => {
 		const clientId = getBlockClientId( block );
 		return ! clientId || ! remotelyDeletedClientIds.has( clientId );
 	} );

@@ -395,4 +395,80 @@ describe( 'stale top-level block snapshots', () => {
 
 		remoteDoc.destroy();
 	} );
+
+	it( 'preserves current rich text for a locally inserted block when a stale base-record snapshot is replayed', () => {
+		const initialBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'beta', 'Beta' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: initialBlocks,
+				content: serializeBlocks( initialBlocks ),
+			},
+			SYNCED_POST_PROPERTIES
+		);
+
+		const staleLocalBlocks = [
+			...initialBlocks,
+			paragraph( 'local-inserted', 'RTC primary paragrph' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: staleLocalBlocks,
+				content: serializeBlocks( staleLocalBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		const advancedLocalBlocks = [
+			...initialBlocks,
+			paragraph( 'local-inserted', 'RTC primary paragraph' ),
+		];
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: advancedLocalBlocks,
+				content: serializeBlocks( advancedLocalBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: staleLocalBlocks } }
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Tail',
+			'RTC primary paragraph',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: staleLocalBlocks,
+				content: serializeBlocks( staleLocalBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Tail',
+			'RTC primary paragraph',
+		] );
+		expect( postContent( doc ) ).toContain( 'RTC primary paragraph' );
+		expect( postContent( doc ) ).not.toContain( 'RTC primary paragrph' );
+
+		remoteDoc.destroy();
+	} );
 } );
