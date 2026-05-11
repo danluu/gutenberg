@@ -79,7 +79,7 @@ Blast radius:
   from post revisions after a bad save.
 
 Strongest evidence for `low`: archived browser failure used normal controls;
-screenshots and error context show duplicate/lost content; a pass-170 focused
+screenshots and error context show duplicate/lost content; a pass-177 focused
 unit negative control fails on the current known-fixes base; the refreshed fix
 passes the focused and full CRDT unit suites.
 
@@ -96,6 +96,18 @@ there. A code audit of the normal toolbar action path found that
 `innerBlocks` array before `getBlocks()` returns it. That makes the remaining
 current-known-fixes residual less natural than the archived browser failure
 unless another editor path reuses and mutates the same block-array object.
+
+Pass 177 rechecked current `origin/trunk`
+(`23f840960ebf80b59832a0d724fa1c018e79a186`, 2026-05-11) and found no
+intervening changes to the CRDT merge, sync manager, entity sync hook,
+block-editor reducer, selector, or collaboration fixture paths. The sync path
+is: `useBlockSync()` passes the current `getBlocks()` array to
+`useEntityBlockEditor()`, `updateFootnotesFromMeta()` adds that array to the
+core-data edit, and `editEntityRecord()` calls the sync manager before
+dispatching the edit. That makes the archived browser bug a real natural
+product path, but it also confirms the remaining known-fixes failure depends on
+a mutable same-array input that the audited normal toolbar reducers do not
+appear to produce for delete, insert-before, or move-down.
 
 Shortest confidence-improving experiment: run the natural Playwright sequence
 100-200 times with small randomized delays between delete, insert-before, and
@@ -143,34 +155,35 @@ f256024286dd80a4c0e2579f658c109256abf648
 Integrate RTC known-fix stack
 ```
 
-That base is not enough. Pass 170 added an uncommitted focused test file in a
-temporary worktree. Pass 171 independently repeated the negative control with a
-standalone test file to avoid depending on the overlapping known-fixes test
-conflict:
+That base is not enough. Pass 177 repeated the focused negative control in a
+detached worktree at `f256024286dd80a4c0e2579f658c109256abf648`, with the
+refreshed PR branch's regression test file overlaid:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-171/work/66edd42bfa52-knownfix-standalone/packages/core-data/src/utils/test/66edd42bfa52-pass171-knownfix.test.ts
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-177/work/66edd42bfa52-knownfix-f256
 ```
 
 Command:
 
 ```bash
-npm run test:unit packages/core-data/src/utils/test/66edd42bfa52-pass171-knownfix.test.ts -- --runInBand
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
 ```
 
 Result:
 
 ```text
-FAIL packages/core-data/src/utils/test/66edd42bfa52-pass171-knownfix.test.ts
-2 failed
+FAIL packages/core-data/src/utils/test/crdt-blocks.ts
+1 passed, 2 failed, 75 skipped
 
-observes a move when the same top-level block array object is reused
-Expected: [ "Inserted paragraph", "Sibling paragraph", "Moved paragraph" ]
-Received: [ "Inserted paragraph", "Moved paragraph", "Sibling paragraph" ]
+passed:
+preserves a remotely inserted block and the moved sibling after a stale top-level move
 
-preserves a remote insert and moved sibling after a stale echo
-Expected: [ "Inserted paragraph", "Sibling paragraph", "Moved paragraph" ]
-Received: [ "Inserted paragraph", "Moved paragraph", "Sibling paragraph" ]
+failed:
+observes reordered blocks when the editor reuses the same block array reference
+preserves the moved sibling when a same-array move follows a remote insert echo
+
+received stale order:
+Inserted paragraph, Emoji and multibyte, Another paragraph
 ```
 
 The current known-fixes branch has stale-snapshot reconciliation helpers, but it
@@ -249,24 +262,24 @@ PR branch:
 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
 ```
 
-Pass 174 rebased both branches onto:
+Pass 177 rebased both branches onto:
 
 ```text
-b38f9b4d86d Fix lockfile drift and missing dep from content-types consolidation (#78109)
+23f840960eb Content Types: Introduce view items actions (#78104)
 ```
 
-PR branch commit order after the pass 174 refresh:
+PR branch commit order after the pass 177 refresh:
 
 ```text
-038f583e8eb Add RTC stale top-level move merge regressions
-a4eb8d2fc24 Add RTC top-level move Playwright repro
-d4f1db34ab6 Preserve RTC block order across stale snapshots
+990e49cc268 Add RTC stale top-level move merge regressions
+04275e1ff17 Add RTC top-level move Playwright repro
+184dc254118 Preserve RTC block order across stale snapshots
 ```
 
-Remote PR head pushed to `danluu` after the pass 174 refresh:
+Remote PR head pushed to `danluu` after the pass 177 refresh:
 
 ```text
-d4f1db34ab6101bfc4bccfb5b070439a6f2e8bf0 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
+184dc2541180d3c345c43ec2605317a5b59e9e83 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
 ```
 
 ## Verification
@@ -410,3 +423,25 @@ browser run in the same detached worktree did not reach the editing sequence:
 `waitForCollaborationReady()` timed out before `_wpCollaborationEnabled` became
 true. Pass 175 therefore treats that browser result as an environment/harness
 failure, not as product evidence for or against the bug.
+
+Pass 177 refreshed the branches onto current `origin/trunk`
+(`23f840960ebf80b59832a0d724fa1c018e79a186`). The intervening upstream commits
+did not touch these paths:
+
+```text
+packages/core-data/src/utils/crdt-blocks.ts
+packages/core-data/src/utils/crdt.ts
+packages/core-data/src/entities.js
+packages/sync/src/manager.ts
+packages/block-editor/src/store/reducer.js
+packages/block-editor/src/store/selectors.js
+test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts
+```
+
+Pass 177 focused fixed-branch unit test:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `PASS`, 3 passed, 75 skipped.
