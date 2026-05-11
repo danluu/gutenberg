@@ -22,7 +22,7 @@ top-level Paragraph move can omit a remote-only top-level Pullquote from the
 snapshot being merged. The pre-existing stale-local reconciliation handles the
 cached-history path, but the explicit-base path bypasses that reconciliation.
 
-Current `origin/trunk` at `23f840960ebf80b59832a0d724fa1c018e79a186`
+Current `origin/trunk` at `a0a24a30a3747f4b143a415a4fb5a80f8b8b005f`
 (fetched 2026-05-11) does not yet pass `baseRecord` through the same
 `getSyncManager()?.update()` call, so this document tracks a proposed-stack
 regression risk rather than a directly reproduced trunk bug.
@@ -68,6 +68,13 @@ known-fixes base with only the test commit applied. The cached-history control
 passed, while the explicit-base CRDT case and the `SyncManager.update()` race
 both dropped `remote-pullquote`. The same two files passed on the PR branch
 containing the fix.
+
+A pass-178 verification repeated that check after refreshing `origin/trunk` to
+`a0a24a30a37`. On a clean scratch worktree at `f256024286d` with only the test
+commit applied, the cached-history control still passed, while the explicit-base
+CRDT case and the `SyncManager.update()` race both dropped `remote-pullquote`.
+On PR-branch commit `425764ce85c9183550ba0fb17651e18b0541a461`, all three tests
+passed.
 
 ## Root Cause
 
