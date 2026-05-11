@@ -340,6 +340,34 @@ resolved cursor `{ clientId, attributeKey, offset }`, and the resulting Y.Text
 after each key. That should distinguish a bad incoming full snapshot from a bad
 rich-text delta/cursor application.
 
+## Pass 178 Follow-up
+
+Pass 178 added a temporary adapter-level probe on PR head `e32f9d80c02` to test
+one remaining stale full-snapshot shape: an inserted paragraph reaches
+`RTC primary paragraph`, then an older queued key snapshot with the same
+inserted block at `RTC primary paragrap` is applied with an older base record.
+The branch rolls the CRDT value back to the older string:
+
+```text
+Expected: Alpha, Beta, Tail, RTC primary paragraph
+Received: Alpha, Beta, Tail, RTC primary paragrap
+```
+
+Command:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts --runInBand
+```
+
+Temporary worktree: `/private/tmp/5fe795-pass178-prqueue.AoAStk`.
+
+This is not a replacement for the browser instrumentation requested in pass
+177, because it does not prove that browser events are actually reordered in
+that exact way. It does show why the current partial fix is not a general
+"never roll acknowledged inserted-block text backward" invariant: the guard
+handles an exact stale replay, but a queued snapshot that differs from its base
+is still treated as authoritative and can overwrite a newer Y.Text value.
+
 ## Artifacts
 
 - Failure JSON, pass-172 160 ms/key no post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output/attempt-6.json`
