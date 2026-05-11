@@ -40,11 +40,11 @@ Relevant history:
 
 ## Practical Impact
 
-Real-user likelihood: low.
+Real-user likelihood: low for affected WebSocket RTC deployments; very-low across the broad default Gutenberg installed base. The corruption is in the shared post-entity CRDT merge path, but Gutenberg's built-in provider is HTTP polling and WebSocket transport requires a provider supplied through the `sync.providers` filter.
 
 Natural workflow: two users or tabs in the post editor using websocket RTC; ordinary Paragraph, Group, Pullquote, and Heading blocks; save/reload or checkpoint history; one participant receives live collaborator inserts/edits in the CRDT document, then submits a stale checkpoint-view top-level Group move before the visible block tree has caught up. Multiple active sessions and a narrow timing window are required.
 
-Common prerequisites are the involved block types, draft saves, reloads, content edits, and block moves. Rare prerequisites are RTC websocket collaboration, an explicit-base stale full-block snapshot, concurrent remote top-level inserts, and a move across heterogeneous siblings. The exact marker strings and action order are fuzz-derived.
+Common prerequisites are the involved block types, draft saves, reloads, content edits, and block moves. RTC is an early-access plugin feature and may be enabled on plugin installs where collaboration is allowed, but WebSocket is not the default provider. Rare prerequisites are a WebSocket RTC provider, an explicit-base stale full-block snapshot, concurrent remote top-level inserts, and a move across heterogeneous siblings. The exact marker strings and action order are fuzz-derived.
 
 Blast radius: real content corruption, not UI-only. Affected code can drop inserted blocks, move nested content to the wrong block type, leak Pullquote attributes onto Paragraphs, diverge peers, and persist corrupted markup if the bad tree is saved. Recovery is undo/reload before save, or revision restore/manual repair after save.
 
@@ -117,6 +117,15 @@ At PR branch head `74516c1fbb7`, the same focused test passes:
 PASS packages/core-data/src/utils/test/crdt-747c653e7b3b-pass175-explicit-base.test.ts
 Tests: 1 passed, 1 total
 ```
+
+Pass 177 rechecked the branch after rebasing the explanation write-up onto current `origin/trunk`. A fresh detached worktree at the test-only commit `07e637acb29` failed with the same dropped live block IDs:
+
+```text
+Expected: intro, remote-insert, middle, pullquote, local-insert, heading, tail, group
+Received: intro, middle, pullquote, heading, tail, group
+```
+
+The PR branch head `74516c1fbb7` passed the same test in place. The pass-177 code audit also confirmed that the WebSocket transport is not the key data-corrupting layer: the failing path is shared once a provider delivers remote Yjs updates and a local full-block edit reaches `mergeCrdtBlocks()` with `baseRecord.blocks`.
 
 ## Fix Plan
 
