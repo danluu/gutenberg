@@ -349,3 +349,76 @@ with the editor loaded but `window._wpCollaborationEnabled` not true before the
 15s readiness timeout. That is a harness/readiness gap for this pass, not a
 product-failure signal. The existing pass-170 annotated fixed-workflow MP4
 still exists and validates with `ffprobe` as an 8.566667s, 212080-byte video.
+
+Pass 178 refreshed the branches again after `origin/trunk` advanced to
+`569ea262b573872d5f364e9f4829132c47c683d4`.
+
+```bash
+git fetch origin trunk
+git -C /Users/danluu/dev/fuzz/gutenberg-bug-703ef0771ea5 rebase origin/trunk
+git -C .../pass-177/703ef0771ea5-pr-branch rebase origin/trunk
+```
+
+Results:
+
+- Explanation branch post-rebase head before this documentation note:
+  `bbf765725951d26c945f520c42d0a01f40ef78a7`.
+- PR branch head:
+  `343ca23e916bad6392a636d7fd19d2bf814b6efd`.
+- PR branch commit order remains:
+  `cc4813e718d Add stale table body CRDT repro`,
+  `7ff8ccce472 Add stale table body collaboration repro`,
+  `343ca23e916 Fix stale table body structural merges`.
+- `git diff --check origin/trunk..HEAD` passed on the PR branch.
+- The focused unit repro passed on the refreshed PR branch.
+
+Pass-178 target matrix:
+
+```bash
+git worktree add --detach .../pass-178/703ef0771ea5-f256-exact \
+	f256024286dd80a4c0e2579f658c109256abf648
+git -C .../pass-178/703ef0771ea5-f256-exact cherry-pick --no-commit \
+	cc4813e718d
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: failed on exact known-fixes base with a duplicate
+`remote append A` / `remote append B` row.
+
+```bash
+git fetch origin '+pull/77887/head:refs/heads/pr/77887'
+git worktree add --detach .../pass-178/703ef0771ea5-pr77887-head \
+	refs/heads/pr/77887
+git -C .../pass-178/703ef0771ea5-pr77887-head cherry-pick --no-commit \
+	cc4813e718d
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: failed on refreshed PR 77887 head `9c5dba15654e`, with the later
+appended tail row already missing before the final table equality assertion.
+
+```bash
+git worktree add --detach .../pass-178/703ef0771ea5-trunk-exact origin/trunk
+git -C .../pass-178/703ef0771ea5-trunk-exact cherry-pick --no-commit \
+	cc4813e718d
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: passed on current `origin/trunk` at `569ea262b573872d5f364e9f4829132c47c683d4`.
+This continues to mean the proposed/known-fixes stack is vulnerable while
+current trunk alone does not contain the risky stale-local path.
+
+Pass 178 also retried the natural Playwright repro on the refreshed fixed
+branch after starting `wp-env` on port 9946. The run again failed before any
+table action in `waitForCollaborationReady()`, this time at
+`fixtures/collaboration-utils.ts:311`, with the editor loaded but
+`window._wpCollaborationEnabled` still not true after 15s. The screenshot and
+trace are local harness artifacts under
+`test/e2e/artifacts/test-results/editor-collaboration-triag-9db65-prepend-and-stale-tail-edit-chromium/`.
+The environment was stopped after the attempt.
