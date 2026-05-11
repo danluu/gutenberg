@@ -82,6 +82,24 @@ The rebased fixed branch passed the same natural two-user Playwright repro:
 
 Result after fix: `1 passed (21.0s)`.
 
+Pass 177 refreshed the explanation branch onto current `origin/trunk`
+`bf2d0cc1f1e82d0db286f4aa9851f151e407b163`
+(`Editor: Refactor 'PostPublishPanel' into function component (#78083)`). The
+nine trunk commits after pass 176 do not touch
+`packages/editor/src/components/local-autosave-monitor`,
+`packages/editor/src/store`, `packages/core-data/src`, `packages/sync/src`,
+`test/e2e/specs/editor/collaboration`, or this explanation doc. Targeted static
+checks still show that current trunk and the required known-fixes base lack an
+editor-local `pagehide`/`beforeunload` flush; the only lifecycle hooks matching
+those names are in the HTTP polling sync provider. This pass also sharpened the
+practical likelihood assessment: the bug remains `medium` for active RTC
+collaboration sessions because the visible-tab HTTP polling path is asynchronous
+at a 1-second collaborator interval, and the ordinary background-tab path polls
+at 25 seconds. That background path gives a realistic non-fuzz workflow where a
+non-saving collaborator can leave the editor tab inactive while another user
+saves, return to the tab, and reload/rejoin before the remote-save refetch has
+purged or refreshed the stale browser backup.
+
 ## Natural Repro
 
 The committed repro on the PR branch creates a draft post with one paragraph and uses two real browser users in the post editor:
