@@ -68,50 +68,70 @@ This means the Enter-path assertion was checking the wrong expected behavior.
 The saved/reloaded pass-172 Enter result persisted because the editor saved a
 normal paragraph split at the caret position, not because RTC moved text.
 
+## Pass 177 Update
+
+Pass 177 confirms that the `End` route above is still a false positive, but the
+broader 810c same-anchor Add-after family is a real RTC product bug.
+
+The remaining realistic route is:
+
+```text
+Two WebSocket RTC collaborators select the same paragraph, invoke Insert after,
+and type into the new paragraph before both local and remote updates settle.
+```
+
+On the backlink-aware known-fixes checkout, after the structural same-anchor
+block preservation fix at `c8af86c24a5`, the browser-level shortcut repro still
+converged to a wrong state:
+
+```text
+Seed 953009 pass171 collaborator shortcut-after-anchor
+eed 953009 pass171 primary shortcut-after-anchor
+```
+
+That result had `convergenceError: null` and `statesEqual: true`, so the peers
+agreed on corrupted content. A same-checkout single-writer Add-after shortcut
+control passed.
+
+Pass 177 isolated a lower-level race in the proposed known-fixes sync-manager
+stack: `editEntityRecord()` schedules local CRDT writes with a zero-delay timer,
+but a remote `blocks` update can be reconciled into the local store before that
+queued local write runs. The remote reconciliation then overwrites the local
+typed first character. The later queued local write is either filtered out as a
+stale same-key update, or arrives too late to repair the already-overwritten
+editor state. This explains the observed `Seed` -> `eed` loss without requiring
+malformed blocks, direct state mutation, or a rich-text delta corruption.
+
+The pass-177 unit probe against `c8af86c24a5` reproduced the loss with:
+
+1. Initial paragraph plus shared anchor.
+2. Queued local `blocks` update inserting `primary-insert` with content `S`.
+3. Remote same-anchor insert applied before the queued local update timer fires.
+4. Local edited record and CRDT both missing `S`.
+
+A candidate fix in a detached probe preserved the character by batching remote
+store reconciliation through the same event-loop boundary as local CRDT writes,
+and by allowing rebaseable `blocks` updates with `baseRecord.blocks` through the
+stale-key filter. The new unit repro and existing
+`packages/sync/src/test/manager.ts` both passed with that candidate.
+
 ## Remaining Risk
 
-This does not prove every historical seed-953009 family artifact is false. The
-manifest still links `810c2d35f443` to broader concurrent same-anchor paragraph
-insert/typing failures, and the old simultaneous Add-after shortcut path does
-not rely on `End`.
-
-However, pass 172 also reran the Add-after shortcut as a single-active-writer
-case with a connected second WebSocket RTC session:
-
-```text
-RTC_810C_PASS171_SKIP_SECONDARY_ACTION=1
-RTC_810C_PASS171_TYPE_DELAY_MS=160
-npm run test:e2e:rtc-websocket -- \
-  specs/editor/collaboration/websocket/collaboration-triage-810c2d35f443-pass171-delay-probe.spec.ts \
-  --project=chromium --workers=1 --reporter=line --grep shortcut-after-anchor
-```
-
-Command result: `1 passed`.
-
-Result path:
-
-```text
-/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-172/810c-pass172-singlewriter-shortcut-results/shortcut-after-anchor.json
-```
-
-That result had `convergenceError: null`, `statesEqual: true`, and
-`exactTextsPresentOnBoth: true`. The remaining plausible product issue is
-therefore much narrower: simultaneous same-anchor paragraph insertion/typing by
-two users, likely a duplicate of the broader concurrent paragraph insertion
-family rather than a standalone 810c single-writer corruption bug.
+This does not revive the invalid single-writer Enter claim. It does mean
+`810c2d35f443` should remain attached to the real concurrent same-anchor
+paragraph insertion/typing family, which is user-reachable through the editor's
+registered Insert-after command.
 
 ## Practical Classification
 
-The pass-171 `high` practical-impact classification should be withdrawn for
-this signature. The single-active-writer Enter workflow is expected editor
-behavior once the `End` key semantics are accounted for.
+The single-active-writer Enter workflow remains expected editor behavior.
 
-For the residual concurrent same-anchor Add-after/typing family, practical
-likelihood is `low`: it requires WebSocket RTC, two active users or tabs,
-ordinary paragraph blocks, and closely overlapping edits at the same insertion
-surface. It does not require malformed blocks or direct state mutation, but the
-timing and same-anchor overlap are fuzz-like compared with normal collaborative
-editing.
+For the concurrent same-anchor Add-after/typing family, practical likelihood is
+`medium`: it requires WebSocket RTC, two active users or tabs, ordinary
+paragraph blocks, and closely overlapping edits at the same insertion point. The
+overlap is narrower than typical solo editing, but the action itself is a normal
+editor command and the bad outcome is converged content corruption, not a
+test-only readiness failure.
 
 ## Filing Guidance
 
