@@ -12,6 +12,8 @@ The backlink-aware known-fixes base added stale top-level reconciliation, but th
 
 Pass 177 added an adapter-level reproduction through `applyPostChangesToCRDTDoc` rather than calling `mergeCrdtBlocks` directly. On pinned known-fixes base `f256024286dd80a4c0e2579f658c109256abf648`, the remote delete first converged to `["Alpha","Beta"]`, then a stale base-record edit restored `Gamma` and produced `["Alpha local edit","Beta","Gamma"]`. The same temporary adapter-level test passed on the fix branch head.
 
+Pass 178 rebased the proposed fix branch onto `origin/trunk` `5c6e65c85af5fefe411c43f1fe5ea7395b37d2ef` and rechecked the evidence. The committed non-Playwright repros now include both the direct `mergeCrdtBlocks` case and the post-adapter `applyPostChangesToCRDTDoc` stale-base case, and they pass on fixed head `4f598df5434`. The committed browser repro still uses natural editor actions: one collaborator appends a Paragraph by typing after `Enter`, another deletes it through the block toolbar, and the first collaborator concurrently types into a different Paragraph.
+
 ## User workflow
 
 The natural workflow is ordinary collaborative editing, but the timing is specific:
