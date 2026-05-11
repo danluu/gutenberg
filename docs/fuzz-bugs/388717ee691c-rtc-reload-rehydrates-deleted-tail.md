@@ -248,3 +248,33 @@ document during reload uses `applyChangesToCRDTDoc()` without an explicit
 explicit-base duplicate path. The highest-risk natural trigger is therefore not
 mere reload in isolation; it is reload/rejoin plus a stale follow-up entity edit
 or reconciliation update around the same move/delete window.
+
+## Pass 177 Update
+
+Pass 177 rechecked the same focused regressions on fresh detached worktrees:
+exact known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` still fails
+both tests with the duplicate tail, while prototype PR head
+`7d0e079fc07d7ad3f937f0921d68a0d3d183f481` passes both.
+
+Pass 177 also added a temporary record-level probe to separate two product
+paths. On the exact known-fixes base, a stale full `blocks` snapshot applied
+through `applyPostChangesToCRDTDoc()` without `baseRecord` does not produce the
+manifest duplicate-tail shape; it rehydrates the original long paragraph and
+rolls survivor order back to:
+
+```text
+Long paragraph -> Follow-up heading -> Tail paragraph
+```
+
+The same stale full snapshot with `baseRecord.blocks` still produces the
+manifest shape:
+
+```text
+Tail paragraph -> Follow-up heading -> Tail paragraph
+```
+
+The prototype fix preserves the moved-and-deleted explicit-base order
+`Tail paragraph -> Follow-up heading`, while the unbased stale-snapshot arm
+still rehydrates the original paragraph. That narrows this signature's root
+cause to stale explicit-base entity updates, and leaves the unbased stale reload
+corruption as related residual scope.
