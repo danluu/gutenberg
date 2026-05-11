@@ -442,3 +442,62 @@ evidence strengthens the branch/artifact sufficiency claim: the exact source
 workflow is still guarded by a natural-user Playwright test on current trunk,
 and the focused non-browser repro still proves the May 7 known-fixes base has a
 real causality/base-tracking bug rather than a browser readiness issue.
+
+## Pass 177 current-trunk refresh
+
+Pass 177 rebased both requested branches onto current `origin/trunk` again:
+
+- `origin/trunk`: `84ecc0f1476 Connectors: Avoid using centered text (#78125)`.
+- Explanation branch head after this documentation update:
+  `d4a69cca649 Refresh RTC table delete pass 174 analysis` before the pass-177
+  commit.
+- PR branch head after rebase:
+  `3bea34983d8 Advance RTC block merge base after remote delivery`.
+- PR branch commit order:
+  1. `623b625dd7c Add RTC remote insert delete CRDT repro`
+  2. `a2f68193f99 Add WebSocket table delete Playwright repro`
+  3. `3bea34983d8 Advance RTC block merge base after remote delivery`
+
+Pass 177 reran the required known-fixes negative control on the May 7
+backlink-aware base `f256024286d` plus only the repro commit. It also widened
+the pattern to include the paragraph and nested paragraph delivered-delete
+cases. The result was the same causal split:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache --testNamePattern='preserves a remote table insert|does not reintroduce a remote table|matches the source order|deletes delivered blocks while preserving unseen remote inserts|does not reintroduce a remote paragraph|does not reintroduce a remote nested paragraph'
+```
+
+Result on `f256024286d` plus only the repro commit:
+
+- `preserves a remote table insert when a stale local snapshot edits another block`: PASS.
+- `does not reintroduce a remote table after that remote insert has become the local base`: FAIL; received a trailing `core/table`.
+- `matches the source order: collaborator paragraph, primary table, collaborator table delete`: FAIL; received table content after the collaborator delete.
+- `deletes delivered blocks while preserving unseen remote inserts in the same stale snapshot`: FAIL; retained the delivered-deleted paragraph alongside the unseen table.
+- `does not reintroduce a remote paragraph after that remote insert has become the local base`: FAIL; retained the delivered-deleted paragraph.
+- `does not reintroduce a remote nested paragraph after that remote insert has become the local base`: FAIL; retained the delivered-deleted nested paragraph.
+
+Fresh verification on the pass-177 rebased PR branch:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+node ./tools/eslint/lint-js.cjs --config eslint.config.strict.cjs packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/crdt.ts packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts
+git diff --check origin/trunk..HEAD
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 RTC_MANIFEST_WS_START_PORT=21176 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_98E7_REALISTIC_REPRO_DIR=/Users/danluu/dev/fuzz/gutenberg-bug-98e7f896ffb0/artifacts/pass-177/playwright-fixed-results npm run test:e2e -- test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts --project=chromium --workers=1
+```
+
+Results:
+
+- Focused repro unit file: PASS, 6 tests.
+- Existing CRDT block unit file: PASS, 71 tests.
+- Targeted strict JS lint: exit 0.
+- `git diff --check origin/trunk..HEAD`: exit 0.
+- Natural Playwright repro: PASS, 2 scenarios.
+- Pass-177 result JSONs showed `convergenceError: null`, matching block-name
+  arrays, and no `core/table` in either editor after deletion.
+
+Pass 177 keeps the practical-impact classification at `medium`. The refreshed
+negative control proves the May 7 known-fixes base still preserves unseen
+remote inserts while reintroducing delivered-deleted blocks; the rebased fix
+preserves the unseen-insert behavior and removes delivered-deleted table,
+paragraph, and nested paragraph blocks.
