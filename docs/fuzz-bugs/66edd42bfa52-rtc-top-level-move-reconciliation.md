@@ -109,6 +109,18 @@ product path, but it also confirms the remaining known-fixes failure depends on
 a mutable same-array input that the audited normal toolbar reducers do not
 appear to produce for delete, insert-before, or move-down.
 
+Pass 178 refreshed both branches onto current `origin/trunk`
+(`a0a24a30a3747f4b143a415a4fb5a80f8b8b005f`, 2026-05-11). One intervening
+commit touched collaboration e2e helper usage, but it did not change the
+product CRDT merge, sync manager, entity sync hook, or block-editor reducer
+paths. A fresh known-fixes negative control at
+`f256024286dd80a4c0e2579f658c109256abf648` reproduced the current-base split:
+the stale full-snapshot repro passed, while both same-array/cache-sensitive
+repros failed. That keeps the archived browser bug at `low` real-user
+likelihood, but the surviving known-fixes residual is better described as
+`very-low` unless another ordinary editor path is found that mutates and
+reuses the exact top-level block array object across a move.
+
 Shortest confidence-improving experiment: run the natural Playwright sequence
 100-200 times with small randomized delays between delete, insert-before, and
 move-down while logging each emitted block array order and object identity.
@@ -262,24 +274,24 @@ PR branch:
 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
 ```
 
-Pass 177 rebased both branches onto:
+Pass 178 rebased both branches onto:
 
 ```text
-23f840960eb Content Types: Introduce view items actions (#78104)
+a0a24a30a37 Add SelectControl component to @wordpress/ui (#77809)
 ```
 
-PR branch commit order after the pass 177 refresh:
+PR branch commit order after the pass 178 refresh:
 
 ```text
-990e49cc268 Add RTC stale top-level move merge regressions
-04275e1ff17 Add RTC top-level move Playwright repro
-184dc254118 Preserve RTC block order across stale snapshots
+640b2131bb6 Add RTC stale top-level move merge regressions
+4bdef744985 Add RTC top-level move Playwright repro
+6c5c069d04a Preserve RTC block order across stale snapshots
 ```
 
-Remote PR head pushed to `danluu` after the pass 177 refresh:
+Local PR head after the pass 178 refresh:
 
 ```text
-184dc2541180d3c345c43ec2605317a5b59e9e83 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
+6c5c069d04a13000100150088bbe36cbbca07c68 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
 ```
 
 ## Verification
@@ -445,3 +457,54 @@ npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBan
 ```
 
 Result: `PASS`, 3 passed, 75 skipped.
+
+Pass 178 repeated the known-fixes negative control in:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-178/work/66edd42bfa52-knownfix-f256
+```
+
+Command:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `FAIL`, 1 passed, 2 failed, 75 skipped. The stale full-snapshot repro
+passed, while both same-array/cache-sensitive repros received the stale order:
+
+```text
+Inserted paragraph, Emoji and multibyte, Another paragraph
+```
+
+Pass 178 fixed-branch focused unit test after rebasing onto `origin/trunk`:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `PASS`, 3 passed, 75 skipped.
+
+Pass 178 full fixed-branch CRDT unit file:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand
+```
+
+Result: `PASS`, 78 passed.
+
+Pass 178 lint:
+
+```bash
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts
+```
+
+Result: exit code 0.
+
+Pass 178 diff check:
+
+```bash
+git diff --check HEAD~3..HEAD
+```
+
+Result: exit code 0.
